@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
@@ -36,7 +35,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
@@ -189,13 +187,11 @@ public class ProgramRewriter
 		_sbRuleSet.removeIf(r -> r.getClass().equals(clazz));
 	}
 	
-	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) throws LanguageException, HopsException {
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) {
 		return rewriteProgramHopDAGs(dmlp, true);
 	}
 	
-	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp, boolean splitDags) 
-		throws LanguageException, HopsException
-	{
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp, boolean splitDags) {
 		ProgramRewriteStatus state = new ProgramRewriteStatus();
 		
 		// for each namespace, handle function statement blocks
@@ -219,9 +215,7 @@ public class ProgramRewriter
 		return state;
 	}
 	
-	public void rRewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) 
-		throws LanguageException, HopsException
-	{
+	public void rRewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) {
 		//ensure robustness for calls from outside
 		if( state == null )
 			state = new ProgramRewriteStatus();
@@ -267,9 +261,7 @@ public class ProgramRewriter
 		}
 	}
 	
-	public ArrayList<Hop> rewriteHopDAG(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAG(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		for( HopRewriteRule r : _dagRuleSet ) {
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
@@ -279,9 +271,7 @@ public class ProgramRewriter
 		return roots;
 	}
 	
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{	
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return null;
 		
@@ -294,9 +284,7 @@ public class ProgramRewriter
 		return root;
 	}
 	
-	public ArrayList<StatementBlock> rRewriteStatementBlocks(ArrayList<StatementBlock> sbs, ProgramRewriteStatus status, boolean splitDags)
-		throws HopsException
-	{
+	public ArrayList<StatementBlock> rRewriteStatementBlocks(ArrayList<StatementBlock> sbs, ProgramRewriteStatus status, boolean splitDags) {
 		//ensure robustness for calls from outside
 		if( status == null )
 			status = new ProgramRewriteStatus();
@@ -323,9 +311,7 @@ public class ProgramRewriter
 		return sbs;
 	}
 	
-	public ArrayList<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status, boolean splitDags)
-		throws HopsException
-	{
+	public ArrayList<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status, boolean splitDags) {
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 		ret.add(sb);
 		

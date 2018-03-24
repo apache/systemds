@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
@@ -33,7 +32,6 @@ import org.apache.sysml.hops.codegen.SpoofCompiler.IntegrationType;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.ForStatement;
@@ -60,7 +58,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 public class ProgramRecompiler 
 {
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
-		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
 		ArrayList<ProgramBlock> ret = new ArrayList<>();
 		DMLConfig config = ConfigurationManager.getDMLConfig();

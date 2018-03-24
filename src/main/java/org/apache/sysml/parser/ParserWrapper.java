@@ -45,8 +45,7 @@ public abstract class ParserWrapper {
 	protected boolean atLeastOneWarning = false;
 	protected List<ParseIssue> parseIssues;
 	
-	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals)
-		throws ParseException;
+	public abstract DMLProgram parse(String fileName, String dmlScript, Map<String, String> argVals);
 
 	/**
 	 * Custom wrapper to convert statement into statement blocks. Called by doParse and in DmlSyntacticValidator for for, parfor, while, ...

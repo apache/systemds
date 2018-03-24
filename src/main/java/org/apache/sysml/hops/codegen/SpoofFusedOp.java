@@ -23,12 +23,10 @@ import java.util.ArrayList;
 
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.SpoofFused;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -70,7 +68,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {}
+	public void checkArity() {}
 
 	@Override
 	public void setMaxNumThreads(int k) {
@@ -105,7 +103,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
-	public Lop constructLops() throws HopsException, LopsException {
+	public Lop constructLops() {
 		if( getLops() != null )
 			return getLops();
 		
@@ -125,7 +123,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		

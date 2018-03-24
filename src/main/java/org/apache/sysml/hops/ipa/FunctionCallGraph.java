@@ -281,9 +281,7 @@ public class FunctionCallGraph
 		}
 	}
 	
-	private boolean rConstructFunctionCallGraph(String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) 
-		throws HopsException 
-	{
+	private boolean rConstructFunctionCallGraph(String fkey, StatementBlock sb, Stack<String> fstack, HashSet<String> lfset) {
 		boolean ret = false;
 		if (sb instanceof WhileStatementBlock) {
 			WhileStatement ws = (WhileStatement)sb.getStatement(0);

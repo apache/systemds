@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -78,33 +77,23 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 	}
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return null;
-		
 		for( Hop h : roots ) 
 			rule_RemovePersistentDataOp( h );
-		
 		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
-		
 		rule_RemovePersistentDataOp( root );
-		
 		return root;
 	}
 	
-	private void rule_RemovePersistentDataOp( Hop hop ) 
-		throws HopsException
-	{
+	private void rule_RemovePersistentDataOp( Hop hop ) {
 		//check mark processed
 		if( hop.isVisited() )
 			return;

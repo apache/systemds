@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -99,56 +98,52 @@ public class CumSumProd extends PackageFunction {
 
 	@Override
 	public void execute() {
-		try {
-			X = ((Matrix) getFunctionInput(0)).getMatrixObject().acquireRead();
-			C = ((Matrix) getFunctionInput(1)).getMatrixObject().acquireRead();
-			if(X.getNumRows() != C.getNumRows())
-				throw new RuntimeException("Number of rows of X and C should match");
-			if( X.getNumColumns() != C.getNumColumns() && C.getNumColumns() != 1 )
-				throw new RuntimeException("Incorrect Number of columns of X and C (Expected C to be of same dimension or a vector)");
-			start = Double.parseDouble(((Scalar)getFunctionInput(2)).getValue());
-			isReverse = Boolean.parseBoolean(((Scalar)getFunctionInput(3)).getValue()); 
-			
-			numRetRows = X.getNumRows();
-			numRetCols = X.getNumColumns();
-			allocateOutput();
-			
-			// Copy X to Y
-			denseBlock = retMB.getDenseBlockValues();
-			if(X.isInSparseFormat()) {
-				Iterator<IJV> iter = X.getSparseBlockIterator();
-				while(iter.hasNext()) {
-					IJV ijv = iter.next();
-					denseBlock[ijv.getI()*numRetCols + ijv.getJ()] = ijv.getV();
-				}
+		X = ((Matrix) getFunctionInput(0)).getMatrixObject().acquireRead();
+		C = ((Matrix) getFunctionInput(1)).getMatrixObject().acquireRead();
+		if(X.getNumRows() != C.getNumRows())
+			throw new RuntimeException("Number of rows of X and C should match");
+		if( X.getNumColumns() != C.getNumColumns() && C.getNumColumns() != 1 )
+			throw new RuntimeException("Incorrect Number of columns of X and C (Expected C to be of same dimension or a vector)");
+		start = Double.parseDouble(((Scalar)getFunctionInput(2)).getValue());
+		isReverse = Boolean.parseBoolean(((Scalar)getFunctionInput(3)).getValue()); 
+		
+		numRetRows = X.getNumRows();
+		numRetCols = X.getNumColumns();
+		allocateOutput();
+		
+		// Copy X to Y
+		denseBlock = retMB.getDenseBlockValues();
+		if(X.isInSparseFormat()) {
+			Iterator<IJV> iter = X.getSparseBlockIterator();
+			while(iter.hasNext()) {
+				IJV ijv = iter.next();
+				denseBlock[ijv.getI()*numRetCols + ijv.getJ()] = ijv.getV();
 			}
-			else {
-				if(X.getDenseBlock() != null)
-					System.arraycopy(X.getDenseBlockValues(), 0, denseBlock, 0, denseBlock.length);
-			}
-			
-			if(!isReverse) {
-				// Y [1, ] = X [1, ] + C [1, ] * start;
-				// Y [i+1, ] = X [i+1, ] + C [i+1, ] * Y [i, ]
-				addCNConstant(0, start);
-				for(int i = 1; i < numRetRows; i++) {
-					addC(i, true);
-				}
-			}
-			else {
-				// Y [m, ] = X [m, ] + C [m, ] * start;
-				// Y [i-1, ] = X [i-1, ] + C [i-1, ] * Y [i, ]
-				addCNConstant(numRetRows-1, start);
-				for(int i = numRetRows - 2; i >= 0; i--) {
-					addC(i, false);
-				}
-			}
-			
-			((Matrix) getFunctionInput(1)).getMatrixObject().release();
-			((Matrix) getFunctionInput(0)).getMatrixObject().release();
-		} catch (CacheException e) {
-			throw new RuntimeException("Error while executing CumSumProd", e);
 		}
+		else {
+			if(X.getDenseBlock() != null)
+				System.arraycopy(X.getDenseBlockValues(), 0, denseBlock, 0, denseBlock.length);
+		}
+		
+		if(!isReverse) {
+			// Y [1, ] = X [1, ] + C [1, ] * start;
+			// Y [i+1, ] = X [i+1, ] + C [i+1, ] * Y [i, ]
+			addCNConstant(0, start);
+			for(int i = 1; i < numRetRows; i++) {
+				addC(i, true);
+			}
+		}
+		else {
+			// Y [m, ] = X [m, ] + C [m, ] * start;
+			// Y [i-1, ] = X [i-1, ] + C [i-1, ] * Y [i, ]
+			addCNConstant(numRetRows-1, start);
+			for(int i = numRetRows - 2; i >= 0; i--) {
+				addC(i, false);
+			}
+		}
+		
+		((Matrix) getFunctionInput(1)).getMatrixObject().release();
+		((Matrix) getFunctionInput(0)).getMatrixObject().release();
 		
 		retMB.recomputeNonZeros();
 		try {
@@ -243,7 +238,4 @@ public class CumSumProd extends PackageFunction {
 		retMB = new MatrixBlock((int) numRetRows, (int) numRetCols, false);
 		retMB.allocateDenseBlock();
 	}
-
-	
-	
 }

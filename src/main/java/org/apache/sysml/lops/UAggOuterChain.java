@@ -55,12 +55,10 @@ public class UAggOuterChain extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
 	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
 	{
-		super(Lop.Type.UaggOuterChain, dt, vt);		
+		super(Lop.Type.UaggOuterChain, dt, vt);
 		addInput(input1);
 		addInput(input2);
 		input1.addOutput(this); 

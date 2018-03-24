@@ -86,10 +86,8 @@ public class RunMRJobs
 	 * @param inst instruction
 	 * @param ec execution context
 	 * @return job status
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JobReturn prepareAndSubmitJob( MRJobInstruction inst, ExecutionContext ec )
-		throws DMLRuntimeException 
 	{
 		// Obtain references to all input matrices 
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(ec);
@@ -105,7 +103,7 @@ public class RunMRJobs
 			}
 
 			//check input files
-			checkEmptyInputs( inst, inputMatrices );	
+			checkEmptyInputs( inst, inputMatrices );
 		}
 		
 		// Obtain references to all output matrices
@@ -154,12 +152,10 @@ public class RunMRJobs
 	 * 
 	 * @param inst instruction
 	 * @return job status
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JobReturn submitJob(MRJobInstruction inst ) 
-		throws DMLRuntimeException 
 	{
-		JobReturn ret = new JobReturn();		
+		JobReturn ret = new JobReturn();
 		MatrixObject[] inputMatrices = inst.getInputMatrices();
 		MatrixObject[] outputMatrices = inst.getOutputMatrices();
 		boolean execCP = false;
@@ -385,9 +381,8 @@ public class RunMRJobs
 	 * @param varName variable name
 	 * @param map local variable map
 	 * @return string variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) throws DMLRuntimeException {
+	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) {
 		Data val = map.get(varName);
 		if ( val != null ) {
 			String replacement = null;
@@ -410,9 +405,8 @@ public class RunMRJobs
 	 * @param inst string instruction
 	 * @param map local variable map
 	 * @return string instruction after replacement
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String updateInstLabels(String inst, LocalVariableMap map) throws DMLRuntimeException {
+	private static String updateInstLabels(String inst, LocalVariableMap map) {
 		if ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
 			int skip = Lop.VARIABLE_NAME_PLACEHOLDER.toString().length();
 			while ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
@@ -432,9 +426,8 @@ public class RunMRJobs
 	 * @param instList instruction list as string
 	 * @param labelValueMapping local variable map
 	 * @return instruction list after replacement
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
+	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) {
 
 		if ( !instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER) )
 			return instList;

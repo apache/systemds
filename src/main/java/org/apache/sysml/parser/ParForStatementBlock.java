@@ -19,7 +19,6 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -175,8 +174,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional)
-		throws LanguageException, ParseException, IOException
-	{	
+	{
 		LOG.trace("PARFOR("+_ID+"): validating ParForStatementBlock.");
 		
 		//create parent variable set via cloning
@@ -419,10 +417,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param asb list of statement blocks
 	 * @param C set of candidates
 	 * @param sCount statement count
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineCandidates(ArrayList<StatementBlock> asb, HashSet<Candidate> C, Integer sCount) 
-		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
 			for( Statement s : sb._statements ) // foreach statement in statement block
@@ -476,10 +472,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param var variables
 	 * @param asb list of statement blocks
 	 * @param C list of partition formats
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PartitionFormat> C) 
-		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
 			for( Statement s : sb._statements ) // foreach statement in statement block
@@ -600,7 +594,6 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private void rConsolidateResultVars(ArrayList<StatementBlock> asb, ArrayList<ResultVar> vars) 
-		throws LanguageException 
 	{
 		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
 		{
@@ -633,12 +626,10 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param asb list of statement blocks
 	 * @param sCount statement count
 	 * @param dep array of boolean potential output dependencies
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rCheckCandidates(Candidate c, DataType cdt,
 			ArrayList<StatementBlock> asb, Integer sCount, boolean[] dep) 
-		throws LanguageException 
-	{	
+	{
 		// check candidate only (output dependency if scalar or constant matrix subscript)
 		if(    cdt == DataType.SCALAR 
 			|| cdt == DataType.OBJECT  ) //dat2 checked for other candidate 
@@ -865,7 +856,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		return ret;
 	}
 	
-	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) throws LanguageException {
+	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) {
 		for( StatementBlock sb : sbs )
 			rDetermineBounds(sb, flag);
 	}
@@ -875,10 +866,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * 
 	 * @param sb statement block
 	 * @param flag indicates that method is already in subtree of THIS.
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void rDetermineBounds( StatementBlock sb, boolean flag ) 
-		throws LanguageException
 	{
 		// catch all known for/ parfor bounds 
 		// (all unknown bounds are assumed to be +-infinity)
@@ -1000,10 +989,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param dat1 data identifier 1
 	 * @param dat2 data identifier 2
 	 * @return true if "anti or data dependency"
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runBanerjeeGCDTest(DataIdentifier dat1, DataIdentifier dat2) 
-		throws LanguageException 
 	{
 		/* The GCD (greatest common denominator) and the Banerjee test are two commonly used tests
 		 * for determining loop-carried dependencies. Both rely on (1) linear index expressions of the
@@ -1151,10 +1138,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * 
 	 * @param dat1 data identifier
 	 * @return true if dependency
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runConstantCheck(DataIdentifier dat1) 
-		throws LanguageException 
 	{
 		LOG.trace("PARFOR: runConstantCheck.");
 		
@@ -1201,10 +1186,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param dat1 data identifier 1
 	 * @param dat2 data identifier 2
 	 * @return true if equal data identifiers
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private boolean runEqualsCheck(DataIdentifier dat1, DataIdentifier dat2) 
-		throws LanguageException 
 	{
 		LOG.trace("PARFOR: runEqualsCheck.");
 		
@@ -1272,10 +1255,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * 
 	 * @param dat data identifier
 	 * @return linear function
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction getLinearFunction(DataIdentifier dat)
-		throws LanguageException
 	{
 		/* Notes:
 		 * - Currently, this function supports 2dim matrix subscripts with arbitrary linear functions
@@ -1463,7 +1444,6 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private LinearFunction getRowLinearFunction(DataIdentifier dat) 
-		throws LanguageException
 	{
 		//NOTE: would require separate function cache, not realized due to inexpensive operations
 		
@@ -1501,7 +1481,6 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private LinearFunction getColLinearFunction(DataIdentifier dat) 
-		throws LanguageException
 	{
 		//NOTE: would require separate function cache, not realized due to inexpensive operations
 		
@@ -1538,8 +1517,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		return out;
 	}
 	
-	private LinearFunction getLinearFunction(Expression expr, boolean ignoreMinWithConstant) 
-		throws LanguageException {
+	private LinearFunction getLinearFunction(Expression expr, boolean ignoreMinWithConstant) {
 		if( expr instanceof IntIdentifier )
 			return new LinearFunction(((IntIdentifier)expr).getValue(), 0, null);
 		else if( expr instanceof BinaryExpression )
@@ -1611,10 +1589,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * robustness purposes.
 	 * 
 	 * @param f1 linear function
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private void verifyFunction(LinearFunction f1)
-		throws LanguageException
 	{
 		//check for required form of linear functions
 		if( f1 == null || f1._b.length != f1._vars.length ) {
@@ -1687,10 +1663,8 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * 
 	 * @param be binary expression
 	 * @return linear function
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	private LinearFunction rParseBinaryExpression(BinaryExpression be) 
-		throws LanguageException
 	{
 		LinearFunction ret = null;
 		Expression l = be.getLeft();

@@ -29,7 +29,6 @@ import org.apache.commons.lang.math.IntRange;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -278,7 +277,7 @@ public class DMLDebuggerFunctions {
 			System.out.println("Symbol table for current frame is empty");
 	}
 	
-	public void print(LocalVariableMap variables, String varname, String displayFunction, int rowIndex, int colIndex) throws DMLRuntimeException {
+	public void print(LocalVariableMap variables, String varname, String displayFunction, int rowIndex, int colIndex) {
 		if (varname == null) {
 			System.err.println("No matrix variable name entered.");
 			return;
@@ -357,9 +356,8 @@ public class DMLDebuggerFunctions {
 	 * Print DML matrix variable in current frame (if existing)
 	 * @param variables Current frame variables
  	 * @param varname Variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void printMatrixVariable(LocalVariableMap variables, String varname) throws DMLRuntimeException {
+	public void printMatrixVariable(LocalVariableMap variables, String varname) {
 		if (varname == null) {
 			System.err.println("No matrix variable name entered.");
 			return;

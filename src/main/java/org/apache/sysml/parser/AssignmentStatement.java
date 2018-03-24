@@ -34,7 +34,7 @@ public class AssignmentStatement extends Statement
 	 
 	// rewrites statement to support function inlining (creates deep copy)
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException {
+	public Statement rewriteStatement(String prefix) {
 		// rewrite target (deep copy)
 		DataIdentifier newTarget = (DataIdentifier) _targetList.get(0).rewriteExpression(prefix);
 		// rewrite source (deep copy)
@@ -55,12 +55,12 @@ public class AssignmentStatement extends Statement
 		setParseInfo(parseInfo);
 	}
 
-	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) throws LanguageException {
+	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp) {
 		this(di, exp);
 		setCtxValues(ctx);
 	}
 
-	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp, String filename) throws LanguageException {
+	public AssignmentStatement(ParserRuleContext ctx, DataIdentifier di, Expression exp, String filename) {
 		this(ctx, di, exp);
 		setFilename(filename);
 	}

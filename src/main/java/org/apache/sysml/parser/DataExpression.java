@@ -137,14 +137,13 @@ public class DataExpression extends DataIdentifier
 	}
 
 	public static DataExpression getDataExpression(ParserRuleContext ctx, String functionName,
-			ArrayList<ParameterExpression> passedParamExprs, String filename, CustomErrorListener errorListener)
-			throws LanguageException {
+			ArrayList<ParameterExpression> passedParamExprs, String filename, CustomErrorListener errorListener) {
 		ParseInfo pi = ParseInfo.ctxAndFilenameToParseInfo(ctx, filename);
 		return getDataExpression(functionName, passedParamExprs, pi, errorListener);
 	}
 
 	public static DataExpression getDataExpression(String functionName, ArrayList<ParameterExpression> passedParamExprs,
-			ParseInfo parseInfo, CustomErrorListener errorListener) throws LanguageException {
+			ParseInfo parseInfo, CustomErrorListener errorListener) {
 		if (functionName == null || passedParamExprs == null)
 			return null;
 		
@@ -296,7 +295,6 @@ public class DataExpression extends DataIdentifier
 	} // end method getBuiltinFunctionExpression
 	
 	public void addRandExprParam(String paramName, Expression paramValue) 
-		throws LanguageException
 	{
 		if (DMLScript.VALIDATOR_IGNORE_ISSUES && (paramValue == null)) {
 			return;
@@ -334,7 +332,6 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public void addMatrixExprParam(String paramName, Expression paramValue) 
-		throws LanguageException
 	{
 		// check name is valid
 		boolean found = false;
@@ -381,7 +378,7 @@ public class DataExpression extends DataIdentifier
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		
 		HashMap<String,Expression> newVarParams = new HashMap<>();
 		for( Entry<String, Expression> e : _varParams.entrySet() ){
@@ -480,9 +477,7 @@ public class DataExpression extends DataIdentifier
 		_varParams.remove(name);
 	}
 	
-	private String getInputFileName(HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{
+	private String getInputFileName(HashMap<String, ConstIdentifier> currConstVars, boolean conditional) {
 		String filename = null;
 		
 		Expression fileNameExpr = getVarParam(IO_FILENAME);
@@ -513,7 +508,7 @@ public class DataExpression extends DataIdentifier
 		return filename;
 	}
 	
-	public static String getMTDFileName(String inputFileName) throws LanguageException {
+	public static String getMTDFileName(String inputFileName) {
 		return inputFileName + ".mtd";
 	}
 	
@@ -523,8 +518,7 @@ public class DataExpression extends DataIdentifier
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional)
-			throws LanguageException 
-	{		
+	{
 		// validate all input parameters
 		for ( Entry<String,Expression> e : getVarParams().entrySet() ) {
 			String s = e.getKey();
@@ -1603,7 +1597,6 @@ public class DataExpression extends DataIdentifier
 	
 	
 	private String fileNameCat(BinaryExpression expr, HashMap<String, ConstIdentifier> currConstVars, String filename, boolean conditional)
-		throws LanguageException
 	{
 		// Processing the left node first
 		if (expr.getLeft() instanceof BinaryExpression 
@@ -1693,7 +1686,6 @@ public class DataExpression extends DataIdentifier
 	
 	@SuppressWarnings("unchecked")
 	private void parseMetaDataFileParameters(String mtdFileName, JSONObject configObject, boolean conditional) 
-		throws LanguageException 
 	{
     	for( Object obj : configObject.entrySet() ){
 			Entry<Object,Object> e = (Entry<Object, Object>) obj;
@@ -1781,7 +1773,6 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public JSONObject readMetadataFile(String filename, boolean conditional) 
-		throws LanguageException 
 	{
 		JSONObject retVal = null;
 		boolean exists = MapReduceTool.existsFileOnHDFS(filename);
@@ -1838,7 +1829,6 @@ public class DataExpression extends DataIdentifier
 	}
 
 	public String[] readMatrixMarketFile(String filename, boolean conditional) 
-		throws LanguageException 
 	{
 		String[] retVal = new String[2];
 		retVal[0] = new String("");
@@ -1887,7 +1877,6 @@ public class DataExpression extends DataIdentifier
 	}
 	
 	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
-		throws LanguageException 
 	{
 		// Check the MTD file exists. if there is an MTD file, return false.
 		JSONObject mtdObject = readMetadataFile(mtdFileName, conditional);
@@ -1918,9 +1907,7 @@ public class DataExpression extends DataIdentifier
 		return false;
 	}
 	
-	public boolean checkHasDelimitedFormat(String filename, boolean conditional)
-		throws LanguageException 
-	{
+	public boolean checkHasDelimitedFormat(String filename, boolean conditional) {
 		// if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
 		if (mtdObject != null) {

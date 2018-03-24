@@ -19,7 +19,6 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.rewrite.RewriteSplitDagDataDependentOperators;
 import org.apache.sysml.lops.Lop;
@@ -167,7 +165,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return ( stmt instanceof PrintStatement && (((PrintStatement)stmt).getType() == PRINTTYPE.STOP || ((PrintStatement)stmt).getType() == PRINTTYPE.ASSERT) );
 	}
 
-    public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) throws LanguageException{
+    public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
 
 //    	if (DMLScript.ENABLE_DEBUG_MODE && !DMLScript.ENABLE_DEBUG_OPTIMIZER)
     	if (DMLScript.ENABLE_DEBUG_MODE)
@@ -221,7 +219,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return true;
 	}
 
-    public boolean isRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) throws LanguageException{
+    public boolean isRewritableFunctionCall(Statement stmt, DMLProgram dmlProg) {
 
 		// for regular stmt, check if this is a function call stmt block
 		if (stmt instanceof AssignmentStatement || stmt instanceof MultiAssignmentStatement){
@@ -303,7 +301,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
     	return ret;
     }
 
-	public static ArrayList<StatementBlock> mergeFunctionCalls(ArrayList<StatementBlock> body, DMLProgram dmlProg) throws LanguageException
+	public static ArrayList<StatementBlock> mergeFunctionCalls(ArrayList<StatementBlock> body, DMLProgram dmlProg) 
 	{
 		for(int i = 0; i <body.size(); i++){
 
@@ -573,7 +571,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return ret;
 	}
 	
-	public ArrayList<Statement> rewriteFunctionCallStatements (DMLProgram dmlProg, ArrayList<Statement> statements) throws LanguageException {
+	public ArrayList<Statement> rewriteFunctionCallStatements (DMLProgram dmlProg, ArrayList<Statement> statements) {
 
 		ArrayList<Statement> newStatements = new ArrayList<>();
 		for (Statement current : statements){
@@ -713,7 +711,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-		throws LanguageException, ParseException, IOException
 	{
 		_constVarsIn.putAll(constVars);
 		_statements = rewriteFunctionCallStatements(dmlProg, _statements);
@@ -782,7 +779,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	private void validateAssignmentStatement(Statement current, DMLProgram dmlProg, 
 		VariableSet ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-			throws LanguageException, IOException, ParseException 
 	{
 		AssignmentStatement as = (AssignmentStatement)current;
 		DataIdentifier target = as.getTarget();
@@ -899,7 +895,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	
 	private void validateMultiAssignmentStatement(Statement current, DMLProgram dmlProg, 
 		VariableSet ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-			throws LanguageException, IOException 
 	{
 		MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 		ArrayList<DataIdentifier> targetList = mas.getTargetList();
@@ -956,7 +951,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 	
 	public void setStatementFormatType(OutputStatement s, boolean conditionalValidate)
-		throws LanguageException, ParseException
 	{
 		//case of specified format parameter
 		if (s.getExprParam(DataExpression.FORMAT_TYPE)!= null )
@@ -988,7 +982,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	public void setStatementFormatType(AssignmentStatement s, boolean conditionalValidate)
-		throws LanguageException, ParseException
 	{
 
 		if (!(s.getSource() instanceof DataExpression))
@@ -1034,7 +1027,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	 *
 	 */
 	@Override
-	public VariableSet initializeforwardLV(VariableSet activeIn) throws LanguageException {
+	public VariableSet initializeforwardLV(VariableSet activeIn) {
 
 		for (Statement s : _statements){
 			s.initializeforwardLV(activeIn);
@@ -1081,15 +1074,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	@Override
-	public VariableSet initializebackwardLV(VariableSet loPassed)
-		throws LanguageException
-	{
+	public VariableSet initializebackwardLV(VariableSet loPassed) {
 		int numStatements = _statements.size();
 		VariableSet lo = new VariableSet(loPassed);
-		for (int i = numStatements-1; i>=0; i--){
+		for (int i = numStatements-1; i>=0; i--)
 			lo = _statements.get(i).initializebackwardLV(lo);
-		}
-
 		return new VariableSet(lo);
 	}
 
@@ -1102,8 +1091,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	@Override
-	public VariableSet analyze(VariableSet loPassed)
-		throws LanguageException {
+	public VariableSet analyze(VariableSet loPassed) {
 		VariableSet candidateLO = new VariableSet();
 		candidateLO.addVariables(loPassed);
 		//candidateLO.addVariables(_gen);
@@ -1133,14 +1121,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	///////////////////////////////////////////////////////////////
 	// validate error handling (consistent for all expressions)
 
-	public void raiseValidateError( String msg, boolean conditional )
-		throws LanguageException
-	{
+	public void raiseValidateError( String msg, boolean conditional ) {
 		raiseValidateError(msg, conditional, null);
 	}
 
 	public void raiseValidateError( String msg, boolean conditional, String errorCode )
-		throws LanguageException
 	{
 		if( conditional )  //warning if conditional
 		{
@@ -1218,7 +1203,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	// materialized hops recompilation / updateinplace flags
 	////
 
-	public boolean updateRecompilationFlag() throws HopsException {
+	public boolean updateRecompilationFlag() {
 		return (_requiresRecompile =
 			ConfigurationManager.isDynamicRecompilation()
 			&& Recompiler.requiresRecompilation(getHops()));

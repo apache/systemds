@@ -133,10 +133,10 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 	@Override
 	public void refreshMetaData() 
-		throws CacheException
+		throws DMLRuntimeException
 	{
 		if ( _data == null || _metaData ==null ) //refresh only for existing data
-			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
+			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 
 		//update matrix characteristics
 		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();

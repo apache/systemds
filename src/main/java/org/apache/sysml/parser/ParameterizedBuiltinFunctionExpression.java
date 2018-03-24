@@ -144,7 +144,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		HashMap<String,Expression> newVarParams = new HashMap<>();
 		for (String key : _varParams.keySet()){
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
@@ -181,8 +181,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-			throws LanguageException 
-	{		
+	{
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
 			Expression paramExpr = getVarParam(s);
@@ -264,7 +263,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	@Override
 	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-		throws LanguageException 
 	{
 		// validate all input parameters
 		for ( String s : getVarParams().keySet() ) {
@@ -296,7 +294,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	
 	// example: A = transformapply(target=X, meta=M, spec=s)
 	private void validateTransformApply(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
 	{
 		//validate data / metadata (recode maps)
 		checkDataType("transformapply", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
@@ -313,7 +310,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void validateTransformDecode(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
 	{
 		//validate data / metadata (recode maps) 
 		checkDataType("transformdecode", TF_FN_PARAM_DATA, DataType.MATRIX, conditional);
@@ -330,7 +326,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void validateTransformColmap(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
 	{
 		//validate data / metadata (recode maps) 
 		Expression exprTarget = getVarParam(Statement.GAGG_TARGET);
@@ -347,7 +342,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void validateTransformMeta(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
 	{
 		//validate specification
 		checkDataValueType("transformmeta", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
@@ -363,7 +357,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional) 
-		throws LanguageException 
 	{
 		//validate data / metadata (recode maps) 
 		checkDataType("transformencode", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
@@ -381,7 +374,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output2.setDimensions(-1, -1);
 	}
 	
-	private void validateTransformSpec(String pname, boolean conditional) throws LanguageException {
+	private void validateTransformSpec(String pname, boolean conditional) {
 		Expression data = getVarParam(pname);
 		if( data instanceof StringIdentifier ) {
 			try {
@@ -395,7 +388,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private void validateReplace(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateReplace(DataIdentifier output, boolean conditional) {
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target");
 		if( target==null ) {				
@@ -427,7 +420,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
 	}
 
-	private void validateOrder(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateOrder(DataIdentifier output, boolean conditional) {
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target"); //[MANDATORY] TARGET
 		if( target==null ) {				
@@ -478,7 +471,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 	}
 
-	private void validateRemoveEmpty(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateRemoveEmpty(DataIdentifier output, boolean conditional) {
 		
 		//check for invalid parameters
 		Set<String> valid = UtilFunctions.asSet("target", "margin", "select", "empty.return");
@@ -525,7 +518,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void validateGroupedAgg(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
 	{
 		//check existing target and groups
 		if (getVarParam(Statement.GAGG_TARGET)  == null || getVarParam(Statement.GAGG_GROUPS) == null){
@@ -630,7 +622,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(outputDim1, outputDim2);
 	}
 	
-	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) {
 		// CDF and INVCDF expects one unnamed parameter, it must be renamed as "quantile" 
 		// (i.e., we must compute P(X <= x) where x is called as "quantile" )
 		
@@ -712,9 +704,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(0, 0);
 	}
 	
-	private void validateCastAsString(DataIdentifier output, boolean conditional) 
-		throws LanguageException 
-	{
+	private void validateCastAsString(DataIdentifier output, boolean conditional) {
 		HashMap<String, Expression> varParams = getVarParams();
 		
 		// replace parameter name for matrix argument
@@ -737,21 +727,18 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(0, 0);
 	}
 
-	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) 
-		throws LanguageException 
-	{
+	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {
 		Expression data = getVarParam(pname);
-		if( data==null )				
+		if( data==null )
 			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		else if( data.getOutput().getDataType() != dt )
 			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
 	}
 
 	private void checkDataValueType( String fname, String pname, DataType dt, ValueType vt, boolean conditional ) 
-		throws LanguageException 
 	{
 		Expression data = getVarParam(pname);
-		if( data==null )				
+		if( data==null )
 			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		else if( data.getOutput().getDataType() != dt || data.getOutput().getValueType() != vt )
 			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"', '"+vt.toString()+"'. "

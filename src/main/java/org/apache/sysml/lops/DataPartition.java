@@ -38,9 +38,8 @@ public class DataPartition extends Lop
 	private PDataPartitionFormat _pformat = null;
 	
 	public DataPartition(Lop input, DataType dt, ValueType vt, ExecType et, PDataPartitionFormat pformat) 
-		throws LopsException 
 	{
-		super(Lop.Type.DataPartition, dt, vt);		
+		super(Lop.Type.DataPartition, dt, vt);
 		this.addInput(input);
 		input.addOutput(this);
 		

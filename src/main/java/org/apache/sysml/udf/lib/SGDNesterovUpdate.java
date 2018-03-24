@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -142,8 +141,6 @@ public class SGDNesterovUpdate extends PackageFunction {
 			((Matrix) getFunctionInput(0)).getMatrixObject().release();
 			((Matrix) getFunctionInput(1)).getMatrixObject().release();
 			((Matrix) getFunctionInput(4)).getMatrixObject().release();
-		} catch (CacheException e) {
-			throw new RuntimeException("Exception while executing SGDNesterovUpdate", e);
 		} catch (IOException e) {
 			throw new RuntimeException("Exception while executing SGDNesterovUpdate", e);
 		}

@@ -50,7 +50,6 @@ public class OptTreePlanChecker
 {
 
 	public static void checkProgramCorrectness( ProgramBlock pb, StatementBlock sb, Set<String> fnStack ) 
-		throws HopsException, DMLRuntimeException
 	{
 		Program prog = pb.getProgram();
 		DMLProgram dprog = sb.getDMLProg();

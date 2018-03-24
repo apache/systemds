@@ -919,9 +919,7 @@ public class OptimizerUtils
 			+ Dag.getNextUniqueFilenameSuffix();
 	}
 
-	public static boolean allowsToFilterEmptyBlockOutputs( Hop hop ) 
-		throws HopsException
-	{
+	public static boolean allowsToFilterEmptyBlockOutputs( Hop hop ) {
 		boolean ret = true;
 		for( Hop p : hop.getParent() ) {
 			p.optFindExecType(); //ensure exec type evaluated
@@ -1206,10 +1204,8 @@ public class OptimizerUtils
 	 * @param root the root high-level operator
 	 * @param valMemo ?
 	 * @return size expression
-	 * @throws HopsException if HopsException occurs
 	 */
 	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo ) 
-		throws HopsException
 	{
 		long ret = Long.MAX_VALUE;
 		
@@ -1223,7 +1219,6 @@ public class OptimizerUtils
 	}
 	
 	public static long rEvalSimpleLongExpression( Hop root, HashMap<Long, Long> valMemo, LocalVariableMap vars ) 
-		throws HopsException
 	{
 		long ret = Long.MAX_VALUE;
 		
@@ -1237,7 +1232,6 @@ public class OptimizerUtils
 	}
 	
 	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1263,7 +1257,6 @@ public class OptimizerUtils
 	}
 	
 	public static double rEvalSimpleDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1292,7 +1285,6 @@ public class OptimizerUtils
 	}
 
 	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1331,7 +1323,6 @@ public class OptimizerUtils
 	}
 
 	protected static double rEvalSimpleUnaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1370,7 +1361,6 @@ public class OptimizerUtils
 	}
 
 	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )
@@ -1406,7 +1396,6 @@ public class OptimizerUtils
 	}
 
 	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
-		throws HopsException
 	{
 		//memoization (prevent redundant computation of common subexpr)
 		if( valMemo.containsKey(root.getHopID()) )

@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -56,9 +55,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
-	{
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		//remove unnecessary checkpoint before update 
 		removeCheckpointBeforeUpdate(prog);
 		
@@ -69,9 +66,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		removeCheckpointReadWrite(prog);
 	}
 	
-	private static void removeCheckpointBeforeUpdate(DMLProgram dmlp) 
-		throws HopsException
-	{
+	private static void removeCheckpointBeforeUpdate(DMLProgram dmlp) {
 		//approach: scan over top-level program (guaranteed to be unconditional),
 		//collect checkpoints; determine if used before update; remove first checkpoint
 		//on second checkpoint if update in between and not used before update
@@ -138,9 +133,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		}
 	}
 
-	private static void moveCheckpointAfterUpdate(DMLProgram dmlp) 
-		throws HopsException
-	{
+	private static void moveCheckpointAfterUpdate(DMLProgram dmlp) {
 		//approach: scan over top-level program (guaranteed to be unconditional),
 		//collect checkpoints; determine if used before update; move first checkpoint
 		//after update if not used before update (best effort move which often avoids
@@ -210,9 +203,7 @@ public class IPAPassRemoveUnnecessaryCheckpoints extends IPAPass
 		}
 	}
 	
-	private static void removeCheckpointReadWrite(DMLProgram dmlp) 
-		throws HopsException
-	{
+	private static void removeCheckpointReadWrite(DMLProgram dmlp) {
 		List<StatementBlock> sbs = dmlp.getStatementBlocks();
 
 		if (sbs.size() == 1 && !(sbs.get(0) instanceof IfStatementBlock

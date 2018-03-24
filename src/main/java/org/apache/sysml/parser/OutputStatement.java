@@ -70,27 +70,20 @@ public class OutputStatement extends Statement
 			return false;
 	}
 	
-	public void addExprParam(String name, Expression value, boolean fromMTDFile) 
-		throws LanguageException
-	{
+	public void addExprParam(String name, Expression value, boolean fromMTDFile) {
 		if( _paramsExpr.getVarParam(name) != null )
 			raiseValidateError("attempted to add IOStatement parameter " + name + " more than once", false);
-		
 		if( !OutputStatement.isValidParamName(name) )
 			raiseValidateError("attempted to add invalid write statement parameter: " + name, false);
-		
 		_paramsExpr.addVarParam(name, value);
 	}
 	
 	// rewrites statement to support function inlining (create deep copy)
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
-
+	public Statement rewriteStatement(String prefix) {
 		OutputStatement newStatement = new OutputStatement(null, Expression.DataOp.WRITE, this);
-
 		// rewrite outputStatement variable name (creates deep copy)
 		newStatement._id = (DataIdentifier)this._id.rewriteExpression(prefix);
-		
 		// rewrite parameter expressions (creates deep copy)
 		DataOp op = _paramsExpr.getOpCode();
 		HashMap<String,Expression> newExprParams = new HashMap<>();
@@ -102,10 +95,11 @@ public class OutputStatement extends Statement
 		newStatement.setExprParams(newParamerizedExpr);
 		return newStatement;
 	}
-		
+
 	public void setExprParams(DataExpression newParamerizedExpr) {
 		_paramsExpr = newParamerizedExpr;
 	}
+
 	public Expression getExprParam(String key){
 		return _paramsExpr.getVarParam(key);
 	}

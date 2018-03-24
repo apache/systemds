@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
@@ -44,7 +43,6 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
-		throws HopsException 
 	{
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 		
@@ -88,8 +86,7 @@ public class RewriteRemoveUnnecessaryBranches extends StatementBlockRewriteRule
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 }

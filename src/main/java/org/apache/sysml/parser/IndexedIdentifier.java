@@ -72,8 +72,7 @@ public class IndexedIdentifier extends DataIdentifier
 	}
 	
 	public IndexPair calculateIndexedDimensions(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{	
+	{
 		// stores the updated row / col dimension info
 		long updatedRowDim = -1, updatedColDim = -1;
 		
@@ -528,7 +527,7 @@ public class IndexedIdentifier extends DataIdentifier
 	
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		IndexedIdentifier newIndexedIdentifier = new IndexedIdentifier(this.getName(), this._rowLowerEqualsUpper, this._colLowerEqualsUpper);
 		newIndexedIdentifier.setParseInfo(this);
 		
@@ -549,7 +548,7 @@ public class IndexedIdentifier extends DataIdentifier
 		return newIndexedIdentifier;
 	}
 		
-	public void setIndices(ArrayList<ArrayList<Expression>> passed) throws LanguageException {
+	public void setIndices(ArrayList<ArrayList<Expression>> passed) {
 		if (passed.size() != 2)
 			raiseValidateError("matrix indices must be specified for 2 dimensions");
 		

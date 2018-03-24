@@ -188,7 +188,7 @@ public class DataOp extends Hop
 
 	/** Check for N (READ) or N+1 (WRITE) inputs. */
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
 		switch (_dataop) {
@@ -247,8 +247,7 @@ public class DataOp extends Hop
 	
 	@Override
 	public Lop constructLops()
-			throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -441,7 +440,6 @@ public class DataOp extends Hop
 	
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
 	{
 		//MB: find exec type has two meanings here: (1) for write it means the actual
 		//exec type, while (2) for read it affects the recompilation decision as needed

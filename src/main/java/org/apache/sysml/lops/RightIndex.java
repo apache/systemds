@@ -38,7 +38,6 @@ public class RightIndex extends Lop
 
 	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, ExecType et, boolean forleft)
-		throws LopsException 
 	{
 		super(Lop.Type.RightIndex, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, forleft);
@@ -46,7 +45,6 @@ public class RightIndex extends Lop
 
 	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, ExecType et)
-		throws LopsException 
 	{
 		super(Lop.Type.RightIndex, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et, false);
@@ -54,7 +52,6 @@ public class RightIndex extends Lop
 
 	public RightIndex(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, Lop rowDim, Lop colDim, 
 			DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
-		throws LopsException 
 	{
 		super(Lop.Type.RightIndex, dt, vt);
 		_aggtype = aggtype;
@@ -107,8 +104,7 @@ public class RightIndex extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String leftRowDim, String leftColDim, String output) 
-	throws LopsException {
+	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String leftRowDim, String leftColDim, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
@@ -155,8 +151,7 @@ public class RightIndex extends Lop
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int input_index6, int input_index7, int output_index)
-			throws LopsException {
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int input_index6, int input_index7, int output_index) {
 		/*
 		 * Example: B = A[row_l:row_u, col_l:col_u]
 		 * A - input matrix (input_index1)

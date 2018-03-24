@@ -39,7 +39,7 @@ public class ReBlock extends Lop
 	private int _rows_per_block;
 	private int _cols_per_block;
 
-	public ReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks, ExecType et) throws LopsException
+	public ReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, boolean outputEmptyBlocks, ExecType et)
 	{
 		super(Lop.Type.ReBlock, dt, vt);
 		this.addInput(input);
@@ -102,7 +102,7 @@ public class ReBlock extends Lop
 	
 	// This function is replicated in Dag.java
 	@SuppressWarnings("unused")
-	private Format getChildFormat(Lop node) throws LopsException {
+	private Format getChildFormat(Lop node) {
 		
 		if(node.getOutputParameters().getFile_name() != null
 				|| node.getOutputParameters().getLabel() != null)

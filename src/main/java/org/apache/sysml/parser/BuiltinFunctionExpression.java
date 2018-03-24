@@ -64,7 +64,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		Expression[] newArgs = new Expression[_args.length];
 		for (int i = 0; i < _args.length; i++) {
 			newArgs[i] = _args[i].rewriteExpression(prefix);
@@ -99,7 +99,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	@Override
 	public void validateExpression(MultiAssignmentStatement stmt, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-			throws LanguageException 
 	{
 		if (this.getFirstExpr() instanceof FunctionCallIdentifier){
 			raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
@@ -251,8 +250,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, 
-			int skip) throws LanguageException {
+	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, int skip) {
 		ArrayList<ParameterExpression> newParams = new ArrayList<>();
 
 		for(int i = 0; i < skip; i++)
@@ -280,7 +278,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	private static ArrayList<ParameterExpression> replaceListParams(ArrayList<ParameterExpression> paramExpression,
-			String inputVarName, String outputVarName, int startIndex) throws LanguageException {
+			String inputVarName, String outputVarName, int startIndex) {
 		ArrayList<ParameterExpression> newParamExpression = new ArrayList<>();
 		int i = startIndex;
 		int j = 1; // Assumption: sequential ordering pool_size1, pool_size2 
@@ -297,7 +295,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	private static ArrayList<ParameterExpression> expandListParams(ArrayList<ParameterExpression> paramExpression, 
-			HashSet<String> paramsToExpand) throws LanguageException {
+			HashSet<String> paramsToExpand) {
 		ArrayList<ParameterExpression> newParamExpressions = new ArrayList<>();
 		for(ParameterExpression expr : paramExpression) {
 			if(paramsToExpand.contains(expr.getName())) {
@@ -351,13 +349,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	/**
 	 * Validate parse tree : Process BuiltinFunction Expression in an assignment
 	 * statement
-	 * 
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	@Override
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-			throws LanguageException {
-		
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
+	{
 		for(int i=0; i < _args.length; i++ ) {
 			
 			if (_args[i] instanceof FunctionCallIdentifier){
@@ -1289,7 +1284,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private void setBinaryOutputProperties(DataIdentifier output) throws LanguageException {
+	private void setBinaryOutputProperties(DataIdentifier output) {
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();
 		DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX) ?
@@ -1304,7 +1299,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		output.setBlockDimensions (dims.getRowsPerBlock(), dims.getColsPerBlock());
 	}
 	
-	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) throws LanguageException {
+	private void setTernaryOutputProperties(DataIdentifier output, boolean conditional) {
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();
 		DataType dt3 = getThirdExpr().getOutput().getDataType();
@@ -1354,9 +1349,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return ( expr != null && expr instanceof ConstIdentifier );
 	}
 	
-	private static double getDoubleValue(Expression expr) 
-		throws LanguageException 
-	{
+	private static double getDoubleValue(Expression expr) {
 		if ( expr instanceof DoubleIdentifier )
 			return ((DoubleIdentifier)expr).getValue();
 		else if ( expr instanceof IntIdentifier)
@@ -1397,7 +1390,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private void checkMathFunctionParam() throws LanguageException {
+	private void checkMathFunctionParam() {
 		switch (this.getOpCode()) {
 		case COS:
 		case SIN:
@@ -1466,9 +1459,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return result;
 	}
 
-	protected void checkNumParameters(int count) //always unconditional
-		throws LanguageException 
-	{
+	protected void checkNumParameters(int count) { //always unconditional
 		if (getFirstExpr() == null) {
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1485,7 +1476,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	protected void checkMatrixParam(Expression e) throws LanguageException {
+	protected void checkMatrixParam(Expression e) {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
 			raiseValidateError(
 					"Expecting matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
@@ -1493,41 +1484,31 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	protected void checkMatrixFrameParam(Expression e) //always unconditional
-		throws LanguageException 
-	{
+	protected void checkMatrixFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting matrix or frame parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	
-	protected void checkMatrixScalarParam(Expression e) //always unconditional
-		throws LanguageException 
-	{
+	protected void checkMatrixScalarParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.SCALAR) {
 			raiseValidateError("Expecting matrix or scalar parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	
-	private void checkScalarParam(Expression e) //always unconditional
-		throws LanguageException 
-	{
+	private void checkScalarParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.SCALAR) {
 			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	
-	private void checkScalarFrameParam(Expression e) //always unconditional
-		throws LanguageException 
-	{
+	private void checkScalarFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.SCALAR && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 
-	private void checkValueTypeParam(Expression e, ValueType vt) //always unconditional
-		throws LanguageException 
-	{
+	private void checkValueTypeParam(Expression e, ValueType vt) { //always unconditional
 		if (e.getOutput().getValueType() != vt) {
 			raiseValidateError("Expecting parameter of different value type " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
@@ -1541,9 +1522,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return (e.getOutput().getDim1() != -1 && e.getOutput().getDim2() != -1);
 	}
 	
-	private void check1DMatrixParam(Expression e) //always unconditional
-		throws LanguageException 
-	{	
+	private void check1DMatrixParam(Expression e) { //always unconditional
 		checkMatrixParam(e);
 		
 		// throw an exception, when e's output is NOT a one-dimensional matrix 
@@ -1554,16 +1533,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private void checkMatchingDimensions(Expression expr1, Expression expr2) throws LanguageException {
+	private void checkMatchingDimensions(Expression expr1, Expression expr2) {
 		checkMatchingDimensions(expr1, expr2, false);
 	}
 	
-	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) throws LanguageException {
+	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) {
 		checkMatchingDimensions(expr1, expr2, allowsMV, false);
 	}
 	
 	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV, boolean conditional) 
-		throws LanguageException 
 	{
 		if (expr1 != null && expr2 != null) {
 			
@@ -1585,7 +1563,6 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	private void checkMatchingDimensionsQuantile() 
-		throws LanguageException 
 	{
 		if (getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1()) {
 			raiseValidateError("Mismatch in matrix dimensions for "
@@ -1817,11 +1794,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	 * @param vt Value type ({@code ValueType.DOUBLE}, {@code ValueType.INT}, or {@code ValueType.BOOLEAN}).
 	 * @return Built-in function operator ({@code BuiltinFunctionOp.AS_DOUBLE},
 	 * {@code BuiltinFunctionOp.AS_INT}, or {@code BuiltinFunctionOp.AS_BOOLEAN}).
-	 * @throws LanguageException thrown if ValueType not accepted
 	 */
-	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) 
-		throws LanguageException
-	{
+	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) {
 		switch( vt )
 		{
 			case DOUBLE:

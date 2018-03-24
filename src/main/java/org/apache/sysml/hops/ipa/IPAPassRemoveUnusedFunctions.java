@@ -44,9 +44,7 @@ public class IPAPassRemoveUnusedFunctions extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
-	{
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		try {
 			Set<String> fnamespaces = prog.getNamespaces().keySet();
 			for( String fnspace : fnamespaces  ) {

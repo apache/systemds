@@ -105,9 +105,7 @@ public class PickByCount extends Lop
 	 * rangepick:::0:DOUBLE:::Var3:DOUBLE:::1:DOUBLE
 	 */
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) 
-		throws LopsException
-	{
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
 		return getInstructions(""+input_index1, ""+input_index2, ""+output_index);
 
 	}
@@ -120,8 +118,7 @@ public class PickByCount extends Lop
 	 * valuepick:::temp2:STRING:::Var1:DOUBLE:::Var2:DOUBLE
 	 */
 	@Override
-	public String getInstructions(String input1, String input2, String output) throws LopsException
-	{		
+	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -159,9 +156,7 @@ public class PickByCount extends Lop
 	 *   iqm:::input:::output
 	 */
 	@Override
-	public String getInstructions(String input, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );

@@ -53,7 +53,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
@@ -263,7 +262,7 @@ public class DMLYarnClient
 
 	@SuppressWarnings("deprecation")
 	private void copyResourcesToHdfsWorkingDir( YarnConfiguration yconf, String hdfsWD ) 
-		throws ParseException, IOException, DMLRuntimeException, InterruptedException 
+		throws IOException, InterruptedException 
 	{
 		Path confPath = new Path(hdfsWD, DML_CONFIG_NAME);
 		FileSystem fs = IOUtilFunctions.getFileSystem(confPath, yconf);

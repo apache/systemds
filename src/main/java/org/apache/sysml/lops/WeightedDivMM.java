@@ -82,10 +82,8 @@ public class WeightedDivMM extends Lop
 	
 	private WDivMMType _weightsType = null;
 	
-	public WeightedDivMM(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WDivMMType wt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedDivMM, dt, vt);		
+	public WeightedDivMM(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WDivMMType wt, ExecType et) {
+		super(Lop.Type.WeightedDivMM, dt, vt);
 		addInput(input1); //W
 		addInput(input2); //U
 		addInput(input3); //V

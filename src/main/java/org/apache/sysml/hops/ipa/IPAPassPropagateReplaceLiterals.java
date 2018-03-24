@@ -54,7 +54,6 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 	
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
 	{
 		for( String fkey : fgraph.getReachableFunctions() ) {
 			FunctionOp first = fgraph.getFunctionCalls(fkey).get(0);
@@ -82,7 +81,6 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 	}
 	
 	private void rReplaceLiterals(StatementBlock sb, LocalVariableMap constants) 
-		throws HopsException 
 	{
 		//remove updated literals
 		for( String varname : sb.variablesUpdated().getVariableNames() )
@@ -120,9 +118,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		}
 	}
 	
-	private static void replaceLiterals(ArrayList<Hop> roots, LocalVariableMap constants) 
-		throws HopsException 
-	{
+	private static void replaceLiterals(ArrayList<Hop> roots, LocalVariableMap constants) {
 		if( roots == null )
 			return;
 		
@@ -137,9 +133,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		}
 	}
 	
-	private static void replaceLiterals(Hop root, LocalVariableMap constants) 
-		throws HopsException 
-	{
+	private static void replaceLiterals(Hop root, LocalVariableMap constants) {
 		if( root == null )
 			return;
 		

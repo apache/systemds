@@ -151,9 +151,8 @@ public abstract class Hop implements ParseInfo
 	 *
 	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
 	 *
-	 * @throws HopsException if this Hop has an illegal number of inputs (a kind of Illegal State)
 	 */
-	public abstract void checkArity() throws HopsException;
+	public abstract void checkArity();
 	
 	public ExecType getExecType()
 	{
@@ -282,9 +281,7 @@ public abstract class Hop implements ParseInfo
 		return _requiresCompression;
 	}
 	
-	public void constructAndSetLopsDataFlowProperties() 
-		throws HopsException
-	{
+	public void constructAndSetLopsDataFlowProperties() {
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
@@ -296,7 +293,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	private void constructAndSetReblockLopIfRequired() 
-		throws HopsException
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
@@ -337,9 +333,7 @@ public abstract class Hop implements ParseInfo
 		}
 	}
 
-	private void constructAndSetCheckpointLopIfRequired() 
-		throws HopsException
-	{
+	private void constructAndSetCheckpointLopIfRequired() {
 		//determine execution type
 		ExecType et = ExecType.CP;
 		if( OptimizerUtils.isSparkExecutionMode() 
@@ -397,7 +391,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	private void constructAndSetCompressionLopIfRequired() 
-		throws HopsException
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
@@ -435,7 +428,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
-		throws HopsException, LopsException
 	{
 		Lop offset = null;
 		
@@ -819,11 +811,9 @@ public abstract class Hop implements ParseInfo
 		return _updateType;
 	}
 
-	public abstract Lop constructLops() 
-		throws HopsException, LopsException;
+	public abstract Lop constructLops();
 
-	protected abstract ExecType optFindExecType() 
-		throws HopsException;
+	protected abstract ExecType optFindExecType();
 	
 	public abstract String getOpString();
 
@@ -1000,9 +990,7 @@ public abstract class Hop implements ParseInfo
 		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
 	}
 	
-	protected void setOutputDimensions(Lop lop) 
-		throws HopsException
-	{
+	protected void setOutputDimensions(Lop lop) {
 		lop.getOutputParameters().setDimensions(
 			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());	
 	}

@@ -76,7 +76,7 @@ public class BooleanExpression extends Expression
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		BooleanExpression newExpr = new BooleanExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		if (_right != null)
@@ -88,7 +88,7 @@ public class BooleanExpression extends Expression
 	 * Validate parse tree : Process Boolean Expression  
 	 */
 	@Override
-	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) throws LanguageException{
+	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) {
 		//recursive validate
 		getLeft().validateExpression(ids, constVars, conditional);
 		if (_left instanceof FunctionCallIdentifier){

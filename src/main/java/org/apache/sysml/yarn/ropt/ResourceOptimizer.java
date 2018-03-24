@@ -448,7 +448,6 @@ public class ResourceOptimizer
 	}
 
 	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B ) 
-		throws HopsException
 	{
 		//prune all program blocks w/o mr instructions (mr budget does not matter)
 		if( PRUNING_SMALL ){
@@ -468,11 +467,10 @@ public class ResourceOptimizer
 			B = Bp;
 		}
 		
-		return B;		
+		return B;
 	}
 
 	private static boolean pruneHasOnlyUnknownMR( ProgramBlock pb ) 
-		throws HopsException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
@@ -503,18 +501,14 @@ public class ResourceOptimizer
 		}
 	}
 
-	private static boolean pruneHasOnlyUnknownMR( ArrayList<Hop> hops ) 
-		throws HopsException
-	{
+	private static boolean pruneHasOnlyUnknownMR( ArrayList<Hop> hops ) {
 		boolean ret = false;
-
 		if( hops!=null ){
 			ret = true;
 			Hop.resetVisitStatus(hops);
 			for( Hop hop : hops )
 				ret &= pruneHasOnlyUnknownMR(hop);
 		}
-		
 		return ret;
 	}
 

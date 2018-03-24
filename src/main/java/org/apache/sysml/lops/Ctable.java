@@ -128,7 +128,7 @@ public class Ctable extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException
+	public String getInstructions(String input1, String input2, String input3, String output)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -194,7 +194,7 @@ public class Ctable extends Lop
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

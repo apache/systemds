@@ -48,7 +48,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -153,9 +152,8 @@ public class InterProceduralAnalysis
 	/**
 	 * Main interface to perform IPA over a given DML program.
 	 * 
-	 * @throws HopsException in case of compilation errors
 	 */
-	public void analyzeProgram() throws HopsException {
+	public void analyzeProgram() {
 		analyzeProgram(1); //single run
 	}
 	
@@ -163,11 +161,8 @@ public class InterProceduralAnalysis
 	 * Main interface to perform IPA over a given DML program.
 	 * 
 	 * @param repetitions number of IPA rounds 
-	 * @throws HopsException in case of compilation errors
 	 */
-	public void analyzeProgram(int repetitions) 
-		throws HopsException
-	{
+	public void analyzeProgram(int repetitions) {
 		//sanity check for valid number of repetitions
 		if( repetitions <= 0 )
 			throw new HopsException("Invalid number of IPA repetitions: " + repetitions);
@@ -221,9 +216,7 @@ public class InterProceduralAnalysis
 			rmFuns.rewriteProgram(_prog, graph2, null);
 	}
 	
-	public Set<String> analyzeSubProgram() 
-		throws HopsException, ParseException
-	{
+	public Set<String> analyzeSubProgram() {
 		DMLTranslator.resetHopsDAGVisitStatus(_sb);
 		
 		//get function call size infos to obtain candidates for statistics propagation
@@ -239,9 +232,7 @@ public class InterProceduralAnalysis
 		return fcallSizes.getValidFunctions();
 	}
 	
-	private boolean isUnarySizePreservingFunction(FunctionStatementBlock fsb) 
-		throws HopsException 
-	{
+	private boolean isUnarySizePreservingFunction(FunctionStatementBlock fsb) {
 		FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 		
 		//check unary functions over matrices
@@ -282,7 +273,6 @@ public class InterProceduralAnalysis
 	//////	
 
 	private void propagateStatisticsAcrossBlock( StatementBlock sb, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
-		throws HopsException
 	{
 		if (sb instanceof FunctionStatementBlock)
 		{
@@ -380,11 +370,8 @@ public class InterProceduralAnalysis
 	 *
 	 * @param roots  List of HOPs.
 	 * @param vars  Map of variables eligible for propagation.
-	 * @throws HopsException  If a HopsException occurs.
 	 */
-	private static void propagateScalarsAcrossDAG(ArrayList<Hop> roots, LocalVariableMap vars)
-		throws HopsException
-	{
+	private static void propagateScalarsAcrossDAG(ArrayList<Hop> roots, LocalVariableMap vars) {
 		for (Hop hop : roots) {
 			try {
 				Recompiler.rReplaceLiterals(hop, vars, true);
@@ -394,9 +381,7 @@ public class InterProceduralAnalysis
 		}
 	}
 
-	private static void propagateStatisticsAcrossPredicateDAG( Hop root, LocalVariableMap vars ) 
-		throws HopsException
-	{
+	private static void propagateStatisticsAcrossPredicateDAG( Hop root, LocalVariableMap vars ) {
 		if( root == null )
 			return;
 		
@@ -417,11 +402,8 @@ public class InterProceduralAnalysis
 	 *
 	 * @param roots  List of HOP DAG root nodes.
 	 * @param vars  Map of variables eligible for propagation.
-	 * @throws HopsException  If a HopsException occurs.
 	 */
-	private static void propagateStatisticsAcrossDAG( ArrayList<Hop> roots, LocalVariableMap vars )
-		throws HopsException
-	{
+	private static void propagateStatisticsAcrossDAG( ArrayList<Hop> roots, LocalVariableMap vars ) {
 		if( roots == null )
 			return;
 		
@@ -452,11 +434,8 @@ public class InterProceduralAnalysis
 	 * @param callVars  Calling program's map of variables eligible for propagation.
 	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException  If a HopsException occurs.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack)
-			throws HopsException
-	{
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack) {
 		for( Hop root : roots )
 			propagateStatisticsIntoFunctions(prog, root, callVars, fcallSizes, fnStack);
 	}
@@ -470,10 +449,8 @@ public class InterProceduralAnalysis
 	 * @param callVars  Calling program's map of variables eligible for propagation.
 	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
-	 * @throws HopsException  If a HopsException occurs.
 	 */
 	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack ) 
-		throws HopsException
 	{
 		if( hop.isVisited() )
 			return;
@@ -535,7 +512,6 @@ public class InterProceduralAnalysis
 	}
 	
 	private static void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
 	{
 		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
 		ArrayList<Hop> inputOps = fop.getInput();
@@ -592,11 +568,8 @@ public class InterProceduralAnalysis
 	 * @param callVars  Calling program's map of variables.
 	 * @param overwrite  Whether or not to overwrite variables in the
 	 *                      calling program's variable map.
-	 * @throws HopsException  If a HopsException occurs.
 	 */
-	private static void extractFunctionCallReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap tmpVars, LocalVariableMap callVars, boolean overwrite ) 
-		throws HopsException
-	{
+	private static void extractFunctionCallReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap tmpVars, LocalVariableMap callVars, boolean overwrite ) {
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
 		String fkey = fop.getFunctionKey();
@@ -659,7 +632,6 @@ public class InterProceduralAnalysis
 	}
 	
 	private static void extractFunctionCallUnknownReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
-		throws HopsException
 	{
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
@@ -686,7 +658,6 @@ public class InterProceduralAnalysis
 	}
 	
 	private static void extractFunctionCallEquivalentReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
-		throws HopsException
 	{
 		try {
 			Hop input = fop.getInput().get(0);
@@ -700,7 +671,6 @@ public class InterProceduralAnalysis
 	}
 	
 	private static void extractExternalFunctionCallReturnStatistics( ExternalFunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
-		throws HopsException
 	{
 		String className = fstmt.getOtherParams().get(ExternalFunctionStatement.CLASS_NAME);
 

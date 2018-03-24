@@ -29,7 +29,7 @@ public class BinaryExpression extends Expression
 	private BinaryOp _opcode;
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		BinaryExpression newExpr = new BinaryExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
@@ -87,12 +87,10 @@ public class BinaryExpression extends Expression
 	 * Validate parse tree : Process Binary Expression in an assignment
 	 * statement
 	 * 
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)
-			throws LanguageException 
-	{	
+	{
 		//recursive validate
 		if (_left instanceof FunctionCallIdentifier || _right instanceof FunctionCallIdentifier) {
 			raiseValidateError("User-defined function calls not supported in binary expressions.", false,
@@ -146,8 +144,7 @@ public class BinaryExpression extends Expression
 		this.setOutput(output);
 	}
 
-	private void checkAndSetDimensions(DataIdentifier output, boolean conditional)
-			throws LanguageException {
+	private void checkAndSetDimensions(DataIdentifier output, boolean conditional) {
 		Identifier left = this.getLeft().getOutput();
 		Identifier right = this.getRight().getOutput();
 		Identifier pivot = null;

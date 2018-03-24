@@ -36,10 +36,8 @@ public class WeightedCrossEntropyR extends Lop
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedCrossEntropyR(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WCeMMType wt, boolean cacheU, boolean cacheV, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedCeMM, dt, vt);		
+	public WeightedCrossEntropyR(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WCeMMType wt, boolean cacheU, boolean cacheV, ExecType et) {
+		super(Lop.Type.WeightedCeMM, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -56,9 +54,7 @@ public class WeightedCrossEntropyR extends Lop
 		setupLopProperties(et);
 	}
 	
-	private void setupLopProperties( ExecType et ) 
-		throws LopsException
-	{
+	private void setupLopProperties( ExecType et ) {
 		if( et == ExecType.MR )
 		{
 			//setup MR parameters 

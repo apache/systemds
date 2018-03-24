@@ -59,9 +59,8 @@ public class BinaryM extends Lop
 	 * @param et exec type
 	 * @param partitioned true if partitioned
 	 * @param colVector true if colVector
-	 * @throws LopsException if LopsException occurs
 	 */
-	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean partitioned, boolean colVector ) throws LopsException {
+	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean partitioned, boolean colVector ) {
 		super(Lop.Type.Binary, dt, vt);
 		
 		_operation = op;
@@ -164,22 +163,21 @@ public class BinaryM extends Lop
 		}
 	}
 
-	public static boolean isOpcode(String opcode)
-	{
+	public static boolean isOpcode(String opcode) {
 		return opcode.equals("map+") || opcode.equals("map-") ||
-			   opcode.equals("map*") || opcode.equals("map/") ||	
-			   opcode.equals("map%%") || opcode.equals("map%/%") ||	
-			   opcode.equals("map<") || opcode.equals("map<=") ||	
-			   opcode.equals("map>") || opcode.equals("map>=") ||	
-			   opcode.equals("map==") || opcode.equals("map!=") ||	
-			   opcode.equals("map&&") || opcode.equals("map||") ||	
-			   opcode.equals("mapmin") || opcode.equals("mapmax") ||	
+			   opcode.equals("map*") || opcode.equals("map/") ||
+			   opcode.equals("map%%") || opcode.equals("map%/%") ||
+			   opcode.equals("map<") || opcode.equals("map<=") ||
+			   opcode.equals("map>") || opcode.equals("map>=") ||
+			   opcode.equals("map==") || opcode.equals("map!=") ||
+			   opcode.equals("map&&") || opcode.equals("map||") ||
+			   opcode.equals("mapmin") || opcode.equals("mapmax") ||
 			   opcode.equals("map^") || opcode.equals("map1-*");
 	}
 	
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException {
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
 		return getInstructions(
 				String.valueOf(input_index1), 
 				String.valueOf(input_index2), 
@@ -188,7 +186,6 @@ public class BinaryM extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String output) 
-		throws LopsException 
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

@@ -29,7 +29,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -69,7 +68,6 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate)
-		throws HopsException 
 	{
 		//check for inapplicable statement blocks
 		if( !HopRewriteUtils.isLastLevelStatementBlock(sb)
@@ -92,15 +90,11 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	}
 
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate)
-		throws HopsException 
-	{
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 	
-	private static void injectCompressionDirective(Hop hop, CompressConfig compress, DMLProgram prog) 
-		throws HopsException 
-	{
+	private static void injectCompressionDirective(Hop hop, CompressConfig compress, DMLProgram prog) {
 		if( hop.isVisited() || hop.requiresCompression() )
 			return;
 		
@@ -122,9 +116,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 			&& hop.getDim1() > 1 && hop.getDim2() > 1; //multi-column matrix
 	}
 	
-	private static boolean satisfiesAutoCompressionCondition(Hop hop, DMLProgram prog) 
-		throws HopsException 
-	{
+	private static boolean satisfiesAutoCompressionCondition(Hop hop, DMLProgram prog) {
 		//check for basic compression condition
 		if( !(satisfiesCompressionCondition(hop) 
 			&& OptimizerUtils.isSparkExecutionMode()) )
@@ -169,7 +161,6 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	}
 	
 	private static void rAnalyzeProgram(StatementBlock sb, ProbeStatus status) 
-		throws HopsException 
 	{
 		if(sb instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
@@ -216,7 +207,6 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule
 	}
 	
 	private static void rAnalyzeHopDag(Hop current, ProbeStatus status) 
-		throws HopsException 
 	{
 		if( current.isVisited() )
 			return;

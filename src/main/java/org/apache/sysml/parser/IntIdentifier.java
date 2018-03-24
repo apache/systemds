@@ -26,7 +26,7 @@ public class IntIdentifier extends ConstIdentifier
 	private long _val;
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		return this;
 	}
 

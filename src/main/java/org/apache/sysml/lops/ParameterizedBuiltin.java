@@ -22,7 +22,6 @@ package org.apache.sysml.lops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.lops.LopProperties.ExecLocation;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.compile.JobType;
@@ -49,15 +48,11 @@ public class ParameterizedBuiltin extends Lop
 	//cp-specific parameters
 	private int _numThreads = 1;
 	
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-			throws HopsException 
-	{
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		this(paramLops, op, dt, vt, et, 1);
 	}
 	
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
-		throws HopsException 
-	{
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) {
 		super(Lop.Type.ParameterizedBuiltin, dt, vt);
 		_operation = op;
 		
@@ -105,9 +100,7 @@ public class ParameterizedBuiltin extends Lop
 		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
 	}
 
-	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) 
-			throws HopsException 
-	{
+	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) {
 		this(paramLops, op, dt, vt, et);
 		_bRmEmptyBC = bRmEmptyBC;
 	}
@@ -129,8 +122,7 @@ public class ParameterizedBuiltin extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String output) 
-		throws LopsException 
+	public String getInstructions(String output)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -246,8 +238,7 @@ public class ParameterizedBuiltin extends Lop
 	}
 
 	@Override 
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) 
-		throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
@@ -288,8 +279,7 @@ public class ParameterizedBuiltin extends Lop
 	}
 
 	@Override 
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) 
-		throws LopsException
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index)
 	{
 		int[] tmp = new int[]{input_index1, input_index2,
 			input_index3, input_index4, input_index5};

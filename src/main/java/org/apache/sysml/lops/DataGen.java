@@ -61,10 +61,9 @@ public class DataGen extends Lop
 	 * @param dt Data type
 	 * @param vt Value type
 	 * @param et Execution type
-	 * @throws LopsException if LopsException occurs
 	 */
 	public DataGen(DataGenMethod mthd, DataIdentifier id, HashMap<String, Lop> 
-				inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et) throws LopsException 
+				inputParametersLops, String baseDir, DataType dt, ValueType vt, ExecType et)
 	{
 		super(Type.DataGen, dt, vt);
 		method = mthd;
@@ -117,8 +116,7 @@ public class DataGen extends Lop
 	 * passed from piggybacking as the function argument <code>output</code>. 
 	 */
 	@Override
-	public String getInstructions(String output) 
-		throws LopsException 
+	public String getInstructions(String output)
 	{
 		switch( method ) 
 		{
@@ -137,9 +135,7 @@ public class DataGen extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int inputIndex, int outputIndex) 
-		throws LopsException
-	{
+	public String getInstructions(int inputIndex, int outputIndex) {
 		switch(method) {
 		case RAND:
 			return getRandInstructionMR(inputIndex, outputIndex);
@@ -156,11 +152,9 @@ public class DataGen extends Lop
 	 * 
 	 * @param output output operand
 	 * @return cp instruction for rand
-	 * @throws LopsException if LopsException occurs
 	 */
 	private String getRandInstructionCPSpark(String output) 
-		throws LopsException 
-	{	
+	{
 		//sanity checks
 		if ( method != DataGenMethod.RAND )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
@@ -239,7 +233,6 @@ public class DataGen extends Lop
 	}
 
 	private String getSInitInstructionCPSpark(String output) 
-		throws LopsException 
 	{
 		if ( method != DataGenMethod.SINIT )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
@@ -287,7 +280,6 @@ public class DataGen extends Lop
 	}
 	
 	private String getSampleInstructionCPSpark(String output) 
-		throws LopsException
 	{
 		if ( method != DataGenMethod.SAMPLE )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
@@ -335,9 +327,8 @@ public class DataGen extends Lop
 	 * 
 	 * @param output output operand
 	 * @return cp instruction for seq
-	 * @throws LopsException if LopsException occurs
 	 */
-	private String getSeqInstructionCPSpark(String output) throws LopsException {
+	private String getSeqInstructionCPSpark(String output) {
 		if ( method != DataGenMethod.SEQ )
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
 		
@@ -393,17 +384,14 @@ public class DataGen extends Lop
 	 * @param inputIndex input index
 	 * @param outputIndex output index
 	 * @return mr instruction for rand
-	 * @throws LopsException if LopsException occurs
 	 */
-	private String getRandInstructionMR(int inputIndex, int outputIndex) 
-		throws LopsException 
-	{
+	private String getRandInstructionMR(int inputIndex, int outputIndex) {
 		//sanity checks
 		if( getInputs().size() != DataExpression.RAND_VALID_PARAM_NAMES.length) {
 			throw new LopsException(printErrorLocation() + "Invalid number of operands ("
 					+ getInputs().size() + ") for a Rand operation");
 		}
-			
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -472,9 +460,8 @@ public class DataGen extends Lop
 	 * @param inputIndex input index
 	 * @param outputIndex output index
 	 * @return mr instruction for seq
-	 * @throws LopsException if LopsException occurs
 	 */
-	private String getSeqInstructionMR(int inputIndex, int outputIndex) throws LopsException {
+	private String getSeqInstructionMR(int inputIndex, int outputIndex) {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append( getExecType() );

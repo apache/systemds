@@ -22,7 +22,6 @@ package org.apache.sysml.hops;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.Nary;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -53,14 +52,11 @@ public class NaryOp extends Hop {
 	 *            the operation type (such as PRINTF)
 	 * @param inputs
 	 *            a variable number of input Hops
-	 * @throws HopsException
-	 *             thrown if a HopsException occurs
 	 */
 	public NaryOp(String name, DataType dataType, ValueType valueType,
-			OpOpN op, Hop... inputs) throws HopsException {
+			OpOpN op, Hop... inputs) {
 		super(name, dataType, valueType);
 		_op = op;
-
 		for (int i = 0; i < inputs.length; i++) {
 			getInput().add(i, inputs[i]);
 			inputs[i].getParent().add(this);
@@ -69,7 +65,7 @@ public class NaryOp extends Hop {
 
 	/** MultipleOp may have any number of inputs. */
 	@Override
-	public void checkArity() throws HopsException {}
+	public void checkArity() {}
 
 	public OpOpN getOp() {
 		return _op;
@@ -89,7 +85,7 @@ public class NaryOp extends Hop {
 	 * Construct the corresponding Lops for this Hop
 	 */
 	@Override
-	public Lop constructLops() throws HopsException, LopsException {
+	public Lop constructLops() {
 		// reuse existing lop
 		if (getLops() != null)
 			return getLops();
@@ -131,7 +127,7 @@ public class NaryOp extends Hop {
 	}
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		

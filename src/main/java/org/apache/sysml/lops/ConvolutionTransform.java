@@ -175,7 +175,7 @@ public class ConvolutionTransform extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String bias, String output) throws LopsException {
+	public String getInstructions(String input, String bias, String output) {
 		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
@@ -206,7 +206,7 @@ public class ConvolutionTransform extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String C, String HW, String output) throws LopsException {
+	public String getInstructions(String input, String C, String HW, String output) {
 		if(operation == OperationTypes.CHANNEL_SUMS) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
@@ -231,7 +231,7 @@ public class ConvolutionTransform extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String[] inputs, String output) throws LopsException {
+	public String getInstructions(String[] inputs, String output) {
 		StringBuilder sb = new StringBuilder();
 		appendOpcode(sb);
 		

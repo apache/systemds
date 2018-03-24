@@ -213,7 +213,7 @@ public abstract class Expression implements ParseInfo
 		_outputs = null;
 	}
 
-	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
+	public abstract Expression rewriteExpression(String prefix);
 	
 	public void setOutput(Identifier output) {
 		if ( _outputs == null) {
@@ -242,15 +242,11 @@ public abstract class Expression implements ParseInfo
 		return _outputs;
 	}
 	
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) {
 		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
 	}
 	
-	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{
+	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) {
 		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
 	}
 
@@ -384,9 +380,8 @@ public abstract class Expression implements ParseInfo
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) {
 		return computeDataType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
 
@@ -399,9 +394,8 @@ public abstract class Expression implements ParseInfo
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) {
 		DataType d1 = identifier1.getDataType();
 		DataType d2 = identifier2.getDataType();
 
@@ -432,9 +426,8 @@ public abstract class Expression implements ParseInfo
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) {
 		return computeValueType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
 	
@@ -448,9 +441,8 @@ public abstract class Expression implements ParseInfo
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) {
 		ValueType v1 = identifier1.getValueType();
 		ValueType v2 = identifier2.getValueType();
 
@@ -506,9 +498,8 @@ public abstract class Expression implements ParseInfo
 	 * Throw a LanguageException with the message.
 	 * 
 	 * @param message the error message
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public void raiseValidateError( String message ) throws LanguageException {
+	public void raiseValidateError( String message ) {
 		raiseValidateError(message, false, null);
 	}
 	
@@ -519,9 +510,8 @@ public abstract class Expression implements ParseInfo
 	 * @param message the error (or warning) message
 	 * @param conditional if {@code true}, display log warning message. Otherwise, the message
 	 * will be thrown as a LanguageException
-	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError( String message, boolean conditional ) throws LanguageException {
+	public void raiseValidateError( String message, boolean conditional ) {
 		raiseValidateError(message, conditional, null);
 	}
 	
@@ -533,9 +523,8 @@ public abstract class Expression implements ParseInfo
 	 * @param conditional if {@code true}, display log warning message. Otherwise, the message (and optional
 	 * error code) will be thrown as a LanguageException
 	 * @param errorCode optional error code
-	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError(String msg, boolean conditional, String errorCode) throws LanguageException {
+	public void raiseValidateError(String msg, boolean conditional, String errorCode) {
 		if (conditional) {// warning if conditional
 			String fullMsg = this.printWarningLocation() + msg;
 			LOG.warn(fullMsg);

@@ -69,8 +69,7 @@ public class CombineTernary extends Lop
 
 	@Override
 	public String getInstructions(int input_index1, int input_index2,
-			int input_index3, int output_index) 
-		throws LopsException 
+			int input_index3, int output_index)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

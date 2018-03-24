@@ -76,7 +76,7 @@ public class DMLProgram
 		return retVal;
 	}
 	
-	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) throws LanguageException{
+	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null){
 			LOG.error("ERROR: namespace " + namespaceKey + " is undefined");
@@ -94,9 +94,7 @@ public class DMLProgram
 		return ret;
 	}
 	
-	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() 
-		throws LanguageException
-	{
+	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() {
 		ArrayList<FunctionStatementBlock> ret = new ArrayList<>();
 		
 		for( DMLProgram nsProg : _namespaces.values() )
@@ -105,9 +103,7 @@ public class DMLProgram
 		return ret;
 	}
 
-	public void addFunctionStatementBlock( String namespace, String fname, FunctionStatementBlock fsb ) 
-		throws LanguageException
-	{
+	public void addFunctionStatementBlock( String namespace, String fname, FunctionStatementBlock fsb ) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespace);
 		if (namespaceProgram == null)
 			throw new LanguageException( "Namespace does not exist." );

@@ -69,7 +69,7 @@ public class TernaryAggregate extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) 
-		throws LopsException 
+		 
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

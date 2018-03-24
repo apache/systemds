@@ -50,7 +50,6 @@ public class IPAPassFlagFunctionsRecompileOnce extends IPAPass
 	
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
 	{
 		if( !ConfigurationManager.isDynamicRecompilation() )
 			return;

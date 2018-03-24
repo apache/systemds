@@ -33,7 +33,6 @@ import org.apache.sysml.lops.GroupedAggregate;
 import org.apache.sysml.lops.GroupedAggregateM;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PMMJ;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.ParameterizedBuiltin;
@@ -109,7 +108,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
 		HopsException.check(sz == pz, this, "has %d inputs but %d parameters", sz, pz);
@@ -158,8 +157,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException 
-	{		
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -213,7 +211,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 	
 	private void constructLopsGroupedAggregate(HashMap<String, Lop> inputlops, ExecType et) 
-		throws HopsException, LopsException 
 	{
 		//reset reblock requirement (see MR aggregate / construct lops)
 		setRequiresReblock( false );
@@ -403,7 +400,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructLopsRemoveEmpty(HashMap<String, Lop> inputlops, ExecType et) 
-		throws HopsException, LopsException 
 	{
 		Hop targetHop = getTargetHop();
 		Hop marginHop = getParameterHop("margin");
@@ -749,7 +745,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructLopsRExpand(HashMap<String, Lop> inputlops, ExecType et) 
-		throws HopsException, LopsException 
 	{
 		if( et == ExecType.CP || et == ExecType.SPARK )
 		{
@@ -1040,7 +1035,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
 	{
 		checkAndSetForcedPlatform();
 

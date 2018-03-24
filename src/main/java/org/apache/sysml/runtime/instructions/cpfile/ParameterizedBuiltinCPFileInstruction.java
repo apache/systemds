@@ -43,7 +43,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
@@ -224,13 +223,8 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			if( rows==0 || cols ==0 ){
 				rows = Math.max(rows, 1);
 				cols = Math.max(cols, 1);
-				try {
-					moNew.acquireModify(new MatrixBlock((int)rows, (int) cols, true));
-					moNew.release();
-				} 
-				catch (CacheException e) {
-					throw new DMLRuntimeException(e);
-				}
+				moNew.acquireModify(new MatrixBlock((int)rows, (int) cols, true));
+				moNew.release();
 			}
 			
 			//create deep copy of metadata obj

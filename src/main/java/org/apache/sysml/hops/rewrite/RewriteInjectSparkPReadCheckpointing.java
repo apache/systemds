@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 
 /**
@@ -36,9 +35,7 @@ import org.apache.sysml.hops.OptimizerUtils;
 public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 {
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if(  !OptimizerUtils.isSparkExecutionMode()  ) 
 			return roots;
 		
@@ -53,15 +50,12 @@ public class RewriteInjectSparkPReadCheckpointing extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		//not applicable to predicates (we do not allow persistent reads there)
 		return root;
 	}
 
 	private void rInjectCheckpointAfterPRead( Hop hop ) 
-		throws HopsException 
 	{
 		if(hop.isVisited())
 			return;

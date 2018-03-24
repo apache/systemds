@@ -96,16 +96,12 @@ public class GridEnumerationMemory extends GridEnumeration
 		return val;
 	}
 	
-	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) 
-		throws HopsException
-	{
+	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) {
 		for( ProgramBlock pb : pbs )
 			getMemoryEstimates(pb, mem);
 	}
 	
-	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) 
-		throws HopsException
-	{
+	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) {
 		if (pb instanceof FunctionProgramBlock)
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;

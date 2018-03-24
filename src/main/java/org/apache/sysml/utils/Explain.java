@@ -31,7 +31,6 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ReorgOp;
@@ -49,7 +48,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
@@ -108,8 +106,7 @@ public class Explain
 	//////////////
 	// public explain interface
 
-	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
-		throws HopsException, DMLRuntimeException, LanguageException {
+	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) {
 		if( counts == null )
 			counts = countDistributedOperations(rtprog);
 		
@@ -198,16 +195,14 @@ public class Explain
 			sb.append( rk2 );
 		}
 		
-		return sb.toString();		 
+		return sb.toString();
 	}
 
-	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
-		throws HopsException, DMLRuntimeException, LanguageException {
+	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) {
 		return explain(prog, rtprog, type, null);
-	}	
+	}
 	
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
-		throws HopsException, DMLRuntimeException, LanguageException
 	{
 		//dispatch to individual explain utils
 		switch( type ) {
@@ -227,7 +222,6 @@ public class Explain
 	}
 
 	public static String explain(DMLProgram prog) 
-		throws HopsException, DMLRuntimeException, LanguageException 
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -270,8 +264,7 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph)
-			throws HopsException, DMLRuntimeException, LanguageException {
+	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph) {
 		StringBuilder sb = new StringBuilder();
 		StringBuilder nodes = new StringBuilder();
 
@@ -314,12 +307,11 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( Program rtprog ) throws HopsException {
+	public static String explain( Program rtprog ) {
 		return explain(rtprog, null);
 	}
 	
 	public static String explain( Program rtprog, ExplainCounts counts ) 
-		throws HopsException 
 	{
 		//counts number of instructions
 		boolean sparkExec = OptimizerUtils.isSparkExecutionMode();
@@ -328,7 +320,7 @@ public class Explain
 			countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
 		}
 	
-		StringBuilder sb = new StringBuilder();		
+		StringBuilder sb = new StringBuilder();
 		
 		//create header
 		sb.append("\nPROGRAM ( size CP/"+(sparkExec?"SP":"MR")+" = ");
@@ -393,34 +385,25 @@ public class Explain
 		return explainInstructions(inst, level);
 	}
 
-	public static String explain( Instruction inst )
-	{
+	public static String explain( Instruction inst ) {
 		return explainGenericInstruction(inst, 0);
 	}
 
-	public static String explain( StatementBlock sb ) 
-		throws HopsException, DMLRuntimeException
-	{
+	public static String explain( StatementBlock sb ) {
 		return explainStatementBlock(sb, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops ) 
-		throws DMLRuntimeException
-	{
+	public static String explainHops( ArrayList<Hop> hops ) {
 		return explainHops(hops, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops, int level ) 
-		throws DMLRuntimeException
-	{
+	public static String explainHops( ArrayList<Hop> hops, int level ) {
 		StringBuilder sb = new StringBuilder();
-		
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
 			sb.append(explainHop(hop, level));
 		Hop.resetVisitStatus(hops);
-		
-		return sb.toString();		
+		return sb.toString();
 	}
 
 	public static String explain( Hop hop ) 
@@ -515,7 +498,7 @@ public class Explain
 	}
 
 	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines,
-			boolean withSubgraph) throws HopsException, DMLRuntimeException {
+			boolean withSubgraph) {
 		StringBuilder builder = new StringBuilder();
 
 		if (sb instanceof WhileStatementBlock) {
@@ -618,7 +601,6 @@ public class Explain
 	}
 
 	private static String explainStatementBlock(StatementBlock sb, int level) 
-		throws HopsException, DMLRuntimeException 
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);
@@ -1207,7 +1189,6 @@ public class Explain
 	}
 
 	private static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level) 
-		throws HopsException 
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);

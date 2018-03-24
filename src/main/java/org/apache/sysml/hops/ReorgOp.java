@@ -87,7 +87,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		int sz = _input.size();
 		switch( op ) {
 		case TRANSPOSE:
@@ -157,7 +157,6 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -387,7 +386,6 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 
 	private static Lop constructCPOrSparkSortLop( Hop input, Hop by, Hop desc, Hop ixret, ExecType et, boolean bSortIndInMem ) 
-		throws HopsException, LopsException
 	{
 		Hop[] hinputs = new Hop[]{input, by, desc, ixret};
 		Lop[] linputs = new Lop[4];
@@ -514,13 +512,13 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
 		}

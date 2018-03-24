@@ -60,9 +60,8 @@ public class ZeroOut  extends Lop
 		}
 	}
 
-	public ZeroOut(
-			Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim, long colDim, DataType dt, ValueType vt, ExecType et)
-			throws LopsException {
+	public ZeroOut(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim,
+		long colDim, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.ZeroOut, dt, vt);
 		init(input, rowL, rowU, colL, colU, rowDim, colDim, dt, vt, et);
 	}
@@ -72,9 +71,7 @@ public class ZeroOut  extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
@@ -101,25 +98,11 @@ public class ZeroOut  extends Lop
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index)
-			throws LopsException {
-		/*
-		 * Example: B = A[row_l:row_u, col_l:col_u]
-		 * A - input matrix (input_index1)
-		 * row_l - lower bound in row dimension
-		 * row_u - upper bound in row dimension
-		 * col_l - lower bound in column dimension
-		 * col_u - upper bound in column dimension
-		 * 
-		 * Since row_l,row_u,col_l,col_u are scalars, values for input_index(2,3,4,5) 
-		 * will be equal to -1. They should be ignored and the scalar value labels must
-		 * be derived from input lops.
-		 */
-		
+	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) {
 		return getInstructions(
-				String.valueOf(input_index1), String.valueOf(input_index2), 
-				String.valueOf(input_index3), String.valueOf(input_index4), 
-				String.valueOf(input_index5), String.valueOf(output_index));
+			String.valueOf(input_index1), String.valueOf(input_index2), 
+			String.valueOf(input_index3), String.valueOf(input_index4), 
+			String.valueOf(input_index5), String.valueOf(output_index));
 	}
 
 	@Override

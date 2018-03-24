@@ -32,23 +32,21 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class CoVariance extends Lop 
 {
 
-	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) throws LopsException {
+	public CoVariance(Lop input1, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, null, null, et);
 	}
 	
-	public CoVariance(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) throws LopsException {
+	public CoVariance(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
 		this(input1, input2, null, dt, vt, et);
 	}
 	
-	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) throws LopsException {
+	public CoVariance(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.CoVariance, dt, vt);
 		init(input1, input2, input3, et);
 	}
 
-	private void init(Lop input1, Lop input2, Lop input3, ExecType et) 
-		throws LopsException 
-	{
+	private void init(Lop input1, Lop input2, Lop input3, ExecType et) {
 		/*
 		 * When et = MR: covariance lop will have a single input lop, which
 		 * denote the combined input data -- output of combinebinary, if unweighed;

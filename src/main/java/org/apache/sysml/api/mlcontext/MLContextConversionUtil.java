@@ -44,7 +44,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -954,58 +953,54 @@ public class MLContextConversionUtil {
 	 * @return the {@code MatrixObject} converted to a {@code List<String>}
 	 */
 	public static List<String> matrixObjectToListStringCSV(MatrixObject matrixObject) {
-		try {
-			MatrixBlock mb = matrixObject.acquireRead();
+		MatrixBlock mb = matrixObject.acquireRead();
 
-			int rows = mb.getNumRows();
-			int cols = mb.getNumColumns();
-			List<String> list = new ArrayList<>();
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		List<String> list = new ArrayList<>();
 
-			if ( !mb.isEmptyBlock(false) ) {
-				if (mb.isInSparseFormat()) {
-					Iterator<IJV> iter = mb.getSparseBlockIterator();
-					int prevCellRow = -1;
-					StringBuilder sb = null;
-					while (iter.hasNext()) {
-						IJV cell = iter.next();
-						int i = cell.getI();
-						double v = cell.getV();
-						if (i > prevCellRow) {
-							if (sb == null) {
-								sb = new StringBuilder();
-							} else {
-								list.add(sb.toString());
-								sb = new StringBuilder();
-							}
-							sb.append(v);
-							prevCellRow = i;
-						} else if (i == prevCellRow) {
-							sb.append(",");
-							sb.append(v);
+		if ( !mb.isEmptyBlock(false) ) {
+			if (mb.isInSparseFormat()) {
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				int prevCellRow = -1;
+				StringBuilder sb = null;
+				while (iter.hasNext()) {
+					IJV cell = iter.next();
+					int i = cell.getI();
+					double v = cell.getV();
+					if (i > prevCellRow) {
+						if (sb == null) {
+							sb = new StringBuilder();
+						} else {
+							list.add(sb.toString());
+							sb = new StringBuilder();
 						}
-					}
-					if (sb != null) {
-						list.add(sb.toString());
-					}
-				} else {
-					for (int i = 0; i < rows; i++) {
-						StringBuilder sb = new StringBuilder();
-						for (int j = 0; j < cols; j++) {
-							if (j > 0) {
-								sb.append(",");
-							}
-							sb.append(mb.getValueDenseUnsafe(i, j));
-						}
-						list.add(sb.toString());
+						sb.append(v);
+						prevCellRow = i;
+					} else if (i == prevCellRow) {
+						sb.append(",");
+						sb.append(v);
 					}
 				}
+				if (sb != null) {
+					list.add(sb.toString());
+				}
+			} else {
+				for (int i = 0; i < rows; i++) {
+					StringBuilder sb = new StringBuilder();
+					for (int j = 0; j < cols; j++) {
+						if (j > 0) {
+							sb.append(",");
+						}
+						sb.append(mb.getValueDenseUnsafe(i, j));
+					}
+					list.add(sb.toString());
+				}
 			}
-
-			matrixObject.release();
-			return list;
-		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to List<String> CSV format", e);
 		}
+
+		matrixObject.release();
+		return list;
 	}
 
 	/**
@@ -1018,31 +1013,27 @@ public class MLContextConversionUtil {
 	 * @return the {@code FrameObject} converted to a {@code List<String>}
 	 */
 	public static List<String> frameObjectToListStringCSV(FrameObject frameObject, String delimiter) {
-		try {
-			FrameBlock fb = frameObject.acquireRead();
+		FrameBlock fb = frameObject.acquireRead();
 
-			int rows = fb.getNumRows();
-			int cols = fb.getNumColumns();
-			List<String> list = new ArrayList<>();
+		int rows = fb.getNumRows();
+		int cols = fb.getNumColumns();
+		List<String> list = new ArrayList<>();
 
-			for (int i = 0; i < rows; i++) {
-				StringBuilder sb = new StringBuilder();
-				for (int j = 0; j < cols; j++) {
-					if (j > 0) {
-						sb.append(delimiter);
-					}
-					if (fb.get(i, j) != null) {
-						sb.append(fb.get(i, j));
-					}
+		for (int i = 0; i < rows; i++) {
+			StringBuilder sb = new StringBuilder();
+			for (int j = 0; j < cols; j++) {
+				if (j > 0) {
+					sb.append(delimiter);
 				}
-				list.add(sb.toString());
+				if (fb.get(i, j) != null) {
+					sb.append(fb.get(i, j));
+				}
 			}
-
-			frameObject.release();
-			return list;
-		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting frame object to List<String> CSV format", e);
+			list.add(sb.toString());
 		}
+
+		frameObject.release();
+		return list;
 	}
 
 	/**
@@ -1053,50 +1044,45 @@ public class MLContextConversionUtil {
 	 * @return the {@code MatrixObject} converted to a {@code List<String>}
 	 */
 	public static List<String> matrixObjectToListStringIJV(MatrixObject matrixObject) {
-		try {
-			MatrixBlock mb = matrixObject.acquireRead();
+		MatrixBlock mb = matrixObject.acquireRead();
 
-			int rows = mb.getNumRows();
-			int cols = mb.getNumColumns();
-			List<String> list = new ArrayList<>();
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+		List<String> list = new ArrayList<>();
 
-			if (mb.getNonZeros() > 0) {
-				if (mb.isInSparseFormat()) {
-					Iterator<IJV> iter = mb.getSparseBlockIterator();
-					StringBuilder sb = null;
-					while (iter.hasNext()) {
-						IJV cell = iter.next();
+		if (mb.getNonZeros() > 0) {
+			if (mb.isInSparseFormat()) {
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				StringBuilder sb = null;
+				while (iter.hasNext()) {
+					IJV cell = iter.next();
+					sb = new StringBuilder();
+					sb.append(cell.getI() + 1);
+					sb.append(" ");
+					sb.append(cell.getJ() + 1);
+					sb.append(" ");
+					sb.append(cell.getV());
+					list.add(sb.toString());
+				}
+			} else {
+				StringBuilder sb = null;
+				for (int i = 0; i < rows; i++) {
+					sb = new StringBuilder();
+					for (int j = 0; j < cols; j++) {
 						sb = new StringBuilder();
-						sb.append(cell.getI() + 1);
+						sb.append(i + 1);
 						sb.append(" ");
-						sb.append(cell.getJ() + 1);
+						sb.append(j + 1);
 						sb.append(" ");
-						sb.append(cell.getV());
+						sb.append(mb.getValueDenseUnsafe(i, j));
 						list.add(sb.toString());
-					}
-				} else {
-					StringBuilder sb = null;
-					for (int i = 0; i < rows; i++) {
-						sb = new StringBuilder();
-						for (int j = 0; j < cols; j++) {
-							sb = new StringBuilder();
-							sb.append(i + 1);
-							sb.append(" ");
-							sb.append(j + 1);
-							sb.append(" ");
-							sb.append(mb.getValueDenseUnsafe(i, j));
-							list.add(sb.toString());
-						}
 					}
 				}
 			}
-
-			matrixObject.release();
-			return list;
-		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to List<String> IJV format",
-					e);
 		}
+
+		matrixObject.release();
+		return list;
 	}
 
 	/**
@@ -1107,34 +1093,30 @@ public class MLContextConversionUtil {
 	 * @return the {@code FrameObject} converted to a {@code List<String>}
 	 */
 	public static List<String> frameObjectToListStringIJV(FrameObject frameObject) {
-		try {
-			FrameBlock fb = frameObject.acquireRead();
+		FrameBlock fb = frameObject.acquireRead();
 
-			int rows = fb.getNumRows();
-			int cols = fb.getNumColumns();
-			List<String> list = new ArrayList<>();
+		int rows = fb.getNumRows();
+		int cols = fb.getNumColumns();
+		List<String> list = new ArrayList<>();
 
-			StringBuilder sb = null;
-			for (int i = 0; i < rows; i++) {
-				sb = new StringBuilder();
-				for (int j = 0; j < cols; j++) {
-					if (fb.get(i, j) != null) {
-						sb = new StringBuilder();
-						sb.append(i + 1);
-						sb.append(" ");
-						sb.append(j + 1);
-						sb.append(" ");
-						sb.append(fb.get(i, j));
-						list.add(sb.toString());
-					}
+		StringBuilder sb = null;
+		for (int i = 0; i < rows; i++) {
+			sb = new StringBuilder();
+			for (int j = 0; j < cols; j++) {
+				if (fb.get(i, j) != null) {
+					sb = new StringBuilder();
+					sb.append(i + 1);
+					sb.append(" ");
+					sb.append(j + 1);
+					sb.append(" ");
+					sb.append(fb.get(i, j));
+					list.add(sb.toString());
 				}
 			}
-
-			frameObject.release();
-			return list;
-		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting frame object to List<String> IJV format", e);
 		}
+
+		frameObject.release();
+		return list;
 	}
 
 	/**
@@ -1145,14 +1127,10 @@ public class MLContextConversionUtil {
 	 * @return the {@code MatrixObject} converted to a {@code double[][]}
 	 */
 	public static double[][] matrixObjectTo2DDoubleArray(MatrixObject matrixObject) {
-		try {
-			MatrixBlock mb = matrixObject.acquireRead();
-			double[][] matrix = DataConverter.convertToDoubleMatrix(mb);
-			matrixObject.release();
-			return matrix;
-		} catch (CacheException e) {
-			throw new MLContextException("Cache exception while converting matrix object to double matrix", e);
-		}
+		MatrixBlock mb = matrixObject.acquireRead();
+		double[][] matrix = DataConverter.convertToDoubleMatrix(mb);
+		matrixObject.release();
+		return matrix;
 	}
 
 	/**
@@ -1257,14 +1235,10 @@ public class MLContextConversionUtil {
 	 * @return the {@code FrameObject} converted to a {@code String[][]}
 	 */
 	public static String[][] frameObjectTo2DStringArray(FrameObject frameObject) {
-		try {
-			FrameBlock fb = frameObject.acquireRead();
-			String[][] frame = DataConverter.convertToStringFrame(fb);
-			frameObject.release();
-			return frame;
-		} catch (CacheException e) {
-			throw new MLContextException("CacheException while converting frame object to 2D string array", e);
-		}
+		FrameBlock fb = frameObject.acquireRead();
+		String[][] frame = DataConverter.convertToStringFrame(fb);
+		frameObject.release();
+		return frame;
 	}
 
 	/**

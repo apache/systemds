@@ -85,7 +85,7 @@ public class UnaryCP extends Lop
 
 	}
 
-	private String getOpCode() throws LopsException {
+	private String getOpCode() {
 		switch (operation) {
 		case NOT:
 			return "!";
@@ -188,8 +188,7 @@ public class UnaryCP extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String output)
-			throws LopsException {
+	public String getInstructions(String input, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getExecType());
 		sb.append( OPERAND_DELIMITOR );

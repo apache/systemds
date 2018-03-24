@@ -53,7 +53,7 @@ public class BooleanIdentifier extends ConstIdentifier
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		return this;
 	}
 	

@@ -42,7 +42,7 @@ public class PrintStatement extends Statement
 	protected PRINTTYPE _type; // print, printf, or stop
 	protected List<Expression> expressions;
 
-	private static PRINTTYPE getPrintType(String type, List<Expression> expressions) throws LanguageException {
+	private static PRINTTYPE getPrintType(String type, List<Expression> expressions) {
 		if(type.equalsIgnoreCase("print")) {
 			if ((expressions == null) || (expressions.size() == 1)) {
 				return PRINTTYPE.PRINT;
@@ -60,22 +60,19 @@ public class PrintStatement extends Statement
 			throw new LanguageException("Unknown statement type: " + type);
 	}
 
-	public PrintStatement(ParserRuleContext ctx, String type, String filename)
-			throws LanguageException {
+	public PrintStatement(ParserRuleContext ctx, String type, String filename) {
 		this(getPrintType(type, null), null);
 		setCtxValues(ctx);
 		setFilename(filename);
 	}
 
-	public PrintStatement(ParserRuleContext ctx, String type, List<Expression> expressions, String filename)
-			throws LanguageException {
+	public PrintStatement(ParserRuleContext ctx, String type, List<Expression> expressions, String filename) {
 		this(getPrintType(type, expressions), expressions);
 		setCtxValues(ctx);
 		setFilename(filename);
 	}
 
-	public PrintStatement(PRINTTYPE type, List<Expression> expressions)
-			throws LanguageException {
+	public PrintStatement(PRINTTYPE type, List<Expression> expressions) {
 		_type = type;
 		if (expressions == null) {
 			this.expressions = new ArrayList<>();
@@ -85,7 +82,7 @@ public class PrintStatement extends Statement
 	}
 
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
+	public Statement rewriteStatement(String prefix) {
 		List<Expression> newExpressions = new ArrayList<>();
 		for (Expression oldExpression : expressions) {
 			Expression newExpression = oldExpression.rewriteExpression(prefix);

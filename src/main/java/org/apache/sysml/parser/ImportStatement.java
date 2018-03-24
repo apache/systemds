@@ -75,7 +75,7 @@ public class ImportStatement extends Statement
 	
 
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
+	public Statement rewriteStatement(String prefix) {
 		LOG.error(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");
 		throw new LanguageException(this.printErrorLocation() + "rewriting for inlining not supported for ImportStatement");
 	}

@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DataIdentifier;
@@ -60,7 +59,6 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
-		throws HopsException 
 	{
 		if( !OptimizerUtils.isSparkExecutionMode() ) {
 			// nothing to do here, return original statement block
@@ -130,8 +128,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 }

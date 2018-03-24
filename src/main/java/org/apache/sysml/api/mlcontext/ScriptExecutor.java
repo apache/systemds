@@ -548,11 +548,7 @@ public class ScriptExecutor {
 	protected void validateScript() {
 		try {
 			dmlTranslator.validateParseTree(dmlProgram);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while validating script", e);
-		} catch (ParseException e) {
-			throw new MLContextException("Exception occurred while validating script", e);
-		} catch (IOException e) {
+		} catch (LanguageException | ParseException e) {
 			throw new MLContextException("Exception occurred while validating script", e);
 		}
 	}

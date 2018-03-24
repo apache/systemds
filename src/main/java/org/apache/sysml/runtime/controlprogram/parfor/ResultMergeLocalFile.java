@@ -42,7 +42,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -976,7 +975,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private static void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
-		throws CacheException, IOException
+		throws DMLRuntimeException, IOException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fnameNew );

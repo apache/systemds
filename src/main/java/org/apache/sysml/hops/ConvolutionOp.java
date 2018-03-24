@@ -26,7 +26,6 @@ import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -81,7 +80,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
 	}
 
@@ -107,7 +106,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -213,10 +211,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * If corresponding output lop is not found or if this is not a max_pool_backward operation, this function returns null
 	 * 
 	 * @return output lop of max_pool/avg_pool operation with same parameters as this hop
-	 * @throws HopsException if error 
-	 * @throws LopsException if error
 	 */
-	private Lop getMaxPoolOutputLop() throws HopsException, LopsException {
+	private Lop getMaxPoolOutputLop() {
 		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.AVG_POOLING_BACKWARD) {
 			ConvOp opType = (op == ConvOp.MAX_POOLING_BACKWARD) ? ConvOp.MAX_POOLING : ConvOp.AVG_POOLING;
 			Hop inputImage = getInput().get(0);
@@ -232,7 +228,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return null;
 	}
 	
-	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
+	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) {
 		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		
@@ -533,7 +529,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		

@@ -31,7 +31,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -74,9 +73,7 @@ public abstract class CostEstimator
 	protected static final VarStats _unknownStats = new VarStats(1,1,-1,-1,-1,false);
 	protected static final VarStats _scalarStats = new VarStats(1,1,1,1,1,true);
 	
-	public double getTimeEstimate(Program rtprog, LocalVariableMap vars, HashMap<String,VarStats> stats) 
-		throws DMLRuntimeException
-	{
+	public double getTimeEstimate(Program rtprog, LocalVariableMap vars, HashMap<String,VarStats> stats) {
 		double costs = 0;
 
 		//obtain stats from symboltable (e.g., during recompile)
@@ -89,9 +86,7 @@ public abstract class CostEstimator
 		return costs;
 	}
 	
-	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) 
-		throws DMLRuntimeException
-	{
+	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) {
 		//obtain stats from symboltable (e.g., during recompile)
 		maintainVariableStatistics(vars, stats);
 				
@@ -99,9 +94,7 @@ public abstract class CostEstimator
 		return rGetTimeEstimate(pb, stats, new HashSet<String>(), recursive);
 	}
 
-	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) 
-		throws DMLRuntimeException
-	{
+	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) {
 		double ret = 0;
 		
 		if (pb instanceof WhileProgramBlock)
@@ -216,9 +209,7 @@ public abstract class CostEstimator
 		return ret;
 	}
 	
-	private static void maintainVariableStatistics( LocalVariableMap vars, HashMap<String, VarStats> stats ) 
-		throws DMLRuntimeException
-	{
+	private static void maintainVariableStatistics( LocalVariableMap vars, HashMap<String, VarStats> stats ) {
 		for( String varname : vars.keySet() )
 		{
 			Data dat = vars.get(varname);
@@ -308,9 +299,7 @@ public abstract class CostEstimator
 		}
 	}
 
-	private void maintainMRJobInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats ) 
-		throws DMLRuntimeException
-	{
+	private void maintainMRJobInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats ) {
 		MRJobInstruction jobinst = (MRJobInstruction)inst;
 		
 		//input sizes (varname, index mapping)
@@ -631,9 +620,7 @@ public abstract class CostEstimator
 		return OptimizerUtils.getNumIterations(pb, DEFAULT_NUMITER);
 	}
 
-	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
-		throws DMLRuntimeException;
+	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args );
 
-	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
-		throws DMLRuntimeException;
+	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args );
 }

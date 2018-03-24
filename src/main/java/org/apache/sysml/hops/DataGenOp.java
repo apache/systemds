@@ -29,7 +29,6 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.DataGen;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.DataExpression;
@@ -119,7 +118,7 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
 		HopsException.check(sz == pz, this, "has %d inputs but %d parameters", sz, pz);
@@ -151,7 +150,6 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -274,13 +272,12 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
-		
+	protected ExecType optFindExecType() {
 		checkAndSetForcedPlatform();
 
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 			_etype = _etypeForced;
 		else 
 		{

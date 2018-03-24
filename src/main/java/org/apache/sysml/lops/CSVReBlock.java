@@ -37,7 +37,7 @@ public class CSVReBlock extends Lop
 	private int _rows_per_block;
 	private int _cols_per_block;
 
-	public CSVReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, ExecType et) throws LopsException 
+	public CSVReBlock(Lop input, int rows_per_block, int cols_per_block, DataType dt, ValueType vt, ExecType et)
 	{
 		super(Lop.Type.CSVReBlock, dt, vt);
 		addInput(input);
@@ -67,7 +67,7 @@ public class CSVReBlock extends Lop
 		return "CSVReblock - rows per block = " + _rows_per_block + " cols per block  " + _cols_per_block ;
 	}
 	
-	private String prepCSVProperties() throws LopsException {
+	private String prepCSVProperties() {
 		StringBuilder sb = new StringBuilder();
 
 		Data dataInput = (Data)getInputs().get(0);
@@ -110,12 +110,12 @@ public class CSVReBlock extends Lop
 }
 
 	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException {
+	public String getInstructions(int input_index, int output_index) {
 		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output) throws LopsException {
+	public String getInstructions(String input1, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );

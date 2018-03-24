@@ -34,10 +34,8 @@ public class WeightedSquaredLossR extends Lop
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedSquaredLossR(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WeightsType wt, boolean cacheU, boolean cacheV, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedSquaredLoss, dt, vt);		
+	public WeightedSquaredLossR(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WeightsType wt, boolean cacheU, boolean cacheV, ExecType et) {
+		super(Lop.Type.WeightedSquaredLoss, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -54,9 +52,7 @@ public class WeightedSquaredLossR extends Lop
 		setupLopProperties(et);
 	}
 	
-	private void setupLopProperties( ExecType et ) 
-		throws LopsException
-	{
+	private void setupLopProperties( ExecType et ) {
 		if( et == ExecType.MR )
 		{
 			//setup MR parameters 

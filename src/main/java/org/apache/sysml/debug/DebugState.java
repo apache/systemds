@@ -58,9 +58,8 @@ public class DebugState
 	/**
 	 * Getter for current frame's program counter
 	 * @return Current frame program counter
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public DMLProgramCounter getPC() throws DMLRuntimeException {
+	public DMLProgramCounter getPC() {
 		if(!DMLScript.ENABLE_DEBUG_MODE) {
 			System.err.println("Error: This functionality (getPC) is available only in debug mode");
 			//// Fatal error to avoid unintentional bugs 

@@ -54,7 +54,6 @@ import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -1301,7 +1300,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 
 	private void exportMatricesToHDFS(ExecutionContext ec, String... blacklistNames) 
-		throws CacheException 
 	{
 		ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
 		Set<String> blacklist = UtilFunctions.asSet(blacklistNames);

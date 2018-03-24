@@ -85,9 +85,7 @@ public class HopRewriteUtils
 	//////////////////////////////////
 	// literal handling
 
-	public static boolean getBooleanValue( LiteralOp op )
-		throws HopsException
-	{
+	public static boolean getBooleanValue( LiteralOp op ) {
 		switch( op.getValueType() )
 		{
 			case DOUBLE:  return op.getDoubleValue() != 0; 
@@ -118,37 +116,22 @@ public class HopRewriteUtils
 		return false;
 	}
 
-	public static double getDoubleValue( LiteralOp op )
-		throws HopsException
-	{
-		switch( op.getValueType() )
-		{
+	public static double getDoubleValue( LiteralOp op ) {
+		switch( op.getValueType() ) {
 			case DOUBLE:  return op.getDoubleValue(); 
 			case INT:	  return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
-			
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
 	}
 	
-	public static double getDoubleValueSafe( LiteralOp op )
-	{
-		try
-		{
-			switch( op.getValueType() )
-			{
-				case DOUBLE:  return op.getDoubleValue(); 
-				case INT:	  return op.getLongValue();
-				case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
-				
-				default: throw new HopsException("Invalid double value: "+op.getValueType());
-			}
+	public static double getDoubleValueSafe( LiteralOp op ) {
+		switch( op.getValueType() ) {
+			case DOUBLE:  return op.getDoubleValue(); 
+			case INT:	  return op.getLongValue();
+			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			default: return Double.MAX_VALUE;
 		}
-		catch(Exception ex){
-			//silently ignore error
-		}
-		
-		return Double.MAX_VALUE;
 	}
 	
 	/**
@@ -159,40 +142,24 @@ public class HopRewriteUtils
 	 * Otherwise, a safer alternative is `getDoubleValue`.
 	 * 
 	 * @param op literal operator
-	 * @return long value of literator op
-	 * @throws HopsException if HopsException occurs
+	 * @return long value of literal op
 	 */
-	public static long getIntValue( LiteralOp op )
-		throws HopsException
-	{
-		switch( op.getValueType() )
-		{
+	public static long getIntValue( LiteralOp op ) {
+		switch( op.getValueType() ) {
 			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
 			case INT:	  return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
-			
 			default: throw new HopsException("Invalid int value: "+op.getValueType());
 		}
 	}
 	
-	public static long getIntValueSafe( LiteralOp op )
-	{
-		try
-		{
-			switch( op.getValueType() )
-			{
-				case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
-				case INT:	  return op.getLongValue();
-				case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
-				default:
-					throw new RuntimeException("Invalid int value: "+op.getValueType());
-			}
+	public static long getIntValueSafe( LiteralOp op ) {
+		switch( op.getValueType() ) {
+			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
+			case INT:	  return op.getLongValue();
+			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
+			default: return Long.MAX_VALUE;
 		}
-		catch(Exception ex){
-			//silently ignore error
-		}
-		
-		return Long.MAX_VALUE;
 	}
 	
 	public static boolean isLiteralOfValue( Hop hop, double val ) {
@@ -320,8 +287,7 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createDataGenOp( Hop input, double value ) 
-		throws HopsException
-	{		
+	{
 		Hop rows = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
 			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		Hop cols = input.colsKnown() ? new LiteralOp(input.getDim2()) :
@@ -356,11 +322,9 @@ public class HopRewriteUtils
 	 * @param scale the scale
 	 * @param shift the shift
 	 * @return data gen op
-	 * @throws HopsException if HopsException occurs
 	 */
 	public static DataGenOp copyDataGenOp( DataGenOp inputGen, double scale, double shift ) 
-		throws HopsException
-	{		
+	{
 		HashMap<String, Integer> params = inputGen.getParamIndexMap();
 		Hop rows = inputGen.getInput().get(params.get(DataExpression.RAND_ROWS));
 		Hop cols = inputGen.getInput().get(params.get(DataExpression.RAND_COLS));
@@ -406,8 +370,7 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
-		throws HopsException
-	{		
+	{
 		Hop rows = rowInput.rowsKnown() ? new LiteralOp(rowInput.getDim1()) : 
 			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
 		Hop cols = colInput.colsKnown() ? new LiteralOp(colInput.getDim2()) :
@@ -436,8 +399,7 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createDataGenOp( Hop rowInput, boolean tRowInput, Hop colInput, boolean tColInput, double value ) 
-		throws HopsException
-	{		
+	{
 		long nrow = tRowInput ? rowInput.getDim2() : rowInput.getDim1();
 		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
@@ -469,8 +431,7 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createDataGenOpByVal( Hop rowInput, Hop colInput, double value ) 
-		throws HopsException
-	{		
+	{
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -495,7 +456,6 @@ public class HopRewriteUtils
 	}
 	
 	public static Hop createDataGenOpByVal( ArrayList<LiteralOp> values, long rows, long cols ) 
-		throws HopsException
 	{
 		StringBuilder sb = new StringBuilder();
 		for(LiteralOp lit : values) {
@@ -663,7 +623,7 @@ public class HopRewriteUtils
 		return ix;
 	}
 	
-	public static NaryOp createNary(OpOpN op, Hop... inputs) throws HopsException {
+	public static NaryOp createNary(OpOpN op, Hop... inputs) {
 		Hop mainInput = inputs[0];
 		NaryOp nop = new NaryOp(mainInput.getName(), mainInput.getDataType(),
 			mainInput.getValueType(), op, inputs);
@@ -673,9 +633,7 @@ public class HopRewriteUtils
 		return nop;
 	}
 	
-	public static Hop createValueHop( Hop hop, boolean row ) 
-		throws HopsException
-	{
+	public static Hop createValueHop( Hop hop, boolean row ) {
 		Hop ret = null;
 		if( row ){
 			ret = hop.rowsKnown() ? new LiteralOp(hop.getDim1()) : 
@@ -690,15 +648,11 @@ public class HopRewriteUtils
 	}
 	
 
-	public static DataGenOp createSeqDataGenOp( Hop input ) 
-		throws HopsException
-	{
+	public static DataGenOp createSeqDataGenOp( Hop input ) {
 		return createSeqDataGenOp(input, true);
 	}
 	
-	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) 
-		throws HopsException
-	{		
+	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) {
 		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
 			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
 		
@@ -858,7 +812,6 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
-		throws HopsException
 	{
 		//check for string (no defined double value)
 		if(    hop1.getValueType()==ValueType.STRING 
@@ -1187,15 +1140,12 @@ public class HopRewriteUtils
 		return ret;
 	}
 
-	public static Hop getBasic1NSequenceMax(Hop hop) 
-		throws HopsException
-	{
+	public static Hop getBasic1NSequenceMax(Hop hop) {
 		if( isDataGenOp(hop, DataGenMethod.SEQ) ) {
 			DataGenOp dgop = (DataGenOp) hop;
 			return dgop.getInput()
 				.get(dgop.getParamIndex(Statement.SEQ_TO));
 		}
-		
 		throw new HopsException("Failed to retrieve 'to' argument from basic 1-N sequence.");
 	}
 	

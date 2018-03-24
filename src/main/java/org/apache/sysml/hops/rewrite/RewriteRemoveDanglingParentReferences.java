@@ -27,7 +27,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.UnaryOp;
 
@@ -41,9 +40,7 @@ import org.apache.sysml.hops.UnaryOp;
 public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 {
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return null;
 		
@@ -58,9 +55,7 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
 		
@@ -74,9 +69,7 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 		return root;
 	}
 	
-	private int removeDanglingParentReferences( Hop hop, boolean pin ) 
-		throws HopsException
-	{
+	private int removeDanglingParentReferences( Hop hop, boolean pin ) {
 		//check mark processed
 		if( hop.isVisited() )
 			return 0;

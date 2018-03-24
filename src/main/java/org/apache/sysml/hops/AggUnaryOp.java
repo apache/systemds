@@ -29,7 +29,6 @@ import org.apache.sysml.lops.Binary;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PartialAggregate;
 import org.apache.sysml.lops.PartialAggregate.DirectionTypes;
 import org.apache.sysml.lops.TernaryAggregate;
@@ -74,7 +73,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
 	}
 
@@ -148,8 +147,7 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -473,14 +471,14 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		//forced / memory-based / threshold-based decision
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
 		}
@@ -547,7 +545,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private boolean isTernaryAggregateRewriteApplicable() 
-		throws HopsException 
 	{
 		boolean ret = false;
 		
@@ -701,7 +698,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private Lop constructLopsTernaryAggregateRewrite(ExecType et) 
-		throws HopsException, LopsException
 	{
 		BinaryOp input1 = (BinaryOp)getInput().get(0);
 		Hop input11 = input1.getInput().get(0);

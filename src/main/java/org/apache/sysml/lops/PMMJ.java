@@ -50,12 +50,9 @@ public class PMMJ extends Lop
 	 * @param partitioned true if partitioned
 	 * @param emptyBlocks true if output empty blocks
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public PMMJ(Lop pminput, Lop rightinput, Lop nrow, DataType dt, ValueType vt, boolean partitioned, boolean emptyBlocks, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.PMMJ, dt, vt);		
+	public PMMJ(Lop pminput, Lop rightinput, Lop nrow, DataType dt, ValueType vt, boolean partitioned, boolean emptyBlocks, ExecType et) {
+		super(Lop.Type.PMMJ, dt, vt);
 		addInput(pminput);
 		addInput(rightinput);
 		addInput(nrow);

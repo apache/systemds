@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 
 /**
@@ -35,27 +34,20 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
  */
 public class RewriteTransientWriteParentHandling extends HopRewriteRule
 {
-
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		for (Hop h : roots) 
 			rule_RehangTransientWriteParents(h, roots);
-		
 		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state)
-		throws HopsException
-	{
-		// do nothing (does not apply to predicate hop DAGs) 	
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		// do nothing (does not apply to predicate hop DAGs)
 		return root;
 	}
 
 	private void rule_RehangTransientWriteParents(Hop hop, ArrayList<Hop> sbHops) 
-		throws HopsException 
 	{
 		if (hop instanceof DataOp && ((DataOp) hop).getDataOpType() == DataOpTypes.TRANSIENTWRITE
 				&& !hop.getParent().isEmpty()) {

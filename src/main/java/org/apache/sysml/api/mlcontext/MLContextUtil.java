@@ -54,11 +54,8 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -1181,15 +1178,8 @@ public final class MLContextUtil {
 	 *            If false, the dot graph will be created without subgraphs for
 	 *            statement blocks.
 	 * @return hop DAG in dot format
-	 * @throws LanguageException
-	 *             if error occurs
-	 * @throws DMLRuntimeException
-	 *             if error occurs
-	 * @throws HopsException
-	 *             if error occurs
 	 */
-	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, boolean performHOPRewrites,
-			boolean withSubgraph) throws HopsException, DMLRuntimeException, LanguageException {
+	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, boolean performHOPRewrites, boolean withSubgraph) {
 		return getHopDAG(mlCtx, script, lines, null, performHOPRewrites, withSubgraph);
 	}
 
@@ -1213,16 +1203,9 @@ public final class MLContextUtil {
 	 *            If false, the dot graph will be created without subgraphs for
 	 *            statement blocks.
 	 * @return hop DAG in dot format
-	 * @throws LanguageException
-	 *             if error occurs
-	 * @throws DMLRuntimeException
-	 *             if error occurs
-	 * @throws HopsException
-	 *             if error occurs
 	 */
 	public static String getHopDAG(MLContext mlCtx, Script script, ArrayList<Integer> lines, SparkConf newConf,
-			boolean performHOPRewrites, boolean withSubgraph)
-			throws HopsException, DMLRuntimeException, LanguageException {
+			boolean performHOPRewrites, boolean withSubgraph) {
 		SparkConf oldConf = mlCtx.getSparkSession().sparkContext().getConf();
 		SparkExecutionContext.SparkClusterConfig systemmlConf = SparkExecutionContext.getSparkClusterConfig();
 		long oldMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();

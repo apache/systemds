@@ -44,15 +44,13 @@ public class WeightedSquaredLoss extends Lop
 	
 	private WeightsType _weightsType = null;
 	
-	public WeightedSquaredLoss(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WeightsType wt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedSquaredLoss, dt, vt);		
+	public WeightedSquaredLoss(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WeightsType wt, ExecType et) {
+		super(Lop.Type.WeightedSquaredLoss, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
 		addInput(input4); //W
-		input1.addOutput(this); 
+		input1.addOutput(this);
 		input2.addOutput(this);
 		input3.addOutput(this);
 		input4.addOutput(this);

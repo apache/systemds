@@ -79,7 +79,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
-		throws HopsException 
 	{
 		//DAG splits not required for forced single node
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
@@ -482,8 +481,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 	

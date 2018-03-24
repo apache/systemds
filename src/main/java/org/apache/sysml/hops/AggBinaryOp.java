@@ -29,7 +29,6 @@ import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.MMCJ;
 import org.apache.sysml.lops.MMCJ.MMCJType;
 import org.apache.sysml.lops.MMRJ;
@@ -117,7 +116,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
 	}
 
@@ -177,7 +176,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 */
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -434,8 +432,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	protected ExecType optFindExecType()
-		throws HopsException 
-	{	
+	{
 		checkAndSetForcedPlatform();
 
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
@@ -489,7 +486,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	private boolean isApplicableForTransitiveSparkExecType(boolean left) 
-		throws HopsException 
 	{
 		int index = left ? 0 : 1;
 		return !(getInput().get(index) instanceof DataOp && ((DataOp)getInput().get(index)).requiresCheckpoint())
@@ -587,21 +583,16 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	// CP Lops generation
 	/////////////////////////
 	
-	private void constructCPLopsTSMM( MMTSJType mmtsj, ExecType et ) 
-		throws HopsException, LopsException
-	{
+	private void constructCPLopsTSMM( MMTSJType mmtsj, ExecType et ) {
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
-		
 		Lop matmultCP = new MMTSJ(getInput().get(mmtsj.isLeft()?1:0).constructLops(),
-				                 getDataType(), getValueType(), et, mmtsj, false, k);
-	
+			getDataType(), getValueType(), et, mmtsj, false, k);
 		matmultCP.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers( matmultCP );
 		setLops(matmultCP);
 	}
 
-	private void constructCPLopsMMChain( ChainType chain ) 
-		throws LopsException, HopsException
+	private void constructCPLopsMMChain( ChainType chain )
 	{
 		MapMultChain mapmmchain = null;
 		if( chain == ChainType.XtXv ) {
@@ -632,12 +623,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	 * NOTE: exists for consistency since removeEmtpy might be scheduled to MR
 	 * but matrix mult on small output might be scheduled to CP. Hence, we 
 	 * need to handle directly passed selection vectors in CP as well.
-	 * 
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private void constructCPLopsPMM() 
-		throws HopsException, LopsException
 	{
 		Hop pmInput = getInput().get(0);
 		Hop rightInput = getInput().get(1);
@@ -663,7 +650,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructCPLopsMM(ExecType et) 
-		throws HopsException, LopsException
 	{
 		Lop matmultCP = null;
 		
@@ -701,7 +687,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private Lop constructCPLopsMMWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
@@ -730,9 +715,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	// Spark Lops generation
 	/////////////////////////
 
-	private void constructSparkLopsTSMM(MMTSJType mmtsj, boolean multiPass) 
-		throws HopsException, LopsException
-	{
+	private void constructSparkLopsTSMM(MMTSJType mmtsj, boolean multiPass) {
 		Hop input = getInput().get(mmtsj.isLeft()?1:0);
 		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), 
 				getValueType(), ExecType.SPARK, mmtsj, multiPass);
@@ -741,8 +724,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLops(tsmm);
 	}
 
-	private void constructSparkLopsMapMM(MMultMethod method) 
-		throws LopsException, HopsException
+	private void constructSparkLopsMapMM(MMultMethod method)
 	{
 		Lop mapmult = null;
 		if( isLeftTransposeRewriteApplicable(false, false) ) 
@@ -767,8 +749,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLops(mapmult);	
 	}
 
-	private Lop constructSparkLopsMapMMWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
+	private Lop constructSparkLopsMapMMWithLeftTransposeRewrite()
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
@@ -794,9 +775,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return out;
 	}
 
-	private void constructSparkLopsMapMMChain(ChainType chain) 
-		throws LopsException, HopsException
-	{
+	private void constructSparkLopsMapMMChain(ChainType chain) {
 		MapMultChain mapmmchain = null;
 		if( chain == ChainType.XtXv ) {
 			Hop hX = getInput().get(0).getInput().get(0);
@@ -816,9 +795,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLops(mapmmchain);
 	}
 
-	private void constructSparkLopsPMapMM() 
-		throws LopsException, HopsException
-	{
+	private void constructSparkLopsPMapMM() {
 		PMapMult pmapmult = new PMapMult( 
 				getInput().get(0).constructLops(),
 				getInput().get(1).constructLops(), 
@@ -828,9 +805,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLops(pmapmult);
 	}
 
-	private void constructSparkLopsCPMM() 
-		throws HopsException, LopsException
-	{
+	private void constructSparkLopsCPMM() {
 		if( isLeftTransposeRewriteApplicable(false, false) )
 		{
 			setLops( constructSparkLopsCPMMWithLeftTransposeRewrite() );
@@ -847,9 +822,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 	}
 
-	private Lop constructSparkLopsCPMMWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
-	{
+	private Lop constructSparkLopsCPMMWithLeftTransposeRewrite() {
 		SparkAggType aggtype = getSparkMMAggregationType(true);
 		
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
@@ -872,19 +845,15 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return out;
 	}
 
-	private void constructSparkLopsRMM() 
-		throws LopsException, HopsException
-	{
+	private void constructSparkLopsRMM() {
 		Lop rmm = new MMRJ(getInput().get(0).constructLops(),getInput().get(1).constructLops(), 
-				          getDataType(), getValueType(), ExecType.SPARK);
+			getDataType(), getValueType(), ExecType.SPARK);
 		setOutputDimensions(rmm);
 		setLineNumbers( rmm );
 		setLops(rmm);
 	}
 
-	private void constructSparkLopsPMM() 
-		throws HopsException, LopsException
-	{
+	private void constructSparkLopsPMM() {
 		//PMM has two potential modes (a) w/ full permutation matrix input, and 
 		//(b) w/ already condensed input vector of target row positions.
 		
@@ -894,7 +863,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		Lop lpmInput = pmInput.constructLops();
 		Hop nrow = null;
 		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
-		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP;				
+		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP;
 		
 		//a) full permutation matrix input (potentially without empty block materialized)
 		if( pmInput.getDim2() != 1 ) //not a vector
@@ -939,12 +908,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLineNumbers(pmm);
 		setLops(pmm);
 		
-		HopRewriteUtils.removeChildReference(pmInput, nrow);		
+		HopRewriteUtils.removeChildReference(pmInput, nrow);
 	} 
 
-	private void constructSparkLopsZIPMM() 
-		throws HopsException, LopsException
-	{
+	private void constructSparkLopsZIPMM() {
 		//zipmm applies to t(X)%*%y if ncol(X)<=blocksize and it prevents 
 		//unnecessary reshuffling by keeping the original indexes (and partitioning) 
 		//joining the datasets, and internally doing the necessary transpose operations
@@ -965,8 +932,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	// MR Lops generation
 	/////////////////////////
 
-	private void constructMRLopsMapMM(MMultMethod method) 
-		throws HopsException, LopsException
+	private void constructMRLopsMapMM(MMultMethod method)
 	{
 		if( method == MMultMethod.MAPMM_R && isLeftTransposeRewriteApplicable(false, true) )
 		{
@@ -1002,7 +968,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 					rightInput.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), getRowsInBlock(), getColsInBlock(), input.getNnz());
 					setLineNumbers(rightInput);
 				}
-			}					
+			}
 			
 			//core matrix mult
 			MapMult mapmult = new MapMult( leftInput, rightInput, getDataType(), getValueType(), 
@@ -1027,11 +993,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			else {
 				setLops(mapmult);
 			}
-		}	
+		}
 	} 
 
-	private Lop constructMRLopsMapMMWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
+	private Lop constructMRLopsMapMMWithLeftTransposeRewrite()
 	{
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
@@ -1087,8 +1052,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return out;
 	}
 
-	private void constructMRLopsMapMMChain( ChainType chainType ) 
-		throws HopsException, LopsException
+	private void constructMRLopsMapMMChain( ChainType chainType )
 	{
 		Lop mapmult = null; 
 		
@@ -1140,8 +1104,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLops(agg1);
 	} 
 
-	private void constructMRLopsCPMM() 
-		throws HopsException, LopsException
+	private void constructMRLopsCPMM()
 	{
 		if( isLeftTransposeRewriteApplicable(false, false) )
 		{
@@ -1172,9 +1135,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 	} 
 
-	private Lop constructMRLopsCPMMWithLeftTransposeRewrite() 
-		throws HopsException, LopsException
-	{
+	private Lop constructMRLopsCPMMWithLeftTransposeRewrite() {
 		Hop X = getInput().get(0).getInput().get(0); //guaranteed to exists
 		Hop Y = getInput().get(1);
 		
@@ -1208,36 +1169,27 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return out;
 	}
 
-	private void constructMRLopsRMM() 
-		throws HopsException, LopsException
-	{
+	private void constructMRLopsRMM() {
 		MMRJ rmm = new MMRJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-				            getDataType(), getValueType(), ExecType.MR);
-		
+			getDataType(), getValueType(), ExecType.MR);
 		setOutputDimensions(rmm);
 		setLineNumbers(rmm);
 		setLops(rmm);
 	} 
 
-	private void constructMRLopsTSMM(MMTSJType mmtsj) 
-		throws HopsException, LopsException
-	{
+	private void constructMRLopsTSMM(MMTSJType mmtsj) {
 		Hop input = getInput().get(mmtsj.isLeft()?1:0);
-		
 		MMTSJ tsmm = new MMTSJ(input.constructLops(), getDataType(), getValueType(), ExecType.MR, mmtsj);
 		tsmm.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(tsmm);
-		
 		Aggregate agg1 = new Aggregate(tsmm, HopsAgg2Lops.get(outerOp), getDataType(), getValueType(), ExecType.MR);
 		agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 		setLineNumbers(agg1);
-		
 		setLops(agg1);
-	} 
+	}
 
 	private void constructMRLopsPMM() 
-		throws HopsException, LopsException
 	{
 		//PMM has two potential modes (a) w/ full permutation matrix input, and 
 		//(b) w/ already condensed input vector of target row positions.

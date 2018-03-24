@@ -28,7 +28,6 @@ import java.util.List;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
@@ -51,13 +50,13 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, 
-			ProgramRewriteStatus state) throws HopsException {
+			ProgramRewriteStatus state) {
 		return Arrays.asList(sb);
 	}
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException 
+			ProgramRewriteStatus sate) 
 	{
 		if( sbs == null || sbs.isEmpty() )
 			return sbs;
@@ -174,8 +173,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		current.setVisited();
 	}
 	
-	private static boolean hasFunctionOpRoot(StatementBlock sb) 
-			throws HopsException {
+	private static boolean hasFunctionOpRoot(StatementBlock sb) {
 		if( sb == null || sb.getHops() == null )
 			return false;
 		boolean ret = false;
@@ -184,8 +182,7 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 		return ret;
 	}
 	
-	private static boolean hasExternalFunctionOpRootWithSideEffect(StatementBlock sb) 
-			throws HopsException {
+	private static boolean hasExternalFunctionOpRootWithSideEffect(StatementBlock sb) {
 		if( sb == null || sb.getHops() == null )
 			return false;
 		for( Hop root : sb.getHops() )
@@ -202,7 +199,6 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 	}
 	
 	private static boolean hasFunctionIOConflict(StatementBlock sb1, StatementBlock sb2) 
-		throws HopsException 
 	{
 		//semantics: a function op root in sb1 conflicts with sb2 if this function op writes
 		//to a variable that is read or written by sb2, where the write might be either

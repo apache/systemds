@@ -140,15 +140,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	/**
 	 * Make the matrix metadata consistent with the in-memory matrix data
-	 * 
-	 * @throws CacheException if CacheException occurs
 	 */
 	@Override
-	public void refreshMetaData() 
-		throws CacheException
-	{
+	public void refreshMetaData() {
 		if ( _data == null || _metaData ==null ) //refresh only for existing data
-			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
+			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 			//we need to throw an exception, otherwise input/output format cannot be inferred
 		
 		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
@@ -233,17 +229,17 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param pred index range
 	 * @return matrix block
-	 * @throws CacheException if CacheException occurs
+	 * @throws DMLRuntimeException if CacheException occurs
 	 */
 	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
-		throws CacheException
+		throws DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire partition "+hashCode()+" "+pred);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
-			throw new CacheException ("MatrixObject not available to indexed read.");
+			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		
 		//return static partition of set from outside of the program
 		if( _partitionInMemory != null )
@@ -302,7 +298,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						cols = _partitionSize;
 						break;	
 					default:
-						throw new CacheException("Unsupported partition format: "+_partitionFormat);
+						throw new DMLRuntimeException("Unsupported partition format: "+_partitionFormat);
 				}
 				
 				
@@ -338,9 +334,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//NOTE: currently no special treatment of non-existing partitions necessary 
 			//      because empty blocks are written anyway
 		}
-		catch(Exception ex)
-		{
-			throw new CacheException(ex);
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
 		}
 		
 		if( DMLScript.STATISTICS ){
@@ -352,10 +347,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	}
 
 	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
-		throws CacheException
+		throws DMLRuntimeException
 	{
 		if ( !_partitioned )
-			throw new CacheException ("MatrixObject not available to indexed read.");
+			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(_hdfsFileName);
@@ -387,7 +382,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append((pred.colStart-1)/_partitionSize+1);
 				break;	
 			default:
-				throw new CacheException ("MatrixObject not available to indexed read.");
+				throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		}
 
 		return sb.toString();

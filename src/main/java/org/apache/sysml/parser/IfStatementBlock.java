@@ -19,14 +19,12 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
@@ -40,8 +38,7 @@ public class IfStatementBlock extends StatementBlock
 	
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
-	{		
+	{
 		if (_statements.size() > 1){
 			raiseValidateError("IfStatementBlock should only have 1 statement (IfStatement)", conditional);
 		}
@@ -287,8 +284,7 @@ public class IfStatementBlock extends StatementBlock
 	
 	@Override
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) 
-		throws LanguageException 
-	{	
+	{
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
@@ -421,8 +417,7 @@ public class IfStatementBlock extends StatementBlock
 
 	@Override
 	public VariableSet initializebackwardLV(VariableSet loPassed) 
-		throws LanguageException
-	{	
+	{
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
@@ -468,7 +463,7 @@ public class IfStatementBlock extends StatementBlock
 	}
 
 	@Override
-	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
+	public VariableSet analyze(VariableSet loPassed) {
 	 	
 		VariableSet predVars = ((IfStatement)_statements.get(0)).getConditionalPredicate().variablesRead();
 		predVars.addVariables(((IfStatement)_statements.get(0)).getConditionalPredicate().variablesUpdated());
@@ -515,7 +510,7 @@ public class IfStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public boolean updatePredicateRecompilationFlag() throws HopsException {
+	public boolean updatePredicateRecompilationFlag() {
 		return (_requiresPredicateRecompile =
 			ConfigurationManager.isDynamicRecompilation()
 			&& Recompiler.requiresRecompilation(getPredicateHops()));

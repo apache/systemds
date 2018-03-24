@@ -29,7 +29,6 @@ import java.util.Set;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 
@@ -68,11 +67,8 @@ public class FunctionCallSizeInfo
 	 * reachable from the main program. 
 	 * 
 	 * @param fgraph function call graph
-	 * @throws HopsException 
 	 */
-	public FunctionCallSizeInfo(FunctionCallGraph fgraph) 
-		throws HopsException 
-	{
+	public FunctionCallSizeInfo(FunctionCallGraph fgraph) {
 		this(fgraph, true);
 	}
 	
@@ -82,11 +78,8 @@ public class FunctionCallSizeInfo
 	 * 
 	 * @param fgraph function call graph
 	 * @param init initialize function candidates
-	 * @throws HopsException 
 	 */
-	public FunctionCallSizeInfo(FunctionCallGraph fgraph, boolean init) 
-		throws HopsException 
-	{
+	public FunctionCallSizeInfo(FunctionCallGraph fgraph, boolean init) {
 		_fgraph = fgraph;
 		_fcand = new HashSet<>();
 		_fcandUnary = new HashSet<>();
@@ -212,7 +205,6 @@ public class FunctionCallSizeInfo
 	}
 	
 	private void constructFunctionCallSizeInfo() 
-		throws HopsException 
 	{
 		//step 1: determine function candidates by evaluating all function calls
 		for( String fkey : _fgraph.getReachableFunctions() ) {

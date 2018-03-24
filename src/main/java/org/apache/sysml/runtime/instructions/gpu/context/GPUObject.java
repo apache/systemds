@@ -30,7 +30,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -619,24 +618,19 @@ public class GPUObject {
 	 *
 	 * @param instName name of the instruction
 	 * @return true if a copy to host happened, false otherwise
-	 * @throws CacheException ?
 	 */
-	public boolean acquireHostRead(String instName) throws CacheException {
+	public boolean acquireHostRead(String instName) throws DMLRuntimeException {
 		boolean copied = false;
-		try {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : acquireDeviceModifySparse on " + this + ", GPUContext=" + getGPUContext());
+		}
+		if (isAllocated() && dirty) {
 			if(LOG.isTraceEnabled()) {
-				LOG.trace("GPU : acquireDeviceModifySparse on " + this + ", GPUContext=" + getGPUContext());
+				LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
+					+ getGPUContext());
 			}
-			if (isAllocated() && dirty) {
-				if(LOG.isTraceEnabled()) {
-					LOG.trace("GPU : data is dirty on device, copying to host, on " + this + ", GPUContext="
-						+ getGPUContext());
-				}
-				copyFromDeviceToHost(instName, false);
-				copied = true;
-			}
-		} catch (DMLRuntimeException e) {
-			throw new CacheException(e);
+			copyFromDeviceToHost(instName, false);
+			copied = true;
 		}
 		return copied;
 	}
@@ -699,7 +693,7 @@ public class GPUObject {
 				timestamp.set(-System.nanoTime());
 				break;
 			default:
-				throw new CacheException("The eviction policy is not supported:" + evictionPolicy.name());
+				throw new DMLRuntimeException("The eviction policy is not supported:" + evictionPolicy.name());
 		}
 	}
 
@@ -712,7 +706,7 @@ public class GPUObject {
 		releaseReadLock();
 		updateReleaseLocks();
 		if (!isAllocated())
-			throw new CacheException("Attempting to release an input before allocating it");
+			throw new DMLRuntimeException("Attempting to release an input before allocating it");
 	}
 
 	/**
@@ -728,7 +722,7 @@ public class GPUObject {
 		// Ideally, we would want to throw CacheException("Attempting to release an output that was not acquired via acquireDeviceModify") if !isDirty()
 		dirty = true;
 		if (!isAllocated())
-			throw new CacheException("Attempting to release an output before allocating it");
+			throw new DMLRuntimeException("Attempting to release an output before allocating it");
 	}
 
 	void allocateDenseMatrixOnDevice() throws DMLRuntimeException {
@@ -764,7 +758,7 @@ public class GPUObject {
 		setSparseMatrixCudaPointer(tmp);
 	}
 
-	void deallocateMemoryOnDevice(boolean eager) throws DMLRuntimeException {
+	void deallocateMemoryOnDevice(boolean eager) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : deallocateMemoryOnDevice, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -779,7 +773,7 @@ public class GPUObject {
 		resetReadWriteLock();
 	}
 
-	protected long getSizeOnDevice() throws DMLRuntimeException {
+	protected long getSizeOnDevice() {
 		long GPUSize = 0;
 		long rlen = mat.getNumRows();
 		long clen = mat.getNumColumns();
@@ -793,7 +787,7 @@ public class GPUObject {
 		return GPUSize;
 	}
 
-	void copyFromHostToDevice(String opcode) throws DMLRuntimeException {
+	void copyFromHostToDevice(String opcode) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromHostToDevice, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -910,14 +904,14 @@ public class GPUObject {
 			GPUStatistics.cudaToDevCount.add(1);
 	}
 
-	public static int toIntExact(long l) throws DMLRuntimeException {
+	public static int toIntExact(long l) {
 		if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
 			throw new DMLRuntimeException("Cannot be cast to int:" + l);
 		}
 		return (int) l;
 	}
 
-	protected void copyFromDeviceToHost(String instName, boolean isEviction) throws DMLRuntimeException {
+	protected void copyFromDeviceToHost(String instName, boolean isEviction) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyFromDeviceToHost, on " + this + ", GPUContext=" + getGPUContext());
 		}
@@ -988,10 +982,8 @@ public class GPUObject {
 
 	/**
 	 * lazily clears the data associated with this {@link GPUObject} instance
-	 *
-	 * @throws CacheException ?
 	 */
-	public void clearData() throws DMLRuntimeException {
+	public void clearData() {
 		clearData(DMLScript.EAGER_CUDA_FREE);
 	}
 
@@ -999,9 +991,8 @@ public class GPUObject {
 	 * Clears the data associated with this {@link GPUObject} instance
 	 *
 	 * @param eager whether to be done synchronously or asynchronously
-	 * @throws CacheException ?
 	 */
-	public void clearData(boolean eager) throws DMLRuntimeException {
+	public void clearData(boolean eager) {
 		deallocateMemoryOnDevice(eager);
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}

@@ -49,12 +49,9 @@ public class BinaryUAggChain extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.BinUaggChain, dt, vt);		
+	public BinaryUAggChain(Lop input1, Binary.OperationTypes bop, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.BinUaggChain, dt, vt);
 		addInput(input1); //X
 		input1.addOutput(this); 
 		

@@ -43,7 +43,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
 	{
 		if( roots == null )
 			return null;
@@ -61,7 +60,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 
 	@Override
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
 	{
 		if( root == null )
 			return null;
@@ -77,7 +75,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	}
 
 	private void rule_BlockSizeAndReblock(Hop hop, final int blocksize) 
-		throws HopsException 
 	{
 		// Go to the source(s) of the DAG
 		for (Hop hi : hop.getInput()) {

@@ -35,7 +35,7 @@ public class DataIdentifier extends Identifier
 	}
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		DataIdentifier newId = new DataIdentifier(this);
 		String newIdName = prefix + _name;
 		newId.setName(newIdName);
@@ -81,9 +81,8 @@ public class DataIdentifier extends Identifier
 	 * This method must be overridden by all child classes.
 	 * 
 	 * @return true if expression returns multiple outputs
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public boolean multipleReturns() throws LanguageException {
+	public boolean multipleReturns() {
 		throw new LanguageException("multipleReturns() must be overridden in the subclass.");
 	}
 	

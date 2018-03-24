@@ -68,12 +68,10 @@ public class MapMult extends Lop
 	 * @param rightCache true if right cache, false if left cache
 	 * @param partitioned true if partitioned, false if not partitioned
 	 * @param emptyBlocks true if output empty blocks
-	 * @throws LopsException if LopsException occurs
 	 */
 	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks ) 
-		throws LopsException 
 	{
-		super(Lop.Type.MapMult, dt, vt);		
+		super(Lop.Type.MapMult, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
@@ -106,12 +104,9 @@ public class MapMult extends Lop
 	 * @param partitioned true if partitioned, false if not partitioned
 	 * @param emptyBlocks true if output empty blocks
 	 * @param aggtype spark aggregation type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks, SparkAggType aggtype) 
-		throws LopsException 
-	{
-		super(Lop.Type.MapMult, dt, vt);		
+	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks, SparkAggType aggtype) {
+		super(Lop.Type.MapMult, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);

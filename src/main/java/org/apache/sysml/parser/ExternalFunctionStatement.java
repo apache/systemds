@@ -63,12 +63,9 @@ public class ExternalFunctionStatement extends FunctionStatement
 	 * Validates all attributes and attribute values.
 	 * 
 	 * @param sb statement block
-	 * @throws LanguageException if LanguageException occurs
 	 */
 	public void validateParameters(StatementBlock sb) //always unconditional  
-		throws LanguageException 
 	{
-		
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
 			if( !(varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) 
@@ -144,13 +141,13 @@ public class ExternalFunctionStatement extends FunctionStatement
 	}
 
 	@Override
-	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
+	public void initializeforwardLV(VariableSet activeIn) {
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 	}
 	
 	@Override
-	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
+	public VariableSet initializebackwardLV(VariableSet lo) {
 		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		

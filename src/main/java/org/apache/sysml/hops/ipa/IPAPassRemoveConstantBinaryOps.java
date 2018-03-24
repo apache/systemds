@@ -26,7 +26,6 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -57,9 +56,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
-	{
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		//approach: scan over top-level program (guaranteed to be unconditional),
 		//collect ones=matrix(1,...); remove b(*)ones if not outer operation
 		HashMap<String, Hop> mOnes = new HashMap<>();
@@ -99,9 +96,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 			}
 	}
 	
-	private static void rRemoveConstantBinaryOp(StatementBlock sb, HashMap<String,Hop> mOnes) 
-		throws HopsException
-	{
+	private static void rRemoveConstantBinaryOp(StatementBlock sb, HashMap<String,Hop> mOnes) {
 		if( sb instanceof IfStatementBlock )
 		{
 			IfStatementBlock isb = (IfStatementBlock) sb;

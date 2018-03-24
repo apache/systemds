@@ -31,8 +31,7 @@ public class CumulativeOffsetBinary extends Lop
 	private OperationTypes _op;
 	private double _initValue = 0;
 	
-	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, OperationTypes op, ExecType et)
-		throws LopsException 
+	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, OperationTypes op, ExecType et) 
 	{
 		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
 		checkSupportedOperations(op);
@@ -42,7 +41,6 @@ public class CumulativeOffsetBinary extends Lop
 	}
 	
 	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, OperationTypes op, ExecType et)
-		throws LopsException 
 	{
 		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
 		checkSupportedOperations(op);
@@ -88,9 +86,7 @@ public class CumulativeOffsetBinary extends Lop
 		return "CumulativeOffsetBinary";
 	}
 
-	private static void checkSupportedOperations(OperationTypes op) 
-		throws LopsException
-	{
+	private static void checkSupportedOperations(OperationTypes op) {
 		//sanity check for supported aggregates
 		if( !(op == OperationTypes.KahanSum || op == OperationTypes.Product ||
 		      op == OperationTypes.Min || op == OperationTypes.Max) )

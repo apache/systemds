@@ -81,10 +81,9 @@ public class DMLParserWrapper extends ParserWrapper
 	 * @param dmlScript script file contents
 	 * @param argVals script arguments
 	 * @return dml program, or null if error
-	 * @throws ParseException if ParseException occurs
 	 */
 	@Override
-	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) throws ParseException {
+	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) {
 		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
 		
 		return prog;
@@ -97,9 +96,8 @@ public class DMLParserWrapper extends ParserWrapper
 	 * @param sourceNamespace namespace from source statement
 	 * @param argVals script arguments
 	 * @return dml program, or null if at least one error
-	 * @throws ParseException if ParseException occurs
 	 */
-	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) throws ParseException {
+	public DMLProgram doParse(String fileName, String dmlScript, String sourceNamespace, Map<String,String> argVals) {
 		DMLProgram dmlPgm = null;
 		
 		ANTLRInputStream in;

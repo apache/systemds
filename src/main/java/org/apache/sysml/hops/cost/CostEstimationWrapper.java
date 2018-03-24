@@ -67,9 +67,7 @@ public class CostEstimationWrapper
 		}
 	}
 	
-	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) {
 		Timing time = new Timing(true);
 		
 		HashMap<String,VarStats> stats = new HashMap<>();

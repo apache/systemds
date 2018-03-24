@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.StatementBlock;
 
 /**
@@ -52,10 +51,8 @@ public abstract class StatementBlockRewriteRule
 	 * @param sb statement block
 	 * @param sate program rewrite status
 	 * @return list of statement blocks
-	 * @throws HopsException if HopsException occurs
 	 */
-	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate) 
-		throws HopsException;
+	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate);
 	
 	/**
 	 * Handle a list of statement blocks. Specific type constraints have to be ensured
@@ -65,8 +62,6 @@ public abstract class StatementBlockRewriteRule
 	 * @param sbs list of statement blocks
 	 * @param sate program rewrite status
 	 * @return list of statement blocks
-	 * @throws HopsException if HopsException occurs
 	 */
-	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) 
-		throws HopsException;
+	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate);
 }

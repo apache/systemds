@@ -60,12 +60,9 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.debug.DMLDebugger;
-import org.apache.sysml.debug.DMLDebuggerException;
 import org.apache.sysml.debug.DMLDebuggerProgramInfo;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
@@ -456,7 +453,6 @@ public class DMLScript
 	 * @param args arguments
 	 * @return true if success, false otherwise
 	 * @throws DMLException if DMLException occurs
-	 * @throws ParseException if ParseException occurs
 	 */
 	public static boolean executeScript( Configuration conf, String[] args ) 
 		throws DMLException
@@ -565,10 +561,9 @@ public class DMLScript
 	 * @param scriptOrFilename script or filename
 	 * @return a string representation of the script
 	 * @throws IOException	if error
-	 * @throws LanguageException	if error
 	 */
 	protected static String readDMLScript( boolean isFile, String scriptOrFilename )
-		throws IOException, LanguageException
+		throws IOException
 	{
 		String dmlScriptStr;
 		
@@ -663,15 +658,10 @@ public class DMLScript
 	 * @param argVals map of argument values
 	 * @param allArgs arguments
 	 * @param scriptType type of script (DML or PyDML)
-	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws LanguageException if LanguageException occurs
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
+		throws IOException
 	{	
 		SCRIPT_TYPE = scriptType;
 
@@ -774,16 +764,10 @@ public class DMLScript
 	 * @param fnameOptConfig Full path of configuration file for SystemML
 	 * @param argVals Key-value pairs defining arguments of DML script
 	 * @param scriptType type of script (DML or PyDML)
-	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws DMLDebuggerException if DMLDebuggerException occurs
-	 * @throws LanguageException if LanguageException occurs
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, ScriptType scriptType)
-		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
+		throws IOException
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		

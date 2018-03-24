@@ -28,7 +28,6 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.ForStatement;
@@ -55,7 +54,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
-		throws HopsException 
 	{
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
 			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
@@ -95,7 +93,6 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	}
 	
 	private boolean rIsApplicableForUpdateInPlace( ArrayList<StatementBlock> sbs, String varname ) 
-		throws HopsException
 	{
 		//NOTE: no function statement blocks / predicates considered because function call would 
 		//render variable as not applicable and predicates don't allow assignments; further reuse 
@@ -157,8 +154,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 }

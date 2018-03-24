@@ -37,8 +37,7 @@ public class Nary extends Lop {
 	
 	private OperationType operationType;
 
-	public Nary(OperationType operationType, DataType dt, ValueType vt, Lop[] inputLops, ExecType et) 
-		throws LopsException 
+	public Nary(OperationType operationType, DataType dt, ValueType vt, Lop[] inputLops, ExecType et)
 	{
 		super(Lop.Type.Nary, dt, vt);
 		this.operationType = operationType;
@@ -93,7 +92,7 @@ public class Nary extends Lop {
 	 * 
 	 */
 	@Override
-	public String getInstructions(String[] inputs, String output) throws LopsException {
+	public String getInstructions(String[] inputs, String output) {
 		String opString = getOpcode();
 
 		StringBuilder sb = new StringBuilder();
@@ -114,7 +113,7 @@ public class Nary extends Lop {
 		return sb.toString();
 	}
 	
-	private String getOpcode() throws LopsException {
+	private String getOpcode() {
 		switch (operationType) {
 			case PRINTF:
 			case CBIND:

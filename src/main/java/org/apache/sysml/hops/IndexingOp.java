@@ -26,7 +26,6 @@ import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
@@ -76,7 +75,7 @@ public class IndexingOp extends Hop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 5, this, "should have 5 inputs but has %d inputs", _input.size());
 	}
 
@@ -116,8 +115,7 @@ public class IndexingOp extends Hop
 
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -362,13 +360,13 @@ public class IndexingOp extends Hop
 	}
 
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
 		}

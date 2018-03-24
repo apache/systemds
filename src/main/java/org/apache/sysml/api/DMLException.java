@@ -22,26 +22,25 @@ package org.apache.sysml.api;
 /**
  * <p>Exception occurring in the DML framework.</p>
  */
-public class DMLException extends Exception 
+public class DMLException extends RuntimeException 
 {
-	
-	public static String ERROR_MSG_DELIMITER = " : ";
-	
+	public static final String ERROR_MSG_DELIMITER = " : ";
+
 	private static final long serialVersionUID = 1L;
 
-    public DMLException() {
-        super();
-    }
-    
-    public DMLException(String message) {
-        super(message);
-    }
-    
-    public DMLException(Throwable cause) {
-        super(cause);
-    }
-    
-    public DMLException(String message, Throwable cause) {
-        super(message, cause);
-    }
+	public DMLException() {
+		super();
+	}
+
+	public DMLException(String message) {
+		super(message);
+	}
+
+	public DMLException(Throwable cause) {
+		super(cause);
+	}
+
+	public DMLException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

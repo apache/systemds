@@ -99,8 +99,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 	@Override
 	@SuppressWarnings("unused")
-	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
-		throws DMLRuntimeException
+	protected double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args )
 	{
 		CPInstruction cpinst = (CPInstruction)inst;
 		
@@ -156,7 +155,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 	@Override
 	protected double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args ) 
-		throws DMLRuntimeException
 	{
 		MRJobInstruction jinst = (MRJobInstruction) inst;
 		
@@ -315,7 +313,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	}		
 	
 	private Object[] extractMRInstStatistics( String inst, VarStats[] stats ) 
-		throws DMLRuntimeException
 	{
 		Object[] ret = new Object[2]; //stats, attrs
 		VarStats[] vs = new VarStats[3];
@@ -487,8 +484,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return inIx;
 	}
 	
-	private byte[] getMapOutputIndexes( byte[] inIx, byte[] retIx, String rdInst, String mapInst, String shfInst, String aggInst, String otherInst ) 
-		throws DMLRuntimeException
+	private byte[] getMapOutputIndexes( byte[] inIx, byte[] retIx, String rdInst, String mapInst, String shfInst, String aggInst, String otherInst )
 	{
 		//note: this is a simplified version of MRJobConfiguration.setUpOutputIndexesForMapper
 		
@@ -611,9 +607,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return Math.max(1, ret);
 	}
 
-	private static int getDistcacheIndex(String inst) 
-		throws DMLRuntimeException
-	{
+	private static int getDistcacheIndex(String inst) {
 		ArrayList<Byte> indexes = new ArrayList<>();
 		
 		if( InstructionUtils.isDistributedCacheUsed(inst) ) {
@@ -747,15 +741,13 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	// Operation Costs //
 	/////////////////////
 	
-	private static double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) 
-		throws DMLRuntimeException
-	{
+	private static double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) {
 		boolean inMR = (et == ExecType.MR);
-		return getInstTimeEstimate(opcode, inMR,  
-				                   vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen, 
-						           vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen, 
-						           vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen,
-						           args);
+		return getInstTimeEstimate(opcode, inMR,
+			vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen,
+			vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen,
+			vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen,
+			args);
 	}
 	
 	/**
@@ -777,9 +769,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param d3s ?
 	 * @param args ?
 	 * @return estimated instruction execution time
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) throws DMLRuntimeException
+	private static double getInstTimeEstimate( String opcode, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args )
 	{
 		double nflops = getNFLOP(opcode, inMR, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s, args);
 		double time = nflops / DEFAULT_FLOPS;
@@ -790,8 +781,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return time;
 	}
 	
-	private static double getNFLOP( String optype, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args ) 
-		throws DMLRuntimeException
+	private static double getNFLOP( String optype, boolean inMR, long d1m, long d1n, double d1s, long d2m, long d2n, double d2s, long d3m, long d3n, double d3s, String[] args )
 	{
 		//operation costs in FLOP on matrix block level (for CP and MR instructions)
 		//(excludes IO and parallelism; assumes known dims for all inputs, outputs )

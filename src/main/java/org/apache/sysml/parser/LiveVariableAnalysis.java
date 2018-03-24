@@ -85,9 +85,9 @@ public abstract class LiveVariableAnalysis
 		_read = vars;
 	}
 	
-	public abstract VariableSet initializeforwardLV(VariableSet activeIn) throws LanguageException;
-	public abstract VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException;
-	public abstract VariableSet analyze(VariableSet loPassed) throws LanguageException;
+	public abstract VariableSet initializeforwardLV(VariableSet activeIn);
+	public abstract VariableSet initializebackwardLV(VariableSet loPassed);
+	public abstract VariableSet analyze(VariableSet loPassed);
 	
 	public void updateLiveVariablesOut(VariableSet liveOut){
 		 updateLiveVariables(_liveOut,liveOut);

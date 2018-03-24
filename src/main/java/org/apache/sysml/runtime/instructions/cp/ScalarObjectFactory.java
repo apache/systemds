@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -66,7 +65,7 @@ public abstract class ScalarObjectFactory
 		}
 	}
 	
-	public static ScalarObject createScalarObject(ValueType vt, LiteralOp lit) throws HopsException {
+	public static ScalarObject createScalarObject(ValueType vt, LiteralOp lit) {
 		switch( vt ) {
 			case DOUBLE:  return new DoubleObject(lit.getDoubleValue());
 			case INT:     return new IntObject(lit.getLongValue());

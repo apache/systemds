@@ -21,7 +21,6 @@ package org.apache.sysml.hops.ipa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DMLProgram;
 
 /**
@@ -48,8 +47,6 @@ public abstract class IPAPass
 	 * @param prog dml program
 	 * @param fgraph function call graph
 	 * @param fcallSizes function call size infos
-	 * @throws HopsException
 	 */
-	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException;
+	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes );
 }

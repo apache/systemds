@@ -140,7 +140,6 @@ public abstract class Identifier extends Expression
 	
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException 
 	{
 		
 		if( getOutput() instanceof DataIdentifier ) {

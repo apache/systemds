@@ -22,7 +22,6 @@ package org.apache.sysml.utils;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextException;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.parser.LanguageException;
 
 /**
  * The purpose of this proxy is to shield systemml internals from direct access to MLContext
@@ -44,9 +43,7 @@ public class MLContextProxy
 		return _active;
 	}
 	
-	public static void setAppropriateVarsForRead(Expression source, String targetname)
-		throws LanguageException
-	{
+	public static void setAppropriateVarsForRead(Expression source, String targetname) {
 		MLContext.getActiveMLContext().getInternalProxy().setAppropriateVarsForRead(source, targetname);
 	}
 

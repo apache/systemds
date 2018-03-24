@@ -64,8 +64,6 @@ import org.apache.sysml.debug.DMLDebuggerException;
 import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
-import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
@@ -730,14 +728,6 @@ public class DMLScript
 		
 		//Step 7: generate runtime program, incl codegen
 		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
-		
-		//Step 8: [optional global data flow optimization]
-		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
-		{
-			LOG.warn("Optimization level '" + OptimizationLevel.O4_GLOBAL_TIME_MEMORY + "' " +
-					"is still in experimental state and not intended for production use.");
-			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
-		}
 		
 		//launch SystemML appmaster (if requested and not already in launched AM)
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){

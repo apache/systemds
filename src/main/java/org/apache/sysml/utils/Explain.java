@@ -39,9 +39,6 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
@@ -474,22 +471,6 @@ public class Explain
 		return explainCNode(node, level);
 	}
 
-	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes ) 
-		throws DMLRuntimeException
-	{
-		return explainGDFNodes(gdfnodes, 0);
-	}
-
-	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes, int level ) 
-		throws DMLRuntimeException
-	{
-		StringBuilder sb = new StringBuilder();
-		HashSet<Long> memo = new HashSet<>();
-		for( GDFNode gnode : gdfnodes )
-			sb.append(explainGDFNode(gnode, level, memo));
-		return sb.toString();
-	}
-	
 	/**
 	 * Counts the number of compiled MRJob/Spark instructions in the
 	 * given runtime program.
@@ -980,104 +961,7 @@ public class Explain
 		
 		return sb.toString();
 	}
-	
-	//////////////
-	// internal explain GDFNODE
 
-	/**
-	 * Do a post-order traverse through the GDFNode DAG and explain each GDFNode.
-	 * Note: nodes referring to literalops are suppressed.
-	 * 
-	 * @param gnode GDF node
-	 * @param level offset
-	 * @param memo memoization table
-	 * @return string explanation
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	private static String explainGDFNode(GDFNode gnode, int level, HashSet<Long> memo) 
-		throws DMLRuntimeException 
-	{
-		//basic memoization via memo table since gnode has no visit status
-		if( memo.contains(gnode.getID()) || 
-			gnode.getNodeType()==NodeType.HOP_NODE && gnode.getHop() instanceof LiteralOp ) 
-		{
-			return "";
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		String offset = createOffset(level);
-		
-		for( GDFNode input : gnode.getInputs() )
-			sb.append(explainGDFNode(input, level, memo));
-		
-		//indentation
-		sb.append(offset);
-		
-		//hop id
-		String deps = null;
-		if( SHOW_DATA_DEPENDENCIES ) {
-			sb.append("("+gnode.getID()+") ");
-		
-			StringBuilder childs = new StringBuilder();
-			childs.append(" (");
-			boolean childAdded = false;
-			for( GDFNode input : gnode.getInputs() ) {
-				childs.append(childAdded?",":"");
-				childs.append(input.getID());
-				childAdded = true;
-			}
-			childs.append(")");		
-			if( childAdded )
-				deps = childs.toString();
-		}
-		
-		//operation string
-		if( gnode instanceof GDFLoopNode ) //LOOP NODES
-		{
-			GDFLoopNode lgnode = (GDFLoopNode) gnode;
-			String offset2 = createOffset(level+1);
-			sb.append(lgnode.explain(deps)+"\n"); //loop header
-			sb.append(offset2+"PRED:\n");
-			sb.append(explainGDFNode(lgnode.getLoopPredicate(),level+2, memo));
-			sb.append(offset2+"BODY:\n");
-			//note: memo table and already done child explain prevents redundancy
-			for( Entry<String,GDFNode> root : lgnode.getLoopOutputs().entrySet() ) {
-				sb.append(explainGDFNode(root.getValue(), level+2, memo));
-			}
-		}
-		else //GENERAL CASE (BASIC/CROSSBLOCK NODES)
-		{
-			sb.append(gnode.explain(deps));
-			sb.append('\n');
-		}
-		
-		/*
-		//matrix characteristics
-		sb.append(" [" + hop.getDim1() + "," 
-		               + hop.getDim2() + "," 
-				       + hop.getRowsInBlock() + "," 
-		               + hop.getColsInBlock() + "," 
-				       + hop.getNnz() + "]");
-		
-		//memory estimates
-		sb.append(" [" + showMem(hop.getInputMemEstimate(), false) + "," 
-		               + showMem(hop.getIntermediateMemEstimate(), false) + "," 
-				       + showMem(hop.getOutputMemEstimate(), false) + " -> " 
-		               + showMem(hop.getMemEstimate(), true) + "]");
-		
-		//exec type
-		if (hop.getExecType() != null)
-			sb.append(", " + hop.getExecType());
-		*/
-		
-		
-		//memoization
-		memo.add(gnode.getID());
-		
-		return sb.toString();
-	}
-	
-	
 	//////////////
 	// internal explain RUNTIME
 

@@ -37,8 +37,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
-import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.lops.LopsException;
@@ -337,7 +335,6 @@ public class ScriptExecutor {
 		constructLops();
 		generateRuntimeProgram();
 		showExplanation();
-		globalDataFlowOptimization();
 		countCompiledMRJobsAndSparkInstructions();
 		initializeCachingAndScratchSpace();
 		cleanupRuntimeProgram();
@@ -473,23 +470,6 @@ public class ScriptExecutor {
 			throw new MLContextException("Exception occurred initializing caching and scratch space", e);
 		} catch (IOException e) {
 			throw new MLContextException("Exception occurred initializing caching and scratch space", e);
-		}
-	}
-
-	/**
-	 * Optimize the program.
-	 */
-	protected void globalDataFlowOptimization() {
-		if (OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY)) {
-			try {
-				runtimeProgram = GlobalOptimizerWrapper.optimizeProgram(dmlProgram, runtimeProgram);
-			} catch (DMLRuntimeException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			} catch (HopsException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			} catch (LopsException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			}
 		}
 	}
 

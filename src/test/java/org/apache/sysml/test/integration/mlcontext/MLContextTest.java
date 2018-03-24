@@ -407,11 +407,8 @@ public class MLContextTest extends MLContextTestBase {
 		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
-			// turn off global data flow optimization check
 			@Override
-			protected void globalDataFlowOptimization() {
-				return;
-			}
+			protected void showExplanation() {}
 		};
 		ml.execute(script, scriptExecutor);
 	}
@@ -424,11 +421,8 @@ public class MLContextTest extends MLContextTestBase {
 		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.mlcontext.ScriptType.PYDML);
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
-			// turn off global data flow optimization check
 			@Override
-			protected void globalDataFlowOptimization() {
-				return;
-			}
+			protected void showExplanation() {}
 		};
 		ml.execute(script, scriptExecutor);
 	}

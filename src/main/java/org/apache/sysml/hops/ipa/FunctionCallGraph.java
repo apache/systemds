@@ -36,6 +36,7 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.FunctionStatement;
@@ -356,6 +357,13 @@ public class FunctionCallGraph
 					
 					//mark as visited for current function call context
 					lfset.add( lfkey );
+					
+					//handle second order external functions
+					FunctionStatementBlock fsb = sb.getDMLProg().getFunctionStatementBlock(lfkey);
+					if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement
+						&& ((ExternalFunctionStatement)fsb.getStatement(0)).isSecondOrder() ) {
+						ret = true;
+					}
 				}
 				else if( HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
 					&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {

@@ -28,7 +28,7 @@ public class ExternalFunctionStatement extends FunctionStatement
 	public static final String EXEC_TYPE     = "exectype";
 	public static final String CONFIG_FILE   = "configfile";
 	public static final String SIDE_EFFECTS  = "sideeffect";
-	
+	public static final String SECOND_ORDER  = "secondorder";
 	
 	//valid attribute values for execlocation
 	public static final String FILE_BASED    = "file";
@@ -59,6 +59,11 @@ public class ExternalFunctionStatement extends FunctionStatement
 			&& Boolean.parseBoolean(_otherParams.get(SIDE_EFFECTS));
 	}
 	
+	public boolean isSecondOrder() {
+		return _otherParams.containsKey(SECOND_ORDER)
+			&& Boolean.parseBoolean(_otherParams.get(SECOND_ORDER));
+	}
+	
 	/**
 	 * Validates all attributes and attribute values.
 	 * 
@@ -69,7 +74,7 @@ public class ExternalFunctionStatement extends FunctionStatement
 		//warnings for all not defined attributes
 		for( String varName : _otherParams.keySet() )
 			if( !(varName.equals(CLASS_NAME) || varName.equals(EXEC_TYPE) 
-				  || varName.equals(CONFIG_FILE) || varName.equals(SIDE_EFFECTS) ) )
+				  || varName.equals(CONFIG_FILE) || varName.equals(SIDE_EFFECTS) || varName.equals(SECOND_ORDER) ) )
 			{
 				LOG.warn( printWarningLocation() + "External function specifies undefined attribute type '"+varName+"'.");
 			}
@@ -95,12 +100,14 @@ public class ExternalFunctionStatement extends FunctionStatement
 			_otherParams.put(EXEC_TYPE, DEFAULT_EXEC_TYPE);
 		}
 		
-		//side effects
-		if( _otherParams.containsKey( SIDE_EFFECTS ) ) {
-			String sideeffect = _otherParams.get(SIDE_EFFECTS);
-			if( !(sideeffect.equals("true") || sideeffect.equals("false")) ) //always unconditional (invalid parameter)
-				sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"
-					+ SIDE_EFFECTS+"' (valid values: true, false).", false);
+		//side effects/second order
+		for( String param : new String[]{ SIDE_EFFECTS, SECOND_ORDER } ) {
+			if( _otherParams.containsKey( param ) ) {
+				String sideeffect = _otherParams.get(param);
+				if( !(sideeffect.equals("true") || sideeffect.equals("false")) ) //always unconditional (invalid parameter)
+					sb.raiseValidateError("External function specifies invalid value for (optional) attribute '"
+						+ param+"' (valid values: true, false).", false);
+			}
 		}
 	}
 	

@@ -50,17 +50,15 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 		colUpper = cu;
 	}
 
-	protected IndexRange getIndexRange(ExecutionContext ec) throws DMLRuntimeException {
+	protected IndexRange getIndexRange(ExecutionContext ec) {
 		return new IndexRange( //rl, ru, cl, ru
 			(int)(ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue()-1),
 			(int)(ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue()-1),
 			(int)(ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue()-1),
-			(int)(ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue()-1));		
+			(int)(ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue()-1));
 	}
 
-	public static IndexingCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static IndexingCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		

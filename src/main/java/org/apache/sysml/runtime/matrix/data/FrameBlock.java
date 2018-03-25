@@ -793,17 +793,13 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	///////
 	// indexing and append operations
 	
-	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, IndexRange ixrange, FrameBlock ret)
-		throws DMLRuntimeException
-	{
+	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, IndexRange ixrange, FrameBlock ret) {
 		return leftIndexingOperations(rhsFrame, 
 				(int)ixrange.rowStart, (int)ixrange.rowEnd, 
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
 
-	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, int rl, int ru, int cl, int cu, FrameBlock ret)
-		throws DMLRuntimeException
-	{
+	public FrameBlock leftIndexingOperations(FrameBlock rhsFrame, int rl, int ru, int cl, int cu, FrameBlock ret) {
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
 			|| cl < 0 || cu >= getNumColumns() || cu < cl || cu >= getNumColumns() ) {
@@ -848,9 +844,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return ret;
 	}
 
-	public FrameBlock slice(IndexRange ixrange, FrameBlock ret) 
-		throws DMLRuntimeException
-	{
+	public FrameBlock slice(IndexRange ixrange, FrameBlock ret) {
 		return slice(
 				(int)ixrange.rowStart, (int)ixrange.rowEnd,
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
@@ -866,11 +860,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param cu column upper index, inclusive, 0-based
 	 * @param retCache cache block
 	 * @return frame block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) 
-		throws DMLRuntimeException
-	{
+	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
 		FrameBlock ret = (FrameBlock)retCache;
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
@@ -966,11 +957,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param ret frame block to return, can be null
 	 * @param cbind if true, column append
 	 * @return frame block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public FrameBlock append( FrameBlock that, FrameBlock ret, boolean cbind )
-		throws DMLRuntimeException
-	{
+	public FrameBlock append( FrameBlock that, FrameBlock ret, boolean cbind ) {
 		if( cbind ) //COLUMN APPEND
 		{
 			//sanity check row dimension mismatch
@@ -1087,15 +1075,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		return map;
 	}
 
-	public void merge(CacheBlock that, boolean bDummy) 
-			throws DMLRuntimeException
-	{
+	public void merge(CacheBlock that, boolean bDummy) {
 		merge((FrameBlock)that);
 	}
 
-	public void merge(FrameBlock that) 
-		throws DMLRuntimeException
-	{
+	public void merge(FrameBlock that) {
 		//check for empty input source (nothing to merge)
 		if( that == null || that.getNumRows() == 0 )
 			return;
@@ -1140,11 +1124,8 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 * @param brlen ?
 	 * @param iMaxRowsToCopy ?
 	 * @return frame block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy)
-			throws DMLRuntimeException 
-	{
+	public FrameBlock zeroOutOperations(FrameBlock result, IndexRange range, boolean complementary, int iRowStartSrc, int iRowStartDest, int brlen, int iMaxRowsToCopy) {
 		int clen = getNumColumns();
 		
 		if(result==null)

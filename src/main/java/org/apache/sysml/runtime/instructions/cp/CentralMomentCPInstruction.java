@@ -36,9 +36,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		super(cm, in1, in2, in3, out, AUType.DEFAULT, opcode, str);
 	}
 
-	public static CentralMomentCPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static CentralMomentCPInstruction parseInstruction(String str) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = null; 
 		CPOperand in3 = null; 
@@ -89,9 +87,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		String output_name = output.getName();
 
 		/*

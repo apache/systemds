@@ -44,8 +44,7 @@ public class JobReturn
 		}
 	}
 
-	public JobReturn(MatrixCharacteristics[] sts, OutputInfo[] infos,
-			boolean success) throws DMLRuntimeException {
+	public JobReturn(MatrixCharacteristics[] sts, OutputInfo[] infos, boolean success) {
 		successful = success;
 		metadata = new MetaDataFormat[sts.length];
 		for (int i = 0; i < sts.length; i++) {
@@ -53,7 +52,7 @@ public class JobReturn
 		}
 	}
 
-	public JobReturn(MatrixCharacteristics sts, OutputInfo info, boolean success) throws DMLRuntimeException {
+	public JobReturn(MatrixCharacteristics sts, OutputInfo info, boolean success) {
 		successful = success;
 		metadata = new MetaDataFormat[1];
 		metadata[0] = new MetaDataFormat(sts, info, OutputInfo.getMatchingInputInfo(info));
@@ -65,7 +64,7 @@ public class JobReturn
 		metadata[0] = new MetaDataNumItemsByEachReducer(mc, items, partition0, number0s);
 	}
 
-	public boolean checkReturnStatus() throws DMLRuntimeException {
+	public boolean checkReturnStatus() {
 		if( !successful )
 			throw new DMLRuntimeException("Error in executing the DML program.");
 		return successful;

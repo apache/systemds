@@ -87,9 +87,7 @@ public class DistributedCacheInput
 		_pformat = null;
 	}
 
-	public IndexedMatrixValue getDataBlock(int rowBlockIndex, int colBlockIndex)
-		throws DMLRuntimeException 
-	{
+	public IndexedMatrixValue getDataBlock(int rowBlockIndex, int colBlockIndex) {
 		//probe missing block (read on-demand)
 		if( dataBlocks==null || dataBlocks[rowBlockIndex-1][colBlockIndex-1]==null )
 			readDataBlocks( rowBlockIndex, colBlockIndex );
@@ -98,37 +96,27 @@ public class DistributedCacheInput
 		return dataBlocks[rowBlockIndex-1][colBlockIndex-1];
 	}
 
-	public double[] getRowVectorArray() 
-		throws DMLRuntimeException
-	{
+	public double[] getRowVectorArray() {
 		double[] ret = new double[(int)_clen];
-		
 		for( int j=0; j<_clen; j+=_bclen ) {
 			MatrixBlock mb = (MatrixBlock) getDataBlock(1, (int)Math.ceil((double)(j+1)/_bclen)).getValue(); 
 			double[] mbtmp = DataConverter.convertToDoubleVector(mb, false);
 			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
 		}
-		
 		return ret;
 	}
 
-	public double[] getColumnVectorArray() 
-		throws DMLRuntimeException
-	{
+	public double[] getColumnVectorArray() {
 		double[] ret = new double[(int)_rlen];
-		
 		for( int j=0; j<_rlen; j+=_brlen ) {
 			MatrixBlock mb = (MatrixBlock) getDataBlock((int)Math.ceil((double)(j+1)/_brlen),1).getValue(); 
 			double[] mbtmp = DataConverter.convertToDoubleVector(mb, false);
 			System.arraycopy(mbtmp, 0, ret, j, mbtmp.length);
 		}
-		
 		return ret;
 	}
 
-	private void readDataBlocks( int rowBlockIndex, int colBlockIndex )
-		throws DMLRuntimeException 
-	{
+	private void readDataBlocks( int rowBlockIndex, int colBlockIndex ) {
 		//get filename for rowblock/colblock
 		String fname = _localFilePath.toString();
 		if( isPartitioned() ) 
@@ -156,30 +144,23 @@ public class DistributedCacheInput
 		} 
 	}
 
-	private boolean isPartitioned()
-	{
+	private boolean isPartitioned() {
 		return (_pformat != PDataPartitionFormat.NONE);
 	}
 
-	private String getPartitionFileName( int rowBlockIndex, int colBlockIndex  ) 
-		throws DMLRuntimeException
-	{
+	private String getPartitionFileName( int rowBlockIndex, int colBlockIndex  ) {
 		long partition = -1;
-		switch( _pformat )
-		{
-			case ROW_BLOCK_WISE_N:
-			{
+		switch( _pformat ) {
+			case ROW_BLOCK_WISE_N:{
 				long numRowBlocks = (long)Math.ceil(((double)PARTITION_SIZE)/_clen/_brlen); 
 				partition = (rowBlockIndex-1)/numRowBlocks + 1;	
 				break;
 			}
-			case COLUMN_BLOCK_WISE_N:
-			{
+			case COLUMN_BLOCK_WISE_N: {
 				long numColBlocks = (long)Math.ceil(((double)PARTITION_SIZE)/_rlen/_bclen); 
 				partition = (colBlockIndex-1)/numColBlocks + 1;
 				break;
 			}
-			
 			default: 
 				throw new DMLRuntimeException("Unsupported partition format for distributed cache input: "+_pformat);
 		}

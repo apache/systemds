@@ -69,7 +69,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	GPUContext gCtx = null; String instName = null;
 	
 	private LibMatrixCuDNNConvolutionAlgorithm(GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
-			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
+			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) {
 		int padding[] = {pad_h, pad_w};
 		int strides[] = {stride_h, stride_w};
 		convDesc = allocateConvolutionDescriptor(padding, strides);
@@ -126,11 +126,10 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param Q        output width
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionForwardAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
-			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) throws DMLRuntimeException {
+			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
@@ -170,11 +169,10 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param Q        output width
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardFilterAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
-			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) throws DMLRuntimeException {
+			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
@@ -217,11 +215,10 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param Q        output width
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardDataAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
-			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) throws DMLRuntimeException {
+			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
 		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
 				pad_h, pad_w, stride_h, stride_w, P, Q);
 		if(H == R || W == S) {
@@ -258,9 +255,8 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param H height
 	 * @param W width
 	 * @return cudnn tensor descriptor
-	 * @throws DMLRuntimeException if the input descriptor and matrix dimensions don't match
 	 */
-	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) throws DMLRuntimeException {
+	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
 		cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 		cudnnCreateTensorDescriptor(tensorDescriptor);
 		cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, LibMatrixCUDA.CUDNN_DATA_TYPE, N, C, H, W);

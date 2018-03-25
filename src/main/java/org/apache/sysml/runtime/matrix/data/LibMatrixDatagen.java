@@ -96,9 +96,7 @@ public class LibMatrixDatagen
 	}
 
 	@Deprecated
-	public static LongStream computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) 
-		throws DMLRuntimeException 
-	{
+	public static LongStream computeNNZperBlock(long nrow, long ncol, int brlen, int bclen, double sparsity) {
 		long lnumBlocks = (long) (Math.ceil((double)nrow/brlen) * Math.ceil((double)ncol/bclen));
 		
 		//sanity check max number of blocks (before cast to avoid overflow)
@@ -135,9 +133,7 @@ public class LibMatrixDatagen
 		}
 	}
 
-    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams)
-    	throws DMLRuntimeException
-    {
+    public static RandomMatrixGenerator createRandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max, String distParams) {
 		RandomMatrixGenerator.PDF pdf = RandomMatrixGenerator.PDF.valueOf(pdfStr.toUpperCase());
 		RandomMatrixGenerator rgen = null;
     	switch (pdf) {
@@ -181,12 +177,8 @@ public class LibMatrixDatagen
      * @param rgen random matrix generator
      * @param bigrand Well1024a pseudo-random number generator
      * @param bSeed seed for random generator
-     * @throws DMLRuntimeException if DMLRuntimeException occurs
      */
-	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen,
-							Well1024a bigrand, long bSeed ) 
-		throws DMLRuntimeException
-	{
+	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed ) {
 		boolean invokedFromCP = (bigrand != null);
 		int rows = rgen._rows;
 		int cols = rgen._cols;
@@ -259,11 +251,8 @@ public class LibMatrixDatagen
      * @param bigrand Well1024a pseudo-random number generator
      * @param bSeed seed for random generator
      * @param k ?
-     * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k ) 
-		throws DMLRuntimeException
-	{	
+     */
+	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k ) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;
 		int rpb = rgen._rowsPerBlock;
@@ -362,11 +351,8 @@ public class LibMatrixDatagen
 	 * @param from lower end point
 	 * @param to upper end point
 	 * @param incr increment value
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void generateSequence(MatrixBlock out, double from, double to, double incr) 
-		throws DMLRuntimeException 
-	{
+	public static void generateSequence(MatrixBlock out, double from, double to, double incr) {
 		//check valid increment value
 		if( (from > to && incr > 0) || incr == 0 )
 			throw new DMLRuntimeException("Wrong sequence increment: from="+from+", to="+to+ ", incr="+incr);
@@ -397,11 +383,8 @@ public class LibMatrixDatagen
 	 * @param size sample size
 	 * @param replace if true, sample with replacement
 	 * @param seed seed for random generator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed)
-		throws DMLRuntimeException 
-	{
+	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed) {
 		//set meta data and allocate dense block
 		out.reset(size, 1, false);
 		out.allocateDenseBlock();
@@ -462,9 +445,7 @@ public class LibMatrixDatagen
 		return lseeds;
 	}
 
-	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) 
-		throws DMLRuntimeException 
-	{
+	private static void genRandomNumbers(boolean invokedFromCP, int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;
 		int rpb = rgen._rowsPerBlock;
@@ -589,9 +570,7 @@ public class LibMatrixDatagen
 		} // rbi
 	}
 
-	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) 
-		throws DMLRuntimeException
-	{
+	private static void checkMatrixDimensionsAndSparsity(int rows, int cols, double sp) {
 		if( rows < 0 || cols < 0 || sp < 0 || sp > 1)
 			throw new DMLRuntimeException("Invalid matrix characteristics: "+rows+"x"+cols+", "+sp);
 	}
@@ -619,9 +598,7 @@ public class LibMatrixDatagen
 		private long _bSeed = 0;
 		private long[] _seeds = null;
 		
-		public RandTask(int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) 
-			throws DMLRuntimeException 
-		{
+		public RandTask(int rl, int ru, int cl, int cu, MatrixBlock out, RandomMatrixGenerator rgen, long bSeed, long[] seeds) {
 			_rl = rl;
 			_ru = ru;
 			_cl = cl;
@@ -633,10 +610,9 @@ public class LibMatrixDatagen
 		}
 
 		@Override
-		public Long call() throws Exception {
+		public Long call() {
 			//execute rand operations (with block indexes)
 			genRandomNumbers(true, _rl, _ru, _cl, _cu, _out, _rgen, _bSeed, _seeds);
-			
 			//thread-local maintenance of non-zero values
 			int rpb =_rgen._rowsPerBlock, cpb = _rgen._colsPerBlock;
 			return _out.recomputeNonZeros(_rl*rpb, Math.min(_ru*rpb,_rgen._rows)-1,

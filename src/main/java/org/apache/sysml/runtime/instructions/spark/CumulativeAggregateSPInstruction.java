@@ -25,7 +25,6 @@ import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -43,9 +42,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		super(SPType.CumsumAggregate, op, null, in1, out, null, opcode, istr);
 	}
 
-	public static CumulativeAggregateSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CumulativeAggregateSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields ( parts, 2 );
 		
@@ -59,9 +56,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		long rlen = mc.getRows();

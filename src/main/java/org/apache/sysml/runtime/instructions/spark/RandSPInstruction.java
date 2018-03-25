@@ -153,9 +153,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		return sparsity;
 	}
 
-	public static RandSPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException 
-	{
+	public static RandSPInstruction parseInstruction(String str) {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = s[0];
 		
@@ -229,9 +227,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ){
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//process specific datagen operator
@@ -244,9 +240,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private void generateRandData(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	private void generateRandData(SparkExecutionContext sec) {
 		long lrows = sec.getScalarInput(rows).getLongValue();
 		long lcols = sec.getScalarInput(cols).getLongValue();
 		
@@ -352,9 +346,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 
-	private void generateSequence(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	private void generateSequence(SparkExecutionContext sec) {
 		double lfrom = sec.getScalarInput(seq_from).getDoubleValue();
 		double lto = sec.getScalarInput(seq_to).getDoubleValue();
 		double lincr = sec.getScalarInput(seq_incr).getDoubleValue();
@@ -439,11 +431,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 	 * Helper function to construct a sample.
 	 * 
 	 * @param sec spark execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void generateSample(SparkExecutionContext sec) 
-		throws DMLRuntimeException 
-	{
+	private void generateSample(SparkExecutionContext sec) {
 		long lrows = sec.getScalarInput(rows).getLongValue();
 		if ( maxValue < lrows && !replace )
 			throw new DMLRuntimeException("Sample (size=" + rows + ") larger than population (size=" + maxValue + ") can only be generated with replacement.");

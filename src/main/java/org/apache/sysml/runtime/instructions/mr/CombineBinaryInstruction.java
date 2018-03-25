@@ -38,19 +38,15 @@ public class CombineBinaryInstruction extends BinaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static CombineBinaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static CombineBinaryInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 4 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in1, in2, out;
 		String opcode = parts[0];
 		boolean isWeight=Boolean.parseBoolean(parts[1]);
 		in1 = Byte.parseByte(parts[2]);
 		in2 = Byte.parseByte(parts[3]);
 		out = Byte.parseByte(parts[4]);
-		
 		if ( opcode.equalsIgnoreCase("combinebinary") ) {
 			return new CombineBinaryInstruction(null, isWeight, in1, in2, out, str);
 		}else
@@ -65,8 +61,7 @@ public class CombineBinaryInstruction extends BinaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("CombineInstruction.processInstruction should never be called!");
 		
 	}

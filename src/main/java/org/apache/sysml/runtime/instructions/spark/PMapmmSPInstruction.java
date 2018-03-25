@@ -62,9 +62,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 		super(SPType.PMAPMM, op, in1, in2, out, opcode, istr);
 	}
 
-	public static PMapmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static PMapmmSPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -83,9 +81,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get inputs

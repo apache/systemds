@@ -43,9 +43,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		_bOp = bop;
 	}
 
-	public static UaggOuterChainCPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static UaggOuterChainCPInstruction parseInstruction(String str) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -72,9 +70,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 	
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
 				|| !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp));
 

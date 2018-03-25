@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.lops.MapMultChain.ChainType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -38,9 +37,7 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 		_numThreads = k;
 	}
 
-	public static MMChainCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MMChainCPInstruction parseInstruction ( String str ) {
 		//parse instruction parts (without exec type)
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields( parts, 5, 6 );
@@ -69,18 +66,14 @@ public class MMChainCPInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock X = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock v = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 		MatrixBlock w = (_type==ChainType.XtwXv || _type==ChainType.XtXvy) ? 
-				ec.getMatrixInput(input3.getName(), getExtendedOpcode()) : null;
-
+			ec.getMatrixInput(input3.getName(), getExtendedOpcode()) : null;
 		//execute mmchain operation 
 		 MatrixBlock out = (MatrixBlock) X.chainMatrixMultOperations(v, w, new MatrixBlock(), _type, _numThreads);
-				
 		//set output and release inputs
 		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());

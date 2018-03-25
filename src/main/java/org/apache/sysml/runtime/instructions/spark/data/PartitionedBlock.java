@@ -146,9 +146,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	}
 
 	@SuppressWarnings("unchecked")
-	public T getBlock(int rowIndex, int colIndex) 
-		throws DMLRuntimeException 
-	{
+	public T getBlock(int rowIndex, int colIndex) {
 		//check for valid block index
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
@@ -163,9 +161,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		return (T)_partBlocks[ix];
 	}
 
-	public void setBlock(int rowIndex, int colIndex, T block) 
-		throws DMLRuntimeException
-	{
+	public void setBlock(int rowIndex, int colIndex, T block) {
 		//check for valid block index
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
@@ -212,12 +208,9 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	 * @param cu column upper bound
 	 * @param block block object
 	 * @return block object
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("unchecked")
-	public T slice(long rl, long ru, long cl, long cu, T block) 
-		throws DMLRuntimeException 
-	{
+	public T slice(long rl, long ru, long cl, long cu, T block) {
 		int lrl = (int) rl;
 		int lru = (int) ru;
 		int lcl = (int) cl;

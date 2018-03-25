@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.AppendM.CacheType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -42,19 +41,15 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 		_offset = offset;
 	}
 
-	public static AppendMInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AppendMInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		InstructionUtils.checkNumFields(parts, 6);
-		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		long offset = (long)(Double.parseDouble(parts[3]));
 		byte out = Byte.parseByte(parts[4]);
 		CacheType type = CacheType.valueOf(parts[5]);
 		boolean cbind = Boolean.parseBoolean(parts[6]);
-		
 		return new AppendMInstruction(null, in1, in2, offset, type, out, cbind, str);
 	}
 	
@@ -72,8 +67,7 @@ public class AppendMInstruction extends AppendInstruction implements IDistribute
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
 			int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 
 			return;

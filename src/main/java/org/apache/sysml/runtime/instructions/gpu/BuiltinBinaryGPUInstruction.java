@@ -44,7 +44,7 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 		this.input2 = input2;
 	}
 
-  public static BuiltinBinaryGPUInstruction parseInstruction(String str) throws DMLRuntimeException {
+  public static BuiltinBinaryGPUInstruction parseInstruction(String str) {
     CPOperand in1 = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);
     CPOperand in2 = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);
     CPOperand out = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);

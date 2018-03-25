@@ -29,14 +29,12 @@ public class ComputeBinaryBlockNnzFunction implements Function<MatrixBlock,Matri
 	
 	private LongAccumulator _aNnz = null;
 	
-	public ComputeBinaryBlockNnzFunction( LongAccumulator aNnz )
-	{
+	public ComputeBinaryBlockNnzFunction( LongAccumulator aNnz ) {
 		_aNnz = aNnz;
 	}
 
 	@Override
-	public MatrixBlock call(MatrixBlock arg0) throws Exception 
-	{
+	public MatrixBlock call(MatrixBlock arg0) {
 		_aNnz.add( arg0.getNonZeros() );
 		return arg0;
 	}

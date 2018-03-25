@@ -116,28 +116,16 @@ public class CSRPointer {
 		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
 	}
 
-	//  private Pointer allocate(String instName, long size) throws DMLRuntimeException {
-	//    return getGPUContext().allocate(instName, size);
-	//  }
-
 	private static long getIntSizeOf(long numElems) {
 		return numElems * ((long) Sizeof.INT);
 	}
 
-	//  private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-	//    getGPUContext().cudaFreeHelper(toFree);
-	//  }
-
-	public static int toIntExact(long l) throws DMLRuntimeException {
+	public static int toIntExact(long l) {
 		if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
 			throw new DMLRuntimeException("Cannot be cast to int:" + l);
 		}
 		return (int) l;
 	}
-
-	//  private void cudaFreeHelper(String instName, Pointer toFree, boolean eager) throws DMLRuntimeException {
-	//    getGPUContext().cudaFreeHelper(instName, toFree, eager);
-	//  }
 
 	/**
 	 * @return Singleton default matrix descriptor object
@@ -188,9 +176,8 @@ public class CSRPointer {
 	 * @param rowPtr integer array of row pointers
 	 * @param colInd integer array of column indices
 	 * @param values double array of non zero values
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) throws DMLRuntimeException {
+	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 		CSRPointer r = dest;
 		long t0 = 0;
 		if (DMLScript.STATISTICS)
@@ -218,9 +205,8 @@ public class CSRPointer {
 	 * @param nnz    [input] number of non-zeroes
 	 * @param rowPtr [output] pre-allocated integer array of row pointers of size (rows+1)
 	 * @param colInd [output] pre-allocated integer array of column indices of size nnz
-	 * @throws DMLRuntimeException if error
 	 */
-	public static void copyPtrToHost(CSRPointer src, int rows, long nnz, int[] rowPtr, int[] colInd) throws DMLRuntimeException {
+	public static void copyPtrToHost(CSRPointer src, int rows, long nnz, int[] rowPtr, int[] colInd) {
 		CSRPointer r = src;
 		cudaMemcpy(Pointer.to(rowPtr), r.rowPtr, getIntSizeOf(rows + 1), cudaMemcpyDeviceToHost);
 		cudaMemcpy(Pointer.to(colInd), r.colInd, getIntSizeOf(nnz), cudaMemcpyDeviceToHost);
@@ -237,13 +223,10 @@ public class CSRPointer {
 	 * @param m      Rows in A
 	 * @param n      Columns in Bs
 	 * @return CSR (compressed sparse row) pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static CSRPointer allocateForDgeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, int m,
-			int n) throws DMLRuntimeException {
-		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) {
+	public static CSRPointer allocateForDgeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, int m, int n) {
+		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
 			throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse");
-		}
 		CSRPointer C = new CSRPointer(gCtx);
 		step1AllocateRowPointers(gCtx, handle, C, m);
 		step2GatherNNZGeam(gCtx, handle, A, B, C, m, n);
@@ -265,10 +248,9 @@ public class CSRPointer {
 	 * @param n      Columns in B
 	 * @param k      Columns in A / Rows in B
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static CSRPointer allocateForMatrixMultiply(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-			CSRPointer B, int transB, int m, int n, int k) throws DMLRuntimeException {
+			CSRPointer B, int transB, int m, int n, int k) {
 		// Following the code example at http://docs.nvidia.com/cuda/cusparse/#cusparse-lt-t-gt-csrgemm and at
 		// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java
 		CSRPointer C = new CSRPointer(gCtx);
@@ -285,9 +267,8 @@ public class CSRPointer {
 	 * @param nnz2 number of non-zeroes
 	 * @param rows number of rows
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static CSRPointer allocateEmpty(GPUContext gCtx, long nnz2, long rows) throws DMLRuntimeException {
+	public static CSRPointer allocateEmpty(GPUContext gCtx, long nnz2, long rows) {
 		LOG.trace("GPU : allocateEmpty from CSRPointer with nnz=" + nnz2 + " and rows=" + rows + ", GPUContext=" + gCtx);
 		if(nnz2 < 0) throw new DMLRuntimeException("Incorrect usage of internal API, number of non zeroes is less than 0 when trying to allocate sparse data on GPU");
 		if(rows <= 0) throw new DMLRuntimeException("Incorrect usage of internal API, number of rows is less than or equal to 0 when trying to allocate sparse data on GPU");
@@ -312,10 +293,8 @@ public class CSRPointer {
 	 * @param handle a valid {@link cusparseHandle}
 	 * @param C      Output matrix
 	 * @param rowsC  number of rows in C
-	 * @throws DMLRuntimeException ?
 	 */
-	private static void step1AllocateRowPointers(GPUContext gCtx, cusparseHandle handle, CSRPointer C, int rowsC)
-			throws DMLRuntimeException {
+	private static void step1AllocateRowPointers(GPUContext gCtx, cusparseHandle handle, CSRPointer C, int rowsC) {
 		LOG.trace("GPU : step1AllocateRowPointers" + ", GPUContext=" + gCtx);
 		cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
 		//cudaDeviceSynchronize;
@@ -334,10 +313,8 @@ public class CSRPointer {
 	 * @param C      Output Sparse Matrix C on GPU
 	 * @param m      Rows in C
 	 * @param n      Columns in C
-	 * @throws DMLRuntimeException ?
 	 */
-	private static void step2GatherNNZGeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B,
-			CSRPointer C, int m, int n) throws DMLRuntimeException {
+	private static void step2GatherNNZGeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) {
 		LOG.trace("GPU : step2GatherNNZGeam for DGEAM" + ", GPUContext=" + gCtx);
 		int[] CnnzArray = { -1 };
 		cusparseXcsrgeamNnz(handle, m, n, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr, toIntExact(B.nnz),
@@ -367,10 +344,9 @@ public class CSRPointer {
 	 * @param m      Number of rows of sparse matrix op ( A ) and C
 	 * @param n      Number of columns of sparse matrix op ( B ) and C
 	 * @param k      Number of columns/rows of sparse matrix op ( A ) / op ( B )
-	 * @throws DMLRuntimeException ?
 	 */
 	private static void step2GatherNNZGemm(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-			CSRPointer B, int transB, CSRPointer C, int m, int n, int k) throws DMLRuntimeException {
+			CSRPointer B, int transB, CSRPointer C, int m, int n, int k) {
 		LOG.trace("GPU : step2GatherNNZGemm for DGEMM" + ", GPUContext=" + gCtx);
 		int[] CnnzArray = { -1 };
 		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) {
@@ -396,10 +372,8 @@ public class CSRPointer {
 	 * @param gCtx   a valid {@link GPUContext}
 	 * @param handle a valid {@link cusparseHandle}
 	 * @param C      Output sparse matrix on GPU
-	 * @throws DMLRuntimeException ?
 	 */
-	private static void step3AllocateValNInd(GPUContext gCtx, cusparseHandle handle, CSRPointer C)
-			throws DMLRuntimeException {
+	private static void step3AllocateValNInd(GPUContext gCtx, cusparseHandle handle, CSRPointer C) {
 		LOG.trace("GPU : step3AllocateValNInd" + ", GPUContext=" + gCtx);
 		// Increment cudaCount by one when all three arrays of CSR sparse array are allocated
 		C.val = gCtx.allocate(null, getDataTypeSizeOf(C.nnz));
@@ -424,30 +398,25 @@ public class CSRPointer {
 	// nnzC elements respectively, then finally calls function cusparse[S|D|C|Z]csrgeam()
 	// to complete matrix C.
 
-	public CSRPointer clone(int rows) throws DMLRuntimeException {
+	public CSRPointer clone(int rows) {
 		CSRPointer me = this;
 		CSRPointer that = new CSRPointer(me.getGPUContext());
-
 		that.allocateMatDescrPointer();
-
 		that.nnz = me.nnz;
 		that.val = allocate(that.nnz * LibMatrixCUDA.sizeOfDataType);
-		// TODO: Nakul ... can you please double-check whether the below was a bug or intentional ?
 		that.rowPtr = allocate(rows * Sizeof.INT);
 		that.colInd = allocate(that.nnz * Sizeof.INT);
-
 		cudaMemcpy(that.val, me.val, that.nnz * LibMatrixCUDA.sizeOfDataType, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(that.rowPtr, me.rowPtr, rows * Sizeof.INT, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(that.colInd, me.colInd, that.nnz * Sizeof.INT, cudaMemcpyDeviceToDevice);
-
 		return that;
 	}
 
-	private Pointer allocate(long size) throws DMLRuntimeException {
+	private Pointer allocate(long size) {
 		return getGPUContext().allocate(size);
 	}
 
-	private void cudaFreeHelper(Pointer toFree, boolean eager) throws DMLRuntimeException {
+	private void cudaFreeHelper(Pointer toFree, boolean eager) {
 		getGPUContext().cudaFreeHelper(toFree, eager);
 	}
 
@@ -490,10 +459,9 @@ public class CSRPointer {
 	 * @param cols           number of columns in this CSR matrix
 	 * @param instName          name of the invoking instruction to record{@link Statistics}.
 	 * @return A {@link Pointer} to the allocated dense matrix (in column-major format)
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows,
-			int cols, String instName) throws DMLRuntimeException {
+			int cols, String instName) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
@@ -514,9 +482,8 @@ public class CSRPointer {
 	/**
 	 * Calls cudaFree lazily on the allocated {@link Pointer} instances
 	 *
-	 * @throws DMLRuntimeException ?
 	 */
-	public void deallocate() throws DMLRuntimeException {
+	public void deallocate() {
 		deallocate(DMLScript.EAGER_CUDA_FREE);
 	}
 
@@ -524,9 +491,8 @@ public class CSRPointer {
 	 * Calls cudaFree lazily or eagerly on the allocated {@link Pointer} instances
 	 *
 	 * @param eager whether to do eager or lazy cudaFrees
-	 * @throws DMLRuntimeException ?
 	 */
-	public void deallocate(boolean eager) throws DMLRuntimeException {
+	public void deallocate(boolean eager) {
 		if (nnz > 0) {
 			cudaFreeHelper(val, eager);
 			cudaFreeHelper(rowPtr, eager);

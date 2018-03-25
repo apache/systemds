@@ -44,13 +44,10 @@ public class CSVWriteInstruction extends UnaryMRInstructionBase {
 		Operator op = null;
 		byte input, output;
 		String[] s=str.split(Instruction.OPERAND_DELIM);
-		
 		String[] in1f = s[2].split(Instruction.DATATYPE_PREFIX);
 		input=Byte.parseByte(in1f[0]);
-		
 		String[] outf = s[3].split(Instruction.DATATYPE_PREFIX);
 		output=Byte.parseByte(outf[0]);
-		
 		String header=s[4];
 		String delim=s[5];
 		boolean sparse=Boolean.parseBoolean(s[6]);
@@ -60,8 +57,7 @@ public class CSVWriteInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
-		throw new DMLRuntimeException("CSVWriteInstruction.processInstruction should never be called");		
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
+		throw new DMLRuntimeException("CSVWriteInstruction.processInstruction should never be called");
 	}
 }

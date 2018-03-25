@@ -28,7 +28,6 @@ import scala.Tuple2;
 
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -54,9 +53,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		_aop = aop;
 	}
 
-	public static AggregateUnarySPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static AggregateUnarySPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 3);
 		String opcode = parts[0];
@@ -75,9 +72,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		

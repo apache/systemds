@@ -57,15 +57,13 @@ public class MatrixPackedCell extends MatrixCell
 		extra_size=size;
 	}
 	
-	public static MatrixPackedCell checkType(MatrixValue cell) throws DMLRuntimeException
-	{
+	public static MatrixPackedCell checkType(MatrixValue cell) {
 		if( cell!=null && !(cell instanceof MatrixPackedCell))
 			throw new DMLRuntimeException("the Matrix Value is not MatrixPackedCell!");
 		return (MatrixPackedCell) cell;
 	}
 	
-	public double getExtraByPostition(int i)
-	{
+	public double getExtraByPostition(int i) {
 		if(extras==null || i>=extra_size)
 			return 0;
 		else
@@ -75,16 +73,13 @@ public class MatrixPackedCell extends MatrixCell
 	//with corrections
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
-			MatrixValue newWithCorrection)throws DMLRuntimeException {
+			MatrixValue newWithCorrection) {
 		incrementalAggregate(aggOp, newWithCorrection);
 	}
 	
 	//with corrections
 	@Override
-	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue newWithCorrection)throws DMLRuntimeException {
-
-		
+	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection) {
 		MatrixPackedCell newWithCor=checkType(newWithCorrection);
 		if(aggOp.correctionLocation==CorrectionLocationType.NONE || aggOp.correctionLocation==CorrectionLocationType.LASTROW || aggOp.correctionLocation==CorrectionLocationType.LASTCOLUMN)
 		{

@@ -66,9 +66,8 @@ public class ExecutionConfig {
 	 *
 	 * @param numCells number of cells
 	 * @return execution configuration
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) throws DMLRuntimeException {
+	public static ExecutionConfig getConfigForSimpleVectorOperations(int numCells) {
 		if(numCells == 0)
 			throw new DMLRuntimeException("Attempting to invoke a kernel with 0 threads");
 		int deviceNumber = 0;
@@ -86,9 +85,8 @@ public class ExecutionConfig {
 	 * @param rlen number of rows
 	 * @param clen number of columns
 	 * @return execution configuration
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) throws DMLRuntimeException {
+	public static ExecutionConfig getConfigForSimpleMatrixOperations(int rlen, int clen) {
 		return getConfigForSimpleVectorOperations(rlen * clen);
 	}
 
@@ -109,9 +107,8 @@ public class ExecutionConfig {
 	 *
 	 * @param deviceNumber device number of the given device
 	 * @return The maximum block dimension, in x-direction
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static int getMaxBlockDim(int deviceNumber) throws DMLRuntimeException {
+	private static int getMaxBlockDim(int deviceNumber) {
 		//    	return 32;
 		// TODO: Use JCudaDriver.cuOccupancyMaxPotentialBlockSize to chose the block size that maximizes occupancy
 		Integer ret = maxBlockDimForDevice.get(deviceNumber);

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -32,11 +31,8 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		String output_name = output.getName();
-		
 		String opcode = getOpcode();
 		if(LibCommonsMath.isSupportedUnaryOperation(opcode)) {
 			MatrixBlock retBlock = LibCommonsMath.unaryOperations(ec.getMatrixObject(input1.getName()),getOpcode());
@@ -46,14 +42,10 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 			UnaryOperator u_op = (UnaryOperator) _optr;
 			MatrixBlock inBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 			MatrixBlock retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
-		
 			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-			
 			// Ensure right dense/sparse output representation (guarded by released input memory)
-			if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
+			if( checkGuardedRepresentationChange(inBlock, retBlock) )
 	 			retBlock.examSparsity();
-	 		}
-			
 			ec.setMatrixOutput(output_name, retBlock, getExtendedOpcode());
 		}
 	}

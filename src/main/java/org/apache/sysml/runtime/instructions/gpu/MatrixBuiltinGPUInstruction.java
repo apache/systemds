@@ -36,7 +36,7 @@ public class MatrixBuiltinGPUInstruction extends BuiltinUnaryGPUInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		String opcode = getOpcode();

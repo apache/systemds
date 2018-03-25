@@ -83,9 +83,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		_out = out;
 	}
 
-	public static SpoofSPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException
-	{
+	public static SpoofSPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
 		//String opcode = parts[0];
@@ -103,9 +101,7 @@ public class SpoofSPInstruction extends SPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//decide upon broadcast side inputs
@@ -242,9 +238,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		}
 	}
 	
-	private static boolean[] determineBroadcastInputs(SparkExecutionContext sec, CPOperand[] inputs) 
-		throws DMLRuntimeException 
-	{
+	private static boolean[] determineBroadcastInputs(SparkExecutionContext sec, CPOperand[] inputs) {
 		boolean[] ret = new boolean[inputs.length];
 		double localBudget = OptimizerUtils.getLocalMemBudget()
 			- CacheableData.getBroadcastSize(); //account for other broadcasts
@@ -270,9 +264,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		return ret;
 	}
 	
-	private static boolean[] getMatrixBroadcastVector(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect) 
-			throws DMLRuntimeException 
-	{
+	private static boolean[] getMatrixBroadcastVector(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect) {
 		int numMtx = (int) Arrays.stream(inputs)
 			.filter(in -> in.getDataType().isMatrix()).count();
 		boolean[] ret = new boolean[numMtx];
@@ -282,9 +274,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		return ret;
 	}
 	
-	private static JavaPairRDD<MatrixIndexes, MatrixBlock[]> createJoinedInputRDD(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect, boolean outer) 
-		throws DMLRuntimeException
-	{
+	private static JavaPairRDD<MatrixIndexes, MatrixBlock[]> createJoinedInputRDD(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect, boolean outer) {
 		//get input rdd for main input
 		int main = getMainInputIndex(inputs, bcVect);
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(inputs[main].getName());
@@ -313,9 +303,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		return ret;
 	}
 	
-	private static void maintainLineageInfo(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect, CPOperand output) 
-		throws DMLRuntimeException 
-	{
+	private static void maintainLineageInfo(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect, CPOperand output) {
 		//add lineage info for all rdd/broadcast inputs 
 		for( int i=0; i<inputs.length; i++ )
 			if( inputs[i].getDataType().isMatrix() )
@@ -327,9 +315,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			.filter(i -> inputs[i].isMatrix() && !bcVect[i]).min().orElse(0);
 	}
 	
-	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, SpoofOperator op) 
-		throws DMLRuntimeException 
-	{
+	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, SpoofOperator op) {
 		if(op instanceof SpoofCellwise)
 		{
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
@@ -408,15 +394,11 @@ public class SpoofSPInstruction extends SPInstruction {
 			_className = className;
 		}
 		
-		protected ArrayList<MatrixBlock> getAllMatrixInputs(MatrixIndexes ixIn, MatrixBlock[] blkIn) 
-			throws DMLRuntimeException 
-		{
+		protected ArrayList<MatrixBlock> getAllMatrixInputs(MatrixIndexes ixIn, MatrixBlock[] blkIn) {
 			return getAllMatrixInputs(ixIn, blkIn, false);
 		}
 		
-		protected ArrayList<MatrixBlock> getAllMatrixInputs(MatrixIndexes ixIn, MatrixBlock[] blkIn, boolean outer) 
-			throws DMLRuntimeException 
-		{
+		protected ArrayList<MatrixBlock> getAllMatrixInputs(MatrixIndexes ixIn, MatrixBlock[] blkIn, boolean outer) {
 			ArrayList<MatrixBlock> ret = new ArrayList<>();
 			//add all rdd/broadcast inputs (main and side inputs)
 			for( int i=0, posRdd=0, posBc=0; i<_bcInd.length; i++ ) {
@@ -444,18 +426,14 @@ public class SpoofSPInstruction extends SPInstruction {
 		private final int _clen2;
 		private SpoofRowwise _op = null;
 		
-		public RowwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int clen, int clen2) 
-			throws DMLRuntimeException
-		{			
+		public RowwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars, int clen, int clen2) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
 			_clen = clen;
 			_clen2 = clen;
 		}
 		
 		@Override
-		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>> arg ) 
-			throws Exception 
-		{
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>> arg ) {
 			//lazy load of shipped class
 			if( _op == null ) {
 				Class<?> loadedClass = CodegenUtils.getClassSync(_className, _classBytes);
@@ -506,9 +484,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		
 		private SpoofOperator _op = null;
 		
-		public CellwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
-			throws DMLRuntimeException
-		{
+		public CellwiseFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
 		}
 		
@@ -558,9 +534,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		
 		private SpoofOperator _op = null;
 		
-		public MultiAggregateFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
-			throws DMLRuntimeException
-		{
+		public MultiAggregateFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
 		}
 		
@@ -620,9 +594,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		
 		private SpoofOperator _op = null;
 		
-		public OuterProductFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) 
-				throws DMLRuntimeException
-		{
+		public OuterProductFunction(String className, byte[] classBytes, boolean[] bcInd, ArrayList<PartitionedBroadcast<MatrixBlock>> bcMatrices, ArrayList<ScalarObject> scalars) {
 			super(className, classBytes, bcInd, bcMatrices, scalars);
 		}
 		

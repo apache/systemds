@@ -32,31 +32,25 @@ public class CombineTernaryInstruction extends CtableInstruction {
 		super(MRType.CombineTernary, op, in1, in2, in3, out, -1, -1, istr);
 	}
 
-	public static CombineTernaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static CombineTernaryInstruction parseInstruction ( String str ) {
 		// example instruction string - ctabletransform:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE:::3:DOUBLE 
 		InstructionUtils.checkNumFields ( str, 4 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in1, in2, in3, out;
 		String opcode = parts[0];
 		in1 = Byte.parseByte(parts[1]);
 		in2 = Byte.parseByte(parts[2]);
 		in3 = Byte.parseByte(parts[3]);
 		out = Byte.parseByte(parts[4]);
-		
-		if ( opcode.equalsIgnoreCase("combineternary") ) {
+		if ( opcode.equalsIgnoreCase("combineternary") )
 			return new CombineTernaryInstruction(null, in1, in2, in3, out, str);
-		} 
 		return null;
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
-			int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("CombineTernaryInstruction.processInstruction should never be called!");
 	}
 }

@@ -33,9 +33,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		super(CPType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
 	}
 
-	public static AggregateTernaryCPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AggregateTernaryCPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
@@ -57,18 +55,16 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{		
+	public void processInstruction(ExecutionContext ec) {
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-        MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
-        MatrixBlock matBlock3 = input3.isLiteral() ? null : //matrix or literal 1
-        						ec.getMatrixInput(input3.getName(), getExtendedOpcode());
-			
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock matBlock3 = input3.isLiteral() ? null : //matrix or literal 1
+			ec.getMatrixInput(input3.getName(), getExtendedOpcode());
+		
 		AggregateTernaryOperator ab_op = (AggregateTernaryOperator) _optr;
 		MatrixBlock ret = matBlock1.aggregateTernaryOperations(
 				matBlock1, matBlock2, matBlock3, new MatrixBlock(), ab_op, true);
-			
+		
 		//release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());

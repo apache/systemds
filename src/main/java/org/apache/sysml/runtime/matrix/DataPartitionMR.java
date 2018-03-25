@@ -37,7 +37,7 @@ public class DataPartitionMR
 		//prevent instantiation via private constructor
 	}
 	
-	public static JobReturn runJob(MRJobInstruction jobinst, MatrixObject[] inputMatrices, String shuffleInst, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication) throws DMLRuntimeException {
+	public static JobReturn runJob(MRJobInstruction jobinst, MatrixObject[] inputMatrices, String shuffleInst, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication) {
 		MatrixCharacteristics[] sts = new MatrixCharacteristics[outputMatrices.length];
 		
 		processPartitionInstructions(shuffleInst, inputMatrices, resultIndices, outputMatrices, numReducers, replication, sts);
@@ -46,7 +46,7 @@ public class DataPartitionMR
 		return ret;
 	}
 	
-	private static void processPartitionInstructions(String shuffleInst, MatrixObject[] inputMatrices, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication, MatrixCharacteristics[] sts) throws DMLRuntimeException {
+	private static void processPartitionInstructions(String shuffleInst, MatrixObject[] inputMatrices, byte[] resultIndices, MatrixObject[] outputMatrices, int numReducers, int replication, MatrixCharacteristics[] sts) {
 		int i=0;
 		for(String inst : shuffleInst.split(Instruction.INSTRUCTION_DELIM)) {
 			if( InstructionUtils.getOpCode(inst).equalsIgnoreCase("partition") ) {

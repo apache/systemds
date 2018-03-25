@@ -44,28 +44,20 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		_type = type;
 	}
 
-	public static TsmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static TsmmSPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		//check supported opcode 
-		if ( !opcode.equalsIgnoreCase("tsmm") ) {
-			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);			
-		}
-			
+		if ( !opcode.equalsIgnoreCase("tsmm") )
+			throw new DMLRuntimeException("TsmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJType type = MMTSJType.valueOf(parts[3]);
-		
 		return new TsmmSPInstruction(null, in1, out, type, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input

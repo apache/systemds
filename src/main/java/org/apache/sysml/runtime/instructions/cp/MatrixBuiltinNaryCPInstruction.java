@@ -31,7 +31,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		//pin input matrix blocks
 		MatrixBlock in1 = ec.getMatrixInput(inputs[0].getName());
 		MatrixBlock[] in2 = new MatrixBlock[inputs.length-1];

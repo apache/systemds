@@ -293,12 +293,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPFileInstructionType.put( "rmempty"	    , CPType.ParameterizedBuiltin);
 	}
 
-	public static CPInstruction parseSingleInstruction (String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CPInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-
 		CPType cptype = InstructionUtils.getCPType(str); 
 		if ( cptype == null ) 
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
@@ -308,16 +305,11 @@ public class CPInstructionParser extends InstructionParser
 		return cpinst;
 	}
 	
-	public static CPInstruction parseSingleInstruction ( CPType cptype, String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CPInstruction parseSingleInstruction ( CPType cptype, String str ) {
 		ExecType execType = null; 
-		
 		if ( str == null || str.isEmpty() ) 
 			return null;
-		
-		switch(cptype) 
-		{
+		switch(cptype) {
 			case AggregateUnary:
 				return AggregateUnaryCPInstruction.parseInstruction(str);
 			

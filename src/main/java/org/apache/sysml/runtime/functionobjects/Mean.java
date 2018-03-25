@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 
@@ -43,7 +42,7 @@ public class Mean extends ValueFunction
 	}
 	
 	@Override
-	public Data execute(Data in1, double in2, double count) throws DMLRuntimeException {
+	public Data execute(Data in1, double in2, double count) {
 		KahanObject kahanObj=(KahanObject)in1;
 		double delta = (in2-kahanObj._sum)/count;
 		_plus.execute(in1, delta);	

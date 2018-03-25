@@ -38,9 +38,7 @@ public class CM_N_COVInstruction extends UnaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static CM_N_COVInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static CM_N_COVInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		byte in, out;
@@ -81,8 +79,7 @@ public class CM_N_COVInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		
 		throw new DMLRuntimeException("no processInstruction for AggregateInstruction!");
 		

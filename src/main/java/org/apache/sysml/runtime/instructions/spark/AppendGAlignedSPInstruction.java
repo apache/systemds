@@ -45,9 +45,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendGAlignedSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException
-	{
+	public static AppendGAlignedSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields (parts, 5);
 		
@@ -67,9 +65,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		// general case append (map-extend, aggregate)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, true);
@@ -80,7 +76,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
 		// Simple changing of matrix indexes of RHS
-		long shiftBy = _cbind ? mc1.getNumColBlocks() : mc1.getNumRowBlocks();		
+		long shiftBy = _cbind ? mc1.getNumColBlocks() : mc1.getNumRowBlocks();
 		out = in2.mapToPair(new ShiftColumnIndex(shiftBy, _cbind));
 		out = in1.union( out );
 		

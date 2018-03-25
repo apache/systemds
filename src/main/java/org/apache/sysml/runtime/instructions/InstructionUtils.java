@@ -103,9 +103,7 @@ import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 public class InstructionUtils 
 {
 
-	public static int checkNumFields( String str, int expected ) 
-		throws DMLRuntimeException 
-	{
+	public static int checkNumFields( String str, int expected ) {
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;
 		int numFields = numParts - 2; // -2 accounts for execType and opcode
@@ -116,9 +114,7 @@ public class InstructionUtils
 		return numFields; 
 	}
 
-	public static int checkNumFields( String[] parts, int expected ) 
-		throws DMLRuntimeException 
-	{
+	public static int checkNumFields( String[] parts, int expected ) {
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
 		
@@ -128,9 +124,7 @@ public class InstructionUtils
 		return numFields; 
 	}
 
-	public static int checkNumFields( String[] parts, int expected1, int expected2 ) 
-		throws DMLRuntimeException 
-	{
+	public static int checkNumFields( String[] parts, int expected1, int expected2 ) {
 		int numParts = parts.length;
 		int numFields = numParts - 1; //account for opcode
 		
@@ -140,16 +134,12 @@ public class InstructionUtils
 		return numFields; 
 	}
 
-	public static int checkNumFields( String str, int expected1, int expected2 ) 
-		throws DMLRuntimeException 
-	{
+	public static int checkNumFields( String str, int expected1, int expected2 ) {
 		//note: split required for empty tokens
 		int numParts = str.split(Instruction.OPERAND_DELIM).length;
 		int numFields = numParts - 2; // -2 accounts for execType and opcode
-		
 		if ( numFields != expected1 && numFields != expected2 ) 
 			throw new DMLRuntimeException("checkNumFields() for (" + str + ") -- expected number (" + expected1 + " or "+ expected2 +") != is not equal to actual number (" + numFields + ").");
-		
 		return numFields; 
 	}
 	
@@ -161,8 +151,7 @@ public class InstructionUtils
 	 * @param str instruction string
 	 * @return instruction parts as string array
 	 */
-	public static String[] getInstructionParts( String str ) 
-	{
+	public static String[] getInstructionParts( String str ) {
 		StringTokenizer st = new StringTokenizer( str, Instruction.OPERAND_DELIM );
 		String[] ret = new String[st.countTokens()-1];
 		st.nextToken(); // stripping-off the exectype
@@ -188,8 +177,7 @@ public class InstructionUtils
 	 * @param str instruction string
 	 * @return instruction parts as string array
 	 */
-	public static String[] getInstructionPartsWithValueType( String str ) 
-	{
+	public static String[] getInstructionPartsWithValueType( String str ) {
 		//note: split required for empty tokens
 		String[] parts = str.split(Instruction.OPERAND_DELIM, -1);
 		String[] ret = new String[parts.length-1]; // stripping-off the exectype
@@ -503,9 +491,7 @@ public class InstructionUtils
 			new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 	}
 
-	public static Operator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 
-		throws DMLRuntimeException 
-	{
+	public static Operator parseBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) {
 		if( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) )
 			return null;
 		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
@@ -516,9 +502,7 @@ public class InstructionUtils
 				parseBinaryOperator(opcode));
 	}
 	
-	public static Operator parseExtendedBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) 
-		throws DMLRuntimeException 
-	{
+	public static Operator parseExtendedBinaryOrBuiltinOperator(String opcode, CPOperand in1, CPOperand in2) {
 		boolean matrixScalar = (in1.getDataType() != in2.getDataType());
 		return Builtin.isBuiltinFnObject(opcode) ?
 			(matrixScalar ? new RightScalarOperator( Builtin.getBuiltinFnObject(opcode), 0) :
@@ -755,9 +739,7 @@ public class InstructionUtils
 		throw new RuntimeException("Unknown binary opcode " + opcode);
 	}
 
-	public static BinaryOperator parseExtendedBinaryOperator(String opcode) 
-		throws DMLRuntimeException
-	{
+	public static BinaryOperator parseExtendedBinaryOperator(String opcode) {
 		if(opcode.equalsIgnoreCase("==") || opcode.equalsIgnoreCase("map=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
 		else if(opcode.equalsIgnoreCase("!=") || opcode.equalsIgnoreCase("map!="))

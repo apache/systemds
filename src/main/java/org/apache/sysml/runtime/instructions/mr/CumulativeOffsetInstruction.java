@@ -53,26 +53,20 @@ public class CumulativeOffsetInstruction extends BinaryInstruction {
 		}
 	}
 
-	public static CumulativeOffsetInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CumulativeOffsetInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		String opcode = parts[0];
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		byte out = Byte.parseByte(parts[3]);
-		
 		return new CumulativeOffsetInstruction(in1, in2, out, opcode, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+	{
 		IndexedMatrixValue in1 = cachedValues.getFirst(input1); //original data 
 		IndexedMatrixValue in2 = cachedValues.getFirst(input2); //offset row vector
 				

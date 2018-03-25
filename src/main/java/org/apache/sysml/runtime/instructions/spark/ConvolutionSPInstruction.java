@@ -97,7 +97,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_in2 = in2;
 	}
 
-	public static ConvolutionSPInstruction parseInstruction( String str ) throws DMLRuntimeException {
+	public static ConvolutionSPInstruction parseInstruction( String str ) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
@@ -209,7 +209,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		}
 	}
 	
-	private static JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) throws DMLRuntimeException {
+	private static JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( name );
 		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(name);
 		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
@@ -224,15 +224,14 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		return in1;
 	}
 	
-	private Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) throws DMLRuntimeException {
+	private Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) {
 		MatrixBlock mb = sec.getMatrixInput( name, getExtendedOpcode() );
 		sec.releaseMatrixInput(name, getExtendedOpcode());
 		return sec.getSparkContext().broadcast(mb);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		if(instOpcode.equalsIgnoreCase("conv2d") || instOpcode.equalsIgnoreCase("conv2d_bias_add")
 			|| instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
@@ -294,8 +293,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
-			throws DMLRuntimeException {
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}

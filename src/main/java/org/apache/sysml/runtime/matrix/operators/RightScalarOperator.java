@@ -20,7 +20,6 @@
 
 package org.apache.sysml.runtime.matrix.operators;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Divide;
 import org.apache.sysml.runtime.functionobjects.GreaterThan;
@@ -56,7 +55,7 @@ public class RightScalarOperator extends ScalarOperator
 	}
 	
 	@Override
-	public double executeScalar(double in) throws DMLRuntimeException {
+	public double executeScalar(double in) {
 		return fn.execute(in, _constant);
 	}
 }

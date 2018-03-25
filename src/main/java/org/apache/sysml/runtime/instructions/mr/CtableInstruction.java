@@ -103,14 +103,7 @@ public class CtableInstruction extends MRInstruction {
 	}
 
 	public static CtableInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{		
-		// example instruction string 
-		// - ctabletransform:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE:::3:DOUBLE 
-		// - ctabletransformscalarweight:::0:DOUBLE:::1:DOUBLE:::1.0:DOUBLE:::3:DOUBLE 
-		// - ctabletransformhistogram:::0:DOUBLE:::1.0:DOUBLE:::1.0:DOUBLE:::3:DOUBLE 
-		// - ctabletransformweightedhistogram:::0:DOUBLE:::1:INT:::1:DOUBLE:::2:DOUBLE 
-		
+	{
 		//check number of fields
 		InstructionUtils.checkNumFields ( str, 6 );
 		
@@ -160,12 +153,9 @@ public class CtableInstruction extends MRInstruction {
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			            IndexedMatrixValue zeroInput, HashMap<Byte, CTableMap> resultMaps, HashMap<Byte, MatrixBlock> resultBlocks, 
 			            int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
-		
+	{
 		IndexedMatrixValue in1, in2, in3 = null;
 		in1 = cachedValues.getFirst(input1);
-		
 		CTableMap ctableResult = null;
 		MatrixBlock ctableResultBlock = null;
 		
@@ -238,26 +228,24 @@ public class CtableInstruction extends MRInstruction {
 				break;
 			}
 			default:
-				throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);		
+				throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);
 		}
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
-			int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{
+			int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("This function should not be called!");
 	}
 
 	@Override
-	public byte[] getAllIndexes() throws DMLRuntimeException {
+	public byte[] getAllIndexes() {
 		return new byte[]{input1, input2, input3, output};
 	}
 
 	@Override
-	public byte[] getInputIndexes() throws DMLRuntimeException {
+	public byte[] getInputIndexes() {
 		return new byte[]{input1, input2, input3};
 	}
 

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -36,7 +35,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -45,8 +44,6 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		//TODO: make hop level changes for this
 		boolean isLeftTransposed = false;
 		boolean isRightTransposed = false;
-		// int rlen = isLeftTransposed ? (int) in1.getNumColumns() : (int) in1.getNumRows();
-		// int clen = isLeftTransposed ? (int) in1.getNumRows() : (int) in1.getNumColumns();
 
 		long rlen1 = in1.getNumRows();
 		long clen1 = in1.getNumColumns();

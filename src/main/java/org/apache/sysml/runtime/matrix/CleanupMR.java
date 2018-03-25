@@ -107,7 +107,7 @@ public class CleanupMR
 	}
 
 	private static void writeCleanupTasksToFile(Path path, int numTasks)
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {

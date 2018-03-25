@@ -46,7 +46,6 @@ public abstract class BuiltinUnaryGPUInstruction extends GPUInstruction {
 	}
 	
 	public static BuiltinUnaryGPUInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
 	{
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);

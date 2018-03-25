@@ -50,9 +50,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		super(op, in, rl, ru, cl, cu, out, opcode, istr);
 	}
 
-	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{		
+	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
@@ -82,9 +80,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec).add(1);
 		MatrixObject mo = ec.getMatrixObject(input1.getName());

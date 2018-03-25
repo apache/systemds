@@ -46,9 +46,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		IndexRange ixrange = getIndexRange(ec);
 		

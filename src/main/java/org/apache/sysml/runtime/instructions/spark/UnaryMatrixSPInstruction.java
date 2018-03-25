@@ -23,7 +23,6 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -39,7 +38,7 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 		super(SPType.Unary, op, in, out, opcode, instr);
 	}
 	
-	public static UnarySPInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static UnarySPInstruction parseInstruction ( String str ) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseUnaryInstruction(str, in, out);
@@ -48,9 +47,7 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input

@@ -45,32 +45,25 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 		super(SPType.AggregateTernary, op, in1, in2, in3, out, opcode, istr);
 	}
 
-	public static AggregateTernarySPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AggregateTernarySPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		if ( opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*") ) {
 			InstructionUtils.checkNumFields( parts, 4 );
-			
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-			
 			AggregateTernaryOperator op = InstructionUtils.parseAggregateTernaryOperator(opcode);
 			return new AggregateTernarySPInstruction(op, in1, in2, in3, out, opcode, str);
-		} 
+		}
 		else {
 			throw new DMLRuntimeException("AggregateTernaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get inputs

@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -34,9 +33,7 @@ public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		

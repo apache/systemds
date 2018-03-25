@@ -72,9 +72,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		_cacheV = cacheV;
 	}
 
-	public static QuaternarySPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static QuaternarySPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
@@ -191,9 +189,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 		
@@ -314,22 +310,19 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		}
 	}
 
-	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) 
-		throws DMLRuntimeException
-	{
+	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) {
 		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
 		MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(input3.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		
 		if( qop.wtype2 != null || qop.wtype5 != null ) {
 			//output size determined by main input
 			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}
 		else if(qop.wtype3 != null ) { //wdivmm
 			long rank = qop.wtype3.isLeft() ? mcIn3.getCols() : mcIn2.getCols();
-			MatrixCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mcIn1.getRows(), mcIn1.getCols(), rank);		
-			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());		
+			MatrixCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mcIn1.getRows(), mcIn1.getCols(), rank);
+			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}
 	}
 
@@ -342,17 +335,16 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		protected PartitionedBroadcast<MatrixBlock> _pmV = null;
 		
 		public RDDQuaternaryBaseFunction( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) {
-			_qop = qop;		
+			_qop = qop;
 			_pmU = bcU;
 			_pmV = bcV;
 		}
 
-		protected MatrixIndexes createOutputIndexes(MatrixIndexes in) 
-		{
+		protected MatrixIndexes createOutputIndexes(MatrixIndexes in) {
 			if( _qop.wtype3 != null && !_qop.wtype3.isBasic() ){ //key change
 				boolean left = _qop.wtype3.isLeft();
 				return new MatrixIndexes(left?in.getColumnIndex():in.getRowIndex(), 1);
-			}				
+			}
 			return in;
 		}
 	}
@@ -362,16 +354,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 	{
 		private static final long serialVersionUID = -8209188316939435099L;
 		
-		public RDDQuaternaryFunction1( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) 
-			throws DMLRuntimeException
-		{
+		public RDDQuaternaryFunction1( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) {
 			super(qop, bcU, bcV);
 		}
 	
 		@Override
-		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg)
-			throws Exception 
-		{
+		public LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg) {
 			return new RDDQuaternaryPartitionIterator(arg);
 		}
 		
@@ -382,13 +370,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			}
 			
 			@Override
-			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) 
-				throws Exception 
-			{
+			protected Tuple2<MatrixIndexes, MatrixBlock> computeNext(Tuple2<MatrixIndexes, MatrixBlock> arg) {
 				MatrixIndexes ixIn = arg._1();
 				MatrixBlock blkIn = arg._2();
 				MatrixBlock blkOut = new MatrixBlock();
-				
 				MatrixBlock mbU = _pmU.getBlock((int)ixIn.getRowIndex(), 1);
 				MatrixBlock mbV = _pmV.getBlock((int)ixIn.getColumnIndex(), 1);
 				
@@ -399,7 +384,6 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 				MatrixIndexes ixOut = createOutputIndexes(ixIn);
 				return new Tuple2<>(ixOut, blkOut);
 			}
-			
 		}
 	}
 
@@ -408,21 +392,16 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 	{
 		private static final long serialVersionUID = 7493974462943080693L;
 		
-		public RDDQuaternaryFunction2( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) 
-			throws DMLRuntimeException
-		{
+		public RDDQuaternaryFunction2( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) {
 			super(qop, bcU, bcV);
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0)
-			throws Exception 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<MatrixBlock, MatrixBlock>> arg0) {
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn1 = arg0._2()._1();
 			MatrixBlock blkIn2 = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
-			
 			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock((int)ixIn.getColumnIndex(), 1) : blkIn2;
 			MatrixBlock mbW = (_qop.hasFourInputs()) ? blkIn2 : null;
@@ -441,23 +420,17 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 	{
 		private static final long serialVersionUID = -2294086455843773095L;
 		
-		public RDDQuaternaryFunction3( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) 
-			throws DMLRuntimeException
-		{
+		public RDDQuaternaryFunction3( QuaternaryOperator qop, PartitionedBroadcast<MatrixBlock> bcU, PartitionedBroadcast<MatrixBlock> bcV ) {
 			super(qop, bcU, bcV);
 		}
 
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>> arg0)
-			throws Exception 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>> arg0) {
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn1 = arg0._2()._1()._1();
 			MatrixBlock blkIn2 = arg0._2()._1()._2();
 			MatrixBlock blkIn3 = arg0._2()._2();
-			
 			MatrixBlock blkOut = new MatrixBlock();
-			
 			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock((int)ixIn.getRowIndex(), 1) : blkIn2;
 			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock((int)ixIn.getColumnIndex(), 1) : 
 				              (_pmU!=null)? blkIn2 : blkIn3;
@@ -480,15 +453,12 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 	{
 		private static final long serialVersionUID = 7328911771600289250L;
 		
-		public RDDQuaternaryFunction4( QuaternaryOperator qop ) 
-			throws DMLRuntimeException
-		{ 
-			super(qop, null, null);		
+		public RDDQuaternaryFunction4( QuaternaryOperator qop ) {
+			super(qop, null, null);
 		}
 
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, Tuple2<Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock>, MatrixBlock>> arg0)
-			throws Exception 
 		{
 			MatrixIndexes ixIn1 = arg0._1();
 			MatrixBlock blkIn1 = arg0._2()._1()._1()._1();
@@ -511,9 +481,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		private static final long serialVersionUID = -2571724736131823708L;
 		
 		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) {
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 

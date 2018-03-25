@@ -68,9 +68,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		_aggtype = aggtype;
 	}
 
-	public static MapmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MapmmSPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -90,9 +88,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec)  {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		CacheType type = _type;

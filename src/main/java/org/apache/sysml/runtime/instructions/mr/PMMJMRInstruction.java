@@ -54,11 +54,8 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 		return _outputEmptyBlocks;
 	}
 
-	public static PMMJMRInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static PMMJMRInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 6 );
-		
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
 		byte in1 = Byte.parseByte(parts[1]);
@@ -67,10 +64,8 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 		byte out = Byte.parseByte(parts[4]);
 		CacheType ctype = CacheType.valueOf(parts[5]);
 		boolean outputEmpty = Boolean.parseBoolean(parts[6]);
-		
 		if(!opcode.equalsIgnoreCase("pmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an PmmMRInstruction: " + str);
-		
 		return new PMMJMRInstruction(new Operator(true), in1, in2, out, nrow, ctype, outputEmpty, str);
 	}
 	
@@ -78,8 +73,7 @@ public class PMMJMRInstruction extends BinaryMRInstructionBase implements IDistr
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+	{
 		//get both matrix inputs (left side always permutation)
 		DistributedCacheInput dcInput = MRBaseForCommonInstructions.dcValues.get(input1);
 		IndexedMatrixValue in2 = cachedValues.getFirst(input2);

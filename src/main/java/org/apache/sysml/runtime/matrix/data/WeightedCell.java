@@ -55,9 +55,7 @@ public class WeightedCell extends MatrixCell
 		out.writeDouble(weight);
 	}
 
-	private static WeightedCell checkType(MatrixValue cell) 
-	throws DMLRuntimeException
-	{
+	private static WeightedCell checkType(MatrixValue cell) {
 		if( cell!=null && !(cell instanceof WeightedCell))
 			throw new DMLRuntimeException("the Matrix Value is not WeightedCell!");
 		return (WeightedCell) cell;
@@ -120,24 +118,21 @@ public class WeightedCell extends MatrixCell
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int brlen, int bclen,
-			MatrixIndexes indexesIn) throws DMLRuntimeException {
+			MatrixIndexes indexesIn) {
 		super.aggregateUnaryOperations(op, result, brlen, bclen, indexesIn);
 		WeightedCell c3=checkType(result);
 		c3.setWeight(weight);
 		return c3;
 	}
 
-	//TODO: how to handle -minus left vs. minus right
 	@Override
-	public void denseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLRuntimeException {
+	public void denseScalarOperationsInPlace(ScalarOperator op) {
 		value=op.executeScalar(value);
 	}
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
-			int startRow, int startColumn, int length)
-			throws DMLRuntimeException {
+			int startRow, int startColumn, int length) {
 		super.reorgOperations(op, result, startRow, startColumn, length);
 		WeightedCell c3=checkType(result);
 		c3.setWeight(weight);
@@ -145,9 +140,7 @@ public class WeightedCell extends MatrixCell
 	}
 
 	@Override
-	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) 
-		throws DMLRuntimeException 
-	{
+	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) {
 		WeightedCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value, op.getConstant()));
 		c3.setWeight(weight);
@@ -155,20 +148,17 @@ public class WeightedCell extends MatrixCell
 	}
 
 	@Override
-	public void sparseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLRuntimeException {
+	public void sparseScalarOperationsInPlace(ScalarOperator op) {
 		value=op.executeScalar(value);
 	}
 
 	@Override
-	public void sparseUnaryOperationsInPlace(UnaryOperator op)
-			throws DMLRuntimeException {
+	public void sparseUnaryOperationsInPlace(UnaryOperator op) {
 		value=op.fn.execute(value);
 	}
 
 	@Override
-	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLRuntimeException {
+	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) {
 		WeightedCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value));
 		c3.setWeight(weight);

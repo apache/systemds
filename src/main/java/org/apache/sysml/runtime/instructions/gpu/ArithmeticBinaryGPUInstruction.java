@@ -39,7 +39,7 @@ public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
-	public static ArithmeticBinaryGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static ArithmeticBinaryGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 3 );
 		

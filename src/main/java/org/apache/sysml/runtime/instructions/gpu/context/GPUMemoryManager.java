@@ -153,9 +153,8 @@ public class GPUMemoryManager {
 	 * @param opcode instruction name
 	 * @param size size in bytes
 	 * @return allocated pointer
-	 * @throws DMLRuntimeException if error
 	 */
-	public Pointer malloc(String opcode, long size) throws DMLRuntimeException {
+	public Pointer malloc(String opcode, long size) {
 		if(size < 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + size);
 		}
@@ -296,9 +295,8 @@ public class GPUMemoryManager {
 	 * @param opcode instruction name
 	 * @param toFree pointer to free
 	 * @param eager whether to deallocate eagerly
-	 * @throws DMLRuntimeException if error
 	 */
-	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
+	public void free(String opcode, Pointer toFree, boolean eager) {
 		Pointer dummy = new Pointer();
 		if (toFree == dummy) { // trying to free a null pointer
 			return;
@@ -325,10 +323,8 @@ public class GPUMemoryManager {
 	
 	/**
 	 * Clear the allocated GPU objects
-	 * 
-	 * @throws DMLRuntimeException if error
 	 */
-	public void clearMemory() throws DMLRuntimeException {
+	public void clearMemory() {
 		// First deallocate all the GPU objects
 		for(GPUObject gpuObj : allocatedGPUObjects) {
 			if(gpuObj.isDirty()) {

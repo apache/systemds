@@ -81,9 +81,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 		return _aggType;
 	}
 
-	public static AggregateBinaryInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AggregateBinaryInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		
 		byte in1, in2, out;
@@ -129,9 +127,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException 
-	{	
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);
 		
@@ -179,10 +175,8 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 	 * @param in2 indexed matrix value 2
 	 * @param blockRowFactor ?
 	 * @param blockColFactor ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void processMapMultInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, IndexedMatrixValue in1, IndexedMatrixValue in2, int blockRowFactor, int blockColFactor) 
-		throws DMLRuntimeException 
 	{
 		boolean removeOutput = true;
 		

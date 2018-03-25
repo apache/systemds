@@ -85,9 +85,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		return paramMap;
 	}
 	
-	public static ParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ParameterizedBuiltinCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
@@ -151,13 +149,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
-		
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		ScalarObject sores = null;
-		
 		if ( opcode.equalsIgnoreCase("cdf")) {
 			SimpleOperator op = (SimpleOperator) _optr;
 			double result =  op.fn.execute(params);

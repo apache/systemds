@@ -60,15 +60,11 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		_aggtype = aggtype;
 	}
 
-	public static CpmmSPInstruction parseInstruction( String str )
-		throws DMLRuntimeException 
-	{
+	public static CpmmSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		if ( !opcode.equalsIgnoreCase("cpmm"))
 			throw new DMLRuntimeException("CpmmSPInstruction.parseInstruction(): Unknown opcode " + opcode);
-		
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
@@ -79,9 +75,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd inputs

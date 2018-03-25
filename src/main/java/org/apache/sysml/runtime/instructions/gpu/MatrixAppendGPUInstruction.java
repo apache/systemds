@@ -50,12 +50,9 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		this.atype = type;
 	}
 
-	public static MatrixAppendGPUInstruction parseInstruction ( String str )
-			throws DMLRuntimeException
-	{
+	public static MatrixAppendGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields (parts, 5);
-
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -63,36 +60,29 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);
-
 		AppendCPInstruction.AppendType type = (in1.getDataType()!= Expression.DataType.MATRIX && in1.getDataType()!= Expression.DataType.FRAME) ?
 				AppendCPInstruction.AppendType.STRING : cbind ? AppendCPInstruction.AppendType.CBIND : AppendCPInstruction.AppendType.RBIND;
-
 		if (in1.getDataType()!= Expression.DataType.MATRIX || in2.getDataType()!= Expression.DataType.MATRIX){
 			throw new DMLRuntimeException("GPU : Error in internal state - Append was called on data other than matrices");
 		}
-
 		if(!opcode.equalsIgnoreCase("append"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
-
 		Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));
 		return new MatrixAppendGPUInstruction(op, in1, in2, out, type, opcode, str);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-
 		String opcode = getOpcode();
 		MatrixObject mat1 = getMatrixInputForGPUInstruction(ec, input1.getName());
 		MatrixObject mat2 = getMatrixInputForGPUInstruction(ec, input2.getName());
-
-		if(atype == AppendCPInstruction.AppendType.CBIND) {
+		if(atype == AppendCPInstruction.AppendType.CBIND)
 			LibMatrixCUDA.cbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
-		} else if (atype == AppendCPInstruction.AppendType.RBIND ) {
+		else if (atype == AppendCPInstruction.AppendType.RBIND )
 			LibMatrixCUDA.rbind(ec, ec.getGPUContext(0), getExtendedOpcode(), mat1, mat2, output.getName());
-		} else {
+		else
 			throw new DMLRuntimeException("Unsupported GPU operator:" + opcode);
-		}
 		ec.releaseMatrixInputForGPUInstruction(input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(input2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(output.getName());

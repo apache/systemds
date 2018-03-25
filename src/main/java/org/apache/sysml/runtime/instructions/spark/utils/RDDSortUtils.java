@@ -34,7 +34,6 @@ import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -243,12 +242,10 @@ public class RDDSortUtils
 	 * @param sec spark execution context
 	 * @param r_op reorg operator
 	 * @return data as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> sortDataByValMemSort( JavaPairRDD<MatrixIndexes, MatrixBlock> val, 
 			JavaPairRDD<MatrixIndexes, MatrixBlock> data, boolean asc, long rlen, long clen, int brlen, int bclen, 
 			SparkExecutionContext sec, ReorgOperator r_op) 
-					throws DMLRuntimeException
 	{
 		//collect orderby column for in-memory sorting
 		MatrixBlock inMatBlock = SparkExecutionContext

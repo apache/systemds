@@ -19,22 +19,18 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class BinaryMatrixMatrixSPInstruction extends BinarySPInstruction {
 
-	protected BinaryMatrixMatrixSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode, String istr) throws DMLRuntimeException {
+	protected BinaryMatrixMatrixSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//common binary matrix-matrix process instruction
 		super.processMatrixMatrixBinaryInstruction(ec);
 	}

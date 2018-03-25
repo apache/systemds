@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -62,73 +61,46 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	
 	
 	@Test
-	public void testRewriteExpr1SingleColumnCP() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr1SingleColumnCP() throws IOException {
 		runRewriteMapMultChain(TEST_NAME1, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr1MultiColumnCP() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr1MultiColumnCP() throws IOException {
 		runRewriteMapMultChain(TEST_NAME1, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr1SingleColumnMR() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr1SingleColumnMR() throws IOException {
 		runRewriteMapMultChain(TEST_NAME1, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testRewriteExpr1MultiColumnMR() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr1MultiColumnMR() throws IOException {
 		runRewriteMapMultChain(TEST_NAME1, false, ExecType.MR);
 	}
 	
 	@Test
-	public void testRewriteExpr2SingleColumnCP() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr2SingleColumnCP() throws IOException {
 		runRewriteMapMultChain(TEST_NAME2, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr2MultiColumnCP() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr2MultiColumnCP() throws IOException {
 		runRewriteMapMultChain(TEST_NAME2, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testRewriteExpr2SingleColumnMR() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr2SingleColumnMR() throws IOException {
 		runRewriteMapMultChain(TEST_NAME2, true, ExecType.MR);
 	}
 	
 	@Test
-	public void testRewriteExpr2MultiColumnMR() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testRewriteExpr2MultiColumnMR() throws IOException {
 		runRewriteMapMultChain(TEST_NAME2, false, ExecType.MR);
 	}
-	
 
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
-	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) 
-		throws DMLRuntimeException, IOException
-	{	
+	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) throws IOException {
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		
 		try
@@ -175,5 +147,4 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			rtplatform = platformOld;
 		}
 	}
-	
 }

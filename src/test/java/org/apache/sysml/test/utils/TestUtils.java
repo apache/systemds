@@ -52,7 +52,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -1527,11 +1526,8 @@ public class TestUtils
 	 *            frame data
 	 * @param isR
 	 * @throws IOException 
-	 * @throws DMLRuntimeException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi, boolean isR) 
-			throws DMLRuntimeException, IOException 
-	{
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi, boolean isR) throws IOException {
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(oi);
 		FrameBlock frame = new FrameBlock(schema);
 		initFrameData(frame, data, schema, data.length);
@@ -1548,20 +1544,11 @@ public class TestUtils
 	 * @param data
 	 *            frame data
 	 * @throws IOException 
-	 * @throws DMLRuntimeException 
 	 */
-	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi)
-		throws DMLRuntimeException, IOException
-	{
+	public static void writeTestFrame(String file, double[][] data, ValueType[] schema, OutputInfo oi) throws IOException {
 		writeTestFrame(file, data, schema, oi, false);
 	}
 
-	/**
-	 * 
-	 * @param frame
-	 * @param data
-	 * @param lschema
-	 */
 	public static void initFrameData(FrameBlock frame, double[][] data, ValueType[] lschema, int rows) {
 		Object[] row1 = new Object[lschema.length];
 		for( int i=0; i<rows; i++ ) {

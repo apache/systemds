@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -52,9 +51,7 @@ public class TernaryInstruction extends MRInstruction {
 		m3 = input3.isMatrix() ? null :new MatrixBlock(Double.parseDouble(input3.getName()));
 	}
 
-	public static TernaryInstruction parseInstruction ( String str )
-		throws DMLRuntimeException
-	{
+	public static TernaryInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 4 );
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -68,9 +65,7 @@ public class TernaryInstruction extends MRInstruction {
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues,
-			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{
+			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		MatrixBlock lm1 = input1.isMatrix() ? (MatrixBlock) cachedValues.getFirst(ixinput1).getValue() : m1;
 		MatrixBlock lm2 = input2.isMatrix() ? (MatrixBlock) cachedValues.getFirst(ixinput2).getValue() : m2;
 		MatrixBlock lm3 = input3.isMatrix() ? (MatrixBlock) cachedValues.getFirst(ixinput3).getValue() : m3;

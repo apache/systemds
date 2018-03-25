@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 
 /**
  * This class contains the different implementation of rotate180 operation
@@ -34,9 +33,8 @@ public class LibMatrixDNNRelu
 	 * 
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing relu backward operation
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getReluBackwardWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getReluBackwardWorkers(ConvolutionParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));

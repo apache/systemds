@@ -73,9 +73,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		_ignoreZeros = ignoreZeros;
 	}
 
-	public static CtableSPInstruction parseInstruction(String inst) 
-		throws DMLRuntimeException
-	{	
+	public static CtableSPInstruction parseInstruction(String inst) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		InstructionUtils.checkNumFields ( parts, 7 );
 		
@@ -105,9 +103,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	
 		//get input rdd handle

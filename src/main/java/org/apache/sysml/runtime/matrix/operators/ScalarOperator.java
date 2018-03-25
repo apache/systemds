@@ -20,7 +20,6 @@
 
 package org.apache.sysml.runtime.matrix.operators;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.And;
 import org.apache.sysml.runtime.functionobjects.BitwShiftL;
 import org.apache.sysml.runtime.functionobjects.BitwShiftR;
@@ -73,10 +72,8 @@ public abstract class ScalarOperator extends Operator
 	 * 
 	 * @param in input value
 	 * @return result
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract double executeScalar(double in) 
-		throws DMLRuntimeException;
+	public abstract double executeScalar(double in);
 	
 	/**
 	 * Indicates if the function is statically sparse safe, i.e., it is always

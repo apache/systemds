@@ -163,7 +163,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
 		if(src == null)
 			throw new DMLRuntimeException("The source pointer in deviceToHost is null");
@@ -178,7 +178,7 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 
 	@Override
-	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) throws DMLRuntimeException {
+	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
 		cudaMemcpy(dest, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 

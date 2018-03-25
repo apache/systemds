@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -32,9 +31,7 @@ public class BinaryMatrixScalarSPInstruction extends BinarySPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//common binary matrix-scalar process instruction
 		super.processMatrixScalarBinaryInstruction(ec);
 	}

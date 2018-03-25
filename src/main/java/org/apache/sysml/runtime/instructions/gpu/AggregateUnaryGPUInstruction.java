@@ -46,9 +46,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
-  public static AggregateUnaryGPUInstruction parseInstruction(String str )
-          throws DMLRuntimeException
-  {
+  public static AggregateUnaryGPUInstruction parseInstruction(String str ) {
     String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
     String opcode = parts[0];
     CPOperand in1 = new CPOperand(parts[1]);
@@ -66,9 +64,7 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
   }
 
   @Override
-  public void processInstruction(ExecutionContext ec)
-          throws DMLRuntimeException
-  {
+  public void processInstruction(ExecutionContext ec) {
     GPUStatistics.incrementNoOfExecutedGPUInst();
 
     String opcode = getOpcode();
@@ -103,5 +99,4 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
       ec.releaseMatrixOutputForGPUInstruction(_output.getName());
     }
   }
-
 }

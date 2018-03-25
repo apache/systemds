@@ -35,32 +35,32 @@ public abstract class FunctionObject
 
 	//basic execute methods for all function objects
 	
-	public double execute ( double in1, double in2 ) throws DMLRuntimeException {
+	public double execute ( double in1, double in2 ) {
 		throw new DMLRuntimeException("FunctionObject.execute(double,double): should never get called in the base class");
 	}
 	
-	public double execute ( long in1, long in2 )  throws DMLRuntimeException  {
+	public double execute ( long in1, long in2 ) {
 		throw new DMLRuntimeException("FunctionObject.execute(int,int): should never get called in the base class");
 	}
 	
-	public double execute ( double in )  throws DMLRuntimeException {
+	public double execute ( double in ) {
 		throw new DMLRuntimeException("FunctionObject.execute(double): should never get called in the base class");
 	}
 	
-	public double execute ( long in )  throws DMLRuntimeException {
+	public double execute ( long in ) {
 		throw new DMLRuntimeException("FunctionObject.execute(int): should never get called in the base class");
 	}
 	
-	public boolean execute ( boolean in1, boolean in2 )  throws DMLRuntimeException  {
+	public boolean execute ( boolean in1, boolean in2 ) {
 		throw new DMLRuntimeException("FunctionObject.execute(boolean,boolean): should never get called in the base class");
 	}
 	
-	public boolean execute ( boolean in )  throws DMLRuntimeException  {
+	public boolean execute ( boolean in ) {
 		throw new DMLRuntimeException("FunctionObject.execute(boolean): should never get called in the base class");
 	}
 	
 	// this version is for parameterized builtins with input parameters of form: name=value 
-	public double execute ( HashMap<String,String> params )  throws DMLRuntimeException  {
+	public double execute ( HashMap<String,String> params ) {
 		throw new DMLRuntimeException("FunctionObject.execute(HashMap<String,String> params): should never get called in the base class");
 	}
 
@@ -70,15 +70,15 @@ public abstract class FunctionObject
 	 * For complex function object that operates on objects instead of native values 
 	 */
 
-	public Data execute(Data in1, double in2) throws DMLRuntimeException {
+	public Data execute(Data in1, double in2) {
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}
 	
-	public Data execute(Data in1, double in2, double in3) throws DMLRuntimeException {
+	public Data execute(Data in1, double in2, double in3) {
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}
 	
-	public Data execute(Data in1, Data in2) throws DMLRuntimeException {
+	public Data execute(Data in1, Data in2) {
 		throw new DMLRuntimeException("execute(): should not be invoked from base class.");
 	}
 	
@@ -87,11 +87,11 @@ public abstract class FunctionObject
 	 * For file functions and specific builtin functions 
 	 */
 
-	public String execute ( String in1 ) throws DMLRuntimeException {
+	public String execute ( String in1 ) {
 		throw new DMLRuntimeException("FileFunction.execute(String): should never get called in the base class");
 	}
 	
-	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
+	public String execute ( String in1, String in2 ) {
 		throw new DMLRuntimeException("FileFunction.execute(String,String): should never get called in the base class");
 	}	
 }

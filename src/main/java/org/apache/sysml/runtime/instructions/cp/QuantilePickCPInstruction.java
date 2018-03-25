@@ -51,20 +51,13 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 		_inmem = inmem;
 	}
 
-	public static QuantilePickCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static QuantilePickCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
-		//sanity check opcode
-		if ( !opcode.equalsIgnoreCase("qpick") ) {
+		if ( !opcode.equalsIgnoreCase("qpick") )
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
-		}
-		
 		//instruction parsing
-		if( parts.length == 4 )
-		{
+		if( parts.length == 4 ) {
 			//instructions of length 4 originate from unary - mr-iqm
 			//TODO this should be refactored to use pickvaluecount lops
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -72,18 +65,16 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 			CPOperand out = new CPOperand(parts[3]);
 			OperationTypes ptype = OperationTypes.IQM;
 			boolean inmem = false;
-			return new QuantilePickCPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);			
+			return new QuantilePickCPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
 		}
-		else if( parts.length == 5 )
-		{
+		else if( parts.length == 5 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[2]);
 			OperationTypes ptype = OperationTypes.valueOf(parts[3]);
 			boolean inmem = Boolean.parseBoolean(parts[4]);
 			return new QuantilePickCPInstruction(null, in1, out, ptype, inmem, opcode, str);
 		}
-		else if( parts.length == 6 )
-		{
+		else if( parts.length == 6 ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
@@ -91,14 +82,11 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 			boolean inmem = Boolean.parseBoolean(parts[5]);
 			return new QuantilePickCPInstruction(null, in1, in2, out, ptype, inmem, opcode, str);
 		}
-		
 		return null;
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		switch( _type ) 
 		{
 			case VALUEPICK: 
@@ -118,7 +106,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 						ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
 						ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 					}
-					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());										
+					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 				}
 				else //MR VALUEPICK
 				{
@@ -138,7 +126,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					else {
 						throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname + ") not found." );
 					}
-				}				
+				}
 				break;
 
 			case MEDIAN:

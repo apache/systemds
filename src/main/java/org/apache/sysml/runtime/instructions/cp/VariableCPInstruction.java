@@ -148,7 +148,7 @@ public class VariableCPInstruction extends CPInstruction {
 		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr);
 	}
 
-	private static VariableOperationCode getVariableOperationCode ( String str ) throws DMLRuntimeException {
+	private static VariableOperationCode getVariableOperationCode ( String str ) {
 		
 		if ( str.equalsIgnoreCase("createvar"))
 			return VariableOperationCode.CreateVariable;
@@ -279,9 +279,7 @@ public class VariableCPInstruction extends CPInstruction {
 		}
 	}
 	
-	public static VariableCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static VariableCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 		VariableOperationCode voc = getVariableOperationCode(opcode);
@@ -467,9 +465,7 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		switch ( opcode ) 
 		{ 
 		case CreateVariable:
@@ -682,10 +678,9 @@ public class VariableCPInstruction extends CPInstruction {
 	 * Currently, applicable only when format=binaryblock.
 	 *  
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	@SuppressWarnings("rawtypes")
-	private void processMoveInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private void processMoveInstruction(ExecutionContext ec) {
 		
 		if ( getInput3() == null ) {
 			// example: mvvar tempA A
@@ -741,11 +736,10 @@ public class VariableCPInstruction extends CPInstruction {
 	 * Example: cpvar &lt;srcvar&gt; &lt;destvar&gt;
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processCopyInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private void processCopyInstruction(ExecutionContext ec) {
 		// get source variable 
-		Data dd = ec.getVariable(getInput1().getName());		
+		Data dd = ec.getVariable(getInput1().getName());
 			
 		if ( dd == null ) 
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
@@ -770,11 +764,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 * the format given by the corresponding symbol table entry.
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processWriteInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
 		String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
@@ -808,17 +799,12 @@ public class VariableCPInstruction extends CPInstruction {
 	 * 
 	 * @param ec execution context
 	 * @param varname variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) 
-		throws DMLRuntimeException
-	{
+	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
 		Data input1_data = ec.removeVariable(varname);
-		
 		if ( input1_data == null )
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmvar instruction.");
-
 		//cleanup matrix data on fs/hdfs (if necessary)
 		if ( input1_data instanceof CacheableData ) {
 			ec.cleanupCacheableData( (CacheableData<?>) input1_data );
@@ -830,11 +816,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 * 
 	 * @param ec execution context
 	 * @param fname file name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void writeCSVFile(ExecutionContext ec, String fname) 
-		throws DMLRuntimeException 
-	{
+	private void writeCSVFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 		String outFmt = "csv";
 		
@@ -871,11 +854,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 * 
 	 * @param ec execution context
 	 * @param fname file name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void writeMMFile(ExecutionContext ec, String fname) 
-		throws DMLRuntimeException 
-	{
+	private void writeMMFile(ExecutionContext ec, String fname) {
 		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 		String outFmt = "matrixmarket";
 		if(mo.isDirty()) {
@@ -907,11 +887,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 * 
 	 * @param ec execution context
 	 * @param fname file name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void writeScalarToHDFS(ExecutionContext ec, String fname) 
-		throws DMLRuntimeException 
-	{
+	private void writeScalarToHDFS(ExecutionContext ec, String fname) {
 		try {
 			ScalarObject scalar = ec.getScalarInput(getInput1().getName(), 
 				getInput1().getValueType(), getInput1().isLiteral());
@@ -929,9 +906,7 @@ public class VariableCPInstruction extends CPInstruction {
 		}
 	}
 	
-	private static void cleanDataOnHDFS(MatrixObject mo) 
-		throws DMLRuntimeException 
-	{
+	private static void cleanDataOnHDFS(MatrixObject mo) {
 		try {
 			String fpath = mo.getFileName();
 			if (fpath != null) {
@@ -952,17 +927,10 @@ public class VariableCPInstruction extends CPInstruction {
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(varName);
 		}
-		String str = sb.toString();
-		
-		try {
-			return parseInstruction(str);
-		} 
-		catch (DMLRuntimeException ex) {
-			throw new RuntimeException(ex);
-		}
+		return parseInstruction(sb.toString());
 	}
 	
-	public static Instruction prepareCopyInstruction(String srcVar, String destVar) throws DMLRuntimeException {
+	public static Instruction prepareCopyInstruction(String srcVar, String destVar) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -971,12 +939,10 @@ public class VariableCPInstruction extends CPInstruction {
 		sb.append(srcVar);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(destVar);
-		String str = sb.toString();
-
-		return parseInstruction(str);
+		return parseInstruction(sb.toString());
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) throws DMLRuntimeException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destFileName, String format) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
@@ -988,11 +954,10 @@ public class VariableCPInstruction extends CPInstruction {
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(format);
 		String str = sb.toString();
-
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareMoveInstruction(String srcVar, String destVar) throws DMLRuntimeException {
+	public static Instruction prepareMoveInstruction(String srcVar, String destVar) {
 		// example: mvvar tempA A 
 		StringBuilder sb = new StringBuilder();
 		sb.append("CP");
@@ -1003,7 +968,6 @@ public class VariableCPInstruction extends CPInstruction {
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(destVar);
 		String str = sb.toString();
-
 		return parseInstruction(str);
 	}
 	
@@ -1031,11 +995,11 @@ public class VariableCPInstruction extends CPInstruction {
 		return sb.toString();
 	}
 	
-	public static Instruction prepareCreateMatrixVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) throws DMLRuntimeException {
+	public static Instruction prepareCreateMatrixVariableInstruction(String varName, String fileName, boolean fNameOverride, String format) {
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
 	}
 
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update) throws DMLRuntimeException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
 		
@@ -1057,7 +1021,7 @@ public class VariableCPInstruction extends CPInstruction {
 		return parseInstruction(str);
 	}	
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) throws DMLRuntimeException {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
 		
@@ -1087,9 +1051,7 @@ public class VariableCPInstruction extends CPInstruction {
 	}	
 	
 	@Override
-	public void updateInstructionThreadID(String pattern, String replace)
-		throws DMLRuntimeException
-	{
+	public void updateInstructionThreadID(String pattern, String replace) {
 		if(    opcode == VariableOperationCode.CreateVariable
 			|| opcode == VariableOperationCode.SetFileName )
 		{

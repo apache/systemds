@@ -81,9 +81,7 @@ public class FrameRDDConverterUtils
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, ValueType[] schema,
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
-	{
+			boolean hasHeader, String delim, boolean fill, double fillValue) {
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown() ) { //nnz irrelevant here
  			JavaRDD<String> tmp = input.values()
@@ -114,9 +112,7 @@ public class FrameRDDConverterUtils
 
 	public static JavaPairRDD<Long, FrameBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, ValueType[] schema,
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
-	{
+			boolean hasHeader, String delim, boolean fill, double fillValue) {
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
 				input.mapToPair(new StringToSerTextFunction());
@@ -145,21 +141,16 @@ public class FrameRDDConverterUtils
 	// Text cell <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, ValueType[] schema ) 
-		throws DMLRuntimeException  
-	{
+			JavaPairRDD<LongWritable, Text> in, MatrixCharacteristics mcOut, ValueType[] schema ) {
 		//convert input rdd to serializable long/frame block
 		JavaPairRDD<Long,Text> input = 
 				in.mapToPair(new LongWritableTextToLongTextFunction());
-		
 		//do actual conversion
 		return textCellToBinaryBlockLongIndex(sc, input, mcOut, schema);
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> textCellToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, ValueType[] schema ) 
-		throws DMLRuntimeException  
-	{
+			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, ValueType[] schema ) {
 		//prepare default schema if needed
 		if( schema == null || schema.length==1 ) {
 			schema = UtilFunctions.nCopies((int)mc.getCols(), 
@@ -174,9 +165,7 @@ public class FrameRDDConverterUtils
 		return FrameRDDAggregateUtils.mergeByKey( output ); 
 	}
 
-	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<Long, FrameBlock> input, MatrixCharacteristics mcIn) 
-		throws DMLRuntimeException 
-	{
+	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<Long, FrameBlock> input, MatrixCharacteristics mcIn) {
 		//convert frame blocks to ijv string triples  
 		return input.flatMap(new ConvertFrameBlockToIJVLines());
 	}
@@ -185,18 +174,14 @@ public class FrameRDDConverterUtils
 	// Matrix block <--> Binary block
 
 	public static JavaPairRDD<LongWritable, FrameBlock> matrixBlockToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
-		throws DMLRuntimeException 
-	{
+			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn) {
 		//convert and map to serializable LongWritable/frame block
 		return matrixBlockToBinaryBlockLongIndex(sc,input, mcIn)
 			.mapToPair(new LongFrameToLongWritableFrameFunction());
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> matrixBlockToBinaryBlockLongIndex(JavaSparkContext sc,
-			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn)
-		throws DMLRuntimeException 
-	{
+			JavaPairRDD<MatrixIndexes, MatrixBlock> input, MatrixCharacteristics mcIn) {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = input;
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcIn);
 		
@@ -230,16 +215,12 @@ public class FrameRDDConverterUtils
 	// DataFrame <--> Binary block
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID) 
-		throws DMLRuntimeException 
-	{
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID) {
 		return dataFrameToBinaryBlock(sc, df, mc, containsID, new Pair<String[], ValueType[]>());
 	}
 
 	public static JavaPairRDD<Long, FrameBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) 
-		throws DMLRuntimeException 
-	{
+			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, Pair<String[],ValueType[]> out) {
 		//determine unknown dimensions if required
 		if( !mc.dimsKnown() ) { //nnz are irrelevant here
 			int colVect = getColVectFromDFSchema(df.schema(), containsID);
@@ -646,9 +627,7 @@ public class FrameRDDConverterUtils
 			return fb;
 		}
 
-		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
-			throws DMLRuntimeException
-		{
+		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) {
 			if( fb != null && fb.getNumRows()>=0 )
 				ret.add(new Tuple2<>(ix, fb));
 		}
@@ -786,9 +765,7 @@ public class FrameRDDConverterUtils
 			return ret.iterator();
 		}
 
-		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) 
-			throws DMLRuntimeException
-		{
+		private static void flushBlocksToList( Long ix, FrameBlock fb, ArrayList<Tuple2<Long,FrameBlock>> ret ) {
 			if( fb != null && fb.getNumRows()>=0 )
 				ret.add(new Tuple2<>(ix, fb));
 		}

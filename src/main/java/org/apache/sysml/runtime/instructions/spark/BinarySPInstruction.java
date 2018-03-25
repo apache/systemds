@@ -50,9 +50,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
 	
-	public static BinarySPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static BinarySPInstruction parseInstruction ( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -93,32 +91,24 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		return null;
 	}
 
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
-		throws DMLRuntimeException
-	{	
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 3 );
-		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);
-		
 		return opcode;
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
-		throws DMLRuntimeException
-	{
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 4 );
-		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		in3.split(parts[3]);
 		out.split(parts[4]);
-		
 		return opcode;
 	}
 
@@ -126,10 +116,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	 * Common binary matrix-matrix process instruction
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void processMatrixMatrixBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -171,7 +159,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -211,7 +198,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	
@@ -235,7 +221,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected MatrixCharacteristics updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -255,7 +240,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec, boolean cbind) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -297,7 +281,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException 
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -325,7 +308,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());

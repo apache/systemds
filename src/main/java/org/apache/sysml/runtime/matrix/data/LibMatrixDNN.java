@@ -140,9 +140,8 @@ public class LibMatrixDNN {
 	 * @param filter filter
 	 * @param outputBlock output of convolution
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
@@ -161,9 +160,9 @@ public class LibMatrixDNN {
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	 
+*/
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
 		long nnz = execute(LibMatrixDNNConv2d.getConv2dBackwardDataWorkers(params), params);
@@ -180,9 +179,8 @@ public class LibMatrixDNN {
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		
 		execute(LibMatrixDNNConv2d.getConv2dBackwardFilterWorkers(params), params);
@@ -192,7 +190,7 @@ public class LibMatrixDNN {
 		outputBlock.examSparsity();
 	}
 	
-	public static void pooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params, PoolingType poolType) throws DMLRuntimeException {
+	public static void pooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params, PoolingType poolType) {
 		params.input1 = input;
 		params.output = output;
 		
@@ -222,10 +220,9 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 * @param performReluBackward perform ReLU backward
 	 * @param poolType type of pooling
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void poolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
-			ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) throws DMLRuntimeException {
+			ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -269,9 +266,8 @@ public class LibMatrixDNN {
 	 * @param dout errors from next layer
 	 * @param outputBlock output matrix
 	 * @param numThreads number of threads
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) {
 		int N = input.getNumRows();
 		ConvolutionParameters params = new ConvolutionParameters(N, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, numThreads);
 		params.input1 = input;
@@ -299,9 +295,8 @@ public class LibMatrixDNN {
 	 * @param bias bias matrix
 	 * @param outputBlock output matrix
 	 * @param numThreads number of threads
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void biasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+	public static void biasAdd(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) {
 		int N = input.getNumRows();
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
@@ -348,9 +343,8 @@ public class LibMatrixDNN {
 	 * @param bias bias matrix
 	 * @param outputBlock output matrix
 	 * @param numThreads number of threads
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void biasMultiply(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) throws DMLRuntimeException {
+	public static void biasMultiply(MatrixBlock input, MatrixBlock bias, MatrixBlock outputBlock, int numThreads) {
 		int N = input.getNumRows();
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
@@ -423,9 +417,8 @@ public class LibMatrixDNN {
 	 *  
 	 * @param tasks deep learning related tasks
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if the error occurs
 	 */
-	private static long execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) throws DMLRuntimeException {
+	private static long execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		long lnnz = 0;
 		try {
@@ -451,16 +444,16 @@ public class LibMatrixDNN {
 		return lnnz;
 	}
 	
-	private static void checkOrThrowException(String msg, long lhs, long rhs) throws DMLRuntimeException {
+	private static void checkOrThrowException(String msg, long lhs, long rhs) {
 		if(lhs != rhs)
 			throw new DMLRuntimeException(msg + ":" + lhs + " != " + rhs);
 	}
-	private static void checkOrThrowException(String msg, long lhs, long rhs1, long rhs2, long rhs3) throws DMLRuntimeException {
+	private static void checkOrThrowException(String msg, long lhs, long rhs1, long rhs2, long rhs3) {
 		if(lhs != (rhs1*rhs2*rhs3))
 			throw new DMLRuntimeException(msg + ":" + lhs + " != (" + rhs1 + " * " + rhs2 + " * " + rhs3);
 	}
 	
-	static void checkInputsConv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
+	static void checkInputsConv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		params.input1 = filter;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -485,7 +478,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params)  throws DMLRuntimeException {
+	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -510,7 +503,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
 		params.input1 = input;
 		params.input2 = filter;
 		params.output = outputBlock;

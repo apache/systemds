@@ -42,7 +42,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		//1. get the namespace and func
 		String funcName = ec.getScalarInput(inputs[0]).getStringValue();
 		if( funcName.contains(Program.KEY_DELIM) )

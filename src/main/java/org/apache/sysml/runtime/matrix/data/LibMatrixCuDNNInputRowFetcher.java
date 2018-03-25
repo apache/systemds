@@ -43,9 +43,8 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	 * @param gCtx current gpu context
 	 * @param instName name of the instruction
 	 * @param image input matrix object.
-	 * @throws DMLRuntimeException if error
 	 */
-	public LibMatrixCuDNNInputRowFetcher(GPUContext gCtx, String instName, MatrixObject image) throws DMLRuntimeException {
+	public LibMatrixCuDNNInputRowFetcher(GPUContext gCtx, String instName, MatrixObject image) {
 		this.gCtx = gCtx; this.instName = instName;
 		numColumns = LibMatrixCUDA.toInt(image.getNumColumns());
 		isInputInSparseFormat = LibMatrixCUDA.isInSparseFormat(gCtx, image);
@@ -56,9 +55,8 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	 * Copy the nth row and return the dense pointer
 	 * @param n zero-based row index
 	 * @return dense pointer containing the nth row. This row is reused in the next iteration
-	 * @throws DMLRuntimeException ?
 	 */
-	public Pointer getNthRow(int n) throws DMLRuntimeException {
+	public Pointer getNthRow(int n) {
 		if(isInputInSparseFormat) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;

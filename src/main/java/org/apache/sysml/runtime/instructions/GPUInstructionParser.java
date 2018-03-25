@@ -144,13 +144,10 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( RightIndex.OPCODE, GPUINSTRUCTION_TYPE.MatrixIndexing); 
 	}
 	
-	public static GPUInstruction parseSingleInstruction (String str ) 
-		throws DMLRuntimeException 
-	{
+	public static GPUInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-
-		GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str); 
+		GPUINSTRUCTION_TYPE cptype = InstructionUtils.getGPUType(str);
 		if ( cptype == null ) 
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
 		GPUInstruction cpinst = parseSingleInstruction(cptype, str);
@@ -159,9 +156,7 @@ public class GPUInstructionParser  extends InstructionParser
 		return cpinst;
 	}
 	
-	public static GPUInstruction parseSingleInstruction ( GPUINSTRUCTION_TYPE gputype, String str ) 
-		throws DMLRuntimeException 
-	{
+	public static GPUInstruction parseSingleInstruction ( GPUINSTRUCTION_TYPE gputype, String str ) {
 		if( str == null || str.isEmpty() ) 
 			return null;	
 		if( gputype == null )

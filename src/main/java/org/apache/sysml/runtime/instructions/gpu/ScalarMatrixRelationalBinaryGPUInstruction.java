@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.gpu;
 
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -38,7 +37,7 @@ public class ScalarMatrixRelationalBinaryGPUInstruction extends RelationalBinary
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 
 		CPOperand mat = ( _input1.getDataType() == Expression.DataType.MATRIX ) ? _input1 : _input2;

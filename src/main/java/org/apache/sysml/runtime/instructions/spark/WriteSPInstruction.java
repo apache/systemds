@@ -64,9 +64,7 @@ public class WriteSPInstruction extends SPInstruction {
 		formatProperties = null; // set in case of csv
 	}
 
-	public static WriteSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static WriteSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 		
@@ -116,9 +114,7 @@ public class WriteSPInstruction extends SPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{			
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
 
 		//get filename (literal or variable expression)
@@ -151,7 +147,7 @@ public class WriteSPInstruction extends SPInstruction {
 	}
 
 	protected void processMatrixWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		//get input rdd
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
@@ -235,7 +231,7 @@ public class WriteSPInstruction extends SPInstruction {
 
 	@SuppressWarnings("unchecked")
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		//get input rdd
 		JavaPairRDD<Long,FrameBlock> in1 = (JavaPairRDD<Long,FrameBlock>)sec
@@ -268,9 +264,7 @@ public class WriteSPInstruction extends SPInstruction {
 		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
 	}
 
-	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) 
-		throws DMLRuntimeException 
-	{
+	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
 		if(inSingleFile) {
 			Random rand = new Random();
 			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();

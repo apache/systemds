@@ -713,9 +713,7 @@ public abstract class AutomatedTestBase
 	}
 
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo)
-			throws DMLRuntimeException, IOException
-	{
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -725,9 +723,7 @@ public abstract class AutomatedTestBase
 	}
 
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
-			throws DMLRuntimeException, IOException
-	{
+	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -735,9 +731,7 @@ public abstract class AutomatedTestBase
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md)
-			throws DMLRuntimeException, IOException
-	{
+	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
@@ -1732,11 +1726,8 @@ public abstract class AutomatedTestBase
 	 * @param bIncludeR
 	 *            generates also the corresponding R frame data
 	 * @throws IOException
-	 * @throws DMLRuntimeException
 	 */
-	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi)
-			throws DMLRuntimeException, IOException
-	{
+	protected double[][] writeInputFrame(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) throws IOException {
 		String completePath = baseDirectory + INPUT_DIR + name;
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".csv";
 
@@ -1759,16 +1750,12 @@ public abstract class AutomatedTestBase
 		return data;
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi)
-			throws DMLRuntimeException, IOException
-	{
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, ValueType[] schema, OutputInfo oi) throws IOException {
 		MatrixCharacteristics mc = new MatrixCharacteristics(data.length, data[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, data[0].length, -1);
 		return writeInputFrameWithMTD(name, data, bIncludeR, mc, schema, oi);
 	}
 
-	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi)
-			throws DMLRuntimeException, IOException
-	{
+	protected double[][] writeInputFrameWithMTD(String name, double[][] data, boolean bIncludeR, MatrixCharacteristics mc, ValueType[] schema, OutputInfo oi) throws IOException {
 		writeInputFrame(name, data, bIncludeR, schema, oi);
 
 		// write metadata file
@@ -1798,10 +1785,9 @@ public abstract class AutomatedTestBase
 	 * @param schema
 	 * @param oi
 	 * @throws IOException
-	 * @throws DMLRuntimeException
 	 */
 	protected double[][] writeInputFrame(String name, double[][] data, ValueType[] schema, OutputInfo oi)
-			throws DMLRuntimeException, IOException
+			throws IOException
 	{
 		return writeInputFrame(name, data, false, schema, oi);
 	}

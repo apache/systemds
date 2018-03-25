@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -46,25 +45,19 @@ public class CumulativeSplitInstruction extends UnaryInstruction {
 		_lastRowBlockIndex = (long)Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock());
 	}
 	
-	public static CumulativeSplitInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CumulativeSplitInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
 		double init = Double.parseDouble(parts[3]);
-		
 		return new CumulativeSplitInstruction(in, out, init, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList == null ) 
 			return;

@@ -72,7 +72,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	protected static int CONVOLUTION_PREFERENCE = cudnnConvolutionFwdPreference.CUDNN_CONVOLUTION_FWD_NO_WORKSPACE;
 	private static final Log LOG = LogFactory.getLog(LibMatrixCuDNN.class.getName());
 
-	protected static cudnnHandle getCudnnHandle(GPUContext gCtx) throws DMLRuntimeException {
+	protected static cudnnHandle getCudnnHandle(GPUContext gCtx) {
 		return gCtx.getCudnnHandle();
 	}
 	
@@ -99,11 +99,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param P        output height
 	 * @param Q        output width
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if error
 	 */
 	public static void conv2dBiasAdd(GPUContext gCtx, String instName, MatrixObject image, MatrixObject bias, MatrixObject filter, MatrixObject output, int N, int C, int H, int W,
-			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget)
-					throws DMLRuntimeException {
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget) {
 		conv2d(gCtx, instName, image, filter, output, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, intermediateMemoryBudget);
 		//cudaDeviceSynchronize;
 		biasAdd(gCtx, instName, output, bias, output);
@@ -129,10 +127,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param P        output height
 	 * @param Q        output width
 	 * @return output im2col pointer (the caller is expected to free this pointer) or null if image is an empty matrix
-	 * @throws DMLRuntimeException if error
 	 */
 	private static Pointer denseIm2col(GPUContext gCtx, String instName, MatrixObject image, boolean isSparseImage, long N, long C, long H, long W,
-			int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) throws DMLRuntimeException {
+			int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q) {
 		Pointer im2colPointer = null;
 		long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		if(isSparseImage) {
@@ -185,10 +182,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param P        output height
 	 * @param Q        output width
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if error
 	 */
 	public static void conv2d(GPUContext gCtx, String instName, MatrixObject image, MatrixObject filter, MatrixObject outputBlock, int N, int C, int H, int W,
-			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int K, int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, double intermediateMemoryBudget) {
 
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
@@ -272,9 +268,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void softmax(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void softmax(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : softmax" + ", GPUContext=" + gCtx);
 		}
@@ -297,9 +292,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param H height
 	 * @param W width
 	 * @return cudnn tensor descriptor
-	 * @throws DMLRuntimeException if the input descriptor and matrix dimensions don't match
 	 */
-	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) throws DMLRuntimeException {
+	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
 		cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 		cudnnCreateTensorDescriptor(tensorDescriptor);
 		cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, LibMatrixCUDA.CUDNN_DATA_TYPE, N, C, H, W);
@@ -316,9 +310,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dim4 input2 number of columns
 	 * @param dim5 output number of rows
 	 * @param dim6 output number of columns
-	 * @throws DMLRuntimeException the exception with the appropriate message
 	 */
-	private static void throwCuDNNDimensionError(long dim1, long dim2, long dim3, long dim4) throws DMLRuntimeException {
+	private static void throwCuDNNDimensionError(long dim1, long dim2, long dim3, long dim4) {
 		throw new DMLRuntimeException("The dimensions of input/output matrices is too large to execute a CuDNN kernel. "
 				+ "Max CuDNN matrix size:" + maxNumElementsOfCuDNNTensor + ". "
 				+ "Given input matrix dimensions: [" + dim1 + "," + dim2 + "]. Output dimension:  [" + dim3 + "," + dim4 + "].");
@@ -333,9 +326,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dim4 input2 number of columns
 	 * @param dim5 output number of rows
 	 * @param dim6 output number of columns
-	 * @throws DMLRuntimeException the exception with the appropriate message
 	 */
-	private static void throwCuDNNDimensionError(long dim1, long dim2, long dim3, long dim4, long dim5, long dim6) throws DMLRuntimeException {
+	private static void throwCuDNNDimensionError(long dim1, long dim2, long dim3, long dim4, long dim5, long dim6) {
 		throw new DMLRuntimeException("The dimensions of input/output matrices is too large to execute a CuDNN kernel. "
 				+ "Max CuDNN matrix size:" + maxNumElementsOfCuDNNTensor + ". "
 				+ "Given input matrix dimensions: [" + dim1 + "," + dim2 + "], [" + dim3 + "," + dim4 + "]. Output dimension: [" + dim5 + "," + dim6 + "]");
@@ -352,11 +344,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param filter   the filter allocated on the GPU
 	 * @param output   the output matrix allocated on the GPU
 	 * @param algo     cudnn algorithm wrapper
-	 * @throws DMLRuntimeException if error
 	 */
 	private static void cudnnConv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, 
-			LibMatrixCuDNNConvolutionAlgorithm algo)
-					throws DMLRuntimeException {
+			LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : conv2d" + ", GPUContext=" + gCtx);
 		}
@@ -400,12 +390,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param P output activation height
 	 * @param Q output activation width
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardFilter(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, double intermediateMemoryBudget) {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 		
@@ -474,10 +463,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param doutPointer pointer to errors from next layer
 	 * @param dwPointer  output errors
 	 * @param algo     cudnn algorithm wrapper
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void cudnnConv2dBackwardFilter(GPUContext gCtx, String instName, Pointer imagePointer, Pointer doutPointer,
-			Pointer dwPointer, LibMatrixCuDNNConvolutionAlgorithm algo) throws DMLRuntimeException {
+			Pointer dwPointer, LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : conv2dBackwardFilter" + ", GPUContext=" + gCtx);
 		}
@@ -517,12 +505,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param P output activation height
 	 * @param Q output activation width
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void conv2dBackwardData(GPUContext gCtx, String instName, MatrixObject filter, MatrixObject dout,
 			MatrixObject output, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, double intermediateMemoryBudget) {
 		long CHW = C*H*W; long KPQ = K*P*Q; long CRS = C*R*S; 
 		long NCHW = N*CHW; long NKPQ = N*KPQ; long KCRS = K*CRS;
 
@@ -579,10 +566,9 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dy pointer to errors from next layer
 	 * @param dx pointer to  output errors
 	 * @param algo cudnn algorithm wrapper
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void cudnnConv2dBackwardData(GPUContext gCtx, String instName, Pointer w, Pointer dy,
-			Pointer dx, LibMatrixCuDNNConvolutionAlgorithm algo) throws DMLRuntimeException {
+			Pointer dx, LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : conv2dBackwardData" + ", GPUContext=" + gCtx);
 		}
@@ -621,12 +607,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
 	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void pooling(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
@@ -654,7 +639,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	private static void cudnnPoolingHelper(GPUContext gCtx, String instName, Pointer x,
 			Pointer y, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : perform pooling" + ", GPUContext=" + gCtx);
 		}
@@ -700,12 +685,11 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
 	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void poolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType, double intermediateMemoryBudget) throws DMLRuntimeException {
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) {
 		long CHW = C*H*W; long CPQ = C*P*Q;  
 		long NCHW = N*CHW; long NCPQ = N*CPQ; 
 
@@ -750,7 +734,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer x, Pointer dy, Pointer y, Pointer dx, 
 			int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : maxpoolingBackward" + ", GPUContext=" + gCtx);
 		}
@@ -793,7 +777,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 
-	private static void cudnnReLU(GPUContext gCtx, String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) throws DMLRuntimeException {
+	private static void cudnnReLU(GPUContext gCtx, String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) {
 		long t0=0;
 		try {
 			if(LOG.isTraceEnabled()) {
@@ -828,9 +812,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in input matrix
 	 * @param outputName	name of the output matrix
-	 * @throws DMLRuntimeException	if an error occurs
 	 */
-	public static void relu(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
+	public static void relu(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		long N = in.getNumRows();
@@ -867,9 +850,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param image input matrix object
 	 * @param instName name of the instruction
 	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */
-	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName) throws DMLRuntimeException {
+	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName) {
 		long numElems = image.getNumRows()*image.getNumColumns();
 		if(numElems > maxNumElementsOfCuDNNTensor) {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
@@ -881,9 +863,8 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * Convenience method for checking the status of CuDNN kernel.
 	 *
 	 * @param status status returned by CuDNN
-	 * @throws DMLRuntimeException if status is not CUDNN_STATUS_SUCCESS
 	 */
-	protected static void checkStatus(int status) throws DMLRuntimeException {
+	protected static void checkStatus(int status) {
 		if(status != cudnnStatus.CUDNN_STATUS_SUCCESS)
 			throw new DMLRuntimeException("Error status returned by CuDNN:" + jcuda.jcudnn.cudnnStatus.stringFor(status));
 	}

@@ -24,7 +24,6 @@ import org.apache.spark.storage.StorageLevel;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -52,9 +51,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		_level = level;
 	}
 
-	public static CheckpointSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CheckpointSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 3);
 		
@@ -68,9 +65,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		// Step 1: early abort on non-existing or in-memory (cached) inputs

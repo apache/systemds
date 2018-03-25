@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.mr;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -57,17 +56,14 @@ public abstract class MRInstruction extends Instruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		//do nothing (not applicable for MR instructions)
 	}
 
 	public abstract void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
-			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) 
-		throws DMLRuntimeException;
+			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor);
 
-	public abstract byte[] getInputIndexes() 
-		throws DMLRuntimeException;
+	public abstract byte[] getInputIndexes();
 
-	public abstract byte[] getAllIndexes() 
-		throws DMLRuntimeException;
+	public abstract byte[] getAllIndexes();
 }

@@ -111,9 +111,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		return paramMap;
 	}
 	
-	public static ParameterizedBuiltinSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ParameterizedBuiltinSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
@@ -183,9 +181,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 	@Override 
 	@SuppressWarnings("unchecked")
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 		
@@ -194,7 +190,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		{		
 			//get input rdd handle
 			String targetVar = params.get(Statement.GAGG_TARGET);
-			String groupsVar = params.get(Statement.GAGG_GROUPS);			
+			String groupsVar = params.get(Statement.GAGG_GROUPS);
 			JavaPairRDD<MatrixIndexes,MatrixBlock> target = sec.getBinaryBlockRDDHandleForVariable(targetVar);
 			PartitionedBroadcast<MatrixBlock> groups = sec.getBroadcastForVariable(groupsVar);
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( targetVar );
@@ -874,9 +870,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		}
 	}
 
-	public void setOutputCharacteristicsForGroupedAgg(MatrixCharacteristics mc1, MatrixCharacteristics mcOut, JavaPairRDD<MatrixIndexes, MatrixCell> out) 
-		throws DMLRuntimeException 
-	{
+	public void setOutputCharacteristicsForGroupedAgg(MatrixCharacteristics mc1, MatrixCharacteristics mcOut, JavaPairRDD<MatrixIndexes, MatrixCell> out) {
 		if(!mcOut.dimsKnown()) {
 			if(!mc1.dimsKnown()) {
 				throw new DMLRuntimeException("The output dimensions are not specified for grouped aggregate");

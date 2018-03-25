@@ -79,9 +79,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		_bSortIndInMem = bSortIndInMem;
 	}
 
-	public static ReorgSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ReorgSPInstruction parseInstruction ( String str ) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = InstructionUtils.getOpCode(str);
@@ -120,9 +118,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 
@@ -217,9 +213,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
-	private void updateReorgMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	private void updateReorgMatrixCharacteristics(SparkExecutionContext sec) {
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
@@ -256,19 +250,14 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		private ReorgOperator _reorgOp = null;
 		private MatrixCharacteristics _mcIn = null;
 		
-		public RDDDiagV2MFunction(MatrixCharacteristics mcIn) 
-			throws DMLRuntimeException 
-		{
+		public RDDDiagV2MFunction(MatrixCharacteristics mcIn) {
 			_reorgOp = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 			_mcIn = mcIn;
 		}
 		
 		@Override
-		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) {
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
-			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 			
@@ -299,16 +288,12 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		
 		private MatrixCharacteristics _mcIn = null;
 		
-		public RDDRevFunction(MatrixCharacteristics mcIn) 
-			throws DMLRuntimeException 
-		{
+		public RDDRevFunction(MatrixCharacteristics mcIn) {
 			_mcIn = mcIn;
 		}
 		
 		@Override
-		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) {
 			//construct input
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
 			
@@ -352,9 +337,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			_bclen = mc.getColsPerBlock();
 		}
 		
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0)
-			throws Exception 
-		{
+		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) {
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock in = arg0._2();
 			MatrixBlock out = new MatrixBlock(in.getNumRows(), _cols.length, true);

@@ -37,9 +37,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 		_numThreads = k;
 	}
 
-	public static MMTSJCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MMTSJCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 4 );
 		
@@ -56,9 +54,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 

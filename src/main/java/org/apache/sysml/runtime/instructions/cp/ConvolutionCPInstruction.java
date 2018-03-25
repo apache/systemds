@@ -65,14 +65,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) throws DMLRuntimeException {
+	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, null, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
 		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
 		}
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) throws DMLRuntimeException {
+	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, in3, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
 		if( !opcode.equals("channel_sums") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
@@ -99,8 +99,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		this(in, in2, in3, out, stride, padding, input_shape, filter_shape, numThreads, intermediateMemoryBudget, opcode, istr);
 	}
 
-	public static ConvolutionCPInstruction parseInstruction(String str)
-			throws DMLRuntimeException {
+	public static ConvolutionCPInstruction parseInstruction(String str) {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -220,13 +219,12 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 	}
 
-	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
-			throws DMLRuntimeException {
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}
 	
-	public void processReluBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processReluBackwardInstruction(ExecutionContext ec) {
 		// (X > 0) * dout
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
@@ -244,7 +242,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
-	public void processBiasAddInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processBiasAddInstruction(ExecutionContext ec) {
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock outputBlock = null;
@@ -272,7 +270,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
-	public void processBiasMultiplyInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processBiasMultiplyInstruction(ExecutionContext ec) {
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock outputBlock = null;
@@ -298,7 +296,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
-	public void processChannelSumsInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processChannelSumsInstruction(ExecutionContext ec) {
 		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int C = (int) ec.getScalarInput(_in2.getName(), _in2.getValueType(), _in2.isLiteral()).getLongValue();
 		int HW = (int) ec.getScalarInput(_in3.getName(), _in3.getValueType(), _in3.isLiteral()).getLongValue();
@@ -359,7 +357,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	// Assumption: enableNative && NativeHelper.isNativeLibraryLoaded() is true
 	// This increases the number of native calls. For example:the cases where filter is sparse but input is dense
-	private static boolean isFilterSparse(MatrixBlock filter) throws DMLRuntimeException {
+	private static boolean isFilterSparse(MatrixBlock filter) {
 		long numElems = filter.getNumRows()*filter.getNumColumns();
 		// if filter is less than 10 MB in dense format (which handles almost all the cases).
 		// In fact, using threshold of 1 MB is still sufficient for common CNNs.
@@ -370,8 +368,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasAddInstruction(ec);
 			return;

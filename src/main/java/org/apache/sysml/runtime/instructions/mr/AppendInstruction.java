@@ -40,9 +40,7 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 		return _cbind;
 	}
 
-	public static AppendInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AppendInstruction parseInstruction ( String str ) {
 		String opcode = InstructionUtils.getOpCode(str);
 		if( opcode.equals("mappend") )
 			return AppendMInstruction.parseInstruction(str);
@@ -57,9 +55,7 @@ public class AppendInstruction extends BinaryMRInstructionBase {
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
-			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int brlen, int bclen)
-			throws DMLRuntimeException 
-	{
+			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int brlen, int bclen) {
 		throw new DMLRuntimeException("Operations on base append instruction not supported.");
 	}
 }

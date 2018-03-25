@@ -44,9 +44,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		// map-only append (rhs must be vector and fit in mapper mem)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, false);

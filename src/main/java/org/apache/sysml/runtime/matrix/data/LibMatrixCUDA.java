@@ -108,9 +108,8 @@ public class LibMatrixCUDA {
 	
 	/**
 	 * Sets the internal state based on the DMLScript.DATA_TYPE
-	 * @throws DMLRuntimeException if error
 	 */
-	public static void resetFloatingPointPrecision() throws DMLRuntimeException {
+	public static void resetFloatingPointPrecision() {
 		if(DMLScript.FLOATING_POINT_PRECISION.equalsIgnoreCase("double")) {
 			LibMatrixCUDA.CUDNN_DATA_TYPE = jcuda.jcudnn.cudnnDataType.CUDNN_DATA_DOUBLE;
 			LibMatrixCUDA.cudaSupportFunctions = new DoublePrecisionCudaSupportFunctions();
@@ -143,19 +142,12 @@ public class LibMatrixCUDA {
 	//***************************** UTILS ********************************/
 	//********************************************************************/
 
-	/*
-	static GPUContext gCtx throws DMLRuntimeException {
-			return GPUContext.gCtx;
-	}
-	 */
-
 	/**
 	 * Utility function to get maximum number of threads supported by the active CUDA device.
 	 * @param gCtx a valid {@link GPUContext}
 	 * @return max threads
-	 * @throws DMLRuntimeException if exception occurs
 	 */
-	static int getMaxThreads(GPUContext gCtx) throws DMLRuntimeException{
+	static int getMaxThreads(GPUContext gCtx){
 		if (_MAX_THREADS == -1){
 			_MAX_THREADS = gCtx.getMaxThreadsPerBlock();
 		}
@@ -166,9 +158,8 @@ public class LibMatrixCUDA {
 	 * Utility function to get maximum number of blocks supported by the active CUDA device.
 	 * @param gCtx a valid {@link GPUContext}
 	 * @return max blocks
-	 * @throws DMLRuntimeException if exception occurs
 	 */
-	static int getMaxBlocks(GPUContext gCtx) throws DMLRuntimeException{
+	static int getMaxBlocks(GPUContext gCtx) {
 		if (_MAX_BLOCKS == -1){
 			_MAX_BLOCKS = gCtx.getMaxBlocks();
 		}
@@ -179,9 +170,8 @@ public class LibMatrixCUDA {
 	 * Utility function to get the warp size supported by the active CUDA device.
 	 * @param gCtx a valid {@link GPUContext}
 	 * @return warp size
-	 * @throws DMLRuntimeException if exception occurs
 	 */
-	static int getWarpSize(GPUContext gCtx) throws DMLRuntimeException {
+	static int getWarpSize(GPUContext gCtx) {
 		if (_WARP_SIZE == -1) {
 			_WARP_SIZE = gCtx.getWarpSize();
 		}
@@ -202,9 +192,8 @@ public class LibMatrixCUDA {
 	 * @param mo matrix object
 	 * @param recomputeDenseNNZ recompute NNZ if dense
 	 * @return number of non-zeroes
-	 * @throws DMLRuntimeException if error
 	 */
-	public static long getNnz(GPUContext gCtx, String instName, MatrixObject mo, boolean recomputeDenseNNZ) throws DMLRuntimeException {
+	public static long getNnz(GPUContext gCtx, String instName, MatrixObject mo, boolean recomputeDenseNNZ) {
 		if(mo.getGPUObject(gCtx) != null && mo.getGPUObject(gCtx).isAllocated()) {
 			return mo.getGPUObject(gCtx).getNnz(instName, recomputeDenseNNZ);
 		}
@@ -214,25 +203,25 @@ public class LibMatrixCUDA {
 	}
 
 
-	protected static cusparseHandle getCusparseHandle(GPUContext gCtx) throws DMLRuntimeException{
+	protected static cusparseHandle getCusparseHandle(GPUContext gCtx) {
 		return gCtx.getCusparseHandle();
 	}
 
-	protected static cublasHandle getCublasHandle(GPUContext gCtx) throws DMLRuntimeException {
+	protected static cublasHandle getCublasHandle(GPUContext gCtx) {
 		return gCtx.getCublasHandle();
 	}
 
-	protected static JCudaKernels getCudaKernels(GPUContext gCtx) throws DMLRuntimeException {
+	protected static JCudaKernels getCudaKernels(GPUContext gCtx) {
 		return gCtx.getKernels();
 	}
 	
-	public static Pointer double2float(GPUContext gCtx, Pointer A, Pointer ret, int numElems) throws DMLRuntimeException {
+	public static Pointer double2float(GPUContext gCtx, Pointer A, Pointer ret, int numElems) {
 		getCudaKernels(gCtx).launchKernel("double2float", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
 				A, ret, numElems);
 		return ret;
 	}
 	
-	public static Pointer float2double(GPUContext gCtx, Pointer A, Pointer ret, int numElems) throws DMLRuntimeException {
+	public static Pointer float2double(GPUContext gCtx, Pointer A, Pointer ret, int numElems) {
 		getCudaKernels(gCtx).launchKernel("float2double", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
 				A, ret, numElems);
 		return ret;
@@ -278,9 +267,8 @@ public class LibMatrixCUDA {
 	 * @param input input matrix object
 	 * @param instName  the invoking instruction's name for record {@link Statistics}.
 	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
 	 */
-	protected static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
+	protected static Pointer getDensePointer(GPUContext gCtx, MatrixObject input, String instName) {
 		if(isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).sparseToDense(instName);
 		}
@@ -293,9 +281,8 @@ public class LibMatrixCUDA {
 	 * @param input input matrix
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @return a sparse matrix pointer
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	protected static CSRPointer getSparsePointer(GPUContext gCtx, MatrixObject input, String instName) throws DMLRuntimeException {
+	protected static CSRPointer getSparsePointer(GPUContext gCtx, MatrixObject input, String instName) {
 		if(!isInSparseFormat(gCtx, input)) {
 			input.getGPUObject(gCtx).denseToSparse();
 		}
@@ -322,9 +309,8 @@ public class LibMatrixCUDA {
 	 * @param input input image
 	 * @param dout  next layer error propogation
 	 * @param outputBlock output
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void reluBackward(GPUContext gCtx, String instName, MatrixObject input, MatrixObject dout, MatrixObject outputBlock) throws DMLRuntimeException {
+	public static void reluBackward(GPUContext gCtx, String instName, MatrixObject input, MatrixObject dout, MatrixObject outputBlock) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reluBackward" + ", GPUContext=" + gCtx);
 		}
@@ -352,9 +338,8 @@ public class LibMatrixCUDA {
 	 * @param outputBlock output
 	 * @param C number of channels
 	 * @param HW height*width
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void channelSums(GPUContext gCtx, String instName, MatrixObject input, MatrixObject outputBlock, long C, long HW) throws DMLRuntimeException {
+	public static void channelSums(GPUContext gCtx, String instName, MatrixObject input, MatrixObject outputBlock, long C, long HW) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : channelSums" + ", GPUContext=" + gCtx);
 		}
@@ -384,9 +369,8 @@ public class LibMatrixCUDA {
 	 * @param input input image
 	 * @param bias bias
 	 * @param outputBlock output
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void biasMultiply(GPUContext gCtx, String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
+	public static void biasMultiply(GPUContext gCtx, String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : biasMultiply" + ", GPUContext=" + gCtx);
 		}
@@ -425,9 +409,8 @@ public class LibMatrixCUDA {
 	 * @param input input image
 	 * @param bias bias
 	 * @param outputBlock output
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void biasAdd(GPUContext gCtx, String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) throws DMLRuntimeException {
+	public static void biasAdd(GPUContext gCtx, String instName, MatrixObject input, MatrixObject bias, MatrixObject outputBlock) {
 		Pointer imagePointer = getDensePointer(gCtx, input, instName);
 		Pointer biasPointer = getDensePointer(gCtx, bias, instName);
 		Pointer outputPointer = getDensePointer(gCtx, outputBlock, instName);
@@ -453,9 +436,8 @@ public class LibMatrixCUDA {
 	 * @param rows rows in input image
 	 * @param cols cols in input image
 	 * @param k rows in bias
-	 * @throws DMLRuntimeException
 	 */
-	private static void biasAdd(GPUContext gCtx, String instName, Pointer image, Pointer bias, Pointer output, int rows, int cols, int k) throws DMLRuntimeException {
+	private static void biasAdd(GPUContext gCtx, String instName, Pointer image, Pointer bias, Pointer output, int rows, int cols, int k) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : biasAdd" + ", GPUContext=" + gCtx);
 		}
@@ -491,10 +473,9 @@ public class LibMatrixCUDA {
 	 * @param left             input matrix, as in a tsmm expression like A %*% A' or A' %*% A, we just need to check whether the left one is transposed or not, I named it 'left'
 	 * @param outputName       output matrix name
 	 * @param isLeftTransposed if true, left transposed
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matmultTSMM(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left, String outputName,
-			boolean isLeftTransposed) throws DMLRuntimeException {
+			boolean isLeftTransposed) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : matmultTSMM" + ", GPUContext=" + gCtx);
 		}
@@ -550,9 +531,8 @@ public class LibMatrixCUDA {
 	 * @param gCtx     a valid {@link GPUContext}
 	 * @param instName instruction name
 	 * @param ret      upper triangular matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void copyUpperToLowerTriangle(GPUContext gCtx, String instName, MatrixObject ret) throws DMLRuntimeException {
+	private static void copyUpperToLowerTriangle(GPUContext gCtx, String instName, MatrixObject ret) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : copyUpperToLowerTriangle" + ", GPUContext=" + gCtx);
 		}
@@ -589,10 +569,8 @@ public class LibMatrixCUDA {
 	 * @param in1      input matrix
 	 * @param output   output matrix/scalar name
 	 * @param op       Instance of {@link AggregateUnaryOperator} which encapsulates the direction of reduction/aggregation and the reduction operation.
-	 * @throws DMLRuntimeException if {@link DMLRuntimeException} occurs
 	 */
-	public static void unaryAggregate(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String output, AggregateUnaryOperator op)
-			throws DMLRuntimeException {
+	public static void unaryAggregate(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String output, AggregateUnaryOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(LOG.isTraceEnabled()) {
@@ -923,9 +901,8 @@ public class LibMatrixCUDA {
 	 * @param out		output matrix on GPU
 	 * @param rlen	row length
 	 * @param clen	column length
-	 * @throws DMLRuntimeException if error
 	 */
-	private static void squareMatrix(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) throws DMLRuntimeException {
+	private static void squareMatrix(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
 		ScalarOperator power2op = new RightScalarOperator(Power.getPowerFnObject(), 2);
 		matrixScalarOp(gCtx, instName, in, 2, rlen, clen, out, power2op);
 	}
@@ -937,9 +914,8 @@ public class LibMatrixCUDA {
 	 * @param in							{@link Pointer} to matrix in device memory
 	 * @param n								size of array
 	 * @return	the reduced value
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static double reduceAll(GPUContext gCtx, String instName, String kernelFunction, Pointer in, int n) throws DMLRuntimeException {
+	private static double reduceAll(GPUContext gCtx, String instName, String kernelFunction, Pointer in, int n) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceAll for " + kernelFunction + ", GPUContext=" + gCtx);
 		}
@@ -981,9 +957,8 @@ public class LibMatrixCUDA {
 	 * @param out							{@link Pointer} to output matrix in device memory (size - rows * 1)
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void reduceRow(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+	private static void reduceRow(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceRow for " + kernelFunction + ", GPUContext=" + gCtx);
 		}
@@ -1009,9 +984,8 @@ public class LibMatrixCUDA {
 	 * @param out							{@link Pointer} to output matrix in device memory (size - 1 * cols)
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) throws DMLRuntimeException {
+	private static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceCol for " + kernelFunction + ", GPUContext=" + gCtx);
 		}
@@ -1033,7 +1007,7 @@ public class LibMatrixCUDA {
 	 * @param n size of input array
 	 * @return integer array containing {blocks, threads, shared memory}
 	 */
-	private static int[] getKernelParamsForReduceAll(GPUContext gCtx, int n) throws DMLRuntimeException{
+	private static int[] getKernelParamsForReduceAll(GPUContext gCtx, int n) {
 		final int MAX_THREADS = getMaxThreads(gCtx);
 		final int MAX_BLOCKS = getMaxBlocks(gCtx);
 		final int WARP_SIZE = getWarpSize(gCtx);
@@ -1056,7 +1030,7 @@ public class LibMatrixCUDA {
 	 * @param cols number of columns in input matrix
 	 * @return integer array containing {blocks, threads, shared memory}
 	 */
-	private static int[] getKernelParamsForReduceByRow(GPUContext gCtx, int rows, int cols) throws DMLRuntimeException {
+	private static int[] getKernelParamsForReduceByRow(GPUContext gCtx, int rows, int cols) {
 		final int WARP_SIZE = getWarpSize(gCtx);
 		final int MAX_THREADS = getMaxThreads(gCtx);
 		int threads = (cols < MAX_THREADS *2) ? nextPow2((cols + 1)/ 2) : MAX_THREADS;
@@ -1068,7 +1042,7 @@ public class LibMatrixCUDA {
 		return new int[] {blocks, threads, sharedMemSize};
 	}
 
-	private static int[] getKernelParamsForReduceByCol(GPUContext gCtx, int rows, int cols) throws DMLRuntimeException {
+	private static int[] getKernelParamsForReduceByCol(GPUContext gCtx, int rows, int cols) {
 		final int MAX_THREADS = getMaxThreads(gCtx);
 		final int MAX_BLOCKS = getMaxBlocks(gCtx);
 		final int WARP_SIZE = getWarpSize(gCtx);
@@ -1112,9 +1086,8 @@ public class LibMatrixCUDA {
 	 * @param in         input matrix
 	 * @param outputName output matrix name
 	 * @param op         scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void matrixScalarRelational(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, ScalarOperator op) throws DMLRuntimeException {
+	public static void matrixScalarRelational(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, ScalarOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		double constant = op.getConstant();
@@ -1149,9 +1122,8 @@ public class LibMatrixCUDA {
 	 * @param outputName        output matrix name
 	 * @param isInputTransposed true if input transposed
 	 * @param op                scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void matrixScalarArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed, ScalarOperator op) throws DMLRuntimeException {
+	public static void matrixScalarArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed, ScalarOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		double constant = op.getConstant();
@@ -1233,10 +1205,9 @@ public class LibMatrixCUDA {
 	 * @param in2 input matrix 2
 	 * @param outputName output matrix name
 	 * @param op binary operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixMatrixRelational(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
-			String outputName, BinaryOperator op) throws DMLRuntimeException {
+			String outputName, BinaryOperator op) {
 
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
@@ -1270,10 +1241,9 @@ public class LibMatrixCUDA {
 	 * @param isLeftTransposed  true if left-transposed
 	 * @param isRightTransposed true if right-transposed
 	 * @param op                binary operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixMatrixArithmetic(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
-			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
+			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		boolean isCUDALibAvailable = (op.fn instanceof Plus || op.fn instanceof Minus) && !isSparseAndEmpty(gCtx, in1) && !isSparseAndEmpty(gCtx, in2) && !isVector(in1) && !isVector(in2);
@@ -1309,10 +1279,9 @@ public class LibMatrixCUDA {
 	 * @param outputName        output variable name
 	 * @param isInputTransposed true if input is transposed
 	 * @param op                operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void matrixScalarOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName, boolean isInputTransposed,
-			ScalarOperator op) throws DMLRuntimeException {
+			ScalarOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(isInputTransposed)
@@ -1341,9 +1310,8 @@ public class LibMatrixCUDA {
 	 * @param clenA    column lenght of matrix a
 	 * @param c        the dense output matrix
 	 * @param op       operation to perform
-	 * @throws DMLRuntimeException throws runtime exception
 	 */
-	private static void matrixScalarOp(GPUContext gCtx, String instName, Pointer a, double scalar, int rlenA, int clenA, Pointer c, ScalarOperator op) throws DMLRuntimeException {
+	private static void matrixScalarOp(GPUContext gCtx, String instName, Pointer a, double scalar, int rlenA, int clenA, Pointer c, ScalarOperator op) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : matrix_scalar_op" + ", GPUContext=" + gCtx);
 		}
@@ -1369,10 +1337,9 @@ public class LibMatrixCUDA {
 	 * @param isLeftTransposed  true if left matrix is transposed
 	 * @param isRightTransposed true if right matrix is transposed
 	 * @param op                operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void matrixMatrixOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
-			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) throws DMLRuntimeException {
+			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		boolean isEmpty1 = isSparseAndEmpty(gCtx, in1);
@@ -1447,9 +1414,8 @@ public class LibMatrixCUDA {
 	 * @param vecStatusB	if matrix B is a vector
 	 * @param c						output matrix of size (maxRlen, maxClen) allocated on GPU
 	 * @param op					the operation to perform
-	 * @throws DMLRuntimeException
 	 */
-	private static void matrixMatrixOp(GPUContext gCtx, String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) throws DMLRuntimeException {
+	private static void matrixMatrixOp(GPUContext gCtx, String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : matrix_matrix_cellwise_op" + ", GPUContext=" + gCtx);
 		}
@@ -1502,7 +1468,7 @@ public class LibMatrixCUDA {
 		return isEmpty1;
 	}
 
-	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName, boolean isInputTransposed) throws DMLRuntimeException {
+	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName, boolean isInputTransposed) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(!isInputTransposed)
@@ -1518,9 +1484,8 @@ public class LibMatrixCUDA {
 	 * @param instName   the invoking instruction's name for record {@link Statistics}.
 	 * @param src        source matrix
 	 * @param outputName destination variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName) throws DMLRuntimeException {
+	private static void deviceCopy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject src, String outputName) {
 		Pointer srcPtr = getDensePointer(gCtx, src, instName); // TODO: FIXME: Implement sparse kernel
 		MatrixObject out = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, toInt(src.getNumRows()), toInt(src.getNumColumns()));	// Allocated the dense output matrix
@@ -1537,9 +1502,8 @@ public class LibMatrixCUDA {
 	 * @param outputName	(internal) name of the matrix that is to be filled
 	 * @param numRows number of rows of output matrix object
 	 * @param numCols number of columns of output matrix object
-	 * @throws DMLRuntimeException if error
 	 */
-	private static void setOutputToConstant(ExecutionContext ec, GPUContext gCtx, String instName, double constant, String outputName, long numRows, long numCols) throws DMLRuntimeException {
+	private static void setOutputToConstant(ExecutionContext ec, GPUContext gCtx, String instName, double constant, String outputName, long numRows, long numCols) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(constant == 0) {
@@ -1566,9 +1530,8 @@ public class LibMatrixCUDA {
 	 * @param dest destination matrix
 	 * @param rlen number of rows
 	 * @param clen number of columns
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void deviceCopy(String instName, Pointer src, Pointer dest, int rlen, int clen) throws DMLRuntimeException {
+	private static void deviceCopy(String instName, Pointer src, Pointer dest, int rlen, int clen) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		int size = rlen * clen * sizeOfDataType;
@@ -1585,7 +1548,7 @@ public class LibMatrixCUDA {
 	 * 11=min, 12=max, 13=and, 14=or, 15=minus1multiply, 16=minusnz,
 	 * 17=modulus, 18=integer division}
 	 */
-	private static int getBinaryOp(ValueFunction fn) throws DMLRuntimeException {
+	private static int getBinaryOp(ValueFunction fn) {
 		if(fn instanceof Plus) return 0;
 		else if(fn instanceof Minus) return 1;
 		else if(fn instanceof Multiply) return 2;
@@ -1626,10 +1589,9 @@ public class LibMatrixCUDA {
 	 * @param isRightTransposed true if right matrix is transposed
 	 * @param alpha alpha
 	 * @param beta beta
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void dgeam(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName,
-			boolean isLeftTransposed, boolean isRightTransposed, double alpha, double beta) throws DMLRuntimeException {
+			boolean isLeftTransposed, boolean isRightTransposed, double alpha, double beta) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(LOG.isTraceEnabled()) {
@@ -1757,9 +1719,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in input matrix
 	 * @param outputName output matrix name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void transpose(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) throws DMLRuntimeException {
+	public static void transpose(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in, String outputName) {
 		// C = alpha* op( A ) + beta* op ( B )
 		// = 1.0 * A^T + 0.0 * A^T
 		if (ec.getGPUContext(0) != gCtx)
@@ -1771,7 +1732,7 @@ public class LibMatrixCUDA {
 	//******************* End of Re-org Functions ************************/
 	//********************************************************************/
 
-	public static int toInt(long num) throws DMLRuntimeException {
+	public static int toInt(long num) {
 		if(num >= Integer.MAX_VALUE || num <= Integer.MIN_VALUE) {
 			throw new DMLRuntimeException("GPU : Exceeded supported size " + num);
 		}
@@ -1791,10 +1752,9 @@ public class LibMatrixCUDA {
 	 * @param in1 input matrix object
 	 * @param ixrange index range (0-based)
 	 * @param outputName output matrix object
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static void sliceOperations(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1,
-			IndexRange ixrange, String outputName) throws DMLRuntimeException {
+			IndexRange ixrange, String outputName) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException(
 					"GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
@@ -1842,10 +1802,9 @@ public class LibMatrixCUDA {
 	 * @param cl column lower
 	 * @param cu column upper
 	 * @param inClen input number of columns
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	protected static void sliceDenseDense(GPUContext gCtx, String instName, Pointer inPointer, Pointer outPointer, 
-			int rl, int ru, int cl, int cu, int inClen) throws DMLRuntimeException {
+			int rl, int ru, int cl, int cu, int inClen) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		long retClen = cu - cl + 1;
 		if (inClen == retClen) {
@@ -1871,10 +1830,9 @@ public class LibMatrixCUDA {
 	 * @param cl column lower
 	 * @param cu column upper
 	 * @param inClen number of columns of input matrix
-	 * @throws DMLRuntimeException if error
 	 */
 	protected static void sliceSparseDense(GPUContext gCtx, String instName, CSRPointer inPointer, Pointer outPointer, 
-			int rl, int ru, int cl, int cu, int inClen) throws DMLRuntimeException {
+			int rl, int ru, int cl, int cu, int inClen) {
 		int size = getNnz(inPointer, rl, ru);
 		// Return since nnz of the output is 0 as outPointer is expected to be zeroed out.
 		if(size == 0) return;
@@ -1920,7 +1878,7 @@ public class LibMatrixCUDA {
 		return ruPtr[0] - rlPtr[0];
 	}
 
-	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+	public static void cbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(LOG.isTraceEnabled()) {
@@ -1955,7 +1913,7 @@ public class LibMatrixCUDA {
 
 	}
 
-	public static void rbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+	public static void rbind(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		if(LOG.isTraceEnabled()) {
@@ -2007,9 +1965,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void exp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void exp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : exp" + ", GPUContext=" + gCtx);
 		}
@@ -2024,9 +1981,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void sqrt(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void sqrt(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sqrt" + ", GPUContext=" + gCtx);
 		}
@@ -2041,9 +1997,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void round(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void round(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : round" + ", GPUContext=" + gCtx);
 		}
@@ -2058,9 +2013,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void abs(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void abs(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : abs" + ", GPUContext=" + gCtx);
 		}
@@ -2075,9 +2029,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void log(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void log(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : log" + ", GPUContext=" + gCtx);
 		}
@@ -2092,9 +2045,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void floor(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void floor(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : floor" + ", GPUContext=" + gCtx);
 		}
@@ -2109,9 +2061,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void ceil(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void ceil(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : ceil" + ", GPUContext=" + gCtx);
 		}
@@ -2126,9 +2077,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void sin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void sin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sin" + ", GPUContext=" + gCtx);
 		}
@@ -2143,9 +2093,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void cos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void cos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : cos" + ", GPUContext=" + gCtx);
 		}
@@ -2160,9 +2109,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void tan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void tan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : tan" + ", GPUContext=" + gCtx);
 		}
@@ -2177,9 +2125,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void sinh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void sinh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sinh" + ", GPUContext=" + gCtx);
 		}
@@ -2194,9 +2141,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void cosh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void cosh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : cosh" + ", GPUContext=" + gCtx);
 		}
@@ -2211,9 +2157,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void tanh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void tanh(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : tanh" + ", GPUContext=" + gCtx);
 		}
@@ -2228,9 +2173,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void asin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void asin(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : asin" + ", GPUContext=" + gCtx);
 		}
@@ -2245,9 +2189,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void acos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void acos(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : acos" + ", GPUContext=" + gCtx);
 		}
@@ -2262,9 +2205,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void atan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void atan(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : atan" + ", GPUContext=" + gCtx);
 		}
@@ -2279,9 +2221,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void sign(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void sign(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sign" + ", GPUContext=" + gCtx);
 		}
@@ -2296,9 +2237,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param in1	input matrix
 	 * @param outputName	output matrix name
-	 * @throws DMLRuntimeException	if DMLRuntimeException occurs
 	 */
-	public static void sigmoid(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) throws DMLRuntimeException {
+	public static void sigmoid(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, String outputName) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : sigmoid" + ", GPUContext=" + gCtx);
 		}
@@ -2317,9 +2257,8 @@ public class LibMatrixCUDA {
 	 * @param outputName output matrix name
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param kernelTimer the name of the timer to measure the kernel invocation
-	 * @throws DMLRuntimeException
 	 */
-	private static void unaryOp(ExecutionContext ec, GPUContext gCtx, MatrixObject in1, String kernel, double sparseAndEmptyFillValue, String outputName, String instName, String kernelTimer) throws DMLRuntimeException {
+	private static void unaryOp(ExecutionContext ec, GPUContext gCtx, MatrixObject in1, String kernel, double sparseAndEmptyFillValue, String outputName, String instName, String kernelTimer) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		GPUObject in = in1.getGPUObject(gCtx);
@@ -2352,10 +2291,9 @@ public class LibMatrixCUDA {
 	 * @param in2 input matrix 2
 	 * @param outputName output matrix name
 	 * @param constant pointer constant
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void axpy(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
-			String outputName,  double constant) throws DMLRuntimeException {
+			String outputName,  double constant) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		Pointer A = getDensePointer(gCtx, in1, instName);
@@ -2412,9 +2350,8 @@ public class LibMatrixCUDA {
 	 * @param in1        input matrix A
 	 * @param in2        input matrix B
 	 * @param outputName name of the output matrix
-	 * @throws DMLRuntimeException if an error occurs
 	 */
-	public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) throws DMLRuntimeException {
+	public static void solve(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2, String outputName) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 
@@ -2533,9 +2470,8 @@ public class LibMatrixCUDA {
 	 * @param numRows number of rows of output matrix object
 	 * @param numCols number of columns of output matrix object
 	 * @return	the matrix object
-	 * @throws DMLRuntimeException	if an error occurs
 	 */
-	protected static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) throws DMLRuntimeException {
+	protected static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
@@ -2555,9 +2491,8 @@ public class LibMatrixCUDA {
 	 * @param instName the invoking instruction's name for record {@link Statistics}.
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
 	 * @return	the matrix object
-	 * @throws DMLRuntimeException	if an error occurs
 	 */
-	private static MatrixObject getSparseMatrixOutputForGPUInstruction(ExecutionContext ec, long numRows, long numCols, long nnz, String instName, String name) throws DMLRuntimeException {
+	private static MatrixObject getSparseMatrixOutputForGPUInstruction(ExecutionContext ec, long numRows, long numCols, long nnz, String instName, String name) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getSparseMatrixOutputForGPUInstruction(name, numRows, numCols, nnz);

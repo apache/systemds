@@ -45,9 +45,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		return _outputs.get(i);
 	}
 
-	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MultiReturnParameterizedBuiltinCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
@@ -67,9 +65,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//obtain and pin input frame
 		FrameBlock fin = ec.getFrameInput(input1.getName());
 		String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();

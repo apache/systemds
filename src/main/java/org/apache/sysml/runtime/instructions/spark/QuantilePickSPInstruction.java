@@ -62,9 +62,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		_type = type;
 	}
 
-	public static QuantilePickSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static QuantilePickSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
@@ -102,9 +100,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdds
@@ -154,10 +150,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	 * @param mc matrix characteristics
 	 * @param quantiles one or more quantiles between 0 and 1.
 	 * @return a summary of weighted quantiles
-	 * @throws DMLRuntimeException 
 	 */
 	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, Double... quantiles)
-		throws DMLRuntimeException 
 	{
 		double[] ret = new double[3*quantiles.length + 1];
 		if( mc.getCols()==2 ) //weighted 
@@ -216,9 +210,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		return ret;
 	}
 
-	private static double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen)
-		throws DMLRuntimeException
-	{
+	private static double lookupKey(JavaPairRDD<MatrixIndexes,MatrixBlock> in, long key, int brlen) {
 		long rix = UtilFunctions.computeBlockIndex(key, brlen);
 		long pos = UtilFunctions.computeCellInBlock(key, brlen);
 		List<MatrixBlock> val = in.lookup(new MatrixIndexes(rix,1));

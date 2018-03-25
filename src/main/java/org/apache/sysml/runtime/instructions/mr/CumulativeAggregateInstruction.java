@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -45,27 +44,20 @@ public class CumulativeAggregateInstruction extends AggregateUnaryInstruction {
 		_mcIn = mcIn;
 	}
 	
-	public static CumulativeAggregateInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CumulativeAggregateInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 2 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		String opcode = parts[0];
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
-		
 		AggregateUnaryOperator aggun = InstructionUtils.parseCumulativeAggregateUnaryOperator(opcode);
-		
 		return new CumulativeAggregateInstruction(aggun, in, out, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList == null ) 
 			return;

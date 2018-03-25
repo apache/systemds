@@ -62,33 +62,25 @@ public class RemoveEmptyMRInstruction extends BinaryInstruction {
 		return _len;
 	}
 
-	public static RemoveEmptyMRInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static RemoveEmptyMRInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields (str, 6);
-		
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
-		
 		if(!opcode.equalsIgnoreCase("rmempty"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an RemoveEmptyMRInstruction: " + str);
-		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		long rlen = UtilFunctions.toLong(Double.parseDouble(parts[3]));
 		boolean rmRows = parts[4].equals("rows");
 		boolean emptyRet = Boolean.parseBoolean(parts[5].toLowerCase());
 		byte out = Byte.parseByte(parts[6]);
-		
 		return new RemoveEmptyMRInstruction(null, in1, in2, rlen, rmRows, emptyRet, out, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException
-	{
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		//get input and offsets
 		IndexedMatrixValue inData = cachedValues.getFirst(input1);
 		IndexedMatrixValue inOffset = cachedValues.getFirst(input2);

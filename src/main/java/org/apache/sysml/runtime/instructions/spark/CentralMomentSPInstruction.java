@@ -47,9 +47,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		super(SPType.CentralMoment, op, in1, in2, in3, out, opcode, str);
 	}
 
-	public static CentralMomentSPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static CentralMomentSPInstruction parseInstruction(String str) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = null; 
 		CPOperand in3 = null; 
@@ -98,9 +96,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//parse 'order' input argument 

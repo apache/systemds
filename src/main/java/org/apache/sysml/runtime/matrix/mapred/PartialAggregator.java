@@ -132,9 +132,7 @@ public class PartialAggregator extends MMCJMRCache
 		return nonZeros;
 	}
 
-	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value, boolean leftcached) 
-		throws DMLRuntimeException 
-	{
+	private void aggregateToBufferHelp(MatrixIndexes indexes, MatrixValue value, boolean leftcached) {
 		Integer ix = _bufferMap.get( indexes );
 		if( ix != null ) //agg into existing block 
 		{

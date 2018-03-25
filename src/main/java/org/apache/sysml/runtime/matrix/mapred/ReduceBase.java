@@ -282,9 +282,7 @@ public class ReduceBase extends MRBaseForCommonInstructions
 	
 	//process one aggregate instruction
 	private void processAggregateHelp(long row, long col, MatrixValue value, 
-			AggregateInstruction instruction, boolean imbededCorrection) 
-	throws DMLRuntimeException
-	{
+			AggregateInstruction instruction, boolean imbededCorrection) {
 		AggregateOperator aggOp=(AggregateOperator)instruction.getOperator();
 		
 		//there should be just one value in cache.

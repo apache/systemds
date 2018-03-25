@@ -80,9 +80,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		super(op, paramsMap, out, opcode, istr);
 	}
 
-	public static ParameterizedBuiltinCPFileInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ParameterizedBuiltinCPFileInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		// first part is always the opcode
 		String opcode = parts[0];
@@ -104,9 +102,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 	}
 	
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		
 		if ( opcode.equalsIgnoreCase("rmempty") ) 
@@ -149,12 +145,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			_out = out;
 		}
 
-		public MatrixObject execute() 
-			throws DMLRuntimeException 
-		{
-			//Timing time = new Timing();
-			//time.start();
-			
+		public MatrixObject execute() {
 			//initial setup
 			String fnameOld = _src.getFileName();
 			String fnameNew = _out.getFileName();
@@ -212,9 +203,7 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 				return createNewOutputObject(_src, _out, mc.getRows(), ret );
 		}
 
-		private static MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) 
-			throws DMLRuntimeException
-		{
+		private static MatrixObject createNewOutputObject( MatrixObject src, MatrixObject out, long rows, long cols ) {
 			String fName = out.getFileName();
 			MetaDataFormat metadata = (MetaDataFormat) src.getMetaData();
 			MatrixObject moNew = new MatrixObject(src.getValueType(), fName);
@@ -348,11 +337,10 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 		 * @param stagingDir staging directory
 		 * @return true if diag
 		 * @throws IOException if IOException occurs
-		 * @throws DMLRuntimeException if DMLRuntimeException occurs
 		 */
 		@SuppressWarnings("deprecation")
 		public boolean createBinaryBlockStagingFile( String fnameOld, String stagingDir ) 
-			throws IOException, DMLRuntimeException
+			throws IOException
 		{
 			//prepare input
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -389,33 +377,25 @@ public class ParameterizedBuiltinCPFileInstruction extends ParameterizedBuiltinC
 			return diagBlocks;
 		}
 
-		private static void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) 
-			throws DMLRuntimeException, IOException
-		{
+		private static void appendCellBufferToStagingArea( String dir, LinkedList<Cell> buffer, int brlen, int bclen ) throws IOException {
 			HashMap<String,LinkedList<Cell>> sortedBuffer = new HashMap<>();
-			
 			//sort cells in buffer wrt key
 			String key = null;
-			for( Cell c : buffer )
-			{
+			for( Cell c : buffer ) {
 				key = (c.getRow()/brlen+1) +"_"+(c.getCol()/bclen+1);
-				
 				if( !sortedBuffer.containsKey(key) )
 					sortedBuffer.put(key, new LinkedList<Cell>());
 				sortedBuffer.get(key).addLast(c);
-			}	
-			
+			}
 			//write lists of cells to local files
-			for( Entry<String,LinkedList<Cell>> e : sortedBuffer.entrySet() )
-			{
-				
+			for( Entry<String,LinkedList<Cell>> e : sortedBuffer.entrySet() ) {
 				String pfname = dir + "/" + e.getKey();
 				StagingFileUtils.writeCellListToLocal(pfname, e.getValue());
 			}
-		}	
+		}
 
 		private long createKeyMapping( String stagingDir, long rlen, long clen, int brlen, int bclen, InputInfo ii) 
-			throws FileNotFoundException, IOException, DMLRuntimeException 
+			throws FileNotFoundException, IOException 
 		{
 			String metaOut = stagingDir+"/meta";
 			

@@ -42,7 +42,6 @@ import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -280,9 +279,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 	}
 
 	@SuppressWarnings("resource")
-	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema)
-		throws DMLRuntimeException
-	{
+	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) {
 		//create in-memory list of rows
 		List<Row> list = new ArrayList<Row>();
 		int off = (containsID ? 1 : 0);

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -36,7 +35,7 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static UnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static UnaryInstruction parseInstruction ( String str ) {
 		String opcode = InstructionUtils.getOpCode(str);
 		InstructionUtils.checkNumFields ( str, 2 );
 		String[] parts = InstructionUtils.getInstructionParts ( str );
@@ -50,11 +49,8 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
-		
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
-		
 		if( blkList != null )
 			for(IndexedMatrixValue in : blkList ) {
 				if(in==null) continue;
@@ -72,5 +68,4 @@ public class UnaryInstruction extends UnaryMRInstructionBase {
 					cachedValues.add(output, out);
 			}
 	}
-
 }

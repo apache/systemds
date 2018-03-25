@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -37,18 +36,14 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static ScalarInstruction parseInstruction ( String str )
-		throws DMLRuntimeException 
-	{	
+	public static ScalarInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		String opcode = parts[0];
 		boolean firstArgScalar = isFirstArgumentScalar(str);
 		double cst = Double.parseDouble( firstArgScalar ? parts[1] : parts[2]);
 		byte in = Byte.parseByte( firstArgScalar ? parts[2] : parts[1]);
 		byte out = Byte.parseByte(parts[3]);
-		
 		ScalarOperator sop = InstructionUtils.parseScalarBinaryOperator(opcode, firstArgScalar, cst);
 		return new ScalarInstruction(sop, in, out, str);
 	}
@@ -56,7 +51,6 @@ public class ScalarInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList != null )

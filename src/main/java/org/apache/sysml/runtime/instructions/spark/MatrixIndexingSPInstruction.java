@@ -79,9 +79,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 		
@@ -177,7 +175,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 
 
 	public static MatrixBlock inmemoryIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) throws DMLRuntimeException {
+			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
 		if( isSingleBlockLookup(mcIn, ixrange) ) {
 			return singleBlockIndexing(in1, mcIn, mcOut, ixrange);
 		}
@@ -189,7 +187,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	}
 	
 	private static MatrixBlock multiBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) throws DMLRuntimeException {
+			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
 		//create list of all required matrix indexes
 		List<MatrixIndexes> filter = new ArrayList<>();
 		long rlix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
@@ -212,7 +210,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	}
 	
 	private static MatrixBlock singleBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) throws DMLRuntimeException {
+			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
 		//single block output via lookup (on partitioned inputs, this allows for single partition
 		//access to avoid a full scan of the input; note that this is especially important for 
 		//out-of-core datasets as entire partitions are read, not just keys as in the in-memory setting.
@@ -254,9 +252,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		return out;
 	}
 	
-	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
-		throws DMLRuntimeException
-	{
+	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) {
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}

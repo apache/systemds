@@ -47,7 +47,7 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		this.inputs = inputs;
 	}
 
-	public static BuiltinNaryCPInstruction parseInstruction(String str) throws DMLRuntimeException {
+	public static BuiltinNaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand outputOperand = new CPOperand(parts[parts.length - 1]);

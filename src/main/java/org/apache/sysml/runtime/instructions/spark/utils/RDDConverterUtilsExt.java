@@ -93,10 +93,9 @@ public class RDDConverterUtilsExt
 	 * @param mcIn matrix characteristics
 	 * @param outputEmptyBlocks if true, inject empty blocks if necessary
 	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(JavaSparkContext sc,
-			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) throws DMLRuntimeException
+			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks)
 	{
 		//convert matrix entry rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.entries().toJavaRDD()
@@ -115,12 +114,11 @@ public class RDDConverterUtilsExt
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
-			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) throws DMLRuntimeException
-	{
+			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) {
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
 	}
 
-	public static Dataset<Row> projectColumns(Dataset<Row> df, ArrayList<String> columns) throws DMLRuntimeException {
+	public static Dataset<Row> projectColumns(Dataset<Row> df, ArrayList<String> columns) {
 		ArrayList<String> columnToSelect = new ArrayList<String>();
 		for(int i = 1; i < columns.size(); i++) {
 			columnToSelect.add(columns.get(i));
@@ -128,19 +126,19 @@ public class RDDConverterUtilsExt
 		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) throws DMLRuntimeException {
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) {
 		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false);
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) throws DMLRuntimeException {
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) {
 		return convertPy4JArrayToMB(data, rlen, clen, false);
 	}
 
-	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) throws DMLRuntimeException {
+	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) {
 		return convertSciPyCOOToMB(data, row, col, (int)rlen, (int)clen, (int)nnz);
 	}
 
-	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) throws DMLRuntimeException {
+	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) {
 		MatrixBlock mb = new MatrixBlock(rlen, clen, true);
 		mb.allocateSparseRowsBlock(false);
 		ByteBuffer buf1 = ByteBuffer.wrap(data);
@@ -160,7 +158,7 @@ public class RDDConverterUtilsExt
 		return mb;
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) {
 		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
 	}
 
@@ -169,35 +167,35 @@ public class RDDConverterUtilsExt
 		ret.allocateBlock();
 		return ret;
 	}
-	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) throws DMLRuntimeException {
+	public static MatrixBlock allocateDenseOrSparse(long rlen, long clen, boolean isSparse) {
 		if(rlen > Integer.MAX_VALUE || clen > Integer.MAX_VALUE) {
 			throw new DMLRuntimeException("Dimensions of matrix are too large to be passed via NumPy/SciPy:" + rlen + " X " + clen);
 		}
 		return allocateDenseOrSparse(rlen, clen, isSparse);
 	}
 
-	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) throws DMLRuntimeException {
+	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) {
 		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
-	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) throws DMLRuntimeException {
+	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, int numRowsPerBlock, int rlen, int clen) {
 		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
-	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) throws DMLRuntimeException {
+	public static void copyRowBlocks(MatrixBlock mb, int rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) {
 		copyRowBlocks(mb, (long)rowIndex, ret, (long)numRowsPerBlock, (long)rlen, (long)clen);
 	}
-	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) throws DMLRuntimeException {
+	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) {
 		// TODO: Double-check if synchronization is required here.
 		// synchronized (RDDConverterUtilsExt.class) {
 			ret.copy((int)(rowIndex*numRowsPerBlock), (int)Math.min((rowIndex+1)*numRowsPerBlock-1, rlen-1), 0, (int)(clen-1), mb, false);
 		// }
 	}
 
-	public static void postProcessAfterCopying(MatrixBlock ret) throws DMLRuntimeException {
+	public static void postProcessAfterCopying(MatrixBlock ret) {
 		ret.recomputeNonZeros();
 		ret.examSparsity();
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) throws DMLRuntimeException {
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) {
 		MatrixBlock mb = new MatrixBlock(rlen, clen, isSparse, -1);
 		if(isSparse) {
 			throw new DMLRuntimeException("Convertion to sparse format not supported");
@@ -219,7 +217,7 @@ public class RDDConverterUtilsExt
 		return mb;
 	}
 
-	public static byte [] convertMBtoPy4JDenseArr(MatrixBlock mb) throws DMLRuntimeException {
+	public static byte [] convertMBtoPy4JDenseArr(MatrixBlock mb) {
 		byte [] ret = null;
 		if(mb.isInSparseFormat()) {
 			mb.sparseToDense();
@@ -290,7 +288,7 @@ public class RDDConverterUtilsExt
 		private static final long serialVersionUID = 4907483236186747224L;
 
 		private IJVToBinaryBlockFunctionHelper helper = null;
-		public MatrixEntryToBinaryBlockFunction(MatrixCharacteristics mc) throws DMLRuntimeException {
+		public MatrixEntryToBinaryBlockFunction(MatrixCharacteristics mc) {
 			helper = new IJVToBinaryBlockFunctionHelper(mc);
 		}
 
@@ -312,19 +310,15 @@ public class RDDConverterUtilsExt
 		private int _brlen = -1;
 		private int _bclen = -1;
 
-		public IJVToBinaryBlockFunctionHelper(MatrixCharacteristics mc) throws DMLRuntimeException
-		{
-			if(!mc.dimsKnown()) {
+		public IJVToBinaryBlockFunctionHelper(MatrixCharacteristics mc) {
+			if(!mc.dimsKnown())
 				throw new DMLRuntimeException("The dimensions need to be known in given MatrixCharacteristics for given input RDD");
-			}
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
-
 			//determine upper bounded buffer len
 			_bufflen = (int) Math.min(_rlen*_clen, BUFFER_SIZE);
-
 		}
 
 		// ----------------------------------------------------
@@ -422,12 +416,9 @@ public class RDDConverterUtilsExt
 	 *            dataframe of comma-separated row strings to convert to
 	 *            dataframe of ml.linalg.Vector rows
 	 * @return dataframe of ml.linalg.Vector rows
-	 * @throws DMLRuntimeException
-	 *             if DMLRuntimeException occurs
 	 */
 	public static Dataset<Row> stringDataFrameToVectorDataFrame(SparkSession sparkSession, Dataset<Row> inputDF)
-			throws DMLRuntimeException {
-
+	{
 		StructField[] oldSchema = inputDF.schema().fields();
 		StructField[] newSchema = new StructField[oldSchema.length];
 		for (int i = 0; i < oldSchema.length; i++) {

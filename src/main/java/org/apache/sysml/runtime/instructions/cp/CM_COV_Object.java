@@ -131,17 +131,13 @@ public class CM_COV_Object extends Data
 	 * 
 	 * @param op operator
 	 * @return result of the aggregated operation for the given operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public double getRequiredResult(Operator op) throws DMLRuntimeException
-	{
-		if(op instanceof CMOperator)
-		{
+	public double getRequiredResult(Operator op) {
+		if(op instanceof CMOperator) {
 			AggregateOperationTypes agg=((CMOperator)op).aggOpType;
 			return getRequiredResult(agg);
 		}
-		else
-		{
+		else {
 			//avoid division by 0
 			if(w==1.0)
 				return 0;
@@ -156,9 +152,8 @@ public class CM_COV_Object extends Data
 	 * 
 	 * @param agg aggregate operation type
 	 * @return result of the aggregated operation given the operation type
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public double getRequiredResult(AggregateOperationTypes agg) throws DMLRuntimeException {
+	public double getRequiredResult(AggregateOperationTypes agg) {
 		switch(agg)
 		{
 			case COUNT:
@@ -178,20 +173,14 @@ public class CM_COV_Object extends Data
 		}
 	}
 
-	public double getRequiredPartialResult(Operator op) 
-		throws DMLRuntimeException
-	{
-		if(op instanceof CMOperator)
-		{
+	public double getRequiredPartialResult(Operator op) {
+		if(op instanceof CMOperator) {
 			AggregateOperationTypes agg=((CMOperator)op).aggOpType;
-			switch(agg)
-			{
-				case COUNT:
-					return 0;
-				case MEAN:
-					return mean._sum;
-				case CM2:					
-				case CM3:					
+			switch(agg) {
+				case COUNT: return 0;
+				case MEAN:  return mean._sum;
+				case CM2:
+				case CM3:
 				case CM4:
 				case VARIANCE:
 					throw new DMLRuntimeException("Aggregation operator '"+agg.toString()+"' does not apply to partial aggregation.");
@@ -203,8 +192,7 @@ public class CM_COV_Object extends Data
 			return c2._sum;
 	}
 
-	public double getWeight() 
-	{
+	public double getWeight() {
 		return w;
 	}
 	

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -50,27 +49,21 @@ public class BinUaggChainInstruction extends UnaryInstruction {
 		instString = istr;
 	}
 
-	public static BinUaggChainInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{		
+	public static BinUaggChainInstruction parseInstruction( String str ) {
 		//check number of fields (2/3 inputs, output, type)
 		InstructionUtils.checkNumFields ( str, 4 );
-		
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionParts( str );		
-		
+		String[] parts = InstructionUtils.getInstructionParts( str );
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[1]);
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
 		byte in1 = Byte.parseByte(parts[3]);
 		byte out = Byte.parseByte(parts[4]);
-		
 		return new BinUaggChainInstruction(bop, uaggop, in1, out, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
-			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
+		IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get( input );
 		if( blkList == null )

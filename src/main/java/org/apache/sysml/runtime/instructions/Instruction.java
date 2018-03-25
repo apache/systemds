@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 
@@ -210,11 +209,8 @@ public abstract class Instruction
 	 * 
 	 * @param pattern ?
 	 * @param replace ?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void updateInstructionThreadID(String pattern, String replace) 
-		throws DMLRuntimeException
-	{
+	public void updateInstructionThreadID(String pattern, String replace) {
 		//do nothing
 	}
 	
@@ -225,11 +221,8 @@ public abstract class Instruction
 	 * 
 	 * @param ec execution context
 	 * @return instruction
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException
-	{
+	public Instruction preprocessInstruction(ExecutionContext ec){
 		//update debug status
 		ec.updateDebugState( this );
 		
@@ -241,10 +234,8 @@ public abstract class Instruction
 	 * This method should be used to execute the instruction. 
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException;
+	public abstract void processInstruction(ExecutionContext ec);
 	
 	/**
 	 * This method should be used for any tear down after executing this instruction.
@@ -252,11 +243,8 @@ public abstract class Instruction
 	 * call the super method.
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void postprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException
-	{
+	public void postprocessInstruction(ExecutionContext ec) {
 		//do nothing
 	}
 }

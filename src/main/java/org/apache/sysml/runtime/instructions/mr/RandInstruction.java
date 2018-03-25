@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import org.apache.sysml.hops.Hop.DataGenMethod;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
@@ -73,12 +72,10 @@ public class RandInstruction extends DataGenMRInstruction {
 		return seed;
 	}
 
-	public static RandInstruction parseInstruction(String str) throws DMLRuntimeException 
+	public static RandInstruction parseInstruction(String str)
 	{
 		InstructionUtils.checkNumFields ( str, 13 );
-
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		Operator op = null;
 		byte input = Byte.parseByte(parts[1]);
 		byte output = Byte.parseByte(parts[2]);
@@ -93,16 +90,13 @@ public class RandInstruction extends DataGenMRInstruction {
 		String baseDir = parts[11];
 		String pdf = parts[12];
 		String pdfParams = parts[13];
-		
 		return new RandInstruction(op, input, output, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, pdf, pdfParams, baseDir, str);
 	}
 
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException 
-	{
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		//do nothing (only meta carrier, handled in special job type)
-	}	
+	}
 }

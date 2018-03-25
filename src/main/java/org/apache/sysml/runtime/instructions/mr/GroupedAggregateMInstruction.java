@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -45,29 +44,22 @@ public class GroupedAggregateMInstruction extends BinaryMRInstructionBase implem
 		_ngroups = ngroups;
 	}
 
-	public static GroupedAggregateMInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static GroupedAggregateMInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		InstructionUtils.checkNumFields(parts, 5);
-		
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		byte out = Byte.parseByte(parts[3]);
 		int ngroups = Integer.parseInt(parts[4]);
 		//partitioning ignored
-		
 		Operator op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
-		
 		return new GroupedAggregateMInstruction(op, in1, in2, out, ngroups, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
-			int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{	
+			int blockRowFactor, int blockColFactor) {
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input1);
 		if( blkList == null ) 
 			return;

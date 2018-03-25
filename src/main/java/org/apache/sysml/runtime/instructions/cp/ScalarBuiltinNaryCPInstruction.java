@@ -43,7 +43,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		if (Nary.OperationType.PRINTF.toString().equalsIgnoreCase(getOpcode())) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {

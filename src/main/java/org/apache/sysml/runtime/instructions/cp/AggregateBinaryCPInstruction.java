@@ -38,9 +38,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
 	}
 
-	public static AggregateBinaryCPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AggregateBinaryCPInstruction parseInstruction( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -64,9 +62,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());

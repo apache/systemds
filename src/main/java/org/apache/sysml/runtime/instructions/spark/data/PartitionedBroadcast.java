@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark.data;
 import java.io.Serializable;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -79,9 +78,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 			Math.min(rlen, brlen) / Math.min(clen, bclen));
 	}
 
-	public T getBlock(int rowIndex, int colIndex) 
-		throws DMLRuntimeException 
-	{
+	public T getBlock(int rowIndex, int colIndex) {
 		int pix = 0;
 		if( _pbc.length > 1 ) { //compute partition index
 			int numPerPart = computeBlocksPerPartition(_mc.getRows(),
@@ -93,9 +90,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		return _pbc[pix].value().getBlock(rowIndex, colIndex);
 	}
 	
-	public T slice(long rl, long ru, long cl, long cu, T block) 
-		throws DMLRuntimeException 
-	{
+	public T slice(long rl, long ru, long cl, long cu, T block) {
 		T ret = null;
 		for( Broadcast<PartitionedBlock<T>> bc : _pbc ) {
 			PartitionedBlock<T> pm = bc.value();

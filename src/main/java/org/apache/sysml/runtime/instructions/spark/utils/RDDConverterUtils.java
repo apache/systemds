@@ -79,9 +79,7 @@ public class RDDConverterUtils
 	public static final String DF_ID_COLUMN = "__INDEX";
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
-		throws DMLRuntimeException  
-	{
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) {
  		//convert textcell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.values()
 				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut));
@@ -99,9 +97,7 @@ public class RDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<MatrixIndexes, MatrixCell> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) 
-		throws DMLRuntimeException 
-	{	
+			JavaPairRDD<MatrixIndexes, MatrixCell> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) {
  		//convert binarycell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input
 				.mapPartitionsToPair(new BinaryCellToBinaryBlockFunction(mcOut));
@@ -167,9 +163,7 @@ public class RDDConverterUtils
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, 
-			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
-	{
+			boolean hasHeader, String delim, boolean fill, double fillValue) {
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown(true) ) {
 			LongAccumulator aNnz = sc.sc().longAccumulator("nnz");
@@ -217,12 +211,10 @@ public class RDDConverterUtils
 	 * @param fill if true, fill in empty values with fillValue
 	 * @param fillValue fill value used to fill empty values
 	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
-		throws DMLRuntimeException 
 	{
 		//convert string rdd to serializable longwritable/text
 		JavaPairRDD<LongWritable, Text> prepinput =
@@ -317,11 +309,9 @@ public class RDDConverterUtils
 	 * @param pathX path to binary block output file of features
 	 * @param pathY path to binary block output file of labels
 	 * @param mcOutX matrix characteristics of output matrix X
-	 * @throws DMLRuntimeException if output path not writable or conversion failure
 	 */
 	public static void libsvmToBinaryBlock(JavaSparkContext sc, String pathIn, 
 			String pathX, String pathY, MatrixCharacteristics mcOutX) 
-		throws DMLRuntimeException
 	{
 		if( !mcOutX.dimsKnown() )
 			throw new DMLRuntimeException("Matrix characteristics "
@@ -774,15 +764,13 @@ public class RDDConverterUtils
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
-			throws DMLRuntimeException
-		{
-			int len = ix.length;			
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) {
+			int len = ix.length;
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {
 					ret.add(new Tuple2<>(ix[i],mb[i]));
 					mb[i].examSparsity(); //ensure right representation
-				}	
+				}
 		}
 	}
 
@@ -891,15 +879,13 @@ public class RDDConverterUtils
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
-			throws DMLRuntimeException
-		{
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) {
 			int len = ix.length;
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {
 					ret.add(new Tuple2<>(ix[i],mb[i]));
 					mb[i].examSparsity(); //ensure right representation
-				}	
+				}
 		}
 	}
 	
@@ -1125,9 +1111,7 @@ public class RDDConverterUtils
 		}
 		
 		// Flushes current state of filled column blocks to output list.
-		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
-			throws DMLRuntimeException
-		{
+		private static void flushBlocksToList( MatrixIndexes[] ix, MatrixBlock[] mb, ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) {
 			int len = ix.length;
 			for( int i=0; i<len; i++ )
 				if( mb[i] != null ) {

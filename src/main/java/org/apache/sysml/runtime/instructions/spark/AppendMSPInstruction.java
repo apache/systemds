@@ -38,9 +38,7 @@ public abstract class AppendMSPInstruction extends BinarySPInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendMSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AppendMSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields (parts, 5);
 		
@@ -59,7 +57,7 @@ public abstract class AppendMSPInstruction extends BinarySPInstruction {
 			return new MatrixAppendMSPInstruction(new ReorgOperator(OffsetColumnIndex
 					.getOffsetColumnIndexFnObject(-1)), in1, in2, offset, out, cbind, opcode, str);
 		}
-		else { //frame			
+		else { //frame
 			return new FrameAppendMSPInstruction(new ReorgOperator(OffsetColumnIndex
 					.getOffsetColumnIndexFnObject(-1)), in1, in2, offset, out, cbind, opcode, str);
 		}

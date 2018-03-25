@@ -56,9 +56,7 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 		colUpper = cu;
 	}
 
-	public static IndexingSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static IndexingSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		

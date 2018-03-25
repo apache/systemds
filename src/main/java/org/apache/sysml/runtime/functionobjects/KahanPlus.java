@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 
@@ -44,9 +43,7 @@ public class KahanPlus extends KahanFunction implements Serializable
 	}
 	
 	@Override
-	public Data execute(Data in1, double in2) 
-		throws DMLRuntimeException 
-	{
+	public Data execute(Data in1, double in2) {
 		KahanObject kahanObj=(KahanObject)in1;
 		
 		//fast path for INF/-INF in order to ensure result correctness
@@ -59,14 +56,12 @@ public class KahanPlus extends KahanFunction implements Serializable
 		//default path for any other value
 		double correction=in2+kahanObj._correction;
 		double sum=kahanObj._sum+correction;
-		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt 		
+		kahanObj.set(sum, correction-(sum-kahanObj._sum)); //prevent eager JIT opt
 		return kahanObj;
 	}
 	
 	@Override // in1, in2 is the sum, in3 is the correction
-	public Data execute(Data in1, double in2, double in3) 
-		throws DMLRuntimeException 
-	{
+	public Data execute(Data in1, double in2, double in3) {
 		KahanObject kahanObj=(KahanObject)in1;
 		
 		//fast path for INF/-INF in order to ensure result correctness

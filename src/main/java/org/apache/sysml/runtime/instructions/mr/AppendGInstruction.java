@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -43,19 +42,15 @@ public class AppendGInstruction extends AppendInstruction {
 		_len = _offset + _offset2;
 	}
 
-	public static AppendGInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AppendGInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		InstructionUtils.checkNumFields (parts, 6);
-			
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		long offset = (long)(Double.parseDouble(parts[3]));
 		long len = (long)(Double.parseDouble(parts[4]));
 		byte out = Byte.parseByte(parts[5]);
 		boolean cbind = Boolean.parseBoolean(parts[6]);
-			
 		return new AppendGInstruction(null, in1, in2, offset, len, out, cbind, str);
 	}
 	
@@ -63,7 +58,6 @@ public class AppendGInstruction extends AppendInstruction {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int brlen, int bclen)
-			throws DMLRuntimeException 
 	{
 		//setup basic meta data
 		int blen = _cbind ? bclen : brlen;

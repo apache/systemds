@@ -109,9 +109,7 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 		}
 	}
 
-	public static QuaternaryInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{		
+	public static QuaternaryInstruction parseInstruction( String str ) {
 		String opcode = InstructionUtils.getOpCode(str);
 		
 		//validity check
@@ -281,7 +279,6 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
 	{
 		QuaternaryOperator qop = (QuaternaryOperator)optr; 
 		

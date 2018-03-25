@@ -90,7 +90,7 @@ public class GPUContext {
 		return memoryManager;
 	}
 
-	protected GPUContext(int deviceNum) throws DMLRuntimeException {
+	protected GPUContext(int deviceNum) {
 		this.deviceNum = deviceNum;
 		cudaSetDevice(deviceNum);
 
@@ -123,15 +123,14 @@ public class GPUContext {
 	 * Print information of memory usage.
 	 *
 	 * @param opcode opcode of caller
-	 * @throws DMLRuntimeException if error
 	 */
-	public void printMemoryInfo(String opcode) throws DMLRuntimeException {
+	public void printMemoryInfo(String opcode) {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(opcode + ": " + memoryManager.toString());
 		}
 	}
 
-	private void initializeCudaLibraryHandles() throws DMLRuntimeException {
+	private void initializeCudaLibraryHandles() {
 		deleteCudaLibraryHandles();
 
 		if (cudnnHandle == null) {
@@ -178,9 +177,8 @@ public class GPUContext {
 	 * If in a multi-threaded environment like parfor, this method must be called when in the
 	 * appropriate thread.
 	 *
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void initializeThread() throws DMLRuntimeException {
+	public void initializeThread() {
 		cudaSetDevice(deviceNum);
 		initializeCudaLibraryHandles();
 	}
@@ -190,9 +188,8 @@ public class GPUContext {
 	 *
 	 * @param size size of data (in bytes) to allocate
 	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Pointer allocate(long size) throws DMLRuntimeException {
+	public Pointer allocate(long size) {
 		return memoryManager.malloc(null, size);
 	}
 
@@ -202,9 +199,8 @@ public class GPUContext {
 	 * @param instructionName name of instruction for which to record per instruction performance statistics, null if don't want to record
 	 * @param size            size of data (in bytes) to allocate
 	 * @return jcuda pointer
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public Pointer allocate(String instructionName, long size) throws DMLRuntimeException {
+	public Pointer allocate(String instructionName, long size) {
 		return memoryManager.malloc(instructionName, size);
 	}
 
@@ -213,9 +209,8 @@ public class GPUContext {
 	 * Does lazy cudaFree calls.
 	 *
 	 * @param toFree {@link Pointer} instance to be freed
-	 * @throws DMLRuntimeException if error
 	 */
-	public void cudaFreeHelper(final Pointer toFree) throws DMLRuntimeException {
+	public void cudaFreeHelper(final Pointer toFree) {
 		cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
@@ -224,9 +219,8 @@ public class GPUContext {
 	 *
 	 * @param toFree {@link Pointer} instance to be freed
 	 * @param eager  true if to be done eagerly
-	 * @throws DMLRuntimeException if error
 	 */
-	public void cudaFreeHelper(final Pointer toFree, boolean eager) throws DMLRuntimeException {
+	public void cudaFreeHelper(final Pointer toFree, boolean eager) {
 		cudaFreeHelper(null, toFree, eager);
 	}
 
@@ -235,9 +229,8 @@ public class GPUContext {
 	 *
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree          {@link Pointer} instance to be freed
-	 * @throws DMLRuntimeException if error
 	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree) throws DMLRuntimeException {
+	public void cudaFreeHelper(String instructionName, final Pointer toFree) {
 		cudaFreeHelper(instructionName, toFree, DMLScript.EAGER_CUDA_FREE);
 	}
 
@@ -247,9 +240,8 @@ public class GPUContext {
 	 * @param instructionName name of the instruction for which to record per instruction free time, null if do not want to record
 	 * @param toFree          {@link Pointer} instance to be freed
 	 * @param eager           true if to be done eagerly
-	 * @throws DMLRuntimeException if error
 	 */
-	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) throws DMLRuntimeException {
+	public void cudaFreeHelper(String instructionName, final Pointer toFree, boolean eager) {
 		memoryManager.free(instructionName, toFree, eager);
 	}
 
@@ -265,10 +257,8 @@ public class GPUContext {
 
 	/**
 	 * Makes sure that GPU that SystemML is trying to use has the minimum compute capability needed.
-	 *
-	 * @throws DMLRuntimeException if the compute capability is less than what is required
 	 */
-	public void ensureComputeCapability() throws DMLRuntimeException {
+	public void ensureComputeCapability() {
 		int[] devices = { -1 };
 		cudaGetDeviceCount(devices);
 		if (devices[0] == -1) {
@@ -308,9 +298,8 @@ public class GPUContext {
 	 * Gets the device properties for the active GPU (set with cudaSetDevice()).
 	 *
 	 * @return the device properties
-	 * @throws DMLRuntimeException ?
 	 */
-	public cudaDeviceProp getGPUProperties() throws DMLRuntimeException {
+	public cudaDeviceProp getGPUProperties() {
 		return GPUContextPool.getGPUProperties(deviceNum);
 	}
 
@@ -318,9 +307,8 @@ public class GPUContext {
 	 * Gets the maximum number of threads per block for "active" GPU.
 	 *
 	 * @return the maximum number of threads per block
-	 * @throws DMLRuntimeException ?
 	 */
-	public int getMaxThreadsPerBlock() throws DMLRuntimeException {
+	public int getMaxThreadsPerBlock() {
 		cudaDeviceProp deviceProps = getGPUProperties();
 		return deviceProps.maxThreadsPerBlock;
 	}
@@ -329,9 +317,8 @@ public class GPUContext {
 	 * Gets the maximum number of blocks supported by the active cuda device.
 	 *
 	 * @return the maximum number of blocks supported
-	 * @throws DMLRuntimeException ?
 	 */
-	public int getMaxBlocks() throws DMLRuntimeException {
+	public int getMaxBlocks() {
 		cudaDeviceProp deviceProp = getGPUProperties();
 		return deviceProp.maxGridSize[0];
 	}
@@ -340,9 +327,8 @@ public class GPUContext {
 	 * Gets the shared memory per block supported by the active cuda device.
 	 *
 	 * @return the shared memory per block
-	 * @throws DMLRuntimeException ?
 	 */
-	public long getMaxSharedMemory() throws DMLRuntimeException {
+	public long getMaxSharedMemory() {
 		cudaDeviceProp deviceProp = getGPUProperties();
 		return deviceProp.sharedMemPerBlock;
 	}
@@ -351,9 +337,8 @@ public class GPUContext {
 	 * Gets the warp size supported by the active cuda device.
 	 *
 	 * @return the warp size
-	 * @throws DMLRuntimeException ?
 	 */
-	public int getWarpSize() throws DMLRuntimeException {
+	public int getWarpSize() {
 		cudaDeviceProp deviceProp = getGPUProperties();
 		return deviceProp.warpSize;
 	}
@@ -406,9 +391,8 @@ public class GPUContext {
 	/**
 	 * Destroys this GPUContext object.
 	 *
-	 * @throws DMLRuntimeException if error
 	 */
-	public void destroy() throws DMLRuntimeException {
+	public void destroy() {
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("GPU : this context was destroyed, this = " + this.toString());
 		}
@@ -445,14 +429,12 @@ public class GPUContext {
 	 * If memory is being used between MLContext invocations, they are pointed to by a {@link GPUObject} instance
 	 * which would be part of the {@link MatrixObject}. The cleanup of that {@link MatrixObject} instance will
 	 * cause the memory associated with that block on the GPU to be freed up.
-	 *
-	 * @throws DMLRuntimeException ?
 	 */
-	public void clearMemory() throws DMLRuntimeException {
+	public void clearMemory() {
 		memoryManager.clearMemory();
 	}
 	
-	public void clearTemporaryMemory() throws DMLRuntimeException {
+	public void clearTemporaryMemory() {
 		memoryManager.clearTemporaryMemory();
 	}
 
@@ -460,5 +442,4 @@ public class GPUContext {
 	public String toString() {
 		return "GPUContext{" + "deviceNum=" + deviceNum + '}';
 	}
-
 }

@@ -30,7 +30,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
@@ -61,13 +60,12 @@ public class LibMatrixNative
 	 * @param m2 rhs matrix block
 	 * @param ret output matrix block
 	 * @param k number of threads
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) throws DMLRuntimeException {
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		matrixMult(m1, m2, ret, k, true);
 	}
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) throws DMLRuntimeException {
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) {
 		// Sanity check:
 		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
 		
@@ -125,9 +123,8 @@ public class LibMatrixNative
 	 * @param filter filter
 	 * @param outputBlock output of convolution
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
@@ -202,9 +199,8 @@ public class LibMatrixNative
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
@@ -239,9 +235,8 @@ public class LibMatrixNative
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {

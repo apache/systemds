@@ -56,9 +56,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 		_opByRow = in4;
 	}
 
-	public static MatrixReshapeSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MatrixReshapeSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields( parts, 5 );
 		
@@ -76,9 +74,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get parameters

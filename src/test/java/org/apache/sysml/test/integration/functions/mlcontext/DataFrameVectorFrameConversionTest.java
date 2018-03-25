@@ -39,7 +39,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -291,9 +290,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 	}
 
 	@SuppressWarnings("resource")
-	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) 
-		throws DMLRuntimeException
-	{
+	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) {
 		//create in-memory list of rows
 		List<Row> list = new ArrayList<Row>();		 
 		int off = (containsID ? 1 : 0);

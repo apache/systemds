@@ -54,9 +54,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		super(SPType.RMM, op, in1, in2, out, opcode, istr);
 	}
 
-	public static RmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static RmmSPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -69,13 +67,11 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		} 
 		else {
 			throw new DMLRuntimeException("RmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}		
+		}
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdds

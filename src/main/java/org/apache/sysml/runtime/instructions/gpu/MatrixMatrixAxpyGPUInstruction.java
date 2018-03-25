@@ -41,7 +41,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		this.multiplier = multiplier;
 	}
 
-	public static MatrixMatrixAxpyGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static MatrixMatrixAxpyGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 4 );
 		
@@ -77,7 +77,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());

@@ -59,10 +59,8 @@ public class RandomMatrixGenerator {
 	 * @param rpb    rows per block
 	 * @param cpb    columns per block
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
-	 * @throws DMLRuntimeException if error
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp) throws DMLRuntimeException
-	{
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp) {
 		this(pdf, r, c, rpb, cpb, sp, Double.NaN, Double.NaN);
 	}
 
@@ -76,10 +74,8 @@ public class RandomMatrixGenerator {
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
-	 * @throws DMLRuntimeException if error
 	 */
-	public RandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max) throws DMLRuntimeException
-	{
+	public RandomMatrixGenerator(String pdfStr, int r, int c, int rpb, int cpb, double sp, double min, double max) {
 		init(PDF.valueOf(pdfStr.toUpperCase()), r, c, rpb, cpb, sp, min, max);
 	}
 
@@ -93,10 +89,8 @@ public class RandomMatrixGenerator {
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
-	 * @throws DMLRuntimeException if error
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) throws DMLRuntimeException
-	{
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) {
 		init(pdf, r, c, rpb, cpb, sp, min, max);
 	}
 
@@ -110,10 +104,8 @@ public class RandomMatrixGenerator {
 	 * @param sp     sparsity (0 = completely sparse, 1 = completely dense)
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
-	 * @throws DMLRuntimeException if error
 	 */
-	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) throws DMLRuntimeException
-	{
+	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max) {
 		_pdf = pdf;
 		_rows = r;
 		_cols = c;
@@ -137,10 +129,8 @@ public class RandomMatrixGenerator {
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 * @param mean   the poisson mean
-	 * @throws DMLRuntimeException if error
 	 */
-	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) throws DMLRuntimeException
-	{
+	public RandomMatrixGenerator(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) {
 		init(pdf, r, c, rpb, cpb, sp, min, max, mean);
 	}
 
@@ -155,10 +145,8 @@ public class RandomMatrixGenerator {
 	 * @param min    minimum of range of random numbers
 	 * @param max    maximum of range of random numbers
 	 * @param mean   the poisson mean
-	 * @throws DMLRuntimeException if error
 	 */
-	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) throws DMLRuntimeException
-	{
+	public void init(PDF pdf, int r, int c, int rpb, int cpb, double sp, double min, double max, double mean) {
 		_pdf = pdf;
 		_rows = r;
 		_cols = c;
@@ -171,8 +159,7 @@ public class RandomMatrixGenerator {
 		setupValuePRNG();
 	}
 	
-	protected void setupValuePRNG() throws DMLRuntimeException 
-	{
+	protected void setupValuePRNG() {
 		switch (_pdf) {
 		case NORMAL:
 			_valuePRNG = new NormalPRNGenerator();

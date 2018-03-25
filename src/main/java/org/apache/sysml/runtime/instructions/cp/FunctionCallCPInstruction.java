@@ -63,9 +63,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return _namespace;
 	}
 	
-	public static FunctionCallCPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException 
-	{
+	public static FunctionCallCPInstruction parseInstruction(String str) {
 		//schema: extfunct, fname, num inputs, num outputs, inputs, outputs
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
@@ -86,28 +84,20 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	@Override
-	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default pre-process behavior
 		Instruction tmp = super.preprocessInstruction(ec);
-		
 		//maintain debug state (function call stack) 
-		if( DMLScript.ENABLE_DEBUG_MODE ) {
+		if( DMLScript.ENABLE_DEBUG_MODE )
 			ec.handleDebugFunctionEntry((FunctionCallCPInstruction) tmp);
-		}
-
 		return tmp;
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Executing instruction : " + this.toString());
 		}
-		
 		// get the function program block (stored in the Program object)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName);
 		
@@ -206,14 +196,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 
 	@Override
-	public void postprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void postprocessInstruction(ExecutionContext ec) {
 		//maintain debug state (function call stack) 
-		if (DMLScript.ENABLE_DEBUG_MODE ) {
+		if (DMLScript.ENABLE_DEBUG_MODE )
 			ec.handleDebugFunctionExit( this );
-		}
-		
 		//default post-process behavior
 		super.postprocessInstruction(ec);
 	}

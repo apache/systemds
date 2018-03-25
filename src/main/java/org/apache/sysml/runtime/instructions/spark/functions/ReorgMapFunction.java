@@ -39,9 +39,7 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 	private ReorgOperator _reorgOp = null;
 	private IndexFunction _indexFnObject = null;
 	
-	public ReorgMapFunction(String opcode) 
-			throws DMLRuntimeException 
-	{
+	public ReorgMapFunction(String opcode) {
 		if(opcode.equalsIgnoreCase("r'")) {
 			_indexFnObject = SwapIndex.getSwapIndexFnObject();
 		}

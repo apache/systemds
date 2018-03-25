@@ -122,8 +122,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		return sparsity;
 	}
 
-	public static DataGenCPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException 
+	public static DataGenCPInstruction parseInstruction(String str)
 	{
 		DataGenMethod method = DataGenMethod.INVALID;
 
@@ -200,7 +199,6 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
 	{
 		MatrixBlock soresBlock = null;
 		
@@ -259,7 +257,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
 	}
 	
-	private static void checkValidDimensions(long rows, long cols) throws DMLRuntimeException {
+	private static void checkValidDimensions(long rows, long cols) {
 		//check valid for integer dimensions (we cannot even represent empty blocks with larger dimensions)
 		if( rows > Integer.MAX_VALUE || cols > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("DataGenCPInstruction does not "

@@ -57,9 +57,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		_type = type;
 	}
 	
-	public static AggregateUnaryCPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static AggregateUnaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
@@ -77,9 +75,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		String output_name = output.getName();
 		String opcode = getOpcode();
 		

@@ -235,10 +235,9 @@ public class DMLScript
 	 *
 	 * @param args command-line arguments
 	 * @throws IOException if an IOException occurs
-	 * @throws DMLException if a DMLException occurs
 	 */
 	public static void main(String[] args)
-		throws IOException, DMLException
+		throws IOException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -452,11 +451,8 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
-	 * @throws DMLException if DMLException occurs
 	 */
-	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException
-	{
+	public static boolean executeScript( Configuration conf, String[] args ) {
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
 		ExplainType oldexplain          = EXPLAIN;     //keep old explain
@@ -956,9 +952,7 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	private static void cleanSystemMLWorkspace() 
-		throws DMLException
-	{
+	private static void cleanSystemMLWorkspace() {
 		try
 		{
 			//read the default config

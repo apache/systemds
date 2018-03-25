@@ -32,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -489,9 +488,7 @@ public class SpoofCompiler
 	////////////////////
 	// Codegen plan construction
 	
-	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
-		throws DMLException
-	{
+	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) {
 		//top-down memoization of processed dag nodes
 		if( memo.contains(hop.getHopID()) || memo.containsHop(hop) )
 			return;
@@ -545,9 +542,7 @@ public class SpoofCompiler
 		return P;
 	}
 	
-	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) 
-		throws DMLException
-	{
+	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) {
 		//top-down memoization of processed dag nodes
 		if( hop == null || visited.contains(hop.getHopID()) )
 			return;
@@ -568,7 +563,7 @@ public class SpoofCompiler
 		}
 		else {
 			for( Hop c : hop.getInput() )
-				rConstructCPlans(c, memo, cplans, compileLiterals, visited);	
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);
 		}
 		
 		visited.add(hop.getHopID());

@@ -299,7 +299,11 @@ public class ScriptFactory {
 			resourcePath = "/" + resourcePath;
 		}
 		InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath);
-		return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
+		try{
+			return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
+		} catch (Exception e){
+			throw new MLContextException("error trying to read script from input stream: "+ inputStream, e);
+		}
 	}
 
 	/**

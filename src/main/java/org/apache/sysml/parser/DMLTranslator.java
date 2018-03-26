@@ -2440,7 +2440,12 @@ public class DMLTranslator
 				currBuiltinOp = new LiteralOp(lval);
 			}
 			break;
-
+		
+		case EXISTS:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), Hop.OpOp1.EXISTS, new LiteralOp(expr.getName()));
+			break;
+			
 		case SUM:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.SUM,
 					Direction.RowCol, expr);

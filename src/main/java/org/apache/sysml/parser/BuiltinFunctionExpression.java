@@ -694,6 +694,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.INT);
 			break;
 
+		case EXISTS:
+			checkNumParameters(1);
+			checkStringOrDataIdentifier(getFirstExpr());
+			output.setDataType(DataType.SCALAR);
+			output.setDimensions(0, 0);
+			output.setBlockDimensions (0, 0);
+			output.setValueType(ValueType.BOOLEAN);
+			break;
+			
 		// Contingency tables
 		case TABLE:
 			
@@ -1514,6 +1523,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
+	protected void checkStringOrDataIdentifier(Expression e) { //always unconditional
+		if( !(e.getOutput().getDataType().isScalar() && e.getOutput().getValueType()==ValueType.STRING)
+			&& !(e instanceof DataIdentifier && !(e instanceof IndexedIdentifier)) ) {
+			raiseValidateError("Expecting variable name or data identifier "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+	
 	private static boolean is1DMatrix(Expression e) {
 		return (e.getOutput().getDim1() == 1 || e.getOutput().getDim2() == 1 );
 	}
@@ -1777,9 +1793,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.BITWSHIFTR;
 		else if ( functionName.equals("ifelse") )
 			bifop = Expression.BuiltinFunctionOp.IFELSE;
-		else if (functionName.equals("eval")) {
+		else if (functionName.equals("eval"))
 			bifop = Expression.BuiltinFunctionOp.EVAL;
-		}
+		else if (functionName.equals("exists"))
+			bifop = Expression.BuiltinFunctionOp.EXISTS;
 		else
 			return null;
 		

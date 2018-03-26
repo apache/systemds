@@ -107,6 +107,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "nrow"    ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "ncol"    ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "length"  ,CPType.AggregateUnary);
+		String2CPInstructionType.put( "exists"  ,CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		

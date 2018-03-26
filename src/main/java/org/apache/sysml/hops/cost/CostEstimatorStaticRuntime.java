@@ -1198,7 +1198,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	
 				case ZeroOut: //opcodes: zeroOut
 					return   DEFAULT_NFLOP_CP * ((leftSparse)? d1m*d1n*d1s : d1m*d1n)
-				           + DEFAULT_NFLOP_CP * ((rightSparse)? d2m*d2n*d2s : d2m*d2n );								
+				           + DEFAULT_NFLOP_CP * ((rightSparse)? d2m*d2n*d2s : d2m*d2n );
 					
 				default:
 					return 0;
@@ -1208,9 +1208,6 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		{
 			throw new DMLRuntimeException("CostEstimator: unsupported instruction type: "+optype);
 		}
-		
-		//TODO Parameterized Builtin Functions
-		//String2CPFileInstructionType.put( "rmempty"	    , CPINSTRUCTION_TYPE.ParameterizedBuiltin);
 		
 		return -1; //should never come here.
 	}

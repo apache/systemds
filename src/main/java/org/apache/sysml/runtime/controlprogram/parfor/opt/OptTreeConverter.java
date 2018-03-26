@@ -62,7 +62,6 @@ import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 /**
@@ -627,7 +626,7 @@ public class OptTreeConverter
 	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark ) {
 		return instSet.stream().anyMatch(inst -> inst instanceof MRJobInstruction
 			|| (inclSpark && inst instanceof SPInstruction)
-			|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)));
+			|| (inclCPFile && inst instanceof MatrixIndexingCPFileInstruction));
 	}
 
 	public static boolean containsFunctionCallInstruction( ProgramBlock pb ) {

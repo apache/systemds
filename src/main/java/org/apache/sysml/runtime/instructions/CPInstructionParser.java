@@ -64,7 +64,6 @@ import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 
 public class CPInstructionParser extends InstructionParser 
 {
@@ -364,14 +363,10 @@ public class CPInstructionParser extends InstructionParser
 				
 			case External:
 				return FunctionCallCPInstruction.parseInstruction(str);
-				
+			
 			case ParameterizedBuiltin: 
-				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
-				if( execType == ExecType.CP )
-					return ParameterizedBuiltinCPInstruction.parseInstruction(str);
-				else //exectype CP_FILE
-					return ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
-	
+				return ParameterizedBuiltinCPInstruction.parseInstruction(str);
+			
 			case MultiReturnParameterizedBuiltin:
 				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
 				

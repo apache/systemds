@@ -51,8 +51,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * 
  */
 public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
-{	
-	private static boolean COMPILE_PARALLEL_REMOVEEMPTY = true;
+{
 	public static boolean FORCE_DIST_RM_EMPTY = false;
 
 	//operator type
@@ -175,7 +174,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			}
 			case RMEMPTY: {
 				ExecType et = optFindExecType();
-				et = (et == ExecType.MR && !COMPILE_PARALLEL_REMOVEEMPTY ) ? ExecType.CP_FILE : et;
 				constructLopsRemoveEmpty(inputlops, et);
 				break;
 			} 
@@ -406,7 +404,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		Hop selectHop = getParameterHop("select");
 		Hop emptyRet = getParameterHop("empty.return");
 		
-		if( et == ExecType.CP || et == ExecType.CP_FILE )
+		if( et == ExecType.CP )
 		{
 			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
 			setOutputDimensions(pbilop);

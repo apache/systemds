@@ -103,8 +103,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
 
           # Compute validation loss & accuracy
           probs_val = predict(X_val, w0, W, V)
-          loss_val = l2_loss::forward(probs_val, y_val)
-          accuracy_val = ( mean( (probs_val - y_val)^2 ) )^0.5
+          [loss_val, accuracy_val] = eval(probs_val, y_val);
 
           # Output results
           print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "

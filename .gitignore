@@ -69,6 +69,7 @@ Gemfile.lock
 src/main/python/systemml/project_info.py
 src/main/python/systemml/systemml-java
 *.pyc
+*.interp
 
 # Spark
 **/metastore_db

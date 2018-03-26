@@ -25,7 +25,6 @@
 
 # Imports
 source("nn/optim/adam.dml") as adam
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 source("nn/layers/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
@@ -40,19 +39,20 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
    *  - y     : Target matrix, of shape (n, 1)
    *  - X_val : Input validation data matrix, of shape (n, d)
    *  - y_val : Target validation matrix, of shape (n, 1)
+   *
    * Outputs:
    *  - w0, W, V : updated model parameters.
    *
    * Network Architecture:
    *
-   * X --> [model] --> out -----> l2_loss::backward(y,out) --> dout
-   *
+   * X --> [model] --> out --> l2_loss::backward(out, y) --> dout
    *
    */
 
     n = nrow(X) # num examples
     d = ncol(X) # num features
-    k = 2 # factorization dimensionality, only (=2) possible
+    k = 2       # factorization dimensionality,
+                #   only (=2) possible
 
     # 1.initialize fm core
     [w0, W, V] = fm::init(n, d, k);
@@ -75,7 +75,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
     # Optimize
     print("Starting optimization")
     batch_size = 10
-    epochs = 100; N = 1000
+    epochs = 100; N = n;
     iters = ceil(N / batch_size)
 
     for (e in 1:epochs) {
@@ -95,13 +95,11 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
         # Compute loss & accuracy for training & validation data every 100 iterations.
         if (i %% 100 == 0) {
           # Compute training loss & accuracy
-          loss_data  = l2_loss::forward(out, y_batch)
+          [loss_data, accuracy] = eval(out, y_batch);
           loss_reg_w0 = l2_reg::forward(w0, lambda)
           loss_reg_W  = l2_reg::forward(W , lambda)
           loss_reg_V  = l2_reg::forward(V , lambda)
           loss = loss_data + loss_reg_w0 + loss_reg_W + loss_reg_V
-          accuracy = ( mean( (dout - y_batch)^2 ) )^ 0.5
-
 
           # Compute validation loss & accuracy
           probs_val = predict(X_val, w0, W, V)
@@ -116,7 +114,10 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
         # 5.Send the above result through fm::backward
         [dw0, dW, dV] = fm::backward(dout, X_batch, w0, W, V);
 
-        # 6.Call adam::update for all parameters
+        # 6.update timestep
+        t = e * i - 1;
+
+        # 7.Call adam::update for all parameters
         [w0,mw0,vw0] = adam::update(w0, dw0, lr, beta1, beta2, epsilon, t, mw0, vw0);
         [W, mW, vW]  = adam::update(W, dW, lr, beta1, beta2, epsilon, t, mW, vW );
         [V, mV, vV]  = adam::update(V, dV, lr, beta1, beta2, epsilon, t, mV, vV );

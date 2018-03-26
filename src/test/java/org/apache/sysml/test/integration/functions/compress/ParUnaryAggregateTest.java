@@ -1092,7 +1092,7 @@ public class ParUnaryAggregateTest extends AutomatedTestBase
 					|| aggtype == AggType.ROWMINS || aggtype == AggType.ROWMINS)?rows:1;
 			int dim2 = (aggtype == AggType.COLSUMS || aggtype == AggType.COLSUMSSQ 
 					|| aggtype == AggType.COLMAXS || aggtype == AggType.COLMINS)?cols1:1;
-			TestUtils.compareMatrices(d1, d2, dim1, dim2, 0.00000000001);
+			TestUtils.compareMatrices(d1, d2, dim1, dim2, 0.000000001);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

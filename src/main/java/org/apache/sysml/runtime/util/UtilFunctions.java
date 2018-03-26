@@ -150,6 +150,32 @@ public class UtilFunctions
 		return (int)Math.min(blockSize, remain);
 	}
 
+	public static ArrayList<Integer> getBalancedBlockSizesDefault(int len, int k, boolean constK) {
+		int nk = constK ? k : roundToNext(Math.min(8*k,len/32), k);
+		return getBalancedBlockSizes(len, nk);
+	}
+	
+	public static ArrayList<Integer> getAlignedBlockSizes(int len, int k, int align) {
+		int blklen = (int)(Math.ceil((double)len/k));
+		blklen += ((blklen%align != 0) ? align-blklen%align : 0);
+		ArrayList<Integer> ret = new ArrayList<>(len/blklen);
+		for(int i=0; i<len; i+=blklen)
+			ret.add(Math.min(blklen, len-i));
+		return ret;
+	}
+	
+	private static ArrayList<Integer> getBalancedBlockSizes(int len, int k) {
+		ArrayList<Integer> ret = new ArrayList<>(k);
+		int base = len / k;
+		int rest = len % k;
+		for( int i=0; i<k; i++ ) {
+			int val = base + (i<rest?1:0);
+			if( val > 0 )
+				ret.add(val);
+		}
+		return ret;
+	}
+	
 	public static boolean isInBlockRange( MatrixIndexes ix, int brlen, int bclen, long rl, long ru, long cl, long cu )
 	{
 		long bRLowerIndex = (ix.getRowIndex()-1)*brlen + 1;

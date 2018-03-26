@@ -198,7 +198,7 @@ public class LibMatrixMult
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<MatrixMultTask> tasks = new ArrayList<>();
-			ArrayList<Integer> blklens = getBalancedBlockSizesDefault(num, k, (pm2r||pm2c));
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(num, k, (pm2r||pm2c));
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultTask(m1, m2, ret, tm2, pm2r, pm2c, lb, lb+blklens.get(i)));
 			//execute tasks
@@ -303,7 +303,7 @@ public class LibMatrixMult
 		//(currently: always parallelization over number of rows)
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
-			ArrayList<Integer> blklens = getBalancedBlockSizesDefault(mX.rlen, k, true);
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(mX.rlen, k, true);
 			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, lb, lb+blklens.get(i)));
@@ -3705,32 +3705,6 @@ public class LibMatrixMult
 				vectAdd4(partret[j], partret[j+1], partret[j+2], partret[j+3], ret, bi, bi, llen);
 		}
 		
-	}
-
-	public static ArrayList<Integer> getBalancedBlockSizesDefault(int len, int k, boolean constK) {
-		int nk = constK ? k : UtilFunctions.roundToNext(Math.min(8*k,len/32), k);
-		return getBalancedBlockSizes(len, nk);
-	}
-	
-	public static ArrayList<Integer> getAlignedBlockSizes(int len, int k, int align) {
-		int blklen = (int)(Math.ceil((double)len/k));
-		blklen += ((blklen%align != 0) ? align-blklen%align : 0);
-		ArrayList<Integer> ret = new ArrayList<>();
-		for(int i=0; i<len; i+=blklen)
-			ret.add(Math.min(blklen, len-i));
-		return ret;
-	}
-	
-	private static ArrayList<Integer> getBalancedBlockSizes(int len, int k) {
-		ArrayList<Integer> ret = new ArrayList<>();
-		int base = len / k;
-		int rest = len % k;
-		for( int i=0; i<k; i++ ) {
-			int val = base + (i<rest?1:0);
-			if( val > 0 )
-				ret.add(val);
-		}	
-		return ret; 
 	}
 	
 	/////////////////////////////////////////////////////////

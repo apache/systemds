@@ -41,6 +41,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseRow;
 import org.apache.sysml.runtime.matrix.data.SparseRowVector;
 import org.apache.sysml.runtime.util.CommonThreadPool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public abstract class SpoofRowwise extends SpoofOperator
@@ -200,8 +201,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//core parallel execute
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<Integer> blklens = (a instanceof CompressedMatrixBlock) ?
-			LibMatrixMult.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
-			LibMatrixMult.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
+			UtilFunctions.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
+			UtilFunctions.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
 		
 		try
 		{

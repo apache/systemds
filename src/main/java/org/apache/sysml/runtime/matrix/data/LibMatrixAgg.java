@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -81,7 +82,8 @@ public class LibMatrixAgg
 {
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
+	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*1024; //Min 1M elements
+	private static final long PAR_NUMCELL_THRESHOLD2 = 16*1024;   //Min 16K elements
 	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
 	
 	////////////////////////////////
@@ -209,9 +211,7 @@ public class LibMatrixAgg
 
 	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
 		//fall back to sequential version if necessary
-		if(    k <= 1 || (long)in.nonZeros < PAR_NUMCELL_THRESHOLD || in.rlen <= k/2
-			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) || 
-			!out.isThreadSafe()) {
+		if( !satisfiesMultiThreadingConstraints(in, out, uaop, k) ) {
 			aggregateUnaryMatrix(in, out, uaop);
 			return;
 		}
@@ -241,11 +241,12 @@ public class LibMatrixAgg
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTask> tasks = new ArrayList<>();
-			int blklen = (int)(Math.ceil((double)m/k));
-			for( int i=0; i<k & i*blklen<m; i++ ) {
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(m, k,
+				(uaop.indexFn instanceof ReduceRow)); //use static partitioning for col*()
+			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ ) {
 				tasks.add( (uaop.indexFn instanceof ReduceCol) ? 
-						new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) :
-						new PartialAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
+					new RowAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) :
+					new PartialAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) );
 			}
 			pool.invokeAll(tasks);
 			pool.shutdown();
@@ -259,7 +260,7 @@ public class LibMatrixAgg
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-				
+		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
 		out.examSparsity();
@@ -303,7 +304,7 @@ public class LibMatrixAgg
 		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 		
 		//fall back to sequential if necessary or agg not supported
-		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
+		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
 			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}
@@ -407,7 +408,7 @@ public class LibMatrixAgg
 
 	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) {
 		//fall back to sequential version if necessary
-		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD || in1.rlen <= k/2 
+		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 || in1.rlen <= k/2 
 			|| (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD) ) {
 			return aggregateTernary(in1, in2, in3, ret, op);
 		}
@@ -479,7 +480,7 @@ public class LibMatrixAgg
 	{
 		//fall back to sequential version if necessary
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
-		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1) {
+		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD1 || rowVector || target.clen==1) {
 			groupedAggregate(groups, target, weights, result, numGroups, op);
 			return;
 		}
@@ -514,16 +515,21 @@ public class LibMatrixAgg
 		result.examSparsity();
 	}
 
-	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator op )
-	{
+	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator op ) {
 		AggType type = getAggType( op );
 		return (type != AggType.INVALID);
 	}
 	
-	public static boolean isSupportedUnaryOperator( UnaryOperator op )
-	{
+	public static boolean isSupportedUnaryOperator( UnaryOperator op ) {
 		AggType type = getAggType( op );
 		return (type != AggType.INVALID);
+	}
+	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		return k > 1 && out.isThreadSafe() && in.rlen > (sharedTP ? k/8 : k/2)
+			&& (uaop.indexFn instanceof ReduceCol || out.clen*8*k < PAR_INTERMEDIATE_SIZE_THRESHOLD) //size
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	/**

@@ -80,10 +80,8 @@ public class GPUContextPool {
 	 * Also sets behaviour for J{Cuda, Cudnn, Cublas, Cusparse} in case of error
 	 * Initializes the CUDA driver
 	 * All these need be done once, and not per GPU
-	 *
-	 * @throws DMLRuntimeException ?
 	 */
-	public synchronized static void initializeGPU() throws DMLRuntimeException {
+	public synchronized static void initializeGPU() {
 		initialized = true;
 		GPUContext.LOG.info("Initializing CUDA");
 		long start = System.nanoTime();
@@ -207,9 +205,8 @@ public class GPUContextPool {
 	 * Reserves and gets an initialized list of GPUContexts
 	 *
 	 * @return null if no GPUContexts in pool, otherwise a valid list of GPUContext
-	 * @throws DMLRuntimeException ?
 	 */
-	public static synchronized List<GPUContext> reserveAllGPUContexts() throws DMLRuntimeException {
+	public static synchronized List<GPUContext> reserveAllGPUContexts() {
 		if (reserved)
 			throw new DMLRuntimeException("Trying to re-reserve GPUs");
 		if (!initialized)
@@ -233,9 +230,8 @@ public class GPUContextPool {
 	 *
 	 * @param device the device number (on a machine with more than 1 GPU)
 	 * @return the device properties
-	 * @throws DMLRuntimeException if there is problem initializing the GPUContexts
 	 */
-	static cudaDeviceProp getGPUProperties(int device) throws DMLRuntimeException {
+	static cudaDeviceProp getGPUProperties(int device) {
 		// do once - initialization of GPU
 		if (!initialized)
 			initializeGPU();
@@ -246,9 +242,8 @@ public class GPUContextPool {
 	 * Number of available devices on this machine
 	 *
 	 * @return number of available GPUs on this machine
-	 * @throws DMLRuntimeException if error
 	 */
-	public static int getDeviceCount() throws DMLRuntimeException {
+	public static int getDeviceCount() {
 		if (!initialized)
 			initializeGPU();
 		return deviceCount;
@@ -256,10 +251,8 @@ public class GPUContextPool {
 
 	/**
 	 * Unreserves all GPUContexts
-	 *
-	 * @throws DMLRuntimeException if error
 	 */
-	public static synchronized void freeAllGPUContexts() throws DMLRuntimeException {
+	public static synchronized void freeAllGPUContexts() {
 		if (!reserved)
 			throw new DMLRuntimeException("Trying to free unreserved GPUs");
 		reserved = false;

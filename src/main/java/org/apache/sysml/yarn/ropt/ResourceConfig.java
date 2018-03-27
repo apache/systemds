@@ -22,7 +22,6 @@ package org.apache.sysml.yarn.ropt;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.IfStatementBlock;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -45,9 +44,7 @@ public class ResourceConfig
 		_mrres = mr;
 	}
 	
-	public ResourceConfig( ArrayList<ProgramBlock> prog, long init ) 
-		throws HopsException
-	{
+	public ResourceConfig( ArrayList<ProgramBlock> prog, long init ) {
 		//init cp memory
 		_cpres = init;
 		
@@ -56,51 +53,40 @@ public class ResourceConfig
 		addProgramBlocks(prog, init);
 	}
 	
-	public long getCPResource()
-	{
+	public long getCPResource() {
 		return (long)_cpres;
 	}
 	
-	public void setCPResource( long res )
-	{
+	public void setCPResource( long res ) {
 		_cpres = res;
 	}
 
 
-	public long getMRResources( int i ) 
-		throws DMLRuntimeException
-	{
+	public long getMRResources( int i ) {
 		if( _mrres.size() <= i )
 			throw new DMLRuntimeException("Memo table out-of-bounds: "+_mrres.size()+" vs "+i);
-			
 		return _mrres.get(i); 
 	}
 
-	public double[][] getMRResourcesMemo()
-	{
+	public double[][] getMRResourcesMemo() {
 		int len = _mrres.size();
 		double[][] ret = new double[len][2];
 		for( int i=0; i< len; i++ ){
 			ret[i][0] = _mrres.get(i);
 			ret[i][1] = -1;
 		}
-		
 		return ret;
 	}
 	
-	public void setMRResources( ArrayList<ProgramBlock> B, double[][] res ) 
-		throws DMLRuntimeException
-	{
+	public void setMRResources( ArrayList<ProgramBlock> B, double[][] res ) {
 		if( _mrres.size() != res.length )
 			throw new DMLRuntimeException("Memo table sizes do not match: "+_mrres.size()+" vs "+res.length);
-		
 		int len = res.length;
 		for( int i=0; i<len; i++ )
 			_mrres.set(i, (long)res[i][0]);
 	}
 
-	public long getMaxMRResource()
-	{
+	public long getMaxMRResource() {
 		double val = (double) Collections.max(_mrres);
 		return (long)val;
 	}
@@ -142,15 +128,12 @@ public class ResourceConfig
 		return new ResourceConfig(cp, mr);
 	}
 
-	private void addProgramBlocks( ArrayList<ProgramBlock> pbs, long init ) 
-		throws HopsException
-	{
+	private void addProgramBlocks( ArrayList<ProgramBlock> pbs, long init ) {
 		for( ProgramBlock pb : pbs )
 			addProgramBlock(pb, init);
 	}
 
 	private void addProgramBlock( ProgramBlock pb, long init ) 
-		throws HopsException
 	{
 		if (pb instanceof FunctionProgramBlock)
 		{

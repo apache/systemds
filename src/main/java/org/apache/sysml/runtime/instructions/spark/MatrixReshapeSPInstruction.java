@@ -56,9 +56,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 		_opByRow = in4;
 	}
 
-	public static MatrixReshapeSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MatrixReshapeSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields( parts, 5 );
 		
@@ -76,9 +74,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get parameters
@@ -92,7 +88,9 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction {
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics( output.getName() );
 		
 		//update output characteristics and sanity check
-		mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
+		mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
+		if( !mcIn.nnzKnown() )
+			mcOut.setNonZerosBound(mcIn.getNonZerosBound());
 		if( mcIn.getRows()*mcIn.getCols() != mcOut.getRows()*mcOut.getCols() ) {
 			throw new DMLRuntimeException("Incompatible matrix characteristics for reshape: "
 				+ mcIn.getRows()+"x"+mcIn.getCols()+" vs "+mcOut.getRows()+"x"+mcOut.getCols());

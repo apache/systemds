@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -200,20 +199,8 @@ public class FullDynWriteTest extends AutomatedTestBase
 		return C;
 	}
 	
-	/**
-	 * 
-	 * @param A
-	 * @param dir
-	 * @param oi
-	 * @param rows
-	 * @param cols
-	 * @param brows
-	 * @param bcols
-	 * @throws DMLRuntimeException
-	 * @throws IOException
-	 */
 	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		MapReduceTool.deleteFileIfExistOnHDFS(fname);
 		MapReduceTool.deleteFileIfExistOnHDFS(fname+".mtd");

@@ -44,47 +44,41 @@ public abstract class SpoofOperator implements Serializable
 	protected static final long PAR_MINFLOP_THRESHOLD = 2L*1024*1024; //MIN 2 MFLOP
 	
 	
-	public abstract MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out)
-		throws DMLRuntimeException;
+	public abstract MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out);
 	
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k)
-		throws DMLRuntimeException 
-	{
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, MatrixBlock out, int k) {
 		//default implementation serial execution
 		return execute(inputs, scalars, out);
 	}
 	
 	public abstract String getSpoofType();
 	
-	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars) throws DMLRuntimeException {
-		throw new RuntimeException("Invalid invocation in base class.");
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars) {
+		throw new DMLRuntimeException("Invalid invocation in base class.");
 	}
 	
-	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, int k)
-		throws DMLRuntimeException
-	{
+	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalars, int k) {
 		//default implementation serial execution
 		return execute(inputs, scalars);
 	}
 	
-	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs) throws DMLRuntimeException {
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs) {
 		return prepInputMatrices(inputs, 1, inputs.size()-1, false, false);
 	}
 	
-	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly) throws DMLRuntimeException {
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly) {
 		return prepInputMatrices(inputs, 1, inputs.size()-1, denseOnly, false);
 	}
 	
-	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, boolean denseOnly) throws DMLRuntimeException {
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, boolean denseOnly) {
 		return prepInputMatrices(inputs, offset, inputs.size()-offset, denseOnly, false);
 	}
 	
-	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly, boolean tB1) throws DMLRuntimeException {
+	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, boolean denseOnly, boolean tB1) {
 		return prepInputMatrices(inputs, 1, inputs.size()-1, denseOnly, tB1);
 	}
 	
 	protected SideInput[] prepInputMatrices(ArrayList<MatrixBlock> inputs, int offset, int len, boolean denseOnly, boolean tB1)
-		throws DMLRuntimeException
 	{
 		SideInput[] b = new SideInput[len];
 		for(int i=offset; i<offset+len; i++) {

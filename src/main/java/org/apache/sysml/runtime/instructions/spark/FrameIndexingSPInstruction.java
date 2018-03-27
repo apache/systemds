@@ -66,9 +66,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		String opcode = getOpcode();
 		
@@ -169,9 +167,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s
 	}
 
-	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) 
-		throws DMLRuntimeException
-	{
+	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) {
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("FrameIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}

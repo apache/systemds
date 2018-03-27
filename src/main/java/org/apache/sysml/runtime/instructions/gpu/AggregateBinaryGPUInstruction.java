@@ -53,16 +53,11 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 		_isRightTransposed = rightTranspose;
 	}
 
-	public static AggregateBinaryGPUInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AggregateBinaryGPUInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-
-		if ( !opcode.equalsIgnoreCase("ba+*")) {
+		if ( !opcode.equalsIgnoreCase("ba+*"))
  			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
-		
 		InstructionUtils.checkNumFields( parts, 5 );
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -75,28 +70,18 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		
 		AggregateBinaryOperator op = (AggregateBinaryOperator) _optr;
-		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) ) {
+		if( !(op.binaryFn instanceof Multiply && op.aggOp.increOp.fn instanceof Plus) )
 			throw new DMLRuntimeException("Unsupported binary aggregate operation: ("+op.binaryFn+", "+op.aggOp+").");
-		}
-		
-		//get inputs
 		MatrixObject m1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject m2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
-
-
 		//compute matrix multiplication
 		int rlen = (int) (_isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
 		int clen = (int) (_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
-
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCuMatMult.matmult(ec, ec.getGPUContext(0), getExtendedOpcode(), m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
-		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
@@ -104,13 +89,13 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	}
 
 	@SuppressWarnings("unused")
-	private static MatrixBlock transpose(MatrixBlock m1) throws DMLRuntimeException {
+	private static MatrixBlock transpose(MatrixBlock m1) {
 		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), 1);
 		return (MatrixBlock) (m1.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0));
 	}
 
 	@SuppressWarnings("unused")
-	private static boolean isSparse(ExecutionContext ec, String var) throws DMLRuntimeException {
+	private static boolean isSparse(ExecutionContext ec, String var) {
 		MatrixObject mo = ec.getMatrixObject(var);
 		return LibMatrixCUDA.isInSparseFormat(ec.getGPUContext(0), mo);
 	}

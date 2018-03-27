@@ -81,8 +81,7 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	{
 		//dynamically recompile entire function body (according to function inputs)
 		try {
 			if( ConfigurationManager.isDynamicRecompilation() 

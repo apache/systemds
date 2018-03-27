@@ -67,8 +67,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 		value=v;
 	}
 
-	private static MatrixCell checkType(MatrixValue cell) throws DMLRuntimeException 
-	{
+	private static MatrixCell checkType(MatrixValue cell) {
 		if( cell!=null && !(cell instanceof MatrixCell))
 			throw new DMLRuntimeException("the Matrix Value is not MatrixCell!");
 		return (MatrixCell) cell;
@@ -170,7 +169,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int brlen, int bclen,
-			MatrixIndexes indexesIn) throws DMLRuntimeException {
+			MatrixIndexes indexesIn) {
 		
 		MatrixCell c3=checkType(result);
 		if(c3==null)
@@ -190,8 +189,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
-			MatrixValue thatValue, MatrixValue result)
-			throws DMLRuntimeException {
+			MatrixValue thatValue, MatrixValue result) {
 		MatrixCell c2=checkType(thatValue);
 		MatrixCell c3=checkType(result);
 		if(c3==null)
@@ -202,21 +200,18 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void binaryOperationsInPlace(BinaryOperator op,
-			MatrixValue thatValue)
-			throws DMLRuntimeException {
+			MatrixValue thatValue) {
 		MatrixCell c2=checkType(thatValue);
 		setValue(op.fn.execute(this.getValue(), c2.getValue()));
-		
 	}
 
-	public void denseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLRuntimeException {
+	public void denseScalarOperationsInPlace(ScalarOperator op) {
 		value=op.executeScalar(value);
 	}
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
-			int startRow, int startColumn, int length) throws DMLRuntimeException {		
+			int startRow, int startColumn, int length) { 
 		MatrixCell c3=checkType(result);
 		if(c3==null)
 			c3=new MatrixCell();
@@ -225,26 +220,22 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	}
 
 	@Override
-	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) throws DMLRuntimeException {
-		
+	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) {
 		MatrixCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value, op.getConstant()));
 		return c3;
 	}
 
-	public void sparseScalarOperationsInPlace(ScalarOperator op)
-			throws DMLRuntimeException {
+	public void sparseScalarOperationsInPlace(ScalarOperator op) {
 		value=op.executeScalar(value);
 	}
 
-	public void sparseUnaryOperationsInPlace(UnaryOperator op)
-			throws DMLRuntimeException {
+	public void sparseUnaryOperationsInPlace(UnaryOperator op) {
 		value=op.fn.execute(value);
 	}
 
 	@Override
-	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLRuntimeException {
+	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixCell c3=checkType(result);
 		c3.setValue(op.fn.execute(value));
 		return c3;
@@ -275,14 +266,12 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue correction, MatrixValue newWithCorrection)
-			throws DMLRuntimeException {
+			MatrixValue correction, MatrixValue newWithCorrection) {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLRuntimeException {
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
 		if(range.rowStart!=0 || range.rowEnd!=0 || range.colStart!=0 || range.colEnd!=0)
 			throw new DMLRuntimeException("wrong range: "+range+" for matrixCell");
 		MatrixCell c3=checkType(result);
@@ -292,16 +281,13 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue newWithCorrection)
-			throws DMLRuntimeException {
+			MatrixValue newWithCorrection) {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
-			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException 
-	{
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
 		MatrixCell c2=checkType(that);
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
@@ -313,9 +299,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that, double scalarThat2, boolean ignoreZeros, 
-			CTableMap ctableResult, MatrixBlock ctableResultBlock)
-			throws DMLRuntimeException 
-	{
+			CTableMap ctableResult, MatrixBlock ctableResultBlock) {
 		MatrixCell c2=checkType(that);
 		CTable ctable = CTable.getCTableFnObject();
 		if ( ctableResult != null)
@@ -326,9 +310,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
-			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException 
-	{
+			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock) {
 		CTable ctable = CTable.getCTableFnObject();
 		if ( resultMap != null)
 			ctable.execute(this.value, scalarThat, scalarThat2, false, resultMap);
@@ -338,9 +320,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	
 	@Override
 	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
-			CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException 
-	{
+			CTableMap resultMap, MatrixBlock resultBlock) {
 		//ctable expand (column vector to ctable)
 		CTable ctable = CTable.getCTableFnObject();
 		if ( resultMap != null ) {
@@ -359,9 +339,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
-			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException 
-	{
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
 		MatrixCell c3=checkType(that2);
 		CTable ctable = CTable.getCTableFnObject();
 		if ( resultMap != null)
@@ -374,16 +352,12 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
-			int blockColFactor, int boundaryRlen, int boundaryClen)
-			throws DMLRuntimeException {
+			int blockColFactor, int boundaryRlen, int boundaryClen) {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
-		
 	}
 	
 	@Override
-	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement)
-			throws DMLRuntimeException 
-	{
+	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) {
 		MatrixCell out = checkType(result);
 		if( value == pattern || (Double.isNaN(pattern) && Double.isNaN(value)) )
 			out.value = replacement;
@@ -395,18 +369,15 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
-			MatrixIndexes indexesIn, boolean inCP)
-			throws DMLRuntimeException {
+			MatrixIndexes indexesIn, boolean inCP) {
 		return aggregateUnaryOperations(op,	result, blockingFactorRow, blockingFactorCol,indexesIn);
 	}
 
 	@Override
 	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) 
-	throws DMLRuntimeException  {
+			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
 		((MatrixCell)outlist.get(0).getValue()).setValue(this.value);
 		MatrixCell c2=checkType(valueIn2);
 		((MatrixCell)outlist.get(1).getValue()).setValue(c2.getValue());	
 	}
-
 }

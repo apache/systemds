@@ -529,18 +529,14 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			functionName = convertedSyntax.functionName;
 			paramExpression = convertedSyntax.paramExpression;
 		}
-		final ExpressionInfo info = ctx.info;
-		Action f = new Action() {
-			@Override public void execute(Expression e) { info.expr = e; }
-		};
 		
 		// handle built-in functions
-		boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-		if (validBIF)
+		ctx.info.expr = buildForBuiltInFunction(ctx, functionName, paramExpression);
+		if( ctx.info.expr != null )
 			return;
 		
 		// handle user-defined functions
-		info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
+		ctx.info.expr = createFunctionCall(ctx, namespace, functionName, paramExpression);
 	}
 
 
@@ -582,13 +578,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		}
 
 		if(namespace.equals(DMLProgram.DEFAULT_NAMESPACE)) {
-			final FunctionCallMultiAssignmentStatementContext fctx = ctx;
-			Action f = new Action() {
-				@Override public void execute(Expression e) { setMultiAssignmentStatement(targetList, e, fctx, fctx.info); }
-			};
-			boolean validBIF = buildForBuiltInFunction(ctx, functionName, paramExpression, f);
-			if (validBIF)
+			Expression e = buildForBuiltInFunction(ctx, functionName, paramExpression);
+			if( e != null ) {
+				setMultiAssignmentStatement(targetList, e, ctx, ctx.info);
 				return;
+			}
 		}
 
 		// Override default namespace for imported non-built-in function

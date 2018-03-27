@@ -21,8 +21,6 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
-
 // Singleton class
 
 public class Plus extends ValueFunction implements Serializable 
@@ -57,7 +55,7 @@ public class Plus extends ValueFunction implements Serializable
 	}
 
 	@Override
-	public String execute ( String in1, String in2 ) throws DMLRuntimeException {
+	public String execute ( String in1, String in2 ) {
 		return in1 + in2;
 	}
 }

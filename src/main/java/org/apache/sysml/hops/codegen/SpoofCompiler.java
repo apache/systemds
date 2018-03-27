@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops.codegen;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -66,14 +64,12 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteCommonSubexpressionElimination;
 import org.apache.sysml.hops.rewrite.RewriteRemoveUnnecessaryCasts;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -81,7 +77,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -170,9 +165,7 @@ public class SpoofCompiler
 			new RewriteCommonSubexpressionElimination(true),
 			new RewriteRemoveUnnecessaryCasts());
 	
-	public static void generateCode(DMLProgram dmlprog) 
-		throws LanguageException, HopsException, DMLRuntimeException
-	{
+	public static void generateCode(DMLProgram dmlprog) {
 		// for each namespace, handle function statement blocks
 		for (String namespaceKey : dmlprog.getNamespaces().keySet()) {
 			for (String fname : dmlprog.getFunctionStatementBlocks(namespaceKey).keySet()) {
@@ -188,9 +181,7 @@ public class SpoofCompiler
 		}
 	}
 	
-	public static void generateCode(Program rtprog) 
-		throws LanguageException, HopsException, DMLRuntimeException, LopsException, IOException
-	{
+	public static void generateCode(Program rtprog) {
 		// handle all function program blocks
 		for( FunctionProgramBlock pb : rtprog.getFunctionProgramBlocks().values() )
 			generateCodeFromProgramBlock(pb);
@@ -200,9 +191,7 @@ public class SpoofCompiler
 			generateCodeFromProgramBlock(pb);
 	}
 	
-	public static void generateCodeFromStatementBlock(StatementBlock current)
-		throws HopsException, DMLRuntimeException
-	{
+	public static void generateCodeFromStatementBlock(StatementBlock current) {
 		if (current instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)current;
@@ -246,7 +235,6 @@ public class SpoofCompiler
 	}
 	
 	public static void generateCodeFromProgramBlock(ProgramBlock current)
-		throws HopsException, DMLRuntimeException, LopsException, IOException
 	{
 		if (current instanceof FunctionProgramBlock)
 		{
@@ -295,9 +283,7 @@ public class SpoofCompiler
 		}
 	}
 
-	public static ArrayList<Hop> generateCodeFromHopDAGs(ArrayList<Hop> roots) 
-		throws HopsException, DMLRuntimeException
-	{
+	public static ArrayList<Hop> generateCodeFromHopDAGs(ArrayList<Hop> roots) {
 		if( roots == null )
 			return roots;
 
@@ -308,17 +294,13 @@ public class SpoofCompiler
 		return optimized;
 	}
 	
-	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(StatementBlock sb, ArrayList<Hop> roots) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException 
-	{
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(StatementBlock sb, ArrayList<Hop> roots) {
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(sb, roots, 
 			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
 	}
 	
-	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException 
-	{
+	public static ArrayList<Instruction> generateCodeFromHopDAGsToInst(Hop root) {
 		//create copy of hop dag, call codegen, and generate instructions
 		return Recompiler.recompileHopsDag(root, 
 			new LocalVariableMap(), new RecompileStatus(true), false, false, 0);
@@ -331,9 +313,8 @@ public class SpoofCompiler
 	 * @param root dag root node
 	 * @param recompile true if invoked during dynamic recompilation
 	 * @return dag root node of modified dag
-	 * @throws DMLRuntimeException if optimization failed
 	 */
-	public static Hop optimize( Hop root, boolean recompile ) throws DMLRuntimeException {
+	public static Hop optimize( Hop root, boolean recompile ) {
 		if( root == null )
 			return root;
 		return optimize(new ArrayList<>(
@@ -346,10 +327,8 @@ public class SpoofCompiler
 	 * @param roots dag root nodes
 	 * @param recompile true if invoked during dynamic recompilation
 	 * @return dag root nodes of modified dag 
-	 * @throws DMLRuntimeException if optimization failed
 	 */
 	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean recompile) 
-		throws DMLRuntimeException 
 	{
 		if( roots == null || roots.isEmpty() )
 			return roots;
@@ -509,9 +488,7 @@ public class SpoofCompiler
 	////////////////////
 	// Codegen plan construction
 	
-	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) 
-		throws DMLException
-	{
+	private static void rExploreCPlans(Hop hop, CPlanMemoTable memo, boolean compileLiterals) {
 		//top-down memoization of processed dag nodes
 		if( memo.contains(hop.getHopID()) || memo.containsHop(hop) )
 			return;
@@ -565,9 +542,7 @@ public class SpoofCompiler
 		return P;
 	}
 	
-	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) 
-		throws DMLException
-	{
+	private static void rConstructCPlans(Hop hop, CPlanMemoTable memo, HashMap<Long, Pair<Hop[],CNodeTpl>> cplans, boolean compileLiterals, HashSet<Long> visited) {
 		//top-down memoization of processed dag nodes
 		if( hop == null || visited.contains(hop.getHopID()) )
 			return;
@@ -588,7 +563,7 @@ public class SpoofCompiler
 		}
 		else {
 			for( Hop c : hop.getInput() )
-				rConstructCPlans(c, memo, cplans, compileLiterals, visited);	
+				rConstructCPlans(c, memo, cplans, compileLiterals, visited);
 		}
 		
 		visited.add(hop.getHopID());
@@ -690,6 +665,10 @@ public class SpoofCompiler
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
+			//remove invalid plans with null inputs 
+			if( Arrays.stream(inHops).anyMatch(h -> (h==null)) )
+				continue;
+			
 			//perform simplifications and cse rewrites
 			tpl = rewriter.simplifyCPlan(tpl);
 			tpl = cse.eliminateCommonSubexpressions(tpl);
@@ -697,7 +676,7 @@ public class SpoofCompiler
 			//update input hops (order-preserving)
 			HashSet<Long> inputHopIDs = tpl.getInputHopIDs(false);
 			inHops = Arrays.stream(inHops)
-				.filter(p -> inputHopIDs.contains(p.getHopID()))
+				.filter(p -> p != null && inputHopIDs.contains(p.getHopID()))
 				.toArray(Hop[]::new);
 			cplans2.put(e.getKey(), new Pair<>(inHops, tpl));
 			

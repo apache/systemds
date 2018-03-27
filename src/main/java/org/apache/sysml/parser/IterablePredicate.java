@@ -61,7 +61,7 @@ public class IterablePredicate extends Expression
 	}
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		//DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
 		//return new IterablePredicate(newIterVar, _from, _to, _increment);
 		LOG.error(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
@@ -70,7 +70,6 @@ public class IterablePredicate extends Expression
 	
 	@Override
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException 
 	{
 		//recursive validate
 		if (_iterVar instanceof FunctionCallIdentifier
@@ -185,9 +184,7 @@ public class IterablePredicate extends Expression
 		return sb.toString();
 	}
 	
-	private void checkNumericScalarOutput( Expression expr )
-		throws LanguageException
-	{
+	private void checkNumericScalarOutput( Expression expr ) {
 		if( expr == null || expr.getOutput() == null )
 			return;
 		

@@ -23,7 +23,6 @@ import java.io.Serializable;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -36,13 +35,11 @@ import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import scala.Tuple2;
 
 public class TernarySPInstruction extends ComputationSPInstruction {
-	private TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String str) throws DMLRuntimeException {
+	private TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
 		super(SPType.Ternary, op, in1, in2, in3, out, opcode, str);
 	}
 
-	public static TernarySPInstruction parseInstruction(String str) throws DMLRuntimeException
-	{
+	public static TernarySPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode=parts[0];
 		CPOperand operand1 = new CPOperand(parts[1]);
@@ -54,9 +51,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = !input1.isMatrix() ? null :
 			sec.getBinaryBlockRDDHandleForVariable(input1.getName());
@@ -100,9 +95,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			sec.addLineageRDD(output.getName(), input3.getName());
 	}
 	
-	protected void updateTernaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	protected void updateTernaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		for(CPOperand input : new CPOperand[]{input1, input2, input3})
 			if( input.isMatrix() ) {

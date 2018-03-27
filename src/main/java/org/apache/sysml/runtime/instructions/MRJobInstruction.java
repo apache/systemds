@@ -840,9 +840,8 @@ public class MRJobInstruction extends Instruction
 	 * 
 	 * @param ec execution context
 	 * @return array of matrix objects
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixObject[] extractOutputMatrices(ExecutionContext ec) throws DMLRuntimeException {
+	public MatrixObject[] extractOutputMatrices(ExecutionContext ec) {
 		outputMatrices = new MatrixObject[getOutputVars().length];
 		int ind = 0;
 		for(String oo: getOutputVars()) {
@@ -942,7 +941,7 @@ public class MRJobInstruction extends Instruction
 		return tmp;
 	}
 	
-	public void printCompleteMRJobInstruction(MatrixCharacteristics[] resultStats) throws DMLRuntimeException {
+	public void printCompleteMRJobInstruction(MatrixCharacteristics[] resultStats) {
 		LOG.trace("jobtype" + jobType);
 		LOG.trace("Inputs: \n");
 		for(int i=0, mi=0; i < inputVars.length; i++ ) {
@@ -992,8 +991,7 @@ public class MRJobInstruction extends Instruction
 	}
 	
 	@Override
-	public void updateInstructionThreadID(String pattern, String replace) 
-		throws DMLRuntimeException
+	public void updateInstructionThreadID(String pattern, String replace)
 	{
 		if( dimsUnknownFilePrefix!=null )
 			dimsUnknownFilePrefix = dimsUnknownFilePrefix.replaceAll(pattern, replace);
@@ -1270,9 +1268,7 @@ public class MRJobInstruction extends Instruction
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			throw new DMLRuntimeException("MapReduce jobs cannot be executed when execution mode = singlenode");
 		

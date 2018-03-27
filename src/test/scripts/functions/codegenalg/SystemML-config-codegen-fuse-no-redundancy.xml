@@ -20,7 +20,9 @@
 <root>
    <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
    <sysml.scratch>scratch_space</sysml.scratch>
-   <sysml.optlevel>4</sysml.optlevel>
-   <!-- piggybacked test for custom mapred/mapreduce configurations -->
-   <mapreduce.task.io.sort.mb>50</mapreduce.task.io.sort.mb>
+   <sysml.optlevel>7</sysml.optlevel>
+   <sysml.codegen.enabled>true</sysml.codegen.enabled>
+   <sysml.codegen.plancache>true</sysml.codegen.plancache>
+   <sysml.codegen.literals>1</sysml.codegen.literals>
+   <sysml.codegen.optimizer>fuse_no_redundancy</sysml.codegen.optimizer>
 </root>

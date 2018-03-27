@@ -69,12 +69,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 * @param inputParams list of input data identifiers
 	 * @param outputParams list of output data indentifiers
 	 * @param baseDir base directory
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected ExternalFunctionProgramBlock(Program prog,
 			ArrayList<DataIdentifier> inputParams,
 			ArrayList<DataIdentifier> outputParams,
-			String baseDir) throws DMLRuntimeException
+			String baseDir)
 	{
 		super(prog, inputParams, outputParams);
 		_baseDir = baseDir;
@@ -84,7 +83,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 			ArrayList<DataIdentifier> inputParams,
 			ArrayList<DataIdentifier> outputParams,
 			HashMap<String, String> otherParams,
-			String baseDir) throws DMLRuntimeException {
+			String baseDir) {
 
 		super(prog, inputParams, outputParams);
 		_baseDir = baseDir;
@@ -140,7 +139,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	 */
 	@Override
 	public void execute(ExecutionContext ec) 
-		throws DMLRuntimeException
 	{
 		_runID = _idSeq.getNextID();
 		
@@ -228,9 +226,8 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	/**
 	 * method to create instructions
 	 * 
-	 * @throws DMLRuntimeException 
 	 */
-	protected void createInstructions() throws DMLRuntimeException {
+	protected void createInstructions() {
 
 		_inst = new ArrayList<>();
 
@@ -267,7 +264,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected PackageFunction createFunctionObject(String className, String configFile) throws DMLRuntimeException {
+	protected PackageFunction createFunctionObject(String className, String configFile) {
 		try {
 			//create instance of package function
 			Class<Instruction> cla = (Class<Instruction>) Class.forName(className);
@@ -287,9 +284,7 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		}
 	}
 	
-	protected void verifyFunctionInputsOutputs(PackageFunction fun, CPOperand[] inputs, CPOperand[] outputs)
-		throws DMLRuntimeException 
-	{
+	protected void verifyFunctionInputsOutputs(PackageFunction fun, CPOperand[] inputs, CPOperand[] outputs) {
 		// verify number of outputs
 		if( outputs.length != fun.getNumFunctionOutputs() ) {
 			throw new DMLRuntimeException(

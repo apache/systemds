@@ -54,17 +54,13 @@ public class ReorgInstruction extends UnaryMRInstructionBase {
 		_outputEmptyBlocks = flag; 
 	}
 	
-	public static ReorgInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static ReorgInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 2 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in, out;
 		String opcode = parts[0];
 		in = Byte.parseByte(parts[1]);
 		out = Byte.parseByte(parts[2]);
-		
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			return new ReorgInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, str);
 		} 
@@ -77,15 +73,12 @@ public class ReorgInstruction extends UnaryMRInstructionBase {
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
 		}
-		
 	}
 
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, 
-			int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
-		
+			int blockRowFactor, int blockColFactor) {
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		
 		if( blkList != null )

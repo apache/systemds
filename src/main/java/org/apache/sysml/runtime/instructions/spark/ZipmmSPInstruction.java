@@ -51,9 +51,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		_tRewrite = tRewrite;
 	}
 
-	public static ZipmmSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ZipmmSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -70,13 +68,10 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		else {
 			throw new DMLRuntimeException("ZipmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
-		
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd inputs (for computing r = t(X)%*%y via r = t(t(y)%*%X))

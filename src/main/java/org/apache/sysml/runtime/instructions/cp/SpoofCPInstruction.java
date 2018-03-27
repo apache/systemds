@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.util.ArrayList;
 
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.codegen.SpoofOperator;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -48,9 +47,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		return _class;
 	}
 
-	public static SpoofCPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException 
-	{
+	public static SpoofCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		
 		ArrayList<CPOperand> inlist = new ArrayList<>();
@@ -67,9 +64,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//get input matrices and scalars, incl pinning of matrices
 		ArrayList<MatrixBlock> inputs = new ArrayList<>();
 		ArrayList<ScalarObject> scalars = new ArrayList<>();

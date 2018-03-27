@@ -85,9 +85,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 		}
 	}
 
-	public static ParameterizedBuiltinMRInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ParameterizedBuiltinMRInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
 		
@@ -124,8 +122,7 @@ public class ParameterizedBuiltinMRInstruction extends UnaryInstruction {
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{		
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList !=null )
 			for(IndexedMatrixValue imv : blkList)

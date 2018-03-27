@@ -27,7 +27,6 @@ import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.distribution.FDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.exception.MathArithmeticException;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -89,11 +88,11 @@ public class ParameterizedBuiltin extends ValueFunction
 		distFunc = dist;
 	}
 
-	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str) throws DMLRuntimeException {
+	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str) {
 		return getParameterizedBuiltinFnObject (str, null);
 	}
 
-	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str, String str2) throws DMLRuntimeException {
+	public static ParameterizedBuiltin getParameterizedBuiltinFnObject (String str, String str2) {
 		
 		ParameterizedBuiltinCode code = String2ParameterizedBuiltinCode.get(str);
 		
@@ -178,7 +177,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	}
 	
 	@Override
-	public double execute(HashMap<String,String> params) throws DMLRuntimeException {
+	public double execute(HashMap<String,String> params) {
 		switch(bFunc) {
 		case CDF:
 		case INVCDF:
@@ -205,10 +204,8 @@ public class ParameterizedBuiltin extends ValueFunction
 	 * @param params map of parameters
 	 * @param inverse true if inverse
 	 * @return cdf or inverse cdf
-	 * @throws MathArithmeticException if MathArithmeticException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) throws MathArithmeticException, DMLRuntimeException {
+	private static double computeFromDistribution (ProbabilityDistributionCode dcode, HashMap<String,String> params, boolean inverse ) {
 		
 		// given value is "quantile" when inverse=false, and it is "probability" when inverse=true
 		double val = Double.parseDouble(params.get("target"));

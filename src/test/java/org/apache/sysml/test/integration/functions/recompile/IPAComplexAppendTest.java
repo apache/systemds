@@ -25,7 +25,6 @@ import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -55,44 +54,27 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	
 	
 	@Test
-	public void testComplexAppendNoIPANoRewrites() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testComplexAppendNoIPANoRewrites() throws IOException {
 		runIPAAppendTest(false, false);
 	}
 	
 	@Test
-	public void testComplexAppendIPANoRewrites() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testComplexAppendIPANoRewrites() throws IOException {
 		runIPAAppendTest(true, false);
 	}
 	
 	@Test
-	public void testComplexAppendNoIPARewrites() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testComplexAppendNoIPARewrites() throws IOException {
 		runIPAAppendTest(false, true);
 	}
 	
 	@Test
-	public void testComplexAppendIPARewrites() 
-		throws DMLRuntimeException, IOException 
-	{
+	public void testComplexAppendIPARewrites() throws IOException {
 		runIPAAppendTest(true, true);
 	}
-
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 * @throws DMLRuntimeException 
-	 * @throws IOException 
-	 */
-	private void runIPAAppendTest( boolean IPA, boolean rewrites ) 
-		throws DMLRuntimeException, IOException
-	{	
+	
+	private void runIPAAppendTest( boolean IPA, boolean rewrites ) throws IOException
+	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

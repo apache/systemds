@@ -52,8 +52,7 @@ public class WeightedPair extends WeightedCell
 		out.writeDouble(weight);
 	}
 
-	private static WeightedPair checkType(MatrixValue cell) throws DMLRuntimeException
-	{
+	private static WeightedPair checkType(MatrixValue cell) {
 		if( cell!=null && !(cell instanceof WeightedPair))
 			throw new DMLRuntimeException("the Matrix Value is not WeightedPair!");
 		return (WeightedPair) cell;

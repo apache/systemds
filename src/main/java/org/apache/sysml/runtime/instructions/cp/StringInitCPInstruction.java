@@ -52,32 +52,24 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 		return _clen;
 	}
 
-	public static StringInitCPInstruction parseInstruction(String str) 
-		throws DMLRuntimeException 
-	{
+	public static StringInitCPInstruction parseInstruction(String str) {
 		String opcode = InstructionUtils.getOpCode(str);
 		if( !opcode.equals(DataGen.SINIT_OPCODE) )
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
-		
 		//parse instruction
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
 		InstructionUtils.checkNumFields( s, 6 );
-		
 		CPOperand out = new CPOperand(s[s.length-1]); // output is specified by the last operand
-
 		long rows = (s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[1]).longValue());
 		long cols = (s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[2]).longValue());
-        int rpb = Integer.parseInt(s[3]);
+		int rpb = Integer.parseInt(s[3]);
 		int cpb = Integer.parseInt(s[4]);
 		String data = s[5];
-		
 		return new StringInitCPInstruction(null, null, out, rows, cols, rpb, cpb, data, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		//setup output matrix
 		String outName = output.getName();
 		MatrixBlock outBlk = new MatrixBlock((int)_rlen, (int)_clen, false);

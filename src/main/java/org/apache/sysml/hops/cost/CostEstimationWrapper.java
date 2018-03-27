@@ -67,9 +67,7 @@ public class CostEstimationWrapper
 		}
 	}
 	
-	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public static double getTimeEstimate(Program rtprog, ExecutionContext ec) {
 		Timing time = new Timing(true);
 		
 		HashMap<String,VarStats> stats = new HashMap<>();
@@ -80,9 +78,7 @@ public class CostEstimationWrapper
 		return costs;
 	}
 	
-	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) 
-		throws DMLRuntimeException
-	{
+	public static double getTimeEstimate(ProgramBlock pb, ExecutionContext ec, boolean recursive) {
 		Timing time = new Timing(true);
 		
 		HashMap<String,VarStats> stats = new HashMap<>();
@@ -93,9 +89,7 @@ public class CostEstimationWrapper
 		return costs;
 	}
 
-	private static CostEstimator createCostEstimator( CostType type ) 
-		throws DMLRuntimeException
-	{
+	private static CostEstimator createCostEstimator( CostType type ) {
 		switch( type )
 		{
 			case NUM_MRJOBS:

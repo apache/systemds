@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -42,6 +41,7 @@ import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.SortUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -96,9 +96,7 @@ public class LibMatrixReorg
 		return (getReorgType(op) != ReorgType.INVALID);
 	}
 
-	public static MatrixBlock reorg( MatrixBlock in, MatrixBlock out, ReorgOperator op ) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock reorg( MatrixBlock in, MatrixBlock out, ReorgOperator op ) {
 		ReorgType type = getReorgType(op);
 		
 		switch( type ) {
@@ -119,9 +117,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return out;
@@ -162,9 +158,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) {
 		//redirect small or special cases to sequential execution
 		if( in.isEmptyBlock(false) || (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD) || k == 1
 			|| (SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
@@ -185,7 +179,7 @@ public class LibMatrixReorg
 		
 		//core multi-threaded transpose
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			//pre-processing (compute nnz per column once for sparse)
 			int[] cnt = null;
 			if( in.sparse && out.sparse ) {
@@ -219,9 +213,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) {
 		//Timing time = new Timing(true);
 	
 		//sparse-safe operation
@@ -244,9 +236,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) 
-		throws DMLRuntimeException
-	{
+	public static void rev( IndexedMatrixValue in, long rlen, int brlen, ArrayList<IndexedMatrixValue> out ) {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
 		MatrixBlock inblk = (MatrixBlock) in.getValue(); 
@@ -290,9 +280,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out )
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock diag( MatrixBlock in, MatrixBlock out ) {
 		//Timing time = new Timing(true);
 		
 		//sparse-safe operation
@@ -316,9 +304,7 @@ public class LibMatrixReorg
 		return out;
 	}
 
-	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int[] by, boolean desc, boolean ixret) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock sort(MatrixBlock in, MatrixBlock out, int[] by, boolean desc, boolean ixret) {
 		//meta data gathering and preparation
 		boolean sparse = in.isInSparseFormat();
 		int rlen = in.rlen;
@@ -416,17 +402,19 @@ public class LibMatrixReorg
 	/**
 	 * CP reshape operation (single input, single output matrix) 
 	 * 
+	 * NOTE: In contrast to R, the rowwise parameter specifies both
+	 * the read and write order, with row-wise being the default, while
+	 * R uses always a column-wise read, rowwise specifying the write
+	 * order and column-wise being the default. 
+	 * 
 	 * @param in input matrix
 	 * @param out output matrix
 	 * @param rows number of rows
 	 * @param cols number of columns
 	 * @param rowwise if true, reshape by row
 	 * @return output matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock reshape( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
@@ -476,12 +464,9 @@ public class LibMatrixReorg
 	 * @param mcOut output matrix characteristics
 	 * @param rowwise if true, reshape by row
 	 * @return list of indexed matrix values
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, MatrixCharacteristics mcIn, 
-			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise )
-		throws DMLRuntimeException
-	{
+			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise ) {
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
@@ -497,11 +482,13 @@ public class LibMatrixReorg
 			reshapeSparse(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 		else //dense
 			reshapeDense(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
-
+		
 		//prepare output
 		out = new ArrayList<>();
-		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
+		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() ) {
+			e.getValue().examSparsity(); //ensure correct format
 			out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
+		}
 		
 		return out;
 	}
@@ -515,11 +502,8 @@ public class LibMatrixReorg
 	 * @param emptyReturn return row/column of zeros for empty input
 	 * @param select ?
 	 * @return matrix block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
@@ -549,11 +533,8 @@ public class LibMatrixReorg
 	 * @param brlen number of rows in a block
 	 * @param bclen number of columns in a block
 	 * @param outList list of indexed matrix values
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
-		throws DMLRuntimeException
-	{
+	public static void rmempty(IndexedMatrixValue data, IndexedMatrixValue offset, boolean rmRows, long len, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) {
 		//sanity check inputs
 		if( !(data.getValue() instanceof MatrixBlock && offset.getValue() instanceof MatrixBlock) )
 			throw new DMLRuntimeException("Unsupported input data: expected "+MatrixBlock.class.getName()+" but got "+data.getValue().getClass().getName()+" and "+offset.getValue().getClass().getName());
@@ -643,11 +624,8 @@ public class LibMatrixReorg
 	 * @param ignore ?
 	 * @param k degree of parallelism
 	 * @return output matrix
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock rexpand(MatrixBlock in, MatrixBlock ret, double max, boolean rows, boolean cast, boolean ignore, int k) {
 		//prepare parameters
 		int lmax = (int)UtilFunctions.toLong(max);
 		
@@ -683,11 +661,8 @@ public class LibMatrixReorg
 	 * @param brlen number of rows in a block
 	 * @param bclen number of columns in a block
 	 * @param outList list of indexed matrix values
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) 
-		throws DMLRuntimeException
-	{
+	public static void rexpand(IndexedMatrixValue data, double max, boolean rows, boolean cast, boolean ignore, long brlen, long bclen, ArrayList<IndexedMatrixValue> outList) {
 		//prepare parameters
 		MatrixIndexes ix = data.getIndexes();
 		MatrixBlock in = (MatrixBlock)data.getValue();
@@ -740,9 +715,7 @@ public class LibMatrixReorg
 		return ReorgType.INVALID;
 	}
 
-	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
-		throws DMLRuntimeException
-	{
+	private static void transposeDenseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		final int n2 = out.clen;
@@ -903,9 +876,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) 
-		throws DMLRuntimeException
-	{
+	private static void transposeSparseToDense(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		
@@ -995,9 +966,7 @@ public class LibMatrixReorg
 		return cnt;
 	}
 
-	private static void reverseDense(MatrixBlock in, MatrixBlock out)
-		throws DMLRuntimeException
-	{
+	private static void reverseDense(MatrixBlock in, MatrixBlock out) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		
@@ -1023,9 +992,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void reverseSparse(MatrixBlock in, MatrixBlock out)
-		throws DMLRuntimeException
-	{
+	private static void reverseSparse(MatrixBlock in, MatrixBlock out) {
 		final int m = in.rlen;
 		
 		//set basic meta data and allocate output
@@ -1118,9 +1085,7 @@ public class LibMatrixReorg
 		out.setNonZeros(nnz);
 	}
 
-	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
-		throws DMLRuntimeException
-	{
+	private static void reshapeDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
@@ -1403,9 +1368,7 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) 
-		throws DMLRuntimeException
-	{
+	private static void reshapeSparseToDense( MatrixBlock in, MatrixBlock out, int rows, int cols, boolean rowwise ) {
 		int rlen = in.rlen;
 		int clen = in.clen;
 		
@@ -1493,64 +1456,83 @@ public class LibMatrixReorg
 		
 		long row_offset = (ixin.getRowIndex()-1)*mcOut.getRowsPerBlock();
 		long col_offset = (ixin.getColumnIndex()-1)*mcOut.getColsPerBlock();
+		long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1;
+		long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1;
 		
 		if( rowwise ) {
-			long max_col_offset = Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock())-1;
-			for( long i=row_offset; i<Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock()); i++ ) {
+			if( mcIn.getCols() == 1 ) {
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, 0, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, 0, mcIn, mcOut, rowwise);
+				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
+			
+			}
+			for( long i=row_offset; i<max_row_offset+1; i++ ) {
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
 				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, max_col_offset, mcIn, mcOut, rowwise);
-				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed first index: "+first.toString());
-				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed last index: "+last.toString());
-				
-				//add first row block
-				ret.add(first);
-				
-				//add blocks in between first and last
-				if( !first.equals(last) ) {
-					boolean fill = first.getRowIndex()==last.getRowIndex()
-						&& first.getColumnIndex() > last.getColumnIndex();
-					for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
-						long k2_start = (k1==first.getRowIndex() ? first.getColumnIndex()+1 : 1);
-						long k2_end = (k1==last.getRowIndex() && !fill) ?
-							last.getColumnIndex()-1 : mcOut.getNumColBlocks();
-						for( long k2=k2_start; k2<=k2_end; k2++ )
-							ret.add(new MatrixIndexes(k1,k2));
-					}
-					ret.add(last);
-				}
+				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
 			}
 		}
 		else{ //colwise
-			long max_row_offset = Math.min(mcIn.getRows(),row_offset+mcIn.getRowsPerBlock())-1;
-			for( long j=col_offset; j<Math.min(mcIn.getCols(),col_offset+mcIn.getColsPerBlock()); j++ ) {
-				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, j, mcIn, mcOut, rowwise);
-				if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed first index: "+first.toString());
-				if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
-					throw new RuntimeException("Invalid computed last index: "+last.toString());
-				
-				//add first row block
-				ret.add(first);
-				
-				//add blocks in between first and last
-				if( !first.equals(last) ) {
-					boolean fill = first.getColumnIndex()==last.getColumnIndex()
-							&& first.getRowIndex() > last.getRowIndex();
-					for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
-						long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
-						long k2_end = ((k1==last.getColumnIndex() && !fill) ? 
-							last.getRowIndex()-1 : mcOut.getNumRowBlocks());
-						for( long k2=k2_start; k2<=k2_end; k2++ )
-							ret.add(new MatrixIndexes(k1,k2));
-					}
-					ret.add(last);
+			if( mcIn.getRows() == 1 ) {
+				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), 0, col_offset, mcIn, mcOut, rowwise);
+				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), 0, max_col_offset, mcIn, mcOut, rowwise);
+				createColwiseIndexes(first, last, mcOut.getNumRowBlocks(), ret);
+			}
+			else {
+				for( long j=col_offset; j<max_col_offset+1; j++ ) {
+					MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, j, mcIn, mcOut, rowwise);
+					MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, j, mcIn, mcOut, rowwise);
+					createColwiseIndexes(first, last, mcOut.getNumRowBlocks(), ret);
 				}
 			}
 		}
 		return ret;
+	}
+	
+	private static void createRowwiseIndexes(MatrixIndexes first, MatrixIndexes last, long ncblks, HashSet<MatrixIndexes> ret) {
+		if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed first index: "+first.toString());
+		if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed last index: "+last.toString());
+		
+		//add first row block
+		ret.add(first);
+		
+		//add blocks in between first and last
+		if( !first.equals(last) ) {
+			boolean fill = first.getRowIndex()==last.getRowIndex()
+				&& first.getColumnIndex() > last.getColumnIndex();
+			for( long k1=first.getRowIndex(); k1<=last.getRowIndex(); k1++ ) {
+				long k2_start = (k1==first.getRowIndex() ? first.getColumnIndex()+1 : 1);
+				long k2_end = (k1==last.getRowIndex() && !fill) ? last.getColumnIndex()-1 : ncblks;
+				for( long k2=k2_start; k2<=k2_end; k2++ )
+					ret.add(new MatrixIndexes(k1,k2));
+			}
+			ret.add(last);
+		}
+	}
+	
+	private static void createColwiseIndexes(MatrixIndexes first, MatrixIndexes last, long nrblks, HashSet<MatrixIndexes> ret) {
+		if( first.getRowIndex()<=0 || first.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed first index: "+first.toString());
+		if( last.getRowIndex()<=0 || last.getColumnIndex()<=0 )
+			throw new RuntimeException("Invalid computed last index: "+last.toString());
+		
+		//add first row block
+		ret.add(first);
+		
+		//add blocks in between first and last
+		if( !first.equals(last) ) {
+			boolean fill = first.getColumnIndex()==last.getColumnIndex()
+					&& first.getRowIndex() > last.getRowIndex();
+			for( long k1=first.getColumnIndex(); k1<=last.getColumnIndex(); k1++ ) {
+				long k2_start = ((k1==first.getColumnIndex()) ? first.getRowIndex()+1 : 1);
+				long k2_end = ((k1==last.getColumnIndex() && !fill) ? last.getRowIndex()-1 : nrblks);
+				for( long k2=k2_start; k2<=k2_end; k2++ )
+					ret.add(new MatrixIndexes(k2,k1));
+			}
+			ret.add(last);
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -1592,9 +1574,7 @@ public class LibMatrixReorg
 
 	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix,
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
-		throws DMLRuntimeException
-	{
+			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1623,7 +1603,7 @@ public class LibMatrixReorg
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise ) {
+		if( !rowwise && mcIn.getRows() > 1 ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
@@ -1632,9 +1612,7 @@ public class LibMatrixReorg
 
 	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
 			HashMap<MatrixIndexes,MatrixBlock> rix, 
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) 
-		throws DMLRuntimeException
-    {
+			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1665,12 +1643,12 @@ public class LibMatrixReorg
 		}
 		
 		//cleanup for sparse blocks
-		if( !rowwise ) {
+		if( !rowwise && mcIn.getRows() > 1 ) {
 			for( MatrixBlock block : rix.values() )
 				if( block.sparse )
 					block.sortSparseRows();
-		}				
-    }
+		}
+	}
 	
 	/**
 	 * Assumes internal (0-begin) indices ai, aj as input; computes external block indexes (1-begin) 
@@ -1707,9 +1685,7 @@ public class LibMatrixReorg
 			new MatrixIndexes(ci, cj);
 	}
 
-	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
-		throws DMLRuntimeException 
-	{
+	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		boolean[] flags = null;
@@ -1832,9 +1808,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) 
-		throws DMLRuntimeException 
-	{
+	private static MatrixBlock removeEmptyColumns(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		
@@ -1955,9 +1929,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	private static MatrixBlock rexpandRows(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) 
-		throws DMLRuntimeException
-	{
+	private static MatrixBlock rexpandRows(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore) {
 		//set meta data
 		final int rlen = max;
 		final int clen = in.rlen;
@@ -2006,9 +1978,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 	
-	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int k) 
-		throws DMLRuntimeException
-	{
+	private static MatrixBlock rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int k) {
 		//set meta data
 		final int rlen = in.rlen;
 		final int clen = max;
@@ -2025,7 +1995,7 @@ public class LibMatrixReorg
 		}
 		else {
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<RExpandColsTask> tasks = new ArrayList<>();
 				int blklen = (int)(Math.ceil((double)rlen/k/8));
 				for( int i=0; i<8*k & i*blklen<rlen; i++ )
@@ -2047,9 +2017,7 @@ public class LibMatrixReorg
 		return ret;
 	}
 
-	private static long rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int rl, int ru) 
-		throws DMLRuntimeException
-	{
+	private static long rexpandColumns(MatrixBlock in, MatrixBlock ret, int max, boolean cast, boolean ignore, int rl, int ru) {
 		//initialize auxiliary data structures 
 		int lnnz = 0;
 		int[] cix = null;
@@ -2315,8 +2283,7 @@ public class LibMatrixReorg
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
-		{
+		public Object call() {
 			int rl = _row ? _rl : 0;
 			int ru = _row ? _ru : _in.rlen;
 			int cl = _row ? 0 : _rl;
@@ -2349,7 +2316,7 @@ public class LibMatrixReorg
 		}
 		
 		@Override
-		public int[] call() throws DMLRuntimeException {
+		public int[] call() {
 			return countNnzPerColumn(_in, _rl, _ru);
 		}
 	}
@@ -2375,7 +2342,7 @@ public class LibMatrixReorg
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException {
+		public Long call() {
 			return rexpandColumns(_in, _out, _max, _cast, _ignore, _rl, _ru);
 		}
 	}

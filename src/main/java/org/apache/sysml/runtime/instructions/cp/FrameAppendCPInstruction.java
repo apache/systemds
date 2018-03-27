@@ -33,7 +33,6 @@ public final class FrameAppendCPInstruction extends AppendCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
 	{
 		//get inputs
 		FrameBlock fin1 = ec.getFrameInput(input1.getName());

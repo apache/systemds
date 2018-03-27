@@ -63,15 +63,11 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput,
-			int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("GroupedAggregateInstruction.processInstruction() should not be called!");
-		
 	}
 
-	public static GroupedAggregateInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static GroupedAggregateInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		if(parts.length<3)
 			throw new DMLRuntimeException("the number of fields of instruction "+str+" is less than 2!");
@@ -81,16 +77,13 @@ public class GroupedAggregateInstruction extends UnaryMRInstructionBase {
 		out = Byte.parseByte(parts[parts.length - 3]);
 		boolean weights = Boolean.parseBoolean(parts[parts.length-2]);
 		int ngroups = Integer.parseInt(parts[parts.length-1]);
-		
-		if ( !opcode.equalsIgnoreCase("groupedagg") ) {
+		if ( !opcode.equalsIgnoreCase("groupedagg") )
 			throw new DMLRuntimeException("Invalid opcode in GroupedAggregateInstruction: " + opcode);
-		}
-		
 		Operator optr = parseGroupedAggOperator(parts[2], parts[3]);
 		return new GroupedAggregateInstruction(optr, in, out, weights, ngroups, str);
 	}
 	
-	public static Operator parseGroupedAggOperator(String fn, String other) throws DMLRuntimeException {
+	public static Operator parseGroupedAggOperator(String fn, String other) {
 		AggregateOperationTypes op = AggregateOperationTypes.INVALID;
 		if ( fn.equalsIgnoreCase("centralmoment") )
 			// in case of CM, we also need to pass "order"

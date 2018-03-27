@@ -55,8 +55,7 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 		super(SPType.QSort, op, in1, in2, out, opcode, istr);
 	}
 
-	public static QuantileSortSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException {
+	public static QuantileSortSPInstruction parseInstruction ( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = null;
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -86,9 +85,7 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		boolean weighted = (input2 != null);
 		

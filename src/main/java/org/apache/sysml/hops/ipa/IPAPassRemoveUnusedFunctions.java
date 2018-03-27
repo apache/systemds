@@ -38,14 +38,13 @@ import org.apache.sysml.parser.LanguageException;
 public class IPAPassRemoveUnusedFunctions extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
-		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS;
+	public boolean isApplicable(FunctionCallGraph fgraph) {
+		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS
+			&& !fgraph.containsEvalCall();
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
-	{
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		try {
 			Set<String> fnamespaces = prog.getNamespaces().keySet();
 			for( String fnspace : fnamespaces  ) {

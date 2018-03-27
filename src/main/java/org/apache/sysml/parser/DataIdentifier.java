@@ -20,26 +20,25 @@
 package org.apache.sysml.parser;
 
 
-public class DataIdentifier extends Identifier 
+public class DataIdentifier extends Identifier
 {
 	protected String _name;
-	protected String _valueTypeString;	
+	protected String _valueTypeString;
 	
 	public DataIdentifier(DataIdentifier passed){
 		setProperties(passed);
 		_name = passed.getName();
-		_valueTypeString = passed.getValueType().toString();	
+		_valueTypeString = passed.getValueType().toString();
 		
 		// set location information
 		setParseInfo(passed);
 	}
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException{
+	public Expression rewriteExpression(String prefix) {
 		DataIdentifier newId = new DataIdentifier(this);
 		String newIdName = prefix + _name;
 		newId.setName(newIdName);
-				
 		return newId;
 	}
 	
@@ -55,6 +54,7 @@ public class DataIdentifier extends Identifier
 	public String getName(){
 		return _name;
 	}
+	
 	public void setName(String name){
 		_name = name;
 	}
@@ -81,18 +81,15 @@ public class DataIdentifier extends Identifier
 	 * This method must be overridden by all child classes.
 	 * 
 	 * @return true if expression returns multiple outputs
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public boolean multipleReturns() throws LanguageException {
+	public boolean multipleReturns() {
 		throw new LanguageException("multipleReturns() must be overridden in the subclass.");
 	}
 	
 	@Override
-	public boolean equals(Object that) 
-	{
+	public boolean equals(Object that) {
 		if( !(that instanceof DataIdentifier) )
 			return false;
-			
 		DataIdentifier target = (DataIdentifier)that;
 		if(getName()!=null && !getName().equals(target.getName()))
 			return false;
@@ -106,14 +103,11 @@ public class DataIdentifier extends Identifier
 			return false;
 		if(!(this.getDim2() == target.getDim2()))
 			return false;
-		
 		return true;
-		
 	}
 	
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		return super.hashCode();
 	}
 }

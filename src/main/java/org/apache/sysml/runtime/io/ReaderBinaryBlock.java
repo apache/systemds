@@ -135,10 +135,9 @@ public class ReaderBinaryBlock extends MatrixReader
 	 * @param brlen number of rows in block
 	 * @param bclen number of columns in block
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void readBinaryBlockMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
-		throws IOException, DMLRuntimeException
+		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
 		MatrixIndexes key = new MatrixIndexes(); 

@@ -24,16 +24,19 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
 public class LibMatrixNative
 {
+	private static final Log LOG = LogFactory.getLog(LibMatrixNative.class.getName());
+	
 	// ThreadLocal reuse of direct buffers for inputs/outputs (extended on demand).
 	//   note: since we anyway have to convert from double to float, we use
 	//   preallocated direct buffers (with thread-local reuse and resizing on demand)
@@ -57,13 +60,12 @@ public class LibMatrixNative
 	 * @param m2 rhs matrix block
 	 * @param ret output matrix block
 	 * @param k number of threads
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) throws DMLRuntimeException {
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		matrixMult(m1, m2, ret, k, true);
 	}
 	
-	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) throws DMLRuntimeException {
+	public static void matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k, boolean examSparsity) {
 		// Sanity check:
 		k = k <= 0 ? NativeHelper.getMaxNumThreads() : k;
 		
@@ -121,39 +123,28 @@ public class LibMatrixNative
 	 * @param filter filter
 	 * @param outputBlock output of convolution
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
 			setNumThreads(params);
+			long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			int nnz = 0;
 			if(params.bias == null) {
-				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				int nnz = NativeHelper.conv2dDense(input.getDenseBlockValues(), filter.getDenseBlockValues(),
+				nnz = NativeHelper.conv2dDense(input.getDenseBlockValues(), filter.getDenseBlockValues(),
 						outputBlock.getDenseBlockValues(), params.N, params.C, params.H, params.W, 
 						params.K, params.R, params.S, params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);
-				if(nnz != -1) {
-					if(DMLScript.STATISTICS) {
-						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeConv2dCalls.increment();
-					}
-					// post-processing: maintain nnz
-					outputBlock.setNonZeros(nnz);
-					return;
-				}
-				else {
-					// Fall back to Java when failures
-					Statistics.incrementNativeFailuresCounter();
-				}
 			}
 			else {
 				if(params.bias.isInSparseFormat())
 					params.bias.sparseToDense(); // Bias matrix is usually extremely small
-				long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
-				int nnz = -1;
-				if( isSinglePrecision() ) {
+				//NOTE: We temporarily disable MKL FP32 conv2d_bias_add due to incorrect results on
+				//newer processors with AVX2 and AVX-512 instruction set (library bug or alignment issue)
+				//Experiments have shown that falling back to the MKL FP64 primitives is generally faster
+				//than falling back to the custom openmp FP32 implementation.
+				if( isSinglePrecision() && !NativeHelper.getCurrentBLAS().equalsIgnoreCase("mkl") ) {
 					FloatBuffer finput = toFloatBuffer(input.getDenseBlockValues(), inBuff, true);
 					FloatBuffer fbias = toFloatBuffer(params.bias.getDenseBlockValues(), biasBuff, true);
 					FloatBuffer ffilter = toFloatBuffer(filter.getDenseBlockValues(), filterBuff, true);
@@ -162,7 +153,8 @@ public class LibMatrixNative
 						params.N, params.C, params.H, params.W, params.K, params.R, params.S,
 						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);
-					fromFloatBuffer(outBuff.get(), outputBlock.getDenseBlockValues());
+					if( nnz != -1 )
+						fromFloatBuffer(outBuff.get(), outputBlock.getDenseBlockValues());
 				}
 				else { //Double
 					nnz = NativeHelper.dconv2dBiasAddDense(input.getDenseBlockValues(), params.bias.getDenseBlockValues(),
@@ -171,19 +163,22 @@ public class LibMatrixNative
 						params.stride_h, params.stride_w, params.pad_h, params.pad_w, 
 						params.P, params.Q, params.numThreads);	
 				}
-				if(nnz != -1) {
-					if(DMLScript.STATISTICS) {
-						Statistics.nativeConv2dTime += System.nanoTime() - start;
-						Statistics.numNativeConv2dCalls.increment();
-					}
-					// post-processing: maintain nnz
-					outputBlock.setNonZeros(nnz);
-					return;
+			}
+			//post processing and error handling
+			if(nnz != -1) {
+				if(DMLScript.STATISTICS) {
+					Statistics.nativeConv2dTime += System.nanoTime() - start;
+					Statistics.numNativeConv2dCalls.increment();
 				}
-				else {
-					// Fall back to Java when failures
-					Statistics.incrementNativeFailuresCounter();
-				}
+				outputBlock.setNonZeros(nnz);
+				return;
+			}
+			else {
+				// Fall back to Java in case of failures, reset output to ensure correctness
+				LOG.warn("Native conv2d call returned with error - falling back to java operator.");
+				if( !(isSinglePrecision() && params.bias!=null) )
+					outputBlock.reset();
+				Statistics.incrementNativeFailuresCounter();
 			}
 		}
 		
@@ -204,9 +199,8 @@ public class LibMatrixNative
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
@@ -241,9 +235,8 @@ public class LibMatrixNative
 	 * @param dout errors from next layer
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {

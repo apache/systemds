@@ -36,7 +36,6 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;
@@ -416,21 +415,10 @@ public class FrameConverterTest extends AutomatedTestBase
 			}
 	}
 	
-
-	/**
-	 * @param oinfo 
-	 * @param frame1
-	 * @param frame2
-	 * @param fprop
-	 * @param schema
-	 * @return 
-	 * @throws DMLRuntimeException, IOException
-	 */
-
 	@SuppressWarnings("unchecked")
 	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix, 
 			List<ValueType> schema, String fnameIn, String fnameOut)
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();
 		JavaSparkContext sc = sec.getSparkContext();

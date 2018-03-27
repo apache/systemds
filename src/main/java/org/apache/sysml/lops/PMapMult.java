@@ -30,10 +30,8 @@ public class PMapMult extends Lop
 {	
 	public static final String OPCODE = "pmapmm";
 
-	public PMapMult(Lop input1, Lop input2, DataType dt, ValueType vt) 
-		throws LopsException 
-	{
-		super(Lop.Type.MapMult, dt, vt);		
+	public PMapMult(Lop input1, Lop input2, DataType dt, ValueType vt) {
+		super(Lop.Type.MapMult, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);

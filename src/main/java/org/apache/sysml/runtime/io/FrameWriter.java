@@ -38,9 +38,7 @@ public abstract class FrameWriter
 	public abstract void writeFrameToHDFS( FrameBlock src, String fname, long rlen, long clen )
 		throws IOException, DMLRuntimeException;
 
-	public static FrameBlock[] createFrameBlocksForReuse( ValueType[] schema, String[] names, long rlen ) 
-		throws DMLRuntimeException
-	{
+	public static FrameBlock[] createFrameBlocksForReuse( ValueType[] schema, String[] names, long rlen ) {
 		FrameBlock frameBlock[] = new FrameBlock[1];
 		frameBlock[0] = new FrameBlock(schema, names);
 		return frameBlock;

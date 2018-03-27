@@ -40,12 +40,9 @@ public class RepMat extends Lop
 	 * @param repCols ?
 	 * @param dt data type
 	 * @param vt value type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public RepMat(Lop input1, Lop input2, boolean repCols, DataType dt, ValueType vt) 
-		throws LopsException 
-	{
-		super(Lop.Type.RepMat, dt, vt);		
+	public RepMat(Lop input1, Lop input2, boolean repCols, DataType dt, ValueType vt) {
+		super(Lop.Type.RepMat, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);

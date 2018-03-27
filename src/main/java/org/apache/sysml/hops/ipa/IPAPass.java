@@ -21,7 +21,6 @@ package org.apache.sysml.hops.ipa;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DMLProgram;
 
 /**
@@ -36,9 +35,10 @@ public abstract class IPAPass
 	 * configuration such as global flags or the chosen execution 
 	 * mode (e.g., hybrid_spark).
 	 * 
+	 * @param fgraph function call graph
 	 * @return true if applicable.
 	 */
-	public abstract boolean isApplicable();
+	public abstract boolean isApplicable(FunctionCallGraph fgraph);
 	
 	/**
 	 * Rewrites the given program or its functions in place,
@@ -47,8 +47,6 @@ public abstract class IPAPass
 	 * @param prog dml program
 	 * @param fgraph function call graph
 	 * @param fcallSizes function call size infos
-	 * @throws HopsException
 	 */
-	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException;
+	public abstract void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes );
 }

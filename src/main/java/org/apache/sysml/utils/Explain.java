@@ -31,7 +31,6 @@ import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ReorgOp;
@@ -39,9 +38,6 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeMultiAgg;
 import org.apache.sysml.hops.codegen.cplan.CNodeTpl;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFLoopNode;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode;
-import org.apache.sysml.hops.globalopt.gdfgraph.GDFNode.NodeType;
 import org.apache.sysml.hops.ipa.FunctionCallGraph;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
@@ -52,12 +48,10 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
@@ -111,8 +105,7 @@ public class Explain
 	//////////////
 	// public explain interface
 
-	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
-		throws HopsException, DMLRuntimeException, LanguageException {
+	public static String display(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) {
 		if( counts == null )
 			counts = countDistributedOperations(rtprog);
 		
@@ -201,16 +194,14 @@ public class Explain
 			sb.append( rk2 );
 		}
 		
-		return sb.toString();		 
+		return sb.toString();
 	}
 
-	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) 
-		throws HopsException, DMLRuntimeException, LanguageException {
+	public static String explain(DMLProgram prog, Program rtprog, ExplainType type) {
 		return explain(prog, rtprog, type, null);
-	}	
+	}
 	
 	public static String explain(DMLProgram prog, Program rtprog, ExplainType type, ExplainCounts counts) 
-		throws HopsException, DMLRuntimeException, LanguageException
 	{
 		//dispatch to individual explain utils
 		switch( type ) {
@@ -230,7 +221,6 @@ public class Explain
 	}
 
 	public static String explain(DMLProgram prog) 
-		throws HopsException, DMLRuntimeException, LanguageException 
 	{
 		StringBuilder sb = new StringBuilder();
 		
@@ -273,8 +263,7 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph)
-			throws HopsException, DMLRuntimeException, LanguageException {
+	public static String getHopDAG(DMLProgram prog, ArrayList<Integer> lines, boolean withSubgraph) {
 		StringBuilder sb = new StringBuilder();
 		StringBuilder nodes = new StringBuilder();
 
@@ -317,12 +306,11 @@ public class Explain
 		return sb.toString();
 	}
 
-	public static String explain( Program rtprog ) throws HopsException {
+	public static String explain( Program rtprog ) {
 		return explain(rtprog, null);
 	}
 	
 	public static String explain( Program rtprog, ExplainCounts counts ) 
-		throws HopsException 
 	{
 		//counts number of instructions
 		boolean sparkExec = OptimizerUtils.isSparkExecutionMode();
@@ -331,7 +319,7 @@ public class Explain
 			countCompiledInstructions(rtprog, counts, !sparkExec, true, sparkExec);
 		}
 	
-		StringBuilder sb = new StringBuilder();		
+		StringBuilder sb = new StringBuilder();
 		
 		//create header
 		sb.append("\nPROGRAM ( size CP/"+(sparkExec?"SP":"MR")+" = ");
@@ -396,55 +384,39 @@ public class Explain
 		return explainInstructions(inst, level);
 	}
 
-	public static String explain( Instruction inst )
-	{
+	public static String explain( Instruction inst ) {
 		return explainGenericInstruction(inst, 0);
 	}
 
-	public static String explain( StatementBlock sb ) 
-		throws HopsException, DMLRuntimeException
-	{
+	public static String explain( StatementBlock sb ) {
 		return explainStatementBlock(sb, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops ) 
-		throws DMLRuntimeException
-	{
+	public static String explainHops( ArrayList<Hop> hops ) {
 		return explainHops(hops, 0);
 	}
 
-	public static String explainHops( ArrayList<Hop> hops, int level ) 
-		throws DMLRuntimeException
-	{
+	public static String explainHops( ArrayList<Hop> hops, int level ) {
 		StringBuilder sb = new StringBuilder();
-		
 		Hop.resetVisitStatus(hops);
 		for( Hop hop : hops )
 			sb.append(explainHop(hop, level));
 		Hop.resetVisitStatus(hops);
-		
-		return sb.toString();		
+		return sb.toString();
 	}
 
-	public static String explain( Hop hop ) 
-		throws DMLRuntimeException
-	{
+	public static String explain( Hop hop ) {
 		return explain(hop, 0);
 	}
 
-	public static String explain( Hop hop, int level ) 
-		throws DMLRuntimeException
-	{
+	public static String explain( Hop hop, int level ) {
 		hop.resetVisitStatus();
 		String ret = explainHop(hop, level);
 		hop.resetVisitStatus();
-		
 		return ret;
 	}
 	
-	public static String explainCPlan( CNodeTpl cplan ) 
-		throws DMLRuntimeException 
-	{
+	public static String explainCPlan( CNodeTpl cplan ) {
 		StringBuilder sb = new StringBuilder();
 		
 		//create template header
@@ -466,30 +438,14 @@ public class Explain
 		return sb.toString();
 	}
 	
-	public static String explain( CNode node ) throws DMLRuntimeException {
+	public static String explain( CNode node ) {
 		return explain(node, 0);
 	}
 	
-	public static String explain( CNode node, int level ) throws DMLRuntimeException {
+	public static String explain( CNode node, int level ) {
 		return explainCNode(node, level);
 	}
 
-	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes ) 
-		throws DMLRuntimeException
-	{
-		return explainGDFNodes(gdfnodes, 0);
-	}
-
-	public static String explainGDFNodes( ArrayList<GDFNode> gdfnodes, int level ) 
-		throws DMLRuntimeException
-	{
-		StringBuilder sb = new StringBuilder();
-		HashSet<Long> memo = new HashSet<>();
-		for( GDFNode gnode : gdfnodes )
-			sb.append(explainGDFNode(gnode, level, memo));
-		return sb.toString();
-	}
-	
 	/**
 	 * Counts the number of compiled MRJob/Spark instructions in the
 	 * given runtime program.
@@ -534,7 +490,7 @@ public class Explain
 	}
 
 	private static StringBuilder getHopDAG(StatementBlock sb, StringBuilder nodes, ArrayList<Integer> lines,
-			boolean withSubgraph) throws HopsException, DMLRuntimeException {
+			boolean withSubgraph) {
 		StringBuilder builder = new StringBuilder();
 
 		if (sb instanceof WhileStatementBlock) {
@@ -637,7 +593,6 @@ public class Explain
 	}
 
 	private static String explainStatementBlock(StatementBlock sb, int level) 
-		throws HopsException, DMLRuntimeException 
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);
@@ -728,11 +683,8 @@ public class Explain
 	 * @param hop high-level operator
 	 * @param level offset
 	 * @return string explanation of Hop DAG
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String explainHop(Hop hop, int level) 
-		throws DMLRuntimeException 
-	{
+	private static String explainHop(Hop hop, int level) {
 		if( hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp) )
 			return "";
 		
@@ -817,8 +769,7 @@ public class Explain
 		return isInRange;
 	}
 
-	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph)
-			throws DMLRuntimeException {
+	private static StringBuilder getHopDAG(Hop hop, StringBuilder nodes, ArrayList<Integer> lines, boolean withSubgraph) {
 		StringBuilder sb = new StringBuilder();
 		if (hop.isVisited() || (!SHOW_LITERAL_HOPS && hop instanceof LiteralOp))
 			return sb;
@@ -938,9 +889,7 @@ public class Explain
 	//////////////
 	// internal explain CNODE
 
-	private static String explainCNode(CNode cnode, int level) 
-		throws DMLRuntimeException 
-	{
+	private static String explainCNode(CNode cnode, int level) {
 		if( cnode.isVisited() )
 			return "";
 		
@@ -980,104 +929,7 @@ public class Explain
 		
 		return sb.toString();
 	}
-	
-	//////////////
-	// internal explain GDFNODE
 
-	/**
-	 * Do a post-order traverse through the GDFNode DAG and explain each GDFNode.
-	 * Note: nodes referring to literalops are suppressed.
-	 * 
-	 * @param gnode GDF node
-	 * @param level offset
-	 * @param memo memoization table
-	 * @return string explanation
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 */
-	private static String explainGDFNode(GDFNode gnode, int level, HashSet<Long> memo) 
-		throws DMLRuntimeException 
-	{
-		//basic memoization via memo table since gnode has no visit status
-		if( memo.contains(gnode.getID()) || 
-			gnode.getNodeType()==NodeType.HOP_NODE && gnode.getHop() instanceof LiteralOp ) 
-		{
-			return "";
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		String offset = createOffset(level);
-		
-		for( GDFNode input : gnode.getInputs() )
-			sb.append(explainGDFNode(input, level, memo));
-		
-		//indentation
-		sb.append(offset);
-		
-		//hop id
-		String deps = null;
-		if( SHOW_DATA_DEPENDENCIES ) {
-			sb.append("("+gnode.getID()+") ");
-		
-			StringBuilder childs = new StringBuilder();
-			childs.append(" (");
-			boolean childAdded = false;
-			for( GDFNode input : gnode.getInputs() ) {
-				childs.append(childAdded?",":"");
-				childs.append(input.getID());
-				childAdded = true;
-			}
-			childs.append(")");		
-			if( childAdded )
-				deps = childs.toString();
-		}
-		
-		//operation string
-		if( gnode instanceof GDFLoopNode ) //LOOP NODES
-		{
-			GDFLoopNode lgnode = (GDFLoopNode) gnode;
-			String offset2 = createOffset(level+1);
-			sb.append(lgnode.explain(deps)+"\n"); //loop header
-			sb.append(offset2+"PRED:\n");
-			sb.append(explainGDFNode(lgnode.getLoopPredicate(),level+2, memo));
-			sb.append(offset2+"BODY:\n");
-			//note: memo table and already done child explain prevents redundancy
-			for( Entry<String,GDFNode> root : lgnode.getLoopOutputs().entrySet() ) {
-				sb.append(explainGDFNode(root.getValue(), level+2, memo));
-			}
-		}
-		else //GENERAL CASE (BASIC/CROSSBLOCK NODES)
-		{
-			sb.append(gnode.explain(deps));
-			sb.append('\n');
-		}
-		
-		/*
-		//matrix characteristics
-		sb.append(" [" + hop.getDim1() + "," 
-		               + hop.getDim2() + "," 
-				       + hop.getRowsInBlock() + "," 
-		               + hop.getColsInBlock() + "," 
-				       + hop.getNnz() + "]");
-		
-		//memory estimates
-		sb.append(" [" + showMem(hop.getInputMemEstimate(), false) + "," 
-		               + showMem(hop.getIntermediateMemEstimate(), false) + "," 
-				       + showMem(hop.getOutputMemEstimate(), false) + " -> " 
-		               + showMem(hop.getMemEstimate(), true) + "]");
-		
-		//exec type
-		if (hop.getExecType() != null)
-			sb.append(", " + hop.getExecType());
-		*/
-		
-		
-		//memoization
-		memo.add(gnode.getID());
-		
-		return sb.toString();
-	}
-	
-	
 	//////////////
 	// internal explain RUNTIME
 
@@ -1323,7 +1175,6 @@ public class Explain
 	}
 
 	private static String explainFunctionCallGraph(FunctionCallGraph fgraph, HashSet<String> fstack, String fkey, int level) 
-		throws HopsException 
 	{
 		StringBuilder builder = new StringBuilder();
 		String offset = createOffset(level);

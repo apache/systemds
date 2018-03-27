@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
@@ -35,9 +34,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
 			MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(

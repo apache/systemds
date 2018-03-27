@@ -186,11 +186,8 @@ public class Connection implements Closeable
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register
 	 * @return PreparedScript object representing the precompiled script
-	 * @throws DMLException if DMLException occurs
 	 */
-	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs) 
-		throws DMLException 
-	{
+	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs) {
 		return prepareScript(script, inputs, outputs, false);
 	}
 	
@@ -202,11 +199,8 @@ public class Connection implements Closeable
 	 * @param outputs string array of output variables to register
 	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
-	 * @throws DMLException if DMLException occurs
 	 */
-	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) 
-		throws DMLException 
-	{
+	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) {
 		return prepareScript(script, new HashMap<String,String>(), inputs, outputs, parsePyDML);
 	}
 	
@@ -219,11 +213,8 @@ public class Connection implements Closeable
 	 * @param outputs string array of output variables to register
 	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
-	 * @throws DMLException if DMLException occurs
 	 */
-	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) 
-		throws DMLException 
-	{
+	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
 		
 		//check for valid names of passed arguments

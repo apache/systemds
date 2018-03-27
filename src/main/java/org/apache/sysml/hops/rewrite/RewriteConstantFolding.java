@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops.rewrite;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
@@ -34,10 +33,8 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -62,39 +59,28 @@ public class RewriteConstantFolding extends HopRewriteRule
 	
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException 
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return null;
-
 		for( int i=0; i<roots.size(); i++ ) {
 			Hop h = roots.get(i);
 			roots.set(i, rule_ConstantFolding(h));
 		}
-		
 		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException 
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return null;
-
 		return rule_ConstantFolding(root);
 	}
 
-	private Hop rule_ConstantFolding( Hop hop ) 
-		throws HopsException 
-	{
+	private Hop rule_ConstantFolding( Hop hop ) {
 		return rConstantFoldingExpression(hop);
 	}
 
-	private Hop rConstantFoldingExpression( Hop root ) 
-		throws HopsException
-	{
+	private Hop rConstantFoldingExpression( Hop root ) {
 		if( root.isVisited() )
 			return root;
 		
@@ -175,13 +161,8 @@ public class RewriteConstantFolding extends HopRewriteRule
 	 * 
 	 * @param bop high-level operator
 	 * @return literal op
-	 * @throws LopsException if LopsException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws IOException if IOException occurs
-	 * @throws HopsException if HopsException occurs
 	 */
 	private LiteralOp evalScalarOperation( Hop bop ) 
-		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
 		//Timing time = new Timing( true );
 		
@@ -228,16 +209,13 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return literal;
 	}
 	
-	private ProgramBlock getProgramBlock() 
-		throws DMLRuntimeException
-	{
+	private ProgramBlock getProgramBlock() {
 		if( _tmpPB == null )
 			_tmpPB = new ProgramBlock( new Program() );
 		return _tmpPB;
 	}
 	
-	private ExecutionContext getExecutionContext()
-	{
+	private ExecutionContext getExecutionContext() {
 		if( _tmpEC == null )
 			_tmpEC = ExecutionContextFactory.createContext();
 		return _tmpEC;
@@ -260,20 +238,21 @@ public class RewriteConstantFolding extends HopRewriteRule
 		ArrayList<Hop> in = hop.getInput();
 		return (   hop instanceof UnaryOp 
 				&& in.get(0) instanceof LiteralOp 
+				&& ((UnaryOp)hop).getOp() != OpOp1.EXISTS
 				&& ((UnaryOp)hop).getOp() != OpOp1.PRINT
 				&& ((UnaryOp)hop).getOp() != OpOp1.ASSERT
 				&& ((UnaryOp)hop).getOp() != OpOp1.STOP
 				&& hop.getDataType() == DataType.SCALAR);
 	}
 	
-	private static boolean isApplicableFalseConjunctivePredicate( Hop hop ) throws HopsException {
+	private static boolean isApplicableFalseConjunctivePredicate( Hop hop ) {
 		ArrayList<Hop> in = hop.getInput();
 		return (   HopRewriteUtils.isBinary(hop, OpOp2.AND) && hop.getDataType().isScalar()
 				&& ( (in.get(0) instanceof LiteralOp && !((LiteralOp)in.get(0)).getBooleanValue())
 				   ||(in.get(1) instanceof LiteralOp && !((LiteralOp)in.get(1)).getBooleanValue())) );
 	}
 	
-	private static boolean isApplicableTrueDisjunctivePredicate( Hop hop ) throws HopsException {
+	private static boolean isApplicableTrueDisjunctivePredicate( Hop hop ) {
 		ArrayList<Hop> in = hop.getInput();
 		return (   HopRewriteUtils.isBinary(hop, OpOp2.OR) && hop.getDataType().isScalar()
 				&& ( (in.get(0) instanceof LiteralOp && ((LiteralOp)in.get(0)).getBooleanValue())

@@ -193,7 +193,7 @@ public class LibMatrixDNNIm2Col
 	// Therefore, it is provided as utility function rather than an operator (like im2col or rotate180)
 	
 	//Converts input: PQ X CRS matrix and writes to 1 X CHW
-	public static void col2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) throws DMLRuntimeException {
+	public static void col2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) {
 		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input dimensions");
 		}
@@ -242,7 +242,7 @@ public class LibMatrixDNNIm2Col
 	
 	// Converts input: PQ X CRS matrix and writes to 1 X CHW if inputN == 0
 	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
-	private static void col2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) throws DMLRuntimeException {
+	private static void col2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) {
 		final int outputNOffset = outputN*params.C*params.H*params.W;
 		final int HW = params.H*params.W;
 		final int inputNPQ = inputN*params.P*params.Q;

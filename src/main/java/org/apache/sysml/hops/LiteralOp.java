@@ -70,7 +70,7 @@ public class LiteralOp extends Hop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.isEmpty(), this, "should have 0 inputs but has %d inputs", _input.size());
 	}
 	
@@ -81,8 +81,7 @@ public class LiteralOp extends Hop
 
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException  
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -187,7 +186,7 @@ public class LiteralOp extends Hop
 	}	
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		// Since a Literal hop does not represent any computation, 
 		// this function is not applicable. 
 		return null;
@@ -214,7 +213,7 @@ public class LiteralOp extends Hop
 		}
 	}
 	
-	public double getDoubleValue() throws HopsException {
+	public double getDoubleValue() {
 		switch( getValueType() ) {
 			case INT:
 				return value_long;
@@ -229,7 +228,7 @@ public class LiteralOp extends Hop
 		}
 	}
 	
-	public boolean getBooleanValue() throws HopsException {
+	public boolean getBooleanValue() {
 		switch( getValueType() ) {
 			case INT:
 				return (value_long != 0);

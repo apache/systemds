@@ -56,13 +56,12 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * @param outputParams list of output data identifiers
 	 * @param otherParams map of other parameters
 	 * @param baseDir base directory
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public ExternalFunctionProgramBlockCP(Program prog,
 			ArrayList<DataIdentifier> inputParams,
 			ArrayList<DataIdentifier> outputParams,
 			HashMap<String, String> otherParams,
-			String baseDir) throws DMLRuntimeException {
+			String baseDir) {
 
 		super(prog, inputParams, outputParams, baseDir); //w/o instruction generation
 		
@@ -79,7 +78,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	 * invocation
 	 */
 	@Override
-	public void execute(ExecutionContext ec) throws DMLRuntimeException 
+	public void execute(ExecutionContext ec) 
 	{
 		if( _inst.size() != 1 )
 			throw new DMLRuntimeException("Invalid number of instructions: "+_inst.size());
@@ -98,7 +97,7 @@ public class ExternalFunctionProgramBlockCP extends ExternalFunctionProgramBlock
 	}
 
 	@Override
-	protected void createInstructions() throws DMLRuntimeException 
+	protected void createInstructions() 
 	{
 		_inst = new ArrayList<>();
 

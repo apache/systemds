@@ -160,7 +160,38 @@ public class SparseBlockMCSR extends SparseBlock
 
 	@Override
 	public boolean checkValidity(int rlen, int clen, long nnz, boolean strict) {
-		// empty implementation
+
+		//1. Correct meta data
+		if( rlen < 0 || clen < 0 )
+			throw new RuntimeException("Invalid block dimensions: ("+rlen+", "+clen+").");
+
+		//2. Correct array lengths
+		if( size() < nnz )
+			throw new RuntimeException("Incorrect size: "+size()+" (expected: "+nnz+").");
+
+		//3. Sorted column indices per row
+		for( int i=0; i<rlen; i++ ) {
+			if( isEmpty(i) ) continue;
+			int apos = pos(i);
+			int alen = size(i);
+			int[] aix = indexes(i);
+			double[] avals = values(i);
+			for (int k = apos + 1; k < apos + alen; k++) {
+				if (aix[k-1] >= aix[k])
+					throw new RuntimeException("Wrong sparse row ordering, at row: "
+						+ k + "with " + aix[k-1] + ">=" + aix[k]);
+				if (avals[k] == 0)
+					throw new RuntimeException("The values are expected to be non zeros "
+						+ "but zero at row: "+ i + ", col pos: " + k);
+			}
+		}
+
+		//3. A capacity that is no larger than nnz times resize factor
+		for( int i=0; i<rlen; i++ )
+			if( !isEmpty(i) && values(i).length > nnz*RESIZE_FACTOR1 )
+				throw new RuntimeException("The capacity is larger than nnz times a resize factor(=2). "
+					+ "Actual length = " + values(i).length+", should not exceed "+nnz*RESIZE_FACTOR1);
+
 		return true;
 	}
 

@@ -46,8 +46,12 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 {
 	@Override
+	public boolean createsSplitDag() {
+		return true;
+	}
+	
+	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
-		throws HopsException 
 	{
 		//DAG splits not required for forced single node
 		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
@@ -81,8 +85,8 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					long clen = reblock.getDim2();
 					long nnz = reblock.getNnz();
 					UpdateType update = reblock.getUpdateType();
-					long brlen = reblock.getRowsInBlock();
-					long bclen = reblock.getColsInBlock();
+					int brlen = reblock.getRowsInBlock();
+					int bclen = reblock.getColsInBlock();
 					
 					//replace reblock inputs to avoid dangling references across dags
 					//(otherwise, for instance, literal ops are shared across dags)
@@ -140,15 +144,13 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 	
 	private void collectCSVReadHopsUnknownSize( ArrayList<Hop> roots, ArrayList<Hop> cand ) {
 		if( roots == null )
 			return;
-		
 		Hop.resetVisitStatus(roots);
 		for( Hop root : roots )
 			collectCSVReadHopsUnknownSize(root, cand);

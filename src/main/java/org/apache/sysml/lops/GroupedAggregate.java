@@ -157,9 +157,7 @@ public class GroupedAggregate extends Lop
 	 * 
 	 */
 	@Override
-	public String getInstructions(String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String output) {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append( getExecType() );

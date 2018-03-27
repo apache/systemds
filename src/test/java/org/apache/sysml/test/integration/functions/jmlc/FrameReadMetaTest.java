@@ -32,7 +32,6 @@ import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.jmlc.ResultVariables;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
@@ -157,9 +156,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 	}
 
 	@SuppressWarnings("unchecked")
-	private static HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) 
-		throws DMLRuntimeException 
-	{
+	private static HashMap<String,Long>[] getRecodeMaps(String spec, FrameBlock M) {
 		List<Integer> collist = Arrays.asList(ArrayUtils.toObject(
 				TfMetaUtils.parseJsonIDList(spec, M.getColumnNames(), TfUtils.TXMETHOD_RECODE)));
 		HashMap<String,Long>[] ret = new HashMap[M.getNumColumns()];

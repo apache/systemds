@@ -29,8 +29,7 @@ public class ConvertStringToLongTextPair implements PairFunction<String, LongWri
 	private static final long serialVersionUID = 6443041051069809479L;
 
 	@Override
-	public Tuple2<LongWritable, Text> call(String arg0) throws Exception {
+	public Tuple2<LongWritable, Text> call(String arg0) {
 		return new Tuple2<>(new LongWritable(1), new Text(arg0));
 	}
-
 }

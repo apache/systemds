@@ -29,14 +29,11 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 public class MatrixWriterFactory 
 {
 
-	public static MatrixWriter createMatrixWriter( OutputInfo oinfo ) 
-			throws DMLRuntimeException
-	{
+	public static MatrixWriter createMatrixWriter( OutputInfo oinfo ) {
 		return createMatrixWriter(oinfo, -1, null);
 	}
 
 	public static MatrixWriter createMatrixWriter( OutputInfo oinfo, int replication, FileFormatProperties props ) 
-		throws DMLRuntimeException
 	{
 		MatrixWriter writer = null;
 		

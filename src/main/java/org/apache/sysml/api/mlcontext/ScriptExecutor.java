@@ -37,8 +37,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
-import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
 import org.apache.sysml.lops.LopsException;
@@ -95,22 +93,7 @@ import org.apache.sysml.utils.Statistics;
  * </ol>
  * <p>
  * Modifications to these steps can be accomplished by subclassing
- * ScriptExecutor. For example, the following code will turn off the global data
- * flow optimization check by subclassing ScriptExecutor and overriding the
- * globalDataFlowOptimization method.
- * </p>
- *
- * <code>ScriptExecutor scriptExecutor = new ScriptExecutor() {
- * <br>&nbsp;&nbsp;// turn off global data flow optimization check
- * <br>&nbsp;&nbsp;@Override
- * <br>&nbsp;&nbsp;protected void globalDataFlowOptimization() {
- * <br>&nbsp;&nbsp;&nbsp;&nbsp;return;
- * <br>&nbsp;&nbsp;}
- * <br>};
- * <br>ml.execute(script, scriptExecutor);</code>
- * <p>
- *
- * For more information, please see the {@link #execute} method.
+ * ScriptExecutor. For more information, please see the {@link #execute} method.
  */
 public class ScriptExecutor {
 
@@ -309,7 +292,6 @@ public class ScriptExecutor {
 	 * <li>{@link #constructLops()}</li>
 	 * <li>{@link #generateRuntimeProgram()}</li>
 	 * <li>{@link #showExplanation()}</li>
-	 * <li>{@link #globalDataFlowOptimization()}</li>
 	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
 	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
 	 * <li>{@link #cleanupRuntimeProgram()}</li>
@@ -337,7 +319,6 @@ public class ScriptExecutor {
 		constructLops();
 		generateRuntimeProgram();
 		showExplanation();
-		globalDataFlowOptimization();
 		countCompiledMRJobsAndSparkInstructions();
 		initializeCachingAndScratchSpace();
 		cleanupRuntimeProgram();
@@ -477,23 +458,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Optimize the program.
-	 */
-	protected void globalDataFlowOptimization() {
-		if (OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY)) {
-			try {
-				runtimeProgram = GlobalOptimizerWrapper.optimizeProgram(dmlProgram, runtimeProgram);
-			} catch (DMLRuntimeException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			} catch (HopsException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			} catch (LopsException e) {
-				throw new MLContextException("Exception occurred during global data flow optimization", e);
-			}
-		}
-	}
-
-	/**
 	 * Parse the script into an ANTLR parse tree, and convert this parse tree
 	 * into a SystemML program. Parsing includes lexical/syntactic analysis.
 	 */
@@ -568,11 +532,7 @@ public class ScriptExecutor {
 	protected void validateScript() {
 		try {
 			dmlTranslator.validateParseTree(dmlProgram);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred while validating script", e);
-		} catch (ParseException e) {
-			throw new MLContextException("Exception occurred while validating script", e);
-		} catch (IOException e) {
+		} catch (LanguageException | ParseException e) {
 			throw new MLContextException("Exception occurred while validating script", e);
 		}
 	}

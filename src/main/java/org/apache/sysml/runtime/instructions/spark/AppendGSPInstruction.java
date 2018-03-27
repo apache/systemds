@@ -51,9 +51,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendGSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static AppendGSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 6);
 		
@@ -74,9 +72,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		// general case append (map-extend, aggregate)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, false);

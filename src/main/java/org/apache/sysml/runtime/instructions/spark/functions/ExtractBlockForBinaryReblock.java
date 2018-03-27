@@ -43,9 +43,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 	private int out_brlen; 
 	private int out_bclen;
 	
-	public ExtractBlockForBinaryReblock(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) 
-		throws DMLRuntimeException 
-	{
+	public ExtractBlockForBinaryReblock(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {
 		rlen = mcIn.getRows(); 
 		clen = mcIn.getCols();
 		in_brlen = mcIn.getRowsPerBlock(); 

@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -45,26 +44,20 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 
 	}
 
-	public static BinUaggChainSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static BinUaggChainSPInstruction parseInstruction ( String str ) {
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );		
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields( parts, 4 );
-		
 		String opcode = parts[0];
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(parts[1]);
 		AggregateUnaryOperator uaggop = InstructionUtils.parseBasicAggregateUnaryOperator(parts[2]);
 		CPOperand in = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
-		
 		return new BinUaggChainSPInstruction(in, out, bop, uaggop, opcode, str);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input

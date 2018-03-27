@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp2;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -47,33 +46,23 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	private static final Log LOG = LogFactory.getLog(RewriteIndexingVectorization.class.getName());
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return roots;
-		
 		for( Hop h : roots )
 			rule_IndexingVectorization( h );
-		
 		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
-		
 		rule_IndexingVectorization( root );
-		
 		return root;
 	}
 
-	private void rule_IndexingVectorization( Hop hop ) 
-		throws HopsException 
-	{
+	private void rule_IndexingVectorization( Hop hop ) {
 		if(hop.isVisited())
 			return;
 		
@@ -96,9 +85,7 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 		hop.setVisited();
 	}
 
-	private static Hop vectorizeRightLeftIndexingChains(Hop hi)
-		throws HopsException
-	{
+	private static Hop vectorizeRightLeftIndexingChains(Hop hi) {
 		//check for valid root operator
 		if( !(hi instanceof LeftIndexingOp 
 			&& hi.getInput().get(1) instanceof IndexingOp
@@ -184,11 +171,9 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	 * dynamic rewrites
 	 * 
 	 * @param hop high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unused")
 	private static void vectorizeRightIndexing( Hop hop )
-		throws HopsException
 	{
 		if( hop instanceof IndexingOp ) //right indexing
 		{
@@ -276,7 +261,6 @@ public class RewriteIndexingVectorization extends HopRewriteRule
 	
 	@SuppressWarnings("unchecked")
 	private static Hop vectorizeLeftIndexing( Hop hop )
-		throws HopsException
 	{
 		Hop ret = hop;
 		

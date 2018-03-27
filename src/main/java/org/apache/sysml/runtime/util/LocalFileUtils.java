@@ -369,19 +369,18 @@ public class LocalFileUtils
 	///
 
 	public static String checkAndCreateStagingDir(String dir) {
-		File f =  new File(dir);		
+		File f =  new File(dir);
 		if( !f.exists() )
 			f.mkdirs();
 		
 		return dir;
 	}
 
-	public static String createWorkingDirectory() throws DMLRuntimeException {
+	public static String createWorkingDirectory() {
 		return createWorkingDirectoryWithUUID( DMLScript.getUUID() );
 	}
 
 	public static String createWorkingDirectoryWithUUID(String uuid)
-		throws DMLRuntimeException 
 	{
 		//create local tmp dir if not existing
 		String dirRoot = null;
@@ -389,7 +388,7 @@ public class LocalFileUtils
 		if( conf != null ) 
 			dirRoot = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);
 		else 
-			dirRoot = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR);		
+			dirRoot = DMLConfig.getDefaultTextValue(DMLConfig.LOCAL_TMP_DIR);
 		
 		//create shared staging dir if not existing
 		if( !LocalFileUtils.createLocalFileIfNotExist(dirRoot, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION) ){
@@ -477,27 +476,20 @@ public class LocalFileUtils
 		return count;
 	}
 
-	public static String getWorkingDir(String category) 
-		throws DMLRuntimeException
-	{
+	public static String getWorkingDir(String category) {
 		if( _workingDir == null )
 			createWorkingDirectory();
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append( _workingDir );
 		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( category );
 		sb.append( Lop.FILE_SEPARATOR );
-		
 		return sb.toString();
 	}
 
-	public static String getUniqueWorkingDir(String category) 
-		throws DMLRuntimeException
-	{
+	public static String getUniqueWorkingDir(String category) {
 		if( _workingDir == null )
 			createWorkingDirectory();
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append( _workingDir );
 		sb.append( Lop.FILE_SEPARATOR );
@@ -505,7 +497,6 @@ public class LocalFileUtils
 		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( "tmp" );
 		sb.append( _seq.getNextID() );
-		
 		return sb.toString();
 	}
 	

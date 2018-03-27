@@ -35,14 +35,12 @@ public class WeightedSigmoidR extends Lop
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedSigmoidR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, boolean cacheU, boolean cacheV, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+	public WeightedSigmoidR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, boolean cacheU, boolean cacheV, ExecType et) {
+		super(Lop.Type.WeightedSigmoid, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
-		input1.addOutput(this); 
+		input1.addOutput(this);
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
@@ -53,9 +51,7 @@ public class WeightedSigmoidR extends Lop
 		setupLopProperties(et);
 	}
 	
-	private void setupLopProperties( ExecType et ) 
-		throws LopsException
-	{
+	private void setupLopProperties( ExecType et ) {
 		if( et == ExecType.MR )
 		{
 			//setup MR parameters 

@@ -33,4 +33,4 @@ R = rbind(rbind(rbind(rbind(
   as.matrix(is.nan(mean(X)))),
   as.matrix(is.na(sd(X))));
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));
+writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""));

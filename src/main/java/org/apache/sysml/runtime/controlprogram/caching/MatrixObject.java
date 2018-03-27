@@ -140,15 +140,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	/**
 	 * Make the matrix metadata consistent with the in-memory matrix data
-	 * 
-	 * @throws CacheException if CacheException occurs
 	 */
 	@Override
-	public void refreshMetaData() 
-		throws CacheException
-	{
+	public void refreshMetaData() {
 		if ( _data == null || _metaData ==null ) //refresh only for existing data
-			throw new CacheException("Cannot refresh meta data because there is no data or meta data. "); 
+			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 			//we need to throw an exception, otherwise input/output format cannot be inferred
 		
 		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
@@ -233,17 +229,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	 * 
 	 * @param pred index range
 	 * @return matrix block
-	 * @throws CacheException if CacheException occurs
 	 */
-	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) 
-		throws CacheException
-	{
+	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire partition "+hashCode()+" "+pred);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
-			throw new CacheException ("MatrixObject not available to indexed read.");
+			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		
 		//return static partition of set from outside of the program
 		if( _partitionInMemory != null )
@@ -302,7 +295,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 						cols = _partitionSize;
 						break;	
 					default:
-						throw new CacheException("Unsupported partition format: "+_partitionFormat);
+						throw new DMLRuntimeException("Unsupported partition format: "+_partitionFormat);
 				}
 				
 				
@@ -338,9 +331,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//NOTE: currently no special treatment of non-existing partitions necessary 
 			//      because empty blocks are written anyway
 		}
-		catch(Exception ex)
-		{
-			throw new CacheException(ex);
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
 		}
 		
 		if( DMLScript.STATISTICS ){
@@ -352,10 +344,9 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	}
 
 	public String getPartitionFileName( IndexRange pred, int brlen, int bclen ) 
-		throws CacheException
 	{
 		if ( !_partitioned )
-			throw new CacheException ("MatrixObject not available to indexed read.");
+			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(_hdfsFileName);
@@ -387,7 +378,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				sb.append((pred.colStart-1)/_partitionSize+1);
 				break;	
 			default:
-				throw new CacheException ("MatrixObject not available to indexed read.");
+				throw new DMLRuntimeException("MatrixObject not available to indexed read.");
 		}
 
 		return sb.toString();
@@ -472,11 +463,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			int clen = (int)mc.getCols();
 			int brlen = (int)mc.getRowsPerBlock();
 			int bclen = (int)mc.getColsPerBlock();
-			long nnz = mc.getNonZeros();
+			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
 			if( ii == InputInfo.BinaryBlockInputInfo && //guarded collect not for binary cell
-				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize()) ) {
+				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize(), true) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
@@ -492,11 +483,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			else if( ii == InputInfo.BinaryCellInputInfo ) {
 				//collect matrix block from binary block RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);		
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, nnz);
 			}
 			else {
 				//collect matrix block from binary cell RDD
-				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);	
+				mb = SparkExecutionContext.toMatrixBlock(lrdd, rlen, clen, brlen, bclen, nnz);
 			}
 		}
 		catch(DMLRuntimeException ex) {

@@ -36,8 +36,15 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_AutoEncoder";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmAutoEncoder.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
-	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
+	private final static String TEST_CONF_DEFAULT = "SystemML-config-codegen.xml";
+	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
+	private final static String TEST_CONF_FUSE_ALL = "SystemML-config-codegen-fuse-all.xml";
+	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
+	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemML-config-codegen-fuse-no-redundancy.xml";
+	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
+			TEST_CONF_FUSE_NO_REDUNDANCY);
+
+	private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 	
 	private final static int rows = 2468;
 	private final static int cols = 784;
@@ -49,76 +56,118 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 	private final static int H2 = 2;
 	private final static double epochs = 2; 
 	
+	private TestType currentTestType = TestType.DEFAULT;
+	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "w" })); 
 	}
 
+	//Note: limited cases for SPARK, as lazy evaluation 
+	//causes very long execution time for this algorithm
+
 	@Test
 	public void testAutoEncoder256DenseCP() {
-		runGLMTest(256, false, false, ExecType.CP);
+		runAutoEncoderTest(256, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder256DenseRewritesCP() {
-		runGLMTest(256, false, true, ExecType.CP);
+		runAutoEncoderTest(256, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder256SparseCP() {
-		runGLMTest(256, true, false, ExecType.CP);
+		runAutoEncoderTest(256, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder256SparseRewritesCP() {
-		runGLMTest(256, true, true, ExecType.CP);
+		runAutoEncoderTest(256, true, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512DenseCP() {
-		runGLMTest(512, false, false, ExecType.CP);
+		runAutoEncoderTest(512, false, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512DenseRewritesCP() {
-		runGLMTest(512, false, true, ExecType.CP);
+		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512SparseCP() {
-		runGLMTest(512, true, false, ExecType.CP);
+		runAutoEncoderTest(512, true, false, ExecType.CP, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512SparseRewritesCP() {
-		runGLMTest(512, true, true, ExecType.CP);
+		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.DEFAULT);
 	}
-	
-	//Note: limited cases for SPARK, as lazy evaluation 
-	//causes very long execution time for this algorithm
 	
 	@Test
 	public void testAutoEncoder256DenseRewritesSpark() {
-		runGLMTest(256, false, true, ExecType.SPARK);
+		runAutoEncoderTest(256, false, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder256SparseRewritesSpark() {
-		runGLMTest(256, true, true, ExecType.SPARK);
+		runAutoEncoderTest(256, true, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512DenseRewritesSpark() {
-		runGLMTest(512, false, true, ExecType.SPARK);
+		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.DEFAULT);
 	}
 	
 	@Test
 	public void testAutoEncoder512SparseRewritesSpark() {
-		runGLMTest(512, true, true, ExecType.SPARK);
+		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.DEFAULT);
 	}
-	
-	private void runGLMTest(int batchsize, boolean sparse, boolean rewrites, ExecType instType)
+
+	@Test
+	public void testAutoEncoder512DenseRewritesCPFuseAll() {
+		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testAutoEncoder512SparseRewritesCPFuseAll() {
+		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testAutoEncoder512DenseRewritesSparkFuseAll() {
+		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testAutoEncoder512SparseRewritesSparkFuseAll() {
+		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testAutoEncoder512DenseRewritesCPFuseNoRedundancy() {
+		runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testAutoEncoder512SparseRewritesCPFuseNoRedundancy() {
+		runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testAutoEncoder512DenseRewritesSparkFuseNoRedundancy() {
+		runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testAutoEncoder512SparseRewritesSparkFuseNoRedundancy() {
+		runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	private void runAutoEncoderTest(int batchsize, boolean sparse, boolean rewrites, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -127,7 +176,9 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
 		}
-	
+
+		currentTestType = testType;
+
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -174,7 +225,16 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 	@Override
 	protected File getConfigTemplateFile() {
 		// Instrumentation in this test's output log to show custom configuration file used for template.
-		System.out.println("This test case overrides default configuration with " + TEST_CONF_FILE.getPath());
-		return TEST_CONF_FILE;
+		String message = "This test case overrides default configuration with ";
+		if(currentTestType == TestType.FUSE_ALL){
+			System.out.println(message + TEST_CONF_FILE_FUSE_ALL.getPath());
+			return TEST_CONF_FILE_FUSE_ALL;
+		} else if(currentTestType == TestType.FUSE_NO_REDUNDANCY){
+			System.out.println(message + TEST_CONF_FILE_FUSE_NO_REDUNDANCY.getPath());
+			return TEST_CONF_FILE_FUSE_NO_REDUNDANCY;
+		} else {
+			System.out.println(message + TEST_CONF_FILE_DEFAULT.getPath());
+			return TEST_CONF_FILE_DEFAULT;
+		}
 	}
 }

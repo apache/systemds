@@ -36,10 +36,8 @@ public class WeightedUnaryMMR extends Lop
 	private boolean _cacheU = false;
 	private boolean _cacheV = false;
 	
-	public WeightedUnaryMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, boolean cacheU, boolean cacheV, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedUMM, dt, vt);		
+	public WeightedUnaryMMR(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WUMMType wt, OperationTypes op, boolean cacheU, boolean cacheV, ExecType et) {
+		super(Lop.Type.WeightedUMM, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V
@@ -55,9 +53,7 @@ public class WeightedUnaryMMR extends Lop
 		setupLopProperties(et);
 	}
 	
-	private void setupLopProperties( ExecType et ) 
-		throws LopsException
-	{
+	private void setupLopProperties( ExecType et ) {
 		if( et == ExecType.MR )
 		{
 			//setup MR parameters 
@@ -85,9 +81,7 @@ public class WeightedUnaryMMR extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int input3, int output)
-		throws LopsException
-	{
+	public String getInstructions(int input1, int input2, int input3, int output) {
 		return getInstructions(
 				String.valueOf(input1),
 				String.valueOf(input2),
@@ -96,9 +90,7 @@ public class WeightedUnaryMMR extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output)
-		throws LopsException
-	{
+	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());

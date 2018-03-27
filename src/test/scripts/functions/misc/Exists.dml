@@ -19,13 +19,12 @@
 #
 #-------------------------------------------------------------
 
+Y = matrix(7, 10, 10)
+if( $1 == 1 & sum(Y)>7 )
+  X = matrix(1,10,10);
 
-X = read($1);
-y = read($2);
-I = matrix(1, ncol(X), 1);
-lambda = $4;
-A = t(X) %*% X + diag(I)*lambda;
-b = t(X) %*% y;
-beta = solve(A, b);
+R = as.matrix(as.double(exists("X")));
 
-write(beta, $5);
+if( exists(X) )
+  print("X exists: "+sum(X));
+write(R, $2);

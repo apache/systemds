@@ -30,9 +30,7 @@ public class CumulativePartialAggregate extends Lop
 	
 	private OperationTypes _op;
 	
-	public CumulativePartialAggregate(Lop input, DataType dt, ValueType vt, OperationTypes op, ExecType et)
-		throws LopsException 
-	{
+	public CumulativePartialAggregate(Lop input, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
 		super(Lop.Type.CumulativePartialAggregate, dt, vt);
 		
 		//sanity check for supported aggregates

@@ -22,7 +22,6 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.StatementBlock;
 
 /**
@@ -33,9 +32,12 @@ import org.apache.sysml.parser.StatementBlock;
 public class RewriteRemoveEmptyBasicBlocks extends StatementBlockRewriteRule
 {
 	@Override
-	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
-		throws HopsException 
-	{
+	public boolean createsSplitDag() {
+		return false;
+	}
+	
+	@Override
+	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 		
 		//prune last level blocks with empty hops
@@ -51,8 +53,7 @@ public class RewriteRemoveEmptyBasicBlocks extends StatementBlockRewriteRule
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) 
-		throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 }

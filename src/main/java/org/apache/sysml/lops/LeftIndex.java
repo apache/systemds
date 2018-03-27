@@ -39,16 +39,14 @@ public class LeftIndex extends Lop
 	private LixCacheType _type;
 
 	public LeftIndex(
-			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et)
-			throws LopsException {
+			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.LeftIndex, dt, vt);
 		_type = LixCacheType.NONE;
 		init(lhsInput, rhsInput, rowL, rowU, colL, colU, et);
 	}
 	
 	public LeftIndex(
-			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et, LixCacheType type)
-			throws LopsException {
+			Lop lhsInput, Lop rhsInput, Lop rowL, Lop rowU, Lop colL, Lop colU, DataType dt, ValueType vt, ExecType et, LixCacheType type) {
 		super(Lop.Type.LeftIndex, dt, vt);
 		_type = type;
 		init(lhsInput, rhsInput, rowL, rowU, colL, colU, et);
@@ -65,9 +63,8 @@ public class LeftIndex extends Lop
 	 * @param colL column lower lop
 	 * @param colU column upper lop
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
-	private void init(Lop lhsMatrix, Lop rhsMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, ExecType et) throws LopsException {
+	private void init(Lop lhsMatrix, Lop rhsMatrix, Lop rowL, Lop rowU, Lop colL, Lop colU, ExecType et) {
 		/*
 		 * A[i:j, k:l] = B;
 		 * B -> rhsMatrix
@@ -110,8 +107,7 @@ public class LeftIndex extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String lhsInput, String rhsInput, String rowl, String rowu, String coll, String colu, String output) 
-		throws LopsException 
+	public String getInstructions(String lhsInput, String rhsInput, String rowl, String rowu, String coll, String colu, String output)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

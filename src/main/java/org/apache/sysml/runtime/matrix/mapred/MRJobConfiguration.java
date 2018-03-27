@@ -395,9 +395,7 @@ public class MRJobConfiguration
 	}
 	
 	
-	public static void setOutputInfo(JobConf job, int i, OutputInfo outputinfo, boolean sourceInBlock) 
-		throws DMLRuntimeException
-	{
+	public static void setOutputInfo(JobConf job, int i, OutputInfo outputinfo, boolean sourceInBlock) {
 		Class<? extends Converter> converterClass;
 		if(sourceInBlock)
 		{
@@ -454,50 +452,43 @@ public class MRJobConfiguration
 		return outputConverter;
 	}
 
-	public static MRInstruction[] getInstructionsInReducer(JobConf job) throws DMLRuntimeException
-	{
+	public static MRInstruction[] getInstructionsInReducer(JobConf job) {
 		String str=job.get(INSTRUCTIONS_IN_REDUCER_CONFIG);
 		MRInstruction[] mixed_ops = MRInstructionParser.parseMixedInstructions(str);
 		return mixed_ops;
 	}
 	
-	public static ReblockInstruction[] getReblockInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static ReblockInstruction[] getReblockInstructions(JobConf job) {
 		String str=job.get(REBLOCK_INSTRUCTIONS_CONFIG);
 		ReblockInstruction[] reblock_instructions = MRInstructionParser.parseReblockInstructions(str);
 		return reblock_instructions;
 	}
 	
-	public static CSVReblockInstruction[] getCSVReblockInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static CSVReblockInstruction[] getCSVReblockInstructions(JobConf job) {
 		String str=job.get(CSV_REBLOCK_INSTRUCTIONS_CONFIG);
 		CSVReblockInstruction[] reblock_instructions = MRInstructionParser.parseCSVReblockInstructions(str);
 		return reblock_instructions;
 	}
 	
-	public static CSVWriteInstruction[] getCSVWriteInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static CSVWriteInstruction[] getCSVWriteInstructions(JobConf job) {
 		String str=job.get(CSV_WRITE_INSTRUCTIONS_CONFIG);
 		CSVWriteInstruction[] reblock_instructions = MRInstructionParser.parseCSVWriteInstructions(str);
 		return reblock_instructions;
 	}
 	
-	public static AggregateInstruction[] getAggregateInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static AggregateInstruction[] getAggregateInstructions(JobConf job) {
 		String str=job.get(AGGREGATE_INSTRUCTIONS_CONFIG);
 		AggregateInstruction[] agg_instructions = MRInstructionParser.parseAggregateInstructions(str);
 		return agg_instructions;
 	}
 	
-	public static MRInstruction[] getCombineInstruction(JobConf job) throws DMLRuntimeException
-	{
+	public static MRInstruction[] getCombineInstruction(JobConf job) {
 		String str=job.get(COMBINE_INSTRUCTIONS_CONFIG);
 		MRInstruction[] comb_instructions = MRInstructionParser.parseCombineInstructions(str);
 		return comb_instructions;
 	}
 	
-	public static MRInstruction[] getInstructionsInMapper(JobConf job) throws DMLRuntimeException
-	{
+	public static MRInstruction[] getInstructionsInMapper(JobConf job) {
 		String str=job.get(INSTRUCTIONS_IN_MAPPER_CONFIG);
 		MRInstruction[] instructions = MRInstructionParser.parseMixedInstructions(str);
 		return instructions;
@@ -526,9 +517,7 @@ public class MRJobConfiguration
 	}
 	
 	//partitioning configurations
-	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew )
-		throws DMLRuntimeException
-	{
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew ){
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_ROW_CONFIG, String.valueOf(rlen));
 		job.set(PARTITIONING_INPUT_MATRIX_NUM_COLUMN_CONFIG, String.valueOf(clen));
 		job.set(PARTITIONING_INPUT_BLOCK_NUM_ROW_CONFIG, String.valueOf(brlen));
@@ -540,9 +529,7 @@ public class MRJobConfiguration
 		job.set(PARTITIONING_OUTPUT_FILENAME_CONFIG, fnameNew);
 	}
 	
-	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, String itervar, String matrixvar, boolean tSparseCol )
-			throws DMLRuntimeException
-	{
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, String itervar, String matrixvar, boolean tSparseCol ) {
 		//set basic partitioning information
 		setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, dpf, n, fnameNew);
 		
@@ -556,12 +543,9 @@ public class MRJobConfiguration
 		job.setBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, tSparseCol);		
 	}
 	
-	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, boolean keepIndexes )
-			throws DMLRuntimeException
-	{
+	public static void setPartitioningInfo( JobConf job, long rlen, long clen, int brlen, int bclen, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n, String fnameNew, boolean keepIndexes ) {
 		//set basic partitioning information
 		setPartitioningInfo(job, rlen, clen, brlen, bclen, ii, oi, dpf, n, fnameNew);
-		
 		//set transpose sparse column vector
 		job.setBoolean(PARTITIONING_OUTPUT_KEEP_INDEXES_CONFIG, keepIndexes);
 	}
@@ -633,9 +617,7 @@ public class MRJobConfiguration
 		return job.getBoolean(PARTITIONING_TRANSPOSE_COL_CONFIG, false);
 	}
 	
-	public static void setResultMergeInfo( JobConf job, String fnameNew, boolean accum, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen )
-		throws DMLRuntimeException
-	{
+	public static void setResultMergeInfo( JobConf job, String fnameNew, boolean accum, InputInfo ii, String stagingDir, long rlen, long clen, int brlen, int bclen ) {
 		job.set(RESULTMERGE_COMPARE_FILENAME_CONFIG, fnameNew);
 		job.set(RESULTMERGE_ACCUMULATOR_CONFIG, String.valueOf(accum));
 		job.set(RESULTMERGE_INPUT_INFO_CONFIG, InputInfo.inputInfoToString(ii));
@@ -787,27 +769,22 @@ public class MRJobConfiguration
 		job.set(RAND_INSTRUCTIONS_CONFIG, randInstrctions);
 	}
 	
-	// TODO: check Rand
-	public static DataGenMRInstruction[] getDataGenInstructions(JobConf job) throws DMLRuntimeException {
+	public static DataGenMRInstruction[] getDataGenInstructions(JobConf job) {
 		String str=job.get(RAND_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseDataGenInstructions(str);
 	}
 	
-	public static AggregateBinaryInstruction[] getAggregateBinaryInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static AggregateBinaryInstruction[] getAggregateBinaryInstructions(JobConf job) {
 		String str=job.get(AGGREGATE_BINARY_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseAggregateBinaryInstructions(str);
 	}
 	
-	public static CM_N_COVInstruction[] getCM_N_COVInstructions(JobConf job) throws DMLRuntimeException
-	{
+	public static CM_N_COVInstruction[] getCM_N_COVInstructions(JobConf job) {
 		String str=job.get(CM_N_COV_INSTRUCTIONS_CONFIG);
 		return MRInstructionParser.parseCM_N_COVInstructions(str);
 	}
 
-	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) 
-		throws DMLRuntimeException
-	{
+	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) {
 		//parse all grouped aggregate instructions
 		String str=job.get(GROUPEDAGG_INSTRUCTIONS_CONFIG);
 		GroupedAggregateInstruction[] tmp = MRInstructionParser.parseGroupedAggInstructions(str);
@@ -821,35 +798,31 @@ public class MRJobConfiguration
 		return tmp;
 	}
 	
-	public static String[] getOutputs(JobConf job)
-	{
+	public static String[] getOutputs(JobConf job) {
 		return job.getStrings(OUTPUT_MATRICES_DIRS_CONFIG);
 	}
 	
-	private static byte[] stringArrayToByteArray(String[] istrs)
-	{
+	private static byte[] stringArrayToByteArray(String[] istrs) {
 		byte[] ret=new byte[istrs.length];
 		for(int i=0; i<istrs.length; i++)
 			ret[i]=Byte.parseByte(istrs[i]);
 		return ret;
 	}
 	
-	public static byte[] getResultIndexes(JobConf job)
-	{
+	public static byte[] getResultIndexes(JobConf job) {
 		String[] istrs=job.get(RESULT_INDEXES_CONFIG).split(Instruction.INSTRUCTION_DELIM);
 		return stringArrayToByteArray(istrs);
 	}
-	public static byte[] getResultDimsUnknown(JobConf job)
-	{
+	
+	public static byte[] getResultDimsUnknown(JobConf job) {
 		String str=job.get(RESULT_DIMS_UNKNOWN_CONFIG);
 		if (str==null || str.isEmpty())
 			return null;
 		String[] istrs=str.split(Instruction.INSTRUCTION_DELIM);
 		return stringArrayToByteArray(istrs);
 	}
-		
-	public static byte[] getIntermediateMatrixIndexes(JobConf job)
-	{
+	
+	public static byte[] getIntermediateMatrixIndexes(JobConf job) {
 		String str=job.get(INTERMEDIATE_INDEXES_CONFIG);
 		if(str==null || str.isEmpty())
 			return null;
@@ -1174,7 +1147,7 @@ public class MRJobConfiguration
 	
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
 			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
 	{
 		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, null, aggInstructionsInReducer, 
 				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
@@ -1182,7 +1155,7 @@ public class MRJobConfiguration
 	
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
 	{
 		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, reblockInstructions, aggInstructionsInReducer, 
 				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
@@ -1230,11 +1203,10 @@ public class MRJobConfiguration
 	 * @param mapOutputIndexes set of map output indexes
 	 * @param forMMCJ ?
 	 * @return reducer groups
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
 			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ) throws DMLRuntimeException
+			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
 	{
 		HashSet<Byte> intermediateMatrixIndexes=new HashSet<>();
 		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<>();
@@ -1571,24 +1543,18 @@ public class MRJobConfiguration
 	}
 	
 	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
-			String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
-	throws DMLRuntimeException
-	{
+			String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
 		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
 				null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 	}
 	
 	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
-			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
-	throws DMLRuntimeException
-	{
+			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
 		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
 				reblockInstructions, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
 	}
 	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String randInstructions, String instructionsInMapper, 
-			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) 
-	throws DMLRuntimeException
-	{
+			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
 		//find out what results are needed to send to reducers
 		
 		HashSet<Byte> indexesInMapper=new HashSet<>();
@@ -1649,9 +1615,7 @@ public class MRJobConfiguration
 		
 	}
 	
-	private static void getIndexes(MRInstruction[] instructions, HashSet<Byte> indexes) 
-		throws DMLRuntimeException
-	{
+	private static void getIndexes(MRInstruction[] instructions, HashSet<Byte> indexes) {
 		if(instructions==null)
 			return;
 		for(MRInstruction ins: instructions)

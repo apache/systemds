@@ -25,7 +25,6 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -163,7 +162,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 	
 	@Override
-	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) throws DMLRuntimeException {
+	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
 		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
 		// We invoke transfer matrix from device to host in two cases:
 		// 1. During eviction of unlocked matrices
@@ -193,7 +192,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	}
 
 	@Override
-	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) throws DMLRuntimeException {
+	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
 		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;

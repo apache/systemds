@@ -312,12 +312,9 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "spoof"	, SPType.SpoofFused);
 	}
 
-	public static SPInstruction parseSingleInstruction (String str ) 
-		throws DMLRuntimeException 
-	{
+	public static SPInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-
 		SPType cptype = InstructionUtils.getSPType(str); 
 		if ( cptype == null )
 			// return null;
@@ -328,9 +325,7 @@ public class SPInstructionParser extends InstructionParser
 		return spinst;
 	}
 	
-	public static SPInstruction parseSingleInstruction ( SPType sptype, String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static SPInstruction parseSingleInstruction ( SPType sptype, String str ) {
 		if ( str == null || str.isEmpty() ) 
 			return null;
 		

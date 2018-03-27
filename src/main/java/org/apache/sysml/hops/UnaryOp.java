@@ -33,7 +33,6 @@ import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PartialAggregate;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.PickByCount;
@@ -72,7 +71,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 1, this, "should have arity 1 but has arity %d", _input.size());
 	}
 
@@ -126,8 +125,7 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
-	{		
+	{
 		//reuse existing lop
 		if( getLops() != null )
 			return getLops();
@@ -201,7 +199,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	
 
 	private Lop constructLopsMedian() 
-		throws HopsException, LopsException 
 	{
 		ExecType et = optFindExecType();
 
@@ -269,7 +266,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	}
 	
 	private Lop constructLopsIQM() 
-		throws HopsException, LopsException
 	{
 
 		ExecType et = optFindExecType();
@@ -380,11 +376,8 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	 * fit into the map task memory budget) or by creating custom job types.
 	 * 
 	 * @return low-level operator
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private Lop constructLopsMRCumulativeUnary() 
-		throws HopsException, LopsException 
 	{
 		Hop input = getInput().get(0);
 		long rlen = input.getDim1();
@@ -460,7 +453,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private Lop constructLopsSparkCumulativeUnary() 
-		throws HopsException, LopsException 
 	{
 		Hop input = getInput().get(0);
 		long rlen = input.getDim1();
@@ -639,15 +631,14 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
-	{		
+	{
 		checkAndSetForcedPlatform();
 	
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 		{
-			_etype = _etypeForced;		
+			_etype = _etypeForced;
 		}
 		else 
 		{

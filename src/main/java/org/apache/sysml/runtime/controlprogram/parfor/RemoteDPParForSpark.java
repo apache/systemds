@@ -39,7 +39,6 @@ import org.apache.spark.util.LongAccumulator;
 import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
@@ -73,7 +72,6 @@ public class RemoteDPParForSpark
 	public static RemoteParForJobReturn runJob(long pfid, String itervar, String matrixvar, String program, HashMap<String, byte[]> clsMap,
 			String resultFile, MatrixObject input, ExecutionContext ec, PartitionFormat dpf, OutputInfo oi, 
 			boolean tSparseCol, boolean enableCPCaching, int numReducers ) 
-		throws DMLRuntimeException
 	{
 		String jobname = "ParFor-DPESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -124,7 +122,6 @@ public class RemoteDPParForSpark
 	@SuppressWarnings("unchecked")
 	private static JavaPairRDD<Long, Writable> getPartitionedInput(SparkExecutionContext sec, 
 			String matrixvar, OutputInfo oi, PartitionFormat dpf) 
-		throws DMLRuntimeException 
 	{
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
@@ -196,7 +193,7 @@ public class RemoteDPParForSpark
 		private static final long serialVersionUID = 2016614593596923995L;
 
 		@Override
-		public Tuple2<Long, Iterable<Writable>> call(Tuple2<Long, Writable> arg0) throws Exception {
+		public Tuple2<Long, Iterable<Writable>> call(Tuple2<Long, Writable> arg0) {
 			return new Tuple2<>(arg0._1(), Collections.singletonList(arg0._2()));
 		}
 	}

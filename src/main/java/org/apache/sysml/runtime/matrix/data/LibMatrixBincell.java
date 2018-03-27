@@ -82,11 +82,8 @@ public class LibMatrixBincell
 	 * @param m1 input matrix
 	 * @param ret result matrix
 	 * @param op scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void bincellOp(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) 
-		throws DMLRuntimeException
-	{
+	public static void bincellOp(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
 		//check internal assumptions 
 		if(   (op.sparseSafe && m1.isInSparseFormat()!=ret.isInSparseFormat())
 			||(!op.sparseSafe && ret.isInSparseFormat()) ) {
@@ -112,11 +109,8 @@ public class LibMatrixBincell
 	 * @param m2 input matrix 2
 	 * @param ret result matrix
 	 * @param op binary operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException
-	{
+	public static void bincellOp(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinary(m1, m2, ret, op);
@@ -135,11 +129,8 @@ public class LibMatrixBincell
 	 * @param m1ret result matrix
 	 * @param m2 matrix block
 	 * @param op binary operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
-		throws DMLRuntimeException
-	{
+	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinaryInPlace(m1ret, m2, op);
@@ -200,9 +191,7 @@ public class LibMatrixBincell
 	// private sparse-safe/sparse-unsafe implementations
 	///////////////////////////////////
 
-	private static void safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean skipEmpty = (op.fn instanceof Multiply 
 			|| isSparseSafeDivide(op, m2) );
 		
@@ -253,9 +242,7 @@ public class LibMatrixBincell
 		}
 	}
 
-	private static void safeBinaryMVDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMVDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply);
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
@@ -346,9 +333,7 @@ public class LibMatrixBincell
 		ret.nonZeros = nnz;
 	}
 
-	private static void safeBinaryMVSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMVSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply);
 		
@@ -455,9 +440,7 @@ public class LibMatrixBincell
 		//no need to recomputeNonZeros since maintained in append value
 	}
 
-	private static void safeBinaryMVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply);
 		int rlen = m1.rlen;
@@ -535,9 +518,7 @@ public class LibMatrixBincell
 		//no need to recomputeNonZeros since maintained in append value
 	}
 	
-	private static void safeBinaryVVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryVVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		int rlen = m1.rlen;
 		int clen = m2.clen;
 		
@@ -563,9 +544,7 @@ public class LibMatrixBincell
 		//no need to recomputeNonZeros since maintained in append value
 	}
 	
-	private static void safeBinaryMMSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMMSparseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		final int rlen = m1.rlen;
 		if(ret.sparse)
 			ret.allocateSparseRowsBlock();
@@ -635,9 +614,7 @@ public class LibMatrixBincell
 		}
 	}
 	
-	private static void safeBinaryMMSparseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMMSparseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		//specific case in order to prevent binary search on sparse inputs (see quickget and quickset)
 		ret.allocateDenseBlock();
 		final int n = ret.clen;
@@ -719,9 +696,7 @@ public class LibMatrixBincell
 		ret.setNonZeros(lnnz);
 	}
 	
-	private static void safeBinaryMMDenseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMMDenseDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		ret.allocateDenseBlock();
 		DenseBlock da = m1.getDenseBlock();
 		DenseBlock db = m2.getDenseBlock();
@@ -743,9 +718,7 @@ public class LibMatrixBincell
 		ret.setNonZeros(lnnz);
 	}
 	
-	private static void safeBinaryMMSparseDenseSkip(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMMSparseDenseSkip(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		SparseBlock a = m1.sparse ? m1.sparseBlock : m2.sparseBlock;
 		if( a == null )
 			return;
@@ -771,9 +744,7 @@ public class LibMatrixBincell
 		}
 	}
 	
-	private static void safeBinaryMMGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryMMGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		int rlen = m1.rlen;
 		int clen = m2.clen;
 		for(int r=0; r<rlen; r++)
@@ -796,9 +767,7 @@ public class LibMatrixBincell
 	 * @param bOp binary operator
 	 * 
 	 */
-	private static void performBinOuterOperation(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator bOp) 
-		throws DMLRuntimeException
-	{
+	private static void performBinOuterOperation(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator bOp) {
 		int rlen = m1.rlen;
 		int clen = ret.clen;
 		double b[] = DataConverter.convertToDoubleVector(m2);
@@ -846,9 +815,7 @@ public class LibMatrixBincell
 		ret.examSparsity();
 	}
 
-	private static void unsafeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void unsafeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		int rlen = m1.rlen;
 		int clen = m1.clen;
 		BinaryAccessType atype = getBinaryAccessType(m1, m2);
@@ -924,9 +891,7 @@ public class LibMatrixBincell
 		}
 	}
 
-	private static void safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
-		throws DMLRuntimeException
-	{
+	private static void safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {
 			return;
@@ -994,11 +959,8 @@ public class LibMatrixBincell
 	 * @param m1 input matrix
 	 * @param ret result matrix
 	 * @param op scalar operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op)
-		throws DMLRuntimeException
-	{
+	private static void unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {
 			//compute 0 op constant once and set into dense output
@@ -1053,9 +1015,7 @@ public class LibMatrixBincell
 		}
 	}
 
-	private static void denseBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void denseBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
 		//allocate dense block (if necessary), incl clear nnz
 		ret.allocateDenseBlock(true);
 		
@@ -1076,9 +1036,7 @@ public class LibMatrixBincell
 		ret.nonZeros = nnz;
 	}
 
-	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//early abort on skip and empty 
 		if( m1ret.isEmptyBlock(false) && m2.isEmptyBlock(false) )
 			return; // skip entire empty block
@@ -1096,9 +1054,7 @@ public class LibMatrixBincell
 			safeBinaryInPlaceGeneric(m1ret, m2, op);
 	}
 	
-	private static void safeBinaryInPlaceSparse(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryInPlaceSparse(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		if(m1ret.sparseBlock!=null)
 			m1ret.allocateSparseRowsBlock(false);
 		if(m2.sparseBlock!=null)
@@ -1173,9 +1129,7 @@ public class LibMatrixBincell
 		m1ret.recomputeNonZeros();
 	}
 
-	private static void safeBinaryInPlaceDense(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryInPlaceDense(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//prepare outputs
 		m1ret.allocateDenseBlock();
 		DenseBlock a = m1ret.getDenseBlock();
@@ -1206,9 +1160,7 @@ public class LibMatrixBincell
 		m1ret.setNonZeros(lnnz);
 	}
 	
-	private static void safeBinaryInPlaceGeneric(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) 
-		throws DMLRuntimeException 
-	{
+	private static void safeBinaryInPlaceGeneric(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		final int rlen = m1ret.rlen;
 		final int clen = m1ret.clen;
 		
@@ -1240,7 +1192,7 @@ public class LibMatrixBincell
 		}
 	}
 	
-	private static void unsafeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) throws DMLRuntimeException 
+	private static void unsafeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op)
 	{
 		int rlen = m1ret.rlen;
 		int clen = m1ret.clen;
@@ -1281,9 +1233,7 @@ public class LibMatrixBincell
 	}
 	
 	private static void mergeForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int pos1, int size1, 
-			double[] values2, int[] cols2, int pos2, int size2, int resultRow, MatrixBlock result) 
-		throws DMLRuntimeException
-	{
+			double[] values2, int[] cols2, int pos2, int size2, int resultRow, MatrixBlock result) {
 		int p1 = 0, p2 = 0;
 		if( op.fn instanceof Multiply ) { //skip empty
 			//skip empty: merge-join (with inner join semantics)
@@ -1328,9 +1278,7 @@ public class LibMatrixBincell
 	}
 
 	private static void appendLeftForSparseBinary(BinaryOperator op, double[] values1, int[] cols1, int pos1, int size1, 
-				int pos, int resultRow, MatrixBlock result) 
-		throws DMLRuntimeException
-	{
+				int pos, int resultRow, MatrixBlock result) {
 		for(int j=pos1+pos; j<pos1+size1; j++) {
 			double v = op.fn.execute(values1[j], 0);
 			result.appendValue(resultRow, cols1[j], v);
@@ -1338,8 +1286,7 @@ public class LibMatrixBincell
 	}
 
 	private static void appendRightForSparseBinary(BinaryOperator op, double[] values2, int[] cols2, int pos2, int size2, 
-		int pos, int resultRow, MatrixBlock result) throws DMLRuntimeException
-	{
+			int pos, int resultRow, MatrixBlock result) {
 		for( int j=pos2+pos; j<pos2+size2; j++ ) {
 			double v = op.fn.execute(0, values2[j]);
 			result.appendValue(resultRow, cols2[j], v);

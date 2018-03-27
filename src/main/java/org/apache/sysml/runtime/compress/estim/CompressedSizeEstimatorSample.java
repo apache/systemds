@@ -28,7 +28,6 @@ import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.ReaderColumnSelection;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
@@ -52,7 +51,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
     private HashMap<Integer, Double> _solveCache = null;
 	
 	public CompressedSizeEstimatorSample(MatrixBlock data, int sampleSize) 
-		throws DMLRuntimeException 
 	{
 		super(data);
 		

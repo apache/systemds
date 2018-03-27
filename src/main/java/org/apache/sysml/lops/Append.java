@@ -67,9 +67,7 @@ public class Append extends Lop
 
 	//called when append executes in CP
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output) 
-		throws LopsException
-	{
+	public String getInstructions(String input1, String input2, String input3, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );

@@ -1,4 +1,4 @@
-/*
+<!--
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,26 +15,14 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- */
+-->
 
-package org.apache.sysml.test.integration.functions.gdfo;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	GDFOLinregCG.class,
-	GDFOLinregDS.class,
-	GDFOLinregDSsimpl.class,
-	GDFOMMChainLoop.class,
-	HashInterestingPropertiesTest.class
-})
-
-
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
-
-}
+<root>
+   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysml.scratch>scratch_space</sysml.scratch>
+   <sysml.optlevel>7</sysml.optlevel>
+   <sysml.codegen.enabled>true</sysml.codegen.enabled>
+   <sysml.codegen.plancache>true</sysml.codegen.plancache>
+   <sysml.codegen.literals>1</sysml.codegen.literals>
+   <sysml.codegen.optimizer>fuse_all</sysml.codegen.optimizer>
+</root>

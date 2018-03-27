@@ -103,7 +103,7 @@ public class WriterBinaryBlock extends MatrixWriter
 
 	@SuppressWarnings("deprecation")
 	protected final void writeBinaryBlockMatrixToSequenceFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int brlen, int bclen, int rl, int ru ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
 		int rlen = src.getNumRows();

@@ -68,9 +68,8 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return matrix as a two-dimensional double array
-	 * @throws DMLException if DMLException occurs
 	 */
-	public double[][] getMatrix(String varname) throws DMLException {
+	public double[][] getMatrix(String varname) {
 		return DataConverter.convertToDoubleMatrix(getMatrixBlock(varname));
 	}
 	
@@ -80,9 +79,8 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return matrix as matrix block
-	 * @throws DMLException if DMLException occurs
 	 */
-	public MatrixBlock getMatrixBlock(String varname) throws DMLException {
+	public MatrixBlock getMatrixBlock(String varname) {
 		Data dat = _out.get(varname);
 		if( dat == null )
 			throw new DMLException("Non-existent output variable: "+varname);
@@ -103,9 +101,8 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return frame as a two-dimensional string array
-	 * @throws DMLException if DMLException occurs
 	 */
-	public String[][] getFrame(String varname) throws DMLException {
+	public String[][] getFrame(String varname) {
 		return DataConverter.convertToStringFrame(getFrameBlock(varname));
 	}
 	
@@ -115,11 +112,8 @@ public class ResultVariables
 	 * 
 	 * @param varname output variable name
 	 * @return frame as a frame block
-	 * @throws DMLException if DMLException occurs
 	 */
-	public FrameBlock getFrameBlock(String varname) 
-		throws DMLException
-	{
+	public FrameBlock getFrameBlock(String varname) {
 		Data dat = _out.get(varname);
 		if( dat == null )
 			throw new DMLException("Non-existent output variable: "+varname);
@@ -141,9 +135,8 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return double value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public double getDouble(String varname) throws DMLException {
+	public double getDouble(String varname) {
 		return getScalarObject(varname).getDoubleValue();
 	}
 
@@ -153,9 +146,8 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return boolean value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public boolean getBoolean(String varname) throws DMLException {
+	public boolean getBoolean(String varname) {
 		return getScalarObject(varname).getBooleanValue();
 	}
 
@@ -165,9 +157,8 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return long value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public long getLong(String varname) throws DMLException {
+	public long getLong(String varname) {
 		return getScalarObject(varname).getLongValue();
 	}
 
@@ -177,9 +168,8 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return string value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public String getString(String varname) throws DMLException {
+	public String getString(String varname) {
 		return getScalarObject(varname).getStringValue();
 	}
 
@@ -189,9 +179,8 @@ public class ResultVariables
 	 * @param varname
 	 *            output variable name
 	 * @return ScalarObject
-	 * @throws DMLException if DMLException occurs
 	 */
-	public ScalarObject getScalarObject(String varname) throws DMLException {
+	public ScalarObject getScalarObject(String varname) {
 		Data dat = _out.get(varname);
 		if( dat == null )
 			throw new DMLException("Non-existent output variable: " + varname);

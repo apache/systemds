@@ -17,7 +17,6 @@
  */
 package org.apache.sysml.runtime.matrix.data;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.jcublas.cublasHandle;
@@ -81,7 +80,7 @@ public interface CudaSupportFunctions {
 	public int cusparsecsr2dense(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, jcuda.Pointer A, int lda) ;
 	public int cusparsedense2csr(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRow, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA);
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRowCol, jcuda.Pointer nnzTotalDevHostPtr);
-	public void deviceToHost(GPUContext gCtx, Pointer src, double [] dest, String instName, boolean isEviction) throws DMLRuntimeException;
-	public void hostToDevice(GPUContext gCtx, double [] src,  Pointer dest, String instName) throws DMLRuntimeException;
+	public void deviceToHost(GPUContext gCtx, Pointer src, double [] dest, String instName, boolean isEviction);
+	public void hostToDevice(GPUContext gCtx, double [] src,  Pointer dest, String instName);
 	
 }

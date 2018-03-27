@@ -77,8 +77,7 @@ public class BinaryScalar extends Lop
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String output) throws LopsException
-	{
+	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		
 		sb.append(getExecType());

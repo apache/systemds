@@ -69,11 +69,10 @@ public abstract class MatrixReader
 	 * @param mallocSparse if true and sparse, allocate sparse rows block
 	 * @return matrix block
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected static MatrixBlock createOutputMatrixBlock( long rlen, long clen, 
 			int bclen, int brlen, long estnnz, boolean mallocDense, boolean mallocSparse ) 
-		throws IOException, DMLRuntimeException
+		throws IOException
 	{
 		//check input dimension
 		if( !OptimizerUtils.isValidCPDimensions(rlen, clen) )

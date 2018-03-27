@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -44,6 +43,7 @@ import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofMultiAggregate extends SpoofOperator implements Serializable
@@ -72,16 +72,12 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	}
 	
 	@Override
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) 
-		throws DMLRuntimeException
-	{
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out) {
 		return execute(inputs, scalarObjects, out, 1);
 	}
 	
 	@Override
-	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)	
-		throws DMLRuntimeException
-	{
+	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k) {
 		//sanity check
 		if( inputs==null || inputs.size() < 1  )
 			throw new RuntimeException("Invalid input arguments.");
@@ -117,7 +113,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		else  //MULTI-THREADED
 		{
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
@@ -146,7 +142,6 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	}
 	
 	private void executeDense(DenseBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, boolean sparseSafe, int rl, int ru)
-		throws DMLRuntimeException
 	{
 		SideInput[] lb = createSparseSideInputs(b);
 		
@@ -168,7 +163,6 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	
 	private void executeSparse(SparseBlock sblock, SideInput[] b, double[] scalars,
 			double[] c, int m, int n, boolean sparseSafe, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		if( sblock == null && sparseSafe )
 			return;
@@ -202,7 +196,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		}
 	}
 
-	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru) throws DMLRuntimeException 
+	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru)
 	{
 		//core compressed aggregation operation
 		Iterator<IJV> iter = a.getIterator(rl, ru, true);
@@ -231,9 +225,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 	}
 	
 
-	private void aggregatePartialResults(double[] c, ArrayList<double[]> pret) 
-		throws DMLRuntimeException 
-	{
+	private void aggregatePartialResults(double[] c, ArrayList<double[]> pret) {
 		ValueFunction[] vfun = getAggFunctions(_aggOps); 
 		for( int k=0; k<_aggOps.length; k++ ) {
 			if( vfun[k] instanceof KahanFunction ) {
@@ -249,10 +241,8 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			}
 		}
 	}
-		
-	public static void aggregatePartialResults(AggOp[] aggOps, MatrixBlock c, MatrixBlock b) 
-		throws DMLRuntimeException 
-	{
+	
+	public static void aggregatePartialResults(AggOp[] aggOps, MatrixBlock c, MatrixBlock b) {
 		ValueFunction[] vfun = getAggFunctions(aggOps);
 		
 		for( int k=0; k< aggOps.length; k++ ) {
@@ -310,7 +300,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		}
 		
 		@Override
-		public double[] call() throws DMLRuntimeException {
+		public double[] call() {
 			double[] c = new double[_aggOps.length];
 			setInitialOutputValues(c);
 			if( _a instanceof CompressedMatrixBlock )

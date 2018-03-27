@@ -38,25 +38,22 @@ public abstract class UnarySPInstruction extends ComputationSPInstruction {
 		super(type, op, in1, in2, in3, out, opcode, instr);
 	}
 
-	static String parseUnaryInstruction(String instr, CPOperand in,
-			CPOperand out) throws DMLRuntimeException {
+	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out) {
 		InstructionUtils.checkNumFields(instr, 2);
 		return parse(instr, in, null, null, out);
 	}
 
-	static String parseUnaryInstruction(String instr, CPOperand in1,
-			CPOperand in2, CPOperand out) throws DMLRuntimeException {
+	static String parseUnaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		InstructionUtils.checkNumFields(instr, 3);
 		return parse(instr, in1, in2, null, out);
 	}
 
-	static String parseUnaryInstruction(String instr, CPOperand in1,
-			CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+	static String parseUnaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
 		InstructionUtils.checkNumFields(instr, 4);
 		return parse(instr, in1, in2, in3, out);
 	}
 
-	private static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) throws DMLRuntimeException {
+	private static String parse(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		
 		// first part is the opcode, last part is the output, middle parts are input operands

@@ -49,7 +49,7 @@ public class ConvolutionParameters implements Serializable
 	
 	public ConvolutionParameters(long N, long C, long H, long W,
 			long K, long R, long S, long stride_h, long stride_w, 
-			long pad_h, long pad_w, int numThreads) throws DMLRuntimeException {
+			long pad_h, long pad_w, int numThreads) {
 		this.N = convertToInt(N);
 		this.C = convertToInt(C);
 		this.H = convertToInt(H);
@@ -100,7 +100,7 @@ public class ConvolutionParameters implements Serializable
 		this.numThreads = numThreads;
 	}
 	
-	private static int convertToInt(long val) throws DMLRuntimeException {
+	private static int convertToInt(long val) {
 		if( val > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("The value for ConvolutionParameters is too large:" + val);
 		return (int) val;
@@ -123,7 +123,7 @@ public class ConvolutionParameters implements Serializable
 	}
 	
 	public void setIfUnknown(Hop N, Hop C, Hop H, Hop W,
-			Hop K, Hop R, Hop S, Hop stride_h, Hop stride_w, Hop pad_h, Hop pad_w, int numThreads) throws DMLRuntimeException {
+			Hop K, Hop R, Hop S, Hop stride_h, Hop stride_w, Hop pad_h, Hop pad_w, int numThreads) {
 		if(this.N < 0) this.N = convertToInt(Hop.computeSizeInformation(N));
 		if(this.C < 0) this.C = convertToInt(Hop.computeSizeInformation(C));
 		if(this.H < 0) this.H = convertToInt(Hop.computeSizeInformation(H));

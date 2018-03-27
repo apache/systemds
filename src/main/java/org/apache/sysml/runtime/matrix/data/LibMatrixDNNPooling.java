@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
@@ -43,9 +42,8 @@ public class LibMatrixDNNPooling {
 	 * @param params convolution parameters
 	 * @param poolType type of pooling
 	 * @return list of callable tasks for performing pooling operation
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getPoolingWorkers(ConvolutionParameters params, PoolingType poolType) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getPoolingWorkers(ConvolutionParameters params, PoolingType poolType) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -66,9 +64,8 @@ public class LibMatrixDNNPooling {
 	 * @param performReluBackward whether to perform ReLU backward
 	 * @param poolType type of pooling operation to perform
 	 * @return list of callable tasks for performing maxpooling backward operation
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);

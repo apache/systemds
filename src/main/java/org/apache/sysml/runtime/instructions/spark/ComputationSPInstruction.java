@@ -53,15 +53,11 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 		return output.getName();
 	}
 
-	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
 		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
 	}
 
-	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) 
-		throws DMLRuntimeException
-	{
+	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) {
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(nameIn);
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(nameOut);
 		if(!mcOut.dimsKnown()) {
@@ -72,9 +68,7 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 		}
 	}
 
-	protected void updateBinaryOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{
+	protected void updateBinaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
 		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
@@ -90,9 +84,7 @@ public abstract class ComputationSPInstruction extends SPInstruction {
 		}
 	}
 	
-	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) 
-		throws DMLRuntimeException
-	{
+	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) {
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		if( mcOut.dimsKnown() )

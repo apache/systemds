@@ -29,7 +29,6 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -503,7 +502,7 @@ public class FullReblockTest extends AutomatedTestBase
 	}
 	
 	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);

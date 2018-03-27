@@ -66,7 +66,6 @@ public class AppendGAlignedSP extends Lop
 	//called when append executes in CP
 	@Override
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 
-		throws LopsException
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

@@ -138,18 +138,14 @@ public class MRBaseForCommonInstructions extends MapReduceBase
 		}
 	}
 
-	protected void processMixedInstructions(ArrayList<MRInstruction> mixed_instructions) 
-		throws DMLRuntimeException
-	{
+	protected void processMixedInstructions(ArrayList<MRInstruction> mixed_instructions) {
 		if( mixed_instructions != null )
 			for( MRInstruction ins : mixed_instructions )
 				processOneInstruction(ins, valueClass, cachedValues, tempValue, zeroInput);
 	}
 
 	protected void processOneInstruction(MRInstruction ins, Class<? extends MatrixValue> valueClass,
-			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) 
-		throws DMLRuntimeException
-	{
+			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput) {
 		//Timing time = new Timing(true);
 		
 		if ( ins instanceof AggregateBinaryInstruction ) {

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.gpu;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -36,7 +35,7 @@ public class MatrixMatrixRelationalBinaryGPUInstruction extends RelationalBinary
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());

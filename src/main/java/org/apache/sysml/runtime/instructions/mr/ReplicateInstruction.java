@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -49,19 +48,15 @@ public class ReplicateInstruction extends UnaryMRInstructionBase {
 			mcOut.set(_lenM, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getRows());
 	}
 
-	public static ReplicateInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ReplicateInstruction parseInstruction ( String str ) {
 		//check instruction format
 		InstructionUtils.checkNumFields ( str, 4 );
-		
 		//parse instruction
 		String[] parts = InstructionUtils.getInstructionParts ( str );
 		byte in = Byte.parseByte(parts[1]);
 		boolean repCols = Boolean.parseBoolean(parts[2]);
 		long len = Long.parseLong(parts[3]);
 		byte out = Byte.parseByte(parts[4]);
-		
 		//construct instruction
 		return new ReplicateInstruction(in, out, repCols, len, str);
 	}
@@ -69,7 +64,6 @@ public class ReplicateInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		

@@ -58,12 +58,9 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 					mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), -1);
 	}
 
-	public static RangeBasedReIndexInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static RangeBasedReIndexInstruction parseInstruction( String str ) {
 		InstructionUtils.checkNumFields ( str, 8 );
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		String opcode = parts[0];
 		boolean forLeft = false;
 		if(opcode.equalsIgnoreCase(RightIndex.OPCODE+"ForLeft"))
@@ -71,14 +68,12 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 		else if(!opcode.equalsIgnoreCase(RightIndex.OPCODE))
 			throw new DMLRuntimeException("Unknown opcode while parsing a Select: " + str);
 		byte in = Byte.parseByte(parts[1]); 
-		IndexRange rng=new IndexRange(UtilFunctions.parseToLong(parts[2]), 
-									  UtilFunctions.parseToLong(parts[3]), 
-									  UtilFunctions.parseToLong(parts[4]),
-									  UtilFunctions.parseToLong(parts[5]));		
+		IndexRange rng=new IndexRange(
+			UtilFunctions.parseToLong(parts[2]), UtilFunctions.parseToLong(parts[3]),
+			UtilFunctions.parseToLong(parts[4]),  UtilFunctions.parseToLong(parts[5]));
 		byte out = Byte.parseByte(parts[6]);
 		long rlen = Long.parseLong(parts[7]);
 		long clen = Long.parseLong(parts[8]);
-		
 		return new RangeBasedReIndexInstruction(new ReIndexOperator(), in, out, rng, forLeft, rlen, clen, str);
 	}
 	
@@ -86,8 +81,7 @@ public class RangeBasedReIndexInstruction extends UnaryMRInstructionBase {
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{		
+	{
 		if(input==output)
 			throw new DMLRuntimeException("input cannot be the same for output for "+instString);
 		

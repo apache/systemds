@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	public enum AUType {
-		NROW, NCOL, LENGTH,
+		NROW, NCOL, LENGTH, EXISTS,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -57,15 +57,14 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		_type = type;
 	}
 	
-	public static AggregateUnaryCPInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static AggregateUnaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		
-		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") || opcode.equalsIgnoreCase("length")){
+		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") 
+			|| opcode.equalsIgnoreCase("length") || opcode.equalsIgnoreCase("exists")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		}
@@ -77,13 +76,11 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		String output_name = output.getName();
 		String opcode = getOpcode();
 		
-		if( _type.isMeta() ) //nrow/ncol/length
+		if( _type.isMeta() && _type!=AUType.EXISTS ) //nrow/ncol/length
 		{
 			//check existence of input variable
 			if( !ec.getVariables().keySet().contains(input1.getName()) )
@@ -123,6 +120,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			
 			//create and set output scalar
 			ec.setScalarOutput(output_name, new IntObject(rval));
+		}
+		else if( _type == AUType.EXISTS ) {
+			//probe existing of variable in symbol table w/o error
+			boolean rval = ec.getVariables().keySet()
+				.contains(ec.getScalarInput(input1).getStringValue());
+			//create and set output scalar
+			ec.setScalarOutput(output_name, new BooleanObject(rval));
 		}
 		else { //DEFAULT
 			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());

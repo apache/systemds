@@ -60,9 +60,7 @@ public class StringObject extends ScalarObject
 		return _value;
 	}
 
-	public static void checkMaxStringLength( long len ) 
-		throws DMLRuntimeException
-	{
+	public static void checkMaxStringLength( long len ) {
 		if( len > MAX_STRING_SIZE ) {
 			throw new DMLRuntimeException("Output string length exceeds maximum "
 				+ "scalar string length ("+len+" > "+MAX_STRING_SIZE+").");

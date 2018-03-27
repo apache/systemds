@@ -45,7 +45,7 @@ public class ExpressionList extends Expression {
 	}
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		throw new LanguageException("ExpressionList should not be exposed beyond parser layer.");
 	}
 	@Override

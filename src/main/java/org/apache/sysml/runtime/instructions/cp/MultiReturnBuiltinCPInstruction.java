@@ -45,9 +45,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		return _outputs.get(i);
 	}
 	
-	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MultiReturnBuiltinCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		// first part is always the opcode
@@ -99,9 +97,7 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		MatrixBlock[] out = null;

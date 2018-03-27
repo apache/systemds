@@ -19,7 +19,6 @@
 
 package org.apache.sysml.lops.compile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -240,12 +239,8 @@ public class Dag<N extends Lop>
 	 * @param sb statement block
 	 * @param config dml configuration
 	 * @return list of instructions
-	 * @throws LopsException if LopsException occurs
-	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config)
-			throws LopsException, DMLRuntimeException {
+	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config) {
 		if (config != null) {
 			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
@@ -267,9 +262,7 @@ public class Dag<N extends Lop>
 
 	}
 
-	private static void deleteUpdatedTransientReadVariables(StatementBlock sb, ArrayList<Lop> nodeV,
-			ArrayList<Instruction> inst) throws DMLRuntimeException {
-
+	private static void deleteUpdatedTransientReadVariables(StatementBlock sb, ArrayList<Lop> nodeV, ArrayList<Instruction> inst) {
 		if ( sb == null ) 
 			return;
 		
@@ -341,8 +334,7 @@ public class Dag<N extends Lop>
 
 	}
 	  
-	private static void generateRemoveInstructions(StatementBlock sb, ArrayList<Instruction> deleteInst)
-		throws DMLRuntimeException {
+	private static void generateRemoveInstructions(StatementBlock sb, ArrayList<Instruction> deleteInst) {
 		
 		if ( sb == null ) 
 			return;
@@ -350,7 +342,6 @@ public class Dag<N extends Lop>
 		if( LOG.isTraceEnabled() )
 			LOG.trace("In generateRemoveInstructions()");
 		
-
 		Instruction inst = null;
 		// RULE 1: if in IN and not in OUT, then there should be an rmvar or rmfilevar inst
 		// (currently required for specific cases of external functions)
@@ -384,9 +375,7 @@ public class Dag<N extends Lop>
 		}
 	}
 
-	private static boolean isCompatible(ArrayList<Lop> nodes, JobType jt, int from, int to) 
-		throws LopsException 
-	{
+	private static boolean isCompatible(ArrayList<Lop> nodes, JobType jt, int from, int to) {
 		int base = jt.getBase();
 		for ( Lop node : nodes ) {
 			if ((node.getCompatibleJobs() & base) == 0) {
@@ -427,7 +416,7 @@ public class Dag<N extends Lop>
 	 * Add node, and its relevant children to job-specific node vectors.
 	 */
 	private void addNodeByJobType(Lop node, ArrayList<ArrayList<Lop>> arr,
-			ArrayList<Lop> execNodes, boolean eliminate) throws LopsException {
+			ArrayList<Lop> execNodes, boolean eliminate) {
 		
 		if (!eliminate) {
 			// Check if this lop defines a MR job.
@@ -534,11 +523,10 @@ public class Dag<N extends Lop>
 	 * @param execNodes list of exec low-level operators
 	 * @param jobNodes list of job low-level operators
 	 * @param finishedNodes list of finished low-level operators
-	 * @throws LopsException if LopsException occurs
 	 */
 	private void handleSingleOutputJobs(ArrayList<Lop> execNodes,
 			ArrayList<ArrayList<Lop>> jobNodes, ArrayList<Lop> finishedNodes)
-			throws LopsException {
+	{
 		/*
 		 * If the input of a MMCJ/MMRJ job (must have executed in a Mapper) is used
 		 * by multiple lops then we should mark it as not-finished.
@@ -635,11 +623,8 @@ public class Dag<N extends Lop>
 	 * 
 	 * @param nodes_v list of nodes
 	 * @param inst list of instructions
-	 * @throws LopsException if LopsException occurs
-	 * @throws IOException if IOException occurs
 	 */
-	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst)
-		throws LopsException {
+	private static void generateInstructionsForInputVariables(ArrayList<Lop> nodes_v, ArrayList<Instruction> inst) {
 		for(Lop n : nodes_v) {
 			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
@@ -767,12 +752,8 @@ public class Dag<N extends Lop>
 	 * @param sb statement block
 	 * @param node_v list of low-level operators
 	 * @return list of instructions
-	 * @throws LopsException if LopsException occurs
-	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, ArrayList<Lop> node_v)
-			throws LopsException, DMLRuntimeException
 	{
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Grouping DAG ============");
@@ -1246,9 +1227,8 @@ public class Dag<N extends Lop>
 	 * @param node low-level operator
 	 * @param inst list of instructions
 	 * @param delteInst list of instructions
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) throws DMLRuntimeException {
+	private static void processConsumersForInputs(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> delteInst) {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		for(Lop in : node.getInputs() ) {
@@ -1261,7 +1241,7 @@ public class Dag<N extends Lop>
 		}
 	}
 	
-	private static void processConsumers(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst, Lop locationInfo) throws DMLRuntimeException {
+	private static void processConsumers(Lop node, ArrayList<Instruction> inst, ArrayList<Instruction> deleteInst, Lop locationInfo) {
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		if ( node.removeConsumer() == 0 ) {
@@ -1290,11 +1270,9 @@ public class Dag<N extends Lop>
 	 * @param inst list of instructions
 	 * @param writeInst list of write instructions
 	 * @param deleteInst list of delete instructions
-	 * @throws LopsException if LopsException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateControlProgramJobs(ArrayList<Lop> execNodes,
-			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) throws LopsException, DMLRuntimeException {
+			ArrayList<Instruction> inst, ArrayList<Instruction> writeInst, ArrayList<Instruction> deleteInst) {
 
 		// nodes to be deleted from execnodes
 		ArrayList<Lop> markedNodes = new ArrayList<>();
@@ -1569,11 +1547,10 @@ public class Dag<N extends Lop>
 	 * @param execNodes list of exec nodes
 	 * @param queuedNodes list of queued nodes
 	 * @param jobvec list of lists of low-level operators
-	 * @throws LopsException if LopsException occurs
 	 */
 	private void removeNodesForNextIteration(Lop node, ArrayList<Lop> finishedNodes,
 			ArrayList<Lop> execNodes, ArrayList<Lop> queuedNodes,
-			ArrayList<ArrayList<Lop>> jobvec) throws LopsException {
+			ArrayList<ArrayList<Lop>> jobvec) {
 		
 		// only queued nodes with multiple inputs need to be handled.
 		if (node.getInputs().size() == 1)
@@ -1900,9 +1877,8 @@ public class Dag<N extends Lop>
 	 * @param lops low-level operator
 	 * @param jobvec list of lists of low-level operators
 	 * @return job index for a low-level operator
-	 * @throws LopsException if LopsException occurs
 	 */
-	private static int jobType(Lop lops, ArrayList<ArrayList<Lop>> jobvec) throws LopsException {
+	private static int jobType(Lop lops, ArrayList<ArrayList<Lop>> jobvec) {
 		for ( JobType jt : JobType.values()) {
 			int i = jt.getId();
 			if (i > 0 && jobvec.get(i) != null && jobvec.get(i).contains(lops)) {
@@ -1969,10 +1945,8 @@ public class Dag<N extends Lop>
 	 * Method to print the lops grouped by job type
 	 * 
 	 * @param jobNodes list of lists of low-level operators
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void printJobNodes(ArrayList<ArrayList<Lop>> jobNodes)
-		throws DMLRuntimeException 
 	{
 		if (LOG.isTraceEnabled()){
 			for ( JobType jt : JobType.values() ) {
@@ -2063,14 +2037,11 @@ public class Dag<N extends Lop>
 	 * @param writeinst list of write instructions
 	 * @param deleteinst list of delete instructions
 	 * @param jobNodes list of list of low-level operators
-	 * @throws LopsException if LopsException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateMRJobs(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst,
 			ArrayList<Instruction> writeinst,
 			ArrayList<Instruction> deleteinst, ArrayList<ArrayList<Lop>> jobNodes)
-			throws LopsException, DMLRuntimeException
 	{
 		printJobNodes(jobNodes);
 		
@@ -2195,10 +2166,8 @@ public class Dag<N extends Lop>
 	 * @param node low-level operator
 	 * @param cellModeOverride override mode
 	 * @return output info
-	 * @throws LopsException if LopsException occurs
 	 */
-	private static OutputInfo getOutputInfo(Lop node, boolean cellModeOverride) 
-		throws LopsException 
+	private static OutputInfo getOutputInfo(Lop node, boolean cellModeOverride)
 	{
 		if ( (node.getDataType() == DataType.SCALAR && node.getExecType() == ExecType.CP) 
 				|| node instanceof FunctionCallCP )
@@ -2290,11 +2259,8 @@ public class Dag<N extends Lop>
 	 * @param cellModeOverride override mode
 	 * @param copyTWrite ?
 	 * @return node output
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
-	private NodeOutput setupNodeOutputs(Lop node, ExecType et, boolean cellModeOverride, boolean copyTWrite) 
-	throws DMLRuntimeException, LopsException {
+	private NodeOutput setupNodeOutputs(Lop node, ExecType et, boolean cellModeOverride, boolean copyTWrite) {
 		
 		OutputParameters oparams = node.getOutputParameters();
 		NodeOutput out = new NodeOutput();
@@ -2656,12 +2622,10 @@ public class Dag<N extends Lop>
 	 * @param deleteinst list of delete instructions
 	 * @param rmvarinst list of rmvar instructions
 	 * @param jt job type
-	 * @throws LopsException if LopsException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void generateMapReduceInstructions(ArrayList<Lop> execNodes,
 			ArrayList<Instruction> inst, ArrayList<Instruction> writeinst, ArrayList<Instruction> deleteinst, ArrayList<Instruction> rmvarinst, 
-			JobType jt) throws LopsException, DMLRuntimeException
+			JobType jt)
 	{
 		ArrayList<Byte> resultIndices = new ArrayList<>();
 		ArrayList<String> inputs = new ArrayList<>();
@@ -2936,7 +2900,6 @@ public class Dag<N extends Lop>
 	 * @param inputLops list of input lops
 	 * @param MRJobLineNumbers MR job line numbers
 	 * @return -1 if problem
-	 * @throws LopsException if LopsException occurs
 	 */
 	private int getAggAndOtherInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> shuffleInstructions,
@@ -2944,7 +2907,7 @@ public class Dag<N extends Lop>
 			ArrayList<String> otherInstructionsReducer,
 			HashMap<Lop, Integer> nodeIndexMapping, int[] start_index,
 			ArrayList<String> inputLabels, ArrayList<Lop> inputLops, 
-			ArrayList<Integer> MRJobLineNumbers) throws LopsException
+			ArrayList<Integer> MRJobLineNumbers)
 	{
 		int ret_val = -1;
 
@@ -3193,14 +3156,13 @@ public class Dag<N extends Lop>
 	 * @param inputLops list of input lops
 	 * @param MRJobLineNumbers MR job line numbers
 	 * @return -1 if problem
-	 * @throws LopsException if LopsException occurs
 	 */
 	private static int getRecordReaderInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> inputStrings,
 			ArrayList<String> recordReaderInstructions,
 			HashMap<Lop, Integer> nodeIndexMapping, int[] start_index,
 			ArrayList<String> inputLabels, ArrayList<Lop> inputLops,
-			ArrayList<Integer> MRJobLineNumbers) throws LopsException
+			ArrayList<Integer> MRJobLineNumbers)
 	{
 		// if input source, return index
 		if (nodeIndexMapping.containsKey(node))
@@ -3294,14 +3256,13 @@ public class Dag<N extends Lop>
 	 * @param inputLabels input labels
 	 * @param MRJoblineNumbers MR job line numbers
 	 * @return -1 if problem
-	 * @throws LopsException if LopsException occurs
 	 */
 	private int getMapperInstructions(Lop node, ArrayList<Lop> execNodes,
 			ArrayList<String> inputStrings,
 			ArrayList<String> instructionsInMapper,
 			HashMap<Lop, Integer> nodeIndexMapping, int[] start_index,
 			ArrayList<String> inputLabels, ArrayList<Lop> inputLops, 
-			ArrayList<Integer> MRJobLineNumbers) throws LopsException
+			ArrayList<Integer> MRJobLineNumbers)
 	{
 		// if input source, return index
 		if (nodeIndexMapping.containsKey(node))
@@ -3436,8 +3397,7 @@ public class Dag<N extends Lop>
 			ArrayList<Long> numRows, ArrayList<Long> numCols,
 			ArrayList<Long> numRowsPerBlock, ArrayList<Long> numColsPerBlock,
 			HashMap<Lop, Integer> nodeIndexMapping, ArrayList<String> inputLabels, 
-			ArrayList<Lop> inputLops, ArrayList<Integer> MRJobLineNumbers)
-			throws LopsException {
+			ArrayList<Lop> inputLops, ArrayList<Integer> MRJobLineNumbers) {
 		// treat rand as an input.
 		if (node.getType() == Type.DataGen && execNodes.contains(node)
 				&& !nodeIndexMapping.containsKey(node)) {
@@ -3836,11 +3796,8 @@ public class Dag<N extends Lop>
 	 * 
 	 * @param insts list of instructions
 	 * @return new list of potentially modified instructions
-	 * @throws DMLRuntimeException in case of instruction parsing errors
 	 */
-	private static ArrayList<Instruction> cleanupInstructions(ArrayList<Instruction> insts) 
-		throws DMLRuntimeException 
-	{
+	private static ArrayList<Instruction> cleanupInstructions(ArrayList<Instruction> insts) {
 		//step 1: create mvvar instructions: assignvar s1 s2, rmvar s1 -> mvvar s1 s2
 		ArrayList<Instruction> tmp1 = collapseAssignvarAndRmvarInstructions(insts);
 		
@@ -3850,9 +3807,7 @@ public class Dag<N extends Lop>
 		return tmp2;
 	}
 	
-	private static ArrayList<Instruction> collapseAssignvarAndRmvarInstructions(ArrayList<Instruction> insts) 
-		throws DMLRuntimeException 
-	{
+	private static ArrayList<Instruction> collapseAssignvarAndRmvarInstructions(ArrayList<Instruction> insts) {
 		ArrayList<Instruction> ret = new ArrayList<>();
 		Iterator<Instruction> iter = insts.iterator();
 		while( iter.hasNext() ) {
@@ -3880,9 +3835,7 @@ public class Dag<N extends Lop>
 		return ret;
 	}
 	
-	private static ArrayList<Instruction> createPackedRmvarInstructions(ArrayList<Instruction> insts) 
-		throws DMLRuntimeException 
-	{
+	private static ArrayList<Instruction> createPackedRmvarInstructions(ArrayList<Instruction> insts) {
 		ArrayList<Instruction> ret = new ArrayList<>();
 		ArrayList<String> currRmVar = new ArrayList<>();
 		for( Instruction inst : insts ) {

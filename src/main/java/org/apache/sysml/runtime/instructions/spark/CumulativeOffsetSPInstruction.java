@@ -28,7 +28,6 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 
 import scala.Tuple2;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
@@ -68,25 +67,19 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		_initValue = init;
 	}
 
-	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields ( parts, 4 );
-		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 		double init = Double.parseDouble(parts[4]);
-		
 		return new CumulativeOffsetSPInstruction(null, in1, in2, out, init, opcode, str);
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input2.getName());
 		long rlen = mc.getRows();

@@ -67,9 +67,7 @@ public class CodegenUtils
 	//javac-specific working directory for src/class files
 	private static String _workingDir = null;
 	
-	public static Class<?> compileClass(String name, String src) 
-		throws DMLRuntimeException
-	{
+	public static Class<?> compileClass(String name, String src) {
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
 		if( ret != null ) 
@@ -94,13 +92,11 @@ public class CodegenUtils
 		return ret;
 	}
 	
-	public static Class<?> getClass(String name) throws DMLRuntimeException {
+	public static Class<?> getClass(String name) {
 		return getClass(name, null);
 	}
 	
-	public synchronized static Class<?> getClassSync(String name, byte[] classBytes)
-		throws DMLRuntimeException 
-	{
+	public synchronized static Class<?> getClassSync(String name, byte[] classBytes) {
 		//In order to avoid anomalies of concurrently compiling and loading the same
 		//class with the same name multiple times in spark executors, this indirection
 		//synchronizes the class compilation. This synchronization leads to the first
@@ -110,9 +106,7 @@ public class CodegenUtils
 		return getClass(name, classBytes);
 	}
 	
-	public static Class<?> getClass(String name, byte[] classBytes) 
-		throws DMLRuntimeException 
-	{
+	public static Class<?> getClass(String name, byte[] classBytes) {
 		//reuse existing compiled class
 		Class<?> ret = _cache.get(name);
 		if( ret != null ) 
@@ -129,9 +123,7 @@ public class CodegenUtils
 		return ret;
 	}
 	
-	public static byte[] getClassData(String name) 
-		throws DMLRuntimeException
-	{
+	public static byte[] getClassData(String name) {
 		//get class in a compiler-specific manner
 		if( SpoofCompiler.JAVA_COMPILER == CompilerType.JANINO )
 			return _src.get(name).getBytes();
@@ -152,13 +144,11 @@ public class CodegenUtils
 				iter.remove();
 	}
 	
-	public static SpoofOperator createInstance(Class<?> cla) 
-		throws DMLRuntimeException 
-	{
+	public static SpoofOperator createInstance(Class<?> cla) {
 		SpoofOperator ret = null;
 		
 		try {
-			ret = (SpoofOperator) cla.newInstance();	
+			ret = (SpoofOperator) cla.newInstance();
 		}
 		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
@@ -177,9 +167,7 @@ public class CodegenUtils
 	////////////////////////////
 	//JANINO-specific methods (used for spark environments)
 
-	private static Class<?> compileClassJanino(String name, String src) 
-		throws DMLRuntimeException
-	{
+	private static Class<?> compileClassJanino(String name, String src) {
 		try {
 			//compile source code
 			SimpleCompiler compiler = new SimpleCompiler();
@@ -201,9 +189,7 @@ public class CodegenUtils
 	////////////////////////////
 	//JAVAC-specific methods (used for hadoop environments)
 
-	private static Class<?> compileClassJavac(String name, String src) 
-		throws DMLRuntimeException
-	{
+	private static Class<?> compileClassJavac(String name, String src) {
 		try
 		{
 			//create working dir on demand
@@ -264,9 +250,7 @@ public class CodegenUtils
 		}
 	}
 	
-	private static Class<?> loadFromClassFile(String name, byte[] classBytes) 
-		throws DMLRuntimeException 
-	{
+	private static Class<?> loadFromClassFile(String name, byte[] classBytes) {
 		if(classBytes != null) {
 			//load from byte representation of class file
 			try(ByteClassLoader byteLoader = new ByteClassLoader(new URL[]{}, 
@@ -292,9 +276,7 @@ public class CodegenUtils
 		}	
 	}
 	
-	private static byte[] getClassAsByteArray(String name) 
-		throws DMLRuntimeException
-	{
+	private static byte[] getClassAsByteArray(String name) {
 		String classAsPath = name.replace('.', '/') + ".class";
 		
 		URLClassLoader classLoader = null;
@@ -318,7 +300,7 @@ public class CodegenUtils
 		}
 	}
 	
-	private static void createWorkingDir() throws DMLRuntimeException  {
+	private static void createWorkingDir() {
 		if( _workingDir != null )
 			return;
 		String tmp = LocalFileUtils.getWorkingDir(LocalFileUtils.CATEGORY_CODEGEN);

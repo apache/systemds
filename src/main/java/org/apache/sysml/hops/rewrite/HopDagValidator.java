@@ -47,7 +47,6 @@ public class HopDagValidator {
 	private HopDagValidator() {}
 	
 	public static void validateHopDag(ArrayList<Hop> roots, HopRewriteRule rule) 
-		throws HopsException 
 	{
 		if( roots == null )
 			return;
@@ -67,7 +66,6 @@ public class HopDagValidator {
 	}
 	
 	public static void validateHopDag(Hop root, HopRewriteRule rule) 
-		throws HopsException 
 	{
 		if( root == null )
 			return;
@@ -89,7 +87,7 @@ public class HopDagValidator {
 		final Set<Long> seen = new HashSet<>();
 	}
 	
-	private static void rValidateHop(final Hop hop, final ValidatorState state) throws HopsException {
+	private static void rValidateHop(final Hop hop, final ValidatorState state) {
 		final long id = hop.getHopID();
 
 		//check visit status

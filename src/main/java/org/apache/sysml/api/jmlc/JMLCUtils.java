@@ -48,21 +48,16 @@ public class JMLCUtils
 	 * @param prog the DML/PyDML program
 	 * @param outputs registered output variables
 	 */
-	public static void cleanupRuntimeProgram( Program prog, String[] outputs)
-	{
+	public static void cleanupRuntimeProgram( Program prog, String[] outputs) {
 		Map<String, FunctionProgramBlock> funcMap = prog.getFunctionProgramBlocks();
 		HashSet<String> blacklist = new HashSet<>(Arrays.asList(outputs));
-		
-		if( funcMap != null && !funcMap.isEmpty() )
-		{
-			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() )
-			{
+		if( funcMap != null && !funcMap.isEmpty() ) {
+			for( Entry<String, FunctionProgramBlock> e : funcMap.entrySet() ) {
 				FunctionProgramBlock fpb = e.getValue();
 				for( ProgramBlock pb : fpb.getChildBlocks() )
 					rCleanupRuntimeProgram(pb, blacklist);
 			}
 		}
-		
 		for( ProgramBlock pb : prog.getProgramBlocks() )
 			rCleanupRuntimeProgram(pb, blacklist);
 	}
@@ -73,24 +68,20 @@ public class JMLCUtils
 	 * @param pb program block
 	 * @param outputs registered output variables
 	 */
-	public static void rCleanupRuntimeProgram( ProgramBlock pb, HashSet<String> outputs )
-	{
-		if( pb instanceof WhileProgramBlock )
-		{
+	public static void rCleanupRuntimeProgram( ProgramBlock pb, HashSet<String> outputs ) {
+		if( pb instanceof WhileProgramBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			for( ProgramBlock pbc : wpb.getChildBlocks() )
 				rCleanupRuntimeProgram(pbc,outputs);
 		}
-		else if( pb instanceof IfProgramBlock )
-		{
+		else if( pb instanceof IfProgramBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			for( ProgramBlock pbc : ipb.getChildBlocksIfBody() )
 				rCleanupRuntimeProgram(pbc,outputs);
 			for( ProgramBlock pbc : ipb.getChildBlocksElseBody() )
 				rCleanupRuntimeProgram(pbc,outputs);
 		}
-		else if( pb instanceof ForProgramBlock )
-		{
+		else if( pb instanceof ForProgramBlock ) {
 			ForProgramBlock fpb = (ForProgramBlock)pb;
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				rCleanupRuntimeProgram(pbc,outputs);
@@ -121,13 +112,10 @@ public class JMLCUtils
 	 * @param outputs registered output variables
 	 * @return list of instructions
 	 */
-	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, HashSet<String> outputs )
-	{
+	public static ArrayList<Instruction> cleanupRuntimeInstructions( ArrayList<Instruction> insts, HashSet<String> outputs ) {
 		ArrayList<Instruction> ret = new ArrayList<>();
-		
 		for( Instruction inst : insts ) {
-			if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() )
-			{
+			if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).isRemoveVariable() ) {
 				ArrayList<String> currRmVar = new ArrayList<>();
 				for( CPOperand input : ((VariableCPInstruction)inst).getInputs() )
 					if( !outputs.contains(input.getName()) )

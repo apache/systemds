@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
@@ -92,6 +91,7 @@ import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.SortUtils;
 
@@ -212,12 +212,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * 
 	 * +per column sparsity
 	 * 
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @return compressed matrix block or original block if incompressible
 	 */
-	public MatrixBlock compress() 
-		throws DMLRuntimeException
-	{
+	public MatrixBlock compress() {
 		//default sequential execution
 		return compress(1);
 	}
@@ -227,11 +224,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * 
 	 * @param k  number of threads
 	 * @return compressed matrix block or original block if incompressible
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock compress(int k) 
-		throws DMLRuntimeException 
-	{
+	public MatrixBlock compress(int k) {
 		//check for redundant compression
 		if( isCompressed() ){
 			throw new DMLRuntimeException("Redundant compression, block already compressed.");
@@ -436,10 +430,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	private static CompressedSizeInfo[] computeCompressedSizeInfos(CompressedSizeEstimator estim, int clen, int k) 
-		throws DMLRuntimeException 
-	{	
+	{
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<SizeEstimTask> tasks = new ArrayList<>();
 			for( int col=0; col<clen; col++ )
 				tasks.add(new SizeEstimTask(estim, col));
@@ -455,8 +448,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 	}
 
-	private static ColGroup[] compressColGroups(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, List<int[]> groups, boolean denseEst)
-	{
+	private static ColGroup[] compressColGroups(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, List<int[]> groups, boolean denseEst) {
 		ColGroup[] ret = new ColGroup[groups.size()];
 		for( int i=0; i<groups.size(); i++ )
 			ret[i] = compressColGroup(in, estim, compRatios, rlen, groups.get(i), denseEst);
@@ -465,10 +457,9 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	private static ColGroup[] compressColGroups(MatrixBlock in, CompressedSizeEstimator estim, HashMap<Integer, Double> compRatios, int rlen, List<int[]> groups, boolean denseEst, int k) 
-		throws DMLRuntimeException
 	{
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<CompressTask> tasks = new ArrayList<>();
 			for( int[] colIndexes : groups )
 				tasks.add(new CompressTask(in, estim, compRatios, rlen, colIndexes, denseEst));
@@ -614,10 +605,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * 
 	 * @return a new uncompressed matrix block containing the contents of this
 	 *         block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock decompress() throws DMLRuntimeException 
-	{
+	public MatrixBlock decompress() {
 		//early abort for not yet compressed blocks
 		if( !isCompressed() )
 			return new MatrixBlock(this); 
@@ -657,10 +646,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * @param k degree of parallelism
 	 * @return a new uncompressed matrix block containing the contents 
 	 * of this block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixBlock decompress(int k) throws DMLRuntimeException 
-	{
+	public MatrixBlock decompress(int k) {
 		//early abort for not yet compressed blocks
 		if( !isCompressed() )
 			return new MatrixBlock(this); 
@@ -673,7 +660,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//multi-threaded decompression
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
@@ -943,7 +930,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixValue scalarOperations(ScalarOperator sop, MatrixValue result) 
-		throws DMLRuntimeException
 	{
 		//call uncompressed matrix scalar if necessary
 		if( !isCompressed() ) {
@@ -973,7 +959,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock append(MatrixBlock that, MatrixBlock ret) 
-		throws DMLRuntimeException
 	{
 		//call uncompressed matrix append if necessary
 		if( !isCompressed() ) {
@@ -1019,7 +1004,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	@Override
 	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype) 
-		throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
@@ -1060,7 +1044,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k) 
-		throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ){
@@ -1102,7 +1085,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	@Override
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op)
-			throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
@@ -1192,7 +1174,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, 
 			int blockingFactorRow, int blockingFactorCol, MatrixIndexes indexesIn, boolean inCP) 
-		throws DMLRuntimeException
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
@@ -1252,7 +1233,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				if( uc != null )
 					uc.unaryAggregateOperations(op, ret);
 				//compute all compressed column groups
-				ExecutorService pool = Executors.newFixedThreadPool( op.getNumThreads() );
+				ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
 				ArrayList<UnaryAggregateTask> tasks = new ArrayList<>();
 				if( op.indexFn instanceof ReduceCol && grpParts.length > 0 ) {
 					int blklen = BitmapEncoder.getAlignedBlocksize(
@@ -1328,13 +1309,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
-			MatrixIndexes indexesIn) throws DMLRuntimeException {
+			MatrixIndexes indexesIn) {
 		return aggregateUnaryOperations(op, result, 
 				blockingFactorRow, blockingFactorCol, indexesIn, false);
 	}
 	
 	private static void aggregateUnaryOperations(AggregateUnaryOperator op, 
-			ArrayList<ColGroup> groups, MatrixBlock ret, int rl, int ru) throws DMLRuntimeException 
+			ArrayList<ColGroup> groups, MatrixBlock ret, int rl, int ru)
 	{
 		boolean cacheDDC1 = ColGroupValue.LOW_LEVEL_OPT 
 				&& op.indexFn instanceof ReduceCol && op.aggOp.increOp.fn instanceof KahanPlus //rowSums
@@ -1362,7 +1343,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	@Override
 	public MatrixBlock transposeSelfMatrixMultOperations(MatrixBlock out, MMTSJType tstype) 
-		throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ) {
@@ -1406,7 +1386,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	
 	@Override
 	public MatrixBlock transposeSelfMatrixMultOperations(MatrixBlock out, MMTSJType tstype, int k) 
-		throws DMLRuntimeException 
 	{
 		//call uncompressed matrix mult if necessary
 		if( !isCompressed() ){
@@ -1435,7 +1414,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		if( !isEmptyBlock(false) ) {
 			//compute matrix mult
 			try {
-				ExecutorService pool = Executors.newFixedThreadPool( k );
+				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<MatrixMultTransposeTask> tasks = new ArrayList<>();
 				int numgrp = _colGroups.size();
 				int blklen = (int)(Math.ceil((double)numgrp/(2*k)));
@@ -1472,7 +1451,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 *            already
 	 */
 	private void rightMultByVector(MatrixBlock vector, MatrixBlock result)
-		throws DMLRuntimeException 
 	{
 		// initialize and allocate the result
 		result.allocateDenseBlock();
@@ -1490,10 +1468,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 * @param vector matrix block vector
 	 * @param result matrix block result
 	 * @param k number of threads
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void rightMultByVector(MatrixBlock vector, MatrixBlock result, int k)
-		throws DMLRuntimeException 
 	{
 		// initialize and allocate the result
 		result.allocateDenseBlock();
@@ -1507,7 +1483,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				uc.rightMultByVector(vector, result, k);
 			
 			//compute remaining compressed column groups in parallel
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
 			int blklen = BitmapEncoder.getAlignedBlocksize(
 				(int)(Math.ceil((double)rlen/k)));
@@ -1529,7 +1505,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 	
 	private static void rightMultByVector(ArrayList<ColGroup> groups, MatrixBlock vect, MatrixBlock ret, boolean inclUC, int rl, int ru) 
-		throws DMLRuntimeException 
 	{
 		ColGroupValue.setupThreadLocalMemory(getMaxNumValues(groups));
 		
@@ -1573,10 +1548,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 *            buffer to hold the result; must have the appropriate size
 	 *            already
 	 * @param doTranspose if true, transpose vector
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, MatrixBlock vector, MatrixBlock result, boolean doTranspose, boolean allocTmp) 
-		throws DMLRuntimeException 
 	{
 		//transpose vector if required
 		MatrixBlock rowVector = vector;
@@ -1604,17 +1577,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		result.recomputeNonZeros();
 	}
 	
-	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, ColGroupDDC vector, MatrixBlock result) 
-		throws DMLRuntimeException 
-	{
+	private static void leftMultByVectorTranspose(List<ColGroup> colGroups, ColGroupDDC vector, MatrixBlock result) {
 		// initialize and allocate the result
 		result.reset();
-		
 		// delegate matrix-vector operation to each column group
-		for( ColGroup grp : colGroups ) {
+		for( ColGroup grp : colGroups )
 			((ColGroupValue)grp).leftMultByRowVector(vector, result);
-		}
-		
 		// post-processing
 		result.recomputeNonZeros();
 	}
@@ -1630,10 +1598,8 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	 *            already
 	 * @param doTranspose if true, transpose vector
 	 * @param k number of threads
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	private void leftMultByVectorTranspose(List<ColGroup> colGroups,MatrixBlock vector, MatrixBlock result, boolean doTranspose, int k) 
-		throws DMLRuntimeException 
 	{
 		//transpose vector if required
 		MatrixBlock rowVector = vector;
@@ -1654,7 +1620,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 				uc.leftMultByRowVector(vector, result, k);
 			
 			//compute remaining compressed column groups in parallel
-			ExecutorService pool = Executors.newFixedThreadPool( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
+			ExecutorService pool = CommonThreadPool.get( Math.min(colGroups.size()-((uc!=null)?1:0), k) );
 			ArrayList<ColGroup>[] grpParts = createStaticTaskPartitioning(4*k, false);
 			ArrayList<LeftMatrixMultTask> tasks = new ArrayList<>();
 			for( ArrayList<ColGroup> groups : grpParts )
@@ -1673,7 +1639,6 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	private static void leftMultByTransposeSelf(ArrayList<ColGroup> groups, MatrixBlock result, int gl, int gu)
-		throws DMLRuntimeException 
 	{
 		final int numRows = groups.get(0).getNumRows();
 		final int numGroups = groups.size();
@@ -1792,7 +1757,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException 
+		public Object call()
 		{
 			// setup memory pool for reuse
 			ColGroupValue.setupThreadLocalMemory(getMaxNumValues(_groups));
@@ -1823,7 +1788,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException {
+		public Long call() {
 			rightMultByVector(_groups, _vect, _ret, false, _rl, _ru);
 			return _ret.recomputeNonZeros(_rl, _ru-1, 0, 0);
 		}
@@ -1844,7 +1809,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException {
+		public Object call() {
 			leftMultByTransposeSelf(_groups, _ret, _gl, _gu);
 			return null;
 		}
@@ -1877,7 +1842,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public MatrixBlock call() throws DMLRuntimeException {
+		public MatrixBlock call() {
 			aggregateUnaryOperations(_op, _groups, _ret, _rl, _ru);
 			return _ret;
 		}
@@ -1894,7 +1859,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public CompressedSizeInfo call() throws DMLRuntimeException {
+		public CompressedSizeInfo call() {
 			return _estim.estimateCompressedColGroupSize(new int[] { _col });
 		}
 	}
@@ -1918,7 +1883,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public ColGroup call() throws DMLRuntimeException {
+		public ColGroup call() {
 			return compressColGroup(_in, _estim, _compRatios, _rlen, _colIndexes, _denseEst);
 		}
 	}
@@ -1938,7 +1903,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException {
+		public Object call() {
 			
 			//preallocate sparse rows to avoid repeated alloc		
 			if( _ret.isInSparseFormat() ) {
@@ -1966,16 +1931,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	// Graceful fallback to uncompressed linear algebra
 	
 	@Override
-	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) 
-			throws DMLRuntimeException {
+	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) {
 		printDecompressWarning("unaryOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.unaryOperations(op, result);
 	}
 
 	@Override
-	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) 
-			throws DMLRuntimeException {
+	public MatrixValue binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		printDecompressWarning("binaryOperations", (MatrixBlock)thatValue);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(thatValue);
@@ -1983,8 +1946,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) 
-			throws DMLRuntimeException {
+	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		printDecompressWarning("binaryOperationsInPlace", (MatrixBlock)thatValue);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(thatValue);
@@ -1992,30 +1954,26 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection)
-			throws DMLRuntimeException {
+	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection) {
 		throw new DMLRuntimeException("CompressedMatrixBlock: incrementalAggregate not supported.");
 	}
 
 	@Override
-	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection) 
-			throws DMLRuntimeException {
+	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection) {
 		throw new DMLRuntimeException("CompressedMatrixBlock: incrementalAggregate not supported.");
 	}
 
 	@Override
-	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length)
-			throws DMLRuntimeException {
+	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
 		printDecompressWarning("reorgOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
 	@Override
-	public MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind) 
-		throws DMLRuntimeException {
+	public MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind) {
 		if( cbind ) //use supported operation
-			return append(that, ret);			
+			return append(that, ret);
 		printDecompressWarning("append-rbind", that);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
@@ -2025,8 +1983,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void append(MatrixValue v2,
 			ArrayList<IndexedMatrixValue> outlist, int blockRowFactor,
-			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
-			throws DMLRuntimeException {
+			int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
 		printDecompressWarning("append", (MatrixBlock)v2);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(v2);
@@ -2034,14 +1991,12 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val)
-			throws DMLRuntimeException {
+	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val) {
 		permutationMatrixMultOperations(m2Val, out1Val, out2Val, 1);
 	}
 
 	@Override
-	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val, int k)
-			throws DMLRuntimeException {
+	public void permutationMatrixMultOperations(MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val, int k) {
 		printDecompressWarning("permutationMatrixMultOperations", (MatrixBlock)m2Val);
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(m2Val);
@@ -2049,8 +2004,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, int cl, int cu, MatrixBlock ret, UpdateType update)
-			throws DMLRuntimeException {
+	public MatrixBlock leftIndexingOperations(MatrixBlock rhsMatrix, int rl, int ru, int cl, int cu, MatrixBlock ret, UpdateType update) {
 		printDecompressWarning("leftIndexingOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(rhsMatrix);
@@ -2058,16 +2012,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, UpdateType update)
-			throws DMLRuntimeException {
+	public MatrixBlock leftIndexingOperations(ScalarObject scalar, int rl, int cl, MatrixBlock ret, UpdateType update) {
 		printDecompressWarning("leftIndexingOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.leftIndexingOperations(scalar, rl, cl, ret, update);
 	}
 
 	@Override
-	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) 
-			throws DMLRuntimeException {
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
 		printDecompressWarning("slice");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.slice(rl, ru, cl, cu, ret);
@@ -2089,15 +2041,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) 
-			throws DMLRuntimeException {
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
 		printDecompressWarning("zeroOutOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.zeroOutOperations(result, range, complementary);
 	}
 
 	@Override
-	public CM_COV_Object cmOperations(CMOperator op) throws DMLRuntimeException {
+	public CM_COV_Object cmOperations(CMOperator op) {
 		printDecompressWarning("cmOperations");
 		if( !isCompressed() || isEmptyBlock() )
 			return super.cmOperations(op);
@@ -2112,8 +2063,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights)
-			throws DMLRuntimeException {
+	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
 		printDecompressWarning("cmOperations");
 		MatrixBlock right = getUncompressed(weights);
 		if( !isCompressed() || isEmptyBlock() )
@@ -2125,8 +2075,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that)
-			throws DMLRuntimeException {
+	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
 		printDecompressWarning("covOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
@@ -2134,8 +2083,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) 
-			throws DMLRuntimeException {
+	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		printDecompressWarning("covOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
@@ -2144,8 +2092,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result)
-			throws DMLRuntimeException {
+	public MatrixValue sortOperations(MatrixValue weights, MatrixValue result) {
 		printDecompressWarning("sortOperations");
 		MatrixBlock right = getUncompressed(weights);
 		if( !isCompressed() )
@@ -2170,8 +2117,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index,
 			MatrixBlock m1Value, MatrixIndexes m2Index, MatrixBlock m2Value,
-			MatrixBlock result, AggregateBinaryOperator op)
-			throws DMLRuntimeException {
+			MatrixBlock result, AggregateBinaryOperator op) {
 		printDecompressWarning("aggregateBinaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(m2Value);
@@ -2179,8 +2125,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret, AggregateTernaryOperator op, boolean inCP)
-			throws DMLRuntimeException {
+	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret, AggregateTernaryOperator op, boolean inCP) {
 		printDecompressWarning("aggregateTernaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(m2);
@@ -2190,8 +2135,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock uaggouterchainOperations(MatrixBlock mbLeft, MatrixBlock mbRight, 
-			MatrixBlock mbOut, BinaryOperator bOp, AggregateUnaryOperator uaggOp) 
-			throws DMLRuntimeException {
+			MatrixBlock mbOut, BinaryOperator bOp, AggregateUnaryOperator uaggOp) {
 		printDecompressWarning("uaggouterchainOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(mbRight);
@@ -2199,15 +2143,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op)
-			throws DMLRuntimeException {
+	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts, MatrixValue ret, int ngroups, Operator op) {
 		return groupedAggOperations(tgt, wghts, ret, ngroups, op, 1);
 	}
 
 	@Override
 	public MatrixBlock groupedAggOperations(MatrixValue tgt, MatrixValue wghts,
-			MatrixValue ret, int ngroups, Operator op, int k)
-			throws DMLRuntimeException {
+			MatrixValue ret, int ngroups, Operator op, int k) {
 		printDecompressWarning("groupedAggOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(wghts);
@@ -2215,16 +2157,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) 
-			throws DMLRuntimeException {
+	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
 		printDecompressWarning("removeEmptyOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select);
 	}
 
 	@Override
-	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn)
-			throws DMLRuntimeException {
+	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn) {
 		printDecompressWarning("removeEmptyOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.removeEmptyOperations(ret, rows, emptyReturn);
@@ -2232,16 +2172,14 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock rexpandOperations(MatrixBlock ret, double max,
-			boolean rows, boolean cast, boolean ignore, int k)
-			throws DMLRuntimeException {
+			boolean rows, boolean cast, boolean ignore, int k) {
 		printDecompressWarning("rexpandOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.rexpandOperations(ret, max, rows, cast, ignore, k);
 	}
 
 	@Override
-	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) 
-			throws DMLRuntimeException {
+	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) {
 		printDecompressWarning("replaceOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		return tmp.replaceOperations(result, pattern, replacement);
@@ -2249,8 +2187,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public void ctableOperations(Operator op, double scalar,
-			MatrixValue that, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			MatrixValue that, CTableMap resultMap, MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
@@ -2259,8 +2196,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public void ctableOperations(Operator op, double scalar,
-			double scalar2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			double scalar2, CTableMap resultMap, MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		tmp.ctableOperations(op, scalar, scalar2, resultMap, resultBlock);
@@ -2269,7 +2205,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void ctableOperations(Operator op, MatrixIndexes ix1,
 			double scalar, boolean left, int brlen, CTableMap resultMap,
-			MatrixBlock resultBlock) throws DMLRuntimeException {
+			MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		tmp.ctableOperations(op, ix1, scalar, left, brlen, resultMap, resultBlock);
@@ -2278,7 +2214,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
 			double scalar, boolean ignoreZeros, CTableMap resultMap,
-			MatrixBlock resultBlock) throws DMLRuntimeException {
+			MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
@@ -2286,8 +2222,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public void ctableOperations(Operator op, MatrixValue that, double scalar, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+	public void ctableOperations(Operator op, MatrixValue that, double scalar, MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
@@ -2296,8 +2231,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
-			MatrixValue that2, CTableMap resultMap)
-			throws DMLRuntimeException {
+			MatrixValue that2, CTableMap resultMap) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
@@ -2307,8 +2241,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
-			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
 		printDecompressWarning("ternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
@@ -2318,15 +2251,13 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 
 	@Override
 	public MatrixBlock quaternaryOperations(QuaternaryOperator qop,
-			MatrixBlock um, MatrixBlock vm, MatrixBlock wm, MatrixBlock out)
-			throws DMLRuntimeException {
+			MatrixBlock um, MatrixBlock vm, MatrixBlock wm, MatrixBlock out) {
 		return quaternaryOperations(qop, um, vm, wm, out, 1);
 	}
 
 	@Override
 	public MatrixBlock quaternaryOperations(QuaternaryOperator qop, MatrixBlock um, 
-			MatrixBlock vm, MatrixBlock wm, MatrixBlock out, int k) 
-			throws DMLRuntimeException {
+			MatrixBlock vm, MatrixBlock wm, MatrixBlock out, int k) {
 		printDecompressWarning("quaternaryOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(um);
@@ -2336,30 +2267,26 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	}
 
 	@Override
-	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed)
-			throws DMLRuntimeException {
-		throw new RuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
+	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed) {
+		throw new DMLRuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}
 
 	@Override
-	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k)
-			throws DMLRuntimeException {
-		throw new RuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
+	public MatrixBlock randOperationsInPlace(RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k) {
+		throw new DMLRuntimeException("CompressedMatrixBlock: randOperationsInPlace not supported.");
 	}
 
 	@Override
-	public MatrixBlock seqOperationsInPlace(double from, double to, double incr)
-			throws DMLRuntimeException {
+	public MatrixBlock seqOperationsInPlace(double from, double to, double incr) {
 		//output should always be uncompressed
-		throw new RuntimeException("CompressedMatrixBlock: seqOperationsInPlace not supported.");
+		throw new DMLRuntimeException("CompressedMatrixBlock: seqOperationsInPlace not supported.");
 	}
 
 	private static boolean isCompressed(MatrixBlock mb) {
 		return (mb instanceof CompressedMatrixBlock && ((CompressedMatrixBlock)mb).isCompressed());
 	}
 
-	private static MatrixBlock getUncompressed(MatrixValue mVal) 
-			throws DMLRuntimeException {
+	private static MatrixBlock getUncompressed(MatrixValue mVal) {
 		return isCompressed((MatrixBlock)mVal) ? 
 				((CompressedMatrixBlock)mVal).decompress() : 
 				(MatrixBlock)mVal;

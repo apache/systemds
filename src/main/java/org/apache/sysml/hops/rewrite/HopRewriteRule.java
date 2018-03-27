@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 
 /**
  * Base class for all hop rewrites in order to enable generic
@@ -34,8 +33,6 @@ import org.apache.sysml.hops.HopsException;
  */
 public abstract class HopRewriteRule 
 {
-
-
 	protected static final Log LOG = LogFactory.getLog(HopRewriteRule.class.getName());
 		
 	/**
@@ -44,10 +41,8 @@ public abstract class HopRewriteRule
 	 * @param roots high-level operator roots
 	 * @param state program rewrite status
 	 * @return list of high-level operators
-	 * @throws HopsException if HopsException occurs
 	 */
-	public abstract ArrayList<Hop> rewriteHopDAGs( ArrayList<Hop> roots, ProgramRewriteStatus state ) 
-		throws HopsException;
+	public abstract ArrayList<Hop> rewriteHopDAGs( ArrayList<Hop> roots, ProgramRewriteStatus state );
 	
 	/**
 	 * Handle a predicate hop DAG with exactly one root.
@@ -55,8 +50,6 @@ public abstract class HopRewriteRule
 	 * @param root high-level operator root
 	 * @param state program rewrite status
 	 * @return high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
-	public abstract Hop rewriteHopDAG( Hop root, ProgramRewriteStatus state ) 
-		throws HopsException;
+	public abstract Hop rewriteHopDAG( Hop root, ProgramRewriteStatus state );
 }

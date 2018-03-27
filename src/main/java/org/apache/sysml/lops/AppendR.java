@@ -71,9 +71,7 @@ public class AppendR extends Lop
 
 	//called when append executes in MR
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) 
-		throws LopsException
-	{
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
 		return getInstructions(
 				String.valueOf(input_index1),
 				String.valueOf(input_index2),
@@ -82,9 +80,7 @@ public class AppendR extends Lop
 	
 	//called when append executes in CP
 	@Override
-	public String getInstructions(String input1, String input2, String output) 
-		throws LopsException
-	{
+	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		

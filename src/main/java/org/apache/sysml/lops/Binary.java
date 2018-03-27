@@ -190,7 +190,7 @@ public class Binary extends Lop
 	
 	
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) throws LopsException {
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
 		return getInstructions(
 				String.valueOf(input_index1), 
 				String.valueOf(input_index2), 
@@ -198,9 +198,7 @@ public class Binary extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );

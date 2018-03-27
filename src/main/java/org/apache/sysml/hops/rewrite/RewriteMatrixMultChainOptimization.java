@@ -55,7 +55,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
 	{
 		if( roots == null )
 			return null;
@@ -69,7 +68,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 	@Override
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state)
-		throws HopsException
 	{
 		if( root == null )
 			return null;
@@ -85,10 +83,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * to find chains that need to be optimized.
 	 * 
 	 * @param hop high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
 	private void rule_OptimizeMMChains(Hop hop) 
-		throws HopsException 
 	{
 		if( hop.isVisited() )
 			return;
@@ -116,9 +112,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * mmChain.
 	 * 
 	 * @param hop high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
-	private void optimizeMMChain( Hop hop ) throws HopsException 
+	private void optimizeMMChain( Hop hop )
 	{
 		if( LOG.isTraceEnabled() ) {
 			LOG.trace("MM Chain Optimization for HOP: (" + hop.getClass().getSimpleName()
@@ -326,7 +321,6 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	}
 
 	private static void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
-		throws HopsException 
 	{
 		for( int i=0; i < operators.size(); i++ ) {
 			Hop op = operators.get(i);
@@ -352,10 +346,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param chain list of high-level operators
 	 * @param dimArray dimension array
 	 * @return true if all dimensions known
-	 * @throws HopsException if HopsException occurs
 	 */
 	private static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
-		throws HopsException 
 	{
 		boolean dimsKnown = true;
 		

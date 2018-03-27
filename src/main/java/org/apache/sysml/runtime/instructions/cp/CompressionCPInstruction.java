@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -34,28 +33,21 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
 	}
 
-	public static Instruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static Instruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		
 		return new CompressionCPInstruction(null, in1, out, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction( ExecutionContext ec )
-		throws DMLRuntimeException
-	{
+	public void processInstruction( ExecutionContext ec ) {
 		//get matrix block input
 		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		
 		//compress the matrix block
 		MatrixBlock out = new CompressedMatrixBlock(in)
 			.compress(OptimizerUtils.getConstrainedNumThreads(-1));
-		
 		//set output and release input
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());

@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-source("src/test/scripts/org/apache/sysml/api/mlcontext/udf.dml") as ns1
-
 # product between matrix and scalar
 f1 = function (matrix[double] M, double factor) return (double res) {
   res = prod(M) * factor
@@ -37,6 +35,10 @@ f3 = function (matrix[double] M1, matrix[double] M2) return (matrix[double] res)
   res = M1 %*% M2
 }
 
+f4 = function (matrix[double] M1, matrix[double] M2) return (matrix[double] res) {
+  res = M1 %*% M2
+}
+
 # some variables
 X = matrix("1 2 3 4", rows=2, cols=2)
 y = 10
@@ -44,8 +46,10 @@ y = 10
 R1 = eval("f1", X, y)
 R2 = eval("f2", X, y)
 R3 = eval("f3", X, X)
+for(i in 3:4)
+  R4 = eval("f"+i, X, X);
 
 print(toString(R1))
 print(toString(R2))
 print(toString(R3))
-print(toString(eval("ns1::f4")))
+print(toString(R4))

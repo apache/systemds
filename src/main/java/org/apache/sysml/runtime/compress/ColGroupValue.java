@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.compress;
 
 import java.util.Arrays;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.KahanFunction;
@@ -325,8 +324,7 @@ public abstract class ColGroupValue extends ColGroup
 	}
 
 	//additional vector-matrix multiplication to avoid DDC uncompression
-	public abstract void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result) 
-		throws DMLRuntimeException;
+	public abstract void leftMultByRowVector(ColGroupDDC vector, MatrixBlock result);
 
 	
 	/**
@@ -336,23 +334,17 @@ public abstract class ColGroupValue extends ColGroup
 	 * @param op
 	 *            scalar operation to perform
 	 * @return transformed copy of value metadata for this column group
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected double[] applyScalarOp(ScalarOperator op)
-		throws DMLRuntimeException 
-	{
+	protected double[] applyScalarOp(ScalarOperator op) {
 		//scan over linearized values
 		double[] ret = new double[_values.length];
 		for (int i = 0; i < _values.length; i++) {
 			ret[i] = op.executeScalar(_values[i]);
 		}
-
 		return ret;
 	}
 
-	protected double[] applyScalarOp(ScalarOperator op, double newVal, int numCols)
-		throws DMLRuntimeException 
-	{
+	protected double[] applyScalarOp(ScalarOperator op, double newVal, int numCols) {
 		//scan over linearized values
 		double[] ret = new double[_values.length + numCols];
 		for( int i = 0; i < _values.length; i++ ) {
@@ -366,9 +358,7 @@ public abstract class ColGroupValue extends ColGroup
 	}
 	
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result) 
-		throws DMLRuntimeException 
-	{
+	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result) {
 		unaryAggregateOperations(op, result, 0, getNumRows());
 	}
 	
@@ -378,10 +368,8 @@ public abstract class ColGroupValue extends ColGroup
 	 * @param result output matrix block
 	 * @param rl row lower index, inclusive
 	 * @param ru row upper index, exclusive
-	 * @throws DMLRuntimeException on invalid inputs
 	 */
-	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru)
-		throws DMLRuntimeException;
+	public abstract void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock result, int rl, int ru);
 	
 
 	//dynamic memory management

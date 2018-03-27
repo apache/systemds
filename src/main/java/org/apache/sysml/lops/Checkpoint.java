@@ -57,12 +57,9 @@ public class Checkpoint extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param level storage level
-	 * @throws LopsException if LopsException occurs
 	 */
-	public Checkpoint(Lop input, DataType dt, ValueType vt, String level) 
-		throws LopsException
-	{
-		super(Lop.Type.Checkpoint, dt, vt);		
+	public Checkpoint(Lop input, DataType dt, ValueType vt, String level)  {
+		super(Lop.Type.Checkpoint, dt, vt);
 		this.addInput(input);
 		input.addOutput(this);
 		
@@ -92,9 +89,7 @@ public class Checkpoint extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input1, String output) {
 		//valid execution type
 		if(getExecType() != ExecType.SPARK) {
 			throw new LopsException("Wrong execution type for Checkpoint.getInstructions (expected: SPARK, found: "+getExecType()+").");

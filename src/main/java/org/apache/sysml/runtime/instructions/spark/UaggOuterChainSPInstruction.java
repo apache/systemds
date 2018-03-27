@@ -76,9 +76,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		instString = istr;
 	}
 
-	public static UaggOuterChainSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static UaggOuterChainSPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
@@ -106,9 +104,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
@@ -186,11 +182,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
 	}
 
-	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException
-	{	
+	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) {
 		String strInput1Name, strInput2Name;
-		
 		if(_uaggOp.indexFn instanceof ReduceCol) {
 			strInput1Name = input1.getName();
 			strInput2Name = input2.getName();
@@ -198,7 +191,6 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			strInput1Name = input2.getName();
 			strInput2Name = input1.getName();
 		}
-				
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(strInput1Name);
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(strInput2Name);
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());

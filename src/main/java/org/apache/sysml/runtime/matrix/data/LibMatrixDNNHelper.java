@@ -19,7 +19,6 @@
 package org.apache.sysml.runtime.matrix.data;
 
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.NativeHelper;
 
 
@@ -58,7 +57,7 @@ public class LibMatrixDNNHelper
 	}
 	
 	protected static void singleThreadedMatMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, 
-		boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) throws DMLRuntimeException {
+		boolean recomputeNNZM1, boolean recomputeNNZM2, ConvolutionParameters params) {
 		if( !params.enableNative || m1.sparse || m2.sparse ) {
 			prepNonZerosForMatrixMult(m1, recomputeNNZM1);
 			prepNonZerosForMatrixMult(m2, recomputeNNZM2);

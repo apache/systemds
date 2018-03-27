@@ -33,8 +33,7 @@ public class MultiAssignmentStatement extends Statement
 	
 	// rewrites statement to support function inlining (creates deep copy) 
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
-				
+	public Statement rewriteStatement(String prefix) {
 		ArrayList<DataIdentifier> newTargetList = new ArrayList<>();
 		
 		// rewrite targetList (deep copy)

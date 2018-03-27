@@ -36,9 +36,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		super(type, op, in1, in2, in3, out, opcode, istr);
 	}
 
-	public static BinaryCPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static BinaryCPInstruction parseInstruction( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -56,23 +54,17 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
-		throws DMLRuntimeException
-	{	
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 3 );
-		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);
-		
 		return opcode;
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
-		throws DMLRuntimeException
-	{
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 4 );
 		
@@ -85,9 +77,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		return opcode;
 	}
 	
-	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) 
-		throws DMLRuntimeException 
-	{
+	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {
 		// check for valid data type of output
 		if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX)
 			throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() + 

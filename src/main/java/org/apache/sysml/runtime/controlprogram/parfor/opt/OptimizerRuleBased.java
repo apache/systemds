@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,7 +40,6 @@ import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -56,11 +54,9 @@ import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.FunctionStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatement;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
@@ -200,7 +196,6 @@ public class OptimizerRuleBased extends Optimizer
 	 */
 	@Override
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
-		throws DMLRuntimeException 
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
@@ -399,7 +394,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM ) 
-		throws DMLRuntimeException
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
 			LOG.warn(getOptMode()+" OPT: Data partitioner can only be set for a ParFor node.");
@@ -454,7 +448,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean rFindDataPartitioningCandidates( OptNode n, HashMap<String, PartitionFormat> cand, LocalVariableMap vars, double thetaM ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = false;
 
@@ -507,10 +500,8 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param dpf data partition format
 	 * @param vars local variable map
 	 * @return memory estimate
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected double getNewRIXMemoryEstimate( OptNode n, String varName, PartitionFormat dpf, LocalVariableMap vars ) 
-		throws DMLRuntimeException
 	{
 		double mem = -1;
 		
@@ -544,9 +535,8 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
-		throws DMLRuntimeException
 	{
-		double mem = -1;		
+		double mem = -1;
 		
 		long rlen = mo.getNumRows();
 		long clen = mo.getNumColumns();
@@ -581,9 +571,7 @@ public class OptimizerRuleBased extends Optimizer
 			return LopProperties.ExecType.CP_FILE;
 	}
 
-	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PartitionFormat dpf ) 
-		throws DMLRuntimeException
-	{
+	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PartitionFormat dpf ) {
 		return (getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP );
 	}
 	
@@ -591,9 +579,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set result partitioning
 	///
 
-	protected boolean rewriteSetResultPartitioning(OptNode n, double M, LocalVariableMap vars) 
-		throws DMLRuntimeException
-	{
+	protected boolean rewriteSetResultPartitioning(OptNode n, double M, LocalVariableMap vars) {
 		//preparations
 		long id = n.getID();
 		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
@@ -626,25 +612,19 @@ public class OptimizerRuleBased extends Optimizer
 		return apply;
 	}
 
-	protected boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<ResultVar> resultVars, LocalVariableMap vars, String iterVarname ) 
-		throws DMLRuntimeException
-	{
+	protected boolean isResultPartitionableAll( Collection<OptNode> nlist, ArrayList<ResultVar> resultVars, LocalVariableMap vars, String iterVarname ) {
 		boolean ret = true;
-		for( OptNode n : nlist )
-		{
+		for( OptNode n : nlist ) {
 			ret &= isResultPartitionable(n, resultVars, vars, iterVarname);
 			if(!ret) //early abort
 				break;
 		}
-		
 		return ret;
 	}
 
 	protected boolean isResultPartitionable( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, String iterVarname ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = true;
-		
 		//check left indexing operator
 		String opStr = n.getParam(ParamType.OPSTRING);
 		if( opStr==null || !opStr.equals(LeftIndexingOp.OPSTRING) )
@@ -754,9 +734,7 @@ public class OptimizerRuleBased extends Optimizer
 		return (int) Math.floor( lbudget / 12 );
 	}
 
-	protected void recompileLIX( OptNode n, LocalVariableMap vars ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
+	protected void recompileLIX( OptNode n, LocalVariableMap vars ) {
 		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 		
 		//set forced exec type
@@ -812,9 +790,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set execution strategy
 	///
 
-	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, double M3, boolean flagLIX) 
-		throws DMLRuntimeException
-	{
+	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, double M3, boolean flagLIX) {
 		boolean isCPOnly = n.isCPOnly();
 		boolean isCPOnlyPossible = isCPOnly || isCPOnlyPossible(n, _rm);
 
@@ -893,13 +869,14 @@ public class OptimizerRuleBased extends Optimizer
 		
 		//rule-based decision based on number of outer iterations or maximum number of
 		//inner iterations (w/ appropriately scaled minimum data size threshold); 
+		boolean isCtxCreated = OptimizerUtils.isSparkExecutionMode()
+				&& SparkExecutionContext.isSparkContextCreated();
 		return (_N >= PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB)
-			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE && M > PROB_SIZE_THRESHOLD_MB/10);
+			|| (_Nmax >= 10 * PROB_SIZE_THRESHOLD_REMOTE
+				&& M > PROB_SIZE_THRESHOLD_MB/(isCtxCreated?10:1));
 	}
 
-	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) 
-		throws DMLRuntimeException
-	{
+	protected boolean isCPOnlyPossible( OptNode n, double memBudget ) {
 		ExecType et = n.getExecType();
 		boolean ret = ( et == ExecType.CP);
 		
@@ -907,7 +884,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
 			if(    h.getForcedExecType()!=LopProperties.ExecType.MR  //e.g., -exec=hadoop
-				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK) 
+				&& h.getForcedExecType()!=LopProperties.ExecType.SPARK 
+				&& h.hasValidCPDimsAndSize() ) //integer dims
 			{
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
 				if( mem <= memBudget )
@@ -929,9 +907,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set operations exec type
 	///
 
-	protected void rewriteSetOperationsExecType(OptNode pn, boolean recompile) 
-		throws DMLRuntimeException
-	{
+	protected void rewriteSetOperationsExecType(OptNode pn, boolean recompile) {
 		//set exec type in internal opt tree
 		int count = setOperationExecType(pn, ExecType.CP);
 		
@@ -975,11 +951,8 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n internal representation of a plan alternative for program blocks and instructions
 	 * @param vars local variable map
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	protected void rewriteDataColocation( OptNode n, LocalVariableMap vars ) 
-		throws DMLRuntimeException
-	{
+	protected void rewriteDataColocation( OptNode n, LocalVariableMap vars ) {
 		// data colocation is beneficial if we have dp=REMOTE_MR, etype=REMOTE_MR
 		// and there is at least one direct col-/row-wise access with the index variable
 		// on the partitioned matrix
@@ -1019,9 +992,7 @@ public class OptimizerRuleBased extends Optimizer
 		LOG.debug(getOptMode()+" OPT: rewrite 'enable data colocation' - result="+apply+((apply)?" ("+varname+")":"") );
 	}
 
-	protected void rFindDataColocationCandidates( OptNode n, HashSet<String> cand, String iterVarname ) 
-		throws DMLRuntimeException
-	{
+	protected void rFindDataColocationCandidates( OptNode n, HashSet<String> cand, String iterVarname ) {
 		if( !n.isLeaf() )
 		{
 			for( OptNode cn : n.getChilds() )
@@ -1070,17 +1041,15 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param n internal representation of a plan alternative for program blocks and instructions
 	 * @param partitionedMatrices map of data partition formats
 	 * @param vars local variable map
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void rewriteSetPartitionReplicationFactor( OptNode n, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars ) 
-		throws DMLRuntimeException
 	{
 		boolean apply = false;
 		double sizeReplicated = 0;
 		int replication = ParForProgramBlock.WRITE_REPLICATION_FACTOR;
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		if(((n.getExecType()==ExecType.MR && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.name()))
 		    || (n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
@@ -1140,19 +1109,17 @@ public class OptimizerRuleBased extends Optimizer
 	 * 
 	 * @param n internal representation of a plan alternative for program blocks and instructions
 	 * @param vars local variable map
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void rewriteSetExportReplicationFactor( OptNode n, LocalVariableMap vars ) 
-		throws DMLRuntimeException
 	{
 		boolean apply = false;
 		int replication = -1;
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-        							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
 		//decide on the replication factor 
-		if( n.getExecType()==getRemoteExecType() )		
+		if( n.getExecType()==getRemoteExecType() )
 		{
 			apply = true;
 			
@@ -1178,9 +1145,8 @@ public class OptimizerRuleBased extends Optimizer
 	 *
 	 * @param n the parfor {@link OptNode}
 	 * @return the maximum memory needed for any operation inside a parfor in CP execution mode
-	 * @throws DMLRuntimeException if error
 	 */
-	protected double getMaxCPOnlyBudget(OptNode n) throws DMLRuntimeException {
+	protected double getMaxCPOnlyBudget(OptNode n) {
 		ExecType et = n.getExecType();
 		double ret = 0;
 
@@ -1211,7 +1177,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
-		throws DMLRuntimeException 
 	{
 		ExecType type = n.getExecType();
 		long id = n.getID();
@@ -1300,8 +1265,7 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected void rAssignRemainingParallelism(OptNode n, int parforK, int opsK) 
-		throws DMLRuntimeException
-	{		
+	{
 		ArrayList<OptNode> childs = n.getChilds();
 		if( childs != null ) 
 		{
@@ -1482,10 +1446,8 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param flagLIX ?
 	 * @param partitionedMatrices map of data partition formats
 	 * @param vars local variable map
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
@@ -1537,7 +1499,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean rIsAccessByIterationVariable( OptNode n, String varName, String iterVarname ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = true;
 		
@@ -1598,7 +1559,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 	
 	protected void rewriteSetTranposeSparseVectorOperations(OptNode pn, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
@@ -1607,9 +1567,9 @@ public class OptimizerRuleBased extends Optimizer
 		boolean apply = false;
 		
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 		
-		if(    pfpb.getExecMode() == PExecMode.REMOTE_MR_DP 
+		if( pfpb.getExecMode() == PExecMode.REMOTE_MR_DP 
 			&& partitionedMatrices.size()==1 ) //general applicable
 		{
 			String moVarname = partitionedMatrices.keySet().iterator().next();
@@ -1631,7 +1591,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean rIsTransposeSafePartition( OptNode n, String varName ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = true;
 		
@@ -1666,7 +1625,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<ResultVar> inPlaceResultVars, ExecutionContext ec) 
-		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
@@ -1725,7 +1683,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 	protected boolean rHasOnlyInPlaceSafeLeftIndexing( OptNode n, ArrayList<ResultVar> retVars ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = true;
 		if( !n.isLeaf() ) {
@@ -1766,7 +1723,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteDisableCPCaching(OptNode pn, HashSet<ResultVar> inplaceResultVars, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
@@ -1788,7 +1744,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<ResultVar> inplaceResultVars )
-		throws DMLRuntimeException
 	{
 		double sum = 0;
 		
@@ -1825,7 +1780,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices ) 
-		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
@@ -1850,7 +1804,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = false;
 		
@@ -1892,7 +1845,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteInjectSparkLoopCheckpointing(OptNode n) 
-		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -1909,7 +1861,7 @@ public class OptimizerRuleBased extends Optimizer
 			ProgramRewriter rewriter = new ProgramRewriter(rewrite);
 			ProgramRewriteStatus state = new ProgramRewriteStatus();
 			rewriter.rRewriteStatementBlockHopDAGs( pfsb, state );
-			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state));
+			fs.setBody(rewriter.rRewriteStatementBlocks(fs.getBody(), state, true));
 			
 			//recompile if additional checkpoints introduced
 			if( state.getInjectedCheckpoints() ) {
@@ -1929,7 +1881,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteInjectSparkRepartition(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -2006,7 +1957,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteSetSparkEagerRDDCaching(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		//get program blocks of root parfor
 		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
@@ -2017,7 +1967,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		if(    OptimizerUtils.isSparkExecutionMode() //spark exec mode
 			&& n.getExecType() == ExecType.CP		 //local parfor 
-			&& _N > 1                            )   //at least 2 iterations                             
+			&& _N > 1                            )   //at least 2 iterations
 		{
 			Set<String> cand = pfsb.variablesRead().getVariableNames();
 			Collection<String> rpVars = pfpb.getSparkRepartitionVariables();
@@ -2057,10 +2007,9 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteRemoveUnnecessaryCompareMatrix( OptNode n, ExecutionContext ec ) 
-		throws DMLRuntimeException
 	{
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
 		ArrayList<ResultVar> cleanedVars = new ArrayList<>();
 		ArrayList<ResultVar> resultVars = pfpb.getResultVariables();
@@ -2091,26 +2040,19 @@ public class OptimizerRuleBased extends Optimizer
 			+" ("+ProgramConverter.serializeResultVariables(cleanedVars)+")" );
 	}
 
-	protected boolean rContainsResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
-		throws DMLRuntimeException
-	{
+	protected boolean rContainsResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) {
 		boolean ret = false;
-		
 		//process hop node
 		if( n.getNodeType()==NodeType.HOP )
 			ret |= isResultFullReplace(n, resultVar, iterVarname, mo);
-			
 		//process childs recursively
-		if( !n.isLeaf() ) {
+		if( !n.isLeaf() )
 			for( OptNode c : n.getChilds() ) 
 				ret |= rContainsResultFullReplace(c, resultVar, iterVarname, mo);
-		}
-		
 		return ret;
 	}
 
 	protected boolean isResultFullReplace( OptNode n, String resultVar, String iterVarname, MatrixObject mo ) 
-		throws DMLRuntimeException
 	{
 		//check left indexing operator
 		String opStr = n.getParam(ParamType.OPSTRING);
@@ -2177,9 +2119,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set result merge
 	///
 
-	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) 
-		throws DMLRuntimeException
-	{
+	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) {
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
@@ -2263,7 +2203,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean hasResultMRLeftIndexing( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean checkSize ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = false;
 		
@@ -2308,10 +2247,8 @@ public class OptimizerRuleBased extends Optimizer
 	 * @param vars local variable map
 	 * @param checkSize ?
 	 * @return true if result sizes larger than local memory budget
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected boolean hasLargeTotalResults( OptNode pn, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean checkSize ) 
-		throws DMLRuntimeException
 	{
 		double totalSize = 0;
 		
@@ -2366,7 +2303,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected boolean hasOnlyInMemoryResults( OptNode n, ArrayList<ResultVar> resultVars, LocalVariableMap vars, boolean inLocal ) 
-		throws DMLRuntimeException
 	{
 		boolean ret = true;
 		
@@ -2400,9 +2336,7 @@ public class OptimizerRuleBased extends Optimizer
 		return ret;
 	}
 
-	protected void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean inLocal) 
-		throws DMLRuntimeException
-	{
+	protected void rInvokeSetResultMerge( Collection<OptNode> nodes, LocalVariableMap vars, boolean inLocal) {
 		for( OptNode n : nodes )
 			if( n.getNodeType() == NodeType.PARFOR )
 			{
@@ -2457,7 +2391,6 @@ public class OptimizerRuleBased extends Optimizer
 	///
 
 	protected void rewriteRemoveRecursiveParFor(OptNode n, LocalVariableMap vars) 
-		throws DMLRuntimeException 
 	{
 		int count = 0; //num removed parfor
 		
@@ -2510,7 +2443,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected void rFindAndUnfoldRecursiveFunction( OptNode n, ParForProgramBlock parfor, HashSet<ParForProgramBlock> recPBs, LocalVariableMap vars )
-		throws DMLRuntimeException, HopsException, LanguageException
 	{
 		//unfold if found
 		if( n.getNodeType() == NodeType.FUNCCALL && n.isRecursive())
@@ -2612,7 +2544,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected void rReplaceFunctionNames( OptNode n, String oldName, String newName ) 
-		throws DMLRuntimeException, HopsException
 	{
 		if( n.getNodeType() == NodeType.FUNCCALL)
 		{
@@ -2655,7 +2586,6 @@ public class OptimizerRuleBased extends Optimizer
 	}
 
 	protected int removeRecursiveParFor( OptNode n, HashSet<ParForProgramBlock> recPBs ) 
-		throws DMLRuntimeException
 	{
 		int count = 0;
 		
@@ -2701,18 +2631,13 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE remove unnecessary parfor
 	///
 
-	protected void rewriteRemoveUnnecessaryParFor(OptNode n) 
-		throws DMLRuntimeException 
-	{
+	protected void rewriteRemoveUnnecessaryParFor(OptNode n) {
 		int count = removeUnnecessaryParFor( n );
-		
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'remove unnecessary parfor' - result="+count );
 	}
 
-	protected int removeUnnecessaryParFor( OptNode n ) 
-		throws DMLRuntimeException
-	{
+	protected int removeUnnecessaryParFor( OptNode n ) {
 		int count = 0;
 		
 		if( !n.isLeaf() )

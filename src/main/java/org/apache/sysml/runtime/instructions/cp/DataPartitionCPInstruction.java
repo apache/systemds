@@ -46,17 +46,13 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 		_pformat = pformat;
 	}
 
-	public static DataPartitionCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static DataPartitionCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields( parts, 3 );
-		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		PDataPartitionFormat pformat = PDataPartitionFormat.valueOf(parts[3]);
-		 
 		if(!opcode.equalsIgnoreCase("partition"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an DataPartitionCPInstruction: " + str);
 		else
@@ -64,9 +60,7 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//get input
 		MatrixObject moIn = ec.getMatrixObject(input1.getName());
 		MatrixBlock mb = moIn.acquireRead();

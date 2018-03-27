@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.DataExpression;
 
@@ -44,7 +43,6 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 	@Override
 	@SuppressWarnings("unchecked")
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
 	{
 		if( roots == null )
 			return null;
@@ -78,17 +76,12 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		//do noting, read/write do not occur in predicates
-		
 		return root;
 	}
 
-	private void collectPersistentReadWriteOps(Hop hop, HashMap<String,Hop> pWrites, HashMap<String,Hop> pReads) 
-		throws HopsException 
-	{
+	private void collectPersistentReadWriteOps(Hop hop, HashMap<String,Hop> pWrites, HashMap<String,Hop> pReads) {
 		if( hop.isVisited() )
 			return;
 		

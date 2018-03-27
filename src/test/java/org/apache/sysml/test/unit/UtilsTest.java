@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.junit.Assert;
 import org.junit.Test;
@@ -83,9 +81,8 @@ public class UtilsTest {
 		GPUContextPool.parseListString("-1-4", 6);
 	}
 
-
 	@Test
-	public void testDMLConfig1() throws DMLRuntimeException{
+	public void testDMLConfig1() {
 		DMLConfig dmlConfig = new DMLConfig();
 		dmlConfig.setTextValue("A", "a");
 		dmlConfig.setTextValue("B", "b");
@@ -103,10 +100,8 @@ public class UtilsTest {
 		Assert.assertEquals("a", dmlConfig.getTextValue("E"));
 	}
 
-
-
 	@Test
-	public void testDMLConfig2() throws DMLRuntimeException, IOException, ParseException {
+	public void testDMLConfig2() throws IOException {
 
 		String testStr = "<root>"
 				+ "<A>a</A>"
@@ -131,8 +126,4 @@ public class UtilsTest {
 		dmlConfig.setTextValue("E", "a");
 		Assert.assertEquals("a", dmlConfig.getTextValue("E"));
 	}
-
-
-
-
 }

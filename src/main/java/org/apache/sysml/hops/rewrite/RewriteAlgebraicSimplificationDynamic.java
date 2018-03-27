@@ -38,7 +38,6 @@ import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.OpOp4;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -87,9 +86,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static OpOp2[] LOOKUP_VALID_WUMM_BINARY = new OpOp2[]{OpOp2.MULT, OpOp2.POW}; 
 	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return roots;
 
@@ -107,9 +104,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
 		
@@ -133,10 +128,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 * @param descendFirst true if recursively process children first
-	 * @throws HopsException if HopsException occurs
 	 */
 	private void rule_AlgebraicSimplification(Hop hop, boolean descendFirst) 
-		throws HopsException 
 	{
 		if(hop.isVisited())
 			return;
@@ -207,7 +200,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop removeEmptyRightIndexing(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof IndexingOp && hi.getDataType()==DataType.MATRIX  ) //indexing op
 		{	
@@ -245,7 +237,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop removeEmptyLeftIndexing(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof LeftIndexingOp && hi.getDataType() == DataType.MATRIX  ) //left indexing op
 		{
@@ -449,7 +440,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
-	private static Hop removeUnnecessaryIfElseOperation(Hop parent, Hop hi, int pos) throws HopsException
+	private static Hop removeUnnecessaryIfElseOperation(Hop parent, Hop hi, int pos)
 	{
 		if( !HopRewriteUtils.isTernary(hi, OpOp3.IFELSE) )
 			return hi;
@@ -530,9 +521,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Hop simplifyColwiseAggregate( Hop parent, Hop hi, int pos ) 
-		throws HopsException
-	{
+	private static Hop simplifyColwiseAggregate( Hop parent, Hop hi, int pos ) {
 		if( hi instanceof AggUnaryOp  ) 
 		{
 			AggUnaryOp uhi = (AggUnaryOp)hi;
@@ -594,9 +583,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Hop simplifyRowwiseAggregate( Hop parent, Hop hi, int pos ) 
-		throws HopsException
-	{
+	private static Hop simplifyRowwiseAggregate( Hop parent, Hop hi, int pos ) {
 		if( hi instanceof AggUnaryOp  ) 
 		{
 			AggUnaryOp uhi = (AggUnaryOp)hi;
@@ -661,7 +648,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyColSumsMVMult( Hop parent, Hop hi, int pos ) 
-		throws HopsException
 	{
 		//colSums(X*Y) -> t(Y) %*% X, if Y col vector; additional transpose later
 		//removed by other rewrite if unnecessary, i.e., if Y==t(Z)
@@ -697,7 +683,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyRowSumsMVMult( Hop parent, Hop hi, int pos ) 
-		throws HopsException
 	{
 		//rowSums(X * Y) -> X %*% t(Y), if Y row vector; additional transpose later
 		//removed by other rewrite if unnecessary, i.e., if Y==t(Z)
@@ -733,7 +718,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyUnnecessaryAggregate(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//e.g., sum(X) -> as.scalar(X) if 1x1 (applies to sum, min, max, prod, trace)
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  ) 
@@ -760,7 +744,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyEmptyAggregate(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof AggUnaryOp  ) 
 		{
@@ -790,7 +773,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyEmptyUnaryOperation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof UnaryOp  ) 
 		{
@@ -815,7 +797,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyEmptyReorgOperation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof ReorgOp  ) 
 		{
@@ -857,7 +838,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyEmptySortOperation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//order(X, indexreturn=FALSE) -> matrix(0,nrow(X),1)
 		//order(X, indexreturn=TRUE) -> seq(1,nrow(X),1)
@@ -895,9 +875,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
-	private static Hop simplifyEmptyMatrixMult(Hop parent, Hop hi, int pos) 
-		throws HopsException
-	{
+	private static Hop simplifyEmptyMatrixMult(Hop parent, Hop hi, int pos) {
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y -> matrix(0, )
 		{
 			Hop left = hi.getInput().get(0);
@@ -919,7 +897,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyIdentityRepMatrixMult(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y -> X, if y is matrix(1,1,1)
 		{
@@ -942,7 +919,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyScalarMatrixMult(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y
 		{
@@ -981,7 +957,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyMatrixMultDiag(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		Hop hnew = null;
 		
@@ -1233,10 +1208,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param hi high-level operator
 	 * @param pos position
 	 * @return high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
 	private static Hop simplifyWeightedSquaredLoss(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//NOTE: there might be also a general simplification without custom operator
 		//via (X-UVt)^2 -> X^2 - 2X*UVt + UVt^2
@@ -1424,7 +1397,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyWeightedSigmoidMMChains(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		Hop hnew = null;
 		
@@ -1559,9 +1531,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 
-	private static Hop simplifyWeightedDivMM(Hop parent, Hop hi, int pos) 
-		throws HopsException
-	{
+	private static Hop simplifyWeightedDivMM(Hop parent, Hop hi, int pos) {
 		Hop hnew = null;
 		boolean appliedPattern = false;
 		
@@ -1851,18 +1821,15 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			Hop V = hi.getInput().get(1).getInput().get(1);
 			
 			//for this basic pattern, we're more conservative and only apply wdivmm if
-			//the factors are not known to be sparse
-			if( !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V) ) {
-				if( !HopRewriteUtils.isTransposeOperation(V) )
-					V = HopRewriteUtils.createTranspose(V);
-				else 
-					V = V.getInput().get(0);
-				
+			//W is sparse and U/V unknown or dense; or if U/V are dense
+			if( (HopRewriteUtils.isSparse(W) && !HopRewriteUtils.isSparse(U) && !HopRewriteUtils.isSparse(V))
+				|| (HopRewriteUtils.isDense(U) && HopRewriteUtils.isDense(V)) ) {
+				V = !HopRewriteUtils.isTransposeOperation(V) ?
+					HopRewriteUtils.createTranspose(V) : V.getInput().get(0);
 				hnew = new QuaternaryOp(hi.getName(), DataType.MATRIX, ValueType.DOUBLE, 
-						  OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
+					OpOp4.WDIVMM, W, U, V, new LiteralOp(-1), 0, true, false);
 				hnew.setOutputBlocksizes(W.getRowsInBlock(), W.getColsInBlock());
 				hnew.refreshSizeInformation();
-				
 				appliedPattern = true;
 				LOG.debug("Applied simplifyWeightedDivMM7 (line "+hi.getBeginLine()+")");
 			}
@@ -1878,7 +1845,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 
 	private static Hop simplifyWeightedCrossEntropy(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		Hop hnew = null;
 		boolean appliedPattern = false;
@@ -1954,9 +1920,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		return hi;
 	}
 	
-	private static Hop simplifyWeightedUnaryMM(Hop parent, Hop hi, int pos) 
-		throws HopsException
-	{
+	private static Hop simplifyWeightedUnaryMM(Hop parent, Hop hi, int pos) {
 		Hop hnew = null;
 		boolean appliedPattern = false;
 		
@@ -2106,11 +2070,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param hi high-level operator
 	 * @param pos position
 	 * @return high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
-	private static Hop simplifyDotProductSum(Hop parent, Hop hi, int pos) 
-		throws HopsException
-	{
+	private static Hop simplifyDotProductSum(Hop parent, Hop hi, int pos) {
 		//sum(v^2)/sum(v1*v2) --> as.scalar(t(v)%*%v) in order to exploit tsmm vector dotproduct 
 		//w/o materialization of intermediates
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM //sum
@@ -2179,11 +2140,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos Position of hi in parent's list of inputs.
 	 *
 	 * @return Either hi or the rewritten HOP replacing it.
-	 *
-	 * @throws HopsException if HopsException occurs
 	 */
-	private static Hop fuseSumSquared(Hop parent, Hop hi, int pos)
-			throws HopsException {
+	private static Hop fuseSumSquared(Hop parent, Hop hi, int pos) {
 		// if SUM
 		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.SUM) {
 			Hop sumInput = hi.getInput().get(0);
@@ -2270,7 +2228,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyEmptyBinaryOperation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( hi instanceof BinaryOp ) //b(?) X Y
 		{
@@ -2350,11 +2307,9 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param hi high-level operator
 	 * @param pos position
 	 * @return high-level operator
-	 * @throws HopsException if HopsException occurs
 	 */
 	@SuppressWarnings("unchecked")
 	private static Hop reorderMinusMatrixMult(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		if( HopRewriteUtils.isMatrixMultiply(hi) ) //X%*%Y
 		{
@@ -2489,7 +2444,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyScalarMVBinaryOperation(Hop hi) 
-		throws HopsException
 	{
 		if( hi instanceof BinaryOp && ((BinaryOp)hi).supportsMatrixScalarOperations() //e.g., X * s
 			&& hi.getInput().get(0).getDataType()==DataType.MATRIX 
@@ -2512,7 +2466,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyNnzComputation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known		
 		if(    hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getOp()==AggOp.SUM  //sum
@@ -2547,7 +2500,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyNrowNcolComputation(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//nrow(X) -> literal(nrow(X)), ncol(X) -> literal(ncol(X)), if respective dims known
 		//(this rewrite aims to remove unnecessary data dependencies to X which trigger computation
@@ -2576,7 +2528,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	}
 	
 	private static Hop simplifyTableSeqExpand(Hop parent, Hop hi, int pos) 
-		throws HopsException
 	{
 		//pattern: table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
 		//note: this rewrite supports both left/right sequence 

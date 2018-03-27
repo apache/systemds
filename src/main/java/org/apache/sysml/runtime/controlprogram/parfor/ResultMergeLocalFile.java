@@ -42,7 +42,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.CacheException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.util.Cell;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -88,9 +87,7 @@ public class ResultMergeLocalFile extends ResultMerge
 
 
 	@Override
-	public MatrixObject executeSerialMerge() 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeSerialMerge() {
 		MatrixObject moNew = null; //always create new matrix object (required for nested parallelism)
 		
 		if( LOG.isTraceEnabled() )
@@ -141,16 +138,12 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 	
 	@Override
-	public MatrixObject executeParallelMerge(int par) 
-		throws DMLRuntimeException 
-	{
+	public MatrixObject executeParallelMerge(int par) {
 		//graceful degradation to serial merge
 		return executeSerialMerge();
 	}
 
-	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO)
-		throws DMLRuntimeException
-	{
+	private MatrixObject createNewMatrixObject(MatrixObject output, ArrayList<MatrixObject> inMO) {
 		MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
 		MatrixObject moNew = new MatrixObject( _output.getValueType(), _outputFName );
 		
@@ -167,7 +160,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private void merge( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		OutputInfo oi = ((MetaDataFormat)outMo.getMetaData()).getOutputInfo();
 		boolean withCompare = ( outMo.getNnz() != 0 ); //if nnz exist or unknown (-1)
@@ -196,7 +188,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private static void mergeTextCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		try
 		{
@@ -263,7 +254,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private void mergeTextCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
@@ -303,7 +293,6 @@ public class ResultMergeLocalFile extends ResultMerge
 
 	@SuppressWarnings("deprecation")
 	private static void mergeBinaryCellWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		try
 		{	
@@ -363,7 +352,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private void mergeBinaryCellWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
@@ -402,7 +390,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private void mergeBinaryBlockWithoutComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		
@@ -432,7 +419,6 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private void mergeBinaryBlockWithComp( String fnameNew, MatrixObject outMo, ArrayList<MatrixObject> inMO ) 
-		throws DMLRuntimeException
 	{
 		String fnameStaging = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
 		String fnameStagingCompare = LocalFileUtils.getUniqueWorkingDir(LocalFileUtils.CATEGORY_RESULTMERGE);
@@ -610,7 +596,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private static void appendCellBufferToStagingArea( String fnameStaging, long ID, LinkedList<Cell> buffer, int brlen, int bclen ) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		HashMap<Long,HashMap<Long,LinkedList<Cell>>> sortedBuffer = new HashMap<>();
 		long brow, bcol, row_offset, col_offset;
@@ -976,7 +962,7 @@ public class ResultMergeLocalFile extends ResultMerge
 	}
 
 	private static void copyAllFiles( String fnameNew, ArrayList<MatrixObject> inMO ) 
-		throws CacheException, IOException
+		throws IOException
 	{
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fnameNew );

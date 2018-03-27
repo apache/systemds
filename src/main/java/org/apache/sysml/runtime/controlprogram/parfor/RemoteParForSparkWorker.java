@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -55,15 +54,12 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 	
-	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters) 
-		throws DMLRuntimeException
-	{
+	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters) {
 		_jobid = jobid;
 		_prog = program;
 		_clsMap = clsMap;
 		_initialized = false;
 		_caching = cpCaching;
-		
 		//setup spark accumulators
 		_aTasks = atasks;
 		_aIters = aiters;
@@ -96,7 +92,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	}
 	
 	private void configureWorker(long taskID) 
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		_workerID = taskID;
 		

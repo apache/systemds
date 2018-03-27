@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
 public abstract class Expression implements ParseInfo
@@ -87,6 +88,7 @@ public abstract class Expression implements ParseInfo
 		DIAG,
 		EIGEN,
 		EVAL,
+		EXISTS,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA, BIAS_ADD, BIAS_MULTIPLY,
 		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD, AVG_POOL_BACKWARD,
 		EXP,
@@ -212,7 +214,7 @@ public abstract class Expression implements ParseInfo
 		_outputs = null;
 	}
 
-	public abstract Expression rewriteExpression(String prefix) throws LanguageException;
+	public abstract Expression rewriteExpression(String prefix);
 	
 	public void setOutput(Identifier output) {
 		if ( _outputs == null) {
@@ -241,15 +243,11 @@ public abstract class Expression implements ParseInfo
 		return _outputs;
 	}
 	
-	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{
+	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) {
 		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
 	}
 	
-	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) 
-		throws LanguageException 
-	{
+	public void validateExpression(MultiAssignmentStatement mas, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> currConstVars, boolean conditional) {
 		raiseValidateError("Should never be invoked in Baseclass 'Expression'", false);
 	}
 
@@ -383,9 +381,8 @@ public abstract class Expression implements ParseInfo
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+	public static DataType computeDataType(Expression expression1, Expression expression2, boolean cast) {
 		return computeDataType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
 
@@ -398,9 +395,8 @@ public abstract class Expression implements ParseInfo
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The data type ({@link DataType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+	public static DataType computeDataType(Identifier identifier1, Identifier identifier2, boolean cast) {
 		DataType d1 = identifier1.getDataType();
 		DataType d2 = identifier2.getDataType();
 
@@ -431,9 +427,8 @@ public abstract class Expression implements ParseInfo
 	 * @param expression2 Second expression
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) throws LanguageException {
+	public static ValueType computeValueType(Expression expression1, Expression expression2, boolean cast) {
 		return computeValueType(expression1.getOutput(), expression2.getOutput(), cast);
 	}
 	
@@ -447,9 +442,8 @@ public abstract class Expression implements ParseInfo
 	 * @param identifier2 Second identifier
 	 * @param cast Whether a cast should potentially be performed
 	 * @return The value type ({@link ValueType})
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) throws LanguageException {
+	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) {
 		ValueType v1 = identifier1.getValueType();
 		ValueType v2 = identifier2.getValueType();
 
@@ -505,9 +499,8 @@ public abstract class Expression implements ParseInfo
 	 * Throw a LanguageException with the message.
 	 * 
 	 * @param message the error message
-	 * @throws LanguageException if LanguageException occurs
 	 */
-	public void raiseValidateError( String message ) throws LanguageException {
+	public void raiseValidateError( String message ) {
 		raiseValidateError(message, false, null);
 	}
 	
@@ -518,9 +511,8 @@ public abstract class Expression implements ParseInfo
 	 * @param message the error (or warning) message
 	 * @param conditional if {@code true}, display log warning message. Otherwise, the message
 	 * will be thrown as a LanguageException
-	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError( String message, boolean conditional ) throws LanguageException {
+	public void raiseValidateError( String message, boolean conditional ) {
 		raiseValidateError(message, conditional, null);
 	}
 	
@@ -532,9 +524,8 @@ public abstract class Expression implements ParseInfo
 	 * @param conditional if {@code true}, display log warning message. Otherwise, the message (and optional
 	 * error code) will be thrown as a LanguageException
 	 * @param errorCode optional error code
-	 * @throws LanguageException thrown if conditional is {@code false}.
 	 */
-	public void raiseValidateError(String msg, boolean conditional, String errorCode) throws LanguageException {
+	public void raiseValidateError(String msg, boolean conditional, String errorCode) {
 		if (conditional) {// warning if conditional
 			String fullMsg = this.printWarningLocation() + msg;
 			LOG.warn(fullMsg);
@@ -551,51 +542,35 @@ public abstract class Expression implements ParseInfo
 	 * Returns the matrix characteristics for scalar-scalar, scalar-matrix, matrix-scalar, matrix-matrix
 	 * operations. This method is aware of potentially unknowns and matrix-vector (col/row) operations.
 	 * 
-	 * 
 	 * @param expression1 The first expression
 	 * @param expression2 The second expression
-	 * @return long array of 4 values, where [0] is the number of rows (rlen),
+	 * @return matrix characteristics
 	 * [1] is the number of columns (clen), [2] is the number of rows in a block (brlen),
 	 * and [3] is the number of columns in a block (bclen). Default (unknown) values are
 	 * -1. Scalar values are all 0.
 	 */
-	public static long[] getBinaryMatrixCharacteristics(Expression expression1, Expression expression2)
-	{
-		long[] ret = new long[]{ -1, -1, -1, -1 };
-		
+	public static MatrixCharacteristics getBinaryMatrixCharacteristics(Expression expression1, Expression expression2) {
 		Identifier idleft = expression1.getOutput();
 		Identifier idright = expression2.getOutput();
-		
 		if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.SCALAR ) {
-			ret[0] = 0; 
-			ret[1] = 0; 
-			ret[2] = 0; 
-			ret[3] = 0; 
+			return new MatrixCharacteristics(0, 0, 0, 0);
 		}
 		else if( idleft.getDataType()==DataType.SCALAR && idright.getDataType()==DataType.MATRIX ) {
-			ret[0] = idright.getDim1(); 
-			ret[1] = idright.getDim2(); 
-			ret[2] = idright.getRowsInBlock(); 
-			ret[3] = idright.getColumnsInBlock();
+			return new MatrixCharacteristics(idright.getDim1(), idright.getDim2(), idright.getRowsInBlock(), idright.getColumnsInBlock());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.SCALAR ) {
-			ret[0] = idleft.getDim1(); 
-			ret[1] = idleft.getDim2(); 
-			ret[2] = idleft.getRowsInBlock(); 
-			ret[3] = idleft.getColumnsInBlock();
+			return new MatrixCharacteristics(idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
 		}
 		else if( idleft.getDataType()==DataType.MATRIX && idright.getDataType()==DataType.MATRIX ) {
-			ret[0] = idleft.getDim1(); 
-			ret[1] = idleft.getDim2(); 
-			ret[2] = idleft.getRowsInBlock(); 
-			ret[3] = idleft.getColumnsInBlock();
-			if( ret[0] < 0 && idright.getDim1() > 1 ) //robustness for row vectors
-				ret[0] = idright.getDim1();
-			if( ret[1] < 0 && idright.getDim2() > 1 ) //robustness for row vectors
-				ret[1] = idright.getDim2();
+			MatrixCharacteristics mc = new MatrixCharacteristics(
+				idleft.getDim1(), idleft.getDim2(), idleft.getRowsInBlock(), idleft.getColumnsInBlock());
+			if( mc.getRows() < 0 && idright.getDim1() > 1 ) //robustness for row vectors
+				mc.setRows(idright.getDim1());
+			if( mc.getCols() < 0 && idright.getDim2() > 1 ) //robustness for row vectors
+				mc.setCols(idright.getDim2());
+			return mc;
 		}
-		
-		return ret;
+		return new MatrixCharacteristics(-1, -1, -1, -1);
 	}
 	
 	///////////////////////////////////////////////////////////////////////////

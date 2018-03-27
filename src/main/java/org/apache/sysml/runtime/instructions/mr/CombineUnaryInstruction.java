@@ -33,17 +33,13 @@ public class CombineUnaryInstruction extends UnaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static CombineUnaryInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static CombineUnaryInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 2 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in, out;
 		String opcode = parts[0];
 		in  = Byte.parseByte(parts[1]);
 		out = Byte.parseByte(parts[2]);
-		
 		if ( opcode.equalsIgnoreCase("combineunary") ) {
 			return new CombineUnaryInstruction(null, in, out, str);
 		}else
@@ -53,10 +49,7 @@ public class CombineUnaryInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("CombineInstruction.processInstruction should never be called!");
-		
 	}
-	
 }

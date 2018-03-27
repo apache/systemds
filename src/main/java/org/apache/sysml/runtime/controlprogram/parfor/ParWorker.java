@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -111,9 +110,7 @@ public abstract class ParWorker
 		}
 	}
 
-	protected void executeTask( Task task ) 
-		throws DMLRuntimeException 
-	{
+	protected void executeTask( Task task ) {
 		LOG.trace("EXECUTE PARFOR_WORKER ID="+_workerID+" for task "+task.toCompactString());
 		
 		switch( task.getType() )
@@ -127,9 +124,7 @@ public abstract class ParWorker
 		}
 	}	
 
-	private void executeSetTask( Task task ) 
-		throws DMLRuntimeException 
-	{
+	private void executeSetTask( Task task ) {
 		//monitoring start
 		Timing time1 = null, time2 = null;
 		if( _monitor )
@@ -169,9 +164,7 @@ public abstract class ParWorker
 		}
 	}
 
-	private void executeRangeTask( Task task ) 
-		throws DMLRuntimeException 
-	{
+	private void executeRangeTask( Task task ) {
 		//monitoring start
 		Timing time1 = null, time2 = null;
 		if( _monitor )

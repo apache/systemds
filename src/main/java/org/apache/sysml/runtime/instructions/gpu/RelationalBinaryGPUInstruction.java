@@ -40,7 +40,7 @@ public abstract class RelationalBinaryGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
-	public static RelationalBinaryGPUInstruction parseInstruction ( String str ) throws DMLRuntimeException {
+	public static RelationalBinaryGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields ( parts, 3 );
 

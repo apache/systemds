@@ -71,7 +71,7 @@ public class OutputInfo implements Serializable
 	public static final OutputInfo CSVOutputInfo=new OutputInfo(UnPaddedOutputFormat.class, 
 			NullWritable.class, RowBlockForTextOutput.class);
 
-	public static InputInfo getMatchingInputInfo(OutputInfo oi) throws DMLRuntimeException {
+	public static InputInfo getMatchingInputInfo(OutputInfo oi) {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
 			return InputInfo.BinaryBlockInputInfo;
 		else if ( oi == OutputInfo.MatrixMarketOutputInfo )
@@ -116,9 +116,7 @@ public class OutputInfo implements Serializable
 		return null;
 	}
 	
-	public static String outputInfoToString (OutputInfo oi) 
-		throws DMLRuntimeException
-	{
+	public static String outputInfoToString (OutputInfo oi) {
 		if ( oi == TextCellOutputInfo )
 			return "textcell";
 		else if ( oi == MatrixMarketOutputInfo)

@@ -21,11 +21,9 @@ package org.apache.sysml.parser;
 
 public abstract class ConstIdentifier extends Identifier 
 {
-	
 	public ConstIdentifier(){
 		super();
 	}
 	
-	public abstract long getLongValue() 
-		throws LanguageException; 
+	public abstract long getLongValue(); 
 }

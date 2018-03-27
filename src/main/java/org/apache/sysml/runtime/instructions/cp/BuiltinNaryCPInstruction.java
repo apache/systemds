@@ -47,7 +47,7 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 		this.inputs = inputs;
 	}
 
-	public static BuiltinNaryCPInstruction parseInstruction(String str) throws DMLRuntimeException {
+	public static BuiltinNaryCPInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand outputOperand = new CPOperand(parts[parts.length - 1]);
@@ -68,7 +68,7 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 					opcode, str, outputOperand, inputOperands);
 		} 
 		else if (Nary.OperationType.EVAL.name().equalsIgnoreCase(opcode)) {
-			return new EvalBuiltinNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
+			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}
 		
 		throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");

@@ -29,7 +29,6 @@ import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_MAX;
 import static jcuda.jcudnn.cudnnPoolingMode.CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 
@@ -84,12 +83,11 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
 	 * @param poolingType	type of pooling
 	 * @return decriptor wrapper
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static LibMatrixCuDNNPoolingDescriptors cudnnPoolingBackwardDescriptors(GPUContext gCtx, 
 			String instName, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) {
 		LibMatrixCuDNNPoolingDescriptors ret = new LibMatrixCuDNNPoolingDescriptors();
 		ret.xDesc = allocateTensorDescriptor(N, C, H, W);
 		ret.yDesc = allocateTensorDescriptor(N, C, P, Q);
@@ -119,12 +117,11 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
 	 * @param poolingType 	type of pooling
 	 * @return decriptor wrapper
-	 * @throws DMLRuntimeException if error occurs
 	 */
 	public static LibMatrixCuDNNPoolingDescriptors cudnnPoolingDescriptors(GPUContext gCtx, 
 			String instName, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
-			int Q, PoolingType poolingType) throws DMLRuntimeException {
+			int Q, PoolingType poolingType) {
 		LibMatrixCuDNNPoolingDescriptors ret = new LibMatrixCuDNNPoolingDescriptors();
 		ret.xDesc = allocateTensorDescriptor(N, C, H, W);
 		ret.yDesc = allocateTensorDescriptor(N, C, P, Q);
@@ -139,9 +136,8 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param H height
 	 * @param W width
 	 * @return cudnn tensor descriptor
-	 * @throws DMLRuntimeException if the input descriptor and matrix dimensions don't match
 	 */
-	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) throws DMLRuntimeException {
+	private static cudnnTensorDescriptor allocateTensorDescriptor(int N, int C, int H, int W) {
 		cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 		cudnnCreateTensorDescriptor(tensorDescriptor);
 		cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, LibMatrixCUDA.CUDNN_DATA_TYPE, N, C, H, W);

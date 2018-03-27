@@ -35,7 +35,7 @@ public class PathStatement extends Statement
 	}
 	
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
+	public Statement rewriteStatement(String prefix) {
 		return this;
 	}
 	

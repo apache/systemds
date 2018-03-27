@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -34,9 +33,7 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		ScalarObject sores = null;
 		ScalarObject so = null;

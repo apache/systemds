@@ -55,38 +55,27 @@ public class ReorgGPUInstruction extends GPUInstruction {
 		_output = out;
 	}
 
-	public static ReorgGPUInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static ReorgGPUInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-        InstructionUtils.checkNumFields ( parts, 2 );
-        
+		InstructionUtils.checkNumFields ( parts, 2 );
 		String opcode = parts[0];
 		CPOperand in = new CPOperand(parts[1]);
-		CPOperand out = new CPOperand(parts[2]);	
-					
-		if ( !(opcode.equalsIgnoreCase("r'")) ) {
+		CPOperand out = new CPOperand(parts[2]);
+		if ( !(opcode.equalsIgnoreCase("r'")) )
 			throw new DMLRuntimeException("Unknown opcode while parsing a ReorgInstruction: " + str);
-		}
 		else
 			return new ReorgGPUInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
-		//acquire input
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
-
 		int rlen = (int) mat.getNumColumns();
 		int clen = (int) mat.getNumRows();
-		
 		//execute operation
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCUDA.transpose(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName());
-		
 		//release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());

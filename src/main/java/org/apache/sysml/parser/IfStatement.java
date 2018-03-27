@@ -30,7 +30,7 @@ public class IfStatement extends Statement
 	private ArrayList<StatementBlock> _elseBody;
 	
 	@Override
-	public Statement rewriteStatement(String prefix) throws LanguageException{
+	public Statement rewriteStatement(String prefix) {
 		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for IfStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for IfStatement");
 	}
@@ -81,14 +81,12 @@ public class IfStatement extends Statement
 	}
 	
 	@Override
-	public void initializeforwardLV(VariableSet activeIn) throws LanguageException{
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
+	public void initializeforwardLV(VariableSet activeIn) {
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
 	}
 
 	@Override
-	public VariableSet initializebackwardLV(VariableSet lo) throws LanguageException{
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
+	public VariableSet initializebackwardLV(VariableSet lo) {
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for IfStatement");
 	}
 

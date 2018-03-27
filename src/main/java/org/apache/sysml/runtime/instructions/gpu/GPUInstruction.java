@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.runtime.RunMRJobs;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.GPUInstructionParser;
@@ -180,44 +179,34 @@ public abstract class GPUInstruction extends Instruction {
 	}
 
 	@Override
-	public Instruction preprocessInstruction(ExecutionContext ec)
-		throws DMLRuntimeException
-	{
+	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default preprocess behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
-
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = GPUInstructionParser.parseSingleInstruction(updInst);
 		}
-
 		return tmp;
 	}
 
 	@Override
-	public abstract void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException;
-
+	public abstract void processInstruction(ExecutionContext ec);
+	
 	@Override
-	public void postprocessInstruction(ExecutionContext ec)
-					throws DMLRuntimeException
-	{
+	public void postprocessInstruction(ExecutionContext ec) {
 		if(DMLScript.SYNCHRONIZE_GPU) {
 			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(DMLScript.FINEGRAINED_STATISTICS) {
+			if(DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
-			}
 		}
 		if(LOG.isDebugEnabled()) {
-			for(GPUContext gpuCtx : ec.getGPUContexts()) {
+			for(GPUContext gpuCtx : ec.getGPUContexts())
 				if(gpuCtx != null)
 					gpuCtx.printMemoryInfo(getOpcode());
-			}
 		}
-			
 	}
 
 	/**
@@ -226,9 +215,8 @@ public abstract class GPUInstruction extends Instruction {
 	 * @param ec		active {@link ExecutionContext}
 	 * @param name	name of input matrix (that the {@link ExecutionContext} is aware of)
 	 * @return	the matrix object
-	 * @throws DMLRuntimeException if an error occurs
 	 */
-	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) throws DMLRuntimeException {
+	protected MatrixObject getMatrixInputForGPUInstruction(ExecutionContext ec, String name) {
 		return ec.getMatrixInputForGPUInstruction(name, getExtendedOpcode());
 	}
 
@@ -240,9 +228,8 @@ public abstract class GPUInstruction extends Instruction {
 	 * @param numRows number of rows of matrix object
 	 * @param numCols number of columns of matrix object
 	 * @return	the matrix object
-	 * @throws DMLRuntimeException	if an error occurs
 	 */
-	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) throws DMLRuntimeException {
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
 		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);

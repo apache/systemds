@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.parser.ParForStatementBlock;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -69,11 +68,9 @@ public abstract class Optimizer
 	 * @param est cost estimator
 	 * @param ec execution context
 	 * @return true if plan changed, false otherwise
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec) 
-		throws DMLRuntimeException;	
-
+	public abstract boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec);
+	
 	public abstract PlanInputType getPlanInputType();
 
 	public abstract CostModelType getCostModelType();

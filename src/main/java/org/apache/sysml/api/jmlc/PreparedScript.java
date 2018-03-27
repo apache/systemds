@@ -103,8 +103,7 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param dmlconf dml configuration 
 	 * @param cconf compiler configuration
 	 */
-	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) 
-	{
+	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) {
 		_prog = prog;
 		_vars = new LocalVariableMap();
 		
@@ -164,9 +163,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param scalar boolean value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, boolean scalar) throws DMLException {
+	public void setScalar(String varname, boolean scalar) {
 		setScalar(varname, scalar, false);
 	}
 	
@@ -176,9 +174,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param scalar boolean value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, boolean scalar, boolean reuse) throws DMLException {
+	public void setScalar(String varname, boolean scalar, boolean reuse) {
 		setScalar(varname, new BooleanObject(scalar), reuse);
 	}
 	
@@ -187,9 +184,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param scalar long value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, long scalar) throws DMLException {
+	public void setScalar(String varname, long scalar) {
 		setScalar(varname, scalar, false);
 	}
 	
@@ -199,9 +195,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param scalar long value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, long scalar, boolean reuse) throws DMLException {
+	public void setScalar(String varname, long scalar, boolean reuse) {
 		setScalar(varname, new IntObject(scalar), reuse);
 	}
 	
@@ -209,9 +204,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param scalar double value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, double scalar) throws DMLException {
+	public void setScalar(String varname, double scalar) {
 		setScalar(varname, scalar, false);
 	}
 	
@@ -221,9 +215,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param scalar double value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, double scalar, boolean reuse) throws DMLException {
+	public void setScalar(String varname, double scalar, boolean reuse) {
 		setScalar(varname, new DoubleObject(scalar), reuse);
 	}
 	
@@ -232,9 +225,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param scalar string value
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, String scalar) throws DMLException {
+	public void setScalar(String varname, String scalar) {
 		setScalar(varname, scalar, false);
 	}
 	
@@ -244,9 +236,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param scalar string value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, String scalar, boolean reuse) throws DMLException {
+	public void setScalar(String varname, String scalar, boolean reuse) {
 		setScalar(varname, new StringObject(scalar), reuse);
 	}
 
@@ -258,14 +249,10 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param scalar scalar object
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setScalar(String varname, ScalarObject scalar, boolean reuse) 
-		throws DMLException
-	{
+	public void setScalar(String varname, ScalarObject scalar, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
-		
 		_vars.put(varname, scalar);
 	}
 
@@ -274,9 +261,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setMatrix(String varname, double[][] matrix) throws DMLException {
+	public void setMatrix(String varname, double[][] matrix) {
 		setMatrix(varname, matrix, false);
 	}
 	
@@ -286,9 +272,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setMatrix(String varname, double[][] matrix, boolean reuse) throws DMLException {
+	public void setMatrix(String varname, double[][] matrix, boolean reuse) {
 		setMatrix(varname, DataConverter.convertToMatrixBlock(matrix), reuse);
 	}
 	
@@ -300,11 +285,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param matrix matrix represented as a MatrixBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse)
-		throws DMLException
-	{
+	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
 				
@@ -330,9 +312,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame) throws DMLException {
+	public void setFrame(String varname, String[][] frame) {
 		setFrame(varname, frame, false);
 	}
 	
@@ -342,9 +323,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame, List<ValueType> schema) throws DMLException {
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema) {
 		setFrame(varname, frame, schema, false);
 	}
 	
@@ -355,9 +335,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
 	 * @param colnames frame column names
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames) throws DMLException {
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames) {
 		setFrame(varname, frame, schema, colnames, false);
 	}
 	
@@ -367,9 +346,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame, boolean reuse) throws DMLException {
+	public void setFrame(String varname, String[][] frame, boolean reuse) {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame), reuse);
 	}
 	
@@ -380,9 +358,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) throws DMLException {
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema.toArray(new ValueType[0])), reuse);
 	}
 	
@@ -394,9 +371,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param schema list representing the types of the frame columns
 	 * @param colnames frame column names
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) throws DMLException {
+	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) {
 		setFrame(varname, DataConverter.convertToFrameBlock( frame, 
 				schema.toArray(new ValueType[0]), colnames.toArray(new String[0])), reuse);
 	}
@@ -409,11 +385,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param varname input variable name
 	 * @param frame frame represented as a FrameBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
-	 * @throws DMLException if DMLException occurs
 	 */
-	public void setFrame(String varname, FrameBlock frame, boolean reuse)
-		throws DMLException
-	{
+	public void setFrame(String varname, FrameBlock frame, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
 		
@@ -445,11 +418,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * result variables according to bound and registered outputs.
 	 * 
 	 * @return ResultVariables object encapsulating output results
-	 * @throws DMLException if DMLException occurs
 	 */
-	public ResultVariables executeScript() 
-		throws DMLException
-	{
+	public ResultVariables executeScript() {
 		//add reused variables
 		_vars.putAll(_inVarReuse);
 		
@@ -484,9 +454,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * Explain the DML/PyDML program and view result as a string.
 	 * 
 	 * @return string results of explain
-	 * @throws DMLException if DMLException occurs
 	 */
-	public String explain() throws DMLException {
+	public String explain() {
 		return Explain.explain(_prog);
 	}
 	
@@ -501,11 +470,8 @@ public class PreparedScript implements ConfigurableAPI
 	 * 
 	 * @param fnamespace function namespace, null for default namespace
 	 * @param fnames function name
-	 * @throws DMLException if any compilation error occurs
 	 */
-	public void enableFunctionRecompile(String fnamespace, String... fnames) 
-		throws DMLException 
-	{
+	public void enableFunctionRecompile(String fnamespace, String... fnames) {
 		//handle default name space
 		if( fnamespace == null )
 			fnamespace = DMLProgram.DEFAULT_NAMESPACE;

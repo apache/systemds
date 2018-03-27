@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.mr;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
@@ -36,31 +35,23 @@ public class BinaryInstruction extends BinaryMRInstructionBase {
 		instString = istr;
 	}
 
-	public static BinaryInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static BinaryInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		byte in1, in2, out;
 		String opcode = parts[0];
 		in1 = Byte.parseByte(parts[1]);
 		in2 = Byte.parseByte(parts[2]);
 		out = Byte.parseByte(parts[3]);
-		
 		BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
-		if( bop != null )
-			return new BinaryInstruction(MRType.Binary, bop, in1, in2, out, str);
-		else
-			return null;
+		return (bop == null) ? null : 
+			new BinaryInstruction(MRType.Binary, bop, in1, in2, out, str);
 	}
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput,
-			int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			int blockRowFactor, int blockColFactor) {
 		
 		IndexedMatrixValue in1=cachedValues.getFirst(input1);
 		IndexedMatrixValue in2=cachedValues.getFirst(input2);

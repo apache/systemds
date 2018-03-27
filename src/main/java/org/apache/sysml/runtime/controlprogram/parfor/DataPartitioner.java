@@ -60,15 +60,11 @@ public abstract class DataPartitioner
 		_n = n;
 	}
 
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew )
-		throws DMLRuntimeException
-	{
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew ) {
 		return createPartitionedMatrixObject(in, fnameNew, false);
 	}
 
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force )
-		throws DMLRuntimeException
-	{
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, String fnameNew, boolean force ) {
 		MatrixObject out = new MatrixObject(in.getValueType(), fnameNew);
 		return createPartitionedMatrixObject(in, out, force);
 	}
@@ -85,11 +81,8 @@ public abstract class DataPartitioner
 	 * @param out output matrix object
 	 * @param force if false, try to optimize
 	 * @return partitioned matrix object
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out, boolean force )
-		throws DMLRuntimeException
-	{
+	public MatrixObject createPartitionedMatrixObject( MatrixObject in, MatrixObject out, boolean force ) {
 		//check for naive partitioning
 		if( _format == PDataPartitionFormat.NONE )
 			return in;
@@ -172,8 +165,7 @@ public abstract class DataPartitioner
 		_allowBinarycell = false;
 	}
 
-	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen )
-		throws DMLRuntimeException;
+	protected abstract void partitionMatrix( MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen );
 
 	
 	public static MatrixBlock createReuseMatrixBlock( PDataPartitionFormat dpf, int rows, int cols ) 

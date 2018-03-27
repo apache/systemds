@@ -23,7 +23,6 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.cost.CostEstimationWrapper;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -52,9 +51,7 @@ public class CostEstimatorRuntime extends CostEstimator
 	}
 	
 	@Override
-	public double getLeafNodeEstimate( TestMeasure measure, OptNode node ) 
-		throws DMLRuntimeException
-	{
+	public double getLeafNodeEstimate( TestMeasure measure, OptNode node ) {
 		//use CostEstimatorHops to get the memory estimate
 		if( measure == TestMeasure.MEMORY_USAGE )
 			return _costMem.getLeafNodeEstimate(measure, node);
@@ -65,9 +62,7 @@ public class CostEstimatorRuntime extends CostEstimator
 	}
 	
 	@Override
-	public double getLeafNodeEstimate( TestMeasure measure, OptNode node, ExecType et ) 
-			throws DMLRuntimeException
-	{
+	public double getLeafNodeEstimate( TestMeasure measure, OptNode node, ExecType et ) {
 		//use CostEstimatorHops to get the memory estimate
 		if( measure == TestMeasure.MEMORY_USAGE )
 			return _costMem.getLeafNodeEstimate(measure, node, et);

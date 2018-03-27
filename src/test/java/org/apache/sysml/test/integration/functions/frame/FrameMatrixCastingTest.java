@@ -27,7 +27,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -185,7 +184,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	}
 	
 	private static void writeMatrixOrFrameInput(String fname, double[][] A, int rows, int cols, DataType dt, ValueType vt) 
-		throws DMLRuntimeException, IOException 
+		throws IOException 
 	{
 		int blksize = ConfigurationManager.getBlocksize();
 		
@@ -208,7 +207,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	}
 	
 	private static double[][] readMatrixOrFrameInput(String fname, int rows, int cols, DataType dt) 
-		throws DMLRuntimeException, IOException 
+		throws IOException 
 	{
 		MatrixBlock ret = null;
 		

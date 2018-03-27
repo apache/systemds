@@ -22,7 +22,6 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.Expression.ValueType;
 
@@ -43,29 +42,20 @@ import org.apache.sysml.parser.Expression.ValueType;
  */
 public class RewriteRemoveUnnecessaryCasts extends HopRewriteRule
 {
-	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return null;
-		
 		for( Hop h : roots ) 
 			rule_RemoveUnnecessaryCasts( h );
-		
 		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
-		
 		rule_RemoveUnnecessaryCasts( root );
-		
 		return root;
 	}
 

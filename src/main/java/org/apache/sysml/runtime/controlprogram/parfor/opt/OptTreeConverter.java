@@ -62,7 +62,6 @@ import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 
 /**
@@ -88,9 +87,7 @@ public class OptTreeConverter
 		_rtMap = new OptTreePlanMappingRuntime();
 	}
 	
-	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec ) 
-		throws DMLRuntimeException, HopsException
-	{	
+	public static OptTree createOptTree( int ck, double cm, PlanInputType type, ParForStatementBlock pfsb, ParForProgramBlock pfpb, ExecutionContext ec )  {
 		OptNode root = null;
 		switch( type )
 		{
@@ -114,7 +111,6 @@ public class OptTreeConverter
 	}
 
 	public static OptTree createAbstractOptTree( int ck, double cm, ParForStatementBlock pfsb, ParForProgramBlock pfpb, Set<String> memo, ExecutionContext ec ) 
-		throws DMLRuntimeException
 	{
 		OptTree tree = null;
 		OptNode root = null;
@@ -133,7 +129,6 @@ public class OptTreeConverter
 	}
 
 	public static OptNode rCreateOptNode( ProgramBlock pb, LocalVariableMap vars, boolean topLevel, boolean storeObjs ) 
-		throws DMLRuntimeException 
 	{
 		OptNode node = null;
 		
@@ -246,18 +241,14 @@ public class OptTreeConverter
 		return node;
 	}
 
-	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, boolean storeObjs) 
-		throws DMLRuntimeException
-	{
+	public static ArrayList<OptNode> createOptNodes (ArrayList<Instruction> instset, LocalVariableMap vars, boolean storeObjs) {
 		ArrayList<OptNode> tmp = new ArrayList<>(instset.size());
 		for( Instruction inst : instset )
 			tmp.add( createOptNode(inst,vars,storeObjs) );
 		return tmp;
 	}
 
-	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) 
-		throws DMLRuntimeException
-	{
+	public static OptNode createOptNode( Instruction inst, LocalVariableMap vars, boolean storeObjs ) {
 		OptNode node = new OptNode(NodeType.INST);
 		String instStr = inst.toString();
 		String opstr = instStr.split(Instruction.OPERAND_DELIM)[1];
@@ -290,7 +281,6 @@ public class OptTreeConverter
 	}
 
 	public static OptNode rCreateAbstractOptNode( StatementBlock sb, ProgramBlock pb, LocalVariableMap vars, boolean topLevel, Set<String> memo ) 
-		throws DMLRuntimeException, HopsException 
 	{
 		OptNode node = null;
 		
@@ -475,9 +465,7 @@ public class OptTreeConverter
 		return node;
 	}
 
-	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, Set<String> memo ) 
-		throws DMLRuntimeException, HopsException 
-	{
+	public static ArrayList<OptNode> createAbstractOptNodes(ArrayList<Hop> hops, LocalVariableMap vars, Set<String> memo ) {
 		ArrayList<OptNode> ret = new ArrayList<>(); 
 		
 		//reset all hops
@@ -491,9 +479,7 @@ public class OptTreeConverter
 		return ret;
 	}
 
-	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, Set<String> memo) 
-		throws DMLRuntimeException, HopsException 
-	{
+	public static ArrayList<OptNode> rCreateAbstractOptNodes(Hop hop, LocalVariableMap vars, Set<String> memo) {
 		ArrayList<OptNode> ret = new ArrayList<>(); 
 		ArrayList<Hop> in = hop.getInput();
 	
@@ -640,7 +626,7 @@ public class OptTreeConverter
 	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark ) {
 		return instSet.stream().anyMatch(inst -> inst instanceof MRJobInstruction
 			|| (inclSpark && inst instanceof SPInstruction)
-			|| (inclCPFile && (inst instanceof MatrixIndexingCPFileInstruction || inst instanceof ParameterizedBuiltinCPFileInstruction)));
+			|| (inclCPFile && inst instanceof MatrixIndexingCPFileInstruction));
 	}
 
 	public static boolean containsFunctionCallInstruction( ProgramBlock pb ) {
@@ -648,9 +634,7 @@ public class OptTreeConverter
 			.anyMatch(inst -> inst instanceof FunctionCallCPInstruction);
 	}
 
-	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) 
-		throws DMLRuntimeException
-	{
+	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) {
 		ProgramBlock pbParent = null;
 		if( rtMap )
 			pbParent = (ProgramBlock)_rtMap.getMappedObject( parent.getID() );

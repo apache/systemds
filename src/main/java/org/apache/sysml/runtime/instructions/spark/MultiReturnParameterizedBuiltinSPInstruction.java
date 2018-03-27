@@ -76,9 +76,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		_outputs = outputs;
 	}
 
-	public static MultiReturnParameterizedBuiltinSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MultiReturnParameterizedBuiltinSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
@@ -99,9 +97,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 
 	@Override 
 	@SuppressWarnings("unchecked")
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext) ec;
 		
 		try

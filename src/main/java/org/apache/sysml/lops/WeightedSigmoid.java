@@ -41,10 +41,8 @@ public class WeightedSigmoid extends Lop
 	
 	private WSigmoidType _wsigmoidType = null;
 	
-	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedSigmoid, dt, vt);		
+	public WeightedSigmoid(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, WSigmoidType wt, ExecType et) {
+		super(Lop.Type.WeightedSigmoid, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V

@@ -26,7 +26,7 @@ public class StringIdentifier extends ConstIdentifier
 	private String _val;
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		return this;
 	}
 
@@ -69,9 +69,7 @@ public class StringIdentifier extends ConstIdentifier
 	}
 	
 	@Override
-	public long getLongValue() 
-		throws LanguageException 
-	{
+	public long getLongValue() {
 		throw new LanguageException("Unsupported string-to-long conversion.");
 	}
 }

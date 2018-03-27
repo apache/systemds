@@ -35,21 +35,19 @@ import org.apache.sysml.parser.LanguageException;
 public class IPAPassApplyStaticHopRewrites extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.APPLY_STATIC_REWRITES;
 	}
 	
 	@Override
-	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
-	{
+	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		try {
 			//construct rewriter w/o checkpoint injection to avoid redundancy
 			ProgramRewriter rewriter = new ProgramRewriter(true, false);
 			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
 			
 			//rewrite program hop dags and statement blocks
-			rewriter.rewriteProgramHopDAGs(prog);
+			rewriter.rewriteProgramHopDAGs(prog, true); //rewrite and split
 		} 
 		catch (LanguageException ex) {
 			throw new HopsException(ex);

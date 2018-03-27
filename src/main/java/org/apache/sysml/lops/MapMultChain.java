@@ -49,12 +49,9 @@ public class MapMultChain extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public MapMultChain(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.MapMultChain, dt, vt);		
+	public MapMultChain(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et)  {
+		super(Lop.Type.MapMultChain, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //v
 		input1.addOutput(this); 
@@ -75,12 +72,9 @@ public class MapMultChain extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
-	 * @throws LopsException if LopsException occurs
 	 */
-	public MapMultChain(Lop input1, Lop input2, Lop input3, ChainType chain, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.MapMultChain, dt, vt);		
+	public MapMultChain(Lop input1, Lop input2, Lop input3, ChainType chain, DataType dt, ValueType vt, ExecType et) {
+		super(Lop.Type.MapMultChain, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //w
 		addInput(input3); //v

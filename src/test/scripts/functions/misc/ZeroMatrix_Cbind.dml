@@ -26,4 +26,4 @@ for( i in 1:3 ) {
   R = cbind(R, matrix(7, $1, 1)); 
   print(nrow(R) + " " + ncol(R) + " " + length(R));
 }  
-write(R, $2);
+write(R, $3);

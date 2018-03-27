@@ -26,7 +26,6 @@ import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -81,7 +80,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
 	}
 
@@ -107,7 +106,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops()
-		throws HopsException, LopsException 
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -213,10 +211,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * If corresponding output lop is not found or if this is not a max_pool_backward operation, this function returns null
 	 * 
 	 * @return output lop of max_pool/avg_pool operation with same parameters as this hop
-	 * @throws HopsException if error 
-	 * @throws LopsException if error
 	 */
-	private Lop getMaxPoolOutputLop() throws HopsException, LopsException {
+	private Lop getMaxPoolOutputLop() {
 		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.AVG_POOLING_BACKWARD) {
 			ConvOp opType = (op == ConvOp.MAX_POOLING_BACKWARD) ? ConvOp.MAX_POOLING : ConvOp.AVG_POOLING;
 			Hop inputImage = getInput().get(0);
@@ -232,7 +228,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return null;
 	}
 	
-	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) throws HopsException, LopsException {
+	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) {
 		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		
@@ -533,7 +529,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		
@@ -569,7 +565,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-	ConvolutionParameters parseInput() throws DMLRuntimeException {
+	ConvolutionParameters parseInput() {
 		
 		Hop imageHeightHop = null; Hop filterHeightHop = null;
 		if(op == ConvOp.MAX_POOLING_BACKWARD || op == ConvOp.AVG_POOLING_BACKWARD 
@@ -656,9 +652,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @param dim1 inferred shape
 	 * @param dim2 given shape
 	 * @param paramType string denoting the parameter for pretty printing of the error message
-	 * @throws DMLRuntimeException if dim1 != dim2
 	 */
-	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) throws DMLRuntimeException {
+	private void throwExceptionIfNotEqual(int dim1, int dim2, String paramType) {
 		if(dim1 >= 0 && dim2 >= 0 && dim1 != dim2) {
 			throw new DMLRuntimeException("Inferred " + paramType + " from parent doesn't match with given " + paramType + ":" + dim1 + " != " + dim2);
 		}
@@ -666,10 +661,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	/**
 	 * Gets the values for the parameters C, H, W, P, Q from parent hops
-	 * 
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	private void inferCHWPQFromParentOp() throws DMLRuntimeException {
+	private void inferCHWPQFromParentOp() {
 		Hop tmp = getInput().get(0);
 		// Skip bias_add and go to its parent
 		tmp = isInputBiasAdd(tmp) ? tmp.getInput().get(0) : tmp;

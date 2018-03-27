@@ -22,8 +22,8 @@ package org.apache.sysml.udf;
 import java.io.IOException;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
@@ -146,12 +146,9 @@ public class Matrix extends FunctionParameter
 	 * representation.
 	 * 
 	 * @return matrix as two-dimensional double array
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
-	public double[][] getMatrixAsDoubleArray() 
-		throws DMLRuntimeException, IOException 
-	{
+	public double[][] getMatrixAsDoubleArray() throws IOException {
 		double[][] ret = null;
 		
 		if( _mo != null ) { //CP ext function
@@ -176,11 +173,8 @@ public class Matrix extends FunctionParameter
 	 * 
 	 * @param data matrix as 2-dimensional double array
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void setMatrixDoubleArray(double[][] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
-		throws IOException, DMLRuntimeException 
-	{
+	public void setMatrixDoubleArray(double[][] data) throws IOException {
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
 		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 	}
@@ -192,11 +186,8 @@ public class Matrix extends FunctionParameter
 	 * 
 	 * @param data matrix as double array
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public void setMatrixDoubleArray(double[] data /*, OutputInfo oinfo, InputInfo iinfo*/) 
-		throws IOException, DMLRuntimeException 
-	{
+	public void setMatrixDoubleArray(double[] data) throws IOException {
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(data, true);
 		setMatrixDoubleArray(mb, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 	}
@@ -222,14 +213,17 @@ public class Matrix extends FunctionParameter
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(_rows, _cols, rblen, cblen, nnz);
 		MetaDataFormat mfmd = new MetaDataFormat(mc, oinfo, iinfo);
-		try 
-		{
+		try {
+			//check for correct sparse/dense representation
+			if( mb.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
+				mb.examSparsity();
+			
+			//construct output matrix object
 			_mo = new MatrixObject(Expression.ValueType.DOUBLE, _filePath, mfmd);
 			_mo.acquireModify( mb );
 			_mo.release();
 		} 
-		catch(Exception e) 
-		{
+		catch(Exception e) {
 			throw new IOException(e);
 		} 
 	}

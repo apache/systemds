@@ -113,19 +113,14 @@ public class Unary extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 * @param numThreads number of threads
-	 * @throws LopsException if LopsException occurs
 	 */
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads) 
-		throws LopsException 
-	{
+	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads) {
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, op, dt, vt, et);
 		_numThreads = numThreads;
 	}
 
-	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-		throws LopsException 
-	{
+	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		//sanity check
 		if ( (op == OperationTypes.INVERSE || op == OperationTypes.CHOLESKY)
 			 && (et == ExecType.SPARK || et == ExecType.MR) ) {
@@ -169,15 +164,11 @@ public class Unary extends Lop
 			return "Operation: " + operation + " " + "Label: N/A";
 	}
 
-	private String getOpcode() 
-		throws LopsException 
-	{
+	private String getOpcode() {
 		return getOpcode(operation);
 	}
 
-	public static String getOpcode(OperationTypes op) 
-		throws LopsException 
-	{
+	public static String getOpcode(OperationTypes op) {
 		switch (op) {
 		case NOT:
 			return "!";
@@ -342,9 +333,7 @@ public class Unary extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input1, String output) {
 		//sanity check number of operands
 		if( getInputs().size() != 1 ) {
 			throw new LopsException(printErrorLocation() + "Invalid number of operands ("
@@ -371,14 +360,12 @@ public class Unary extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException {
+	public String getInstructions(int input_index, int output_index) {
 		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 
 	@Override
-	public String getInstructions(String input1, String input2, String output) 
-		throws LopsException 
-	{
+	public String getInstructions(String input1, String input2, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		
@@ -404,8 +391,7 @@ public class Unary extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int inputIndex1, int inputIndex2,
-			int outputIndex) throws LopsException {
+	public String getInstructions(int inputIndex1, int inputIndex2, int outputIndex) {
 		if (this.getInputs().size() == 2) {
 			// Unary operators with two inputs
 			// Determine the correct operation, depending on the scalar input

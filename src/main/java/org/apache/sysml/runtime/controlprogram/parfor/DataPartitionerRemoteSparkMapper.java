@@ -57,9 +57,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	private PDataPartitionFormat _dpf;
 	private final long _n;
 	
-	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) 
-		throws DMLRuntimeException
-	{
+	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) {
 		_rlen = mc.getRows();
 		_clen = mc.getCols();
 		_brlen = mc.getRowsPerBlock();

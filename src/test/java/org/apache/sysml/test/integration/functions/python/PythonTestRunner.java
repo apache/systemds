@@ -52,39 +52,37 @@ public class PythonTestRunner extends AutomatedTestBase
 	
 	
 	@Test
-	public void testMLContext() throws DMLRuntimeException, IOException, InterruptedException  {
+	public void testMLContext() throws IOException, InterruptedException  {
 		runPythonTest("test_mlcontext.py");
 	}
 	
 	@Test
-	public void testMatrixBinaryOp() throws DMLRuntimeException, IOException, InterruptedException  {
+	public void testMatrixBinaryOp() throws IOException, InterruptedException  {
 		runPythonTest("test_matrix_binary_op.py");
 	}
 	
 	@Test
-	public void testMatrixAggFn() throws DMLRuntimeException, IOException, InterruptedException  {
+	public void testMatrixAggFn() throws IOException, InterruptedException  {
 		runPythonTest("test_matrix_agg_fn.py");
 	}
 	
 	@Test
-	public void testMLLearn_df() throws DMLRuntimeException, IOException, InterruptedException  {
+	public void testMLLearn_df() throws IOException, InterruptedException  {
 		runPythonTest("test_mllearn_df.py");
 	}
 	
 	@Test
-	public void testMLLearn_numpy() throws DMLRuntimeException, IOException, InterruptedException  {
+	public void testMLLearn_numpy() throws IOException, InterruptedException  {
 		runPythonTest("test_mllearn_numpy.py");
 	}
 	
-	public void runPythonTest(String pythonFileName) throws IOException, DMLRuntimeException, InterruptedException {
+	public void runPythonTest(String pythonFileName) throws IOException, InterruptedException {
 		if(!RUN_PYTHON_TEST)
 			return;
 			
 		if(!new File("target/SystemML.jar").exists()) {
 			throw new DMLRuntimeException("Please build the project before running PythonTestRunner");
 		}
-//		String [] args = { "--master", "local[*]", "--driver-class-path", "target/SystemML.jar", "src/main/python/tests/test_mlcontext.py"};
-//		org.apache.spark.deploy.SparkSubmit.main(args);
 		Map<String, String> env = System.getenv();
 		if(!env.containsKey("SPARK_HOME")) {
 			throw new DMLRuntimeException("Please set the SPARK_HOME environment variable");

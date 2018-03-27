@@ -27,7 +27,6 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
@@ -77,7 +76,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	 */
 	@Override
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec)
-		throws DMLRuntimeException
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
@@ -230,7 +228,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 	@Override
 	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PartitionFormat> partitionedMatrices, double thetaM)
-		throws DMLRuntimeException
 	{
 		//call rewrite first to obtain partitioning information
 		String initPlan = n.getParam(ParamType.DATA_PARTITIONER);
@@ -254,7 +251,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 	@Override
 	protected boolean rewriteSetExecutionStategy(OptNode n, double M0, double M, double M2, double M3, boolean flagLIX)
-		throws DMLRuntimeException
 	{
 		boolean ret = false;
 
@@ -262,7 +258,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		if( n.getExecType() != null && ConfigurationManager.isParallelParFor() )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
 			PExecMode mode = PExecMode.LOCAL;
 
@@ -288,9 +284,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested)
-		throws DMLRuntimeException
-	{
+	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) {
 		// constraint awareness
 		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
@@ -347,9 +341,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal )
-		throws DMLRuntimeException
-	{
+	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) {
 		// constraint awareness
 		if( !n.getParam(ParamType.RESULT_MERGE).equals(PResultMerge.UNSPECIFIED.toString()) )
 		{
@@ -368,7 +360,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode)
-		throws DMLRuntimeException
 	{
 		if( emode == PExecMode.REMOTE_MR_DP || emode == PExecMode.REMOTE_SPARK_DP )
 		{

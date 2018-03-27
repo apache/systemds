@@ -168,7 +168,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 3 || _input.size() == 4, this,
 				"should have arity 3 or 4 but has arity %d", _input.size());
 	}
@@ -194,8 +194,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -302,7 +301,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructCPLopsWeightedSquaredLoss(WeightsType wtype) 
-		throws HopsException, LopsException
 	{
 		WeightedSquaredLoss wsloss = new WeightedSquaredLoss(
 				getInput().get(0).constructLops(),
@@ -320,7 +318,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		setLops( wsloss );
 	}
 
-	private Lop constructLeftFactorMRLop(Hop U, Hop V, boolean cacheU, double m1Size) throws HopsException, LopsException {
+	private Lop constructLeftFactorMRLop(Hop U, Hop V, boolean cacheU, double m1Size) {
 		Lop lU = null;
 		if (cacheU) {
 			// partitioning of U for read through distributed cache
@@ -349,7 +347,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		return lU;
 	}
 
-	private Lop constructRightFactorMRLop(Hop U, Hop V, boolean cacheV, double m2Size) throws HopsException, LopsException {
+	private Lop constructRightFactorMRLop(Hop U, Hop V, boolean cacheV, double m2Size) {
 		Lop lV = null;
 		if (cacheV) {
 			// partitioning of V for read through distributed cache
@@ -384,7 +382,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructMRLopsWeightedSquaredLoss(WeightsType wtype) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -484,7 +481,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructSparkLopsWeightedSquaredLoss(WeightsType wtype) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -533,9 +529,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		}
 	}
 
-	private void constructCPLopsWeightedSigmoid(WSigmoidType wtype) 
-		throws HopsException, LopsException
-	{
+	private void constructCPLopsWeightedSigmoid(WSigmoidType wtype) {
 		WeightedSigmoid wsig = new WeightedSigmoid(
 				getInput().get(0).constructLops(),
 				getInput().get(1).constructLops(),
@@ -551,9 +545,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		setLops( wsig );
 	}
 
-	private void constructMRLopsWeightedSigmoid( WSigmoidType wtype ) 
-		throws HopsException, LopsException
-	{
+	private void constructMRLopsWeightedSigmoid( WSigmoidType wtype ) {
 		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
 		//by applying the hop rewrite for Weighted Sigmoid only if this constraint holds. 
@@ -622,7 +614,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructSparkLopsWeightedSigmoid( WSigmoidType wtype ) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -671,7 +662,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructCPLopsWeightedDivMM(WDivMMType wtype) 
-		throws HopsException, LopsException
 	{
 		WeightedDivMM wdiv = new WeightedDivMM(
 				getInput().get(0).constructLops(),
@@ -690,7 +680,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructMRLopsWeightedDivMM( WDivMMType wtype ) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wdivmm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -777,7 +766,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructSparkLopsWeightedDivMM( WDivMMType wtype ) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wdivmm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -827,7 +815,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructCPLopsWeightedCeMM(WCeMMType wtype) 
-		throws HopsException, LopsException
 	{
 		WeightedCrossEntropy wcemm = new WeightedCrossEntropy(
 				getInput().get(0).constructLops(),
@@ -846,7 +833,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructMRLopsWeightedCeMM(WCeMMType wtype) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wcemm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -939,7 +925,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructSparkLopsWeightedCeMM(WCeMMType wtype) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wcemm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -989,7 +974,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructCPLopsWeightedUMM(WUMMType wtype) 
-		throws HopsException, LopsException
 	{
 		Unary.OperationTypes uop = _uop!=null ? 
 				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
@@ -1011,7 +995,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructMRLopsWeightedUMM( WUMMType wtype ) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wumm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -1085,7 +1068,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	}
 
 	private void constructSparkLopsWeightedUMM( WUMMType wtype ) 
-		throws HopsException, LopsException
 	{
 		//NOTE: the common case for wumm are factors U/V with a rank of 10s to 100s; the current runtime only
 		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
@@ -1268,13 +1250,12 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 	
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
-	{	
+	{
 		checkAndSetForcedPlatform();
 		
 		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
-		if( _etypeForced != null ) 			
+		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
 		}

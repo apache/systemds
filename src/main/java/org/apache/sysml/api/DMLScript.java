@@ -60,14 +60,9 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.debug.DMLDebugger;
-import org.apache.sysml.debug.DMLDebuggerException;
 import org.apache.sysml.debug.DMLDebuggerProgramInfo;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.OptimizerUtils.OptimizationLevel;
-import org.apache.sysml.hops.globalopt.GlobalOptimizerWrapper;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.LanguageException;
@@ -240,10 +235,9 @@ public class DMLScript
 	 *
 	 * @param args command-line arguments
 	 * @throws IOException if an IOException occurs
-	 * @throws DMLException if a DMLException occurs
 	 */
 	public static void main(String[] args)
-		throws IOException, DMLException
+		throws IOException
 	{
 		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -457,12 +451,8 @@ public class DMLScript
 	 * @param conf Hadoop configuration
 	 * @param args arguments
 	 * @return true if success, false otherwise
-	 * @throws DMLException if DMLException occurs
-	 * @throws ParseException if ParseException occurs
 	 */
-	public static boolean executeScript( Configuration conf, String[] args ) 
-		throws DMLException
-	{
+	public static boolean executeScript( Configuration conf, String[] args ) {
 		//parse arguments and set execution properties
 		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
 		ExplainType oldexplain          = EXPLAIN;     //keep old explain
@@ -567,10 +557,9 @@ public class DMLScript
 	 * @param scriptOrFilename script or filename
 	 * @return a string representation of the script
 	 * @throws IOException	if error
-	 * @throws LanguageException	if error
 	 */
 	protected static String readDMLScript( boolean isFile, String scriptOrFilename )
-		throws IOException, LanguageException
+		throws IOException
 	{
 		String dmlScriptStr;
 		
@@ -665,15 +654,10 @@ public class DMLScript
 	 * @param argVals map of argument values
 	 * @param allArgs arguments
 	 * @param scriptType type of script (DML or PyDML)
-	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws LanguageException if LanguageException occurs
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
-		throws ParseException, IOException, DMLRuntimeException, LanguageException, HopsException, LopsException 
+		throws IOException
 	{	
 		SCRIPT_TYPE = scriptType;
 
@@ -731,14 +715,6 @@ public class DMLScript
 		//Step 7: generate runtime program, incl codegen
 		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
 		
-		//Step 8: [optional global data flow optimization]
-		if(OptimizerUtils.isOptLevel(OptimizationLevel.O4_GLOBAL_TIME_MEMORY) ) 
-		{
-			LOG.warn("Optimization level '" + OptimizationLevel.O4_GLOBAL_TIME_MEMORY + "' " +
-					"is still in experimental state and not intended for production use.");
-			rtprog = GlobalOptimizerWrapper.optimizeProgram(prog, rtprog);
-		}
-		
 		//launch SystemML appmaster (if requested and not already in launched AM)
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
 			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, dmlconf, allArgs, rtprog) )
@@ -784,16 +760,10 @@ public class DMLScript
 	 * @param fnameOptConfig Full path of configuration file for SystemML
 	 * @param argVals Key-value pairs defining arguments of DML script
 	 * @param scriptType type of script (DML or PyDML)
-	 * @throws ParseException if ParseException occurs
 	 * @throws IOException if IOException occurs
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
-	 * @throws DMLDebuggerException if DMLDebuggerException occurs
-	 * @throws LanguageException if LanguageException occurs
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
 	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, ScriptType scriptType)
-		throws ParseException, IOException, DMLRuntimeException, DMLDebuggerException, LanguageException, HopsException, LopsException 
+		throws IOException
 	{		
 		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
 		
@@ -982,9 +952,7 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	private static void cleanSystemMLWorkspace() 
-		throws DMLException
-	{
+	private static void cleanSystemMLWorkspace() {
 		try
 		{
 			//read the default config

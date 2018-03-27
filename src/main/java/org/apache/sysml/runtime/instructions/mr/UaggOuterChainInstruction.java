@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.ReduceAll;
 import org.apache.sysml.runtime.functionobjects.ReduceCol;
 import org.apache.sysml.runtime.functionobjects.ReduceRow;
@@ -66,9 +65,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 		instString = istr;
 	}
 
-	public static UaggOuterChainInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static UaggOuterChainInstruction parseInstruction( String str ) {
 		//check number of fields (2/3 inputs, output, type)
 		InstructionUtils.checkNumFields ( str, 5 );
 		
@@ -102,9 +99,7 @@ public class UaggOuterChainInstruction extends BinaryInstruction implements IDis
 	
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
-			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{
+			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		ArrayList<IndexedMatrixValue> blkList = null; 
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
 				               || !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp));

@@ -19,13 +19,11 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -33,7 +31,6 @@ import org.apache.sysml.hops.codegen.SpoofCompiler.IntegrationType;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.ForStatement;
@@ -60,7 +57,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 public class ProgramRecompiler 
 {
 	public static ArrayList<ProgramBlock> generatePartitialRuntimeProgram(Program rtprog, ArrayList<StatementBlock> sbs) 
-		throws LopsException, DMLRuntimeException, IOException, HopsException
 	{
 		ArrayList<ProgramBlock> ret = new ArrayList<>();
 		DMLConfig config = ConfigurationManager.getDMLConfig();
@@ -97,10 +93,8 @@ public class ProgramRecompiler
 	 * @param var variable
 	 * @param ec execution context
 	 * @param force if true, set and recompile the respective indexing hops
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
-		throws DMLRuntimeException
 	{
 		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock )
 		{
@@ -203,9 +197,7 @@ public class ProgramRecompiler
 		}
 	}
 
-	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) 
-		throws DMLRuntimeException
-	{
+	public static LocalVariableMap getReusableScalarVariables( DMLProgram prog, StatementBlock parforSB, LocalVariableMap vars ) {
 		LocalVariableMap constVars = new LocalVariableMap(); 
 		
 		for( String varname : vars.keySet() )
@@ -222,7 +214,6 @@ public class ProgramRecompiler
 	}
 	
 	public static void replaceConstantScalarVariables( StatementBlock sb, LocalVariableMap vars )
-		throws DMLRuntimeException, HopsException
 	{
 		if( sb instanceof IfStatementBlock )
 		{
@@ -265,9 +256,7 @@ public class ProgramRecompiler
 		}
 	}
 
-	private static void replacePredicateLiterals( Hop pred, LocalVariableMap vars )
-		throws DMLRuntimeException
-	{
+	private static void replacePredicateLiterals( Hop pred, LocalVariableMap vars ) {
 		if( pred != null ){
 			pred.resetVisitStatus();
 			Recompiler.rReplaceLiterals(pred, vars, true);
@@ -284,40 +273,30 @@ public class ProgramRecompiler
 	 * @param parforSB parfor statement block
 	 * @param var variable
 	 * @return true if can reuse variable
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var )
-		throws DMLRuntimeException
-	{
+	public static boolean isApplicableForReuseVariable( DMLProgram prog, StatementBlock parforSB, String var ) {
 		boolean ret = false;
-		
 		for( StatementBlock sb : prog.getStatementBlocks() )
 			ret |= isApplicableForReuseVariable(sb, parforSB, var);
-		
-		return  ret;	
+		return  ret;
 	}
 
-	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var )
-			throws DMLRuntimeException
-	{
+	private static boolean isApplicableForReuseVariable( StatementBlock sb, StatementBlock parforSB, String var ) {
 		boolean ret = false;
 		
-		if( sb instanceof IfStatementBlock )
-		{
+		if( sb instanceof IfStatementBlock ) {
 			IfStatement is = (IfStatement) sb.getStatement(0);
 			for( StatementBlock lsb : is.getIfBody() )
 				ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 			for( StatementBlock lsb : is.getElseBody() )
 				ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 		}
-		else if( sb instanceof WhileStatementBlock )
-		{
+		else if( sb instanceof WhileStatementBlock ) {
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
 			for( StatementBlock lsb : ws.getBody() )
-				ret |= isApplicableForReuseVariable(lsb, parforSB, var);		
+				ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 		}
-		else if( sb instanceof ForStatementBlock ) //for or parfor
-		{
+		else if( sb instanceof ForStatementBlock ) { //for or parfor
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
 			if( fsb == parforSB ) {
@@ -329,8 +308,7 @@ public class ProgramRecompiler
 					ret |= isApplicableForReuseVariable(lsb, parforSB, var);
 			}
 		}
-		
-		return  ret && !sb.variablesUpdated().containsVariable(var);	
+		return  ret && !sb.variablesUpdated().containsVariable(var);
 	}
 
 	public static boolean containsAtLeastOneFunction( ProgramBlock pb )
@@ -371,7 +349,6 @@ public class ProgramRecompiler
 	}
 
 	private static ArrayList<Instruction> rFindAndRecompileIndexingHOP( Hop hop, ArrayList<Instruction> in, String var, ExecutionContext ec, boolean force ) 
-		throws DMLRuntimeException
 	{
 		ArrayList<Instruction> tmp = in;
 		
@@ -471,9 +448,7 @@ public class ProgramRecompiler
 	///////
 	// additional general-purpose functionalities
 
-	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) 
-		throws DMLRuntimeException 
-	{
+	protected static ArrayList<Instruction> createNestedParallelismToInstructionSet(String iterVar, String offset) {
 		//create instruction string
 		StringBuilder sb = new StringBuilder("CP"+Lop.OPERAND_DELIMITOR+"+"+Lop.OPERAND_DELIMITOR);
 		sb.append(iterVar);

@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -171,7 +170,7 @@ public class FrameMatrixWriteTest extends AutomatedTestBase
 	}
 	
 	private static double[][] readFrameInput(String fname, String ofmt, int rows, int cols) 
-		throws DMLRuntimeException, IOException 
+		throws IOException 
 	{
 		//read input data
 		FrameReader reader = FrameReaderFactory.createFrameReader(InputInfo.stringExternalToInputInfo(ofmt));

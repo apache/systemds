@@ -28,9 +28,7 @@ public class CumulativeSplitAggregate extends Lop
 {
 	private double _initValue = 0;
 	
-	public CumulativeSplitAggregate(Lop input, DataType dt, ValueType vt, double init)
-		throws LopsException 
-	{
+	public CumulativeSplitAggregate(Lop input, DataType dt, ValueType vt, double init) {
 		super(Lop.Type.CumulativeSplitAggregate, dt, vt);
 		_initValue = init;
 		init(input, dt, vt, ExecType.MR);

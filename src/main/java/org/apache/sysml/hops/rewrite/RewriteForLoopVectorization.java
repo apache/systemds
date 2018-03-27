@@ -29,7 +29,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
@@ -53,10 +52,13 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	private static final OpOp2[] MAP_SCALAR_AGGREGATE_SOURCE_OPS = new OpOp2[]{OpOp2.PLUS, OpOp2.MULT, OpOp2.MIN, OpOp2.MAX};
 	private static final AggOp[] MAP_SCALAR_AGGREGATE_TARGET_OPS = new AggOp[]{AggOp.SUM,  AggOp.PROD, AggOp.MIN, AggOp.MAX};
 	
+	@Override
+	public boolean createsSplitDag() {
+		return false;
+	}
 	
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
-		throws HopsException 
 	{
 		if( sb instanceof ForStatementBlock )
 		{
@@ -98,13 +100,11 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	}
 	
 	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, 
-			ProgramRewriteStatus sate) throws HopsException {
+	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
 	}
 	
 	private static StatementBlock vectorizeScalarAggregate( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
-		throws HopsException
 	{
 		StatementBlock ret = sb;
 		
@@ -206,7 +206,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	}
 	
 	private static StatementBlock vectorizeElementwiseBinary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar ) 
-		throws HopsException
 	{
 		StatementBlock ret = sb;
 		
@@ -290,7 +289,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	}
 	
 	private static StatementBlock vectorizeElementwiseUnary( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
-		throws HopsException
 	{
 		StatementBlock ret = sb;
 		
@@ -350,7 +348,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 	}
 	
 	private static StatementBlock vectorizeIndexedCopy( StatementBlock sb, StatementBlock csb, Hop from, Hop to, Hop increment, String itervar )
-		throws HopsException
 	{
 		StatementBlock ret = sb;
 		

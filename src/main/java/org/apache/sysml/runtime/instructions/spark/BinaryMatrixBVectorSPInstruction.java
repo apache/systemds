@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.sysml.lops.BinaryM.VectorType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -29,15 +28,13 @@ public class BinaryMatrixBVectorSPInstruction extends BinarySPInstruction {
 	private VectorType _vtype = null;
 
 	protected BinaryMatrixBVectorSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			VectorType vtype, String opcode, String istr) throws DMLRuntimeException {
+			VectorType vtype, String opcode, String istr) {
 		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 		_vtype = vtype;
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//common binary matrix-broadcast vector process instruction
 		super.processMatrixBVectorBinaryInstruction(ec, _vtype);
 	}

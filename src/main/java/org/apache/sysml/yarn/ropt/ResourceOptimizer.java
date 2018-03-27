@@ -28,11 +28,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.cost.CostEstimationWrapper;
 import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -82,7 +80,6 @@ public class ResourceOptimizer
 	private static long _cntCostPB = 0;
 	
 	public synchronized static ResourceConfig optimizeResourceConfig( ArrayList<ProgramBlock> prog, YarnClusterConfig cc, GridEnumType cptype, GridEnumType mrtype ) 
-		throws DMLRuntimeException
 	{
 		ResourceConfig ROpt = null;
 		
@@ -165,9 +162,7 @@ public class ResourceOptimizer
 		return ROpt;
 	}
 
-	public static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ResourceConfig rc ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
+	public static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ResourceConfig rc ) {
 		//recompile program block hierarchy to list of blocks and apply optimized resource configuration
 		ArrayList<ProgramBlock> B = compileProgram(prog, null, rc.getCPResource(), rc.getMaxMRResource());
 		ResourceOptimizer.recompileProgramBlocks(B, rc.getCPResource(), rc.getMRResourcesMemo());
@@ -175,9 +170,7 @@ public class ResourceOptimizer
 		return B;
 	}
 
-	private static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ArrayList<ProgramBlock> B, double cp, double mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
+	private static ArrayList<ProgramBlock> compileProgram( ArrayList<ProgramBlock> prog, ArrayList<ProgramBlock> B, double cp, double mr ) {
 		if( B == null ) { //init 
 			B = new ArrayList<>();
 			InfrastructureAnalyzer.setLocalMaxMemory( (long)cp );
@@ -192,9 +185,7 @@ public class ResourceOptimizer
 		return B;
 	}
 
-	private static ArrayList<ProgramBlock> compileProgram( ProgramBlock pb, ArrayList<ProgramBlock> B, double cp, double mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
+	private static ArrayList<ProgramBlock> compileProgram( ProgramBlock pb, ArrayList<ProgramBlock> B, double cp, double mr ) {
 		if (pb instanceof FunctionProgramBlock)
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
@@ -265,11 +256,8 @@ public class ResourceOptimizer
 		return B;
 	}
 
-	private static void recompileProgramBlocks( ArrayList<ProgramBlock> pbs, long cp, double[][] memo ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
-	{
-		for( int i=0; i<pbs.size(); i++ )
-		{
+	private static void recompileProgramBlocks( ArrayList<ProgramBlock> pbs, long cp, double[][] memo ) {
+		for( int i=0; i<pbs.size(); i++ ) {
 			ProgramBlock pb = pbs.get(i);
 			long mr = (long)memo[i][0];
 			recompileProgramBlock(pb, cp, mr);
@@ -277,7 +265,6 @@ public class ResourceOptimizer
 	}
 
 	private static void recompileProgramBlock( ProgramBlock pb, long cp, long mr ) 
-		throws DMLRuntimeException, HopsException, LopsException, IOException
 	{
 		//init compiler memory budget
 		InfrastructureAnalyzer.setLocalMaxMemory( cp );
@@ -286,8 +273,7 @@ public class ResourceOptimizer
 		OptimizerUtils.resetDefaultSize(); //dependent on cp, mr
 		
 		//recompile instructions (incl predicates)
-		if (pb instanceof WhileProgramBlock)
-		{
+		if (pb instanceof WhileProgramBlock) {
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock sb = (WhileStatementBlock) pb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
@@ -295,10 +281,9 @@ public class ResourceOptimizer
 					sb.getPredicateHops(), new LocalVariableMap(), null, false, false, 0);
 				inst = annotateMRJobInstructions(inst, cp, mr);
 				wpb.setPredicate( inst );
-			}				
-		}	
-		else if (pb instanceof IfProgramBlock)
-		{
+			}
+		}
+		else if (pb instanceof IfProgramBlock) {
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock sb = (IfStatementBlock) ipb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null && sb.getPredicateHops()!=null ){
@@ -308,8 +293,7 @@ public class ResourceOptimizer
 				ipb.setPredicate( inst );
 			}
 		}
-		else if (pb instanceof ForProgramBlock) //incl parfor
-		{
+		else if (pb instanceof ForProgramBlock) { //incl parfor
 			ForProgramBlock fpb = (ForProgramBlock)pb;
 			ForStatementBlock sb = (ForStatementBlock) fpb.getStatementBlock();
 			if( INCLUDE_PREDICATES && sb!=null ){
@@ -333,8 +317,7 @@ public class ResourceOptimizer
 				}
 			}
 		}
-		else //last-level program blocks
-		{
+		else { //last-level program blocks
 			StatementBlock sb = pb.getStatementBlock();
 			ArrayList<Instruction> inst = Recompiler.recompileHopsDag(
 				sb, sb.getHops(), new LocalVariableMap(), null, false, false, 0);
@@ -346,7 +329,6 @@ public class ResourceOptimizer
 	}
 
 	private static ArrayList<Instruction> annotateMRJobInstructions( ArrayList<Instruction> inst, long cp, long mr ) 
-		throws DMLRuntimeException
 	{
 		//check for empty instruction lists (e.g., predicates)
 		if( inst == null || !COSTS_MAX_PARALLELISM )
@@ -382,9 +364,7 @@ public class ResourceOptimizer
 		return inst;
 	}
 
-	private static double getProgramCosts( ProgramBlock pb ) 
-		throws DMLRuntimeException, HopsException
-	{
+	private static double getProgramCosts( ProgramBlock pb ) {
 		double val = 0;
 		if( COST_INDIVIDUAL_BLOCKS ) {
 			LocalVariableMap vars = new LocalVariableMap();
@@ -403,24 +383,20 @@ public class ResourceOptimizer
 		return val;
 	}
 
-	private static double getProgramCosts( Program prog ) 
-		throws DMLRuntimeException
-	{
+	private static double getProgramCosts( Program prog ) {
 		//we need to cost the entire program in order to take in-memory status into account
 		ExecutionContext ec = ExecutionContextFactory.createContext();
 		double val = CostEstimationWrapper.getTimeEstimate(prog, ec);
 		_cntCostPB ++;
-		
 		return val;
 	}
 
-	private static void collectReadVariables( ArrayList<Hop> hops, LocalVariableMap vars )
-	{
+	private static void collectReadVariables( ArrayList<Hop> hops, LocalVariableMap vars ) {
 		if( hops!=null ) {
 			Hop.resetVisitStatus(hops);
 			for( Hop hop : hops )
 				collectReadVariables(hop, vars);
-		}		
+		}
 	}
 
 	private static void collectReadVariables( Hop hop, LocalVariableMap vars )
@@ -448,7 +424,6 @@ public class ResourceOptimizer
 	}
 
 	private static ArrayList<ProgramBlock> pruneProgramBlocks( ArrayList<ProgramBlock> B ) 
-		throws HopsException
 	{
 		//prune all program blocks w/o mr instructions (mr budget does not matter)
 		if( PRUNING_SMALL ){
@@ -468,11 +443,10 @@ public class ResourceOptimizer
 			B = Bp;
 		}
 		
-		return B;		
+		return B;
 	}
 
 	private static boolean pruneHasOnlyUnknownMR( ProgramBlock pb ) 
-		throws HopsException
 	{
 		if (pb instanceof WhileProgramBlock)
 		{
@@ -503,18 +477,14 @@ public class ResourceOptimizer
 		}
 	}
 
-	private static boolean pruneHasOnlyUnknownMR( ArrayList<Hop> hops ) 
-		throws HopsException
-	{
+	private static boolean pruneHasOnlyUnknownMR( ArrayList<Hop> hops ) {
 		boolean ret = false;
-
 		if( hops!=null ){
 			ret = true;
 			Hop.resetVisitStatus(hops);
 			for( Hop hop : hops )
 				ret &= pruneHasOnlyUnknownMR(hop);
 		}
-		
 		return ret;
 	}
 
@@ -549,9 +519,7 @@ public class ResourceOptimizer
 		return ret;
 	}
 
-	private static ArrayList<Long> enumerateGridPoints( ArrayList<ProgramBlock> prog, long min, long max, GridEnumType type ) 
-		throws DMLRuntimeException, HopsException
-	{
+	private static ArrayList<Long> enumerateGridPoints( ArrayList<ProgramBlock> prog, long min, long max, GridEnumType type ) {
 		//create enumerator
 		GridEnumeration ge = null;
 		switch( type ){
@@ -574,22 +542,17 @@ public class ResourceOptimizer
 		return ret;
 	}
 
-	private static double[][] initLocalMemoTable( ArrayList<ProgramBlock> Bp, double min ) 
-		throws DMLRuntimeException
-	{
+	private static double[][] initLocalMemoTable( ArrayList<ProgramBlock> Bp, double min ) {
 		//allocate memo structure
 		int len = Bp.size();
 		double[][] memo = new double[len][2];
-		
 		//init with min resource and current costs
-		for( int i=0; i<len; i++ )
-		{
+		for( int i=0; i<len; i++ ) {
 			ProgramBlock pb = Bp.get(i);
 			ExecutionContext ec = ExecutionContextFactory.createContext();
 			memo[i][0] = min;
 			memo[i][1] = CostEstimationWrapper.getTimeEstimate(pb.getProgram(), ec);
 		}
-		
 		return memo;
 	}
 

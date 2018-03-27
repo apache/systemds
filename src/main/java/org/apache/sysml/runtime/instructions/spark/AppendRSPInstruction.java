@@ -34,9 +34,7 @@ public abstract class AppendRSPInstruction extends BinarySPInstruction {
 		_cbind = cbind;
 	}
 
-	public static AppendRSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static AppendRSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields (parts, 4);
 		

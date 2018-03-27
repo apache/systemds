@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.instructions.mr;
 import java.util.ArrayList;
 
 import org.apache.sysml.lops.MapMultChain.ChainType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -97,14 +96,12 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 		return _input3;
 	}
 
-	public static MapMultChainInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{		
+	public static MapMultChainInstruction parseInstruction( String str ) {
 		//check number of fields (2/3 inputs, output, type)
 		InstructionUtils.checkNumFields ( str, 4, 5 );
 		
 		//parse instruction parts (without exec type)
-		String[] parts = InstructionUtils.getInstructionParts( str );		
+		String[] parts = InstructionUtils.getInstructionParts( str );
 		byte in1 = Byte.parseByte(parts[1]);
 		byte in2 = Byte.parseByte(parts[2]);
 		
@@ -122,32 +119,29 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 			ChainType type = ChainType.valueOf(parts[5]);
 		
 			return new MapMultChainInstruction(type, in1, in2, in3, out, str);
-		}	
+		}
 	}
 	
 	@Override //IDistributedCacheConsumer
-	public boolean isDistCacheOnlyIndex( String inst, byte index )
-	{
+	public boolean isDistCacheOnlyIndex( String inst, byte index ) {
 		return (_chainType == ChainType.XtXv) ?
 			(index==_input2 && index!=_input1) :
 			(index==_input2 && index!=_input1) || (index==_input3 && index!=_input1);
 	}
 	
 	@Override //IDistributedCacheConsumer
-	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes )
-	{
+	public void addDistCacheIndex( String inst, ArrayList<Byte> indexes ) {
 		if( _chainType == ChainType.XtXv ){
 			indexes.add(_input2);
 		}
 		else {
 			indexes.add(_input2);
-			indexes.add(_input3);	
+			indexes.add(_input3);
 		}
 	}
 	
 	@Override
-	public byte[] getInputIndexes() 
-	{
+	public byte[] getInputIndexes() {
 		if( _chainType==ChainType.XtXv )
 			return new byte[]{_input1, _input2};
 		else
@@ -155,8 +149,7 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	}
 
 	@Override
-	public byte[] getAllIndexes() 
-	{
+	public byte[] getAllIndexes() {
 		if( _chainType==ChainType.XtXv )
 			return new byte[]{_input1, _input2, output};
 		else
@@ -167,7 +160,6 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass, CachedValueMap cachedValues, 
 			           IndexedMatrixValue tempValue, IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(_input1);
 		if( blkList !=null )
@@ -209,15 +201,11 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @param inVal input matrix value
 	 * @param outIx output matrix indexes
 	 * @param outVal output matrix value
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processXtXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal ) 
-		throws DMLRuntimeException
-	{
+	private void processXtXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal ) {
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
 		MatrixBlock Xi = (MatrixBlock)inVal;
 		MatrixBlock v = (MatrixBlock) dcInput2.getDataBlock(1, 1).getValue();
-		
 		//process core block operation
 		Xi.chainMatrixMultOperations(v, null, (MatrixBlock) outVal, ChainType.XtXv);
 		outIx.setIndexes(1, 1);
@@ -231,17 +219,13 @@ public class MapMultChainInstruction extends MRInstruction implements IDistribut
 	 * @param inVal input matrix value
 	 * @param outIx output matrix indexes
 	 * @param outVal output matrix value
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal, ChainType chain )
-		throws DMLRuntimeException
-	{
+	private void processXtwXvOperations(MatrixIndexes inIx, MatrixValue inVal, MatrixIndexes outIx, MatrixValue outVal, ChainType chain ) {
 		DistributedCacheInput dcInput2 = MRBaseForCommonInstructions.dcValues.get(_input2); //v
 		DistributedCacheInput dcInput3 = MRBaseForCommonInstructions.dcValues.get(_input3); //w
 		MatrixBlock Xi = (MatrixBlock) inVal;
 		MatrixBlock v = (MatrixBlock) dcInput2.getDataBlock(1, 1).getValue();
 		MatrixBlock w = (MatrixBlock) dcInput3.getDataBlock((int)inIx.getRowIndex(), 1).getValue();
-		
 		//process core block operation
 		Xi.chainMatrixMultOperations(v, w, (MatrixBlock) outVal, chain);
 		outIx.setIndexes(1, 1);

@@ -61,28 +61,20 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		_type = type;
 	}
 
-	public static Tsmm2SPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static Tsmm2SPInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		//check supported opcode 
-		if ( !opcode.equalsIgnoreCase("tsmm2") ) {
-			throw new DMLRuntimeException("Tsmm2SPInstruction.parseInstruction():: Unknown opcode " + opcode);			
-		}
-			
+		if ( !opcode.equalsIgnoreCase("tsmm2") )
+			throw new DMLRuntimeException("Tsmm2SPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJType type = MMTSJType.valueOf(parts[3]);
-		
 		return new Tsmm2SPInstruction(null, in1, out, type, opcode, str);
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input
@@ -265,9 +257,8 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 	 * @param in input matrix block
 	 * @param out output matrix block
 	 * @return matrix block
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static MatrixBlock transpose(MatrixBlock in, MatrixBlock out) throws DMLRuntimeException {
+	private static MatrixBlock transpose(MatrixBlock in, MatrixBlock out) {
 		if( out == null )
 			out = new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.getNonZeros());
 		else

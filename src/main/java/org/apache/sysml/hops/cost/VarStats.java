@@ -19,19 +19,18 @@
 
 package org.apache.sysml.hops.cost;
 
-public class VarStats 
-{	
+import org.apache.sysml.hops.OptimizerUtils;
 
-	
+public class VarStats 
+{
 	long _rlen = -1;
 	long _clen = -1;
-	long _brlen = -1;
-	long _bclen = -1;
-	double _nnz = -1;
+	int _brlen = -1;
+	int _bclen = -1;
+	long _nnz = -1;
 	boolean _inmem = false;
 	
-	public VarStats( long rlen, long clen, long brlen, long bclen, long nnz, boolean inmem )
-	{
+	public VarStats( long rlen, long clen, int brlen, int bclen, long nnz, boolean inmem ) {
 		_rlen = rlen;
 		_clen = clen;
 		_brlen = brlen;
@@ -40,9 +39,8 @@ public class VarStats
 		_inmem = inmem;
 	}
 	
-	public double getSparsity()
-	{
-		return (_nnz<0) ? 1.0 : (double)_nnz/_rlen/_clen;
+	public double getSparsity() {
+		return OptimizerUtils.getSparsity(_rlen, _clen, _nnz);
 	}
 	
 	@Override

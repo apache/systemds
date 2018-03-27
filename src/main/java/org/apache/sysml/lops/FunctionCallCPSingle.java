@@ -64,42 +64,42 @@ public class FunctionCallCPSingle extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output) throws LopsException {
+	public String getInstructions(String input1, String output) {
 		return getInstructions(new String[]{input1}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String output) {
 		return getInstructions(new String[]{input1, input2}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String input3, String output) {
 		return getInstructions(new String[]{input1, input2, input3}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
 		return getInstructions(new String[]{input1, input2, input3, input4}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) {
 		return getInstructions(new String[]{input1, input2, input3, input4, input5}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String output) {
 		return getInstructions(new String[]{input1, input2, input3, input4, input5, input6}, new String[]{output});	
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) throws LopsException {
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String input6, String input7, String output) {
 		return getInstructions(new String[]{input1, input2, input3, input4, input5, input6, input7}, new String[]{output});
 	}
 	
 	@Override
-	public String getInstructions(String[] inputs, String output) throws LopsException
+	public String getInstructions(String[] inputs, String output)
 	{
 		StringBuilder inst = new StringBuilder();
 		inst.append(getExecType());

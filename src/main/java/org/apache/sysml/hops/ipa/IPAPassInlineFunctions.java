@@ -26,7 +26,6 @@ import java.util.List;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.recompile.Recompiler;
@@ -46,13 +45,12 @@ import org.apache.sysml.parser.StatementBlock;
 public class IPAPassInlineFunctions extends IPAPass
 {
 	@Override
-	public boolean isApplicable() {
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.INLINING_MAX_NUM_OPS > 0;
 	}
 	
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
-		throws HopsException
 	{
 		//NOTE: we inline single-statement-block (i.e., last-level block) functions
 		//that do not contain other functions, and either are small or called once

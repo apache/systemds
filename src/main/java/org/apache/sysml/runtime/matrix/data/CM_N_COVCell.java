@@ -51,21 +51,18 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
-			MatrixValue result, int brlen, int bclen, MatrixIndexes indexesIn)
-			throws DMLRuntimeException {
+			MatrixValue result, int brlen, int bclen, MatrixIndexes indexesIn) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public MatrixValue binaryOperations(BinaryOperator op,
-			MatrixValue thatValue, MatrixValue result)
-			throws DMLRuntimeException {
+			MatrixValue thatValue, MatrixValue result) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
-	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue)
-			throws DMLRuntimeException {
+	public void binaryOperationsInPlace(BinaryOperator op, MatrixValue thatValue) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -101,15 +98,13 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue correction, MatrixValue newWithCorrection)
-			throws DMLRuntimeException {
+			MatrixValue correction, MatrixValue newWithCorrection) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 	
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue newWithCorrection)
-			throws DMLRuntimeException {
+			MatrixValue newWithCorrection) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -125,8 +120,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public MatrixValue reorgOperations(ReorgOperator op, MatrixValue result,
-			int startRow, int startColumn, int length)
-			throws DMLRuntimeException {
+			int startRow, int startColumn, int length) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -146,8 +140,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	public void reset(int rl, int cl, double v) {}
 
 	@Override
-	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result)
-			throws DMLRuntimeException {
+	public MatrixValue scalarOperations(ScalarOperator op, MatrixValue result) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -157,8 +150,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result)
-			throws DMLRuntimeException {
+	public MatrixValue unaryOperations(UnaryOperator op, MatrixValue result) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
@@ -230,72 +222,62 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 	}
 
 	@Override
-	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary)
-			throws DMLRuntimeException {
+	public MatrixValue zeroOutOperations(MatrixValue result, IndexRange range, boolean complementary) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
-			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
-			double scalarThat2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			double scalarThat2, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
-			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			double scalarThat2, CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 	
 	@Override
 	public void ctableOperations(Operator op, MatrixIndexes ix1, double scalarThat, boolean left, int brlen,
-			CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void ctableOperations(Operator op, double scalarThat,
-			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock)
-			throws DMLRuntimeException {
+			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist,
 			IndexRange range, int rowCut, int colCut, int blockRowFactor,
-			int blockColFactor, int boundaryRlen, int boundaryClen)
-			throws DMLRuntimeException {
+			int blockColFactor, int boundaryRlen, int boundaryClen) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 	
 	@Override
-	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement)
-			throws DMLRuntimeException {
+	public MatrixValue replaceOperations(MatrixValue result, double pattern, double replacement) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public MatrixValue aggregateUnaryOperations(AggregateUnaryOperator op,
 			MatrixValue result, int blockingFactorRow, int blockingFactorCol,
-			MatrixIndexes indexesIn, boolean inCP)
-			throws DMLRuntimeException {
+			MatrixIndexes indexesIn, boolean inCP) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 
 	@Override
 	public void append(MatrixValue valueIn2, ArrayList<IndexedMatrixValue> outlist,
-			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol)
-	throws DMLRuntimeException   {
+			int blockRowFactor, int blockColFactor, boolean cbind, boolean m2IsLast, int nextNCol) {
 		throw new DMLRuntimeException("operation not supported for CM_N_COVCell");
 	}
 }

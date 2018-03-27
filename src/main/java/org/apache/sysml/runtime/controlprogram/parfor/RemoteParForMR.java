@@ -69,7 +69,6 @@ public class RemoteParForMR
 
 	public static RemoteParForJobReturn runJob(long pfid, String program, String taskFile, String resultFile, MatrixObject colocatedDPMatrixObj, //inputs
 			                                   boolean enableCPCaching, int numMappers, int replication, int max_retry, long minMem, boolean jvmReuse)  //opt params
-		throws DMLRuntimeException
 	{
 		RemoteParForJobReturn ret = null;
 		String jobname = "ParFor-EMR";
@@ -248,12 +247,11 @@ public class RemoteParForMR
 	 * @param job job configuration
 	 * @param fname file name
 	 * @return array of local variable maps
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 * @throws IOException if IOException occurs
 	 */
 	@SuppressWarnings("deprecation")
 	public static LocalVariableMap [] readResultFile( JobConf job, String fname )
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		HashMap<Long,LocalVariableMap> tmp = new HashMap<>();
 

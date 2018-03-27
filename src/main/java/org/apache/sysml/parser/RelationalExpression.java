@@ -22,6 +22,7 @@ package org.apache.sysml.parser;
 import java.util.HashMap;
 
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class RelationalExpression extends Expression
 {
@@ -46,7 +47,7 @@ public class RelationalExpression extends Expression
 	}
 
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		RelationalExpression newExpr = new RelationalExpression(this._opcode, this);
 		newExpr.setLeft(_left.rewriteExpression(prefix));
 		newExpr.setRight(_right.rewriteExpression(prefix));
@@ -89,16 +90,15 @@ public class RelationalExpression extends Expression
 	 */
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException
-	{	
+	{
 		//check for functions calls in expression
 		if (_left instanceof FunctionCallIdentifier){
 			raiseValidateError("user-defined function calls not supported in relational expressions", 
-		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
-		}		
+				false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+		}
 		if (_right instanceof FunctionCallIdentifier){
 			raiseValidateError("user-defined function calls not supported in relational expressions", 
-		            false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
+				false, LanguageException.LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
 		
 		// handle <NUMERIC> == <BOOLEAN> --> convert <BOOLEAN> to numeric value
@@ -142,11 +142,10 @@ public class RelationalExpression extends Expression
 			if(isLeftMatrix && isRightMatrix) {
 				checkMatchingDimensions(_left, _right, true);
 			}
-			
-			long[] dims = getBinaryMatrixCharacteristics(_left, _right);
+			MatrixCharacteristics dims = getBinaryMatrixCharacteristics(_left, _right);
 			output.setDataType(DataType.MATRIX);
-			output.setDimensions(dims[0], dims[1]);
-			output.setBlockDimensions(dims[2], dims[3]);
+			output.setDimensions(dims.getRows(), dims.getCols());
+			output.setBlockDimensions(dims.getRowsPerBlock(), dims.getColsPerBlock());
 			
 			//since SystemML only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change
@@ -165,10 +164,8 @@ public class RelationalExpression extends Expression
 	 * @param expr1 expression 1
 	 * @param expr2 expression 2
 	 * @param allowsMV ?
-	 * @throws LanguageException
 	 */
 	private void checkMatchingDimensions(Expression expr1, Expression expr2, boolean allowsMV) 
-		throws LanguageException 
 	{
 		if (expr1 != null && expr2 != null) {
 			

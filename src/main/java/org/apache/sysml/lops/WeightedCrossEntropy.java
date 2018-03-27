@@ -42,10 +42,8 @@ public class WeightedCrossEntropy extends Lop
 	
 	private WCeMMType _wcemmType = null;
 	
-	public WeightedCrossEntropy(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WCeMMType wt, ExecType et) 
-		throws LopsException 
-	{
-		super(Lop.Type.WeightedCeMM, dt, vt);		
+	public WeightedCrossEntropy(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, WCeMMType wt, ExecType et) {
+		super(Lop.Type.WeightedCeMM, dt, vt);
 		addInput(input1); //X
 		addInput(input2); //U
 		addInput(input3); //V

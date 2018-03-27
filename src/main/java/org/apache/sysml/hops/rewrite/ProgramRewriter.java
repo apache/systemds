@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
@@ -36,7 +35,6 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParForStatementBlock;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
@@ -71,7 +69,7 @@ public class ProgramRewriter
 		this( true, true );
 	}
 	
-	public ProgramRewriter( boolean staticRewrites, boolean dynamicRewrites )
+	public ProgramRewriter(boolean staticRewrites, boolean dynamicRewrites)
 	{
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<>();
@@ -145,12 +143,11 @@ public class ProgramRewriter
 	 * 
 	 * @param rewrites the HOP rewrite rules
 	 */
-	public ProgramRewriter( HopRewriteRule... rewrites ) {
+	public ProgramRewriter(HopRewriteRule... rewrites) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<>();
 		for( HopRewriteRule rewrite : rewrites )
 			_dagRuleSet.add( rewrite );
-		
 		_sbRuleSet = new ArrayList<>();
 	}
 	
@@ -159,10 +156,9 @@ public class ProgramRewriter
 	 * 
 	 * @param rewrites the statement block rewrite rules
 	 */
-	public ProgramRewriter( StatementBlockRewriteRule... rewrites ) {
+	public ProgramRewriter(StatementBlockRewriteRule... rewrites) {
 		//initialize HOP DAG rewrite ruleSet (with fixed rewrite order)
 		_dagRuleSet = new ArrayList<>();
-		
 		_sbRuleSet = new ArrayList<>();
 		for( StatementBlockRewriteRule rewrite : rewrites )
 			_sbRuleSet.add( rewrite );
@@ -191,9 +187,11 @@ public class ProgramRewriter
 		_sbRuleSet.removeIf(r -> r.getClass().equals(clazz));
 	}
 	
-	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) 
-		throws LanguageException, HopsException
-	{	
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp) {
+		return rewriteProgramHopDAGs(dmlp, true);
+	}
+	
+	public ProgramRewriteStatus rewriteProgramHopDAGs(DMLProgram dmlp, boolean splitDags) {
 		ProgramRewriteStatus state = new ProgramRewriteStatus();
 		
 		// for each namespace, handle function statement blocks
@@ -201,7 +199,8 @@ public class ProgramRewriter
 			for (String fname : dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock fsblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
 				rRewriteStatementBlockHopDAGs(fsblock, state);
-				rRewriteStatementBlock(fsblock, state);
+				if( !_sbRuleSet.isEmpty() )
+					rRewriteStatementBlock(fsblock, state, splitDags);
 			}
 		
 		// handle regular statement blocks in "main" method
@@ -209,14 +208,14 @@ public class ProgramRewriter
 			StatementBlock current = dmlp.getStatementBlock(i);
 			rRewriteStatementBlockHopDAGs(current, state);
 		}
-		dmlp.setStatementBlocks( rRewriteStatementBlocks(dmlp.getStatementBlocks(), state) );
+		if( !_sbRuleSet.isEmpty() )
+			dmlp.setStatementBlocks(rRewriteStatementBlocks(
+				dmlp.getStatementBlocks(), state, splitDags));
 		
 		return state;
 	}
 	
-	public void rRewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) 
-		throws LanguageException, HopsException
-	{
+	public void rRewriteStatementBlockHopDAGs(StatementBlock current, ProgramRewriteStatus state) {
 		//ensure robustness for calls from outside
 		if( state == null )
 			state = new ProgramRewriteStatus();
@@ -262,9 +261,7 @@ public class ProgramRewriter
 		}
 	}
 	
-	public ArrayList<Hop> rewriteHopDAG(ArrayList<Hop> roots, ProgramRewriteStatus state) 
-		throws HopsException
-	{
+	public ArrayList<Hop> rewriteHopDAG(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		for( HopRewriteRule r : _dagRuleSet ) {
 			Hop.resetVisitStatus( roots ); //reset for each rule
 			roots = r.rewriteHopDAGs(roots, state);
@@ -274,9 +271,7 @@ public class ProgramRewriter
 		return roots;
 	}
 	
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-		throws HopsException
-	{	
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return null;
 		
@@ -289,9 +284,7 @@ public class ProgramRewriter
 		return root;
 	}
 	
-	public ArrayList<StatementBlock> rRewriteStatementBlocks( ArrayList<StatementBlock> sbs, ProgramRewriteStatus status ) 
-		throws HopsException
-	{
+	public ArrayList<StatementBlock> rRewriteStatementBlocks(ArrayList<StatementBlock> sbs, ProgramRewriteStatus status, boolean splitDags) {
 		//ensure robustness for calls from outside
 		if( status == null )
 			status = new ProgramRewriteStatus();
@@ -299,16 +292,18 @@ public class ProgramRewriter
 		//apply rewrite rules to list of statement blocks
 		List<StatementBlock> tmp = sbs; 
 		for( StatementBlockRewriteRule r : _sbRuleSet )
-			tmp = r.rewriteStatementBlocks(tmp, status);
+			if( splitDags || !r.createsSplitDag() )
+				tmp = r.rewriteStatementBlocks(tmp, status);
 		
 		//recursively rewrite statement blocks (with potential expansion)
 		List<StatementBlock> tmp2 = new ArrayList<>();
 		for( StatementBlock sb : tmp )
-			tmp2.addAll( rRewriteStatementBlock(sb, status) );
+			tmp2.addAll( rRewriteStatementBlock(sb, status, splitDags) );
 		
 		//apply rewrite rules to list of statement blocks (with potential contraction)
 		for( StatementBlockRewriteRule r : _sbRuleSet )
-			tmp2 = r.rewriteStatementBlocks(tmp2, status);
+			if( splitDags || !r.createsSplitDag() )
+				tmp2 = r.rewriteStatementBlocks(tmp2, status);
 		
 		//prepare output list
 		sbs.clear();
@@ -316,48 +311,42 @@ public class ProgramRewriter
 		return sbs;
 	}
 	
-	public ArrayList<StatementBlock> rRewriteStatementBlock( StatementBlock sb, ProgramRewriteStatus status ) 
-		throws HopsException
-	{
+	public ArrayList<StatementBlock> rRewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status, boolean splitDags) {
 		ArrayList<StatementBlock> ret = new ArrayList<>();
 		ret.add(sb);
 		
 		//recursive invocation
-		if (sb instanceof FunctionStatementBlock)
-		{
+		if (sb instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			fstmt.setBody( rRewriteStatementBlocks(fstmt.getBody(), status) );
+			fstmt.setBody(rRewriteStatementBlocks(fstmt.getBody(), status, splitDags));
 		}
-		else if (sb instanceof WhileStatementBlock)
-		{
+		else if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			wstmt.setBody( rRewriteStatementBlocks( wstmt.getBody(), status ) );
+			wstmt.setBody(rRewriteStatementBlocks(wstmt.getBody(), status, splitDags));
 		}	
-		else if (sb instanceof IfStatementBlock)
-		{
+		else if (sb instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			istmt.setIfBody( rRewriteStatementBlocks( istmt.getIfBody(), status ) );
-			istmt.setElseBody( rRewriteStatementBlocks( istmt.getElseBody(), status ) );
+			istmt.setIfBody(rRewriteStatementBlocks(istmt.getIfBody(), status, splitDags));
+			istmt.setElseBody(rRewriteStatementBlocks(istmt.getElseBody(), status, splitDags));
 		}
-		else if (sb instanceof ForStatementBlock) //incl parfor
-		{
+		else if (sb instanceof ForStatementBlock) { //incl parfor
 			//maintain parfor context information (e.g., for checkpointing)
 			boolean prestatus = status.isInParforContext();
 			if( sb instanceof ParForStatementBlock )
 				status.setInParforContext(true);
-			
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			fstmt.setBody( rRewriteStatementBlocks(fstmt.getBody(), status) );
-			
+			fstmt.setBody(rRewriteStatementBlocks(fstmt.getBody(), status, splitDags));
 			status.setInParforContext(prestatus);
 		}
 		
 		//apply rewrite rules to individual statement blocks
 		for( StatementBlockRewriteRule r : _sbRuleSet ) {
+			if( !splitDags && r.createsSplitDag() )
+				continue;
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for( StatementBlock sbc : ret )
 				tmp.addAll( r.rewriteStatementBlock(sbc, status) );

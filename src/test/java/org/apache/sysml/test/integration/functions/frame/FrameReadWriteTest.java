@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -220,7 +219,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	}
 	
 	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
-		throws DMLRuntimeException, IOException
+		throws IOException
 	{
 		String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData1";
 		String fname2 = SCRIPT_DIR + TEST_DIR + "/frameData2";

@@ -26,7 +26,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -42,9 +41,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<Long,FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() );
@@ -52,10 +49,10 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		long leftRows = sec.getMatrixCharacteristics(input1.getName()).getRows();
 		
 		if(_cbind) {
-			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));			
-			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);			
+			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
+			in1Aligned = FrameRDDAggregateUtils.mergeByKey(in1Aligned);
 			JavaPairRDD<Long,FrameBlock> in2Aligned = in2.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
-			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);			
+			in2Aligned = FrameRDDAggregateUtils.mergeByKey(in2Aligned);
 			
 			out = in1Aligned.join(in2Aligned).mapValues(new ReduceSideColumnsFunction(_cbind));
 		} else {	//rbind
@@ -67,7 +64,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());		
+		sec.addLineageRDD(output.getName(), input2.getName());
 		
 		//update schema of output with merged input schemas
 		sec.getFrameObject(output.getName()).setSchema(
@@ -86,12 +83,9 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		}
 		
 		@Override
-		public FrameBlock call(Tuple2<FrameBlock, FrameBlock> arg0)
-			throws Exception 
-		{
+		public FrameBlock call(Tuple2<FrameBlock, FrameBlock> arg0) {
 			FrameBlock left = arg0._1();
 			FrameBlock right = arg0._2();
-			
 			return left.append(right, new FrameBlock(), _cbind);
 		}
 	}

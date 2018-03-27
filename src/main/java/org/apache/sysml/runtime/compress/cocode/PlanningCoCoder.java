@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
@@ -33,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysml.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 
 public class PlanningCoCoder 
 {
@@ -48,7 +48,6 @@ public class PlanningCoCoder
 	
 	public static List<int[]> findCocodesByPartitioning(CompressedSizeEstimator sizeEstimator, List<Integer> cols, 
 			CompressedSizeInfo[] colInfos, int numRows, int k) 
-		throws DMLRuntimeException 
 	{
 		// filtering out non-groupable columns as singleton groups
 		// weight is the ratio of its cardinality to the number of rows 
@@ -92,11 +91,10 @@ public class PlanningCoCoder
 	}
 
 	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
-		throws DMLRuntimeException 
 	{
 		List<int[]> retGroups = new ArrayList<>();
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<CocodeTask> tasks = new ArrayList<>();
 			for (List<Integer> bin : bins) {
 				// building an array of singleton CoCodingGroup
@@ -226,7 +224,7 @@ public class PlanningCoCoder
 		}
 		
 		@Override
-		public PlanningCoCodingGroup[] call() throws DMLRuntimeException {
+		public PlanningCoCodingGroup[] call() {
 			// brute force co-coding	
 			return findCocodesBruteForce(_estim, _rlen, 
 					_sgroups.toArray(new PlanningCoCodingGroup[0]));

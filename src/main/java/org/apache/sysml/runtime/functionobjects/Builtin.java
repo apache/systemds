@@ -291,9 +291,7 @@ public class Builtin extends ValueFunction
 	}
 
 	@Override
-	public double execute (double in) 
-		throws DMLRuntimeException 
-	{
+	public double execute (double in) {
 		switch(bFunc) {
 			case SIN:    return FASTMATH ? FastMath.sin(in) : Math.sin(in);
 			case COS:    return FASTMATH ? FastMath.cos(in) : Math.cos(in);
@@ -337,7 +335,7 @@ public class Builtin extends ValueFunction
 	}
 
 	@Override
-	public double execute (long in) throws DMLRuntimeException {
+	public double execute (long in) {
 		return execute((double)in);
 	}
 
@@ -345,7 +343,7 @@ public class Builtin extends ValueFunction
 	 * Builtin functions with two inputs
 	 */	
 	@Override
-	public double execute (double in1, double in2) throws DMLRuntimeException {
+	public double execute (double in1, double in2) {
 		switch(bFunc) {
 		
 		/*
@@ -433,7 +431,7 @@ public class Builtin extends ValueFunction
 	}
 	
 	@Override
-	public double execute (long in1, long in2) throws DMLRuntimeException {
+	public double execute (long in1, long in2) {
 		switch(bFunc) {
 		
 		case MAX:    
@@ -458,9 +456,7 @@ public class Builtin extends ValueFunction
 	}
 
 	@Override
-	public String execute (String in1) 
-		throws DMLRuntimeException 
-	{
+	public String execute (String in1) {
 		switch (bFunc) {
 		case PRINT:
 			if (!DMLScript.suppressPrint2Stdout())

@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.MatrixScalarUnaryFu
 import org.apache.sysml.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -49,9 +50,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
 	
-	public static BinarySPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static BinarySPInstruction parseInstruction ( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -92,32 +91,24 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		return null;
 	}
 
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out)
-		throws DMLRuntimeException
-	{	
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 3 );
-		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		out.split(parts[3]);
-		
 		return opcode;
 	}
 	
-	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out)
-		throws DMLRuntimeException
-	{
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
 		InstructionUtils.checkNumFields ( parts, 4 );
-		
 		String opcode = parts[0];
 		in1.split(parts[1]);
 		in2.split(parts[2]);
 		in3.split(parts[3]);
 		out.split(parts[4]);
-		
 		return opcode;
 	}
 
@@ -125,23 +116,21 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	 * Common binary matrix-matrix process instruction
 	 * 
 	 * @param ec execution context
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	protected void processMatrixMatrixBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//sanity check dimensions
 		checkMatrixMatrixBinaryCharacteristics(sec);
+		updateBinaryOutputMatrixCharacteristics(sec);
 		
 		// Get input RDDs
-		String rddVar1 = input1.getName();
-		String rddVar2 = input2.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar1 );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( rddVar2 );
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( rddVar1 );
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( rddVar2 );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable(input2.getName());
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 	
@@ -153,21 +142,23 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			in1 = in1.flatMapToPair(new ReplicateVectorFunction(false, numRepLeft ));
 		if( numRepRight > 1 )
 			in2 = in2.flatMapToPair(new ReplicateVectorFunction(rowvector, numRepRight));
+		int numPrefPart = SparkUtils.isHashPartitioned(in1) ? in1.getNumPartitions() :
+			SparkUtils.isHashPartitioned(in2) ? in2.getNumPartitions() :
+			Math.min(in1.getNumPartitions() + in2.getNumPartitions(),
+				2 * SparkUtils.getNumPreferredPartitions(mcOut));
 		
 		//execute binary operation
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
-				.join(in2)
-				.mapValues(new MatrixMatrixBinaryOpFunction(bop));
+			.join(in2, numPrefPart)
+			.mapValues(new MatrixMatrixBinaryOpFunction(bop));
 		
 		//set output RDD
-		updateBinaryOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), rddVar1);
-		sec.addLineageRDD(output.getName(), rddVar2);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
 	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -207,7 +198,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	
@@ -231,7 +221,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected MatrixCharacteristics updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -251,7 +240,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec, boolean cbind) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -293,7 +281,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
-		throws DMLRuntimeException 
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
@@ -321,7 +308,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	}
 
 	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());

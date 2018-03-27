@@ -44,7 +44,6 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 
 	@Override
 	public List<Task> createTasks() 
-		throws DMLRuntimeException 
 	{
 		LinkedList<Task> tasks = new LinkedList<>();
 		
@@ -92,7 +91,6 @@ public class TaskPartitionerFixedsize extends TaskPartitioner
 
 	@Override
 	public long createTasks(LocalTaskQueue<Task> queue) 
-		throws DMLRuntimeException 
 	{
 		long numCreatedTasks=0;
 		

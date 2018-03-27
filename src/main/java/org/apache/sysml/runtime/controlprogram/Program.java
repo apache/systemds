@@ -85,7 +85,7 @@ public class Program
 		return retVal;
 	}
 
-	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname) throws DMLRuntimeException{
+	public synchronized FunctionProgramBlock getFunctionProgramBlock(String namespace, String fname){
 		if (namespace == null) namespace = DMLProgram.DEFAULT_NAMESPACE;
 		
 		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
@@ -106,9 +106,7 @@ public class Program
 		return _programBlocks;
 	}
 
-	public void execute(ExecutionContext ec)
-		throws DMLRuntimeException
-	{
+	public void execute(ExecutionContext ec) {
 		ec.initDebugProgramCounters();
 		
 		try

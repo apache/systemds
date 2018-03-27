@@ -44,17 +44,13 @@ public class MMTSJMRInstruction extends UnaryInstruction {
 		return _type;
 	}
 
-	public static MMTSJMRInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MMTSJMRInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 3 );
-		
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
 		byte in = Byte.parseByte(parts[1]);
 		byte out = Byte.parseByte(parts[2]);
 		MMTSJType titype = MMTSJType.valueOf(parts[3]);
-		 
 		if(!opcode.equalsIgnoreCase("tsmm"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MMTIJMRInstruction: " + str);
 		else
@@ -65,8 +61,7 @@ public class MMTSJMRInstruction extends UnaryInstruction {
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-		throws DMLRuntimeException 
-	{		
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList !=null )
 			for(IndexedMatrixValue imv : blkList)

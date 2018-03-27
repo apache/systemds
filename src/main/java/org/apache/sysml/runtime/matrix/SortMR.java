@@ -47,7 +47,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.SortKeys;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
@@ -308,9 +307,7 @@ public class SortMR
 		}
 	}
 
-	public static MRInstruction parseSortInstruction(String str) 
-		throws DMLRuntimeException 
-	{
+	public static MRInstruction parseSortInstruction(String str) {
 		SortKeys.OperationTypes otype = SortMR.getSortInstructionType(str);
 		if( otype != SortKeys.OperationTypes.Indexes )
 			return (MRInstruction) UnaryInstruction.parseInstruction(str);

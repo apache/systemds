@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -37,6 +36,7 @@ import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class SpoofOuterProduct extends SpoofOperator
@@ -73,7 +73,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects)	
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 )
@@ -106,7 +105,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public ScalarObject execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, int numThreads)
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 )
@@ -131,7 +129,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(k);
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<ParOuterProdAggTask> tasks = new ArrayList<>();
 			int numThreads2 = getPreferredNumberOfTasks(m, n, nnz, k, numThreads);
 			int blklen = (int)(Math.ceil((double)m/numThreads2));
@@ -153,7 +151,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out)
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 || out==null )
@@ -233,7 +230,6 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 	
 	@Override
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int numThreads)	
-		throws DMLRuntimeException
 	{
 		//sanity check
 		if( inputs==null || inputs.size() < 3 || out==null )
@@ -282,7 +278,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		
 		try 
 		{
-			ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+			ExecutorService pool = CommonThreadPool.get(numThreads);
 			ArrayList<ParExecTask> tasks = new ArrayList<>();
 			//create tasks (for wdivmm-left, parallelization over columns;
 			//for wdivmm-right, parallelization over rows; both ensure disjoint results)
@@ -675,7 +671,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException {
+		public Long call() {
 			switch(_type)
 			{
 				case LEFT_OUTER_PRODUCT:
@@ -740,7 +736,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		}
 		
 		@Override
-		public Double call() throws DMLRuntimeException {
+		public Double call() {
 			MatrixBlock out = new MatrixBlock(1, 1, false);
 			out.allocateDenseBlock();
 			if( _a instanceof CompressedMatrixBlock )

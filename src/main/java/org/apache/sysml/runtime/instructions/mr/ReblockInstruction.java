@@ -62,10 +62,7 @@ public class ReblockInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("ReblockInstruction.processInstruction should never be called");
-		
 	}
-	
 }

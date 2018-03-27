@@ -41,19 +41,15 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 		_opByRow = in4;
 	}
 
-	public static MatrixReshapeCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MatrixReshapeCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields( parts, 5 );
-		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand in4 = new CPOperand(parts[4]);
 		CPOperand out = new CPOperand(parts[5]);
-			 
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeInstruction: " + str);
 		else
@@ -61,9 +57,7 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		int rows = (int)ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue(); //save cast

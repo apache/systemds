@@ -128,7 +128,7 @@ public enum JobType
 		return allowsNoOtherInstructions;
 	}
 
-	public Lop.Type getShuffleLopType() throws DMLRuntimeException {
+	public Lop.Type getShuffleLopType() {
 		if ( !allowsSingleShuffleInstruction )
 			throw new DMLRuntimeException("Shuffle Lop Type is not defined for a job (" + getName() + ") with allowsSingleShuffleInstruction=false.");
 		else {
@@ -187,8 +187,7 @@ public enum JobType
 		}
 	}
 	
-	public boolean isCompatibleWithParentNodes() 
-		throws DMLRuntimeException 
+	public boolean isCompatibleWithParentNodes()
 	{
 		if ( !allowsSingleShuffleInstruction )
 			throw new DMLRuntimeException("isCompatibleWithParentNodes() can not be invoked for a job (" + getName() + ") with allowsSingleShuffleInstruction=false.");

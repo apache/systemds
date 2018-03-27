@@ -51,11 +51,8 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 		_mcIn = mcIn;
 	}
 
-	public static MatrixReshapeMRInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MatrixReshapeMRInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 5 );
-		
 		String[] parts = InstructionUtils.getInstructionParts(str);
 		String opcode = parts[0];
 		byte in = Byte.parseByte(parts[1]);
@@ -63,7 +60,6 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 		long cols = UtilFunctions.toLong(Double.parseDouble(parts[3])); //save cast
 		boolean byrow = Boolean.parseBoolean(parts[4]);
 		byte out = Byte.parseByte(parts[5]);
-		 
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeMRInstruction: " + str);
 		else
@@ -74,8 +70,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
 			IndexedMatrixValue zeroInput, int brlen, int bclen )
-		throws DMLRuntimeException 
-	{		
+	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList != null )
 			for(IndexedMatrixValue imv : blkList)

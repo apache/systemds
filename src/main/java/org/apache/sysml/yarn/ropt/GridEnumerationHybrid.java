@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
-import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 
 /**
@@ -33,16 +31,12 @@ import org.apache.sysml.runtime.controlprogram.ProgramBlock;
  */
 public class GridEnumerationHybrid extends GridEnumeration
 {
-	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, long min, long max ) 
-		throws DMLRuntimeException
-	{
+	public GridEnumerationHybrid( ArrayList<ProgramBlock> prog, long min, long max ) {
 		super(prog, min, max);
 	}
 	
 	@Override
-	public ArrayList<Long> enumerateGridPoints() 
-		throws DMLRuntimeException, HopsException
-	{
+	public ArrayList<Long> enumerateGridPoints() {
 		GridEnumeration ge1 = new GridEnumerationMemory(_prog, _min, _max);
 		GridEnumeration ge2 = new GridEnumerationExp(_prog, _min, _max);
 		

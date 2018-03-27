@@ -127,13 +127,12 @@ public class Aggregate extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index) throws LopsException {
+	public String getInstructions(int input_index, int output_index) {
 		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
 	}
 
 	@Override
 	public String getInstructions(String input1, String output) 
-		throws LopsException 
 	{
 		boolean isCorrectionApplicable = (getExecType() == ExecType.MR &&
 				(operation == OperationTypes.Mean || operation == OperationTypes.Var

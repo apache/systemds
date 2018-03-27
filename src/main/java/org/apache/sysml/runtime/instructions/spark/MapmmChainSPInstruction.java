@@ -63,9 +63,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		_chainType = type;
 	}
 
-	public static MapmmChainSPInstruction parseInstruction( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MapmmChainSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );	
 		InstructionUtils.checkNumFields ( parts, 4, 5 );
 		String opcode = parts[0];
@@ -97,9 +95,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd and broadcast inputs
@@ -134,19 +130,14 @@ public class MapmmChainSPInstruction extends SPInstruction {
 
 		private PartitionedBroadcast<MatrixBlock> _pmV = null;
 		
-		public RDDMapMMChainFunction( PartitionedBroadcast<MatrixBlock> bV) 
-			throws DMLRuntimeException
-		{			
+		public RDDMapMMChainFunction( PartitionedBroadcast<MatrixBlock> bV) {
 			//get first broadcast vector (always single block)
 			_pmV = bV;
 		}
 		
 		@Override
-		public MatrixBlock call( MatrixBlock arg0 ) 
-			throws Exception 
-		{
+		public MatrixBlock call( MatrixBlock arg0 ) {
 			MatrixBlock pmV = _pmV.getBlock(1, 1);
-			
 			//execute mapmmchain operation
 			return arg0.chainMatrixMultOperations(pmV, 
 					null, new MatrixBlock(), ChainType.XtXv);
@@ -165,9 +156,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		private PartitionedBroadcast<MatrixBlock> _pmW = null;
 		private ChainType _chainType = null;
 		
-		public RDDMapMMChainFunction2( PartitionedBroadcast<MatrixBlock> bV, PartitionedBroadcast<MatrixBlock> bW, ChainType chain) 
-			throws DMLRuntimeException
-		{			
+		public RDDMapMMChainFunction2( PartitionedBroadcast<MatrixBlock> bV, PartitionedBroadcast<MatrixBlock> bW, ChainType chain) {
 			//get both broadcast vectors (first always single block)
 			_pmV = bV;
 			_pmW = bW;
@@ -175,15 +164,11 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		}
 		
 		@Override
-		public MatrixBlock call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
-			throws Exception 
-		{
+		public MatrixBlock call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) {
 			MatrixBlock pmV = _pmV.getBlock(1, 1);
-			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 			int rowIx = (int)ixIn.getRowIndex();
-			
 			//execute mapmmchain operation
 			return blkIn.chainMatrixMultOperations(pmV, 
 					_pmW.getBlock(rowIx,1), new MatrixBlock(), _chainType);

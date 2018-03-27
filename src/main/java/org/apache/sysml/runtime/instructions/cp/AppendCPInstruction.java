@@ -44,9 +44,7 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		_type = type;
 	}
 
-	public static AppendCPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static AppendCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields (parts, 5);
 		
@@ -67,8 +65,8 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 		if( type == AppendType.STRING )
 			return new ScalarAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
 		else if( in1.getDataType()==DataType.MATRIX )
-			return new MatrixAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);	
+			return new MatrixAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
 		else //DataType.FRAME
-			return new FrameAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);		
+			return new FrameAppendCPInstruction(op, in1, in2, in3, out, type, opcode, str);
 	}
 }

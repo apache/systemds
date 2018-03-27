@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
@@ -84,7 +83,7 @@ public class FunctionOp extends Hop
 
 	/** FunctionOps may have any number of inputs. */
 	@Override
-	public void checkArity() throws HopsException {}
+	public void checkArity() {}
 	
 	public String getFunctionKey() {
 		return DMLProgram.constructFunctionKey(
@@ -221,7 +220,6 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException 
 	{
 		//return already created lops
 		if( getLops() != null )
@@ -253,7 +251,6 @@ public class FunctionOp extends Hop
 
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
 	{
 		checkAndSetForcedPlatform();
 		

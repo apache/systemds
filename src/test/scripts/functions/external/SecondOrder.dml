@@ -20,16 +20,14 @@
 #-------------------------------------------------------------
 
 
-args <- commandArgs(TRUE)
-options(digits=22)
-library("Matrix")
+foo1 = externalFunction(String fname, Matrix[Double] A)
+return (Matrix[Double] B) 
+implemented in (classname="org.apache.sysml.udf.lib.EvalFunction", exectype="mem", secondorder="true")   
 
-X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")))
-y = as.matrix(readMM(paste(args[1], "y.mtx", sep="")))
-I = as.vector(matrix(1, ncol(X), 1));
-lambda = as.double(args[3]);
-A = t(X) %*% X + diag(I)*lambda;
-b = t(X) %*% y;
-beta = solve(A, b);
+foo2 = function(Matrix[Double] A) return(Matrix[Double] B) {
+   B = A + 7;
+}
 
-writeMM(as(beta,"CsparseMatrix"), paste(args[4], "B", sep=""))
+X = read($1);
+Y = foo1("foo2", X);
+write(Y, $2)

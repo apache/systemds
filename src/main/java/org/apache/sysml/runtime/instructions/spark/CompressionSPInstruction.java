@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -37,9 +36,7 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		super(SPType.Compression, op, in, out, opcode, istr);
 	}
 
-	public static CompressionSPInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException
-	{
+	public static CompressionSPInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields(str, 2);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		return new CompressionSPInstruction(null,
@@ -47,9 +44,7 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec)
-		throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdd handle

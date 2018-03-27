@@ -21,7 +21,6 @@ package org.apache.sysml.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.io.IOException;
 
 
 public class FunctionCallIdentifier extends DataIdentifier 
@@ -53,7 +52,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 	}
 	
 	@Override
-	public Expression rewriteExpression(String prefix) throws LanguageException {
+	public Expression rewriteExpression(String prefix) {
 		ArrayList<ParameterExpression> newParameterExpressions = new ArrayList<>();
 		for (ParameterExpression paramExpr : _paramExprs)
 			newParameterExpressions.add(new ParameterExpression(paramExpr.getName(), paramExpr.getExpr().rewriteExpression(prefix)));
@@ -88,11 +87,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 	 * @param constVars map of constant identifiers
 	 * @param conditional if true, display warning for 'raiseValidateError'; if false, throw LanguageException
 	 * for 'raiseValidateError'
-	 * @throws LanguageException if LanguageException occurs
-	 * @throws IOException if IOException occurs
 	 */
 	public void validateExpression(DMLProgram dmlp, HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, IOException
 	{
 		// Step 1: check the namespace exists, and that function is defined in the namespace
 		if (dmlp.getNamespaces().get(_namespace) == null){

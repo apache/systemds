@@ -72,9 +72,7 @@ public class CombineBinary extends Lop
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) 
-		throws LopsException
-	{
+	public String getInstructions(int input_index1, int input_index2, int output_index) {
 		// Determine whether or not the second input denotes weights vector.
 		// CombineBinary can be used to combine (data,weights) vectors or (data1,data2) vectors  
 		boolean isSecondInputIsWeight = true;

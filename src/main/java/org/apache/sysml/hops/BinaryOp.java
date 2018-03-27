@@ -43,7 +43,6 @@ import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.PartialAggregate;
 import org.apache.sysml.lops.PickByCount;
 import org.apache.sysml.lops.RepMat;
@@ -112,7 +111,7 @@ public class BinaryOp extends Hop
 	}
 
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
 	}
 
@@ -184,8 +183,7 @@ public class BinaryOp extends Hop
 	
 	@Override
 	public Lop constructLops() 
-		throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -231,7 +229,7 @@ public class BinaryOp extends Hop
 		return getLops();
 	}
 	
-	private void constructLopsIQM(ExecType et) throws HopsException, LopsException {
+	private void constructLopsIQM(ExecType et) {
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary.constructCombineLop(
 					OperationTypes.PreSort, (Lop) getInput().get(0)
@@ -329,7 +327,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void constructLopsMedian(ExecType et) throws HopsException, LopsException {
+	private void constructLopsMedian(ExecType et) {
 		if ( et == ExecType.MR ) {
 			CombineBinary combine = CombineBinary
 					.constructCombineLop(
@@ -400,7 +398,6 @@ public class BinaryOp extends Hop
 	}
 	
 	private void constructLopsCentralMoment(ExecType et) 
-		throws HopsException, LopsException 
 	{
 		// The output data type is a SCALAR if central moment 
 		// gets computed in CP/SPARK, and it will be MATRIX otherwise.
@@ -427,9 +424,7 @@ public class BinaryOp extends Hop
 		}
 	}
 
-	private void constructLopsCovariance(ExecType et) 
-		throws LopsException, HopsException 
-	{
+	private void constructLopsCovariance(ExecType et) {
 		if ( et == ExecType.MR ) {
 			// combineBinary -> CoVariance -> CastAsScalar
 			CombineBinary combine = CombineBinary.constructCombineLop(
@@ -469,7 +464,7 @@ public class BinaryOp extends Hop
 		}
 	}
 	
-	private void constructLopsQuantile(ExecType et) throws HopsException, LopsException {
+	private void constructLopsQuantile(ExecType et) {
 		// 1st arguments needs to be a 1-dimensional matrix
 		// For QUANTILE: 2nd argument is scalar or 1-dimensional matrix
 		// For INTERQUANTILE: 2nd argument is always a scalar
@@ -540,7 +535,6 @@ public class BinaryOp extends Hop
 	}
 
 	private void constructLopsAppend(ExecType et) 
-		throws HopsException, LopsException 
 	{
 		DataType dt1 = getInput().get(0).getDataType();
 		DataType dt2 = getInput().get(1).getDataType();
@@ -593,7 +587,6 @@ public class BinaryOp extends Hop
 	}
 
 	private void constructLopsBinaryDefault() 
-		throws HopsException, LopsException 
 	{
 		/* Default behavior for BinaryOp */
 		// it depends on input data types
@@ -995,7 +988,7 @@ public class BinaryOp extends Hop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() throws HopsException {
+	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
 		
@@ -1088,11 +1081,8 @@ public class BinaryOp extends Hop
 	 * @param cbind true if cbind
 	 * @param current current high-level operator
 	 * @return low-level operator
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
-	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
-		throws HopsException, LopsException
+	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current )
 	{
 		Lop ret = null;
 		
@@ -1178,7 +1168,6 @@ public class BinaryOp extends Hop
 	}
 
 	public static Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
-		throws HopsException, LopsException
 	{
 		Lop ret = null;
 		
@@ -1234,12 +1223,8 @@ public class BinaryOp extends Hop
 	 * @param cbind ?
 	 * @param current ?
 	 * @return low-level operator
-	 * @throws HopsException if HopsException occurs
-	 * @throws LopsException if LopsException occurs
 	 */
-	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, boolean cbind, Hop current ) 
-		throws HopsException, LopsException
-	{
+	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, boolean cbind, Hop current ) {
 		long m1_dim1 = left.getDim1();
 		long m1_dim2 = left.getDim2();
 		long m2_dim1 = right1.getDim1();

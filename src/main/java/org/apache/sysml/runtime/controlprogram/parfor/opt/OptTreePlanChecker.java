@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -50,7 +49,6 @@ public class OptTreePlanChecker
 {
 
 	public static void checkProgramCorrectness( ProgramBlock pb, StatementBlock sb, Set<String> fnStack ) 
-		throws HopsException, DMLRuntimeException
 	{
 		Program prog = pb.getProgram();
 		DMLProgram dprog = sb.getDMLProg();
@@ -123,31 +121,23 @@ public class OptTreePlanChecker
 		
 	}
 
-	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, ArrayList<Hop> roots, ArrayList<Instruction> inst, Set<String> fnStack ) 
-		throws DMLRuntimeException, HopsException
-	{
+	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, ArrayList<Hop> roots, ArrayList<Instruction> inst, Set<String> fnStack ) {
 		if( roots != null )
 			for( Hop hop : roots )
 				checkHopDagCorrectness(prog, dprog, hop, inst, fnStack);
 	}
 
-	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) 
-		throws DMLRuntimeException, HopsException
-	{
+	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) {
 		//set of checks to perform
 		checkFunctionNames(prog, dprog, root, inst, fnStack);
 	}
 
-	private static void checkLinksProgramStatementBlock( ProgramBlock pb, StatementBlock sb ) 
-		throws DMLRuntimeException
-	{
+	private static void checkLinksProgramStatementBlock( ProgramBlock pb, StatementBlock sb ) {
 		if( pb.getStatementBlock() != sb )
 			throw new DMLRuntimeException("Links between programblocks and statementblocks are incorrect ("+pb+").");
 	}
 
-	private static void checkFunctionNames( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) 
-		throws DMLRuntimeException, HopsException
-	{
+	private static void checkFunctionNames( Program prog, DMLProgram dprog, Hop root, ArrayList<Instruction> inst, Set<String> fnStack ) {
 		//reset visit status of dag
 		root.resetVisitStatus();
 		

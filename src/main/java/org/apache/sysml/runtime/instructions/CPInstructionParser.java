@@ -64,7 +64,6 @@ import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
-import org.apache.sysml.runtime.instructions.cpfile.ParameterizedBuiltinCPFileInstruction;
 
 public class CPInstructionParser extends InstructionParser 
 {
@@ -107,6 +106,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "nrow"    ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "ncol"    ,CPType.AggregateUnary);
 		String2CPInstructionType.put( "length"  ,CPType.AggregateUnary);
+		String2CPInstructionType.put( "exists"  ,CPType.AggregateUnary);
 
 		String2CPInstructionType.put( "uaggouterchain", CPType.UaggOuterChain);
 		
@@ -293,12 +293,9 @@ public class CPInstructionParser extends InstructionParser
 		String2CPFileInstructionType.put( "rmempty"	    , CPType.ParameterizedBuiltin);
 	}
 
-	public static CPInstruction parseSingleInstruction (String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CPInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-
 		CPType cptype = InstructionUtils.getCPType(str); 
 		if ( cptype == null ) 
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
@@ -308,16 +305,11 @@ public class CPInstructionParser extends InstructionParser
 		return cpinst;
 	}
 	
-	public static CPInstruction parseSingleInstruction ( CPType cptype, String str ) 
-		throws DMLRuntimeException 
-	{
+	public static CPInstruction parseSingleInstruction ( CPType cptype, String str ) {
 		ExecType execType = null; 
-		
 		if ( str == null || str.isEmpty() ) 
 			return null;
-		
-		switch(cptype) 
-		{
+		switch(cptype) {
 			case AggregateUnary:
 				return AggregateUnaryCPInstruction.parseInstruction(str);
 			
@@ -371,14 +363,10 @@ public class CPInstructionParser extends InstructionParser
 				
 			case External:
 				return FunctionCallCPInstruction.parseInstruction(str);
-				
+			
 			case ParameterizedBuiltin: 
-				execType = ExecType.valueOf( str.split(Instruction.OPERAND_DELIM)[0] ); 
-				if( execType == ExecType.CP )
-					return ParameterizedBuiltinCPInstruction.parseInstruction(str);
-				else //exectype CP_FILE
-					return ParameterizedBuiltinCPFileInstruction.parseInstruction(str);
-	
+				return ParameterizedBuiltinCPInstruction.parseInstruction(str);
+			
 			case MultiReturnParameterizedBuiltin:
 				return MultiReturnParameterizedBuiltinCPInstruction.parseInstruction(str);
 				

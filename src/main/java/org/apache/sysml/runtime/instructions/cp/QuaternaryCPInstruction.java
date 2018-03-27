@@ -44,9 +44,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 		_numThreads = k;
 	}
 
-	public static QuaternaryCPInstruction parseInstruction(String inst) 
-		throws DMLRuntimeException
-	{	
+	public static QuaternaryCPInstruction parseInstruction(String inst) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
 		
@@ -100,9 +98,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 		
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());

@@ -50,9 +50,8 @@ public class HopsException extends DMLException
      * @param condition Condition to test
      * @param message Message to print if the condition fails
      * @param objects Objects to print with the message, as per String.format
-     * @throws HopsException Thrown if condition is false
      */
-    public static void check(boolean condition, String message, Object... objects) throws HopsException {
+    public static void check(boolean condition, String message, Object... objects) {
         if (!condition)
             throw new HopsException(String.format(message, objects));
     }
@@ -62,9 +61,8 @@ public class HopsException extends DMLException
      * @param hop Hop to print as a cause of the problem, if the condition fails
      * @param message Message to print if the condition fails
      * @param objects Objects to print with the message, as per String.format
-     * @throws HopsException Thrown if condition is false
      */
-    public static void check(boolean condition, Hop hop, String message, Object... objects) throws HopsException {
+    public static void check(boolean condition, Hop hop, String message, Object... objects) {
         if (!condition)
             throw new HopsException(String.format(hop.getOpString()+" id="+hop.getHopID()+" "+message, objects));
     }

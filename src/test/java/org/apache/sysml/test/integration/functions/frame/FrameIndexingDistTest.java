@@ -34,7 +34,6 @@ import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -97,30 +96,30 @@ public class FrameIndexingDistTest extends AutomatedTestBase
 
 	// Left Indexing Spark test cases
 	@Test
-	public void testMapLeftIndexingSP() throws DMLRuntimeException, IOException {
+	public void testMapLeftIndexingSP() throws IOException {
 		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R, schemaMixedLarge, IXType.LIX, true);
 	}
 	
 	@Test
-	public void testGeneralLeftIndexingSP() throws DMLRuntimeException, IOException {
+	public void testGeneralLeftIndexingSP() throws IOException {
 		runTestLeftIndexing(ExecType.SPARK, LeftIndexingMethod.SP_GLEFTINDEX, schemaMixedLarge, IXType.LIX, true);
 	}
 	
 	
 	// Right Indexing Spark test cases
 	@Test
-	public void testRightIndexingSPSparse() throws DMLRuntimeException, IOException {
+	public void testRightIndexingSPSparse() throws IOException {
 		runTestLeftIndexing(ExecType.SPARK, null, schemaMixedLarge, IXType.RIX, true);
 	}
 	
 	@Test
-	public void testRightIndexingSPDense() throws DMLRuntimeException, IOException {
+	public void testRightIndexingSPDense() throws IOException {
 		runTestLeftIndexing(ExecType.SPARK, null, schemaMixedLarge, IXType.RIX, false);
 	}
 	
 
 	
-	private void runTestLeftIndexing(ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod, ValueType[] schema, IXType itype, boolean bSparse) throws DMLRuntimeException, IOException {
+	private void runTestLeftIndexing(ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod, ValueType[] schema, IXType itype, boolean bSparse) throws IOException {
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		RUNTIME_PLATFORM oldRTP = rtplatform;

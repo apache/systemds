@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.functionobjects;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
@@ -59,10 +58,8 @@ public class COV extends ValueFunction
 	 * @param v ?
 	 * @param w2 ?
 	 * @return result
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public Data execute(Data in1, double u, double v, double w2) 
-		throws DMLRuntimeException 
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;
 		if(cov1.isCOVAllZeros())
@@ -95,7 +92,6 @@ public class COV extends ValueFunction
 	 */
 	@Override
 	public Data execute(Data in1, double u, double v) 
-		throws DMLRuntimeException 
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;
 		if(cov1.isCOVAllZeros())
@@ -119,7 +115,7 @@ public class COV extends ValueFunction
 	}
 	
 	@Override
-	public Data execute(Data in1, Data in2) throws DMLRuntimeException 
+	public Data execute(Data in1, Data in2)
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;
 		CM_COV_Object cov2=(CM_COV_Object) in2;

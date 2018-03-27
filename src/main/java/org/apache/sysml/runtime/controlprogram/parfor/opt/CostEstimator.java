@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 
 /**
@@ -63,10 +62,8 @@ public abstract class CostEstimator
 	 * @param measure ?
 	 * @param node internal representation of a plan alternative for program blocks and instructions
 	 * @return estimate?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract double getLeafNodeEstimate( TestMeasure measure, OptNode node ) 
-		throws DMLRuntimeException;
+	public abstract double getLeafNodeEstimate( TestMeasure measure, OptNode node );
 
 	/**
 	 * Main leaf node estimation method - to be overwritten by specific cost estimators
@@ -75,10 +72,8 @@ public abstract class CostEstimator
 	 * @param node internal representation of a plan alternative for program blocks and instructions
 	 * @param et forced execution type for leaf node 
 	 * @return estimate?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public abstract double getLeafNodeEstimate( TestMeasure measure, OptNode node, ExecType et ) 
-		throws DMLRuntimeException;
+	public abstract double getLeafNodeEstimate( TestMeasure measure, OptNode node, ExecType et );
 	
 	
 	/////////
@@ -92,22 +87,16 @@ public abstract class CostEstimator
 	 * @param node internal representation of a plan alternative for program blocks and instructions
 	 * @param inclCondPart including conditional partitioning
 	 * @return estimate?
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public double getEstimate( TestMeasure measure, OptNode node ) 
-		throws DMLRuntimeException
-	{
+	public double getEstimate( TestMeasure measure, OptNode node ) {
 		return getEstimate(measure, node, null);
 	}
 	
-	public double getEstimate( TestMeasure measure, OptNode node, boolean inclCondPart ) 
-		throws DMLRuntimeException
-	{
+	public double getEstimate( TestMeasure measure, OptNode node, boolean inclCondPart ) {
 		//temporarily change local flag and get estimate
 		boolean oldInclCondPart = _inclCondPart;
 		_inclCondPart = inclCondPart; 
 		double val = getEstimate(measure, node, null);
-		
 		//reset local flag and return
 		_inclCondPart = oldInclCondPart;
 		return val;
@@ -120,11 +109,8 @@ public abstract class CostEstimator
 	 * @param node plan opt tree node
 	 * @param et execution type
 	 * @return estimate
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public double getEstimate( TestMeasure measure, OptNode node, ExecType et ) 
-		throws DMLRuntimeException
-	{
+	public double getEstimate( TestMeasure measure, OptNode node, ExecType et ) {
 		double val = -1;
 		
 		if( node.isLeaf() )
@@ -212,27 +198,21 @@ public abstract class CostEstimator
 		return -1;
 	}
 
-	protected double getMaxEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) 
-		throws DMLRuntimeException
-	{
+	protected double getMaxEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
 		double max = Double.MIN_VALUE; //smallest positive value
 		for( OptNode n : nodes )
 			max = Math.max(max, getEstimate(measure, n, et));
 		return max;
 	}
 
-	protected double getSumEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) 
-		throws DMLRuntimeException
-	{
+	protected double getSumEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
 		double sum = 0;
 		for( OptNode n : nodes )
 			sum += getEstimate( measure, n, et );
-		return sum;	
+		return sum;
 	}
 
-	protected double getWeightedEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) 
-		throws DMLRuntimeException 
-	{
+	protected double getWeightedEstimate( TestMeasure measure, ArrayList<OptNode> nodes, ExecType et ) {
 		double ret = 0;
 		int len = nodes.size();
 		for( OptNode n : nodes )

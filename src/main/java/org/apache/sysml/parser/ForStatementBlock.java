@@ -19,13 +19,11 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
@@ -54,8 +52,7 @@ public class ForStatementBlock extends StatementBlock
 
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
-	{	
+	{
 		if (_statements.size() > 1){
 			raiseValidateError("ForStatementBlock should have only 1 statement (for statement)", conditional);
 		}
@@ -183,7 +180,7 @@ public class ForStatementBlock extends StatementBlock
 	}
 	
 	@Override
-	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
+	public VariableSet initializeforwardLV(VariableSet activeInPassed) {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1){
@@ -247,7 +244,7 @@ public class ForStatementBlock extends StatementBlock
 	}
 
 	@Override
-	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
+	public VariableSet initializebackwardLV(VariableSet loPassed) {
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 			
@@ -285,7 +282,7 @@ public class ForStatementBlock extends StatementBlock
 	public Lop getIncrementLops() { return _incrementLops; }
 
 	@Override
-	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
+	public VariableSet analyze(VariableSet loPassed) {
  		
 		VariableSet predVars = new VariableSet();
 		IterablePredicate ip = ((ForStatement)_statements.get(0)).getIterablePredicate(); 
@@ -339,9 +336,7 @@ public class ForStatementBlock extends StatementBlock
 	}
 	
 
-	public void performConstantPropagation(HashMap<String, ConstIdentifier> currConstVars) 
-		throws LanguageException
-	{
+	public void performConstantPropagation(HashMap<String, ConstIdentifier> currConstVars) {
 		IterablePredicate ip = getIterPredicate();
 		
 		// handle replacement in from expression
@@ -401,7 +396,7 @@ public class ForStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public boolean updatePredicateRecompilationFlags() throws HopsException {
+	public boolean updatePredicateRecompilationFlags() {
 		if( ConfigurationManager.isDynamicRecompilation() ) {
 			_requiresFromRecompile = Recompiler.requiresRecompilation(getFromHops());
 			_requiresToRecompile = Recompiler.requiresRecompilation(getToHops());

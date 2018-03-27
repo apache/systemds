@@ -24,7 +24,6 @@ import java.io.IOException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
 import org.apache.sysml.runtime.io.MatrixReader;
@@ -227,7 +226,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 	}
 	
 	private static void writeFrameInput(String fname, String ofmt, double[][] frame, int rows, int cols) 
-		throws DMLRuntimeException, IOException 
+		throws IOException 
 	{
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(frame);
 		FrameBlock fb = DataConverter.convertToFrameBlock(mb);
@@ -239,7 +238,7 @@ public class FrameMatrixReblockTest extends AutomatedTestBase
 	}
 	
 	private static double[][] readMatrixOutput(String fname, String ofmt, int rows, int cols) 
-		throws DMLRuntimeException, IOException 
+		throws IOException 
 	{
 		MatrixReader reader = MatrixReaderFactory.createMatrixReader(InputInfo.stringExternalToInputInfo(ofmt));
 		MatrixBlock mb = reader.readMatrixFromHDFS(fname, rows, cols, 1000, 1000, -1);

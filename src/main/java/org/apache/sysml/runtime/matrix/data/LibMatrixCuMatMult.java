@@ -70,7 +70,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		private boolean isRightTransposed; // is op(B) = t(B)
 
 		public CuMatMultParameters(long leftNumRows1, long leftNumCols1, long rightNumRows1, long rightNumCols1,
-				boolean isLeftTransposed1, boolean isRightTransposed1) throws DMLRuntimeException {
+				boolean isLeftTransposed1, boolean isRightTransposed1) {
 			leftNumRows = leftNumRows1;
 			leftNumCols = leftNumCols1;
 			rightNumRows = rightNumRows1;
@@ -80,7 +80,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			setDimensions();
 		}
 
-		public void rowToColumnMajor() throws DMLRuntimeException {
+		public void rowToColumnMajor() {
 			// To compensate for the input matrices being in row-major format
 			// instead of column-major (the way cublas expects)
 			isRightTransposed = swap(isLeftTransposed, isLeftTransposed = isRightTransposed);
@@ -89,7 +89,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			setDimensions();
 		}
 
-		private void validate() throws DMLRuntimeException {
+		private void validate() {
 			int k1 = toInt(isRightTransposed ? rightNumCols : rightNumRows);
 			if (k != k1)
 				throw new DMLRuntimeException("Dimension mismatch: " + k + " != " + k1 + " [" + leftNumRows + ","
@@ -97,7 +97,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 						+ isRightTransposed);
 		}
 
-		private void setDimensions() throws DMLRuntimeException {
+		private void setDimensions() {
 			// Validate the dimensions
 			m = toInt(isLeftTransposed ? leftNumCols : leftNumRows);
 			n = toInt(isRightTransposed ? rightNumRows : rightNumCols);
@@ -134,13 +134,10 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 *            op for A, transposed or not
 	 * @param isRightTransposed
 	 *            op for B, tranposed or not
-	 * @throws DMLRuntimeException
-	 *             if DMLRuntimeException occurs
 	 * @return output of matrix multiply
 	 */
 	public static MatrixObject matmult(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject left,
-			MatrixObject right, String outputName, boolean isLeftTransposed, boolean isRightTransposed)
-			throws DMLRuntimeException {
+			MatrixObject right, String outputName, boolean isLeftTransposed, boolean isRightTransposed) {
 		boolean isM1Sparse = isInSparseFormat(gCtx, left);
 		boolean isM2Sparse = isInSparseFormat(gCtx, right);
 		MatrixObject output = ec.getMatrixObject(outputName);
@@ -265,12 +262,10 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 *            is op(A) = t(A)
 	 * @param isRightTransposed
 	 *            is op(B) = t(B)
-	 * @throws DMLRuntimeException
-	 *             if error
 	 */
 	static void sparseDenseMatMult(GPUContext gCtx, String instName, Pointer C, CSRPointer A, Pointer B,
 			long leftNumRows, long leftNumColumns, long rightNumRows, long rightNumColumns, long outRLen, long outCLen,
-			boolean isLeftTransposed, boolean isRightTransposed) throws DMLRuntimeException {
+			boolean isLeftTransposed, boolean isRightTransposed) {
 		// t(C) = t(B) %*% t(A)
 		Pointer output = null;
 		if (outRLen != 1 && outCLen != 1) {
@@ -314,11 +309,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 *            right matrix pointer
 	 * @param param
 	 *            BLAS parameters
-	 * @throws DMLRuntimeException
-	 *             if error
 	 */
 	private static void denseSparseMatMult(cusparseHandle handle, String instName, Pointer C, Pointer A, CSRPointer B,
-			CuMatMultParameters param) throws DMLRuntimeException {
+			CuMatMultParameters param) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		String kernel = GPUInstruction.MISC_TIMER_SPARSE_MATRIX_DENSE_MATRIX_LIB;
 		// Ignoring sparse vector dense matrix multiplication and dot product
@@ -365,11 +358,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 *            right matrix pointer
 	 * @param param
 	 *            BLAS parameters
-	 * @throws DMLRuntimeException
-	 *             if error
 	 */
 	private static void denseDenseMatMult(cublasHandle handle, String instName, Pointer C, Pointer A, Pointer B,
-			CuMatMultParameters param) throws DMLRuntimeException {
+			CuMatMultParameters param) {
 		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		String kernel = null;
 		param.rowToColumnMajor();

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -27,7 +26,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -92,14 +90,6 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 		runTransformEncodeDecodeTest(ExecType.CP, true, "binary");
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @throws IOException 
-	 * @throws DMLRuntimeException 
-	 */
 	private void runTransformEncodeDecodeTest( ExecType et, boolean sparse, String fmt)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -110,7 +100,7 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			//get input/output info
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(fmt);			
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(fmt);
 			OutputInfo oinfo = InputInfo.getMatchingOutputInfo(iinfo);
 			
 			//generate and write input data

@@ -50,7 +50,7 @@ import org.apache.wink.json4j.JSONObject;
 
 public class TfMetaUtils 
 {
-	public static boolean isIDSpec(String spec) throws DMLRuntimeException {
+	public static boolean isIDSpec(String spec) {
 		try {
 			JSONObject jSpec = new JSONObject(spec);
 			return isIDSpec(jSpec);
@@ -64,13 +64,11 @@ public class TfMetaUtils
 		return spec.containsKey("ids") && spec.getBoolean("ids");
 	}
 
-	public static boolean containsOmitSpec(String spec, String[] colnames) throws DMLRuntimeException {
+	public static boolean containsOmitSpec(String spec, String[] colnames) {
 		return (TfMetaUtils.parseJsonIDList(spec, colnames, TfUtils.TXMETHOD_OMIT).length > 0);	
 	}
 
-	public static int[] parseJsonIDList(String spec, String[] colnames, String group) 
-		throws DMLRuntimeException 
-	{
+	public static int[] parseJsonIDList(String spec, String[] colnames, String group) {
 		try {
 			JSONObject jSpec = new JSONObject(spec);
 			return parseJsonIDList(jSpec, colnames, group);

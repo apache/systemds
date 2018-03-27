@@ -60,9 +60,7 @@ public class CombineUnary extends Lop
 	}
 
 	@Override
-	public String getInstructions(int input_index1, int output_index) 
-		throws LopsException
-	{
+	public String getInstructions(int input_index1, int output_index) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );

@@ -318,19 +318,14 @@ public class MRInstructionParser extends InstructionParser
 	}
 	
 	
-	public static MRInstruction parseSingleInstruction (String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MRInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		
 		MRType mrtype = InstructionUtils.getMRType(str); 
 		return parseSingleInstruction(mrtype, str);
 	}
 	
-	public static MRInstruction parseSingleInstruction (MRType mrtype, String str ) 
-		throws DMLRuntimeException 
-	{
+	public static MRInstruction parseSingleInstruction (MRType mrtype, String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
 		
@@ -474,125 +469,88 @@ public class MRInstructionParser extends InstructionParser
 		}
 	}
 	
-	public static MRInstruction[] parseMixedInstructions ( String str ) throws DMLRuntimeException {
+	public static MRInstruction[] parseMixedInstructions ( String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		
 		Instruction[] inst = InstructionParser.parseMixedInstructions(str);
 		MRInstruction[] mrinst = new MRInstruction[inst.length];
-		for ( int i=0; i < inst.length; i++ ) {
+		for ( int i=0; i < inst.length; i++ )
 			mrinst[i] = (MRInstruction) inst[i];
-		}
-		
 		return mrinst;
 	}
 	
-	public static AggregateInstruction[] parseAggregateInstructions(String str) throws DMLRuntimeException 
-	{
+	public static AggregateInstruction[] parseAggregateInstructions(String str) {
 		AggregateInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new AggregateInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (AggregateInstruction) AggregateInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 	
-	public static ReblockInstruction[] parseReblockInstructions(String str) throws DMLRuntimeException 
-	{
+	public static ReblockInstruction[] parseReblockInstructions(String str) {
 		ReblockInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new ReblockInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (ReblockInstruction) ReblockInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 	
-	public static CSVReblockInstruction[] parseCSVReblockInstructions(String str) throws DMLRuntimeException 
-	{
+	public static CSVReblockInstruction[] parseCSVReblockInstructions(String str) {
 		CSVReblockInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new CSVReblockInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (CSVReblockInstruction) CSVReblockInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 	
-	public static CSVWriteInstruction[] parseCSVWriteInstructions(String str) throws DMLRuntimeException 
-	{
+	public static CSVWriteInstruction[] parseCSVWriteInstructions(String str) {
 		CSVWriteInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new CSVWriteInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (CSVWriteInstruction) CSVWriteInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 	
-	public static AggregateBinaryInstruction[] parseAggregateBinaryInstructions(String str) throws DMLRuntimeException 
-	{
+	public static AggregateBinaryInstruction[] parseAggregateBinaryInstructions(String str) {
 		AggregateBinaryInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new AggregateBinaryInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (AggregateBinaryInstruction) AggregateBinaryInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 	
-	public static DataGenMRInstruction[] parseDataGenInstructions(String str) throws DMLRuntimeException 
-	{
+	public static DataGenMRInstruction[] parseDataGenInstructions(String str) {
 		DataGenMRInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new DataGenMRInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (DataGenMRInstruction) InstructionParser.parseSingleInstruction(strlist[i]);
-			}
 		}
 		return inst;
 	}
 	
-	public static MRInstruction[] parseCombineInstructions(String str) throws DMLRuntimeException 
-	{
+	public static MRInstruction[] parseCombineInstructions(String str) {
 		MRInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new MRInstruction[strlist.length];
-			
-			for(int i=0; i < strlist.length; i++)
-			{
+			for(int i=0; i < strlist.length; i++) {
 				MRType type = InstructionUtils.getMRType(strlist[i]);
 				if(type==MRType.CombineBinary)
 					inst[i] = (CombineBinaryInstruction) CombineBinaryInstruction.parseInstruction( strlist[i] );
@@ -605,34 +563,25 @@ public class MRInstructionParser extends InstructionParser
 		return inst;
 	}
 	
-	public static CM_N_COVInstruction[] parseCM_N_COVInstructions(String str) throws DMLRuntimeException 
+	public static CM_N_COVInstruction[] parseCM_N_COVInstructions(String str)
 	{
 		CM_N_COVInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new CM_N_COVInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (CM_N_COVInstruction) CM_N_COVInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}
 
-	public static GroupedAggregateInstruction[] parseGroupedAggInstructions(String str) 
-	throws DMLRuntimeException{
+	public static GroupedAggregateInstruction[] parseGroupedAggInstructions(String str) {
 		GroupedAggregateInstruction[] inst=null;
-		if(str!=null && !str.isEmpty())
-		{
+		if(str!=null && !str.isEmpty()) {
 			String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 			inst = new GroupedAggregateInstruction[strlist.length];
-			
 			for(int i=0; i < strlist.length; i++)
-			{
 				inst[i] = (GroupedAggregateInstruction) GroupedAggregateInstruction.parseInstruction( strlist[i] );
-			}
 		}
 		return inst;
 	}

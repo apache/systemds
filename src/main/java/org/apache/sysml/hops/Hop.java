@@ -73,15 +73,15 @@ public abstract class Hop implements ParseInfo
 	// static variable to assign an unique ID to every hop that is created
 	private static IDSequence _seqHopID = new IDSequence();
 	
-	protected long _ID;
+	protected final long _ID;
 	protected String _name;
 	protected DataType _dataType;
 	protected ValueType _valueType;
 	protected boolean _visited = false;
 	protected long _dim1 = -1;
 	protected long _dim2 = -1;
-	protected long _rows_in_block = -1;
-	protected long _cols_in_block = -1;
+	protected int _rows_in_block = -1;
+	protected int _cols_in_block = -1;
 	protected long _nnz = -1;
 	protected UpdateType _updateType = UpdateType.COPY;
 
@@ -124,10 +124,11 @@ public abstract class Hop implements ParseInfo
 	
 	protected Hop(){
 		//default constructor for clone
+		_ID = getNextHopID();
 	}
 		
 	public Hop(String l, DataType dt, ValueType vt) {
-		_ID = getNextHopID();
+		this();
 		setName(l);
 		setDataType(dt);
 		setValueType(vt);
@@ -150,9 +151,8 @@ public abstract class Hop implements ParseInfo
 	 *
 	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
 	 *
-	 * @throws HopsException if this Hop has an illegal number of inputs (a kind of Illegal State)
 	 */
-	public abstract void checkArity() throws HopsException;
+	public abstract void checkArity();
 	
 	public ExecType getExecType()
 	{
@@ -219,9 +219,7 @@ public abstract class Hop implements ParseInfo
 	{
 		if( _etype == ExecType.CP || _etype == ExecType.GPU ) {
 			//check dimensions of output and all inputs (INTEGER)
-			boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
-			for( Hop in : getInput() )
-				invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+			boolean invalid = !hasValidCPDimsAndSize();
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
@@ -231,6 +229,13 @@ public abstract class Hop implements ParseInfo
 					_etype = ExecType.SPARK;
 			}
 		}
+	}
+	
+	public boolean hasValidCPDimsAndSize() {
+		boolean invalid = !OptimizerUtils.isValidCPDimensions(_dim1, _dim2);
+		for( Hop in : getInput() )
+			invalid |= !OptimizerUtils.isValidCPDimensions(in._dim1, in._dim2);
+		return !invalid;
 	}
 
 	public boolean hasMatrixInputWithDifferentBlocksizes()
@@ -247,7 +252,7 @@ public abstract class Hop implements ParseInfo
 		return false;
 	}
 	
-	public void setOutputBlocksizes( long brlen, long bclen ) {
+	public void setOutputBlocksizes(int brlen, int bclen) {
 		setRowsInBlock( brlen );
 		setColsInBlock( bclen );
 	}
@@ -276,9 +281,7 @@ public abstract class Hop implements ParseInfo
 		return _requiresCompression;
 	}
 	
-	public void constructAndSetLopsDataFlowProperties() 
-		throws HopsException
-	{
+	public void constructAndSetLopsDataFlowProperties() {
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
@@ -290,7 +293,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	private void constructAndSetReblockLopIfRequired() 
-		throws HopsException
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
@@ -331,9 +333,7 @@ public abstract class Hop implements ParseInfo
 		}
 	}
 
-	private void constructAndSetCheckpointLopIfRequired() 
-		throws HopsException
-	{
+	private void constructAndSetCheckpointLopIfRequired() {
 		//determine execution type
 		ExecType et = ExecType.CP;
 		if( OptimizerUtils.isSparkExecutionMode() 
@@ -342,8 +342,8 @@ public abstract class Hop implements ParseInfo
 			//conditional checkpoint based on memory estimate in order to 
 			//(1) avoid unnecessary persist and unpersist calls, and 
 			//(2) avoid unnecessary creation of spark context (incl executors)
-			if(    OptimizerUtils.isHybridExecutionMode() 
-				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate)
+			if( (OptimizerUtils.isHybridExecutionMode() && hasValidCPDimsAndSize()
+				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate))
 				|| _etypeForced == ExecType.CP )
 			{
 				et = ExecType.CP;
@@ -391,7 +391,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	private void constructAndSetCompressionLopIfRequired() 
-		throws HopsException
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
@@ -429,7 +428,6 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public static Lop createOffsetLop( Hop hop, boolean repCols ) 
-		throws HopsException, LopsException
 	{
 		Lop offset = null;
 		
@@ -781,19 +779,19 @@ public abstract class Hop implements ParseInfo
 		h._parent.add(this);
 	}
 
-	public long getRowsInBlock() {
+	public int getRowsInBlock() {
 		return _rows_in_block;
 	}
 
-	public void setRowsInBlock(long rowsInBlock) {
+	public void setRowsInBlock(int rowsInBlock) {
 		_rows_in_block = rowsInBlock;
 	}
 
-	public long getColsInBlock() {
+	public int getColsInBlock() {
 		return _cols_in_block;
 	}
 
-	public void setColsInBlock(long colsInBlock) {
+	public void setColsInBlock(int colsInBlock) {
 		_cols_in_block = colsInBlock;
 	}
 
@@ -813,11 +811,9 @@ public abstract class Hop implements ParseInfo
 		return _updateType;
 	}
 
-	public abstract Lop constructLops() 
-		throws HopsException, LopsException;
+	public abstract Lop constructLops();
 
-	protected abstract ExecType optFindExecType() 
-		throws HopsException;
+	protected abstract ExecType optFindExecType();
 	
 	public abstract String getOpString();
 
@@ -994,9 +990,7 @@ public abstract class Hop implements ParseInfo
 		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
 	}
 	
-	protected void setOutputDimensions(Lop lop) 
-		throws HopsException
-	{
+	protected void setOutputDimensions(Lop lop) {
 		lop.getOutputParameters().setDimensions(
 			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());	
 	}
@@ -1057,7 +1051,7 @@ public abstract class Hop implements ParseInfo
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
-		SVD,
+		SVD, EXISTS,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
 		//fused ML-specific operators for performance 
@@ -1350,6 +1344,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.NROW, org.apache.sysml.lops.UnaryCP.OperationTypes.NROW);
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.apache.sysml.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.apache.sysml.lops.UnaryCP.OperationTypes.LENGTH);
+		HopsOpOp1LopsUS.put(OpOp1.EXISTS, org.apache.sysml.lops.UnaryCP.OperationTypes.EXISTS);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.apache.sysml.lops.UnaryCP.OperationTypes.PRINT);
 		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.apache.sysml.lops.UnaryCP.OperationTypes.ASSERT);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.apache.sysml.lops.UnaryCP.OperationTypes.ROUND);
@@ -1850,7 +1845,6 @@ public abstract class Hop implements ParseInfo
 		if( withRefs )
 			throw new CloneNotSupportedException( "Hops deep copy w/ lops/inputs/parents not supported." );
 		
-		_ID = that._ID;
 		_name = that._name;
 		_dataType = that._dataType;
 		_valueType = that._valueType;

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DebugState;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 
@@ -98,9 +97,7 @@ public class BreakPointInstruction extends Instruction
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException
-	{
+	public void processInstruction(ExecutionContext ec) {
 		if( DMLScript.ENABLE_DEBUG_MODE && isBPInstructionEnabled()) {
 			DebugState dbState = ec.getDebugState();
 			

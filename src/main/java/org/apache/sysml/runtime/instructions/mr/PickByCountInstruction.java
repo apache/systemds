@@ -51,43 +51,34 @@ public class PickByCountInstruction extends MRInstruction {
 		isValuePick = false;
 	}
 
-	public static PickByCountInstruction parseInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{	
+	public static PickByCountInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 5 );
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		OperationTypes ptype = OperationTypes.valueOf(parts[4]);
-		
-		if ( ptype == OperationTypes.VALUEPICK ) 
-		{
+		if ( ptype == OperationTypes.VALUEPICK ) {
 			byte in1 = Byte.parseByte(parts[1]);
 			byte in2 = Byte.parseByte(parts[2]);
 			byte out = Byte.parseByte(parts[3]);
 			return new PickByCountInstruction(null, in1, in2, out, str);
 		} 
-		else if ( ptype == OperationTypes.RANGEPICK ) 
-		{
+		else if ( ptype == OperationTypes.RANGEPICK ) {
 			byte in1 = Byte.parseByte(parts[1]);
 			double cstant = Double.parseDouble(parts[2]);
 			byte out = Byte.parseByte(parts[3]);
 			return new PickByCountInstruction(null, in1, cstant, out, str);
 		}
-		
 		return null;
 	}
 
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		throw new DMLRuntimeException("PickByCountInstruction.processInstruction should never be called!");
-		
 	}
 
 	@Override
-	public byte[] getAllIndexes() throws DMLRuntimeException {
+	public byte[] getAllIndexes() {
 		if( isValuePick ) {
 			return new byte[]{input1,input2,output};
 		}
@@ -98,7 +89,7 @@ public class PickByCountInstruction extends MRInstruction {
 	}
 
 	@Override
-	public byte[] getInputIndexes() throws DMLRuntimeException {
+	public byte[] getInputIndexes() {
 		if( isValuePick ) {
 			return new byte[]{input1,input2};
 		}

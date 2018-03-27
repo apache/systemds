@@ -80,7 +80,7 @@ public class DataOp extends Hop
 	 * @param colsPerBlock cols per block
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
-			String fname, long dim1, long dim2, long nnz, long rowsPerBlock, long colsPerBlock) {
+			String fname, long dim1, long dim2, long nnz, int rowsPerBlock, int colsPerBlock) {
 		super(l, dt, vt);
 		_dataop = dop;
 		
@@ -96,7 +96,7 @@ public class DataOp extends Hop
 	}
 
 	public DataOp(String l, DataType dt, ValueType vt, DataOpTypes dop,
-			String fname, long dim1, long dim2, long nnz, UpdateType update, long rowsPerBlock, long colsPerBlock) {
+			String fname, long dim1, long dim2, long nnz, UpdateType update, int rowsPerBlock, int colsPerBlock) {
 		this(l, dt, vt, dop, fname, dim1, dim2, nnz, rowsPerBlock, colsPerBlock);
 		setUpdateType(update);
 	}
@@ -188,7 +188,7 @@ public class DataOp extends Hop
 
 	/** Check for N (READ) or N+1 (WRITE) inputs. */
 	@Override
-	public void checkArity() throws HopsException {
+	public void checkArity() {
 		int sz = _input.size();
 		int pz = _paramIndexMap.size();
 		switch (_dataop) {
@@ -218,7 +218,7 @@ public class DataOp extends Hop
 		_dataop = type;
 	}
 	
-	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, long rowsPerBlock, long colsPerBlock) {
+	public void setOutputParams(long dim1, long dim2, long nnz, UpdateType update, int rowsPerBlock, int colsPerBlock) {
 		setDim1(dim1);
 		setDim2(dim2);
 		setNnz(nnz);
@@ -247,8 +247,7 @@ public class DataOp extends Hop
 	
 	@Override
 	public Lop constructLops()
-			throws HopsException, LopsException 
-	{	
+	{
 		//return already created lops
 		if( getLops() != null )
 			return getLops();
@@ -441,7 +440,6 @@ public class DataOp extends Hop
 	
 	@Override
 	protected ExecType optFindExecType() 
-		throws HopsException 
 	{
 		//MB: find exec type has two meanings here: (1) for write it means the actual
 		//exec type, while (2) for read it affects the recompilation decision as needed

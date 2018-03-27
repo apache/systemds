@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -47,9 +46,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		output = out;
 	}
 
-	public static BuiltinNarySPInstruction parseInstruction ( String str ) 
-			throws DMLRuntimeException 
-	{
+	public static BuiltinNarySPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand output = new CPOperand(parts[parts.length - 1]);
@@ -61,9 +58,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 	}
 
 	@Override 
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException 
-	{	
+	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		boolean cbind = getOpcode().equals("cbind");
 		
@@ -95,9 +90,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 			sec.addLineageRDD(output.getName(), input.getName());
 	}
 	
-	private static MatrixCharacteristics computeOutputMatrixCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) 
-		throws DMLRuntimeException 
-	{
+	private static MatrixCharacteristics computeOutputMatrixCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) {
 		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(inputs[0].getName());
 		MatrixCharacteristics mcOut = new MatrixCharacteristics(
 			0, 0, mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock(), 0);

@@ -39,9 +39,8 @@ public class LibMatrixDNNConv2d
 	 * 
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create twice as many tasks as threads for improved load balance
@@ -85,9 +84,8 @@ public class LibMatrixDNNConv2d
 	 * 
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d backward filter
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(ConvolutionParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create as many tasks as threads. 
 		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
@@ -122,9 +120,8 @@ public class LibMatrixDNNConv2d
 	 * 
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d backward data
-	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) throws DMLRuntimeException {
+	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create as many tasks as threads. 
@@ -619,7 +616,7 @@ public class LibMatrixDNNConv2d
 		}
 	}
 	
-	private static void getRowInDenseFormat(MatrixBlock input, int n, double []  ret) throws DMLRuntimeException {
+	private static void getRowInDenseFormat(MatrixBlock input, int n, double []  ret) {
 		if(input.getNumColumns() != ret.length) {
 			throw new DMLRuntimeException("Invalid parameters");
 		}

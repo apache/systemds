@@ -21,15 +21,13 @@ package org.apache.sysml.runtime.functionobjects;
 
 import java.io.Serializable;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public abstract class TernaryValueFunction extends ValueFunction implements Serializable
 {
 	private static final long serialVersionUID = 4837616587192612216L;
 	
-	public abstract double execute ( double in1, double in2, double in3 )
-		throws DMLRuntimeException;
+	public abstract double execute ( double in1, double in2, double in3 );
 	
 	public interface ValueFunctionWithConstant {
 		public BinaryOperator setOp2Constant(double cnt);

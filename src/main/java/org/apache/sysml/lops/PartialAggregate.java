@@ -72,7 +72,6 @@ public class PartialAggregate extends Lop
 	
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
-		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, ExecType.MR);
@@ -80,7 +79,6 @@ public class PartialAggregate extends Lop
 
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et, int k)
-		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
@@ -89,7 +87,6 @@ public class PartialAggregate extends Lop
 	
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
-		throws LopsException 
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
 		init(input, op, direct, dt, vt, et);
@@ -160,17 +157,12 @@ public class PartialAggregate extends Lop
 	 * dml.runtime.matrix.operator.AggregateOperator.java and dml.runtime.matrix)
 	 * 
 	 * @return correct location
-	 * @throws LopsException if LopsException occurs
 	 */
-	public CorrectionLocationType getCorrectionLocation() 
-		throws LopsException 
-	{
+	public CorrectionLocationType getCorrectionLocation() {
 		return getCorrectionLocation(operation, direction);
 	}
 	
-	public static CorrectionLocationType getCorrectionLocation(Aggregate.OperationTypes operation, DirectionTypes direction) 
-		throws LopsException 
-	{
+	public static CorrectionLocationType getCorrectionLocation(Aggregate.OperationTypes operation, DirectionTypes direction) {
 		CorrectionLocationType loc;
 
 		switch (operation) {
@@ -254,14 +246,13 @@ public class PartialAggregate extends Lop
 	}
 
 	public void setDimensionsBasedOnDirection(long dim1, long dim2,  
-			long rowsPerBlock, long colsPerBlock) throws LopsException 
+			long rowsPerBlock, long colsPerBlock)
 	{
 		setDimensionsBasedOnDirection(this, dim1, dim2, rowsPerBlock, colsPerBlock, direction);
 	}
 
 	public static void setDimensionsBasedOnDirection(Lop lop, long dim1, long dim2,  
-			long rowsPerBlock, long colsPerBlock, DirectionTypes dir) 
-		throws LopsException 
+			long rowsPerBlock, long colsPerBlock, DirectionTypes dir)
 	{
 		try {
 			if (dir == DirectionTypes.Row)

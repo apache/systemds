@@ -51,19 +51,19 @@ public abstract class Data implements Serializable
 		return valueType;
 	}
 
-	public void setMetaData(MetaData md) throws DMLRuntimeException {
+	public void setMetaData(MetaData md) {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 	
-	public MetaData getMetaData() throws DMLRuntimeException {
+	public MetaData getMetaData() {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 
-	public void removeMetaData() throws DMLRuntimeException {
+	public void removeMetaData() {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 
-	public void updateMatrixCharacteristics(MatrixCharacteristics mc) throws DMLRuntimeException {
+	public void updateMatrixCharacteristics(MatrixCharacteristics mc) {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 }

@@ -44,7 +44,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	private ArrayList<CPOperand> _padding = new ArrayList<>();
 	private double _intermediateMemoryBudget = 0;
 	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
 		if (!(opcode.equals("bias_add") || opcode.equals("bias_multiply") || opcode.equals("relu_backward"))) {
 			throw new DMLRuntimeException(
@@ -58,7 +58,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) throws DMLRuntimeException {
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
 		if( !opcode.equals("channel_sums") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
@@ -98,12 +98,9 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
-	public static ConvolutionGPUInstruction parseInstruction(String str)
-		throws DMLRuntimeException 
-	{
+	public static ConvolutionGPUInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		
 		if( ( opcode.equalsIgnoreCase("conv2d")
 			 || opcode.equalsIgnoreCase("conv2d_backward_filter")
 			 || opcode.equalsIgnoreCase("conv2d_backward_data")) ) {
@@ -111,7 +108,6 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[15]);
-		
 			ArrayList<CPOperand> stride = new ArrayList<>();
 			ArrayList<CPOperand> padding = new ArrayList<>();
 			ArrayList<CPOperand> input_shape = new ArrayList<>();
@@ -237,7 +233,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		}
 	}
 
-	public void processBiasInstruction(String instOpcode, ExecutionContext ec) throws DMLRuntimeException {
+	public void processBiasInstruction(String instOpcode, ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -254,7 +250,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	}
 
 	// (X > 0) * dout
-	public void processReLUBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processReLUBackwardInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -268,7 +264,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	public void processChannelSumsInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	public void processChannelSumsInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
@@ -286,9 +282,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-			throws DMLRuntimeException 
-	{
+	public void processInstruction(ExecutionContext ec) {
 		if (instOpcode.equalsIgnoreCase("bias_add") || instOpcode.equalsIgnoreCase("bias_multiply")) {
 			processBiasInstruction(instOpcode, ec);
 			return;
@@ -431,9 +425,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 	}
 
 
-	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) 
-		throws DMLRuntimeException 
-	{
+	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
 		return (int) ec.getScalarInput(aL.get(index).getName(),
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
 	}

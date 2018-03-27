@@ -29,9 +29,7 @@ import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 
 public class InstructionParser 
 {
-	public static Instruction parseSingleInstruction ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static Instruction parseSingleInstruction ( String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
 		
@@ -67,19 +65,13 @@ public class InstructionParser
 		}
 	}
 	
-	public static Instruction[] parseMixedInstructions ( String str ) 
-		throws DMLRuntimeException 
-	{
+	public static Instruction[] parseMixedInstructions ( String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		
 		String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 		Instruction[] inst = new Instruction[strlist.length];
-		
-		for ( int i=0; i < inst.length; i++ ) {
+		for ( int i=0; i < inst.length; i++ )
 			inst[i] = parseSingleInstruction ( strlist[i] );
-		}
-		
 		return inst;
 	}
 }

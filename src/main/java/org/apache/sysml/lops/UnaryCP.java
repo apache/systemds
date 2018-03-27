@@ -36,7 +36,7 @@ public class UnaryCP extends Lop
 	public enum OperationTypes {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, ASSERT, NROW, NCOL, LENGTH, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX
+		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX
 	}
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -85,7 +85,7 @@ public class UnaryCP extends Lop
 
 	}
 
-	private String getOpCode() throws LopsException {
+	private String getOpCode() {
 		switch (operation) {
 		case NOT:
 			return "!";
@@ -170,14 +170,10 @@ public class UnaryCP extends Lop
 		case CAST_AS_BOOLEAN:
 			return CAST_AS_BOOLEAN_OPCODE; 
 
-		case NROW:
-			return "nrow";
-		
-		case NCOL:
-			return "ncol";
-
-		case LENGTH:
-			return "length";
+		case NROW:   return "nrow";
+		case NCOL:   return "ncol";
+		case LENGTH: return "length";
+		case EXISTS: return "exists";
 
 		case SOFTMAX:
 			return "softmax";
@@ -188,8 +184,7 @@ public class UnaryCP extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input, String output)
-			throws LopsException {
+	public String getInstructions(String input, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getExecType());
 		sb.append( OPERAND_DELIMITOR );

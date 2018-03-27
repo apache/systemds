@@ -24,10 +24,8 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.StatementBlock;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
@@ -42,9 +40,7 @@ public class GridEnumerationMemory extends GridEnumeration
 	
 	private int _nsteps = -1;
 	
-	public GridEnumerationMemory( ArrayList<ProgramBlock> prog, long min, long max ) 
-		throws DMLRuntimeException
-	{
+	public GridEnumerationMemory( ArrayList<ProgramBlock> prog, long min, long max ) {
 		super(prog, min, max);
 		_nsteps = DEFAULT_NSTEPS;
 	}
@@ -54,9 +50,7 @@ public class GridEnumerationMemory extends GridEnumeration
 	}
 	
 	@Override
-	public ArrayList<Long> enumerateGridPoints() 
-		throws DMLRuntimeException, HopsException
-	{
+	public ArrayList<Long> enumerateGridPoints() {
 		ArrayList<Long> ret = new ArrayList<>();
 		long gap = (long)(_max - _min) / (_nsteps-1);
 		
@@ -96,16 +90,12 @@ public class GridEnumerationMemory extends GridEnumeration
 		return val;
 	}
 	
-	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) 
-		throws HopsException
-	{
+	private void getMemoryEstimates( ArrayList<ProgramBlock> pbs, ArrayList<Long> mem ) {
 		for( ProgramBlock pb : pbs )
 			getMemoryEstimates(pb, mem);
 	}
 	
-	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) 
-		throws HopsException
-	{
+	private void getMemoryEstimates( ProgramBlock pb, ArrayList<Long> mem ) {
 		if (pb instanceof FunctionProgramBlock)
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;

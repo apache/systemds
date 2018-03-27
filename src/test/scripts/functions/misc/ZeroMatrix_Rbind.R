@@ -30,4 +30,4 @@ for( i in 1:3 )
   R = rbind(R, matrix(7, 1, n)); 
 R = t(R); 
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep="")); 
+writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep="")); 

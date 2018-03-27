@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -44,6 +43,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
@@ -131,7 +131,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		try 
 		{
 			//create read tasks for all splits
-			ExecutorService pool = Executors.newFixedThreadPool(par);
+			ExecutorService pool = CommonThreadPool.get(par);
 			InputSplit[] splits = informat.getSplits(job, par);
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits ){

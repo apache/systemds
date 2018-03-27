@@ -47,18 +47,13 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 		indexRange = rng;
 	}
 
-	public static ZeroOutInstruction parseInstruction ( String str ) throws DMLRuntimeException {
-		
+	public static ZeroOutInstruction parseInstruction ( String str ) {
 		InstructionUtils.checkNumFields ( str, 6 );
-		
 		String[] parts = InstructionUtils.getInstructionParts ( str );
-		
 		String opcode = parts[0];
 		if(!opcode.equalsIgnoreCase("zeroOut"))
 			throw new DMLRuntimeException("Unknown opcode while parsing a zeroout: " + str);
 		byte in = Byte.parseByte(parts[1]);
-
-		//IndexRange rng=new IndexRange(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]));
 		IndexRange rng=new IndexRange(UtilFunctions.parseToLong(parts[2]), 
 				UtilFunctions.parseToLong(parts[3]), 
 				UtilFunctions.parseToLong(parts[4]), 
@@ -70,9 +65,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 	@Override
 	public void processInstruction(Class<? extends MatrixValue> valueClass,
 			CachedValueMap cachedValues, IndexedMatrixValue tempValue,
-			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor)
-			throws DMLRuntimeException {
-		
+			IndexedMatrixValue zeroInput, int blockRowFactor, int blockColFactor) {
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		
 		if( blkList != null )

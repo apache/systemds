@@ -19,13 +19,11 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.Lop;
 
@@ -39,8 +37,7 @@ public class WhileStatementBlock extends StatementBlock
 	
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
-	{	
+	{
 		if (_statements.size() > 1){
 			raiseValidateError("WhileStatementBlock should have only 1 statement (while statement)", conditional);
 		}
@@ -165,7 +162,7 @@ public class WhileStatementBlock extends StatementBlock
 	}
 
 	@Override
-	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
+	public VariableSet initializeforwardLV(VariableSet activeInPassed) {
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
 		if (_statements.size() > 1){
@@ -224,7 +221,7 @@ public class WhileStatementBlock extends StatementBlock
 	}
 
 	@Override
-	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
+	public VariableSet initializebackwardLV(VariableSet loPassed) {
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
 			
@@ -260,7 +257,7 @@ public class WhileStatementBlock extends StatementBlock
 	}
 	
 	@Override
-	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
+	public VariableSet analyze(VariableSet loPassed) {
 		VariableSet predVars = new VariableSet();
 		predVars.addVariables(((WhileStatement)_statements.get(0)).getConditionalPredicate().variablesRead());
 		predVars.addVariables(((WhileStatement)_statements.get(0)).getConditionalPredicate().variablesUpdated());
@@ -313,7 +310,7 @@ public class WhileStatementBlock extends StatementBlock
 	// materialized hops recompilation flags
 	////
 	
-	public boolean updatePredicateRecompilationFlag() throws HopsException {
+	public boolean updatePredicateRecompilationFlag() {
 		return (_requiresPredicateRecompile = 
 			ConfigurationManager.isDynamicRecompilation() 
 			&& Recompiler.requiresRecompilation(getPredicateHops()));

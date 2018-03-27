@@ -28,8 +28,9 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	DynProjectTest.class,
 	DynReadWriteTest.class,
+	EvalFunctionTest.class,
 	FunctionExpressionsTest.class,
-	OrderTest.class
+	OrderTest.class,
 })
 
 

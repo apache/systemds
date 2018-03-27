@@ -67,10 +67,10 @@ public abstract class Statement implements ParseInfo
 	public abstract VariableSet variablesRead();
 	public abstract VariableSet variablesUpdated();
  
-	public abstract void initializeforwardLV(VariableSet activeIn) throws LanguageException;
-	public abstract VariableSet initializebackwardLV(VariableSet lo) throws LanguageException;
+	public abstract void initializeforwardLV(VariableSet activeIn);
+	public abstract VariableSet initializebackwardLV(VariableSet lo);
 	
-	public abstract Statement rewriteStatement(String prefix) throws LanguageException;
+	public abstract Statement rewriteStatement(String prefix);
 	
 	// Used only insider python parser to allow for ignoring newline logic
 	private boolean isEmptyNewLineStatement = false;
@@ -176,11 +176,11 @@ public abstract class Statement implements ParseInfo
 		}
 	}
 
-	public void raiseValidateError(String msg, boolean conditional) throws LanguageException {
+	public void raiseValidateError(String msg, boolean conditional) {
 		raiseValidateError(msg, conditional, null);
 	}
 
-	public void raiseValidateError(String msg, boolean conditional, String errorCode) throws LanguageException {
+	public void raiseValidateError(String msg, boolean conditional, String errorCode) {
 		if (conditional) {// warning if conditional
 			String fullMsg = this.printWarningLocation() + msg;
 			LOG.warn(fullMsg);

@@ -42,18 +42,14 @@ public class CTable extends ValueFunction
 		return singleObj;
 	}
 
-	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock) 
-		throws DMLRuntimeException 
-	{
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap, MatrixBlock resultBlock) {
 		if( resultBlock != null )
 			execute(v1, v2, w, ignoreZeros, resultBlock);
 		else
 			execute(v1, v2, w, ignoreZeros, resultMap);
 	}
 	
-	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) 
-		throws DMLRuntimeException 
-	{	
+	public void execute(double v1, double v2, double w, boolean ignoreZeros, CTableMap resultMap) {
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple
 		if ( Double.isNaN(v1) || Double.isNaN(v2) || Double.isNaN(w) ) {
@@ -79,8 +75,7 @@ public class CTable extends ValueFunction
 	}	
 
 	public void execute(double v1, double v2, double w, boolean ignoreZeros, MatrixBlock ctableResult) 
-		throws DMLRuntimeException 
-	{	
+	{
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple
 		if ( Double.isNaN(v1) || Double.isNaN(v2) || Double.isNaN(w) ) {
@@ -112,8 +107,7 @@ public class CTable extends ValueFunction
 	}
 
 	public int execute(int row, double v2, double w, int maxCol, MatrixBlock ctableResult) 
-		throws DMLRuntimeException 
-	{	
+	{
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple
 		if ( Double.isNaN(v2) || Double.isNaN(w) ) {
@@ -135,7 +129,6 @@ public class CTable extends ValueFunction
 	}
 
 	public Pair<MatrixIndexes,Double> execute( long row, double v2, double w ) 
-		throws DMLRuntimeException
 	{
 		// If any of the values are NaN (i.e., missing) then 
 		// we skip this tuple, proceed to the next tuple

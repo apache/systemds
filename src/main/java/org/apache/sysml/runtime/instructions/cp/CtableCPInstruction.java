@@ -53,8 +53,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		_ignoreZeros = ignoreZeros;
 	}
 
-	public static CtableCPInstruction parseInstruction(String inst) 
-		throws DMLRuntimeException
+	public static CtableCPInstruction parseInstruction(String inst)
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		InstructionUtils.checkNumFields ( parts, 7 );
@@ -91,9 +90,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public void processInstruction(ExecutionContext ec) 
-		throws DMLRuntimeException {
-		
+	public void processInstruction(ExecutionContext ec) {
 		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock matBlock2=null, wtBlock=null;
 		double cst1, cst2;

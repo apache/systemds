@@ -19,7 +19,6 @@
 
 package org.apache.sysml.parser;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -44,9 +43,7 @@ public class FunctionStatementBlock extends StatementBlock
 	 */
 	@Override
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
-		throws LanguageException, ParseException, IOException 
 	{
-		
 		if (_statements.size() > 1){
 			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
@@ -201,7 +198,7 @@ public class FunctionStatementBlock extends StatementBlock
 	}
 	
 	@Override
-	public VariableSet initializeforwardLV(VariableSet activeInPassed) throws LanguageException {
+	public VariableSet initializeforwardLV(VariableSet activeInPassed) {
 		FunctionStatement fstmt = (FunctionStatement)_statements.get(0);
 		if (_statements.size() > 1){
 			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
@@ -245,7 +242,7 @@ public class FunctionStatementBlock extends StatementBlock
 	}
 
 	@Override
-	public VariableSet initializebackwardLV(VariableSet loPassed) throws LanguageException{
+	public VariableSet initializebackwardLV(VariableSet loPassed) {
 		
 		FunctionStatement wstmt = (FunctionStatement)_statements.get(0);
 			
@@ -265,12 +262,12 @@ public class FunctionStatementBlock extends StatementBlock
 	}
 	
 	@Override
-	public VariableSet analyze(VariableSet loPassed) throws LanguageException{
+	public VariableSet analyze(VariableSet loPassed) {
 		LOG.error(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
 		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");	
 	}
 	
-	public VariableSet analyze(VariableSet liPassed, VariableSet loPassed) throws LanguageException{
+	public VariableSet analyze(VariableSet liPassed, VariableSet loPassed) {
  		
 		VariableSet candidateLO = new VariableSet();
 		candidateLO.addVariables(loPassed);

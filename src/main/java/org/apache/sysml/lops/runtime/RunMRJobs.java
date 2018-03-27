@@ -86,10 +86,8 @@ public class RunMRJobs
 	 * @param inst instruction
 	 * @param ec execution context
 	 * @return job status
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JobReturn prepareAndSubmitJob( MRJobInstruction inst, ExecutionContext ec )
-		throws DMLRuntimeException 
 	{
 		// Obtain references to all input matrices 
 		MatrixObject[] inputMatrices = inst.extractInputMatrices(ec);
@@ -105,7 +103,7 @@ public class RunMRJobs
 			}
 
 			//check input files
-			checkEmptyInputs( inst, inputMatrices );	
+			checkEmptyInputs( inst, inputMatrices );
 		}
 		
 		// Obtain references to all output matrices
@@ -154,12 +152,10 @@ public class RunMRJobs
 	 * 
 	 * @param inst instruction
 	 * @return job status
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
 	public static JobReturn submitJob(MRJobInstruction inst ) 
-		throws DMLRuntimeException 
 	{
-		JobReturn ret = new JobReturn();		
+		JobReturn ret = new JobReturn();
 		MatrixObject[] inputMatrices = inst.getInputMatrices();
 		MatrixObject[] outputMatrices = inst.getOutputMatrices();
 		boolean execCP = false;
@@ -358,9 +354,7 @@ public class RunMRJobs
 		throw new DMLRuntimeException("Unexpected Job Type: " + inst.getJobType());
 	}
 
-	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices ) 
-		throws DMLRuntimeException
-	{
+	private static void checkEmptyInputs( MRJobInstruction inst, MatrixObject[] inputMatrices ) {
 		// Check if any of the input files are empty.. only for those job types
 		// for which empty inputs are NOT allowed
 		if (!inst.getJobType().areEmptyInputsAllowed()) {
@@ -385,9 +379,8 @@ public class RunMRJobs
 	 * @param varName variable name
 	 * @param map local variable map
 	 * @return string variable name
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) throws DMLRuntimeException {
+	private static String getVarNameReplacement(String inst, String varName, LocalVariableMap map) {
 		Data val = map.get(varName);
 		if ( val != null ) {
 			String replacement = null;
@@ -410,9 +403,8 @@ public class RunMRJobs
 	 * @param inst string instruction
 	 * @param map local variable map
 	 * @return string instruction after replacement
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static String updateInstLabels(String inst, LocalVariableMap map) throws DMLRuntimeException {
+	private static String updateInstLabels(String inst, LocalVariableMap map) {
 		if ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
 			int skip = Lop.VARIABLE_NAME_PLACEHOLDER.toString().length();
 			while ( inst.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ) {
@@ -432,9 +424,8 @@ public class RunMRJobs
 	 * @param instList instruction list as string
 	 * @param labelValueMapping local variable map
 	 * @return instruction list after replacement
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) throws DMLRuntimeException {
+	public static String updateLabels (String instList, LocalVariableMap labelValueMapping) {
 
 		if ( !instList.contains(Lop.VARIABLE_NAME_PLACEHOLDER) )
 			return instList;
@@ -452,9 +443,7 @@ public class RunMRJobs
 	}
 
 	
-	private static long[] getNNZ( MatrixObject[] inputMatrices ) 
-		throws DMLRuntimeException
-	{
+	private static long[] getNNZ( MatrixObject[] inputMatrices ) {
 		int len = inputMatrices.length;
 		long[] ret = new long[len];
 		for( int i=0; i<len; i++ )
@@ -470,7 +459,6 @@ public class RunMRJobs
 	}
 	
 	private static JobReturn executeInMemoryReblockOperations( MRJobInstruction inst, String shuffleInst, MatrixObject[] inputMatrices, MatrixObject[] outputMatrices ) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		ReblockInstruction[] rblkSet = MRInstructionParser.parseReblockInstructions(shuffleInst);
@@ -493,7 +481,6 @@ public class RunMRJobs
 	}
 	
 	private static JobReturn executeInMemoryDataGenOperations( MRJobInstruction inst, String randInst, MatrixObject[] outputMatrices ) 
-		throws DMLRuntimeException
 	{
 		MatrixCharacteristics[] mc = new MatrixCharacteristics[outputMatrices.length];
 		DataGenMRInstruction[] dgSet = MRInstructionParser.parseDataGenInstructions(randInst);

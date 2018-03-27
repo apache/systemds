@@ -25,12 +25,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.CM;
@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -81,7 +82,8 @@ public class LibMatrixAgg
 {
 	//internal configuration parameters
 	private static final boolean NAN_AWARENESS = false;
-	private static final long PAR_NUMCELL_THRESHOLD = 1024*1024;   //Min 1M elements
+	private static final long PAR_NUMCELL_THRESHOLD1 = 1024*1024; //Min 1M elements
+	private static final long PAR_NUMCELL_THRESHOLD2 = 16*1024;   //Min 16K elements
 	private static final long PAR_INTERMEDIATE_SIZE_THRESHOLD = 2*1024*1024; //Max 2MB
 	
 	////////////////////////////////
@@ -118,14 +120,17 @@ public class LibMatrixAgg
 	 * @param in input matrix
 	 * @param aggVal current aggregate values (in/out)
 	 * @param aggCorr current aggregate correction (in/out)
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
-		throws DMLRuntimeException
-	{	
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
 		//Timing time = new Timing(true);
-		//boolean saggVal = aggVal.isInSparseFormat(), saggCorr = aggCorr.isInSparseFormat(); 
-		//long naggVal = aggVal.getNonZeros(), naggCorr = aggCorr.getNonZeros();
+		//boolean saggVal = aggVal.sparse, saggCorr = aggCorr.sparse;
+		//long naggVal = aggVal.nonZeros, naggCorr = aggCorr.nonZeros;
+		
+		//ensure MCSR instead of CSR for update in-place
+		if( aggVal.sparse && aggVal.isAllocated() && aggVal.getSparseBlock() instanceof SparseBlockCSR )
+			aggVal.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggVal.getSparseBlock(), true);
+		if( aggCorr.sparse && aggCorr.isAllocated() && aggCorr.getSparseBlock() instanceof SparseBlockCSR )
+			aggCorr.sparseBlock = SparseBlockFactory.copySparseBlock(SparseBlock.Type.MCSR, aggCorr.getSparseBlock(), true);
 		
 		//core aggregation
 		if(!in.sparse && !aggVal.sparse && !aggCorr.sparse)
@@ -137,10 +142,8 @@ public class LibMatrixAgg
 		else //if( !in.sparse ) //any aggVal, aggCorr
 			aggregateBinaryMatrixDenseGeneric(in, aggVal, aggCorr);
 		
-		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.getNonZeros()+","+in.sparse+"), " +
-		//		          "("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
-		//		          "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+"), ("+aggCorr.getNonZeros()+","+aggCorr.isInSparseFormat()+") " +
-		//		          "in "+time.stop()+"ms.");
+		//System.out.println("agg ("+in.rlen+","+in.clen+","+in.nonZeros+","+in.sparse+"), ("+naggVal+","+saggVal+"), ("+naggCorr+","+saggCorr+") -> " +
+		//	"("+aggVal.nonZeros+","+aggVal.sparse+"), ("+aggCorr.nonZeros+","+aggCorr.sparse+") in "+time.stop()+"ms.");
 	}
 	
 	/**
@@ -150,11 +153,8 @@ public class LibMatrixAgg
 	 * @param in matrix block
 	 * @param aggVal aggregate operator
 	 * @param aop aggregate operator
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, AggregateOperator aop) 
-		throws DMLRuntimeException
-	{	
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, AggregateOperator aop) {
 		//sanity check matching dimensions 
 		if( in.getNumRows()!=aggVal.getNumRows() || in.getNumColumns()!=aggVal.getNumColumns() )
 			throw new DMLRuntimeException("Dimension mismatch on aggregate: "+in.getNumRows()+"x"+in.getNumColumns()+
@@ -178,9 +178,7 @@ public class LibMatrixAgg
 		//                   "("+aggVal.getNonZeros()+","+aggVal.isInSparseFormat()+") in "+time.stop()+"ms.");
 	}
 
-	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) 
-		throws DMLRuntimeException
-	{
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop) {
 		//prepare meta data 
 		AggType aggtype = getAggType(uaop);
 		final int m = in.rlen;
@@ -211,13 +209,9 @@ public class LibMatrixAgg
 		//System.out.println("uagg ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 
-	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) 
-		throws DMLRuntimeException
-	{
+	public static void aggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
 		//fall back to sequential version if necessary
-		if(    k <= 1 || (long)in.nonZeros < PAR_NUMCELL_THRESHOLD || in.rlen <= k/2
-			|| (!(uaop.indexFn instanceof ReduceCol) &&  out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD ) || 
-			!out.isThreadSafe()) {
+		if( !satisfiesMultiThreadingConstraints(in, out, uaop, k) ) {
 			aggregateUnaryMatrix(in, out, uaop);
 			return;
 		}
@@ -245,13 +239,14 @@ public class LibMatrixAgg
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTask> tasks = new ArrayList<>();
-			int blklen = (int)(Math.ceil((double)m/k));
-			for( int i=0; i<k & i*blklen<m; i++ ) {
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(m, k,
+				(uaop.indexFn instanceof ReduceRow)); //use static partitioning for col*()
+			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ ) {
 				tasks.add( (uaop.indexFn instanceof ReduceCol) ? 
-						new RowAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) :
-						new PartialAggTask(in, out, aggtype, uaop, i*blklen, Math.min((i+1)*blklen, m)) );
+					new RowAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) :
+					new PartialAggTask(in, out, aggtype, uaop, lb, lb+blklens.get(i)) );
 			}
 			pool.invokeAll(tasks);
 			pool.shutdown();
@@ -265,7 +260,7 @@ public class LibMatrixAgg
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
-				
+		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
 		out.examSparsity();
@@ -273,9 +268,7 @@ public class LibMatrixAgg
 		//System.out.println("uagg k="+k+" ("+in.rlen+","+in.clen+","+in.sparse+") in "+time.stop()+"ms.");
 	}
 
-	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) {
 		//prepare meta data 
 		AggType aggtype = getAggType(uop);
 		final int m = in.rlen;
@@ -307,13 +300,11 @@ public class LibMatrixAgg
 		return out;
 	}
 
-	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, int k) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, int k) {
 		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 		
 		//fall back to sequential if necessary or agg not supported
-		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD || in.rlen <= k
+		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
 			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}
@@ -339,7 +330,7 @@ public class LibMatrixAgg
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			int blklen = (int)(Math.ceil((double)m/k));
 			
 			//step 1: compute aggregates per row partition
@@ -388,9 +379,7 @@ public class LibMatrixAgg
 		return out;
 	}
 
-	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op) 
-		throws DMLRuntimeException
-	{
+	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op) {
 		//early abort if any block is empty
 		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3!=null&&in3.isEmptyBlock(false) ) {
 			return ret;
@@ -417,11 +406,9 @@ public class LibMatrixAgg
 		return ret;
 	}
 
-	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) 
-		throws DMLRuntimeException
-	{		
+	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op, int k) {
 		//fall back to sequential version if necessary
-		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD || in1.rlen <= k/2 
+		if( k <= 1 || in1.nonZeros+in2.nonZeros < PAR_NUMCELL_THRESHOLD1 || in1.rlen <= k/2 
 			|| (!(op.indexFn instanceof ReduceCol) &&  ret.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD) ) {
 			return aggregateTernary(in1, in2, in3, ret, op);
 		}
@@ -434,7 +421,7 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<AggTernaryTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)in1.rlen/k));
 			IndexFunction ixFn = op.indexFn;
@@ -460,9 +447,7 @@ public class LibMatrixAgg
 		return ret;
 	}
 
-	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op) 
-		throws DMLRuntimeException
-	{
+	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op) {
 		if( !(op instanceof CMOperator || op instanceof AggregateOperator) ) {
 			throw new DMLRuntimeException("Invalid operator (" + op + ") encountered while processing groupedAggregate.");
 		}
@@ -492,11 +477,10 @@ public class LibMatrixAgg
 	}
 
 	public static void groupedAggregate(MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, Operator op, int k) 
-		throws DMLRuntimeException
 	{
 		//fall back to sequential version if necessary
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
-		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD || rowVector || target.clen==1) {
+		if( k <= 1 || (long)target.rlen*target.clen < PAR_NUMCELL_THRESHOLD1 || rowVector || target.clen==1) {
 			groupedAggregate(groups, target, weights, result, numGroups, op);
 			return;
 		}
@@ -512,7 +496,7 @@ public class LibMatrixAgg
 		//core multi-threaded grouped aggregate computation
 		//(currently: parallelization over columns to avoid additional memory requirements)
 		try {
-			ExecutorService pool = Executors.newFixedThreadPool( k );
+			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<GrpAggTask> tasks = new ArrayList<>();
 			int blklen = (int)(Math.ceil((double)target.clen/k));
 			for( int i=0; i<k & i*blklen<target.clen; i++ )
@@ -531,16 +515,21 @@ public class LibMatrixAgg
 		result.examSparsity();
 	}
 
-	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator op )
-	{
+	public static boolean isSupportedUnaryAggregateOperator( AggregateUnaryOperator op ) {
 		AggType type = getAggType( op );
 		return (type != AggType.INVALID);
 	}
 	
-	public static boolean isSupportedUnaryOperator( UnaryOperator op )
-	{
+	public static boolean isSupportedUnaryOperator( UnaryOperator op ) {
 		AggType type = getAggType( op );
 		return (type != AggType.INVALID);
+	}
+	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in, MatrixBlock out, AggregateUnaryOperator uaop, int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		return k > 1 && out.isThreadSafe() && in.rlen > (sharedTP ? k/8 : k/2)
+			&& (uaop.indexFn instanceof ReduceCol || out.clen*8*k < PAR_INTERMEDIATE_SIZE_THRESHOLD) //size
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
 	/**
@@ -642,9 +631,7 @@ public class LibMatrixAgg
 		return AggType.INVALID;
 	}
 
-	private static void aggregateFinalResult( AggregateOperator aop, MatrixBlock out, MatrixBlock partout ) 
-		throws DMLRuntimeException
-	{
+	private static void aggregateFinalResult( AggregateOperator aop, MatrixBlock out, MatrixBlock partout ) {
 		AggregateOperator laop = aop;
 		
 		//special handling for mean where the final aggregate operator (kahan plus)
@@ -782,11 +769,8 @@ public class LibMatrixAgg
 	 * @param aggop aggregate operator
 	 * @param cl column lower index
 	 * @param cu column upper index
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void groupedAggregateKahanPlus( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, AggregateOperator aggop, int cl, int cu ) 
-		throws DMLRuntimeException
-	{
+	private static void groupedAggregateKahanPlus( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, AggregateOperator aggop, int cl, int cu ) {
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
 		double w = 1; //default weight
 		
@@ -900,9 +884,7 @@ public class LibMatrixAgg
 				result.appendValue(i, j+cl, buffer[i][j]._sum);
 	}
 
-	private static void groupedAggregateCM( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, CMOperator cmOp, int cl, int cu ) 
-		throws DMLRuntimeException
-	{
+	private static void groupedAggregateCM( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock result, int numGroups, CMOperator cmOp, int cl, int cu ) {
 		CM cmFn = CM.getCMFnObject(((CMOperator) cmOp).getAggOpType());
 		double w = 1; //default weight
 		
@@ -970,9 +952,7 @@ public class LibMatrixAgg
 			}
 	}
 
-	private static void groupedAggregateVecCount( MatrixBlock groups, MatrixBlock result, int numGroups ) 
-		throws DMLRuntimeException
-	{
+	private static void groupedAggregateVecCount( MatrixBlock groups, MatrixBlock result, int numGroups ) {
 		//note: groups are always dense because 0 invalid
 		if( groups.isInSparseFormat() || groups.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Unsupported sparse input for aggregate-count on group vector.");
@@ -995,9 +975,7 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
@@ -1011,7 +989,6 @@ public class LibMatrixAgg
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
-		
 		final int len = Math.min(a.length, in.rlen*in.clen);
 		
 		int nnzC = 0;
@@ -1032,9 +1009,7 @@ public class LibMatrixAgg
 		aggCorr.nonZeros = nnzCC;
 	}
 
-	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1078,9 +1053,7 @@ public class LibMatrixAgg
 		aggCorr.recomputeNonZeros(); 
 	}
 
-	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1113,14 +1086,14 @@ public class LibMatrixAgg
 			}
 		}
 		
-		//note: nnz of aggVal/aggCorr maintained internally 
-		aggVal.examSparsity();
-		aggCorr.examSparsity(); 
+		//note: nnz of aggVal/aggCorr maintained internally
+		if( aggVal.sparse )
+			aggVal.examSparsity(false);
+		if( aggCorr.sparse )
+			aggCorr.examSparsity(false);
 	}
 
-	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) 
-		throws DMLRuntimeException
-	{	
+	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
@@ -1144,13 +1117,13 @@ public class LibMatrixAgg
 			}
 		
 		//note: nnz of aggVal/aggCorr maintained internally 
-		aggVal.examSparsity();
-		aggCorr.examSparsity();
+		if( aggVal.sparse )
+			aggVal.examSparsity(false);
+		if( aggCorr.sparse )
+			aggCorr.examSparsity(false);
 	}
 
-	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixLastRowDenseGeneric(MatrixBlock in, MatrixBlock aggVal) {
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
@@ -1178,9 +1151,7 @@ public class LibMatrixAgg
 		aggVal.examSparsity();
 	}
 
-	private static void aggregateBinaryMatrixLastRowSparseGeneric(MatrixBlock in, MatrixBlock aggVal) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixLastRowSparseGeneric(MatrixBlock in, MatrixBlock aggVal) {
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1219,9 +1190,7 @@ public class LibMatrixAgg
 		aggVal.examSparsity(); 
 	}
 
-	private static void aggregateBinaryMatrixLastColDenseGeneric(MatrixBlock in, MatrixBlock aggVal) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixLastColDenseGeneric(MatrixBlock in, MatrixBlock aggVal) {
 		if( in.denseBlock==null || in.isEmptyBlock(false) )
 			return;
 		
@@ -1248,9 +1217,7 @@ public class LibMatrixAgg
 		aggVal.examSparsity();
 	}
 
-	private static void aggregateBinaryMatrixLastColSparseGeneric(MatrixBlock in, MatrixBlock aggVal) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateBinaryMatrixLastColSparseGeneric(MatrixBlock in, MatrixBlock aggVal) {
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1290,9 +1257,7 @@ public class LibMatrixAgg
 		aggVal.examSparsity(); 
 	}
 
-	private static void aggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) {
 		final int n = in.clen;
 		
 		//note: due to corrections, even the output might be a large dense block
@@ -1393,9 +1358,7 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void aggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) 
-			throws DMLRuntimeException
-	{
+	private static void aggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, IndexFunction ixFn, int rl, int ru) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		
@@ -1497,9 +1460,7 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void cumaggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) 
-		throws DMLRuntimeException
-	{
+	private static void cumaggregateUnaryMatrixDense(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) {
 		final int n = in.clen;
 		
 		DenseBlock da = in.getDenseBlock();
@@ -1529,9 +1490,7 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void cumaggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) 
-			throws DMLRuntimeException
-	{
+	private static void cumaggregateUnaryMatrixSparse(MatrixBlock in, MatrixBlock out, AggType optype, ValueFunction vFn, double[] agg, int rl, int ru) {
 		final int m = in.rlen;
 		final int n = in.clen;
 		
@@ -1561,9 +1520,7 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static MatrixBlock aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) 
-		throws DMLRuntimeException
-	{
+	private static MatrixBlock aggregateUnaryMatrixEmpty(MatrixBlock in, MatrixBlock out, AggType optype, IndexFunction ixFn) {
 		//handle all full aggregates over matrices with zero rows or columns
 		if( ixFn instanceof ReduceAll && (in.getNumRows() == 0 || in.getNumColumns() == 0) ) {
 			double val = Double.NaN;
@@ -2040,11 +1997,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void d_uavar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) 
-		throws DMLRuntimeException
-	{
+	private static void d_uavar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		final int bil = a.index(rl);
 		final int biu = a.index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
@@ -2074,11 +2028,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void d_uarvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru)
-		throws DMLRuntimeException
-	{
+	private static void d_uarvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		// calculate variance for each row
 		for (int i=rl; i<ru; i++) {
 			cbuff.reset(); // reset buffer for each row
@@ -2106,11 +2057,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void d_uacvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru)
-		throws DMLRuntimeException
-	{
+	private static void d_uacvar(DenseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		// calculate variance for each column incrementally
 		for (int i=rl; i<ru; i++)
 			varAgg(a.values(i), c, a.pos(i), n, cbuff, cm);
@@ -2738,11 +2686,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void s_uavar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru)
-		throws DMLRuntimeException
-	{
+	private static void s_uavar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		// compute and store count of empty cells before aggregation
 		int count = (ru-rl)*n - (int)a.size(rl, ru);
 		cbuff.w = count;
@@ -2777,11 +2722,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void s_uarvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru)
-		throws DMLRuntimeException
-	{
+	private static void s_uarvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		// calculate aggregated variance for each row
 		for( int i=rl; i<ru; i++ ) {
 			cbuff.reset(); // reset buffer for each row
@@ -2812,11 +2754,8 @@ public class LibMatrixAgg
 	 *           calculation.
 	 * @param rl Lower row limit.
 	 * @param ru Upper row limit.
-	 * @throws DMLRuntimeException if DMLRuntimeException occurs
 	 */
-	private static void s_uacvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru)
-		throws DMLRuntimeException
-	{
+	private static void s_uacvar(SparseBlock a, DenseBlock c, int n, CM_COV_Object cbuff, CM cm, int rl, int ru) {
 		// compute and store counts of empty cells per column before aggregation
 		// note: column results are { var | mean, count, m2 correction, mean correction }
 		// - first, store total possible column counts in 3rd row of output
@@ -2982,14 +2921,12 @@ public class LibMatrixAgg
 		}
 	}
 
-	private static void var(double[] a, int ai, final int len, CM_COV_Object cbuff, CM cm) throws DMLRuntimeException {
+	private static void var(double[] a, int ai, final int len, CM_COV_Object cbuff, CM cm) {
 		for(int i=0; i<len; i++, ai++)
 			cbuff = (CM_COV_Object) cm.execute(cbuff, a[ai]);
 	}
 
-	private static void varAgg(double[] a, DenseBlock c, int ai, final int len, CM_COV_Object cbuff, CM cm)
-		throws DMLRuntimeException
-	{
+	private static void varAgg(double[] a, DenseBlock c, int ai, final int len, CM_COV_Object cbuff, CM cm) {
 		//note: output might span multiple physical blocks
 		double[] var = c.values(0);
 		double[] mean = c.values(1);
@@ -3017,7 +2954,6 @@ public class LibMatrixAgg
 	}
 
 	private static void varAgg(double[] a, DenseBlock c, int[] aix, int ai, final int len, final int n, CM_COV_Object cbuff, CM cm)
-		throws DMLRuntimeException
 	{
 		//note: output might span multiple physical blocks
 		double[] var = c.values(0);
@@ -3145,7 +3081,7 @@ public class LibMatrixAgg
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException {
+		public Object call() {
 			if( !_in.sparse )
 				aggregateUnaryMatrixDense(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _uaop.indexFn, _rl, _ru);
 			else
@@ -3163,10 +3099,8 @@ public class LibMatrixAgg
 		private int _rl = -1;
 		private int _ru = -1;
 
-		protected PartialAggTask( MatrixBlock in, MatrixBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru ) 
-			throws DMLRuntimeException
-		{
-			_in = in;	
+		protected PartialAggTask( MatrixBlock in, MatrixBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru ) {
+			_in = in;
 			_ret = ret;
 			_aggtype = aggtype;
 			_uaop = uaop;
@@ -3175,8 +3109,7 @@ public class LibMatrixAgg
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
-		{
+		public Object call() {
 			//thead-local allocation for partial aggregation
 			_ret = new MatrixBlock(_ret.rlen, _ret.clen, false);
 			_ret.allocateDenseBlock();
@@ -3207,9 +3140,7 @@ public class LibMatrixAgg
 		private int _rl = -1;
 		private int _ru = -1;
 
-		protected CumAggTask( MatrixBlock in, double[] agg, MatrixBlock ret, AggType aggtype, UnaryOperator uop, int rl, int ru ) 
-			throws DMLRuntimeException
-		{
+		protected CumAggTask( MatrixBlock in, double[] agg, MatrixBlock ret, AggType aggtype, UnaryOperator uop, int rl, int ru ) {
 			_in = in;
 			_agg = agg;
 			_ret = ret;
@@ -3220,14 +3151,12 @@ public class LibMatrixAgg
 		}
 		
 		@Override
-		public Long call() throws DMLRuntimeException
-		{
+		public Long call() {
 			//compute partial cumulative aggregate
 			if( !_in.sparse )
 				cumaggregateUnaryMatrixDense(_in, _ret, _aggtype, _uop.fn, _agg, _rl, _ru);
 			else
 				cumaggregateUnaryMatrixSparse(_in, _ret, _aggtype, _uop.fn, _agg, _rl, _ru);
-			
 			//recompute partial non-zeros (ru exlusive)
 			return _ret.recomputeNonZeros(_rl, _ru-1, 0, _ret.getNumColumns()-1);
 		}
@@ -3243,9 +3172,7 @@ public class LibMatrixAgg
 		private final int _rl;
 		private final int _ru;
 
-		protected AggTernaryTask( MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru ) 
-			throws DMLRuntimeException
-		{
+		protected AggTernaryTask( MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru ) {
 			_in1 = in1;
 			_in2 = in2;
 			_in3 = in3;
@@ -3256,8 +3183,7 @@ public class LibMatrixAgg
 		}
 		
 		@Override
-		public MatrixBlock call() throws DMLRuntimeException
-		{
+		public MatrixBlock call() {
 			//thead-local allocation for partial aggregation
 			_ret = new MatrixBlock(_ret.rlen, _ret.clen, false);
 			_ret.allocateDenseBlock();
@@ -3285,9 +3211,7 @@ public class LibMatrixAgg
 		private int _cl = -1;
 		private int _cu = -1;
 
-		protected GrpAggTask( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock ret, int numGroups, Operator op, int cl, int cu ) 
-			throws DMLRuntimeException
-		{
+		protected GrpAggTask( MatrixBlock groups, MatrixBlock target, MatrixBlock weights, MatrixBlock ret, int numGroups, Operator op, int cl, int cu ) {
 			_groups = groups;
 			_target = target;
 			_weights = weights;
@@ -3299,8 +3223,7 @@ public class LibMatrixAgg
 		}
 		
 		@Override
-		public Object call() throws DMLRuntimeException
-		{
+		public Object call() {
 			//CM operator for count, mean, variance
 			//note: current support only for column vectors
 			if( _op instanceof CMOperator ) {
@@ -3313,7 +3236,6 @@ public class LibMatrixAgg
 				AggregateOperator aggop = (AggregateOperator) _op;
 				groupedAggregateKahanPlus(_groups, _target, _weights, _ret, _numGroups, aggop, _cl, _cu);
 			}
-			
 			return null;
 		}
 	}

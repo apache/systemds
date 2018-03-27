@@ -44,10 +44,8 @@ public class ScriptExecutorUtils {
 	 *            script executor
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
-	 * @throws DMLRuntimeException
-	 *             if exception occurs
 	 */
-	public static void executeRuntimeProgram(ScriptExecutor se, int statisticsMaxHeavyHitters) throws DMLRuntimeException {
+	public static void executeRuntimeProgram(ScriptExecutor se, int statisticsMaxHeavyHitters) {
 		Program prog = se.getRuntimeProgram();
 		ExecutionContext ec = se.getExecutionContext();
 		DMLConfig config = se.getConfig();
@@ -67,11 +65,8 @@ public class ScriptExecutorUtils {
 	 *            dml configuration
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
-	 * @throws DMLRuntimeException
-	 *             if error occurs
 	 */
-	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters)
-			throws DMLRuntimeException {
+	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters) {
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
 		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);

@@ -50,12 +50,16 @@ public abstract class SPInstruction extends Instruction {
 	protected SPInstruction(SPType type, Operator op, String opcode, String istr) {
 		_sptype = type;
 		_optr = op;
-		super.type = IType.SPARK;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
+	}
+	
+	@Override
+	public IType getType() {
+		return IType.SPARK;
 	}
 
 	public SPType getSPInstructionType() {

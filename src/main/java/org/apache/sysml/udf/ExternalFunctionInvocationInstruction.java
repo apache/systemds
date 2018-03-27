@@ -43,9 +43,6 @@ import org.apache.sysml.udf.Scalar.ScalarValueType;
 
 /**
  * Class to maintain external function invocation instructions.
- * 
- * 
- * 
  */
 public class ExternalFunctionInvocationInstruction extends Instruction 
 {
@@ -64,6 +61,11 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 		this.fun = fun;
 		this.baseDir = baseDir;
 		this.iinfo = format;
+	}
+	
+	@Override
+	public IType getType() {
+		return IType.CONTROL_PROGRAM;
 	}
 
 	@Override

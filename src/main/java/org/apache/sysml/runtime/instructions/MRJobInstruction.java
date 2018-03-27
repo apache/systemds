@@ -125,10 +125,8 @@ public class MRJobInstruction extends Instruction
 	// Indicates the data type of inputVars
 	private DataType[] inputDataTypes;
 
-	public MRJobInstruction(JobType type)
-	{
-		setType(Instruction.IType.MAPREDUCE_JOB);
-		jobType = type;	
+	public MRJobInstruction(JobType type) {
+		jobType = type;
 		instOpcode = "MR-Job_"+getJobType();
 	}
 	
@@ -143,7 +141,7 @@ public class MRJobInstruction extends Instruction
 	public MRJobInstruction(MRJobInstruction that) 
 		throws IllegalArgumentException, IllegalAccessException 
 	{
-		this( that.jobType );
+		this(that.jobType);
 		
 		//copy basic variables
 		_randInstructions         = that._randInstructions;
@@ -180,16 +178,18 @@ public class MRJobInstruction extends Instruction
 		inputMatrices  = that.inputMatrices;
 		outputMatrices = that.outputMatrices;
 		inputDataTypes = that.inputDataTypes;
-
-	}	
+	}
 	
-	public JobType getJobType()
-	{
+	@Override
+	public IType getType() {
+		return IType.MAPREDUCE_JOB;
+	}
+	
+	public JobType getJobType() {
 		return jobType;
 	}
 
-	public String getIv_instructionsInMapper()
-	{
+	public String getIv_instructionsInMapper() {
 		return _mapperInstructions;
 	}
 	

@@ -33,8 +33,6 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDSortUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
 /**
  * This class supports two variants of sort operation on a 1-dimensional input matrix. 
@@ -46,13 +44,13 @@ import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
  */
 public class QuantileSortSPInstruction extends UnarySPInstruction {
 
-	private QuantileSortSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
-		this(op, in, null, out, opcode, istr);
+	private QuantileSortSPInstruction(CPOperand in, CPOperand out, String opcode, String istr) {
+		this(in, null, out, opcode, istr);
 	}
 
-	private QuantileSortSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+	private QuantileSortSPInstruction(CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(SPType.QSort, op, in1, in2, out, opcode, istr);
+		super(SPType.QSort, null, in1, in2, out, opcode, istr);
 	}
 
 	public static QuantileSortSPInstruction parseInstruction ( String str ) {
@@ -67,13 +65,13 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 			if ( parts.length == 3 ) {
 				// Example: sort:mVar1:mVar2 (input=mVar1, output=mVar2)
 				parseUnaryInstruction(str, in1, out);
-				return new QuantileSortSPInstruction(new SimpleOperator(null), in1, out, opcode, str);
+				return new QuantileSortSPInstruction(in1, out, opcode, str);
 			}
 			else if ( parts.length == 4 ) {
 				// Example: sort:mVar1:mVar2:mVar3 (input=mVar1, weights=mVar2, output=mVar3)
 				in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 				parseUnaryInstruction(str, in1, in2, out);
-				return new QuantileSortSPInstruction(new SimpleOperator(null), in1, in2, out, opcode, str);
+				return new QuantileSortSPInstruction(in1, in2, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

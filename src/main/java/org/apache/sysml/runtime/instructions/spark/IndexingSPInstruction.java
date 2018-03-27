@@ -27,19 +27,17 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 
 /**
- * This class implements the matrix indexing functionality inside Spark.  
+ * This class implements the matrix indexing functionality inside Spark.
  */
 public abstract class IndexingSPInstruction extends UnarySPInstruction {
 	protected CPOperand rowLower, rowUpper, colLower, colUpper;
 	protected SparkAggType _aggType = null;
 
-	protected IndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+	protected IndexingSPInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
 			CPOperand out, SparkAggType aggtype, String opcode, String istr) {
-		super(SPType.MatrixIndexing, op, in, out, opcode, istr);
+		super(SPType.MatrixIndexing, null, in, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
@@ -47,9 +45,9 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 		_aggType = aggtype;
 	}
 
-	protected IndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl,
+	protected IndexingSPInstruction(CPOperand lhsInput, CPOperand rhsInput, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(SPType.MatrixIndexing, op, lhsInput, rhsInput, out, opcode, istr);
+		super(SPType.MatrixIndexing, null, lhsInput, rhsInput, out, opcode, istr);
 		rowLower = rl;
 		rowUpper = ru;
 		colLower = cl;
@@ -70,9 +68,9 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 				CPOperand out = new CPOperand(parts[6]);
 				SparkAggType aggtype = SparkAggType.valueOf(parts[7]);
 				if( in.getDataType()==DataType.MATRIX )
-					return new MatrixIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, aggtype, opcode, str);
+					return new MatrixIndexingSPInstruction(in, rl, ru, cl, cu, out, aggtype, opcode, str);
 				else
-					return new FrameIndexingSPInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, aggtype, opcode, str);
+					return new FrameIndexingSPInstruction(in, rl, ru, cl, cu, out, aggtype, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -89,9 +87,9 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 				CPOperand out = new CPOperand(parts[7]);
 				LixCacheType lixtype = LixCacheType.valueOf(parts[8]);
 				if( lhsInput.getDataType()==DataType.MATRIX )
-					return new MatrixIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, lixtype, opcode, str);
+					return new MatrixIndexingSPInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, lixtype, opcode, str);
 				else
-					return new FrameIndexingSPInstruction(new SimpleOperator(null), lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
+					return new FrameIndexingSPInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

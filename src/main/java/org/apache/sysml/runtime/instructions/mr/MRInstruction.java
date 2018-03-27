@@ -41,10 +41,14 @@ public abstract class MRInstruction extends Instruction {
 	public byte output;
 
 	protected MRInstruction(MRType type, Operator op, byte out) {
-		super.type = IType.MAPREDUCE;
 		optr = op;
 		output = out;
 		mrtype = type;
+	}
+	
+	@Override
+	public IType getType() {
+		return IType.MAPREDUCE;
 	}
 
 	public Operator getOperator() {

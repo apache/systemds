@@ -30,8 +30,6 @@ import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.MapReduceTool;
 
@@ -45,9 +43,9 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction {
 
-	private MatrixIndexingCPFileInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+	private MatrixIndexingCPFileInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(op, in, rl, ru, cl, cu, out, opcode, istr);
+		super(in, rl, ru, cl, cu, out, opcode, istr);
 	}
 
 	public static MatrixIndexingCPFileInstruction parseInstruction ( String str ) {
@@ -63,7 +61,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 				cl = new CPOperand(parts[4]);
 				cu = new CPOperand(parts[5]);
 				out = new CPOperand(parts[6]);
-				return new MatrixIndexingCPFileInstruction(new SimpleOperator(null), in, rl, ru, cl, cu, out, opcode, str);
+				return new MatrixIndexingCPFileInstruction(in, rl, ru, cl, cu, out, opcode, str);
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

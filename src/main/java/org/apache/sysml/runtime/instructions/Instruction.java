@@ -49,7 +49,6 @@ public abstract class Instruction
 	public static final String GPU_INST_PREFIX = "gpu_";
 	
 	//basic instruction meta data
-	protected IType type = null;
 	protected String instString = null;
 	protected String instOpcode = null;
 	private String extendedOpcode = null;
@@ -81,14 +80,8 @@ public abstract class Instruction
 	public int getEndColumn() {
 		return endCol;
 	}
-
-	public void setType (IType tp ) {
-		type = tp;
-	}
 	
-	public IType getType() {
-		return type;
-	}
+	public abstract IType getType();
 	
 	public void setLocation(String filename, int beginLine, int endLine, int beginCol, int endCol) {
 		this.filename = filename;
@@ -178,18 +171,18 @@ public abstract class Instruction
 				scriptInfo = " [" + filename + " " + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
 			else
 				scriptInfo = " [" + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
-			if( type == IType.SPARK )
+			if( getType() == IType.SPARK )
 				extendedOpcode = SP_INST_PREFIX + getOpcode() + scriptInfo;
-			else if( type == IType.GPU )
+			else if( getType() == IType.GPU )
 				extendedOpcode = GPU_INST_PREFIX + getOpcode() + scriptInfo;
 			else
 				extendedOpcode = getOpcode() + scriptInfo;
 		}
 		else {
 			// This ensures that there is no overhead if finegrained statistics is disabled
-			if( type == IType.SPARK )
+			if( getType() == IType.SPARK )
 				extendedOpcode = SP_INST_PREFIX + getOpcode();
-			else if( type == IType.GPU )
+			else if( getType() == IType.GPU )
 				extendedOpcode = GPU_INST_PREFIX + getOpcode();
 			else
 				extendedOpcode = getOpcode();

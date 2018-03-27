@@ -27,8 +27,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.CachedValueMap;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.ZeroOutOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -41,8 +39,8 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 	private IndexRange tempRange = new IndexRange(-1, -1, -1, -1);
 	public boolean complementary = false;
 
-	private ZeroOutInstruction(Operator op, byte in, byte out, IndexRange rng, String istr) {
-		super(MRType.ZeroOut, op, in, out);
+	private ZeroOutInstruction(byte in, byte out, IndexRange rng, String istr) {
+		super(MRType.ZeroOut, null, in, out);
 		instString = istr;
 		indexRange = rng;
 	}
@@ -59,7 +57,7 @@ public class ZeroOutInstruction extends UnaryMRInstructionBase {
 				UtilFunctions.parseToLong(parts[4]), 
 				UtilFunctions.parseToLong(parts[5]));
 		byte out = Byte.parseByte(parts[6]);
-		return new ZeroOutInstruction(new ZeroOutOperator(), in, out, rng, str);
+		return new ZeroOutInstruction(in, out, rng, str);
 	}
 	
 	@Override

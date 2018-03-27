@@ -64,12 +64,16 @@ public abstract class CPInstruction extends Instruction
 	protected CPInstruction(CPType type, Operator op, String opcode, String istr) {
 		_cptype = type;
 		_optr = op;
-		super.type = IType.CONTROL_PROGRAM;
 		instString = istr;
 
 		// prepare opcode and update requirement for repeated usage
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
+	}
+	
+	@Override
+	public IType getType() {
+		return IType.CONTROL_PROGRAM;
 	}
 
 	public CPType getCPInstructionType() {

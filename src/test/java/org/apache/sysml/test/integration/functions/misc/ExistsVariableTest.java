@@ -29,25 +29,37 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ExistsVariableTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "Exists";
+	private final static String TEST_NAME1 = "Exists1"; //for var names
+	private final static String TEST_NAME2 = "Exists2"; //for vars
+	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ExistsVariableTest.class.getSimpleName() + "/";
-	//TODO additional test with variable creation in same DAG, requires better data dependency handling
 	
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
 	}
 
 	@Test
-	public void testExistsPositive() {
+	public void testExistsVarnamePositive() {
 		runExistsTest(TEST_NAME1, true);
 	}
 	
 	@Test
-	public void testExistsNegative() {
+	public void testExistsVarnameNegative() {
 		runExistsTest(TEST_NAME1, false);
+	}
+	
+	@Test
+	public void testExistsVarPositive() {
+		runExistsTest(TEST_NAME2, true);
+	}
+	
+	@Test
+	public void testExistsVarNegative() {
+		runExistsTest(TEST_NAME2, false);
 	}
 	
 	private void runExistsTest(String testName, boolean pos) {

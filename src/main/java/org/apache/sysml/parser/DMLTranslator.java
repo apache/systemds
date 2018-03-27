@@ -2443,9 +2443,9 @@ public class DMLTranslator
 		
 		case EXISTS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
-				target.getValueType(), Hop.OpOp1.EXISTS, new LiteralOp(expr.getName()));
+				target.getValueType(), Hop.OpOp1.EXISTS, expr);
 			break;
-			
+		
 		case SUM:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.SUM,
 					Direction.RowCol, expr);

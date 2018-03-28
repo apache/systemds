@@ -45,7 +45,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -55,14 +54,14 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 
-	protected FrameIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+	protected FrameIndexingSPInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
-		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
+		super(in, rl, ru, cl, cu, out, aggtype, opcode, istr);
 	}
 
-	protected FrameIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
+	protected FrameIndexingSPInstruction(CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
 			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, String opcode, String istr) {
-		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
+		super(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 	}
 
 	@Override

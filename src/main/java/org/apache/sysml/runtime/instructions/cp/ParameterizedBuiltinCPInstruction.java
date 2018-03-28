@@ -126,7 +126,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(   opcode.equalsIgnoreCase("rmempty") 
 				|| opcode.equalsIgnoreCase("replace") 
-				|| opcode.equalsIgnoreCase("rexpand") ) 
+				|| opcode.equalsIgnoreCase("rexpand")
+				|| opcode.equalsIgnoreCase("lowertri")
+				|| opcode.equalsIgnoreCase("uppertri")) 
 		{
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
@@ -211,15 +213,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.releaseMatrixInput(params.get("select"), getExtendedOpcode());
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) {
-			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
-			
-			// compute the result
 			double pattern = Double.parseDouble( params.get("pattern") );
 			double replacement = Double.parseDouble( params.get("replacement") );
 			MatrixBlock ret = (MatrixBlock) target.replaceOperations(new MatrixBlock(), pattern, replacement);
-			
-			//release locks
+			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
+		}
+		else if ( opcode.equals("lowertri") || opcode.equals("uppertri")) {
+			MatrixBlock target = ec.getMatrixInput(params.get("target"), getExtendedOpcode());
+			boolean lower = opcode.equals("lowertri");
+			boolean diag = Boolean.parseBoolean(params.get("diag"));
+			boolean values = Boolean.parseBoolean(params.get("values"));
+			MatrixBlock ret = (MatrixBlock) target.extractTriangular(new MatrixBlock(), lower, diag, values);
 			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
 			ec.releaseMatrixInput(params.get("target"), getExtendedOpcode());
 		}

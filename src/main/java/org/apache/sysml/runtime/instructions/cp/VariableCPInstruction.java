@@ -802,12 +802,10 @@ public class VariableCPInstruction extends CPInstruction {
 	 */
 	public static void processRemoveVariableInstruction( ExecutionContext ec, String varname ) {
 		// remove variable from symbol table
-		Data input1_data = ec.removeVariable(varname);
-		if ( input1_data == null )
-			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + varname + ", while processing rmvar instruction.");
+		Data dat = ec.removeVariable(varname);
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if ( input1_data instanceof CacheableData ) {
-			ec.cleanupCacheableData( (CacheableData<?>) input1_data );
+		if ( dat != null && dat instanceof CacheableData ) {
+			ec.cleanupCacheableData((CacheableData<?>) dat);
 		}
 	}
 	

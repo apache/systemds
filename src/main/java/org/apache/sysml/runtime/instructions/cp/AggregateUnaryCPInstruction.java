@@ -122,9 +122,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			ec.setScalarOutput(output_name, new IntObject(rval));
 		}
 		else if( _type == AUType.EXISTS ) {
-			//probe existing of variable in symbol table w/o error
-			boolean rval = ec.getVariables().keySet()
-				.contains(ec.getScalarInput(input1).getStringValue());
+			//probe existence of variable in symbol table w/o error
+			String varName = input1.isMatrix() ? input1.getName() :
+				ec.getScalarInput(input1).getStringValue();
+			boolean rval = ec.getVariables().keySet().contains(varName);
 			//create and set output scalar
 			ec.setScalarOutput(output_name, new BooleanObject(rval));
 		}

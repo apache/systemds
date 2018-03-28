@@ -67,10 +67,7 @@ import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruct
 
 public class CPInstructionParser extends InstructionParser 
 {
-	
 	public static final HashMap<String, CPType> String2CPInstructionType;
-	public static final HashMap<String, CPType> String2CPFileInstructionType;
-	
 	static {
 		String2CPInstructionType = new HashMap<>();
 		String2CPInstructionType.put( "ba+*"   	, CPType.AggregateBinary);
@@ -185,17 +182,19 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "eval" , CPType.BuiltinNary);
 
 		// Parameterized Builtin Functions
-		String2CPInstructionType.put( "cdf"	 		, CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "invcdf"	 	, CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "groupedagg"	, CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "rmempty"	    , CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "replace"	    , CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "rexpand"	    , CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "toString"    , CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "transformapply",CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "invcdf",         CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "groupedagg",     CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "rmempty" ,       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "replace",        CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "lowertri",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "uppertri",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "rexpand",        CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "toString",       CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "transformapply", CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformdecode",CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformcolmap",CPType.ParameterizedBuiltin);
-		String2CPInstructionType.put( "transformmeta",CPType.ParameterizedBuiltin);
+		String2CPInstructionType.put( "transformmeta",  CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "transformencode",CPType.MultiReturnParameterizedBuiltin);
 		
 		// Ternary Instruction Opcodes
@@ -286,11 +285,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "partition", 	CPType.Partition);
 		String2CPInstructionType.put( "compress", 	CPType.Compression);
 		String2CPInstructionType.put( "spoof", 		CPType.SpoofFused);
-
-		
-		//CP FILE instruction
-		String2CPFileInstructionType = new HashMap<>();
-		String2CPFileInstructionType.put( "rmempty"	    , CPType.ParameterizedBuiltin);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) {

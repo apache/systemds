@@ -56,7 +56,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -66,15 +65,15 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	private final LixCacheType _type;
 
-	protected MatrixIndexingSPInstruction(Operator op, CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
+	protected MatrixIndexingSPInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
 			CPOperand cu, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
-		super(op, in, rl, ru, cl, cu, out, aggtype, opcode, istr);
+		super(in, rl, ru, cl, cu, out, aggtype, opcode, istr);
 		_type = LixCacheType.NONE;
 	}
 
-	protected MatrixIndexingSPInstruction(Operator op, CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
+	protected MatrixIndexingSPInstruction(CPOperand lhsInput, CPOperand rhsInput, CPOperand rl,
 			CPOperand ru, CPOperand cl, CPOperand cu, CPOperand out, LixCacheType type, String opcode, String istr) {
-		super(op, lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
+		super(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, istr);
 		_type = type;
 	}
 

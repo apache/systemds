@@ -28,7 +28,6 @@ import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap.EntryType;
@@ -41,10 +40,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
 
-	private CtableCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	private CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
-		super(CPType.Ctable, op, in1, in2, in3, out, opcode, istr);
+		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = outputDim1;
 		_dim1Literal = dim1Literal;
 		_outDim2 = outputDim2;
@@ -79,7 +78,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
 		
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new CtableCPInstruction(new SimpleOperator(null), in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
 	}
 
 	private Ctable.OperationTypes findCtableOperation() {

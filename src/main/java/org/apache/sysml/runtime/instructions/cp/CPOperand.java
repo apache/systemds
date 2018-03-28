@@ -69,6 +69,10 @@ public class CPOperand
 		return _dataType.isMatrix();
 	}
 	
+	public boolean isScalar() {
+		return _dataType.isScalar();
+	}
+	
 	public boolean isLiteral() {
 		return _isLiteral;
 	}

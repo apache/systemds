@@ -303,6 +303,7 @@ ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '.')? ALPHABET (ALPHABET|DIGIT|'_')*
    // | 'matrix' // --> This is a special case which causes lot of headache
    // | 'scalar' |  'float' | 'int' | 'bool' // corresponds to as.scalar, as.double, as.integer and as.logical
    | 'index.return' | 'empty.return'
+   | 'lower.tri' | 'upper.tri'
 ;
 // Unfortunately, we have datatype name clashing with builtin function name: matrix :(
 // Therefore, ugly work around for checking datatype

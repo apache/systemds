@@ -33,8 +33,8 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class ExtractTriangularTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "extractLowerTri";
-	private final static String TEST_NAME2 = "extractUpperTri";
+	private final static String TEST_NAME1 = "ExtractLowerTri";
+	private final static String TEST_NAME2 = "ExtractUpperTri";
 	private final static String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ExtractTriangularTest.class.getSimpleName() + "/";
 

@@ -2095,15 +2095,23 @@ public class DMLTranslator
 						target.getName(), target.getDataType(), target.getValueType(), ParamBuiltinOp.REPLACE, paramHops);
 				break;
 			
+			case LOWER_TRI:
+				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
+					target.getValueType(), ParamBuiltinOp.LOWER_TRI, paramHops);
+				break;
+				
+			case UPPER_TRI:
+				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
+					target.getValueType(), ParamBuiltinOp.UPPER_TRI, paramHops);
+				break;
+				
 			case ORDER:
 				ArrayList<Hop> inputs = new ArrayList<>();
 				inputs.add(paramHops.get("target"));
 				inputs.add(paramHops.get("by"));
 				inputs.add(paramHops.get("decreasing"));
 				inputs.add(paramHops.get("index.return"));
-				
 				currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(), target.getValueType(), ReOrgOp.SORT, inputs);
-				
 				break;
 			
 			case TRANSFORMAPPLY:

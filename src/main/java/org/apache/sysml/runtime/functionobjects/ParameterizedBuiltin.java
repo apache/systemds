@@ -44,7 +44,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	private static final long serialVersionUID = -5966242955816522697L;
 	
 	public enum ParameterizedBuiltinCode { 
-		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND,
+		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE }
 	public enum ProbabilityDistributionCode { 
 		INVALID, NORMAL, EXP, CHISQ, F, T }
@@ -59,6 +59,8 @@ public class ParameterizedBuiltin extends ValueFunction
 		String2ParameterizedBuiltinCode.put( "invcdf", ParameterizedBuiltinCode.INVCDF);
 		String2ParameterizedBuiltinCode.put( "rmempty", ParameterizedBuiltinCode.RMEMPTY);
 		String2ParameterizedBuiltinCode.put( "replace", ParameterizedBuiltinCode.REPLACE);
+		String2ParameterizedBuiltinCode.put( "lowertri", ParameterizedBuiltinCode.LOWER_TRI);
+		String2ParameterizedBuiltinCode.put( "uppertri", ParameterizedBuiltinCode.UPPER_TRI);
 		String2ParameterizedBuiltinCode.put( "rexpand", ParameterizedBuiltinCode.REXPAND);
 		String2ParameterizedBuiltinCode.put( "transformapply", ParameterizedBuiltinCode.TRANSFORMAPPLY);
 		String2ParameterizedBuiltinCode.put( "transformdecode", ParameterizedBuiltinCode.TRANSFORMDECODE);
@@ -161,6 +163,12 @@ public class ParameterizedBuiltin extends ValueFunction
 				
 			case REPLACE:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REPLACE);
+			
+			case LOWER_TRI:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.LOWER_TRI);
+			
+			case UPPER_TRI:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.UPPER_TRI);
 			
 			case REXPAND:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.REXPAND);

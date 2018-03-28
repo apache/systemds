@@ -164,7 +164,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixBlock(double val) {
 		reset(1, 1, false, 1, val);
-		nonZeros = (val != 0) ? 1 : 0;
+	}
+	
+	public MatrixBlock(int rl, int cl, double val) {
+		reset(rl, cl, false, (long)rl*cl, val);
 	}
 	
 	/**
@@ -245,7 +248,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		rlen = rl;
 		clen = cl;
 		sparse = (val == 0) ? sp : false;
-		nonZeros = (val == 0) ? 0 : rl*cl;
+		nonZeros = (val == 0) ? 0 : (long)rl*cl;
 		estimatedNNzsPerRow = (estnnz < 0 || !sparse) ? -1 :
 			(int)Math.ceil((double)estnnz/(double)rlen);
 		
@@ -4853,6 +4856,62 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 	
+	public MatrixBlock extractTriangular(MatrixBlock ret, boolean lower, boolean diag, boolean values) {
+		ret.reset(rlen, clen, sparse);
+		if( isEmptyBlock(false) )
+			return ret; //sparse-safe
+		ret.allocateBlock();
+		
+		long nnz = 0;
+		if( sparse ) { //SPARSE
+			SparseBlock a = sparseBlock;
+			SparseBlock c = ret.sparseBlock;
+			for( int i=0; i<rlen; i++ ) {
+				if( a.isEmpty(i) ) continue;
+				int jbeg = Math.min(lower ? 0 : (diag ? i : i+1), clen);
+				int jend = Math.min(lower ? (diag ? i+1 : i) : clen, clen);
+				if( values ) {
+					int k1 = a.posFIndexGTE(i, jbeg);
+					int k2 = a.posFIndexGTE(i, jend);
+					k1 = (k1 >= 0) ? k1 : a.size(i);
+					k2 = (k2 >= 0) ? k2 : a.size(i);
+					int apos = a.pos(i);
+					int[] aix = a.indexes(i);
+					double[] avals = a.values(i);
+					c.allocate(i, k2-k1);
+					for( int k=apos+k1; k<apos+k2; k++ )
+						ret.appendValue(i, aix[k], avals[k]);
+				}
+				else {
+					c.allocate(i, jend-jbeg);
+					for( int j=jbeg; j<jend; j++ )
+						ret.appendValue(i, j, 1);
+				}
+			}
+			//nnz maintained internally
+		}
+		else { //DENSE <- DENSE
+			DenseBlock a = denseBlock;
+			DenseBlock c = ret.getDenseBlock();
+			for(int i = 0; i < rlen; i++) {
+				int jbeg = Math.min(lower ? 0 : (diag ? i : i+1), clen);
+				int jend = Math.min(lower ? (diag ? i+1 : i) : clen, clen);
+				double[] avals = a.values(i), cvals = c.values(i);
+				int aix = a.pos(i,jbeg), cix = c.pos(i,jbeg);
+				if( values ) {
+					System.arraycopy(avals, aix, cvals, cix, jend-jbeg);
+					nnz += UtilFunctions.countNonZeros(avals, aix, jend-jbeg);
+				}
+				else { //R semantics full reset, not just nnz
+					Arrays.fill(cvals, cix, cix+(jend-jbeg), 1);
+					nnz += (jend-jbeg);
+				}
+			}
+		}
+		ret.setNonZeros(nnz);
+		ret.examSparsity();
+		return ret;
+	}
 	
 	/**
 	 *  D = ctable(A,v2,W)

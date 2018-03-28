@@ -245,12 +245,14 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sigmoid", SPType.Unary);
 		
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "groupedagg"	 , SPType.ParameterizedBuiltin);
-		String2SPInstructionType.put( "mapgroupedagg", SPType.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rmempty"	     , SPType.ParameterizedBuiltin);
-		String2SPInstructionType.put( "replace"	     , SPType.ParameterizedBuiltin);
-		String2SPInstructionType.put( "rexpand"	     , SPType.ParameterizedBuiltin);
-		String2SPInstructionType.put( "transformapply",SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rmempty",        SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "replace",        SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "rexpand",        SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "lowertri",       SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "uppertri",       SPType.ParameterizedBuiltin);
+		String2SPInstructionType.put( "transformapply", SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformdecode",SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformencode",SPType.MultiReturnBuiltin);
 		

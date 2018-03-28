@@ -35,6 +35,7 @@ import org.junit.runners.Suite;
 	CholeskyTest.class,
 	DiagTest.class,
 	EigenFactorizeTest.class,
+	ExtractTriangularTest.class,
 	FullCummaxTest.class,
 	FullCumminTest.class,
 	FullCumprodTest.class,

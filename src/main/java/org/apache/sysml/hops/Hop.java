@@ -1114,7 +1114,8 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public enum ParamBuiltinOp {
-		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND, 
+		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
+		LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING
 	}
@@ -1418,6 +1419,8 @@ public abstract class Hop implements ParseInfo
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.RMEMPTY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.RMEMPTY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REPLACE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REPLACE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.REXPAND, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.REXPAND);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.LOWER_TRI, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.LOWER_TRI);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.UPPER_TRI, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.UPPER_TRI);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMAPPLY, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMAPPLY);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMDECODE, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMDECODE);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMCOLMAP, org.apache.sysml.lops.ParameterizedBuiltin.OperationTypes.TRANSFORMCOLMAP);

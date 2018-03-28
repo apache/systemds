@@ -152,7 +152,7 @@ public abstract class Expression implements ParseInfo
 	 * Parameterized built-in function operators.
 	 */
 	public enum ParameterizedBuiltinFunctionOp {
-		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, 
+		GROUPEDAGG, RMEMPTY, REPLACE, ORDER, LOWER_TRI, UPPER_TRI,
 		// Distribution Functions
 		CDF, INVCDF, PNORM, QNORM, PT, QT, PF, QF, PCHISQ, QCHISQ, PEXP, QEXP,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMCOLMAP, TRANSFORMMETA,

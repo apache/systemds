@@ -185,6 +185,8 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case CDF:
 			case INVCDF: 
 			case REPLACE:
+			case LOWER_TRI:
+			case UPPER_TRI:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:
@@ -1115,6 +1117,13 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 						setDim1( target.getDim1() );
 				}
 				setNnz( target.getNnz() );
+				break;
+			}
+			case LOWER_TRI:
+			case UPPER_TRI: {
+				Hop target = getTargetHop();
+				setDim1(target.getDim1());
+				setDim2(target.getDim2());
 				break;
 			}
 			case REPLACE: {

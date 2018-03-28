@@ -42,6 +42,13 @@ public class DataIdentifier extends Identifier
 		return newId;
 	}
 	
+	public DataIdentifier(String name, ValueType vt, DataType dt) {
+		super();
+		_name = name;
+		_valueType = vt;
+		_dataType = dt;
+	}
+	
 	public DataIdentifier(String name){
 		super();
 		_name = name;

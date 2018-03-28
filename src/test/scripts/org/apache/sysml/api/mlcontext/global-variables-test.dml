@@ -1,0 +1,64 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# a func reading the global value
+f1 = function (matrix[double] M, double factor) return (double res) {
+  res = prod(M) * factor * global
+}
+
+# a func trying to modify the global value
+f2 = function () return (double res) {
+  global = 12345
+  res = global
+}
+
+# a func using builtin constant PI
+f3 = function (double r) return (double res) {
+  res = PI * r * r
+}
+
+# use builtin constant PI in main func
+f4 = PI * 1000
+
+# use builtin constant NaN
+print(NaN + 1)
+
+# use builtin constant INF
+if (1 / 0 == INF) {
+  print("1 / 0 is an infinity.")
+}
+
+# some variables
+X = matrix("1 2 3 4", rows=2, cols=2)
+y = 10
+
+# global variables
+global = 5
+factor = 1
+
+R1 = f1(X, y)
+print(toString(R1))
+
+print(f2())
+print(toString(global))
+
+print(f3(y))
+print(f4)

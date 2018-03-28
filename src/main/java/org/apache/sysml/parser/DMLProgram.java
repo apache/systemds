@@ -33,14 +33,44 @@ public class DMLProgram
 	private ArrayList<StatementBlock> _blocks;
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
+	private VariableSet _globals; // global variables
 	public static final String DEFAULT_NAMESPACE = ".defaultNS";
 	public static final String INTERNAL_NAMESPACE = "_internal"; // used for multi-return builtin functions
 	private static final Log LOG = LogFactory.getLog(DMLProgram.class.getName());
+
+	/**
+	 * Builtin variables
+	 */
+	private static final DataIdentifier[] BUILTIN_VARIABLES = {
+			new DataIdentifier("PI", Expression.ValueType.DOUBLE, Expression.DataType.SCALAR),
+			new DataIdentifier("NaN", Expression.ValueType.DOUBLE, Expression.DataType.SCALAR),
+			new DataIdentifier("INF", Expression.ValueType.DOUBLE, Expression.DataType.SCALAR)
+	};
+
+	private static final ConstIdentifier[] BUILTIN_CONSTANTS = {
+			new DoubleIdentifier(Math.PI),
+			new DoubleIdentifier(Double.NaN),
+			new DoubleIdentifier(Double.POSITIVE_INFINITY)
+	};
 	
 	public DMLProgram(){
 		_blocks = new ArrayList<>();
 		_functionBlocks = new HashMap<>();
 		_namespaces = new HashMap<>();
+		_globals = new VariableSet();
+		injectConstantsBlock(_blocks);
+	}
+
+	private void injectConstantsBlock(ArrayList<StatementBlock> blocks) {
+		StatementBlock sb = new StatementBlock();
+		for (int i = 0; i < BUILTIN_CONSTANTS.length; i++) {
+			sb.addStatement(new AssignmentStatement(BUILTIN_VARIABLES[i], BUILTIN_CONSTANTS[i]));
+		}
+		blocks.add(0, sb);
+	}
+
+	public VariableSet getGlobalVariables() {
+		return _globals;
 	}
 	
 	public HashMap<String,DMLProgram> getNamespaces(){

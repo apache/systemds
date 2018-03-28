@@ -113,6 +113,17 @@ public class DMLTranslator
 		boolean fWriteRead = prepareReadAfterWrite(dmlp, new HashMap<String, DataIdentifier>());
 		
 		//STEP2: Actual Validate
+
+		// handle regular blocks -- "main" program
+		VariableSet vs = new VariableSet();
+		HashMap<String, ConstIdentifier> constVars = new HashMap<>();
+		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
+			StatementBlock sb = dmlp.getStatementBlock(i);
+			vs.addVariables(dmlp.getGlobalVariables());
+			vs = sb.validate(dmlp, vs, constVars, fWriteRead);
+			constVars = sb.getConstOut();
+		}
+		
 		// handle functions in namespaces (current program has default namespace)
 		for (String namespaceKey : dmlp.getNamespaces().keySet()){
 		
@@ -120,8 +131,8 @@ public class DMLTranslator
 			for (String fname :  dmlp.getFunctionStatementBlocks(namespaceKey).keySet()) {
 				FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(namespaceKey,fname);
 			
-				HashMap<String, ConstIdentifier> constVars = new HashMap<>();
-				VariableSet vs = new VariableSet();
+				constVars = new HashMap<>();
+				vs = new VariableSet();
 			
 				// add the input variables for the function to input variable list
 				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
@@ -130,19 +141,13 @@ public class DMLTranslator
 						currVar.setDimensions(0, 0);
 					vs.addVariable(currVar.getName(), currVar);
 				}
+				vs.addVariables(dmlp.getGlobalVariables());
 				fblock.validate(dmlp, vs, constVars, false);
 			} 
 		
 		}	
 		
-		// handle regular blocks -- "main" program
-		VariableSet vs = new VariableSet();
-		HashMap<String, ConstIdentifier> constVars = new HashMap<>();
-		for (int i = 0; i < dmlp.getNumStatementBlocks(); i++) {
-			StatementBlock sb = dmlp.getStatementBlock(i);
-			vs = sb.validate(dmlp, vs, constVars, fWriteRead);
-			constVars = sb.getConstOut();
-		}
+		
 
 		//STEP3: Post-processing steps after validate - e.g., prepare read-after-write meta data
 		if( fWriteRead ) 
@@ -177,6 +182,11 @@ public class DMLTranslator
 					activeIn.addVariable(id.getName(), id); 
 				}
 				fsb.initializeforwardLV(activeIn);
+				
+				// inject the needed global variables
+				HashMap<String, DataIdentifier> globals = new HashMap<>(fstmt.getBody().get(0).getGen().getVariables());
+				fstmt.getInputParams().forEach(p -> globals.remove(p.getName()));
+				fstmt.getScopeVariables().addAll(globals.values());
 			}
 		}
 		
@@ -213,6 +223,8 @@ public class DMLTranslator
 			StatementBlock sb = dmlp.getStatementBlock(i);
 			activeIn = sb.initializeforwardLV(activeIn);
 		}
+		
+		dmlp.getGlobalVariables().addVariables(activeIn);
 
 		if (dmlp.getNumStatementBlocks() > 0){
 			StatementBlock lastSb = dmlp.getStatementBlock(dmlp.getNumStatementBlocks() - 1);

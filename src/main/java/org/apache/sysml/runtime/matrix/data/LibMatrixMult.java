@@ -36,6 +36,7 @@ import org.apache.sysml.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysml.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -56,7 +57,8 @@ public class LibMatrixMult
 	//internal configuration
 	private static final boolean LOW_LEVEL_OPTIMIZATION = true;
 	private static final long MEM_OVERHEAD_THRESHOLD = 2L*1024*1024; //MAX 2 MB
-	private static final long PAR_MINFLOP_THRESHOLD = 2L*1024*1024; //MIN 2 MFLOP
+	private static final long PAR_MINFLOP_THRESHOLD1 = 2L*1024*1024; //MIN 2 MFLOP
+	private static final long PAR_MINFLOP_THRESHOLD2 = 128L*1024; //MIN 2 MFLOP
 	private static final int L2_CACHESIZE = 256 *1024; //256KB (common size)
 	
 	private LibMatrixMult() {
@@ -164,11 +166,8 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check too high additional vector-matrix memory requirements (fallback to sequential)
-		//check too small workload in terms of flops (fallback to sequential too)
-		if( m1.rlen == 1 && (8L * m2.clen * k > MEM_OVERHEAD_THRESHOLD || !LOW_LEVEL_OPTIMIZATION || m2.clen==1 || m1.isUltraSparse() || m2.isUltraSparse()) 
-			|| 2L * m1.rlen * m1.clen * m2.clen < PAR_MINFLOP_THRESHOLD ) 
-		{ 
+		//check too small workload and fallback to sequential if needed
+		if( !satisfiesMultiThreadingConstraints(m1, m2, m1.rlen==1, true, 2, k) ) {
 			matrixMult(m1, m2, ret);
 			return;
 		}
@@ -286,9 +285,8 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check too high additional memory requirements (fallback to sequential)
-		//check too small workload in terms of flops (fallback to sequential too)
-		if( !checkParColumnAgg(mX, k, true) ) { 
+		//check temporary memory and too small workload for multi-threading
+		if( !satisfiesMultiThreadingConstraints(mX, true, true, mX.sparse?2:4, k) ) { 
 			matrixMultChain(mX, mV, mW, ret, ct);
 			return;
 		}
@@ -307,12 +305,13 @@ public class LibMatrixMult
 			ArrayList<MatrixMultChainTask> tasks = new ArrayList<>();
 			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
 				tasks.add(new MatrixMultChainTask(mX, mV, mW, ct, lb, lb+blklens.get(i)));
-			//execute tasks
 			List<Future<double[]>> taskret = pool.invokeAll(tasks);
 			pool.shutdown();
-			//aggregate partial results
-			for( Future<double[]> task : taskret )
-				vectAdd(task.get(), ret.getDenseBlockValues(), 0, 0, mX.clen);
+			//aggregate partial results and error handling
+			double[][] a = new double[taskret.size()][];
+			for(int i=0; i<taskret.size(); i++)
+				a[i] = taskret.get(i).get();
+			vectAddAll(a, ret.getDenseBlockValues(), 0, 0, mX.clen);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -360,12 +359,8 @@ public class LibMatrixMult
 			return;
 		}
 		
-		//check no parallelization benefit (fallback to sequential)
-		//check too small workload in terms of flops (fallback to sequential too)
-		if( ret.rlen == 1 || k <= 1
-			|| leftTranspose && 1L * m1.rlen * m1.clen * m1.clen < PAR_MINFLOP_THRESHOLD
-			|| !leftTranspose && 1L * m1.clen * m1.rlen * m1.rlen < PAR_MINFLOP_THRESHOLD) 
-		{ 
+		//check too small workload and fallback to sequential if necessary
+		if( !satisfiesMultiThreadingConstraintsTSMM(m1, leftTranspose, 1, k) ) {
 			matrixMultTransposeSelf(m1, ret, leftTranspose);
 			return;
 		}
@@ -3354,6 +3349,16 @@ public class LibMatrixMult
 		}
 	}
 	
+	private static void vectAddAll(double[][] a, double[] c, int ai, int ci, final int len) {
+		int bi = a.length % 4;
+		//process stride for remaining blocks
+		for(int i=0; i<bi; i++)
+			vectAdd(a[i], c, ai, ci, len);
+		//process stride in 4 blocks at a time
+		for(int i=bi; i<a.length; i+=4)
+			vectAdd4(a[i], a[i+1], a[i+2], a[i+3], c, ai, ci, len);
+	}
+	
 	public static void vectAddInPlace(double aval, double[] c, final int ci, final int len) {
 		final int bn = len%8;
 		//rest, not aligned to 8-blocks
@@ -3609,11 +3614,6 @@ public class LibMatrixMult
 			&& m2clen < 64 && (!inclCacheSize || 8*m2rlen*m2clen < L2_CACHESIZE);
 	}
 	
-	public static boolean checkParColumnAgg(MatrixBlock m1, int k, boolean inclFLOPs) {
-		return (8L * m1.clen * k <= MEM_OVERHEAD_THRESHOLD 
-			&& (!inclFLOPs || 4L * m1.rlen * m1.clen / (m1.sparse?2:1) >= PAR_MINFLOP_THRESHOLD));
-	}
-	
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
 		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
@@ -3627,6 +3627,34 @@ public class LibMatrixMult
 		return (LOW_LEVEL_OPTIMIZATION && !m1.sparse && !m2.sparse 
 				&& m2.clen > k * 1024 && m1.rlen < k * 32 && !pm2r
 				&& 8*m1.rlen*m1.clen < 256*1024 ); //lhs fits in L2 cache
+	}
+	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock m1, int k) {
+		return satisfiesMultiThreadingConstraints(m1, true, false, -1, k);
+	}
+	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock m1, boolean checkMem, boolean checkFLOPs, long FPfactor, int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		return k > 1 && LOW_LEVEL_OPTIMIZATION
+			&& (!checkMem || 8L * m1.clen * k < MEM_OVERHEAD_THRESHOLD)
+			&& (!checkFLOPs || FPfactor * m1.rlen * m1.clen >
+			(sharedTP ? PAR_MINFLOP_THRESHOLD2 : PAR_MINFLOP_THRESHOLD1));
+	}
+	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock m1, MatrixBlock m2, boolean checkMem, boolean checkFLOPs, long FPfactor, int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		return k > 1 && LOW_LEVEL_OPTIMIZATION
+			&& (!checkMem || 8L * m2.clen * k < MEM_OVERHEAD_THRESHOLD)
+			&& (!checkFLOPs || FPfactor * m1.rlen * m1.clen * m2.clen >
+			(sharedTP ? PAR_MINFLOP_THRESHOLD2 : PAR_MINFLOP_THRESHOLD1));
+	}
+	
+	private static boolean satisfiesMultiThreadingConstraintsTSMM(MatrixBlock m1, boolean leftTranspose, long FPfactor, int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		double threshold = sharedTP ? PAR_MINFLOP_THRESHOLD2 : PAR_MINFLOP_THRESHOLD1;
+		return k > 1 && LOW_LEVEL_OPTIMIZATION && (leftTranspose?m1.clen:m1.rlen)!=1
+			&& ((leftTranspose && FPfactor * m1.rlen * m1.clen * m1.clen > threshold)
+			||(!leftTranspose && FPfactor * m1.clen * m1.rlen * m1.rlen > threshold));
 	}
 	
 	public static boolean isUltraSparseMatrixMult(MatrixBlock m1, MatrixBlock m2) {

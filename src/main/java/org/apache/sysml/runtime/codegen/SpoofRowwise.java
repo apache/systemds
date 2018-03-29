@@ -174,7 +174,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 	public MatrixBlock execute(ArrayList<MatrixBlock> inputs, ArrayList<ScalarObject> scalarObjects, MatrixBlock out, int k)
 	{
 		//redirect to serial execution
-		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.checkParColumnAgg(inputs.get(0), k, false))
+		if( k <= 1 || (_type.isColumnAgg() && !LibMatrixMult.satisfiesMultiThreadingConstraints(inputs.get(0), k))
 			|| getTotalInputSize(inputs) < PAR_NUMCELL_THRESHOLD ) {
 			return execute(inputs, scalarObjects, out);
 		}

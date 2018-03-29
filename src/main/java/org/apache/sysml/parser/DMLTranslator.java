@@ -224,7 +224,15 @@ public class DMLTranslator
 			activeIn = sb.initializeforwardLV(activeIn);
 		}
 		
-		dmlp.getGlobalVariables().addVariables(activeIn);
+		// find the global variables in regular program blocks
+		VariableSet globals = new VariableSet();
+		for (StatementBlock sb : dmlp.getStatementBlocks()) {
+			if (!(sb instanceof ForStatementBlock) && !(sb instanceof FunctionStatementBlock)
+					&& !(sb instanceof IfStatementBlock) && !(sb instanceof WhileStatementBlock)) {
+				globals = sb.initializeforwardLV(globals);
+			}
+		}
+		dmlp.getGlobalVariables().addVariables(globals);
 
 		if (dmlp.getNumStatementBlocks() > 0){
 			StatementBlock lastSb = dmlp.getStatementBlock(dmlp.getNumStatementBlocks() - 1);

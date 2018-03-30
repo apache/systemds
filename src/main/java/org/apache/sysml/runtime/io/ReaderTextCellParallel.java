@@ -91,6 +91,8 @@ public class ReaderTextCellParallel extends MatrixReader
 		checkValidInputFile(fs, path);
 		
 		//allocate output matrix block
+		if( estnnz < 0 )
+			estnnz = MapReduceTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 	
 		//core read 

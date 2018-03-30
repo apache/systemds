@@ -43,6 +43,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -237,6 +238,13 @@ public class MapReduceTool
 		if (fs.exists(originalPath)) {
 			FileUtil.copy(fs, originalPath, fs, newPath, deleteSource, overwrite, job);
 		}
+	}
+	
+	public static long estimateNnzBasedOnFileSize(Path path,
+		long rlen, long clen, int brlen, int bclen, double factor) throws IOException
+	{
+		return (long) Math.min(rlen*clen, rlen*clen*(getFilesizeOnHDFS(path)/factor/
+			OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, brlen, bclen, 1.0)));
 	}
 
 	/**

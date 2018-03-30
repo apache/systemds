@@ -54,10 +54,15 @@ public class InputInfo implements Serializable
 		inputValueClass=valueCls;
 	}
 
-	public void setMetaData(MetaData md)
-	{
+	public void setMetaData(MetaData md) {
 		metadata=md;
 	}
+	
+	public boolean isTextIJV() {
+		return this == InputInfo.TextCellInputInfo
+			|| this == InputInfo.MatrixMarketInputInfo;
+	}
+	
 	public static final InputInfo TextCellInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
 	public static final InputInfo MatrixMarketInputInfo = new InputInfo (TextInputFormat.class, 

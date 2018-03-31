@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.MMTSJ.MMTSJType;
 import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
@@ -61,6 +62,7 @@ import org.apache.sysml.runtime.instructions.mr.UaggOuterChainInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryInstruction;
 import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.instructions.mr.ZeroOutInstruction;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
@@ -223,6 +225,11 @@ public class MatrixCharacteristics implements Serializable
 	
 	public boolean nnzKnown() {
 		return ( !ubNnz && nonZero >= 0 );
+	}
+	
+	public boolean isUltraSparse() {
+		return dimsKnown(true) && OptimizerUtils.getSparsity(this)
+			< MatrixBlock.ULTRA_SPARSITY_TURN_POINT;
 	}
 	
 	public boolean mightHaveEmptyBlocks() {

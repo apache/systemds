@@ -256,26 +256,28 @@ public class RDDAggregateUtils
 	{
 		private static final long serialVersionUID = 3703543699467085539L;
 		
-		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);
 		
 		@Override
 		public CorrMatrixBlock call(CorrMatrixBlock arg0, MatrixBlock arg1) 
 			throws Exception 
 		{
+			if( arg1.isEmptyBlock(false) )
+				return arg0;
+			
 			//get current block and correction
 			MatrixBlock value = arg0.getValue();
 			MatrixBlock corr = arg0.getCorrection();
 			
 			//correction block allocation on demand
-			if( corr == null ){
+			if( corr == null )
 				corr = new MatrixBlock(value.getNumRows(), value.getNumColumns(), false);
-			}
 			
 			//aggregate other input and maintain corrections 
 			//(existing value and corr are used in place)
 			OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, false);
 			return arg0.set(value, corr);
-		}	
+		}
 	}
 
 	private static class MergeSumBlockCombinerFunction implements Function2<CorrMatrixBlock, CorrMatrixBlock, CorrMatrixBlock> 

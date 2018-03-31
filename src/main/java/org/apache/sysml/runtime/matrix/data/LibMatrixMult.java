@@ -1512,17 +1512,18 @@ public class LibMatrixMult
 				if( alen==1 ) { 
 					//row selection (now aggregation) with potential scaling
 					int aix = aixs[apos];
+					int lnnz = 0;
 					if( rightSparse ) { //sparse right matrix (full row copy)
 						if( !m2.sparseBlock.isEmpty(aix) ) {
 							ret.rlen=m;
 							ret.allocateSparseRowsBlock(false); //allocation on demand
 							boolean ldeep = (m2.sparseBlock instanceof SparseBlockMCSR);
 							ret.sparseBlock.set(i, m2.sparseBlock.get(aix), ldeep);
-							ret.nonZeros += ret.sparseBlock.size(i);
+							ret.nonZeros += (lnnz = ret.sparseBlock.size(i));
 						}
 					}
 					else { //dense right matrix (append all values)
-						int lnnz = (int)m2.recomputeNonZeros(aix, aix, 0, n-1);
+						lnnz = (int)m2.recomputeNonZeros(aix, aix, 0, n-1);
 						if( lnnz > 0 ) {
 							c.allocate(i, lnnz); //allocate once
 							double[] bvals = m2.getDenseBlock().values(aix);
@@ -1532,7 +1533,7 @@ public class LibMatrixMult
 						}
 					}
 					//optional scaling if not pure selection
-					if( avals[apos] != 1 )
+					if( avals[apos] != 1 && lnnz > 0 )
 						vectMultiplyInPlace(avals[apos], c.values(i), c.pos(i), c.size(i));
 				}
 				else //GENERAL CASE

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -34,7 +34,6 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "FullMatrixMultiplication";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FullMatrixMultiplicationUltraSparseTest.class.getSimpleName() + "/";
@@ -83,62 +82,77 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testMMDenseUltraSparseCP() 
-	{
+	public void testMMDenseUltraSparseCP() {
 		runMatrixMatrixMultiplicationTest(SparsityType.DENSE, SparsityType.ULTRA_SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testMMSparseUltraSparseCP() 
-	{
+	public void testMMSparseUltraSparseCP() {
 		runMatrixMatrixMultiplicationTest(SparsityType.SPARSE, SparsityType.ULTRA_SPARSE, ExecType.CP);
 	}
 
 	@Test
-	public void testMMUltraSparseDenseCP() 
-	{
+	public void testMMUltraSparseDenseCP() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.DENSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testMMUltraSparseSparseCP() 
-	{
+	public void testMMUltraSparseSparseCP() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testMMUltraSparseUltraSparseCP() 
-	{
+	public void testMMUltraSparseUltraSparseCP() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.ULTRA_SPARSE, ExecType.CP);
 	}
 	
 	@Test
-	public void testMMDenseUltraSparseMR() 
-	{
+	public void testMMDenseUltraSparseSP() {
+		runMatrixMatrixMultiplicationTest(SparsityType.DENSE, SparsityType.ULTRA_SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMMSparseUltraSparseSP() {
+		runMatrixMatrixMultiplicationTest(SparsityType.SPARSE, SparsityType.ULTRA_SPARSE, ExecType.SPARK);
+	}
+
+	@Test
+	public void testMMUltraSparseDenseSP() {
+		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.DENSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMMUltraSparseSparseSP() {
+		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMMUltraSparseUltraSparseSP() {
+		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.ULTRA_SPARSE, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testMMDenseUltraSparseMR() {
 		runMatrixMatrixMultiplicationTest(SparsityType.DENSE, SparsityType.ULTRA_SPARSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testMMSparseUltraSparseMR() 
-	{
+	public void testMMSparseUltraSparseMR() {
 		runMatrixMatrixMultiplicationTest(SparsityType.SPARSE, SparsityType.ULTRA_SPARSE, ExecType.MR);
 	}
 
 	@Test
-	public void testMMUltraSparseDenseMR() 
-	{
+	public void testMMUltraSparseDenseMR() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.DENSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testMMUltraSparseSparseMR() 
-	{
+	public void testMMUltraSparseSparseMR() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.SPARSE, ExecType.MR);
 	}
 	
 	@Test
-	public void testMMUltraSparseUltraSparseMR() 
-	{
+	public void testMMUltraSparseUltraSparseMR() {
 		runMatrixMatrixMultiplicationTest(SparsityType.ULTRA_SPARSE, SparsityType.ULTRA_SPARSE, ExecType.MR);
 	}
 
@@ -150,12 +164,17 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 	 */
 	private void runMatrixMatrixMultiplicationTest( SparsityType sparseM1, SparsityType sparseM2, ExecType instType)
 	{
-		//setup exec type, rows, cols
-
-		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		switch( instType ){
+			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+		}
 	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -194,8 +213,8 @@ public class FullMatrixMultiplicationUltraSparseTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			rtplatform = platformOld;
 		}
 	}

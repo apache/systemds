@@ -131,13 +131,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//sparse-block-specific attributes (allocation only)
 	protected int estimatedNNzsPerRow = -1; 
 	
-	//grpaggregate-specific attributes (optional)
-	protected int numGroups = -1;
-	
-	//diag-specific attributes (optional)
-	protected boolean diag = false;
-	
-	
 	////////
 	// Matrix Constructors
 	//
@@ -253,16 +246,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			(int)Math.ceil((double)estnnz/(double)rlen);
 		
 		//reset sparse/dense blocks
-		if( sparse ) {
+		if( sparse )
 			resetSparse();
-		}
-		else {
+		else
 			resetDense(val);
-		}
-		
-		//reset operation-specific attributes
-		numGroups = -1;
-		diag = false;
 	}
 	
 	private void resetSparse() {
@@ -505,15 +492,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		return ret;
 	}
-	
-	public void setDiag() {
-		diag = true;
-	}
-	
-	public boolean isDiag() {
-		return diag;
-	}
-	
+
 	////////
 	// Data handling
 	
@@ -4723,35 +4702,31 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( this.getNumRows() != target.getNumRows() && this.getNumRows() !=Math.max(target.getNumRows(),target.getNumColumns()) || (weights != null && this.getNumRows() != weights.getNumRows()) ) 
 			throw new DMLRuntimeException("groupedAggregate can only operate on matrices with equal dimensions.");
 		
-		// obtain numGroups from instruction, if provided
-		if (ngroups > 0)
-			numGroups = ngroups;
-		
 		// Determine the number of groups
-		if( numGroups <= 0 ) { //reuse if available
+		if( ngroups <= 0 ) { //reuse if available
 			double min = this.min();
 			double max = this.max();
 			if ( min <= 0 )
 				throw new DMLRuntimeException("Invalid value (" + min + ") encountered in 'groups' while computing groupedAggregate");
 			if ( max <= 0 )
 				throw new DMLRuntimeException("Invalid value (" + max + ") encountered in 'groups' while computing groupedAggregate.");
-			numGroups = (int) max;
+			ngroups = (int) max;
 		}
 	
 		// Allocate result matrix
 		boolean rowVector = (target.getNumRows()==1 && target.getNumColumns()>1);
 		MatrixBlock result = checkType(ret);
-		boolean result_sparsity = estimateSparsityOnGroupedAgg(rlen, numGroups);
+		boolean result_sparsity = estimateSparsityOnGroupedAgg(rlen, ngroups);
 		if(result==null)
-			result=new MatrixBlock(numGroups, rowVector?1:target.getNumColumns(), result_sparsity);
+			result=new MatrixBlock(ngroups, rowVector?1:target.getNumColumns(), result_sparsity);
 		else
-			result.reset(numGroups, rowVector?1:target.getNumColumns(), result_sparsity);
+			result.reset(ngroups, rowVector?1:target.getNumColumns(), result_sparsity);
 
 		//execute grouped aggregate operation
 		if( k > 1 )
-			LibMatrixAgg.groupedAggregate(this, target, weights, result, numGroups, op, k);
+			LibMatrixAgg.groupedAggregate(this, target, weights, result, ngroups, op, k);
 		else
-			LibMatrixAgg.groupedAggregate(this, target, weights, result, numGroups, op);
+			LibMatrixAgg.groupedAggregate(this, target, weights, result, ngroups, op);
 		
 		return result;
 	}

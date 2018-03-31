@@ -54,7 +54,7 @@ public class WriterTextCSV extends MatrixWriter
 	}
 	
 	@Override
-	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//validity check matrix dimensions

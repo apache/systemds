@@ -45,7 +45,7 @@ public class WriterBinaryBlock extends MatrixWriter
 	}
 
 	@Override
-	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access
@@ -61,7 +61,7 @@ public class WriterBinaryBlock extends MatrixWriter
 			MRJobConfiguration.addBinaryBlockSerializationFramework( job );
 		
 		//core write sequential/parallel
-		if( src.isDiag() )
+		if( diag )
 			writeDiagBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);
 		else
 			writeBinaryBlockMatrixToHDFS(path, job, fs, src, rlen, clen, brlen, bclen);

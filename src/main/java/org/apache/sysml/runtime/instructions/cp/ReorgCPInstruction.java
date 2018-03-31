@@ -144,5 +144,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			ec.releaseMatrixInput(_col.getName());
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+		if( r_op.fn instanceof DiagIndex && soresBlock.getNumColumns()>1 ) //diagV2M
+			ec.getMatrixObject(output.getName()).setDiag(true);
 	}
 }

@@ -71,14 +71,15 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	
 	//additional matrix-specific flags
 	private UpdateType _updateType = UpdateType.COPY; 
-	
+	private boolean _diag = false;
+
 	//information relevant to partitioned matrices.
 	private boolean _partitioned = false; //indicates if obj partitioned
 	private PDataPartitionFormat _partitionFormat = null; //indicates how obj partitioned
 	private int _partitionSize = -1; //indicates n for BLOCKWISE_N
 	private String _partitionCacheName = null; //name of cache block
 	private MatrixBlock _partitionInMemory = null;
-
+	
 	/**
 	 * Constructor that takes the value type and the HDFS filename.
 	 * 
@@ -119,6 +120,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
 		_updateType = mo._updateType;
+		_diag = mo._diag;
 		_partitioned = mo._partitioned;
 		_partitionFormat = mo._partitionFormat;
 		_partitionSize = mo._partitionSize;
@@ -131,6 +133,14 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 	public UpdateType getUpdateType() {
 		return _updateType;
+	}
+	
+	public boolean isDiag() {
+		return _diag;
+	}
+	
+	public void setDiag(boolean diag) {
+		_diag = diag;
 	}
 	
 	@Override
@@ -531,10 +541,11 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
 				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
 			{
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop);
+				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
+					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
 			}
 			else {
-				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, mc, rep, fprop);
+				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, mc, rep, fprop, _diag);
 			}
 
 			if( LOG.isTraceEnabled() )

@@ -36,9 +36,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterBinaryCell extends MatrixWriter
 {
-
 	@Override
-	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz) 
+	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
 	{
 		//prepare file access

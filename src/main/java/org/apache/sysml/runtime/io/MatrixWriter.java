@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
 
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -33,9 +32,15 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public abstract class MatrixWriter 
 {
+	public void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
+		throws IOException
+	{
+		writeMatrixToHDFS(src, fname, rlen, clen, brlen, bclen, nnz, false);
+	}
 
-	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz )
-		throws IOException, DMLRuntimeException;
+	public abstract void writeMatrixToHDFS( MatrixBlock src, String fname, long rlen, long clen, int brlen, int bclen, long nnz, boolean diag )
+		throws IOException;
+	
 	
 	/**
 	 * Writes a minimal entry to represent an empty matrix on hdfs.
@@ -50,33 +55,28 @@ public abstract class MatrixWriter
 	public abstract void writeEmptyMatrixToHDFS( String fname, long rlen, long clen, int brlen, int bclen )
 		throws IOException;
 
-	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros ) 
-	{
+	public static MatrixBlock[] createMatrixBlocksForReuse( long rlen, long clen, int brlen, int bclen, boolean sparse, long nonZeros ) {
 		MatrixBlock[] blocks = new MatrixBlock[4];
 		double sparsity = ((double)nonZeros)/(rlen*clen);
 		long estNNZ = -1;
 		
 		//full block 
-		if( rlen >= brlen && clen >= bclen )
-		{
+		if( rlen >= brlen && clen >= bclen ) {
 			estNNZ = (long) (brlen*bclen*sparsity);
 			blocks[0] = new MatrixBlock( brlen, bclen, sparse, (int)estNNZ );
 		}
 		//partial col block
-		if( rlen >= brlen && clen%bclen!=0 )
-		{
+		if( rlen >= brlen && clen%bclen!=0 ) {
 			estNNZ = (long) (brlen*(clen%bclen)*sparsity);
 			blocks[1] = new MatrixBlock( brlen, (int)(clen%bclen), sparse, (int)estNNZ );
 		}
 		//partial row block
-		if( rlen%brlen!=0 && clen>=bclen )
-		{
+		if( rlen%brlen!=0 && clen>=bclen ) {
 			estNNZ = (long) ((rlen%brlen)*bclen*sparsity);
 			blocks[2] = new MatrixBlock( (int)(rlen%brlen), bclen, sparse, (int)estNNZ );
 		}
 		//partial row/col block
-		if( rlen%brlen!=0 && clen%bclen!=0 )
-		{
+		if( rlen%brlen!=0 && clen%bclen!=0 ) {
 			estNNZ = (long) ((rlen%brlen)*(clen%bclen)*sparsity);
 			blocks[3] = new MatrixBlock( (int)(rlen%brlen), (int)(clen%bclen), sparse, (int)estNNZ );
 		}
@@ -85,16 +85,14 @@ public abstract class MatrixWriter
 		for( MatrixBlock b : blocks )
 			if( b != null )
 				if( !sparse )
-					b.allocateDenseBlockUnsafe(b.getNumRows(), b.getNumColumns());		
+					b.allocateDenseBlockUnsafe(b.getNumRows(), b.getNumColumns());
 		//NOTE: no preallocation for sparse (preallocate sparserows with estnnz) in order to reduce memory footprint
 		
 		return blocks;
 	}
 
-	public static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen )
-	{
+	public static MatrixBlock getMatrixBlockForReuse( MatrixBlock[] blocks, int rows, int cols, int brlen, int bclen ) {
 		int index = -1;
-		
 		if( rows==brlen && cols==bclen )
 			index = 0;
 		else if( rows==brlen && cols<bclen )
@@ -103,7 +101,6 @@ public abstract class MatrixWriter
 			index = 2;
 		else //if( rows<brlen && cols<bclen )
 			index = 3;
-
 		return blocks[ index ];
 	}
 }

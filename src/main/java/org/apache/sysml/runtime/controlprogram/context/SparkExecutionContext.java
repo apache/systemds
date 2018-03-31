@@ -291,7 +291,13 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) {
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>)
-			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
+			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, -1);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname, int numParts ) {
+		return (JavaPairRDD<MatrixIndexes,MatrixBlock>)
+			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, numParts);
 	}
 
 	/**
@@ -304,15 +310,19 @@ public class SparkExecutionContext extends ExecutionContext
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockRDDHandleForVariable( String varname ) {
 		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>)
-			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo);
+			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, -1);
 		return out;
 	}
 
 	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) {
+		return getRDDHandleForVariable(varname, inputInfo, -1);
+	}
+	
+	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo, int numParts ) {
 		Data dat = getVariable(varname);
 		if( dat instanceof MatrixObject ) {
 			MatrixObject mo = getMatrixObject(varname);
-			return getRDDHandleForMatrixObject(mo, inputInfo);
+			return getRDDHandleForMatrixObject(mo, inputInfo, numParts);
 		}
 		else if( dat instanceof FrameObject ) {
 			FrameObject fo = getFrameObject(varname);
@@ -323,16 +333,12 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	/**
-	 * This call returns an RDD handle for a given matrix object. This includes
-	 * the creation of RDDs for in-memory or binary-block HDFS data.
-	 *
-	 * @param mo matrix object
-	 * @param inputInfo input info
-	 * @return JavaPairRDD handle for a matrix object
-	 */
-	@SuppressWarnings("unchecked")
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo ) {
+		return getRDDHandleForMatrixObject(mo, inputInfo, -1);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo, int numParts ) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
 		//always available and hence only store generic references in
@@ -366,7 +372,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock());
+				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock(), numParts);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(mc), true);
 			}
@@ -657,16 +663,11 @@ public class SparkExecutionContext extends ExecutionContext
 		obj.setRDDHandle( rddhandle );
 	}
 
-	/**
-	 * Utility method for creating an RDD out of an in-memory matrix block.
-	 *
-	 * @param sc java spark context
-	 * @param src matrix block
-	 * @param brlen block row length
-	 * @param bclen block column length
-	 * @return JavaPairRDD handle to matrix block
-	 */
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) {
+		return toMatrixJavaPairRDD(sc, src, brlen, bclen, -1);
+	}
+	
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen, int numParts) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = null;
 
@@ -681,7 +682,9 @@ public class SparkExecutionContext extends ExecutionContext
 				.collect(Collectors.toList());
 		}
 
-		JavaPairRDD<MatrixIndexes,MatrixBlock> result = sc.parallelizePairs(list);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> result = (numParts > 1) ?
+			sc.parallelizePairs(list, numParts) : sc.parallelizePairs(list);
+		
 		if (DMLScript.STATISTICS) {
 			Statistics.accSparkParallelizeTime(System.nanoTime() - t0);
 			Statistics.incSparkParallelizeCount(1);

@@ -97,8 +97,11 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(rddVar);
 		MatrixCharacteristics mcBc = sec.getMatrixCharacteristics(bcastVar);
 		
-		//get input rdd
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar);
+		//get input rdd with preferred number of partitions to avoid unnecessary repartition
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar,
+			(requiresFlatMapFunction(type, mcBc) && requiresRepartitioning(
+			type, mcRdd, mcBc, sec.getSparkContext().defaultParallelism())) ?
+			getNumRepartitioning(type, mcRdd, mcBc) : -1);
 		
 		//investigate if a repartitioning - including a potential flip of broadcast and rdd 
 		//inputs - is required to ensure moderately sized output partitions (2GB limitation)
@@ -216,7 +219,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		boolean isLargeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
 				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),
 				isLeft?mcRdd.getColsPerBlock():mcBc.getColsPerBlock(), 1.0) / numPartitions) > 1024*1024*1024; 
-		return isOuter && isLargeOutput && mcRdd.dimsKnown() && mcBc.dimsKnown();
+		return isOuter && isLargeOutput && mcRdd.dimsKnown() && mcBc.dimsKnown()
+			&& numPartitions < getNumRepartitioning(type, mcRdd, mcBc);
 	}
 
 	/**

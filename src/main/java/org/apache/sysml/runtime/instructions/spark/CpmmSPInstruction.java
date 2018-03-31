@@ -53,10 +53,12 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
  * 
  */
 public class CpmmSPInstruction extends BinarySPInstruction {
-	private SparkAggType _aggtype;
-
-	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, SparkAggType aggtype, String opcode, String istr) {
+	private final boolean _outputEmptyBlocks;
+	private final SparkAggType _aggtype;
+	
+	private CpmmSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, boolean outputEmptyBlocks, SparkAggType aggtype, String opcode, String istr) {
 		super(SPType.CPMM, op, in1, in2, out, opcode, istr);
+		_outputEmptyBlocks = outputEmptyBlocks;
 		_aggtype = aggtype;
 	}
 
@@ -70,8 +72,9 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		CPOperand out = new CPOperand(parts[3]);
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateBinaryOperator aggbin = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
-		SparkAggType aggtype = SparkAggType.valueOf(parts[4]);
-		return new CpmmSPInstruction(aggbin, in1, in2, out, aggtype, opcode, str);
+		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
+		SparkAggType aggtype = SparkAggType.valueOf(parts[5]);
+		return new CpmmSPInstruction(aggbin, in1, in2, out, outputEmptyBlocks, aggtype, opcode, str);
 	}
 	
 	@Override
@@ -84,7 +87,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
 		
-		if( _aggtype == SparkAggType.SINGLE_BLOCK ) {
+		if( !_outputEmptyBlocks || _aggtype == SparkAggType.SINGLE_BLOCK ) {
 			//prune empty blocks of ultra-sparse matrices
 			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
 			in2 = in2.filter(new FilterNonEmptyBlocksFunction());
@@ -112,6 +115,8 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			sec.setMatrixOutput(output.getName(), out2, getExtendedOpcode());
 		}
 		else { //DEFAULT: MULTI_BLOCK
+			if( !_outputEmptyBlocks )
+				out = out.filter(new FilterNonEmptyBlocksFunction());
 			out = RDDAggregateUtils.sumByKeyStable(out, false);
 			
 			//put output RDD handle into symbol table

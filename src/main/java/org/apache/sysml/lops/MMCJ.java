@@ -37,6 +37,7 @@ public class MMCJ extends Lop
 	}
 	
 	//optional attribute for mr exec type
+	private boolean _outputEmptyBlocks = true;
 	private MMCJType _type = MMCJType.AGG;
 	
 	//optional attribute for spark exec type
@@ -81,11 +82,11 @@ public class MMCJ extends Lop
 		}
 	}
 
-	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et) {
+	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, boolean outputEmptyBlocks, SparkAggType aggtype, ExecType et) {
 		this(input1, input2, dt, vt, MMCJType.NO_AGG, et);
+		_outputEmptyBlocks = outputEmptyBlocks;
 		_aggtype = aggtype;
 	}
-	
 	
 	@Override
 	public String toString() {
@@ -118,8 +119,11 @@ public class MMCJ extends Lop
 		sb.append( prepOutputOperand(output) );
 		
 		sb.append( OPERAND_DELIMITOR );
-		if( getExecType() == ExecType.SPARK )
+		if( getExecType() == ExecType.SPARK ) {
+			sb.append(_outputEmptyBlocks);
+			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_aggtype.name());
+		}
 		else
 			sb.append(_type.name());
 		

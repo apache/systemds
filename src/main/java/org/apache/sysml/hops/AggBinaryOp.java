@@ -813,9 +813,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		else
 		{
 			SparkAggType aggtype = getSparkMMAggregationType(true);
+			_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
 			
 			Lop cpmm = new MMCJ(getInput().get(0).constructLops(), getInput().get(1).constructLops(), 
-								getDataType(), getValueType(), aggtype, ExecType.SPARK);
+				getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
 			setOutputDimensions( cpmm );
 			setLineNumbers( cpmm );
 			setLops( cpmm );
@@ -834,7 +835,8 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		setLineNumbers(tY);
 		
 		//matrix multiply
-		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), aggtype, ExecType.SPARK);
+		_outputEmptyBlocks = !OptimizerUtils.allowsToFilterEmptyBlockOutputs(this); 
+		MMCJ mmcj = new MMCJ(tY, X.constructLops(), getDataType(), getValueType(), _outputEmptyBlocks, aggtype, ExecType.SPARK);
 		mmcj.getOutputParameters().setDimensions(getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
 		setLineNumbers(mmcj);
 

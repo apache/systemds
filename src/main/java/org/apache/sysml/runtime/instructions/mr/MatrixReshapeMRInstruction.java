@@ -83,7 +83,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	
 				//process instruction
 				_mcOut.setBlockSize(brlen, bclen);
-				out = LibMatrixReorg.reshape(imv, _mcIn, out, _mcOut, _byrow);
+				out = LibMatrixReorg.reshape(imv, _mcIn, out, _mcOut, _byrow, true);
 				
 				//put the output values in the output cache
 				for( IndexedMatrixValue outBlk : out )

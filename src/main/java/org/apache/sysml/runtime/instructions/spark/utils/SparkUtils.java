@@ -40,6 +40,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.CopyBlockPairFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.RecomputeNnzFunction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -233,7 +235,9 @@ public class SparkUtils
 	}
 	
 	public static long getNonZeros(JavaPairRDD<MatrixIndexes, MatrixBlock> input) {
-		return input.values().map(b -> b.getNonZeros()).reduce((a,b)->a+b);
+		//note: avoid direct lambda expression due reduce unnecessary GC overhead
+		return input.filter(new FilterNonEmptyBlocksFunction())
+			.values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
 	}
 
 	private static class AnalyzeCellMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, MatrixCharacteristics> 

@@ -42,14 +42,16 @@ public class Transform extends Lop
 	
 	private OperationTypes operation = null;
 	private boolean _bSortIndInMem = false;
+	private boolean _outputEmptyBlock = true;
 	private int _numThreads = 1;
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		this(input, op, dt, vt, et, 1);
 	}
 	
-	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
+	public Transform(Lop[] inputs, Transform.OperationTypes op, DataType dt, ValueType vt, boolean outputEmptyBlock, ExecType et) {
 		this(inputs, op, dt, vt, et, 1);
+		_outputEmptyBlock = outputEmptyBlock;
 	}
 	
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k)  {
@@ -176,7 +178,7 @@ public class Transform extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
-
+		
 		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
@@ -208,6 +210,11 @@ public class Transform extends Lop
 		//output
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
+		
+		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Reshape ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _outputEmptyBlock );
+		}
 		
 		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Sort ){
 			sb.append( OPERAND_DELIMITOR );

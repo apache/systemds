@@ -463,10 +463,11 @@ public class LibMatrixReorg
 	 * @param out list of indexed matrix values
 	 * @param mcOut output matrix characteristics
 	 * @param rowwise if true, reshape by row
+	 * @param outputEmptyBlocks output blocks with nnz=0
 	 * @return list of indexed matrix values
 	 */
 	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, MatrixCharacteristics mcIn, 
-			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise ) {
+			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
@@ -485,10 +486,11 @@ public class LibMatrixReorg
 		
 		//prepare output
 		out = new ArrayList<>();
-		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() ) {
-			e.getValue().examSparsity(); //ensure correct format
-			out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
-		}
+		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
+			if( outputEmptyBlocks || !e.getValue().isEmptyBlock(false) ) {
+				e.getValue().examSparsity(); //ensure correct format
+				out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
+			}
 		
 		return out;
 	}

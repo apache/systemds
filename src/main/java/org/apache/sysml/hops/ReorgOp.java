@@ -232,7 +232,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 				if( et==ExecType.MR )
 				{
 					Transform transform1 = new Transform( linputs,
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), true, et);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					
@@ -250,8 +250,10 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 				}
 				else //CP/SPARK
 				{
+					_outputEmptyBlocks = (et==ExecType.SPARK &&
+						!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this)); 
 					Transform transform1 = new Transform( linputs,
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), _outputEmptyBlocks, et);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					

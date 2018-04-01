@@ -65,6 +65,7 @@ import org.junit.runners.Suite;
 	RewriteLoopVectorization.class,
 	RewriteMatrixMultChainOptTest.class,
 	RewriteMergeBlocksTest.class,
+	RewriteNNIssueTest.class,
 	RewritePushdownSumBinaryMult.class,
 	RewritePushdownSumOnBinaryTest.class,
 	RewritePushdownUaggTest.class,

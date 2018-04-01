@@ -421,7 +421,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public double[][] convertToDoubleMatrix(String input, int rows, int cols) throws IOException {
-		return convertToDoubleMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToDoubleMatrix(is, rows, cols);
+		}
 	}
 	
 	/**
@@ -467,7 +469,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public MatrixBlock convertToMatrix(String input, String meta) throws IOException {
-		return convertToMatrix(IOUtilFunctions.toInputStream(input), meta);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToMatrix(is, meta);
+		}
 	}
 	
 	/**
@@ -509,7 +513,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public MatrixBlock convertToMatrix(String input, int rows, int cols) throws IOException {
-		return convertToMatrix(IOUtilFunctions.toInputStream(input), rows, cols);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToMatrix(is, rows, cols);
+		}
 	}
 	
 	/**
@@ -655,7 +661,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public String[][] convertToStringFrame(String input, int rows, int cols) throws IOException {
-		return convertToStringFrame(IOUtilFunctions.toInputStream(input), rows, cols);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToStringFrame(is, rows, cols);
+		}
 	}
 	
 	/**
@@ -701,7 +709,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock convertToFrame(String input, String meta) throws IOException {
-		return convertToFrame(IOUtilFunctions.toInputStream(input), meta);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToFrame(is, meta);
+		}
 	}
 	
 	/**
@@ -743,7 +753,9 @@ public class Connection implements Closeable
 	 * @throws IOException if IOException occurs
 	 */
 	public FrameBlock convertToFrame(String input, int rows, int cols) throws IOException {
-		return convertToFrame(IOUtilFunctions.toInputStream(input), rows, cols);
+		try( InputStream is = IOUtilFunctions.toInputStream(input) ) {
+			return convertToFrame(is, rows, cols);
+		}
 	}
 	
 	/**

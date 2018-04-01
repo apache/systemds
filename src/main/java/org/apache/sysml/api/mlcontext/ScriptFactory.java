@@ -298,8 +298,11 @@ public class ScriptFactory {
 		if (!resourcePath.startsWith("/")) {
 			resourcePath = "/" + resourcePath;
 		}
-		InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath);
-		return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
+		try( InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath) ) {
+			return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
+		} catch (Exception e){
+			throw new MLContextException("Error trying to read script from resource: "+ resourcePath, e);
+		}
 	}
 
 	/**
@@ -425,8 +428,7 @@ public class ScriptFactory {
 		if ((!urlString.toLowerCase().startsWith("http:")) && (!urlString.toLowerCase().startsWith("https:"))) {
 			throw new MLContextException("Currently only reading from http and https URLs is supported");
 		}
-		try {
-			InputStream is = url.openStream();
+		try( InputStream is = url.openStream() ) {
 			return IOUtils.toString(is);
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from URL: " + url, e);

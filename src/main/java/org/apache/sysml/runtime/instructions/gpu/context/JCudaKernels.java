@@ -125,10 +125,8 @@ public class JCudaKernels {
 	 * @return
 	 */
 	private static Pointer initKernels(String ptxFileName) {
-		InputStream in = null;
 		ByteArrayOutputStream out = null;
-		try {
-			in = JCudaKernels.class.getResourceAsStream(ptxFileName);
+		try( InputStream in = JCudaKernels.class.getResourceAsStream(ptxFileName) ) {
 			if (in != null) {
 				out = new ByteArrayOutputStream();
 				byte buffer[] = new byte[8192];
@@ -149,7 +147,6 @@ public class JCudaKernels {
 			throw new DMLRuntimeException("Could not initialize the kernels", e);
 		} finally {
 			IOUtilFunctions.closeSilently(out);
-			IOUtilFunctions.closeSilently(in);
 		}
 	}
 }

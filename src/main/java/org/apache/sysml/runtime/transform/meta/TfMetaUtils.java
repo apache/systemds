@@ -216,7 +216,7 @@ public class TfMetaUtils
 		throws IOException 
 	{
 		//read column names
-		String colnamesStr = IOUtilFunctions.toString(Connection.class.getResourceAsStream(metapath+"/"+TfUtils.TXMTD_COLNAMES));
+		String colnamesStr = getStringFromResource(metapath+"/"+TfUtils.TXMTD_COLNAMES);
 		String[] colnames = IOUtilFunctions.split(colnamesStr.trim(), colDelim);
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit)
@@ -228,22 +228,22 @@ public class TfMetaUtils
 			String colName = colnames[j];
 			//read recode maps for recoded or dummycoded columns
 			String name = metapath+"/"+"Recode"+"/"+colName;
-			String map = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
+			String map = getStringFromResource(name+TfUtils.TXMTD_RCD_MAP_SUFFIX);
 			if( map != null ) {
 				meta.put(colName, map);
-				String ndistinct = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX));
+				String ndistinct = getStringFromResource(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 				rows = Math.max(rows, Integer.parseInt(ndistinct));
 			}
 			//read binning map for binned columns
 			String name2 = metapath+"/"+"Bin"+"/"+colName;
-			String map2 = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX));
+			String map2 = getStringFromResource(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX);
 			if( map2 != null ) {
 				meta.put(colName, map2);
 				rows = Math.max(rows, Integer.parseInt(map2.split(TfUtils.TXMTD_SEP)[4]));
 			}
 			//read impute value for mv columns
 			String name3 = metapath+File.separator+"Impute"+File.separator+colName;
-			String map3 = IOUtilFunctions.toString(Connection.class.getResourceAsStream(name3+TfUtils.TXMTD_MV_FILE_SUFFIX));
+			String map3 = getStringFromResource(name3+TfUtils.TXMTD_MV_FILE_SUFFIX);
 			if( map3 != null ) {
 				mvmeta.put(colName, map3);
 			}
@@ -387,6 +387,12 @@ public class TfMetaUtils
 		}
 		catch(JSONException ex) {
 			throw new IOException(ex);
+		}
+	}
+	
+	private static String getStringFromResource(String path) throws IOException {
+		try(InputStream is = Connection.class.getResourceAsStream(path) ) {
+			return IOUtilFunctions.toString(is);
 		}
 	}
 }

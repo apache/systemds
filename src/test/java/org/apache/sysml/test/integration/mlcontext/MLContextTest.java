@@ -90,6 +90,14 @@ import scala.collection.Seq;
 public class MLContextTest extends MLContextTestBase {
 
 	@Test
+	public void testBuiltinConstantsTest() {
+		System.out.println("MLContextTest - basic builtin constants test");
+		Script script = dmlFromFile(baseDirectory + File.separator + "builtin-constants-test.dml");
+		ml.execute(script);
+		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
+	}
+	
+	@Test
 	public void testBasicExecuteEvalTest() {
 		System.out.println("MLContextTest - basic eval test");
 		setExpectedStdOut("10");

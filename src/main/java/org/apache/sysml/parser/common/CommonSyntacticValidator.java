@@ -55,6 +55,7 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
 import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
+import org.apache.sysml.parser.BuiltinConstant;
 
 /**
  * Contains fields and (helper) methods common to {@link DmlSyntacticValidator} and {@link PydmlSyntacticValidator}
@@ -328,6 +329,13 @@ public abstract class CommonSyntacticValidator {
 	}
 
 	protected void exitDataIdExpressionHelper(ParserRuleContext ctx, ExpressionInfo me, ExpressionInfo dataInfo) {
+		// inject builtin constant
+		if (dataInfo.expr instanceof DataIdentifier) {
+			DataIdentifier id = ((DataIdentifier) dataInfo.expr);
+			if (BuiltinConstant.contains(id.getName())) { 
+				dataInfo.expr = BuiltinConstant.valueOf(id.getName()).get();
+			}
+		}
 		me.expr = dataInfo.expr;
 		// If "The parameter $X either needs to be passed through commandline or initialized to default value" validation
 		// error occurs, then dataInfo.expr is null which would cause a null pointer exception with the following code.
@@ -430,7 +438,7 @@ public abstract class CommonSyntacticValidator {
 				info.stmt = new AssignmentStatement(ctx, target, source, currentFile);
 			} catch (LanguageException e) {
 				// TODO: extract more meaningful info from this exception.
-				notifyErrorListeners("invalid assignment", lhsStart);
+				notifyErrorListeners("invalid assignment: " + e.getMessage(), lhsStart);
 				return;
 			}
 		}

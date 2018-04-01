@@ -71,7 +71,7 @@ public class CopyBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple
 				MatrixIndexes ix = new MatrixIndexes(arg._1());
 				MatrixBlock block = null;
 				//always create deep copies in more memory-efficient CSR representation 
-				//if block is already in sparse format			
+				//if block is already in sparse format
 				if( Checkpoint.CHECKPOINT_SPARSE_CSR && arg._2.isInSparseFormat() )
 					block = new MatrixBlock(arg._2, SparseBlock.Type.CSR, true);
 				else

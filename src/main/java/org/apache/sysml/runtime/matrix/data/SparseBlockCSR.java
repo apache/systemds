@@ -734,16 +734,20 @@ public class SparseBlockCSR extends SparseBlock
 
 	@Override
 	public double get(int r, int c) {
+		if( isEmpty(r) )
+			return 0;
 		int pos = pos(r);
 		int len = size(r);
 		
 		//search for existing col index in [pos,pos+len)
-		int index = Arrays.binarySearch(_indexes, pos, pos+len, c);		
+		int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
 		return (index >= 0) ? _values[index] : 0;
 	}
 	
 	@Override 
 	public SparseRow get(int r) {
+		if( isEmpty(r) )
+			return new SparseRowScalar();
 		int pos = pos(r);
 		int len = size(r);
 		
@@ -751,7 +755,6 @@ public class SparseBlockCSR extends SparseBlock
 		System.arraycopy(_indexes, pos, row.indexes(), 0, len);
 		System.arraycopy(_values, pos, row.values(), 0, len);
 		row.setSize(len);
-		
 		return row;
 	}
 	

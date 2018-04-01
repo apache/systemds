@@ -184,10 +184,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			throw new RuntimeException("Sparse matrix block expected.");
 		
 		//deep copy and change sparse block type
-		nonZeros = that.nonZeros;
-		estimatedNNzsPerRow = that.estimatedNNzsPerRow;
-		sparseBlock = SparseBlockFactory
+		if( !that.isEmptyBlock(false) ) {
+			nonZeros = that.nonZeros;
+			estimatedNNzsPerRow = that.estimatedNNzsPerRow;
+			sparseBlock = SparseBlockFactory
 				.copySparseBlock(stype, that.sparseBlock, deep);
+		}
 	}
 	
 	////////

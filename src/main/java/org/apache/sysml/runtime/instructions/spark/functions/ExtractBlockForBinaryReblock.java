@@ -70,37 +70,36 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		long endRowGlobalCellIndex = getEndGlobalIndex(ixIn.getRowIndex(), true, true);
 		long startColGlobalCellIndex = UtilFunctions.computeCellIndex(ixIn.getColumnIndex(), in_bclen, 0);
 		long endColGlobalCellIndex = getEndGlobalIndex(ixIn.getColumnIndex(), true, false);
-		assert(startRowGlobalCellIndex <= endRowGlobalCellIndex && startColGlobalCellIndex <= endColGlobalCellIndex);
 		
 		long out_startRowBlockIndex = UtilFunctions.computeBlockIndex(startRowGlobalCellIndex, out_brlen);
 		long out_endRowBlockIndex = UtilFunctions.computeBlockIndex(endRowGlobalCellIndex, out_brlen);
 		long out_startColBlockIndex = UtilFunctions.computeBlockIndex(startColGlobalCellIndex, out_bclen);
 		long out_endColBlockIndex = UtilFunctions.computeBlockIndex(endColGlobalCellIndex, out_bclen);
-		assert(out_startRowBlockIndex <= out_endRowBlockIndex && out_startColBlockIndex <= out_endColBlockIndex);
 		
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<>();
 		
 		for(long i = out_startRowBlockIndex; i <= out_endRowBlockIndex; i++) {
 			for(long j = out_startColBlockIndex; j <= out_endColBlockIndex; j++) {
 				MatrixIndexes indx = new MatrixIndexes(i, j);
-				long rowLower = Math.max(UtilFunctions.computeCellIndex(i, out_brlen, 0), startRowGlobalCellIndex);
-				long rowUpper = Math.min(getEndGlobalIndex(i, false, true), endRowGlobalCellIndex);
-				long colLower = Math.max(UtilFunctions.computeCellIndex(j, out_bclen, 0), startColGlobalCellIndex);
-				long colUpper = Math.min(getEndGlobalIndex(j, false, false), endColGlobalCellIndex);
-				
 				int new_lrlen = UtilFunctions.computeBlockSize(rlen, i, out_brlen);
 				int new_lclen = UtilFunctions.computeBlockSize(clen, j, out_bclen);
 				MatrixBlock blk = new MatrixBlock(new_lrlen, new_lclen, true);
 				
-				int in_i1 = UtilFunctions.computeCellInBlock(rowLower, in_brlen);
-				int out_i1 = UtilFunctions.computeCellInBlock(rowLower, out_brlen);
-				
-				for(long i1 = rowLower; i1 <= rowUpper; i1++, in_i1++, out_i1++) {
-					int in_j1 = UtilFunctions.computeCellInBlock(colLower, in_bclen);
-					int out_j1 = UtilFunctions.computeCellInBlock(colLower, out_bclen);
-					for(long j1 = colLower; j1 <= colUpper; j1++, in_j1++, out_j1++) {
-						double val = in.getValue(in_i1, in_j1);
-						blk.appendValue(out_i1, out_j1, val);
+				if( !in.isEmptyBlock(false) ) {
+					long rowLower = Math.max(UtilFunctions.computeCellIndex(i, out_brlen, 0), startRowGlobalCellIndex);
+					long rowUpper = Math.min(getEndGlobalIndex(i, false, true), endRowGlobalCellIndex);
+					long colLower = Math.max(UtilFunctions.computeCellIndex(j, out_bclen, 0), startColGlobalCellIndex);
+					long colUpper = Math.min(getEndGlobalIndex(j, false, false), endColGlobalCellIndex);
+					int in_i1 = UtilFunctions.computeCellInBlock(rowLower, in_brlen);
+					int out_i1 = UtilFunctions.computeCellInBlock(rowLower, out_brlen);
+					
+					for(long i1 = rowLower; i1 <= rowUpper; i1++, in_i1++, out_i1++) {
+						int in_j1 = UtilFunctions.computeCellInBlock(colLower, in_bclen);
+						int out_j1 = UtilFunctions.computeCellInBlock(colLower, out_bclen);
+						for(long j1 = colLower; j1 <= colUpper; j1++, in_j1++, out_j1++) {
+							double val = in.quickGetValue(in_i1, in_j1);
+							blk.appendValue(out_i1, out_j1, val);
+						}
 					}
 				}
 				retVal.add(new Tuple2<>(indx, blk));

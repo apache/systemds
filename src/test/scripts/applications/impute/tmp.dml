@@ -22,7 +22,7 @@
 setwd ("test/scripts/applications/glm");
 source ("Misc.dml");
 
-blahblah = 0.0 / 0.0; # -0.00099999999;
+blahblah = NaN; # -0.00099999999;
 print (blahblah);
 x = matrix (0.0, rows = 55, cols = 1);
 x [55, 1] = blahblah;
@@ -73,7 +73,7 @@ coeff_d =  3.14 * (2 * (-3) * (-1.7));
         if (acos_argument >= 0.0) {
             coeff_theta = acos_x;
         } else {
-            coeff_theta = 3.1415926535897932384626433832795 - acos_x;
+            coeff_theta = PI - acos_x;
         }
         
         root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);

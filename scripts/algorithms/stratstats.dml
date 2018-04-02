@@ -138,8 +138,8 @@ num_attrs_XY = num_attrs_X * num_attrs_Y;
 
 print ("Preparing the covariates...");
 
-XnoNaNs = replace (target = XwithNaNs, pattern = 0.0/0.0, replacement = 0);
-YnoNaNs = replace (target = YwithNaNs, pattern = 0.0/0.0, replacement = 0);
+XnoNaNs = replace (target = XwithNaNs, pattern = NaN, replacement = 0);
+YnoNaNs = replace (target = YwithNaNs, pattern = NaN, replacement = 0);
 XNaNmask = (XwithNaNs == XwithNaNs);
 YNaNmask = (YwithNaNs == YwithNaNs);
 one_to_num_attrs_X = seq (1, num_attrs_X, 1);
@@ -160,7 +160,7 @@ Y_mask = YNaNmask %*% ProjY;
 
 print ("Preparing the strata...");
 
-SnoNaNs = replace (target = SwithNaNs, pattern = 0.0/0.0, replacement = 0);
+SnoNaNs = replace (target = SwithNaNs, pattern = NaN, replacement = 0);
 S = round (SnoNaNs) * (SnoNaNs > 0);
 Proj_good_stratumID = diag (S > 0);
 Proj_good_stratumID = removeEmpty (target = Proj_good_stratumID, margin = "rows");
@@ -391,6 +391,6 @@ sqrt_failsafe = function (Matrix[double] input_A) return (Matrix[double] output_
     mask_A = (input_A >= 0);
     prep_A = input_A * mask_A;
     mask_A = mask_A * (prep_A == prep_A);
-    prep_A = replace (target = prep_A, pattern = 0.0/0.0, replacement = 0);
+    prep_A = replace (target = prep_A, pattern = NaN, replacement = 0);
     output_A = sqrt (prep_A) / mask_A;
 }

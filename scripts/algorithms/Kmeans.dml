@@ -135,7 +135,7 @@ parfor (run_index in 1 : num_runs, check = 0)
     C_old = C;
     iter_count = 0;
     term_code = 0;
-    wcss = 1.0/0.0; #INF
+    wcss = INF
 
     while (term_code == 0)
     {

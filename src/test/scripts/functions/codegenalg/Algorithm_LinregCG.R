@@ -129,8 +129,8 @@ if (n > m_ext) {
     dispersion  = ss_res / (n - m_ext);
     adjusted_R2 = 1 - dispersion / (ss_avg_tot / (n - 1));
 } else {
-    dispersion  = 0.0 / 0.0;
-    adjusted_R2 = 0.0 / 0.0;
+    dispersion  = NaN;
+    adjusted_R2 = NaN;
 }
 
 plain_R2_nobias = 1 - ss_avg_res / ss_avg_tot;
@@ -139,15 +139,15 @@ if (deg_freedom > 0) {
     var_res = ss_avg_res / deg_freedom;
     adjusted_R2_nobias = 1 - var_res / (ss_avg_tot / (n - 1));
 } else {
-    var_res = 0.0 / 0.0;
-    adjusted_R2_nobias = 0.0 / 0.0;
+    var_res = NaN;
+    adjusted_R2_nobias = NaN;
 }
 
 plain_R2_vs_0 = 1 - ss_res / ss_tot;
 if (n > m) {
     adjusted_R2_vs_0 = 1 - (ss_res / (n - m)) / (ss_tot / n);
 } else {
-    adjusted_R2_vs_0 = 0.0 / 0.0;
+    adjusted_R2_vs_0 = NaN;
 }
 
 if (intercept_status == 2) {

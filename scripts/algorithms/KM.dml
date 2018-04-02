@@ -186,11 +186,11 @@ if (n_group_cols > 0) {
 	Idx[2:num_records,] = rowMaxs (X[1:(num_records - 1),3:(2 + n_group_cols)] != X[2:num_records,3:(2 + n_group_cols)]);
 	num_groups = sum (Idx);
 
-	XG = replace (target = XG, pattern = 0, replacement = "Infinity");
+	XG = replace (target = XG, pattern = 0, replacement = INF);
 	XG = XG * Idx;
-	XG = replace (target = XG, pattern = "NaN", replacement = 0);	
+	XG = replace (target = XG, pattern = NaN, replacement = 0);	
 	G_cols = removeEmpty (target = XG, margin = "rows"); 
-	G_cols = replace (target = G_cols, pattern = "Infinity", replacement = 0);	
+	G_cols = replace (target = G_cols, pattern = INF, replacement = 0);	
 
 	A = removeEmpty (target = diag (Idx), margin = "cols");
 	if (ncol (A) > 1) {
@@ -224,9 +224,9 @@ if (n_stratum_cols > 0) {
 
 	XS = replace (target = XS, pattern = 0, replacement = "Infinity");
 	XS = XS * Idx;
-	XS = replace (target = XS, pattern = "NaN", replacement = 0);	
+	XS = replace (target = XS, pattern = NaN, replacement = 0);	
 	S_cols = removeEmpty (target = XS, margin = "rows"); 
-	S_cols = replace (target = S_cols, pattern = "Infinity", replacement = 0);	
+	S_cols = replace (target = S_cols, pattern = INF, replacement = 0);	
 
 	SB = removeEmpty (target = seq (1,num_records), margin = "rows", select = Idx); # indices of stratum boundaries 
 	A = removeEmpty (target = diag (Idx), margin = "cols");
@@ -317,7 +317,7 @@ parfor (s in 1:num_strata, check = 0) {
 	time_stratum = table (seq (1, nrow (Idx1), 1), Idx1) %*% T; # distinct timestamps both censored and uncensored per stratum 
 	time_stratum_has_zero = sum (time_stratum == 0) > 0;
 	if (time_stratum_has_zero) {
-		time_stratum = 	replace (target = time_stratum, pattern = 0, replacement = "Infinity");
+		time_stratum = 	replace (target = time_stratum, pattern = 0, replacement = INF);
 	}
 	n_time_all1 = nrow (n_event_stratum);  # no. of distinct timestamps both censored and uncensored per stratum
 	n_event_all_stratum_agg = matrix (0, rows = n_time_all1, cols = 1); 
@@ -349,9 +349,9 @@ parfor (s in 1:num_strata, check = 0) {
 			Idx1 = cumsum (n_event_all); 
 			event_occurred = (n_event > 0);
 			if (time_stratum_has_zero) {
-				time = replace (target = time_stratum * event_occurred, pattern = "NaN", replacement = 0);
+				time = replace (target = time_stratum * event_occurred, pattern = NaN, replacement = 0);
 				time = removeEmpty (target = time, margin = "rows");
-				time = replace (target = time, pattern = "Infinity", replacement = 0);
+				time = replace (target = time, pattern = INF, replacement = 0);
 			} else {
 				time = removeEmpty (target = time_stratum * event_occurred, margin = "rows");
 			}
@@ -518,12 +518,12 @@ parfor (s in 1:num_strata, check = 0) {
 				}
 				if (test_type == "log-rank") {
 					V1 = n_risk * n_event_stratum * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
-					V1 = replace (target = V1, pattern = "NaN", replacement = 0);
+					V1 = replace (target = V1, pattern = NaN, replacement = 0);
 					V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
 					V[(i1 + 1),(i2 + 1)] = sum (V1 * V2);
 				} else { ### test_type == "wilcoxon"
 					V1 = (n_risk_stratum ^ 2) * (n_risk * n_event_stratum) * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
-					V1 = replace (target = V1, pattern = "NaN", replacement = 0);
+					V1 = replace (target = V1, pattern = NaN, replacement = 0);
 					V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
 					V[(i1 + 1),(i2 + 1)] = sum (V1 * V2) / (range ^ 2);
 				}
@@ -582,7 +582,7 @@ if (n_stratum_cols > 0) {
 M_cols = removeEmpty (target = M_cols, margin = "rows");
 tab_M = table (seq (1, nrow (M_cols)), M_cols, nrow (M_cols), nrow (M));
 M = tab_M %*% M;
-M = replace (target = M, pattern = "Infinity", replacement = "NaN");
+M = replace (target = M, pattern = INF, replacement = NaN);
 
 # pull out non-empty rows from TEST
 if (n_group_cols > 0 & n_stratum_cols > 0) {

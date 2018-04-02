@@ -296,7 +296,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 			I_gain_scale = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left_scale + ( label_sum_right / label_sum_overall ) * impurity_right_scale); 
 		
-			I_gain_scale = replace (target = I_gain_scale, pattern = "NaN", replacement = 0);	
+			I_gain_scale = replace (target = I_gain_scale, pattern = NaN, replacement = 0);	
 			
 			# determine best feature to split on and the split value
 			best_scale_gain = max (I_gain_scale);
@@ -341,7 +341,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
 					log_label_dist = log (label_dist); # / log(2)
 					impurity = - rowSums (label_dist * log_label_dist); 
-					impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
+					impurity = replace (target = impurity, pattern = NaN, replacement = 1/0); 
 				} else { # imp == "Gini"
 					impurity = rowSums (label_dist * (1 - label_dist)); 				
 				}
@@ -370,7 +370,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 				label_counts_right = - label_counts_left + label_counts_overall;
 				label_sum_right = rowSums (label_counts_right);
 				label_dist_right = label_counts_right / label_sum_right;
-				label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
+				label_dist_right = replace (target = label_dist_right, pattern = NaN, replacement = 1);
 				if (imp == "entropy") {
 					label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
 					log_label_dist_right = log (label_dist_right); # / log (2)
@@ -709,7 +709,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 					}
 					I_gain_scale = cur_impurity - ( ( label_sum_left / label_sum_overall ) * impurity_left_scale + ( label_sum_right / label_sum_overall ) * impurity_right_scale); # I_gain -> I_gain_scale
 			
-					I_gain_scale = replace (target = I_gain_scale, pattern = "NaN", replacement = 0);		
+					I_gain_scale = replace (target = I_gain_scale, pattern = NaN, replacement = 0);		
 			
 					# determine best feature to split on and the split value
 					best_scale_gain = max (I_gain_scale);
@@ -754,7 +754,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 							label_dist = replace (target = label_dist, pattern = 0, replacement = 1);
 							log_label_dist = log (label_dist); # / log(2)
 							impurity = - rowSums (label_dist * log_label_dist); 
-							impurity = replace (target = impurity, pattern = "NaN", replacement = 1/0); 
+							impurity = replace (target = impurity, pattern = NaN, replacement = 1/0); 
 						} else { # imp == "Gini"
 							impurity = rowSums (label_dist * (1 - label_dist)); 
 						}
@@ -770,7 +770,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 			
 						label_sum_left = rowSums (label_counts_left);
 						label_dist_left = label_counts_left / label_sum_left;
-						label_dist_left = replace (target = label_dist_left, pattern = "NaN", replacement = 1);
+						label_dist_left = replace (target = label_dist_left, pattern = NaN, replacement = 1);
 						if (imp == "entropy") {
 							label_dist_left = replace (target = label_dist_left, pattern = 0, replacement = 1);
 							log_label_dist_left = log (label_dist_left); # / log(2)
@@ -782,7 +782,7 @@ while ((num_cur_nodes_large + num_cur_nodes_small) > 0 & level < depth) {
 						label_counts_right = - label_counts_left + label_counts_overall;
 						label_sum_right = rowSums (label_counts_right);
 						label_dist_right = label_counts_right / label_sum_right;
-						label_dist_right = replace (target = label_dist_right, pattern = "NaN", replacement = 1);
+						label_dist_right = replace (target = label_dist_right, pattern = NaN, replacement = 1);
 						if (imp == "entropy") {
 							label_dist_right = replace (target = label_dist_right, pattern = 0, replacement = 1);
 							log_label_dist_right = log (label_dist_right); # / log (2)

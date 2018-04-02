@@ -386,7 +386,7 @@ while (is_enough_gradient_descent == 0)
         if (acos_argument >= 0.0) {
             coeff_theta = acos_x;
         } else {
-            coeff_theta = 3.1415926535897932384626433832795 - acos_x;
+            coeff_theta = PI - acos_x;
         }
         
         root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);
@@ -484,7 +484,7 @@ for (swap_i in 1:num_swaps) {
     }
 }
 
-pi = 3.1415926535897932384626433832795;
+pi = PI;
 zero = matrix (0.0, rows = 1, cols = 1);
 
 isVar = colSums (SampleOrder [1 : num_frees, ]);

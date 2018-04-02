@@ -784,6 +784,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		DataIdentifier target = as.getTarget();
 		Expression source = as.getSource();
 		
+		// check if target is builtin constant
+		if (target != null && BuiltinConstant.contains(target.getName())) {
+			target.raiseValidateError(String.format(
+				"Cannot assign a value to the builtin constant %s.", target.getName()), false);
+		}
+		
 		if (source instanceof FunctionCallIdentifier) {
 			((FunctionCallIdentifier) source).validateExpression(
 				dmlProg, ids.getVariables(),currConstVars, conditional);
@@ -899,6 +905,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
 		ArrayList<DataIdentifier> targetList = mas.getTargetList();
 		Expression source = mas.getSource();
+
+		// check if target list contains builtin constant
+		targetList.forEach(target -> {
+			if (target != null && BuiltinConstant.contains(target.getName()))
+				target.raiseValidateError(String.format(
+					"Cannot assign a value to the builtin constant %s.", target.getName()), false);
+		});
 		
 		//MultiAssignmentStatments currently supports only External,
 		//User-defined, and Multi-return Builtin function expressions

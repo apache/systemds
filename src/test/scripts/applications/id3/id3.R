@@ -87,9 +87,9 @@ id3_learn = function(X, y, X_subset, attributes, minsplit)
 						hist_labels1 = as.matrix(hist_labels1_helper[,2])
 						num_samples1 = sum(Tj)
 						zero_entries_in_hist = (hist_labels1 == 0)
-						pi = hist_labels1/num_samples1
-						log_term = zero_entries_in_hist*1 + (1-zero_entries_in_hist)*pi
-						entropy_vector = -pi*log(log_term)
+						piv = hist_labels1/num_samples1
+						log_term = zero_entries_in_hist*1 + (1-zero_entries_in_hist)*piv
+						entropy_vector = -piv*log(log_term)
 						entropy = sum(entropy_vector)
 	
 						hxt_vector[j,1] = sum(Tj)/sum(X_subset)*entropy

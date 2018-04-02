@@ -247,7 +247,6 @@ for (swap_i in 1:num_swaps) {
     }
 }
 
-pi = PI;
 zero = matrix (0.0, rows = 1, cols = 1);
 
 isVar = colSums (SampleOrder [1 : num_frees, ]);

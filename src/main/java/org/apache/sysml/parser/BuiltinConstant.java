@@ -25,10 +25,10 @@ import org.apache.commons.lang3.EnumUtils;
  * These are the builtin constants
  */
 public enum BuiltinConstant {
-	PI(Math.PI),
-	INF(Double.POSITIVE_INFINITY),
-	NaN(Double.NaN);
-
+	Inf(Double.POSITIVE_INFINITY),
+	NaN(Double.NaN),
+	pi(Math.PI);
+	
 	private DoubleIdentifier _id;
 
 	private BuiltinConstant(double d) {

@@ -638,7 +638,7 @@ return (Matrix[double] beta, double saturated_log_l, int isNaN)
                     - log (- log (0.5)) * (is_zero_y_corr + is_one_y_corr)
                     + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
             } else if (link_type == 5)                  { # Binomial.cauchit
-                linear_terms = tan ((y_corr - 0.5) * PI)
+                linear_terms = tan ((y_corr - 0.5) * pi)
                     + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         }   }      
     }
@@ -741,9 +741,9 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 w   =  rowSums (Y) * vec1 / link_power ^ 2;
             }
         } else {
-            is_LT_infinite = cbind(linear_terms==INF, linear_terms==-INF);
-            finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0);
-            finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0);
+            is_LT_infinite = cbind(linear_terms==Inf, linear_terms==-Inf);
+            finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0);
+            finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0);
             if (link_type == 2)                           { # Binomial.logit
                 Y_prob = cbind(exp(finite_linear_terms), ones_r);
                 Y_prob = Y_prob / rowSums (Y_prob);
@@ -771,11 +771,11 @@ glm_dist = function (Matrix[double] linear_terms, Matrix[double] Y,
                 g_Y =  (rowSums (Y) * the_exp_exp - Y [, 2]) / the_exp_ratio;
                 w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio;
             } else if (link_type == 5)                  { # Binomial.cauchit
-                Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / PI;
+                Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / pi;
                 Y_prob = Y_prob * (1.0 - rowSums (is_LT_infinite)) + is_LT_infinite;
                 y_residual = Y [, 1] * Y_prob [, 2] - Y [, 2] * Y_prob [, 1];
                 var_function = rowSums (Y) * Y_prob [, 1] * Y_prob [, 2];
-                link_gradient_normalized = (1 + linear_terms ^ 2) * PI;
+                link_gradient_normalized = (1 + linear_terms ^ 2) * pi;
                 g_Y =  rowSums (Y) * y_residual / (var_function * link_gradient_normalized);
                 w   = (rowSums (Y) ^ 2) / (var_function * link_gradient_normalized ^ 2);
             }   
@@ -800,8 +800,8 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
         is_natural_parameter_log_zero = zeros_r;
         if          (var_power == 1.0 & link_power == 0)  { # Poisson.log
             b_cumulant = exp (linear_terms);
-            is_natural_parameter_log_zero = (linear_terms == -INF);
-            natural_parameters = replace (target = linear_terms, pattern = -INF, replacement = 0);
+            is_natural_parameter_log_zero = (linear_terms == -Inf);
+            natural_parameters = replace (target = linear_terms, pattern = -Inf, replacement = 0);
         } else if (var_power == 1.0 & link_power == 1.0)  { # Poisson.id
             if (sum (linear_terms < 0) == 0)  {
                 b_cumulant = linear_terms;
@@ -878,14 +878,14 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
             }
         }
         if (sum (is_natural_parameter_log_zero * abs (Y)) > 0) {
-            log_l = -INF;
+            log_l = -Inf;
             isNaN = 1;
         }
         if (isNaN == 0)
         {
             log_l = sum (Y * natural_parameters - b_cumulant);
             if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)) {
-                log_l = -INF;
+                log_l = -Inf;
                 isNaN = 1;
     }   }   }
     
@@ -901,12 +901,12 @@ glm_log_likelihood_part = function (Matrix[double] linear_terms, Matrix[double] 
                     isNaN = 1;
                 }
             } else {
-                log_l = -INF;
+                log_l = -Inf;
                 isNaN = 1;
     }   }   }
     
     if (isNaN == 1) {
-        log_l = - INF; 
+        log_l = - Inf; 
     }
 }
 
@@ -938,9 +938,9 @@ binomial_probability_two_column =
             isNaN = 1;
         }
     } else {              # Binomial.non_power
-        is_LT_infinite = cbind(linear_terms==INF, linear_terms==-INF);
-        finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0);
-        finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0);
+        is_LT_infinite = cbind(linear_terms==Inf, linear_terms==-Inf);
+        finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0);
+        finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0);
         if (link_type == 2)             { # Binomial.logit
             Y_prob = cbind(exp(finite_linear_terms), ones_r);
             Y_prob = Y_prob / rowSums (Y_prob);
@@ -961,7 +961,7 @@ binomial_probability_two_column =
             Y_prob [, 1] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2);
             Y_prob [, 2] = the_exp_exp;
         } else if (link_type == 5)    { # Binomial.cauchit
-            Y_prob = 0.5 + cbind(atan(finite_linear_terms), -atan(finite_linear_terms)) / PI;
+            Y_prob = 0.5 + cbind(atan(finite_linear_terms), -atan(finite_linear_terms)) / pi;
         } else {
             isNaN = 1;
         }
@@ -1109,7 +1109,7 @@ return (double mantissa, int eee)
 {
     mantissa = 1.0;
     eee = 0;
-    positive_infinity = INF;
+    positive_infinity = Inf;
     x = abs (x_to_truncate);
     if (x != x / 2.0) {
         log_ten = log (10.0);

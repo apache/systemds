@@ -559,7 +559,7 @@ return(
     }
     d_max_err_value = ( max( in_m_data_target ) - min( in_m_data_target ) ) * 100;
     b_continue_main_loop = TRUE;    #level 1 while loop flag
-    d_min_LOOCV = INF;
+    d_min_LOOCV = Inf;
     while( b_continue_main_loop ){
         m_feature_selected_flag = m_main_selected_flag;
         m_this_model_selected_flag = TRUE;

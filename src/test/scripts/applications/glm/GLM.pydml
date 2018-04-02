@@ -729,7 +729,7 @@ def glm_initialize(X: matrix[float], Y: matrix[float], dist_type: int, var_power
                                 linear_terms = log (- log (1.0 - y_corr)) - log (- log (0.5)) * (is_zero_y_corr + is_one_y_corr) + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr)
                             else:
                                 if (link_type == 5): # Binomial.cauchit
-                                    linear_terms = tan ((y_corr - 0.5) * PI) + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr)
+                                    linear_terms = tan ((y_corr - 0.5) * pi) + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr)
                                 
                             
                         
@@ -852,11 +852,11 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
                 w   =  rowSums (Y) * vec1 / link_power ** 2
             
         else:
-            is_LT_pos_infinite = (linear_terms == INF)
-            is_LT_neg_infinite = (linear_terms == -INF)
+            is_LT_pos_infinite = (linear_terms == Inf)
+            is_LT_neg_infinite = (linear_terms == -Inf)
             is_LT_infinite = dot(is_LT_pos_infinite, one_zero) + dot(is_LT_neg_infinite, zero_one)
-            finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0)
-            finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0)
+            finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0)
+            finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0)
             if (link_type == 2): # Binomial.logit
                 Y_prob = dot(exp (finite_linear_terms), one_zero) + dot(ones_r, zero_one)
                 Y_prob = Y_prob / (dot(rowSums (Y_prob), ones_2))
@@ -887,11 +887,11 @@ def glm_dist(linear_terms: matrix[float], Y: matrix[float], dist_type: int, var_
                         w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio
                     else:
                         if (link_type == 5): # Binomial.cauchit
-                            Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / PI
+                            Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / pi
                             Y_prob = Y_prob * (dot((1.0 - rowSums (is_LT_infinite)), ones_2)) + is_LT_infinite
                             y_residual = Y [, 0] * Y_prob [, 1] - Y [, 1] * Y_prob [, 0]
                             var_function = rowSums (Y) * Y_prob [, 0] * Y_prob [, 1]
-                            link_gradient_normalized = (1 + linear_terms ** 2) * PI
+                            link_gradient_normalized = (1 + linear_terms ** 2) * pi
                             g_Y =  rowSums (Y) * y_residual / (var_function * link_gradient_normalized)
                             w   = (rowSums (Y) ** 2) / (var_function * link_gradient_normalized ** 2)
                         
@@ -915,8 +915,8 @@ def glm_log_likelihood_part(linear_terms: matrix[float], Y: matrix[float],
         is_natural_parameter_log_zero = zeros_r
         if (var_power == 1.0 & link_power == 0.0): # Poisson.log
             b_cumulant = exp (linear_terms)
-            is_natural_parameter_log_zero = (linear_terms == -INF)
-            natural_parameters = replace (target = linear_terms, pattern = -INF, replacement = 0)
+            is_natural_parameter_log_zero = (linear_terms == -Inf)
+            natural_parameters = replace (target = linear_terms, pattern = -Inf, replacement = 0)
         else:
             if (var_power == 1.0 & link_power == 1.0): # Poisson.id
                 if (sum (linear_terms < 0.0) == 0):
@@ -1040,12 +1040,12 @@ def glm_log_likelihood_part(linear_terms: matrix[float], Y: matrix[float],
             
         
         if (sum (is_natural_parameter_log_zero * abs (Y)) > 0.0):
-            log_l = -INF
+            log_l = -Inf
             isNaN = 1
         if (isNaN == 0):
             log_l = sum (Y * natural_parameters - b_cumulant)
             if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)):
-                log_l = -INF
+                log_l = -Inf
                 isNaN = 1
     # end if (dist_type == 1 & link_type == 1): # POWER DISTRIBUTION
     
@@ -1059,11 +1059,11 @@ def glm_log_likelihood_part(linear_terms: matrix[float], Y: matrix[float],
                 if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)):
                     isNaN = 1
             else:
-                log_l = -INF
+                log_l = -Inf
                 isNaN = 1
     
     if (isNaN == 1):
-        log_l = - INF
+        log_l = - Inf
 
 
 def binomial_probability_two_column(linear_terms: matrix[float], link_type: int, link_power: float) -> (Y_prob: matrix[float], isNaN: int):
@@ -1100,11 +1100,11 @@ def binomial_probability_two_column(linear_terms: matrix[float], link_type: int,
                 else:
                     isNaN = 1
     else: # Binomial.non_power
-        is_LT_pos_infinite = (linear_terms == INF)
-        is_LT_neg_infinite = (linear_terms == -INF)
+        is_LT_pos_infinite = (linear_terms == Inf)
+        is_LT_neg_infinite = (linear_terms == -Inf)
         is_LT_infinite = dot(is_LT_pos_infinite, one_zero) + dot(is_LT_neg_infinite, zero_one)
-        finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0)
-        finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0)
+        finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0)
+        finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0)
         if (link_type == 2): # Binomial.logit
             Y_prob = dot(exp (finite_linear_terms), one_zero) + dot(ones_r, zero_one)
             Y_prob = Y_prob / (dot(rowSums (Y_prob), ones_2))
@@ -1128,7 +1128,7 @@ def binomial_probability_two_column(linear_terms: matrix[float], link_type: int,
                     Y_prob [, 1] = the_exp_exp
                 else:
                     if (link_type == 5): # Binomial.cauchit
-                        Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / PI
+                        Y_prob = 0.5 + (dot(atan (finite_linear_terms), p_one_m_one)) / pi
                     else:
                         isNaN = 1
         Y_prob = Y_prob * (dot((1.0 - rowSums (is_LT_infinite)), ones_2)) + is_LT_infinite
@@ -1254,7 +1254,7 @@ def straightenX(X: matrix[float], eps: float, max_iter_CG: int) -> (w: matrix[fl
 def round_to_print(x_to_truncate: float) -> (mantissa: float, eee: int):
     mantissa = 1.0
     eee = 0
-    positive_infinity = INF
+    positive_infinity = Inf
     x = abs (x_to_truncate)
     if (x != x / 2.0):
         log_ten = log (10.0)

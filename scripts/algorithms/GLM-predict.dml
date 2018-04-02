@@ -391,8 +391,8 @@ glm_means_and_vars =
             y_prob [, 1] = (1 - is_too_small) * (1.0 - y_prob [, 2]) + is_too_small * elt * (1.0 - elt / 2);
         } else if (link_type == 5)                      { # Binomial.cauchit
             atan_linear_terms = atan (linear_terms);
-            y_prob [, 1] = 0.5 + atan_linear_terms / PI;
-            y_prob [, 2] = 0.5 - atan_linear_terms / PI;
+            y_prob [, 1] = 0.5 + atan_linear_terms / pi;
+            y_prob [, 2] = 0.5 - atan_linear_terms / pi;
         }
         means = y_prob;
         ones_ctg = matrix (1, rows = 2, cols = 1);
@@ -417,8 +417,8 @@ glm_partial_loglikelihood_for_power_dist_and_link =   # Assumes: dist_type == 1 
     num_records = nrow (Y);
     if (var_power == 1.0) { # Poisson
         if (link_power == 0)  { # Poisson.log
-            is_natural_parameter_log_zero = (linear_terms == -INF);
-            natural_parameters = replace (target = linear_terms, pattern = -INF, replacement = 0);
+            is_natural_parameter_log_zero = (linear_terms == -Inf);
+            natural_parameters = replace (target = linear_terms, pattern = -Inf, replacement = 0);
             b_cumulant = exp (linear_terms);
         } else {                  # Poisson.power_nonlog
             is_natural_parameter_log_zero = (linear_terms == 0);

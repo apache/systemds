@@ -333,7 +333,7 @@ public abstract class CommonSyntacticValidator {
 		if (dataInfo.expr instanceof DataIdentifier) {
 			DataIdentifier id = ((DataIdentifier) dataInfo.expr);
 			if (BuiltinConstant.contains(id.getName())) { 
-				dataInfo.expr = BuiltinConstant.valueOf(id.getName()).get();
+				dataInfo.expr = new DoubleIdentifier(BuiltinConstant.valueOf(id.getName()).get(), dataInfo.expr);
 			}
 		}
 		me.expr = dataInfo.expr;

@@ -21,18 +21,18 @@
 
 # a func using builtin constant PI
 f1 = function (double r) return (double res) {
-  res = PI * r * r
+  res = pi * r * r
 }
 
 # use builtin constant PI in main func
-res = PI * 1000
+res = pi * 1000
 print(res)
 
 # use builtin constant NaN
 print(NaN + 1)
 
 # use builtin constant INF
-if (1 / 0 == INF) {
+if (1 / 0 == Inf) {
   print("1 / 0 is an infinity.")
 }
 

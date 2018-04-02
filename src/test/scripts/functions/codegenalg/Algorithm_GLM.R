@@ -151,7 +151,7 @@ glm_initialize <- function (X, Y, dist_type, var_power, link_type, link_power, i
                     - log (- log (0.5)) * (is_zero_y_corr + is_one_y_corr)
                     + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
             } else { if (link_type == 5)                  { # Binomial.cauchit
-                linear_terms = tan ((y_corr - 0.5) * PI)
+                linear_terms = tan ((y_corr - 0.5) * pi)
                     + is_one_y_corr / (1.0 - is_one_y_corr) - is_zero_y_corr / (1.0 - is_zero_y_corr);
         }}  }}}}}
     }
@@ -259,11 +259,11 @@ glm_dist <- function (linear_terms, Y,
                 w   =  rowSums (Y) * vec1 / link_power ^ 2;
             }
         } else {
-            is_LT_pos_infinite = (linear_terms ==  INF);
-            is_LT_neg_infinite = (linear_terms == -INF);
+            is_LT_pos_infinite = (linear_terms ==  Inf);
+            is_LT_neg_infinite = (linear_terms == -Inf);
             is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
-            finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0);
-            finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0);
+            finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0);
+            finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0);
             if (link_type == 2)                           { # Binomial.logit
                 Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
                 Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
@@ -291,11 +291,11 @@ glm_dist <- function (linear_terms, Y,
                 g_Y =  (rowSums (Y) * the_exp_exp - Y [, 2]) / the_exp_ratio;
                 w   =  the_exp_exp * the_exp * rowSums (Y) / the_exp_ratio;
             } else { if (link_type == 5)                  { # Binomial.cauchit
-                Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / PI;
+                Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / pi;
                 Y_prob = Y_prob * ((1.0 - rowSums (is_LT_infinite)) %*% ones_2) + is_LT_infinite;
                 y_residual = Y [, 1] * Y_prob [, 2] - Y [, 2] * Y_prob [, 1];
                 var_function = rowSums (Y) * Y_prob [, 1] * Y_prob [, 2];
-                link_gradient_normalized = (1 + linear_terms ^ 2) * PI;
+                link_gradient_normalized = (1 + linear_terms ^ 2) * pi;
                 g_Y =  rowSums (Y) * y_residual / (var_function * link_gradient_normalized);
                 w   = (rowSums (Y) ^ 2) / (var_function * link_gradient_normalized ^ 2);
             }}}}   
@@ -321,8 +321,8 @@ glm_log_likelihood_part <- function (linear_terms, Y,
         is_natural_parameter_log_zero = zeros_r;
         if          (var_power == 1.0 & link_power == 0.0)  { # Poisson.log
             b_cumulant = exp (linear_terms);
-            is_natural_parameter_log_zero = (linear_terms == (-INF));
-            natural_parameters = replace (target = linear_terms, pattern = -INF, replacement = 0);
+            is_natural_parameter_log_zero = (linear_terms == (-Inf));
+            natural_parameters = replace (target = linear_terms, pattern = -Inf, replacement = 0);
         } else { if (var_power == 1.0 & link_power == 1.0)  { # Poisson.id
             if (sum ((linear_terms < 0.0)) == 0)  {
                 b_cumulant = linear_terms;
@@ -398,14 +398,14 @@ glm_log_likelihood_part <- function (linear_terms, Y,
             }}}}
         }}}}} }}}}}
         if (sum (is_natural_parameter_log_zero * abs (Y)) > 0.0) {
-            log_l = -INF;
+            log_l = -Inf;
             isNaN = 1;
         }
         if (isNaN == 0)
         {
             log_l = sum (Y * natural_parameters - b_cumulant);
             if (log_l != log_l | (log_l == log_l + 1.0 & log_l == log_l * 2.0)) {
-                log_l = -INF;
+                log_l = -Inf;
                 isNaN = 1;
     }   }   }
     
@@ -424,12 +424,12 @@ glm_log_likelihood_part <- function (linear_terms, Y,
                     isNaN = 1;
                 }
             } else {
-                log_l = -INF;
+                log_l = -Inf;
                 isNaN = 1;
     }   }   }
     
     if (isNaN == 1) {
-        log_l = - INF; 
+        log_l = - Inf; 
     }
 }
 
@@ -469,11 +469,11 @@ binomial_probability_two_column <- function (linear_terms, link_type, link_power
             } else {isNaN = 1;}
         }}
     } else {              # Binomial.non_power
-        is_LT_pos_infinite = (linear_terms ==  INF);
-        is_LT_neg_infinite = (linear_terms == -INF);
+        is_LT_pos_infinite = (linear_terms ==  Inf);
+        is_LT_neg_infinite = (linear_terms == -Inf);
         is_LT_infinite = is_LT_pos_infinite %*% one_zero + is_LT_neg_infinite %*% zero_one;
-        finite_linear_terms = replace (target =        linear_terms, pattern =  INF, replacement = 0);
-        finite_linear_terms = replace (target = finite_linear_terms, pattern = -INF, replacement = 0);
+        finite_linear_terms = replace (target =        linear_terms, pattern =  Inf, replacement = 0);
+        finite_linear_terms = replace (target = finite_linear_terms, pattern = -Inf, replacement = 0);
         if (link_type == 2)             { # Binomial.logit
             Y_prob = exp (finite_linear_terms) %*% one_zero + ones_r %*% zero_one;
             Y_prob = Y_prob / (rowSums (Y_prob) %*% ones_2);
@@ -494,7 +494,7 @@ binomial_probability_two_column <- function (linear_terms, link_type, link_power
             Y_prob [, 1] = (1 - is_too_small) * (1 - the_exp_exp) + is_too_small * the_exp * (1 - the_exp / 2);
             Y_prob [, 2] = the_exp_exp;
         } else { if (link_type == 5)    { # Binomial.cauchit
-            Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / PI;
+            Y_prob = 0.5 + (atan (finite_linear_terms) %*% p_one_m_one) / pi;
         } else {
             isNaN = 1;
         }}}}
@@ -651,7 +651,7 @@ round_to_print <- function (x_to_truncate)
 {
     mantissa = 1.0;
     eee = 0;
-    positive_infinity = INF;
+    positive_infinity = Inf;
     x = abs (x_to_truncate);
     if (x != x / 2.0) {
         log_ten = log (10.0);

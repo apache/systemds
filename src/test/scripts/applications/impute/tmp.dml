@@ -73,7 +73,7 @@ coeff_d =  3.14 * (2 * (-3) * (-1.7));
         if (acos_argument >= 0.0) {
             coeff_theta = acos_x;
         } else {
-            coeff_theta = PI - acos_x;
+            coeff_theta = pi - acos_x;
         }
         
         root_1 = - coeff_aa / 3.0 - 2.0 * sqrt (coeff_Q) * cos (coeff_theta / 3.0);

@@ -164,7 +164,7 @@ logFactorial = function (Matrix[double] x) return (Matrix[double] logfact)
     y = y -  1.231739516140 / (x + 4);
     y = y +  0.001208580030 / (x + 5);
     y = y -  0.000005363820 / (x + 6);
-    logfact = log(y) + (x + 0.5) * log(x + 5.5) - (x + 5.5) + 0.91893853320467; # log(sqrt(2 * PI));
+    logfact = log(y) + (x + 0.5) * log(x + 5.5) - (x + 5.5) + 0.91893853320467; # log(sqrt(2 * pi));
 }
 
 

@@ -242,7 +242,6 @@ sum_of_observed_reports = matrix (0.0, rows = num_attrs, cols = num_terms);
 sum_of_observed_params = matrix (0.0, rows = num_params, cols = 1);
 
 num_of_observed_reports = 0;
-pi = PI;
 zero = matrix (0.0, rows = 1, cols = 1);
 
 # Starting MCMC iterations

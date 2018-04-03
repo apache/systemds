@@ -122,6 +122,8 @@ public class MRInstructionParser extends InstructionParser
 		String2MRInstructionType.put( "uarvar", MRType.AggregateUnary);
 		String2MRInstructionType.put( "uacvar", MRType.AggregateUnary);
 		String2MRInstructionType.put( "ua*"   , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uar*"  , MRType.AggregateUnary);
+		String2MRInstructionType.put( "uac*"  , MRType.AggregateUnary);
 		String2MRInstructionType.put( "uamax" , MRType.AggregateUnary);
 		String2MRInstructionType.put( "uamin" , MRType.AggregateUnary);
 		String2MRInstructionType.put( "uatrace" , MRType.AggregateUnary);

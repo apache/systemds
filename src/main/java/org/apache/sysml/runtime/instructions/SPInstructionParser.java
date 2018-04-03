@@ -115,6 +115,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "uar+"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uac+"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "ua*"     , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uar*"    , SPType.AggregateUnary);
+		String2SPInstructionType.put( "uac*"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uatrace" , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uaktrace", SPType.AggregateUnary);
 

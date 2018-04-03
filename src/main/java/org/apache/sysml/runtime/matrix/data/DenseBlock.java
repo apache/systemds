@@ -225,8 +225,9 @@ public abstract class DenseBlock implements Serializable
 	 * Set the given value for the entire dense block (fill).
 	 * 
 	 * @param v value
+	 * @return self
 	 */
-	public abstract void set(double v);
+	public abstract DenseBlock set(double v);
 	
 	/**
 	 * Set the given value for an entire index range of the 
@@ -237,8 +238,9 @@ public abstract class DenseBlock implements Serializable
 	 * @param cl column lower index 
 	 * @param cu column upper index (exclusive)
 	 * @param v value
+	 * @return self
 	 */
-	public abstract void set(int rl, int ru, int cl, int cu, double v);
+	public abstract DenseBlock set(int rl, int ru, int cl, int cu, double v);
 	
 	
 	/**
@@ -247,23 +249,26 @@ public abstract class DenseBlock implements Serializable
 	 * @param r row index
 	 * @param c column index
 	 * @param v value
+	 * @return self
 	 */
-	public abstract void set(int r, int c, double v);
+	public abstract DenseBlock set(int r, int c, double v);
 	
 	/**
 	 * Copy the given vector into the given row.
 	 * 
 	 * @param r row index
 	 * @param v value vector
+	 * @return self
 	 */
-	public abstract void set(int r, double[] v);
+	public abstract DenseBlock set(int r, double[] v);
 	
 	/**
 	 * Copy the given dense block.
 	 * 
 	 * @param db dense block
+	 * @return self
 	 */
-	public abstract void set(DenseBlock db);
+	public abstract DenseBlock set(DenseBlock db);
 	
 	/**
 	 * Copy the given dense block into the specified
@@ -274,18 +279,21 @@ public abstract class DenseBlock implements Serializable
 	 * @param cl column lower index 
 	 * @param cu column upper index (exclusive)
 	 * @param db dense block
+	 * @return self
 	 */
-	public abstract void set(int rl, int ru, int cl, int cu, DenseBlock db);
+	public abstract DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db);
 	
 	
 	/**
 	 * Copy the given kahan object sum and correction.
 	 * 
 	 * @param kbuff kahan object
+	 * @return self
 	 */
-	public void set(KahanObject kbuff) {
+	public DenseBlock set(KahanObject kbuff) {
 		set(0, 0, kbuff._sum);
 		set(0, 1, kbuff._correction);
+		return this;
 	}
 	
 	/**
@@ -294,10 +302,12 @@ public abstract class DenseBlock implements Serializable
 	 * 
 	 * @param r row index
 	 * @param kbuff kahan object
+	 * @return self
 	 */
-	public void set(int r, KahanObject kbuff) {
+	public DenseBlock set(int r, KahanObject kbuff) {
 		set(r, 0, kbuff._sum);
 		set(r, 1, kbuff._correction);
+		return this;
 	}
 	
 	/**

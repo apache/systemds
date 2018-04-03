@@ -589,7 +589,8 @@ public class LibMatrixAgg
 		}
 
 		//prod
-		if( vfn instanceof Multiply && ifn instanceof ReduceAll )
+		if( vfn instanceof Multiply 
+			&& (ifn instanceof ReduceAll || ifn instanceof ReduceCol || ifn instanceof ReduceRow))
 		{
 			return AggType.PROD;
 		}
@@ -1350,6 +1351,10 @@ public class LibMatrixAgg
 			case PROD: { //PROD
 				if( ixFn instanceof ReduceAll ) // PROD
 					d_uam(a, c, n, rl, ru );
+				else if( ixFn instanceof ReduceCol ) //ROWPROD
+					d_uarm(a, c, n, rl, ru);
+				else if( ixFn instanceof ReduceRow ) //COLPROD
+					d_uacm(a, c, n, rl, ru);
 				break;
 			}
 			
@@ -1452,6 +1457,10 @@ public class LibMatrixAgg
 			case PROD: { //PROD
 				if( ixFn instanceof ReduceAll ) // PROD
 					s_uam(a, c, n, rl, ru );
+				else if( ixFn instanceof ReduceCol ) // ROWPROD
+					s_uarm(a, c, n, rl, ru );
+				else if( ixFn instanceof ReduceRow ) // COLPROD
+					s_uacm(a, c, n, rl, ru );
 				break;
 			}
 
@@ -2084,7 +2093,36 @@ public class LibMatrixAgg
 		}
 		c.set(0, 0, tmp);
 	}
+
+	/**
+	 * ROWPROD, opcode: uar*, dense input.
+	 * 
+	 * @param a ?
+	 * @param c ?
+	 * @param n ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void d_uarm( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
+		double[] lc = c.valuesAt(0);
+		for( int i=rl; i<ru; i++ )
+			lc[i] = product(a.values(i), a.pos(i), n);
+	}
 	
+	/**
+	 * COLPROD, opcode: uac*, dense input.
+	 * 
+	 * @param a ?
+	 * @param c ?
+	 * @param n ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void d_uacm( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
+		double[] lc = c.set(1).valuesAt(0); //guaranteed single row
+		for( int i=rl; i<ru; i++ )
+			LibMatrixMult.vectMultiplyWrite(a.values(i), lc, lc, a.pos(i), 0, 0, n);
+	}
 	
 	/**
 	 * SUM, opcode: uak+, sparse input. 
@@ -2806,6 +2844,48 @@ public class LibMatrixAgg
 			if( !NAN_AWARENESS && ret==0 ) break;
 		}
 		c.set(0, 0, ret);
+	}
+	
+	/**
+	 * ROWPROD, opcode: uar*, sparse input.
+	 * 
+	 * @param a ?
+	 * @param c ?
+	 * @param n ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void s_uarm( SparseBlock a, DenseBlock c, int n, int rl, int ru ) {
+		double[] lc = c.valuesAt(0);
+		for( int i=rl; i<ru; i++ ) {
+			if( !a.isEmpty(i) ) {
+				int alen = a.size(i);
+				double tmp = product(a.values(i), 0, alen);
+				lc[i] = tmp * ((alen<n) ? 0 : 1);
+			}
+		}
+	}
+	
+	/**
+	 * COLPROD, opcode: uac*, sparse input.
+	 * 
+	 * @param a ?
+	 * @param c ?
+	 * @param n ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void s_uacm( SparseBlock a, DenseBlock c, int n, int rl, int ru ) {
+		double[] lc = c.set(1).valuesAt(0);
+		int[] cnt = new int[ n ]; 
+		for( int i=rl; i<ru; i++ ) {
+			if( a.isEmpty(i) ) continue;
+			countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
+			LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
+		}
+		for( int j=0; j<n; j++ )
+			if( cnt[j] < ru-rl )
+				lc[j] *= 0;
 	}
 	
 	

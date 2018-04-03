@@ -43,6 +43,7 @@ import org.junit.runners.Suite;
 	NRowTest.class,
 	ProdTest.class,
 	PushdownSumBinaryTest.class,
+	RowColProdsAggregateTest.class,
 	RowStdDevsTest.class,
 	RowSumsSqTest.class,
 	RowSumTest.class,

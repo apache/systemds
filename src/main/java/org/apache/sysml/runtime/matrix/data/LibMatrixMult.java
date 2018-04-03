@@ -3252,6 +3252,24 @@ public class LibMatrixMult
 			c[ ci+7 ] = a[ ai+7 ] * b[ bi+7 ];
 		}
 	}
+	
+	public static void vectMultiplyWrite( final double[] a, double[] b, double[] c, int[] bix, final int ai, final int bi, final int ci, final int len ) {
+		final int bn = len%8;
+		//rest, not aligned to 8-blocks
+		for( int j = bi; j < bi+bn; j++ )
+			c[ ci+bix[j] ] = a[ ai+bix[j] ] * b[ j ];
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int j = bi+bn; j < bi+len; j+=8 ) {
+			c[ ci+bix[j+0] ] = a[ ai+bix[j+0] ] * b[ j+0 ];
+			c[ ci+bix[j+1] ] = a[ ai+bix[j+1] ] * b[ j+1 ];
+			c[ ci+bix[j+2] ] = a[ ai+bix[j+2] ] * b[ j+2 ];
+			c[ ci+bix[j+3] ] = a[ ai+bix[j+3] ] * b[ j+3 ];
+			c[ ci+bix[j+4] ] = a[ ai+bix[j+4] ] * b[ j+4 ];
+			c[ ci+bix[j+5] ] = a[ ai+bix[j+5] ] * b[ j+5 ];
+			c[ ci+bix[j+6] ] = a[ ai+bix[j+6] ] * b[ j+6 ];
+			c[ ci+bix[j+7] ] = a[ ai+bix[j+7] ] * b[ j+7 ];
+		}
+	}
 
 	private static void vectMultiply( double[] a, double[] c, int ai, int ci, final int len )
 	{

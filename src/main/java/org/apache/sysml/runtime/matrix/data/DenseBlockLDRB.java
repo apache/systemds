@@ -200,13 +200,14 @@ public class DenseBlockLDRB extends DenseBlock
 	}
 
 	@Override
-	public void set(double v) {
+	public DenseBlock set(double v) {
 		for(int i=0; i<numBlocks(); i++)
 			Arrays.fill(data[i], v);
+		return this;
 	}
 	
 	@Override
-	public void set(int rl, int ru, int cl, int cu, double v) {
+	public DenseBlock set(int rl, int ru, int cl, int cu, double v) {
 		boolean rowBlock = (cl == 0 && cu == clen);
 		final int bil = index(rl);
 		final int biu = index(ru-1);
@@ -219,30 +220,35 @@ public class DenseBlockLDRB extends DenseBlock
 				for(int i=lpos; i<lpos+len; i+=clen)
 					Arrays.fill(data[bi], i+cl, i+cu, v);
 		}
+		return this;
 	}
 
 	@Override
-	public void set(int r, int c, double v) {
+	public DenseBlock set(int r, int c, double v) {
 		data[index(r)][pos(r, c)] = v;
+		return this;
 	}
 
 	@Override
-	public void set(int r, double[] v) {
+	public DenseBlock set(int r, double[] v) {
 		System.arraycopy(v, 0, data[index(r)], pos(r), clen);
+		return this;
 	}
 	
 	@Override
-	public void set(DenseBlock db) {
+	public DenseBlock set(DenseBlock db) {
 		for(int bi=0; bi<numBlocks(); bi++)
 			System.arraycopy(db.valuesAt(bi), 0, data[bi], 0, size(bi));
+		return this;
 	}
 	
 	@Override
-	public void set(int rl, int ru, int cl, int cu, DenseBlock db) {
+	public DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db) {
 		for(int i=rl; i<ru; i++) {
 			System.arraycopy(db.values(i-rl),
 				db.pos(i-rl), values(i), pos(i, cl), cu-cl);
 		}
+		return this;
 	}
 
 	@Override

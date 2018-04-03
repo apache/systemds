@@ -260,14 +260,12 @@ public class InstructionUtils
 		if ( opcode.equalsIgnoreCase("uak+") ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
-		} 		
-		else if ( opcode.equalsIgnoreCase("uark+") ) {
-			// RowSums
+		}
+		else if ( opcode.equalsIgnoreCase("uark+") ) { // RowSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase("uack+") ) {
-			// ColSums
+		else if ( opcode.equalsIgnoreCase("uack+") ) { // ColSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
@@ -339,6 +337,14 @@ public class InstructionUtils
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
+		else if ( opcode.equalsIgnoreCase("uar*") ) {
+			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
+		} 
+		else if ( opcode.equalsIgnoreCase("uac*") ) {
+			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
+			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
+		}
 		else if ( opcode.equalsIgnoreCase("uamax") ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
@@ -808,7 +814,7 @@ public class InstructionUtils
 			return "avar";
 		else if ( opcode.equalsIgnoreCase("ua+") || opcode.equalsIgnoreCase("uar+") || opcode.equalsIgnoreCase("uac+") )
 			return "a+";
-		else if ( opcode.equalsIgnoreCase("ua*") )
+		else if ( opcode.equalsIgnoreCase("ua*") || opcode.equalsIgnoreCase("uar*") || opcode.equalsIgnoreCase("uac*") )
 			return "a*";
 		else if ( opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") ) 
 			return "aktrace";

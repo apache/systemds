@@ -370,9 +370,11 @@ public class PartialAggregate extends Lop
 			}
 
 			case Product: {
-				if( dir == DirectionTypes.RowCol )
-					return "ua*";
-				break;
+				switch( dir ) {
+					case RowCol: return "ua*";
+					case Row:    return "uar*";
+					case Col:    return "uac*";
+				}
 			}
 			
 			case Max: {

@@ -2351,7 +2351,12 @@ public class DMLTranslator
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
 					Direction.Col, expr);
 			break;
-
+		
+		case COLPROD:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.PROD,
+					Direction.Col, expr);
+			break;
+		
 		case COLSD:
 			// colStdDevs = sqrt(colVariances)
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
@@ -2392,6 +2397,11 @@ public class DMLTranslator
 
 		case ROWMEAN:
 			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
+					Direction.Row, expr);
+			break;
+
+		case ROWPROD:
+			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.PROD,
 					Direction.Row, expr);
 			break;
 

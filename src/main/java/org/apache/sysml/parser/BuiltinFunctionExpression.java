@@ -389,6 +389,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case COLMAX:
 		case COLMIN:
 		case COLMEAN:
+		case COLPROD:
 		case COLSD:
 		case COLVAR:
 			// colSums(X);
@@ -405,6 +406,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case ROWMIN:
 		case ROWINDEXMIN:
 		case ROWMEAN:
+		case ROWPROD:
 		case ROWSD:
 		case ROWVAR:
 			//rowSums(X);
@@ -1698,6 +1700,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.ROWVAR;
 		else if (functionName.equals("colVars"))
 			bifop = Expression.BuiltinFunctionOp.COLVAR;
+		else if (functionName.equals("rowProds"))
+			bifop = Expression.BuiltinFunctionOp.ROWPROD;
+		else if (functionName.equals("colProds"))
+			bifop = Expression.BuiltinFunctionOp.COLPROD;
 		else if (functionName.equals("cummax"))
 			 bifop = Expression.BuiltinFunctionOp.CUMMAX;
 		else if (functionName.equals("cummin"))

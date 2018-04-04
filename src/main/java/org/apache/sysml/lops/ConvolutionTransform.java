@@ -30,10 +30,10 @@ public class ConvolutionTransform extends Lop
 
 	
 	public enum OperationTypes {
-		MAX_POOLING, MAX_POOLING_BACKWARD, AVG_POOLING, AVG_POOLING_BACKWARD,
+		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
-		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
-		BIAS_ADD, DIRECT_CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS
+		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
+		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS
 	}
 	
 	private OperationTypes operation = null;
@@ -126,7 +126,7 @@ public class ConvolutionTransform extends Lop
 	private String getOpcode() {
 		switch(operation) {
 				
-		case MAX_POOLING:
+		case MAX_POOL:
 			return "maxpooling";
 			
 		case RELU_MAX_POOLING:
@@ -138,19 +138,19 @@ public class ConvolutionTransform extends Lop
 		case RELU_BACKWARD:
 			return "relu_backward";
 			
-		case MAX_POOLING_BACKWARD:
+		case MAX_POOL_BACKWARD:
 			return "maxpooling_backward";
 		
-		case AVG_POOLING:
+		case AVG_POOL:
 			return "avgpooling";
 			
-		case AVG_POOLING_BACKWARD:
+		case AVG_POOL_BACKWARD:
 			return "avgpooling_backward";
 		
-		case DIRECT_CONV2D:
+		case CONV2D:
 			return "conv2d";
 		
-		case DIRECT_CONV2D_BIAS_ADD:
+		case CONV2D_BIAS_ADD:
 			return "conv2d_bias_add";
 		
 		case BIAS_ADD:
@@ -159,10 +159,10 @@ public class ConvolutionTransform extends Lop
 		case BIAS_MULTIPLY:
 			return "bias_multiply";
 			
-		case DIRECT_CONV2D_BACKWARD_FILTER:
+		case CONV2D_BACKWARD_FILTER:
 			return "conv2d_backward_filter";
 			
-		case DIRECT_CONV2D_BACKWARD_DATA:
+		case CONV2D_BACKWARD_DATA:
 			return "conv2d_backward_data";
 			
 		case CHANNEL_SUMS:

@@ -90,7 +90,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 	public void checkArity() {
 		int sz = _input.size();
 		switch( op ) {
-		case TRANSPOSE:
+		case TRANS:
 		case DIAG:
 		case REV:
 			HopsException.check(sz == 1, this, "should have arity 1 for op %s but has arity %d", op, sz);
@@ -131,7 +131,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		if(!DMLScript.USE_ACCELERATOR)
 			return false;
 		switch( op ) {
-			case TRANSPOSE: {
+			case TRANS: {
 				Lop lin;
 				try {
 					lin = getInput().get(0).constructLops();
@@ -166,7 +166,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		switch( op )
 		{
-			case TRANSPOSE:
+			case TRANS:
 			{
 				Lop lin = getInput().get(0).constructLops();
 				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
@@ -437,7 +437,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 			
 		switch(op) 
 		{
-			case TRANSPOSE:
+			case TRANS:
 			{
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input
@@ -556,7 +556,7 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		
 		switch(op) 
 		{
-			case TRANSPOSE:
+			case TRANS:
 			{
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input

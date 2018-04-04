@@ -1305,7 +1305,7 @@ public class OptimizerRuleBased extends Optimizer
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
 							 && !((UnaryOp)h).isCumulativeUnaryOperation() )
 						&& !( h instanceof ReorgOp //only reorgop-transpose
-							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANSPOSE ))
+							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANS ))
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop

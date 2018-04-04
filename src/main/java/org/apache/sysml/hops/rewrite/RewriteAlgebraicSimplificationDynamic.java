@@ -377,7 +377,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			apply |= (rop.getOp()==ReOrgOp.RESHAPE && HopRewriteUtils.isEqualSize(hi, input));
 			
 			//1x1 dimensions of transpose/reshape -> no need for reorg 	
-			apply |= ((rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE) 
+			apply |= ((rop.getOp()==ReOrgOp.TRANS || rop.getOp()==ReOrgOp.RESHAPE) 
 					&& rop.getDim1()==1 && rop.getDim2()==1);
 			
 			if( apply ) {
@@ -807,7 +807,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			{
 				//reorg-operation-specific rewrite  
 				Hop hnew = null;
-				if( rhi.getOp() == ReOrgOp.TRANSPOSE )
+				if( rhi.getOp() == ReOrgOp.TRANS )
 					hnew = HopRewriteUtils.createDataGenOp(input, true, input, true, 0);
 				else if( rhi.getOp() == ReOrgOp.REV )
 					hnew = HopRewriteUtils.createDataGenOp(input, 0);

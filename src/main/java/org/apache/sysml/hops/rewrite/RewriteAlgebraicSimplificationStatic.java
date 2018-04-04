@@ -906,7 +906,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		   && hi.getInput().get(0) instanceof ReorgOp  ) //reorg operation
 		{
 			ReorgOp rop = (ReorgOp)hi.getInput().get(0);
-			if(   (rop.getOp()==ReOrgOp.TRANSPOSE || rop.getOp()==ReOrgOp.RESHAPE
+			if(   (rop.getOp()==ReOrgOp.TRANS || rop.getOp()==ReOrgOp.RESHAPE
 					|| rop.getOp() == ReOrgOp.REV )         //valid reorg
 				&& rop.getParent().size()==1 )              //uagg only reorg consumer
 			{
@@ -1043,7 +1043,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			BinaryOp binary = (BinaryOp) hi.getInput().get(0);
 			
 			if( HopRewriteUtils.containsTransposeOperation(X.getParent()) 
-				&& !HopRewriteUtils.isValidOp(binary.getOp(), new OpOp2[]{OpOp2.CENTRALMOMENT, OpOp2.QUANTILE})) 
+				&& !HopRewriteUtils.isValidOp(binary.getOp(), new OpOp2[]{OpOp2.MOMENT, OpOp2.QUANTILE})) 
 			{
 				//clear existing wiring
 				HopRewriteUtils.removeChildReferenceByPos(parent, hi, pos);	
@@ -1591,7 +1591,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	 */
 	private static Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
 	{
-		ReOrgOp[] lookup = new ReOrgOp[]{ReOrgOp.TRANSPOSE, ReOrgOp.REV};
+		ReOrgOp[] lookup = new ReOrgOp[]{ReOrgOp.TRANS, ReOrgOp.REV};
 		
 		if( hi instanceof ReorgOp && HopRewriteUtils.isValidOp(((ReorgOp)hi).getOp(), lookup)  ) //first reorg
 		{

@@ -1064,7 +1064,7 @@ public abstract class Hop implements ParseInfo
 	public enum OpOp2 {
 		PLUS, MINUS, MULT, DIV, MODULUS, INTDIV, LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL, NOTEQUAL, 
 		MIN, MAX, AND, OR, XOR, LOG, POW, PRINT, CONCAT, QUANTILE, INTERQUANTILE, IQM,
-		CENTRALMOMENT, COVARIANCE, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
+		MOMENT, COV, CBIND, RBIND, SOLVE, MEDIAN, INVALID,
 		//fused ML-specific operators for performance
 		MINUS_NZ, //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
@@ -1074,7 +1074,7 @@ public abstract class Hop implements ParseInfo
 
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, CENTRALMOMENT, COVARIANCE, PLUS_MULT, MINUS_MULT, IFELSE
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE
 	}
 	
 	// Operations that require 4 operands
@@ -1096,7 +1096,7 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public enum ReOrgOp {
-		TRANSPOSE, DIAG, RESHAPE, SORT, REV
+		TRANS, DIAG, RESHAPE, SORT, REV
 		//Note: Diag types are invalid because for unknown sizes this would 
 		//create incorrect plans (now we try to infer it for memory estimates
 		//and rewrites but the final choice is made during runtime)
@@ -1104,8 +1104,8 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public enum ConvOp {
-		MAX_POOLING, MAX_POOLING_BACKWARD, AVG_POOLING, AVG_POOLING_BACKWARD,
-		DIRECT_CONV2D, DIRECT_CONV2D_BACKWARD_FILTER, DIRECT_CONV2D_BACKWARD_DATA,
+		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
+		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, BIAS_MULTIPLY
 	}
 	
@@ -1159,7 +1159,7 @@ public abstract class Hop implements ParseInfo
 	protected static final HashMap<ReOrgOp, org.apache.sysml.lops.Transform.OperationTypes> HopsTransf2Lops;
 	static {
 		HopsTransf2Lops = new HashMap<>();
-		HopsTransf2Lops.put(ReOrgOp.TRANSPOSE, org.apache.sysml.lops.Transform.OperationTypes.Transpose);
+		HopsTransf2Lops.put(ReOrgOp.TRANS, org.apache.sysml.lops.Transform.OperationTypes.Transpose);
 		HopsTransf2Lops.put(ReOrgOp.REV, org.apache.sysml.lops.Transform.OperationTypes.Rev);
 		HopsTransf2Lops.put(ReOrgOp.DIAG, org.apache.sysml.lops.Transform.OperationTypes.Diag);
 		HopsTransf2Lops.put(ReOrgOp.RESHAPE, org.apache.sysml.lops.Transform.OperationTypes.Reshape);
@@ -1170,15 +1170,15 @@ public abstract class Hop implements ParseInfo
 	protected static final HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes> HopsConv2Lops;
 	static {
 		HopsConv2Lops = new HashMap<>();
-		HopsConv2Lops.put(ConvOp.MAX_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING);
-		HopsConv2Lops.put(ConvOp.MAX_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOLING_BACKWARD);
-		HopsConv2Lops.put(ConvOp.AVG_POOLING, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING);
-		HopsConv2Lops.put(ConvOp.AVG_POOLING_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOLING_BACKWARD);
-		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D);
+		HopsConv2Lops.put(ConvOp.MAX_POOL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOL);
+		HopsConv2Lops.put(ConvOp.MAX_POOL_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOL_BACKWARD);
+		HopsConv2Lops.put(ConvOp.AVG_POOL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOL);
+		HopsConv2Lops.put(ConvOp.AVG_POOL_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOL_BACKWARD);
+		HopsConv2Lops.put(ConvOp.CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D);
 		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
 		HopsConv2Lops.put(ConvOp.BIAS_MULTIPLY, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_MULTIPLY);
-		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_FILTER);
-		HopsConv2Lops.put(ConvOp.DIRECT_CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.DIRECT_CONV2D_BACKWARD_DATA);
+		HopsConv2Lops.put(ConvOp.CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
+		HopsConv2Lops.put(ConvOp.CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D_BACKWARD_DATA);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;
@@ -1458,8 +1458,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.INTERQUANTILE, "interquantile");
 		HopsOpOp2String.put(OpOp2.IQM, "IQM");
 		HopsOpOp2String.put(OpOp2.MEDIAN, "median");
-		HopsOpOp2String.put(OpOp2.CENTRALMOMENT, "cm");
-		HopsOpOp2String.put(OpOp2.COVARIANCE, "cov");
+		HopsOpOp2String.put(OpOp2.MOMENT, "cm");
+		HopsOpOp2String.put(OpOp2.COV, "cov");
 		HopsOpOp2String.put(OpOp2.CBIND, "cbind");
 		HopsOpOp2String.put(OpOp2.RBIND, "rbind");
 		HopsOpOp2String.put(OpOp2.SOLVE, "solve");
@@ -1481,8 +1481,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
 		HopsOpOp3String.put(OpOp3.INTERQUANTILE, "interquantile");
 		HopsOpOp3String.put(OpOp3.CTABLE, "ctable");
-		HopsOpOp3String.put(OpOp3.CENTRALMOMENT, "cm");
-		HopsOpOp3String.put(OpOp3.COVARIANCE, "cov");
+		HopsOpOp3String.put(OpOp3.MOMENT, "cm");
+		HopsOpOp3String.put(OpOp3.COV, "cov");
 		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
 		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
 		HopsOpOp3String.put(OpOp3.IFELSE, "ifelse");
@@ -1524,7 +1524,7 @@ public abstract class Hop implements ParseInfo
 	protected static final HashMap<Hop.ReOrgOp, String> HopsTransf2String;
 	static {
 		HopsTransf2String = new HashMap<>();
-		HopsTransf2String.put(ReOrgOp.TRANSPOSE, "t");
+		HopsTransf2String.put(ReOrgOp.TRANS, "t");
 		HopsTransf2String.put(ReOrgOp.DIAG, "diag");
 		HopsTransf2String.put(ReOrgOp.RESHAPE, "rshape");
 		HopsTransf2String.put(ReOrgOp.SORT, "sort");

@@ -696,7 +696,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 						current.getInput().get(1), 2) ? 1 : 16); break;
 				case MINUS_NZ:
 				case MINUS1_MULT: costs = 2; break;
-				case CENTRALMOMENT:
+				case MOMENT:
 					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
 						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
 					switch( type ) {
@@ -708,7 +708,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 						case 5: costs = 16; break; //variance
 					}
 					break;
-				case COVARIANCE: costs = 23; break;
+				case COV: costs = 23; break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((BinaryOp)current).getOp());
@@ -719,7 +719,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case PLUS_MULT: 
 				case MINUS_MULT: costs = 2; break;
 				case CTABLE:     costs = 3; break;
-				case CENTRALMOMENT:
+				case MOMENT:
 					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
 						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
 					switch( type ) {
@@ -731,7 +731,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 						case 5: costs = 17; break; //variance
 					}
 					break;
-				case COVARIANCE: costs = 23; break;
+				case COV: costs = 23; break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((TernaryOp)current).getOp());

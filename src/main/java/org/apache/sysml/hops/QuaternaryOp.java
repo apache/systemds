@@ -363,7 +363,7 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		} 
 		else {
 			// replication of t(V) for shuffle to target block
-			Transform ltV = new Transform(V.constructLops(), HopsTransf2Lops.get(ReOrgOp.TRANSPOSE), getDataType(),
+			Transform ltV = new Transform(V.constructLops(), HopsTransf2Lops.get(ReOrgOp.TRANS), getDataType(),
 					getValueType(), ExecType.MR);
 			ltV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), V.getColsInBlock(), V.getRowsInBlock(), V.getNnz());
 			setLineNumbers(ltV);

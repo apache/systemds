@@ -139,8 +139,8 @@ public class BinaryOp extends Hop
 		switch(op) 
 		{
 			case IQM:
-			case CENTRALMOMENT:
-			case COVARIANCE:
+			case MOMENT:
+			case COV:
 			case QUANTILE:
 			case INTERQUANTILE:
 			case MEDIAN:
@@ -197,11 +197,11 @@ public class BinaryOp extends Hop
 				constructLopsIQM(et);
 				break;
 			}
-			case CENTRALMOMENT: {
+			case MOMENT: {
 				constructLopsCentralMoment(et);
 				break;
 			}	
-			case COVARIANCE: {
+			case COV: {
 				constructLopsCovariance(et);
 				break;
 			}

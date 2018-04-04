@@ -130,8 +130,8 @@ public class TernaryOp extends Hop
 		if(!DMLScript.USE_ACCELERATOR)
 			return false;
 		switch( _op ) {
-			case CENTRALMOMENT:
-			case COVARIANCE:
+			case MOMENT:
+			case COV:
 			case CTABLE:
 			case INTERQUANTILE:
 			case QUANTILE:
@@ -155,11 +155,11 @@ public class TernaryOp extends Hop
 		try 
 		{
 			switch( _op ) {
-				case CENTRALMOMENT:
+				case MOMENT:
 					constructLopsCentralMoment();
 					break;
 					
-				case COVARIANCE:
+				case COV:
 					constructLopsCovariance();
 					break;
 					
@@ -198,8 +198,8 @@ public class TernaryOp extends Hop
 	 */
 	private void constructLopsCentralMoment()
 	{	
-		if ( _op != OpOp3.CENTRALMOMENT )
-			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.CENTRALMOMENT );
+		if ( _op != OpOp3.MOMENT )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.MOMENT );
 		
 		ExecType et = optFindExecType();
 		
@@ -247,8 +247,8 @@ public class TernaryOp extends Hop
 	 * Method to construct LOPs when op = COVARIANCE.
 	 */
 	private void constructLopsCovariance() {
-		if ( _op != OpOp3.COVARIANCE )
-			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COVARIANCE );
+		if ( _op != OpOp3.COV )
+			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COV );
 		
 		ExecType et = optFindExecType();
 		

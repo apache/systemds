@@ -502,7 +502,7 @@ public class HopRewriteUtils
 	} 
 	
 	public static ReorgOp createTranspose(Hop input) {
-		return createReorg(input, ReOrgOp.TRANSPOSE);
+		return createReorg(input, ReOrgOp.TRANS);
 	}
 	
 	public static ReorgOp createReorg(Hop input, ReOrgOp rop) {
@@ -853,7 +853,7 @@ public class HopRewriteUtils
 	}
 	
 	public static boolean isTransposeOperation(Hop hop) {
-		return isReorg(hop, ReOrgOp.TRANSPOSE);
+		return isReorg(hop, ReOrgOp.TRANS);
 	}
 	
 	public static boolean isTransposeOperation(Hop hop, int maxParents) {

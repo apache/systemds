@@ -1321,13 +1321,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		}
 		else //MR
 		{
-			if( h1 instanceof ReorgOp && ((ReorgOp)h1).getOp()==ReOrgOp.TRANSPOSE )
-			{
+			if( HopRewriteUtils.isTransposeOperation(h1) ) {
 				long m = h1.getDim1();
 				long cd = h1.getDim2();
 				long n = h2.getDim2();
-				
-				
 				//note: output size constraint for mapmult already checked by optfindmmultmethod
 				if( m>0 && cd>0 && n>0 && (m*cd > (cd*n + m*n)) &&
 					2 * OptimizerUtils.estimateSizeExactSparsity(cd, n, 1.0) <  OptimizerUtils.getLocalMemBudget() &&

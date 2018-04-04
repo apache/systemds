@@ -48,7 +48,6 @@ import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpN;
-import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -718,7 +717,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			|| HopRewriteUtils.isNary(hop, OpOpN.CBIND)
 			|| (hop instanceof AggBinaryOp && (inRow || !hop.dimsKnown()
 				|| (hop.getDim1()!=1 && hop.getDim2()!=1)))
-			|| (HopRewriteUtils.isReorg(hop, ReOrgOp.TRANSPOSE) 
+			|| (HopRewriteUtils.isTransposeOperation(hop)
 				&& (hop.getDim1()!=1 && hop.getDim2()!=1))
 			|| (hop instanceof AggUnaryOp && inRow);
 	}
@@ -1075,7 +1074,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 						current.getInput().get(1), 2) ? 1 : 16); break;
 				case MINUS_NZ:
 				case MINUS1_MULT: costs = 2; break;
-				case CENTRALMOMENT:
+				case MOMENT:
 					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
 						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
 					switch( type ) {
@@ -1087,7 +1086,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 						case 5: costs = 16; break; //variance
 					}
 					break;
-				case COVARIANCE: costs = 23; break;
+				case COV: costs = 23; break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((BinaryOp)current).getOp());
@@ -1099,7 +1098,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				case PLUS_MULT: 
 				case MINUS_MULT: costs = 2; break;
 				case CTABLE:     costs = 3; break;
-				case CENTRALMOMENT:
+				case MOMENT:
 					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
 						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
 					switch( type ) {
@@ -1111,7 +1110,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 						case 5: costs = 17; break; //variance
 					}
 					break;
-				case COVARIANCE: costs = 23; break;
+				case COV: costs = 23; break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((TernaryOp)current).getOp());

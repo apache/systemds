@@ -2611,6 +2611,7 @@ public class DMLTranslator
 			currBuiltinOp = (expr2 == null) ? new UnaryOp(target.getName(), target.getDataType(), target.getValueType(), 
 				OpOp1.valueOf(source.getOpCode().name()), expr) : new BinaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
 		
 		case IFELSE:
 			currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 

@@ -920,6 +920,8 @@ public class BinaryOp extends Hop
 				return new long[]{ldim1, ldim2, lnnz};
 		}
 		else if ( op == OpOp2.SOLVE ) {
+			if (mc[0].getRows() != mc[0].getCols())
+				throw new RuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
 			// Output is a (likely to be dense) vector of size number of columns in the first input
 			if ( mc[0].getCols() >= 0 ) {
 				ret = new long[]{ mc[0].getCols(), 1, mc[0].getCols()};

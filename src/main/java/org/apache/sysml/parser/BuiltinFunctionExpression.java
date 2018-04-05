@@ -1096,7 +1096,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Second input to solve() must be a vector", conditional);
 			
 			if ( getFirstExpr().getOutput().dimsKnown() && getSecondExpr().getOutput().dimsKnown() && 
-					getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1() )
+					getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1() &&
+					getFirstExpr().getOutput().getDim1() != getFirstExpr().getOutput().getDim2())
 				raiseValidateError("Dimension mismatch in a call to solve()", conditional);
 			
 			output.setDataType(DataType.MATRIX);

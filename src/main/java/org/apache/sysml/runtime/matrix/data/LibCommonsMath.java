@@ -78,8 +78,11 @@ public class LibCommonsMath
 	}
 	
 	public static MatrixBlock matrixMatrixOperations(MatrixObject in1, MatrixObject in2, String opcode) {
-		if(opcode.equals("solve"))
+		if(opcode.equals("solve")) {
+			if (in1.getNumRows() != in1.getNumColumns())
+				throw new RuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
 			return computeSolve(in1, in2);
+		}
 		return null;
 	}
 	

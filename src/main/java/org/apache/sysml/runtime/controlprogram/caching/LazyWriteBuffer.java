@@ -226,21 +226,22 @@ public class LazyWriteBuffer
 	{
 		System.out.println("WRITE BUFFER STATUS ("+position+") --");
 		
-		//print buffer meta data
-		System.out.println("\tWB: Buffer Meta Data: " +
-				     "limit="+_limit+", " +
-				     "size[bytes]="+_size+", " +
-				     "size[elements]="+_mQueue.size()+"/"+_mQueue.size());
-		
-		//print current buffer entries
-		int count = _mQueue.size();
-		for( Entry<String, ByteBuffer> entry : _mQueue.entrySet() )
-		{
-			String fname = entry.getKey();
-			ByteBuffer bbuff = entry.getValue();
+		synchronized( _mQueue ) {
+			//print buffer meta data
+			System.out.println("\tWB: Buffer Meta Data: " +
+				"limit="+_limit+", " +
+				"size[bytes]="+_size+", " +
+				"size[elements]="+_mQueue.size()+"/"+_mQueue.size());
 			
-			System.out.println("\tWB: buffer element ("+count+"): "+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
-			count--;
+			//print current buffer entries
+			int count = _mQueue.size();
+			for( Entry<String, ByteBuffer> entry : _mQueue.entrySet() ) {
+				String fname = entry.getKey();
+				ByteBuffer bbuff = entry.getValue();
+				System.out.println("\tWB: buffer element ("+count+"): "
+					+fname+", "+bbuff.getSize()+", "+bbuff.isShallow());
+				count--;
+			}
 		}
 	}
 	

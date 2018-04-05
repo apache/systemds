@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map.Entry;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
@@ -166,12 +165,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			expectRetVars.add(di.getName());
 		
 		LocalVariableMap retVars = fn_ec.getVariables();
-		for( Entry<String,Data> var : retVars.entrySet() ) {
-			if( expectRetVars.contains(var.getKey()) )
+		for( String varName : new ArrayList<>(retVars.keySet()) ) {
+			if( expectRetVars.contains(varName) )
 				continue;
 			//cleanup unexpected return values to avoid leaks
-			if( var.getValue() instanceof CacheableData )
-				fn_ec.cleanupCacheableData((CacheableData<?>)var.getValue());
+			Data var = fn_ec.removeVariable(varName);
+			if( var instanceof CacheableData )
+				fn_ec.cleanupCacheableData((CacheableData<?>)var);
 		}
 		
 		// Unpin the pinned variables

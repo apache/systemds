@@ -406,7 +406,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		
 	@Override
 	protected boolean isBelowCachingThreshold() {
-		return super.isBelowCachingThreshold()
+		return LazyWriteBuffer.getCacheBlockSize(_data) <= CACHING_THRESHOLD
 			|| getUpdateType() == UpdateType.INPLACE_PINNED;
 	}
 	

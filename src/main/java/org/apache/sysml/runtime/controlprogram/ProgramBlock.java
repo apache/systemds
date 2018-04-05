@@ -310,6 +310,9 @@ public class ProgramBlock implements ParseInfo
 				mo.release();
 				moNew.release();
 				moNew.setUpdateType(UpdateType.INPLACE);
+				//cleanup old variable (e.g., remove from buffer pool)
+				if( ec.removeVariable(varname) != null )
+					ec.cleanupCacheableData(mo);
 				ec.setVariable(varname, moNew);
 			}
 		}

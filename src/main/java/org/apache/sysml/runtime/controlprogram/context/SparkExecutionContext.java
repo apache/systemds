@@ -1055,46 +1055,44 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	@Override
-	public void cleanupCacheableData( CacheableData<?> mo )
+	public void cleanupCacheableData(CacheableData<?> mo)
 	{
 		//NOTE: this method overwrites the default behavior of cleanupMatrixObject
 		//and hence is transparently used by rmvar instructions and other users. The
 		//core difference is the lineage-based cleanup of RDD and broadcast variables.
 
+		if( !mo.isCleanupEnabled() )
+			return;
+		
 		try
 		{
-			if ( mo.isCleanupEnabled() )
-			{
-				//compute ref count only if matrix cleanup actually necessary
-				if ( !getVariables().hasReferences(mo) )
-				{
-					//clean cached data
-					mo.clearData();
+			//compute ref count only if matrix cleanup actually necessary
+			if( !getVariables().hasReferences(mo) ) {
+				//clean cached data
+				mo.clearData();
 
-					//clean hdfs data if no pending rdd operations on it
-					if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {
-						if( mo.getRDDHandle()==null ) {
-							MapReduceTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
-						}
-						else { //deferred file removal
-							RDDObject rdd = mo.getRDDHandle();
-							rdd.setHDFSFilename(mo.getFileName());
-						}
+				//clean hdfs data if no pending rdd operations on it
+				if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {
+					if( mo.getRDDHandle()==null ) {
+						MapReduceTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
 					}
+					else { //deferred file removal
+						RDDObject rdd = mo.getRDDHandle();
+						rdd.setHDFSFilename(mo.getFileName());
+					}
+				}
 
-					//cleanup RDD and broadcast variables (recursive)
-					//note: requires that mo.clearData already removed back references
-					if( mo.getRDDHandle()!=null ) {
- 						rCleanupLineageObject(mo.getRDDHandle());
-					}
-					if( mo.getBroadcastHandle()!=null ) {
-						rCleanupLineageObject(mo.getBroadcastHandle());
-					}
+				//cleanup RDD and broadcast variables (recursive)
+				//note: requires that mo.clearData already removed back references
+				if( mo.getRDDHandle()!=null ) {
+					rCleanupLineageObject(mo.getRDDHandle());
+				}
+				if( mo.getBroadcastHandle()!=null ) {
+					rCleanupLineageObject(mo.getBroadcastHandle());
 				}
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 	}

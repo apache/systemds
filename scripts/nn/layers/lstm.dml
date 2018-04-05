@@ -108,7 +108,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     c_prev = c
     cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
     cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
-    cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
+    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
   }
 }
 

@@ -751,7 +751,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			timePhase4 = t4;
 			timePhase5 = t5;
 		}
-	} 
+	}
 
 	@Override
 	public double quickGetValue(int r, int c) {
@@ -768,23 +768,35 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		
 		//find row value 
 		return grp.get(r, c);
-	}	
+	}
 	
 	//////////////////////////////////////////
 	// Serialization / Deserialization
 
 	@Override
-	public long getExactSizeOnDisk() 
-	{
+	public long getExactSizeOnDisk() {
 		//header information
-		long ret = 12;
-		
+		long ret = 22;
 		for( ColGroup grp : _colGroups ) {
 			ret += 1; //type info
 			ret += grp.getExactSizeOnDisk();
 		}
-		
 		return ret;
+	}
+	
+	@Override
+	public boolean isShallowSerialize() {
+		return false;
+	}
+	
+	@Override
+	public boolean isShallowSerialize(boolean inclConvert) {
+		return false;
+	}
+	
+	@Override 
+	public void toShallowSerializeBlock() {
+		//do nothing
 	}
 	
 	@Override
@@ -980,7 +992,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			ret2 = (CompressedMatrixBlock) ret;
 			ret2.reset(m, n);
 		}
-			
+		
 		//shallow copy of lhs column groups
 		ret2.allocateColGroupList();
 		ret2._colGroups.addAll(_colGroups);

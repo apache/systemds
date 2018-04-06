@@ -25,13 +25,13 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
 
 public class FastBufferedDataInputStream extends FilterInputStream implements DataInput, MatrixBlockDataInput
 {
-	
 	protected byte[] _buff;
 	protected int _bufflen;
 	
@@ -41,9 +41,8 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	
 	public FastBufferedDataInputStream( InputStream in, int size ) {
 		super(in);
-		
 		if (size <= 0) 
-	    	throw new IllegalArgumentException("Buffer size <= 0");
+			throw new IllegalArgumentException("Buffer size <= 0");
 		_buff = new byte[ size ];
 		_bufflen = size;
 	}
@@ -52,26 +51,21 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	// DataInput Implementation
 	/////////////////////////////
 
-	
 	@Override
-	public void readFully(byte[] b) 
-		throws IOException 
-	{
+	public void readFully(byte[] b) throws IOException {
 		readFully(b, 0, b.length);
 	}
 
 	@Override
-	public void readFully(byte[] b, int off, int len)
-		throws IOException 
-	{
+	public void readFully(byte[] b, int off, int len) throws IOException {
 		if (len < 0)
-		    throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException();
 		int n = 0;
 		while (n < len) {
-		    int count = in.read(b, off + n, len - n);
-		    if (count < 0)
-			throw new EOFException();
-		    n += count;
+			int count = in.read(b, off + n, len - n);
+			if (count < 0)
+				throw new EOFException();
+			n += count;
 		}
 	}
 
@@ -81,16 +75,12 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	}
 
 	@Override
-	public boolean readBoolean() 
-		throws IOException 
-	{
-		return ( in.read() != 0 );
+	public boolean readBoolean() throws IOException {
+		return in.read() != 0;
 	}
 
 	@Override
-	public byte readByte()
-		throws IOException 
-	{
+	public byte readByte() throws IOException {
 		return (byte)in.read();
 	}
 
@@ -111,24 +101,19 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 
 	@Override
 	public char readChar() throws IOException {
-		throw new IOException("Not supported.");
+		readFully(_buff, 0, 2);
+		return (char)baToShort(_buff, 0);
 	}
 
 	@Override
-	public int readInt() 
-		throws IOException 
-	{
+	public int readInt() throws IOException {
 		readFully(_buff, 0, 4);
-		
 		return baToInt(_buff, 0);
 	}
 
 	@Override
-	public long readLong() 
-		throws IOException 
-	{
+	public long readLong() throws IOException {
 		readFully(_buff, 0, 8);
-		
 		return baToLong(_buff, 0);
 	}
 
@@ -138,11 +123,8 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	}
 
 	@Override
-	public double readDouble() 
-		throws IOException 
-	{
+	public double readDouble() throws IOException {
 		readFully(_buff, 0, 8);
-		
 		long tmp = baToLong(_buff, 0);
 		return Double.longBitsToDouble( tmp );
 	}
@@ -160,7 +142,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 	
 	///////////////////////////////////////////////
 	// Implementation of MatrixBlockDataInput
-	///////////////////////////////////////////////	
+	///////////////////////////////////////////////
 
 	@Override
 	public long readDoubleArray(int len, double[] varr) 
@@ -244,7 +226,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 					}
 				}
 				
-				gnnz += lnnz;	
+				gnnz += lnnz;
 			}
 		}
 		
@@ -255,25 +237,15 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 		return nnz;
 	}
 
-	private static int baToInt( byte[] ba, final int off )
-	{
-		//shift and add 4 bytes into single int
-		return ((ba[off+0] & 0xFF) << 24) +
-			   ((ba[off+1] & 0xFF) << 16) +
-			   ((ba[off+2] & 0xFF) <<  8) +
-			   ((ba[off+3] & 0xFF) <<  0);
+	private static int baToShort( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToShort(ba, off);
 	}
 
-	private static long baToLong( byte[] ba, final int off )
-	{
-		//shift and add 8 bytes into single long
-		return ((long)(ba[off+0] & 0xFF) << 56) +
-               ((long)(ba[off+1] & 0xFF) << 48) +
-	           ((long)(ba[off+2] & 0xFF) << 40) +
-               ((long)(ba[off+3] & 0xFF) << 32) +
-               ((long)(ba[off+4] & 0xFF) << 24) +
-               ((long)(ba[off+5] & 0xFF) << 16) +
-               ((long)(ba[off+6] & 0xFF) <<  8) +
-               ((long)(ba[off+7] & 0xFF) <<  0);
+	private static int baToInt( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToInt(ba, off);
+	}
+
+	private static long baToLong( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToLong(ba, off);
 	}
 }

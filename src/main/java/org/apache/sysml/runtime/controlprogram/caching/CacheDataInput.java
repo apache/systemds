@@ -22,18 +22,17 @@ package org.apache.sysml.runtime.controlprogram.caching;
 import java.io.DataInput;
 import java.io.IOException;
 
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {
-	
 	protected byte[] _buff;
 	protected int _bufflen;
 	protected int _count;
 
-	public CacheDataInput( byte[] mem ) 
-	{		
+	public CacheDataInput( byte[] mem ) {
 		_buff = mem;
 		_bufflen = _buff.length;
 		_count = 0;
@@ -55,17 +54,13 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	}
 
 	@Override
-	public boolean readBoolean() 
-		throws IOException 
-	{
+	public boolean readBoolean() throws IOException {
 		//mask to adhere to the input stream semantic
 		return ( (_buff[_count++] & 0xFF) != 0 );
 	}
 
 	@Override
-	public byte readByte()
-		throws IOException 
-	{
+	public byte readByte() throws IOException {
 		//mask to adhere to the input stream semantic
 		return (byte) (_buff[_count++] & 0xFF);
 	}
@@ -87,26 +82,22 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 
 	@Override
 	public char readChar() throws IOException {
-		throw new IOException("Not supported.");
+		int ret = baToShort(_buff, _count);
+		_count += 2;
+		return (char) ret;
 	}
 
 	@Override
-	public int readInt() 
-		throws IOException 
-	{
+	public int readInt() throws IOException {
 		int ret = baToInt(_buff, _count);
 		_count += 4;
-		
 		return ret;
 	}
 
 	@Override
-	public long readLong() 
-		throws IOException 
-	{
+	public long readLong() throws IOException {
 		long ret = baToLong(_buff, _count);
 		_count += 8;
-		
 		return ret;
 	}
 
@@ -200,25 +191,15 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 		return nnz;
 	}
 
-	private static int baToInt( byte[] ba, final int off )
-	{
-		//shift and add 4 bytes into single int
-		return ((ba[off+0] & 0xFF) << 24) +
-			   ((ba[off+1] & 0xFF) << 16) +
-			   ((ba[off+2] & 0xFF) <<  8) +
-			   ((ba[off+3] & 0xFF) <<  0);
+	private static int baToShort( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToShort(ba, off);
 	}
 
-	private static long baToLong( byte[] ba, final int off )
-	{
-		//shift and add 8 bytes into single long
-		return ((long)(ba[off+0] & 0xFF) << 56) +
-               ((long)(ba[off+1] & 0xFF) << 48) +
-	           ((long)(ba[off+2] & 0xFF) << 40) +
-               ((long)(ba[off+3] & 0xFF) << 32) +
-               ((long)(ba[off+4] & 0xFF) << 24) +
-               ((long)(ba[off+5] & 0xFF) << 16) +
-               ((long)(ba[off+6] & 0xFF) <<  8) +
-               ((long)(ba[off+7] & 0xFF) <<  0);
+	private static int baToInt( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToInt(ba, off);
+	}
+
+	private static long baToLong( byte[] ba, final int off ) {
+		return IOUtilFunctions.baToLong(ba, off);
 	}
 }

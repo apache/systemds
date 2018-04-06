@@ -45,34 +45,27 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 	protected byte[] _buff;
 	protected int _bufflen;
 	protected int _count;
-	    
-	public FastBufferedDataOutputStream(OutputStream out) 
-	{
+
+	public FastBufferedDataOutputStream(OutputStream out) {
 		this(out, 8192);
 	}
 
-	public FastBufferedDataOutputStream(OutputStream out, int size) 
-	{
+	public FastBufferedDataOutputStream(OutputStream out, int size) {
 		super(out);
-		
-	    if(size <= 0) 
-	    	throw new IllegalArgumentException("Buffer size <= 0.");
-	    if( size%8 != 0 )    
-	    	throw new IllegalArgumentException("Buffer size not a multiple of 8.");
-	    
+		if(size <= 0)
+			throw new IllegalArgumentException("Buffer size <= 0.");
+		if( size%8 != 0 )
+			throw new IllegalArgumentException("Buffer size not a multiple of 8.");
 		_buff = new byte[size];
 		_bufflen = size;
 	}
 
 	@Override
-    public void write(int b) 
-    	throws IOException 
-    {
-		if (_count >= _bufflen) {
-		    flushBuffer();
-		}
+	public void write(int b) throws IOException {
+		if (_count >= _bufflen)
+			flushBuffer();
 		_buff[_count++] = (byte)b;
-    }
+	}
 
 	@Override
 	public void write(byte[] b, int off, int len) 
@@ -90,99 +83,74 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		_count += len;
 	}
 
-    @Override
-    public void flush() 
-    	throws IOException 
-    {
-        flushBuffer();
-        out.flush();
-    }
-    
-    private void flushBuffer() 
-    	throws IOException 
-    {
-        if(_count > 0) 
-        {
-		    out.write(_buff, 0, _count);
-		    _count = 0;
-        }
-    }
-
-    @Override
-    public void close()
-    	throws IOException
-    {
-    	super.close();
-    }
-    
-    /////////////////////////////
-    // DataOutput Implementation
-    /////////////////////////////
-    
 	@Override
-	public void writeBoolean(boolean v) 
-		throws IOException 
-	{
-		if (_count >= _bufflen) {
-		    flushBuffer();
+	public void flush() throws IOException {
+		flushBuffer();
+		out.flush();
+	}
+
+	private void flushBuffer() throws IOException {
+		if(_count > 0) {
+			out.write(_buff, 0, _count);
+			_count = 0;
 		}
+	}
+
+	@Override
+	public void close() throws IOException {
+		super.close();
+	}
+
+	/////////////////////////////
+	// DataOutput Implementation
+	/////////////////////////////
+
+	@Override
+	public void writeBoolean(boolean v) throws IOException  {
+		if (_count >= _bufflen)
+			flushBuffer();
 		_buff[_count++] = (byte)(v ? 1 : 0);
 	}
 
 
 	@Override
-	public void writeInt(int v) 
-		throws IOException 
-	{
-		if (_count+4 > _bufflen) {
-		    flushBuffer();
-		}
-		
+	public void writeInt(int v) throws IOException {
+		if (_count+4 > _bufflen)
+			flushBuffer();
 		intToBa(v, _buff, _count);
 		_count += 4;
 	}
-	
 
 	@Override
-	public void writeLong(long v) 
-		throws IOException 
-	{
-		if (_count+8 > _bufflen) {
-		    flushBuffer();
-		}
-		
+	public void writeLong(long v) throws IOException {
+		if (_count+8 > _bufflen)
+			flushBuffer();
 		longToBa(v, _buff, _count);
 		_count += 8;
 	}
 	
 	@Override
-	public void writeDouble(double v) 
-		throws IOException 
-	{
-		if (_count+8 > _bufflen) {
-		    flushBuffer();
-		}
-		
-		long tmp = Double.doubleToRawLongBits(v);		
+	public void writeDouble(double v) throws IOException {
+		if (_count+8 > _bufflen)
+			flushBuffer();
+		long tmp = Double.doubleToRawLongBits(v);
 		longToBa(tmp, _buff, _count);
 		_count += 8;
 	}
 
 	@Override
 	public void writeByte(int v) throws IOException {
-		if (_count+1 > _bufflen) {
-		    flushBuffer();
-		}
-		_buff[_count++] = (byte) v;	
+		if (_count+1 > _bufflen)
+			flushBuffer();
+		_buff[_count++] = (byte) v;
 	}
 
 	@Override
 	public void writeShort(int v) throws IOException {
-		if (_count+2 > _bufflen) {
-		    flushBuffer();
-		}
+		if (_count+2 > _bufflen)
+			flushBuffer();
 		shortToBa(v, _buff, _count);
-		_count += 2;	
+		_count += 2;
 	}
 
 	@Override
@@ -192,7 +160,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 
 	@Override
 	public void writeChar(int v) throws IOException {
-		throw new IOException("Not supported.");
+		writeShort(v);
 	}
 
 	@Override
@@ -234,9 +202,9 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		}
 	}
 
-    ///////////////////////////////////////////////
-    // Implementation of MatrixBlockDSMDataOutput
-    ///////////////////////////////////////////////	
+	///////////////////////////////////////////////
+	// Implementation of MatrixBlockDSMDataOutput
+	///////////////////////////////////////////////	
 	
 	@Override
 	public void writeDoubleArray(int len, double[] varr) 
@@ -320,32 +288,15 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 			writeInt( 0 );
 	}
 
-	private static void shortToBa( final int val, byte[] ba, final int off )
-	{
-		//shift and mask out 2 bytes
-		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
+	private static void shortToBa( final int val, byte[] ba, final int off ) {
+		IOUtilFunctions.shortToBa(val, ba, off);
 	}
 
-	private static void intToBa( final int val, byte[] ba, final int off )
-	{
-		//shift and mask out 4 bytes
-		ba[ off+0 ] = (byte)((val >>> 24) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>> 16) & 0xFF);
-		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
+	private static void intToBa( final int val, byte[] ba, final int off ) {
+		IOUtilFunctions.intToBa(val, ba, off);
 	}
 
-	private static void longToBa( final long val, byte[] ba, final int off )
-	{
-		//shift and mask out 8 bytes
-		ba[ off+0 ] = (byte)((val >>> 56) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>> 48) & 0xFF);
-		ba[ off+2 ] = (byte)((val >>> 40) & 0xFF);
-		ba[ off+3 ] = (byte)((val >>> 32) & 0xFF);
-		ba[ off+4 ] = (byte)((val >>> 24) & 0xFF);
-		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
-		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
+	private static void longToBa( final long val, byte[] ba, final int off ) {
+		IOUtilFunctions.longToBa(val, ba, off);
 	}
 }

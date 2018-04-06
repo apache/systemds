@@ -35,7 +35,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
 public class CompressedOuterProductTest extends AutomatedTestBase 
-{	
+{
 	private static final String TEST_NAME1 = "CompressedOuterProductMain";
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CompressedOuterProductTest.class.getSimpleName() + "/";
@@ -210,11 +210,11 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "-stats", 
+			programArgs = new String[]{"-explain", "-stats",
 					"-args", input("X"), output("R") };
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			//generate input data
 			double sparsity = -1;
@@ -254,7 +254,7 @@ public class CompressedOuterProductTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 			CompressedMatrixBlock.ALLOW_DDC_ENCODING = true;
 		}
-	}	
+	}
 
 	/**
 	 * Override default configuration with custom test configuration to ensure

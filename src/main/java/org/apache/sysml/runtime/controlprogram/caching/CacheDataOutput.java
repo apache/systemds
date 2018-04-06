@@ -37,7 +37,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	protected int _bufflen;
 	protected int _count;
 
-	public CacheDataOutput( byte[] mem ) {		
+	public CacheDataOutput( byte[] mem ) {
 		_buff = mem;
 		_bufflen = _buff.length;
 		_count = 0;
@@ -46,25 +46,24 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	@Override
 	public void write(int b) throws IOException {
 		_buff[_count++] = (byte)b;
-    }
+	}
 
-    @Override
+	@Override
 	public void write(byte[] b) throws IOException {
 		System.arraycopy(b, 0, _buff, _count, b.length);
 		_count += b.length;
 	}
-    
-    @Override
+
+	@Override
 	public void write(byte[] b, int off, int len) throws IOException {
 		System.arraycopy(b, off, _buff, _count, len);
 		_count += len;
-    }
+	}
 	
 	@Override
 	public void writeBoolean(boolean v) throws IOException {
 		_buff[_count++] = (byte)( v ? 1 : 0 );
 	}
-
 
 	@Override
 	public void writeInt(int v) throws IOException {
@@ -74,14 +73,14 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	
 	@Override
 	public void writeDouble(double v) throws IOException {
-		long tmp = Double.doubleToRawLongBits(v);		
+		long tmp = Double.doubleToRawLongBits(v);
 		longToBa(tmp, _buff, _count);
 		_count += 8;
 	}
 
 	@Override
 	public void writeByte(int v) throws IOException {
-		_buff[_count++] = (byte) v;	
+		_buff[_count++] = (byte) v;
 	}
 
 	@Override
@@ -91,7 +90,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 
 	@Override
 	public void writeChar(int v) throws IOException {
-		throw new IOException("Not supported.");
+		writeShort(v);
 	}
 
 	@Override
@@ -106,7 +105,7 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 
 	@Override
 	public void writeLong(long v) throws IOException {
-		longToBa(v,  _buff, _count);
+		longToBa(v, _buff, _count);
 		_count += 8;
 	}
 
@@ -143,10 +142,10 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		}
 	}
 
-    ///////////////////////////////////////////////
-    // Implementation of MatrixBlockDSMDataOutput
-    ///////////////////////////////////////////////	
-	
+	///////////////////////////////////////////////
+	// Implementation of MatrixBlockDSMDataOutput
+	///////////////////////////////////////////////
+
 	@Override
 	public void writeDoubleArray(int len, double[] varr) 
 		throws IOException
@@ -155,10 +154,9 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		int off = _count;
 		
 		//serialize entire array into buffer
-		for( int i=0; i<len; i++ )
-		{
-		    long tmp = Double.doubleToRawLongBits(varr[i]);
-		    longToBa(tmp, _buff, off+i*8);
+		for( int i=0; i<len; i++ ) {
+			long tmp = Double.doubleToRawLongBits(varr[i]);
+			longToBa(tmp, _buff, off+i*8);
 		}
 		
 		//update buffer offset
@@ -200,32 +198,15 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 			writeInt( 0 );
 	}
 
-	private static void shortToBa( final int val, byte[] ba, final int off )
-	{
-		//shift and mask out 2 bytes
-		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
+	private static void shortToBa( final int val, byte[] ba, final int off ) {
+		IOUtilFunctions.shortToBa(val, ba, off);
 	}
 
-	private static void intToBa( final int val, byte[] ba, final int off )
-	{
-		//shift and mask out 4 bytes
-		ba[ off+0 ] = (byte)((val >>> 24) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>> 16) & 0xFF);
-		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
+	private static void intToBa( final int val, byte[] ba, final int off ) {
+		IOUtilFunctions.intToBa(val, ba, off);
 	}
 
-	private static void longToBa( final long val, byte[] ba, final int off )
-	{
-		//shift and mask out 8 bytes
-		ba[ off+0 ] = (byte)((val >>> 56) & 0xFF);
-		ba[ off+1 ] = (byte)((val >>> 48) & 0xFF);
-		ba[ off+2 ] = (byte)((val >>> 40) & 0xFF);
-		ba[ off+3 ] = (byte)((val >>> 32) & 0xFF);
-		ba[ off+4 ] = (byte)((val >>> 24) & 0xFF);
-		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
-		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
-		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
+	private static void longToBa( final long val, byte[] ba, final int off ) {
+		IOUtilFunctions.longToBa(val, ba, off);
 	}
 }

@@ -513,4 +513,56 @@ public class IOUtilFunctions
 			fs.delete(fnameMtdCrc, false);
 		}
 	}
+	
+	public static int baToShort( byte[] ba, final int off ) {
+		//shift and add 2 bytes into single int
+		return ((ba[off+0] & 0xFF) << 8)
+			+  ((ba[off+1] & 0xFF) << 0);
+	}
+
+	public static int baToInt( byte[] ba, final int off ) {
+		//shift and add 4 bytes into single int
+		return ((ba[off+0] & 0xFF) << 24)
+			+  ((ba[off+1] & 0xFF) << 16)
+			+  ((ba[off+2] & 0xFF) <<  8)
+			+  ((ba[off+3] & 0xFF) <<  0);
+	}
+
+	public static long baToLong( byte[] ba, final int off ) {
+		//shift and add 8 bytes into single long
+		return ((long)(ba[off+0] & 0xFF) << 56)
+			+  ((long)(ba[off+1] & 0xFF) << 48)
+			+  ((long)(ba[off+2] & 0xFF) << 40)
+			+  ((long)(ba[off+3] & 0xFF) << 32)
+			+  ((long)(ba[off+4] & 0xFF) << 24)
+			+  ((long)(ba[off+5] & 0xFF) << 16)
+			+  ((long)(ba[off+6] & 0xFF) <<  8)
+			+  ((long)(ba[off+7] & 0xFF) <<  0);
+	}
+	
+	public static void shortToBa( final int val, byte[] ba, final int off ) {
+		//shift and mask out 2 bytes
+		ba[ off+0 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>>  0) & 0xFF);
+	}
+
+	public static void intToBa( final int val, byte[] ba, final int off ) {
+		//shift and mask out 4 bytes
+		ba[ off+0 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>>  0) & 0xFF);
+	}
+
+	public static void longToBa( final long val, byte[] ba, final int off ) {
+		//shift and mask out 8 bytes
+		ba[ off+0 ] = (byte)((val >>> 56) & 0xFF);
+		ba[ off+1 ] = (byte)((val >>> 48) & 0xFF);
+		ba[ off+2 ] = (byte)((val >>> 40) & 0xFF);
+		ba[ off+3 ] = (byte)((val >>> 32) & 0xFF);
+		ba[ off+4 ] = (byte)((val >>> 24) & 0xFF);
+		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
+		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
+		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
+	}
 }

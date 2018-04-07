@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
@@ -471,7 +472,7 @@ public class LibMatrixReorg
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
 		
 		//prepare result blocks (no reuse in order to guarantee mem constraints)
-		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, mcIn, mcOut, rowwise);
+		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, mcIn, mcOut, mbIn, rowwise, outputEmptyBlocks);
 		HashMap<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, mcIn, mcOut, rowwise, out);
 		
 		//basic algorithm
@@ -1450,7 +1451,7 @@ public class LibMatrixReorg
 	///////////////////////////////
 
 	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
-		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
+		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, MatrixBlock in, boolean rowwise, boolean outputEmpty )
 	{
 		HashSet<MatrixIndexes> ret = new HashSet<>();
 		
@@ -1464,12 +1465,16 @@ public class LibMatrixReorg
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), row_offset, 0, mcIn, mcOut, rowwise);
 				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), max_row_offset, 0, mcIn, mcOut, rowwise);
 				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
-			
 			}
-			for( long i=row_offset; i<max_row_offset+1; i++ ) {
-				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
-				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, max_col_offset, mcIn, mcOut, rowwise);
-				createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
+			else if( in.getNonZeros()<in.getNumRows() && !outputEmpty ) {
+				createNonZeroIndexes(mcIn, mcOut, in, row_offset, col_offset, rowwise, ret);
+			}
+			else {
+				for( long i=row_offset; i<max_row_offset+1; i++ ) {
+					MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), i, col_offset, mcIn, mcOut, rowwise);
+					MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), i, max_col_offset, mcIn, mcOut, rowwise);
+					createRowwiseIndexes(first, last, mcOut.getNumColBlocks(), ret);
+				}
 			}
 		}
 		else{ //colwise
@@ -1477,6 +1482,9 @@ public class LibMatrixReorg
 				MatrixIndexes first = computeResultBlockIndex(new MatrixIndexes(), 0, col_offset, mcIn, mcOut, rowwise);
 				MatrixIndexes last = computeResultBlockIndex(new MatrixIndexes(), 0, max_col_offset, mcIn, mcOut, rowwise);
 				createColwiseIndexes(first, last, mcOut.getNumRowBlocks(), ret);
+			}
+			else if( in.getNonZeros()<in.getNumColumns() && !outputEmpty ) {
+				createNonZeroIndexes(mcIn, mcOut, in, row_offset, col_offset, rowwise, ret);
 			}
 			else {
 				for( long j=col_offset; j<max_col_offset+1; j++ ) {
@@ -1532,6 +1540,16 @@ public class LibMatrixReorg
 					ret.add(new MatrixIndexes(k2,k1));
 			}
 			ret.add(last);
+		}
+	}
+	
+	private static void createNonZeroIndexes(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut,
+			MatrixBlock in, long row_offset, long col_offset, boolean rowwise, HashSet<MatrixIndexes> ret) {
+		Iterator<IJV> iter = in.getSparseBlockIterator();
+		while( iter.hasNext() ) {
+			IJV cell = iter.next();
+			ret.add(computeResultBlockIndex(new MatrixIndexes(),
+				row_offset+cell.getI(), col_offset+cell.getJ(), mcIn, mcOut, rowwise));
 		}
 	}
 

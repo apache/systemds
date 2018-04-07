@@ -21,21 +21,14 @@ package org.apache.sysml.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
 
-import scala.Tuple2;
-
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
-public class FilterNonEmptyBlocksFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
+public class FilterNonEmptyBlocksFunction2 implements Function<MatrixBlock, Boolean> 
 {
-	private static final long serialVersionUID = -8856829325565589854L;
+	private static final long serialVersionUID = -8435900761521598692L;
 
 	@Override
-	public Boolean call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
-		//always keep 1-1 block in order to prevent empty rdds
-		boolean ix1 = (arg0._1().getRowIndex()==1 
-				&& arg0._1().getColumnIndex()==1);
-		//returns true for non-empty matrix blocks
-		return !arg0._2().isEmptyBlock(false) || ix1;
+	public Boolean call(MatrixBlock arg0) throws Exception {
+		return !arg0.isEmptyBlock(false);
 	}
 }

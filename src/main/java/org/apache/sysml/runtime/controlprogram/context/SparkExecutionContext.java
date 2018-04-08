@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -552,19 +553,18 @@ public class SparkExecutionContext extends ExecutionContext
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
-			if( numParts > 1 ) {
-				for( int i=0; i<numParts; i++ ) {
+			if (numParts > 1) {
+				IntStream.range(0, numParts).parallel().forEach(i -> {
 					int offset = i * numPerPart;
-					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock<MatrixBlock> tmp = pmb.createPartition(offset, numBlks, new MatrixBlock());
+					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() - offset);
+					PartitionedBlock<MatrixBlock> tmp = pmb.createPartition(offset, numBlks);
 					ret[i] = getSparkContext().broadcast(tmp);
-					if( !isLocalMaster() )
+					if (!isLocalMaster())
 						tmp.clearBlocks();
-				}
-			}
-			else { //single partition
+				});
+			} else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
-				if( !isLocalMaster() )
+				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 			
@@ -621,19 +621,18 @@ public class SparkExecutionContext extends ExecutionContext
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
-			if( numParts > 1 ) {
-				for( int i=0; i<numParts; i++ ) {
+			if (numParts > 1) {
+				IntStream.range(0, numParts).parallel().forEach(i -> {
 					int offset = i * numPerPart;
-					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock<FrameBlock> tmp = pmb.createPartition(offset, numBlks, new FrameBlock());
+					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() - offset);
+					PartitionedBlock<FrameBlock> tmp = pmb.createPartition(offset, numBlks);
 					ret[i] = getSparkContext().broadcast(tmp);
-					if( !isLocalMaster() )
+					if (!isLocalMaster())
 						tmp.clearBlocks();
-				}
-			}
-			else { //single partition
+				});
+			} else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
-				if( !isLocalMaster() )
+				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 

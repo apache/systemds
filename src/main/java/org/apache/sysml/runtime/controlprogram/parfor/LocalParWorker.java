@@ -41,20 +41,15 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
  */
 public class LocalParWorker extends ParWorker implements Runnable
 {
-	protected LocalTaskQueue<Task> _taskQueue   = null;
-	
+	protected final LocalTaskQueue<Task> _taskQueue;
+	protected final CompilerConfig _cconf;
+	protected final boolean _stopped;
+	protected final int _max_retry;
 	protected Collection<String> _fnNames = null;
 	
-	protected CompilerConfig _cconf  = null;
-	protected boolean   _stopped     = false;
-	protected int 		_max_retry   = -1;
-	
-	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, CompilerConfig cconf, int max_retry, boolean monitor )	
-	{
+	public LocalParWorker( long ID, LocalTaskQueue<Task> q, ParForBody body, CompilerConfig cconf, int max_retry, boolean monitor ) {
 		super(ID, body, monitor);
-
 		_taskQueue = q;
-		
 		_cconf = cconf;
 		_stopped   = false;
 		_max_retry = max_retry;
@@ -76,10 +71,11 @@ public class LocalParWorker extends ParWorker implements Runnable
 		
 		//setup fair scheduler pool for worker thread, but avoid unnecessary
 		//spark context creation (if data cached already created)
+		int pool = -1;
 		if( OptimizerUtils.isSparkExecutionMode() 
 			&& SparkExecutionContext.isSparkContextCreated() ) {
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
-			sec.setThreadLocalSchedulerPool("parforPool"+_workerID);
+			pool = sec.setThreadLocalSchedulerPool();
 		}
 
 		// Initialize this GPUContext to this thread
@@ -98,60 +94,54 @@ public class LocalParWorker extends ParWorker implements Runnable
 		
 		// continuous execution (execute tasks until (1) stopped or (2) no more tasks)
 		Task lTask = null; 
-		
-		while( !_stopped ) 
-		{
-			//dequeue the next task (abort on NO_MORE_TASKS or error)
-			try
-			{
-				lTask = _taskQueue.dequeueTask();
-				
-				if( lTask == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
-					break; //normal end of parallel worker
-			}
-			catch(Exception ex)
-			{
-				// abort on taskqueue error
-				LOG.warn("Error reading from task queue: "+ex.getMessage());
-				LOG.warn("Stopping LocalParWorker.");
-				break; //no exception thrown to prevent blocking on join
-			}
-			
-			//execute the task sequentially (re-try on error)
-			boolean success = false;
-			int retrys = _max_retry;
-			
-			while( !success )
-			{
-				try 
-				{
-					///////
-					//core execution (see ParWorker)
-					executeTask( lTask );
-					success = true;
-				} 
-				catch (Exception ex) 
-				{
-					LOG.error("Failed to execute "+lTask.toString()+", retry:"+retrys, ex);
+		try {
+			while( !_stopped ) {
+				//dequeue the next task (abort on NO_MORE_TASKS or error)
+				try {
+					lTask = _taskQueue.dequeueTask();
 					
-					if( retrys > 0 )
-						retrys--; //retry on task error
-					else
-					{
-						// abort on no remaining retrys
-						LOG.error("Error executing task: ",ex);
-						LOG.error("Stopping LocalParWorker.");
-						break; //no exception thrown to prevent blocking on join 
+					if( lTask == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
+						break; //normal end of parallel worker
+				}
+				catch(Exception ex) {
+					// abort on taskqueue error
+					LOG.warn("Error reading from task queue: "+ex.getMessage());
+					LOG.warn("Stopping LocalParWorker.");
+					break; //no exception thrown to prevent blocking on join
+				}
+				
+				//execute the task sequentially (re-try on error)
+				boolean success = false;
+				int retrys = _max_retry;
+				
+				while( !success ) {
+					try {
+						///////
+						//core execution (see ParWorker)
+						executeTask( lTask );
+						success = true;
+					} 
+					catch (Exception ex)  {
+						LOG.error("Failed to execute "+lTask.toString()+", retry:"+retrys, ex);
+						
+						if( retrys > 0 )
+							retrys--; //retry on task error
+						else {
+							// abort on no remaining retrys
+							LOG.error("Error executing task: ",ex);
+							LOG.error("Stopping LocalParWorker.");
+							break; //no exception thrown to prevent blocking on join 
+						}
 					}
 				}
 			}
-		}	
-
-		//setup fair scheduler pool for worker thread
-		if( OptimizerUtils.isSparkExecutionMode() 
-			&& SparkExecutionContext.isSparkContextCreated() ) {
-			SparkExecutionContext sec = (SparkExecutionContext)_ec;
-			sec.cleanupThreadLocalSchedulerPool();
+		}
+		finally {
+			//cleanup fair scheduler pool for worker thread
+			if( OptimizerUtils.isSparkExecutionMode() ) {
+				SparkExecutionContext sec = (SparkExecutionContext)_ec;
+				sec.cleanupThreadLocalSchedulerPool(pool);
+			}
 		}
 		
 		if( _monitor ) {
@@ -161,5 +151,3 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}
 	}
 }
-
-	

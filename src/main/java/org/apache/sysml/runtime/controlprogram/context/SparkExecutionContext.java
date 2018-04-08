@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.LongWritable;
@@ -92,10 +93,9 @@ public class SparkExecutionContext extends ExecutionContext
 	private static final boolean LDEBUG = false; //local debug flag
 
 	//internal configurations
-	private static boolean LAZY_SPARKCTX_CREATION = true;
-	private static boolean ASYNCHRONOUS_VAR_DESTROY = true;
-
-	public static boolean FAIR_SCHEDULER_MODE = true;
+	private static final boolean LAZY_SPARKCTX_CREATION = true;
+	private static final boolean ASYNCHRONOUS_VAR_DESTROY = true;
+	public static final boolean FAIR_SCHEDULER_MODE = true;
 
 	//executor memory and relative fractions as obtained from the spark configuration
 	private static SparkClusterConfig _sconf = null;
@@ -107,8 +107,12 @@ public class SparkExecutionContext extends ExecutionContext
 	//10% of JVM max heap size for parallelized RDDs; if this is not sufficient,
 	//matrices or frames are exported to HDFS and the RDDs are created from files.
 	//TODO unify memory management for CP, par RDDs, and potentially broadcasts
-	private static MemoryManagerParRDDs _parRDDs = new MemoryManagerParRDDs(0.1);
-
+	private static final MemoryManagerParRDDs _parRDDs = new MemoryManagerParRDDs(0.1);
+	
+	//pool of reused fair scheduler pool names (unset bits indicate availability)
+	private static boolean[] _poolBuff = FAIR_SCHEDULER_MODE ?
+		new boolean[InfrastructureAnalyzer.getLocalParallelism()] : null;
+	
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
@@ -117,11 +121,10 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	protected SparkExecutionContext(boolean allocateVars, Program prog)
-	{
+	protected SparkExecutionContext(boolean allocateVars, Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
 		super( allocateVars, prog );
-
+		
 		//spark context creation via internal initializer
 		if( !LAZY_SPARKCTX_CREATION || DMLScript.rtplatform==RUNTIME_PLATFORM.SPARK ) {
 			initSparkContext();
@@ -134,8 +137,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 *
 	 * @return java spark context
 	 */
-	public JavaSparkContext getSparkContext()
-	{
+	public JavaSparkContext getSparkContext() {
 		//lazy spark context creation on demand (lazy instead of asynchronous
 		//to avoid wait for uninitialized spark context on close)
 		if( LAZY_SPARKCTX_CREATION ) {
@@ -1232,18 +1234,39 @@ public class SparkExecutionContext extends ExecutionContext
 			in.count(); //trigger caching to prevent contention
 	}
 
-	public void setThreadLocalSchedulerPool(String poolName) {
+	public int setThreadLocalSchedulerPool() {
+		int pool = -1;
 		if( FAIR_SCHEDULER_MODE ) {
+			pool = allocSchedulerPoolName();
 			getSparkContext().sc().setLocalProperty(
-					"spark.scheduler.pool", poolName);
+				"spark.scheduler.pool", "parforPool"+pool);
 		}
+		return pool;
 	}
 
-	public void cleanupThreadLocalSchedulerPool() {
+	public void cleanupThreadLocalSchedulerPool(int pool) {
 		if( FAIR_SCHEDULER_MODE ) {
+			freeSchedulerPoolName(pool);
 			getSparkContext().sc().setLocalProperty(
-					"spark.scheduler.pool", null);
+				"spark.scheduler.pool", null);
 		}
+	}
+	
+	private static synchronized int allocSchedulerPoolName() {
+		int pool = ArrayUtils.indexOf(_poolBuff, false);
+		//grow pool on demand
+		if( pool < 0 ) {
+			pool = _poolBuff.length;
+			_poolBuff = Arrays.copyOf(_poolBuff,
+				(int)Math.min(2L*pool, Integer.MAX_VALUE));
+		}
+		//mark pool name for in use
+		_poolBuff[pool] = true;
+		return pool;
+	}
+	
+	private static synchronized void freeSchedulerPoolName(int pool) {
+		_poolBuff[pool] = false;
 	}
 
 	private boolean isRDDMarkedForCaching( int rddID ) {

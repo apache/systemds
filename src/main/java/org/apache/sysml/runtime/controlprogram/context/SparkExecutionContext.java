@@ -52,6 +52,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -552,19 +553,12 @@ public class SparkExecutionContext extends ExecutionContext
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
-			if( numParts > 1 ) {
-				for( int i=0; i<numParts; i++ ) {
-					int offset = i * numPerPart;
-					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock<MatrixBlock> tmp = pmb.createPartition(offset, numBlks, new MatrixBlock());
-					ret[i] = getSparkContext().broadcast(tmp);
-					if( !isLocalMaster() )
-						tmp.clearBlocks();
-				}
-			}
+			if (numParts > 1) {
+				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
+			} 
 			else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
-				if( !isLocalMaster() )
+				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 			
@@ -621,19 +615,12 @@ public class SparkExecutionContext extends ExecutionContext
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
-			if( numParts > 1 ) {
-				for( int i=0; i<numParts; i++ ) {
-					int offset = i * numPerPart;
-					int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks()*pmb.getNumColumnBlocks()-offset);
-					PartitionedBlock<FrameBlock> tmp = pmb.createPartition(offset, numBlks, new FrameBlock());
-					ret[i] = getSparkContext().broadcast(tmp);
-					if( !isLocalMaster() )
-						tmp.clearBlocks();
-				}
+			if (numParts > 1) {
+				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
 			}
 			else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
-				if( !isLocalMaster() )
+				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 
@@ -650,6 +637,17 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 
 		return bret;
+	}
+	
+	private Broadcast<PartitionedBlock<? extends CacheBlock>> createPartitionedBroadcast(
+			PartitionedBlock<? extends CacheBlock> pmb, int numPerPart, int pos) {
+		int offset = pos * numPerPart;
+		int numBlks = Math.min(numPerPart, pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() - offset);
+		PartitionedBlock<? extends CacheBlock> tmp = pmb.createPartition(offset, numBlks);
+		Broadcast<PartitionedBlock<? extends CacheBlock>> ret = getSparkContext().broadcast(tmp);
+		if (!isLocalMaster())
+			tmp.clearBlocks();
+		return ret;
 	}
 
 	/**

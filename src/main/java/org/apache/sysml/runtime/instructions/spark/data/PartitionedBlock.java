@@ -80,7 +80,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		try {
 			_partBlocks = new CacheBlock[nrblks * ncblks];
 			Arrays.parallelSetAll(_partBlocks, index -> {
-				int i = index % nrblks;
+				int i = index / ncblks;
 				int j = index % ncblks;
 				T tmp = (T) CacheBlockFactory.newInstance(code);
 				return block.slice(i * _brlen, Math.min((i + 1) * _brlen, rlen) - 1,

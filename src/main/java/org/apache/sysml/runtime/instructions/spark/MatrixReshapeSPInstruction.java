@@ -87,7 +87,8 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		boolean byRow = ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral()).getBooleanValue();
 		
 		//get inputs 
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec
+			.getBinaryBlockRDDHandleForVariable(input1.getName(), -1, _outputEmptyBlocks);
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics( output.getName() );
 		

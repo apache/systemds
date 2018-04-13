@@ -179,6 +179,10 @@ public class ExecutionContext {
 		Data dat = getVariable(varname);
 		return (dat!= null && dat instanceof MatrixObject);
 	}
+	
+	public MatrixObject getMatrixObject(CPOperand input) {
+		return getMatrixObject(input.getName());
+	}
 
 	public MatrixObject getMatrixObject(String varname) {
 		Data dat = getVariable(varname);
@@ -190,6 +194,10 @@ public class ExecutionContext {
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a matrix.");
 		
 		return (MatrixObject) dat;
+	}
+	
+	public FrameObject getFrameObject(CPOperand input) {
+		return getFrameObject(input.getName());
 	}
 	
 	public FrameObject getFrameObject(String varname) {

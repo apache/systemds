@@ -59,7 +59,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		String opcode = getOpcode();
 		
 		//get input RDD and prepare output
-		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable( input1.getName(), InputInfo.BinaryBlockInputInfo );
+		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
 		JavaPairRDD<?,?> out = null;
 		

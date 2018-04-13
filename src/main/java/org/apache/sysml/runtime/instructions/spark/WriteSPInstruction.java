@@ -43,7 +43,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
@@ -226,32 +225,27 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		
 		// write meta data file
-		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);	
+		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);
 	}
 
-	@SuppressWarnings("unchecked")
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
 		throws IOException
 	{
 		//get input rdd
-		JavaPairRDD<Long,FrameBlock> in1 = (JavaPairRDD<Long,FrameBlock>)sec
-				.getRDDHandleForVariable( input1.getName(), InputInfo.BinaryBlockInputInfo );
+		JavaPairRDD<Long,FrameBlock> in1 = sec
+			.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
 		
-		if( oi == OutputInfo.TextCellOutputInfo ) 
-		{
+		if( oi == OutputInfo.TextCellOutputInfo ) {
 			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);
 			customSaveTextFile(out, fname, false);
 		}
-		else if( oi == OutputInfo.CSVOutputInfo ) 
-		{
-			CSVFileFormatProperties props = (formatProperties!=null) ? 
-					(CSVFileFormatProperties) formatProperties : null;					
+		else if( oi == OutputInfo.CSVOutputInfo ) {
+			CSVFileFormatProperties props = (formatProperties!=null) ?(CSVFileFormatProperties) formatProperties : null;
 			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
 			customSaveTextFile(out, fname, false);
 		}
-		else if( oi == OutputInfo.BinaryBlockOutputInfo ) 
-		{
+		else if( oi == OutputInfo.BinaryBlockOutputInfo ) {
 			JavaPairRDD<LongWritable,FrameBlock> out = in1.mapToPair(new LongFrameToLongWritableFrameFunction());
 			out.saveAsHadoopFile(fname, LongWritable.class, FrameBlock.class, SequenceFileOutputFormat.class);
 		}

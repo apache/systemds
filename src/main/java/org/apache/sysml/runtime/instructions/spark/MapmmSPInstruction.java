@@ -101,7 +101,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar,
 			(requiresFlatMapFunction(type, mcBc) && requiresRepartitioning(
 			type, mcRdd, mcBc, sec.getSparkContext().defaultParallelism())) ?
-			getNumRepartitioning(type, mcRdd, mcBc) : -1);
+			getNumRepartitioning(type, mcRdd, mcBc) : -1, _outputEmpty);
 		
 		//investigate if a repartitioning - including a potential flip of broadcast and rdd 
 		//inputs - is required to ensure moderately sized output partitions (2GB limitation)

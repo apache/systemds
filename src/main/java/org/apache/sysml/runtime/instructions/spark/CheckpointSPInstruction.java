@@ -90,7 +90,7 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		}
 		
 		//get input rdd handle (for matrix or frame)
-		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable( input1.getName(), InputInfo.BinaryBlockInputInfo );
+		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
 		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
 		
 		// Step 2: Checkpoint given rdd (only if currently in different storage level to prevent redundancy)

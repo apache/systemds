@@ -126,12 +126,12 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	protected JavaPairRDD<MatrixIndexes,MatrixBlock> processMatrixCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut) {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
-		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) 
-				sec.getRDDHandleForVariable(input1.getName(), InputInfo.CSVInputInfo);
-			
+		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>)
+			sec.getRDDHandleForMatrixObject(sec.getMatrixObject(input1), InputInfo.CSVInputInfo);
+		
 		//reblock csv to binary block
-		return RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(), 
-				in, mcOut, _hasHeader, _delim, _fill, _fillValue);
+		return RDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
+			in, mcOut, _hasHeader, _delim, _fill, _fillValue);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -139,10 +139,10 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
 		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) 
-				sec.getRDDHandleForVariable(input1.getName(), InputInfo.CSVInputInfo);
+			sec.getRDDHandleForFrameObject(sec.getFrameObject(input1), InputInfo.CSVInputInfo);
 		
 		//reblock csv to binary block
-		return FrameRDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(), 
-				in, mcOut, schema, _hasHeader, _delim, _fill, _fillValue);
+		return FrameRDDConverterUtils.csvToBinaryBlock(sec.getSparkContext(),
+			in, mcOut, schema, _hasHeader, _delim, _fill, _fillValue);
 	}
 }

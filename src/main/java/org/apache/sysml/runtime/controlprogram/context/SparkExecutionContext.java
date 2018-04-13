@@ -293,14 +293,16 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname ) {
+		MatrixObject mo = getMatrixObject(varname);
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>)
-			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, -1);
+			getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo, -1, true);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname, int numParts ) {
+	public JavaPairRDD<MatrixIndexes,MatrixBlock> getBinaryBlockRDDHandleForVariable( String varname, int numParts, boolean inclEmpty ) {
+		MatrixObject mo = getMatrixObject(varname);
 		return (JavaPairRDD<MatrixIndexes,MatrixBlock>)
-			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, numParts);
+			getRDDHandleForMatrixObject(mo, InputInfo.BinaryBlockInputInfo, numParts, inclEmpty);
 	}
 
 	/**
@@ -312,20 +314,17 @@ public class SparkExecutionContext extends ExecutionContext
 	 */
 	@SuppressWarnings("unchecked")
 	public JavaPairRDD<Long,FrameBlock> getFrameBinaryBlockRDDHandleForVariable( String varname ) {
+		FrameObject fo = getFrameObject(varname);
 		JavaPairRDD<Long,FrameBlock> out = (JavaPairRDD<Long,FrameBlock>)
-			getRDDHandleForVariable( varname, InputInfo.BinaryBlockInputInfo, -1);
+			getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
 		return out;
 	}
 
-	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo ) {
-		return getRDDHandleForVariable(varname, inputInfo, -1);
-	}
-	
-	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo, int numParts ) {
+	public JavaPairRDD<?,?> getRDDHandleForVariable( String varname, InputInfo inputInfo, int numParts, boolean inclEmpty ) {
 		Data dat = getVariable(varname);
 		if( dat instanceof MatrixObject ) {
 			MatrixObject mo = getMatrixObject(varname);
-			return getRDDHandleForMatrixObject(mo, inputInfo, numParts);
+			return getRDDHandleForMatrixObject(mo, inputInfo, numParts, inclEmpty);
 		}
 		else if( dat instanceof FrameObject ) {
 			FrameObject fo = getFrameObject(varname);
@@ -337,11 +336,11 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo ) {
-		return getRDDHandleForMatrixObject(mo, inputInfo, -1);
+		return getRDDHandleForMatrixObject(mo, inputInfo, -1, true);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo, int numParts ) {
+	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, InputInfo inputInfo, int numParts, boolean inclEmpty ) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
 		//always available and hence only store generic references in
@@ -375,7 +374,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock(), numParts);
+				rdd = toMatrixJavaPairRDD(sc, mb, (int)mo.getNumRowsPerBlock(), (int)mo.getNumColumnsPerBlock(), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(mc), true);
 			}
@@ -664,10 +663,11 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen) {
-		return toMatrixJavaPairRDD(sc, src, brlen, bclen, -1);
+		return toMatrixJavaPairRDD(sc, src, brlen, bclen, -1, true);
 	}
 	
-	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src, int brlen, int bclen, int numParts) {
+	public static JavaPairRDD<MatrixIndexes,MatrixBlock> toMatrixJavaPairRDD(JavaSparkContext sc, MatrixBlock src,
+			int brlen, int bclen, int numParts, boolean inclEmpty) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		List<Tuple2<MatrixIndexes,MatrixBlock>> list = null;
 
@@ -679,6 +679,7 @@ public class SparkExecutionContext extends ExecutionContext
 				src.getNumRows(), src.getNumColumns(), brlen, bclen, src.getNonZeros());
 			list = LongStream.range(0, mc.getNumBlocks()).parallel()
 				.mapToObj(i -> createIndexedBlock(src, mc, i))
+				.filter(kv -> inclEmpty || !kv._2.isEmptyBlock(false))
 				.collect(Collectors.toList());
 		}
 

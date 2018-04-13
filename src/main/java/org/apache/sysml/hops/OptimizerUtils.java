@@ -33,6 +33,7 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Lop;
@@ -922,13 +923,13 @@ public class OptimizerUtils
 		boolean ret = true;
 		for( Hop p : hop.getParent() ) {
 			p.optFindExecType(); //ensure exec type evaluated
-			ret &=   (  p.getExecType()==ExecType.CP 
-					 ||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
-					 ||(p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE && ((DataOp)p).getInputFormatType()==FileFormatTypes.TEXT))
-				  && !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormatTypes.TEXT) ); //no function call or transient write
+			ret &= ( p.getExecType()==ExecType.CP 
+				||(p instanceof AggBinaryOp && allowsToFilterEmptyBlockOutputs(p) )
+				||(HopRewriteUtils.isReorg(p, ReOrgOp.RESHAPE, ReOrgOp.TRANS) && allowsToFilterEmptyBlockOutputs(p) )
+				||(HopRewriteUtils.isData(p, DataOpTypes.PERSISTENTWRITE) && ((DataOp)p).getInputFormatType()==FileFormatTypes.TEXT))
+				&& !(p instanceof FunctionOp || (p instanceof DataOp && ((DataOp)p).getInputFormatType()!=FileFormatTypes.TEXT) ); //no function call or transient write
 		}
-			
-		return ret;	
+		return ret;
 	}
 
 	public static int getConstrainedNumThreads(int maxNumThreads)

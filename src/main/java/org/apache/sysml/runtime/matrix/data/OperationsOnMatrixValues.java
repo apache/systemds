@@ -217,15 +217,15 @@ public class OperationsOnMatrixValues
 		valueIn.aggregateUnaryOperations(op, valueOut, brlen, bclen, indexesIn);
 	}
 	
-	public static void performAggregateBinary(MatrixIndexes indexes1, MatrixBlock value1, MatrixIndexes indexes2, MatrixBlock value2, 
+	public static MatrixBlock performAggregateBinary(MatrixIndexes indexes1, MatrixBlock value1, MatrixIndexes indexes2, MatrixBlock value2, 
 			MatrixIndexes indexesOut, MatrixBlock valueOut, AggregateBinaryOperator op) {
 		//compute output index
 		indexesOut.setIndexes(indexes1.getRowIndex(), indexes2.getColumnIndex());
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
-			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+			return value2.aggregateBinaryOperations(value1, value2, valueOut, op);
 		else //default
-			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
+			return value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
 	public static MatrixBlock performAggregateBinaryIgnoreIndexes(MatrixBlock value1, MatrixBlock value2,

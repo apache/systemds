@@ -1490,7 +1490,8 @@ public class LibMatrixMult
 	 */
 	private static void matrixMultUltraSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
 		final boolean leftUS = m1.isUltraSparse()
-			|| (m1.isUltraSparse(false) && !m2.isUltraSparse());
+			|| (m1.isUltraSparse(false) && !m2.isUltraSparse())
+			|| (m1.sparse && !m2.sparse);
 		final int m  = m1.rlen;
 		final int cd = m1.clen;
 		final int n  = m2.clen;
@@ -3693,14 +3694,21 @@ public class LibMatrixMult
 	}
 	
 	public static boolean isUltraSparseMatrixMult(MatrixBlock m1, MatrixBlock m2) {
+		if( m2.clen == 1 ) //mv always dense
+			return false;
 		//note: ultra-sparse matrix mult implies also sparse outputs, hence we need
 		//to be conservative an cannot use this for all ultra-sparse matrices.
+		double outSp = OptimizerUtils.getMatMultSparsity(
+			m1.getSparsity(), m2.getSparsity(), m1.rlen, m1.clen, m2.clen, true);
 		return (m1.isUltraSparse() || m2.isUltraSparse()) //base case
 			|| (m1.isUltraSparsePermutationMatrix() 
 				&& OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0)
 			|| ((m1.isUltraSparse(false) || m2.isUltraSparse(false)) 
-				&& OptimizerUtils.getMatMultSparsity(m1.getSparsity(), m2.getSparsity(),
-				m1.rlen, m1.clen, m2.clen, true) < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2);
+				&& outSp < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2)
+			|| (m1.getSparsity() < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2
+				&& m1.getNonZeros() < MatrixBlock.ULTRA_SPARSE_BLOCK_NNZ
+				&& m1.getLength()+m2.getLength() < (long)m1.rlen*m2.clen
+				&& outSp < MatrixBlock.SPARSITY_TURN_POINT);
 	}
 
 	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {

@@ -101,6 +101,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
 	public static final double ULTRA_SPARSITY_TURN_POINT  = 0.00004;
 	public static final double ULTRA_SPARSITY_TURN_POINT2 = 0.0004;
+	public static final int ULTRA_SPARSE_BLOCK_NNZ = 40;
 	//default sparse block type: modified compressed sparse rows, for efficient incremental construction
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
@@ -874,7 +875,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public boolean isUltraSparse(boolean checkNnz) {
 		double sp = ((double)nonZeros/rlen)/clen;
 		//check for sparse representation in order to account for vectors in dense
-		return sparse && sp<ULTRA_SPARSITY_TURN_POINT && (!checkNnz || nonZeros<40);
+		return sparse && sp<ULTRA_SPARSITY_TURN_POINT 
+			&& (!checkNnz || nonZeros<ULTRA_SPARSE_BLOCK_NNZ);
 	}
 	
 	public boolean isUltraSparsePermutationMatrix() {

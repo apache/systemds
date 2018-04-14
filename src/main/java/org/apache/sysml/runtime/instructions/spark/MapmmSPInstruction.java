@@ -431,43 +431,27 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 			throws Exception 
 		{
 			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
-			
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 
-			if( _type == CacheType.LEFT )
-			{
+			if( _type == CacheType.LEFT ) {
 				//for all matching left-hand-side blocks
 				int len = _pbc.getNumRowBlocks();
-				for( int i=1; i<=len; i++ ) 
-				{
+				for( int i=1; i<=len; i++ ) {
 					MatrixBlock left = _pbc.getBlock(i, (int)ixIn.getRowIndex());
-					MatrixIndexes ixOut = new MatrixIndexes();
-					MatrixBlock blkOut = new MatrixBlock();
-					
-					//execute matrix-vector mult
-					OperationsOnMatrixValues.performAggregateBinary( 
-							new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
-					
-					ret.add(new Tuple2<>(ixOut, blkOut));
+					MatrixBlock blkOut = OperationsOnMatrixValues
+						.performAggregateBinaryIgnoreIndexes(left, blkIn, new MatrixBlock(), _op);
+					ret.add(new Tuple2<>(new MatrixIndexes(i, ixIn.getColumnIndex()), blkOut));
 				}
 			}
-			else //if( _type == CacheType.RIGHT )
-			{
+			else { //RIGHT
 				//for all matching right-hand-side blocks
 				int len = _pbc.getNumColumnBlocks();
-				for( int j=1; j<=len; j++ ) 
-				{
-					//get the right hand side matrix
+				for( int j=1; j<=len; j++ )  {
 					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), j);
-					MatrixIndexes ixOut = new MatrixIndexes();
-					MatrixBlock blkOut = new MatrixBlock();
-					
-					//execute matrix-vector mult
-					OperationsOnMatrixValues.performAggregateBinary(
-							ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),j), right, ixOut, blkOut, _op);
-				
-					ret.add(new Tuple2<>(ixOut, blkOut));
+					MatrixBlock blkOut = OperationsOnMatrixValues
+						.performAggregateBinaryIgnoreIndexes(blkIn, right, new MatrixBlock(), _op);
+					ret.add(new Tuple2<>(new MatrixIndexes(ixIn.getRowIndex(), j), blkOut));
 				}
 			}
 			

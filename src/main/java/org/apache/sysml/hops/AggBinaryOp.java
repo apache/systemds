@@ -223,7 +223,7 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 				//matrix mult operation selection part 3 (SPARK type)
 				boolean tmmRewrite = HopRewriteUtils.isTransposeOperation(input1);
 				_method = optFindMMultMethodSpark ( 
-						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),   
+						input1.getDim1(), input1.getDim2(), input1.getRowsInBlock(), input1.getColsInBlock(), input1.getNnz(),
 						input2.getDim1(), input2.getDim2(), input2.getRowsInBlock(), input2.getColsInBlock(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
 			
@@ -1687,7 +1687,10 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 			//apply map mult if one side fits in remote task memory 
 			//(if so pick smaller input for distributed cache)
 			//TODO relax requirement of valid CP dimensions once we support broadcast creation from files/RDDs
-			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0
+			double em1Size = getInput().get(0).getOutputMemEstimate(); //w/ worst-case estimate
+			double em2Size = getInput().get(1).getOutputMemEstimate(); //w/ worst-case estimate
+			if( (m1SizeP < m2SizeP || (m1SizeP==m2SizeP && em1Size<em2Size) )
+				&& m1_rows>=0 && m1_cols>=0
 				&& OptimizerUtils.isValidCPDimensions(m1_rows, m1_cols) ) {
 				_spBroadcastMemEstimate = m1Size+m1SizeP;
 				return MMultMethod.MAPMM_L;

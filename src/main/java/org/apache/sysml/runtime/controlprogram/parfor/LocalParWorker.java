@@ -138,7 +138,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}
 		finally {
 			//cleanup fair scheduler pool for worker thread
-			if( OptimizerUtils.isSparkExecutionMode() ) {
+			if( OptimizerUtils.isSparkExecutionMode() && pool != -1 ) {
 				SparkExecutionContext sec = (SparkExecutionContext)_ec;
 				sec.cleanupThreadLocalSchedulerPool(pool);
 			}

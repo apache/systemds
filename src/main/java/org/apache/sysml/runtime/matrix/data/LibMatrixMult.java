@@ -3697,7 +3697,10 @@ public class LibMatrixMult
 		//to be conservative an cannot use this for all ultra-sparse matrices.
 		return (m1.isUltraSparse() || m2.isUltraSparse()) //base case
 			|| (m1.isUltraSparsePermutationMatrix() 
-				&& OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0);
+				&& OptimizerUtils.getSparsity(m2.rlen, m2.clen, m2.nonZeros)<1.0)
+			|| ((m1.isUltraSparse(false) || m2.isUltraSparse(false)) 
+				&& OptimizerUtils.getMatMultSparsity(m1.getSparsity(), m2.getSparsity(),
+				m1.rlen, m1.clen, m2.clen, true) < MatrixBlock.ULTRA_SPARSITY_TURN_POINT2);
 	}
 
 	private static MatrixBlock prepMatrixMultRightInput( MatrixBlock m1, MatrixBlock m2 ) {

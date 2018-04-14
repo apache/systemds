@@ -99,7 +99,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	//sparsity threshold for ultra-sparse matrix operations (40nnz in a 1kx1k block)
-	public static final double ULTRA_SPARSITY_TURN_POINT = 0.00004; 
+	public static final double ULTRA_SPARSITY_TURN_POINT  = 0.00004;
+	public static final double ULTRA_SPARSITY_TURN_POINT2 = 0.0004;
 	//default sparse block type: modified compressed sparse rows, for efficient incremental construction
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization

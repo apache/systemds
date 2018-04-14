@@ -440,6 +440,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				{
 					gen.setInput(DataExpression.RAND_MIN, right);
 					gen.setInput(DataExpression.RAND_MAX, right);
+					right.getParent().add(gen);
+					right.getParent().add(gen);
 					//rewire all parents (avoid anomalies with replicated datagen)
 					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )

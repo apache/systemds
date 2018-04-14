@@ -260,39 +260,63 @@ public class FullReblockTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testBinaryBlockSingleMDenseSP() 
-	{
+	public void testBinaryBlockSingleMDenseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryBlockSingeMSparseSP() 
-	{
+	public void testBinaryBlockSingeMSparseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryBlockSingleVDenseSP() 
-	{
+	public void testBinaryBlockSingleVDenseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryBlockSingeVSparseSP() 
-	{
+	public void testBinaryBlockSingeVSparseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryBlockMultipleMDenseSP() 
-	{
+	public void testBinaryBlockMultipleMDenseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testBinaryBlockMultipleMSparseSP() 
-	{
+	public void testBinaryBlockMultipleMSparseSP() {
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleMDenseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.SPARK, 500);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeMSparseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.SPARK, 500);
+	}
+	
+	@Test
+	public void testBinaryBlockSingleVDenseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.SPARK, 500);
+	}
+	
+	@Test
+	public void testBinaryBlockSingeVSparseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.SPARK, 500);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMDenseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.SPARK, 500);
+	}
+	
+	@Test
+	public void testBinaryBlockMultipleMSparseSPAligned() {
+		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.SPARK, 500);
 	}
 
 	//csv
@@ -406,17 +430,15 @@ public class FullReblockTest extends AutomatedTestBase
 		runReblockTest(OutputInfo.CSVOutputInfo, true, Type.Multiple, ExecType.MR);
 	}
 
-	/**
-	 * 
-	 * @param oi
-	 * @param sparse
-	 * @param type
-	 * @param et
-	 */
-	private void runReblockTest( OutputInfo oi, boolean sparse, Type type, ExecType et )
-	{		
-		String TEST_NAME = (type==Type.Multiple) ? TEST_NAME2 : TEST_NAME1;		 
-		double sparsity = (sparse) ? sparsity2 : sparsity1;		
+	private void runReblockTest( OutputInfo oi, boolean sparse, Type type, ExecType et ) {
+		//force binary reblock for 999 to match 1000
+		runReblockTest(oi, sparse, type, et, blocksize-1);
+	}
+	
+	private void runReblockTest( OutputInfo oi, boolean sparse, Type type, ExecType et, int srcBlksize )
+	{
+		String TEST_NAME = (type==Type.Multiple) ? TEST_NAME2 : TEST_NAME1;
+		double sparsity = (sparse) ? sparsity2 : sparsity1;
 		int rows = (type==Type.Vector)? rowsV : rowsM;
 		int cols = (type==Type.Vector)? colsV : colsM;
 		
@@ -448,38 +470,31 @@ public class FullReblockTest extends AutomatedTestBase
 		boolean success = false;
 		long seed1 = System.nanoTime();
 		long seed2 = System.nanoTime()+7;
-        
-		try 
-		{
+
+		try {
 			//run test cases with single or multiple inputs
 			if( type==Type.Multiple )
 			{
 				double[][] A1 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
 				double[][] A2 = getRandomMatrix(rows, cols, 0, 1, sparsity, seed2);
-		        
-				//force binary reblock for 999 to match 1000
-		        writeMatrix(A1, input("A1"), oi, rows, cols, blocksize-1, blocksize-1);
-		        writeMatrix(A2, input("A2"), oi, rows, cols, blocksize-1, blocksize-1);
+				writeMatrix(A1, input("A1"), oi, rows, cols, blocksize-1, blocksize-1);
+				writeMatrix(A2, input("A2"), oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
-		        double[][] C1 = readMatrix(output("C1"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
-		        double[][] C2 = readMatrix(output("C2"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
-		        TestUtils.compareMatrices(A1, C1, rows, cols, eps);
-		        TestUtils.compareMatrices(A2, C2, rows, cols, eps);
-		    }
-			else
-			{
+				double[][] C1 = readMatrix(output("C1"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+				double[][] C2 = readMatrix(output("C2"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+				TestUtils.compareMatrices(A1, C1, rows, cols, eps);
+				TestUtils.compareMatrices(A2, C2, rows, cols, eps);
+			}
+			else {
 				double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, seed1);
-
-				//force binary reblock for 999 to match 1000
-		        writeMatrix(A, input("A"), oi, rows, cols, blocksize-1, blocksize-1);
+				writeMatrix(A, input("A"), oi, rows, cols, blocksize-1, blocksize-1);
 				runTest(true, false, null, -1);
-		        double[][] C = readMatrix(output("C"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
-				
-		        TestUtils.compareMatrices(A, C, rows, cols, eps);
+				double[][] C = readMatrix(output("C"), InputInfo.BinaryBlockInputInfo, rows, cols, blocksize, blocksize);
+				TestUtils.compareMatrices(A, C, rows, cols, eps);
 			}
 			
 			success = true;
-		} 
+		}
 		catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();

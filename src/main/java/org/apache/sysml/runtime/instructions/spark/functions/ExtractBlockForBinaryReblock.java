@@ -36,17 +36,14 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 {
 	private static final long serialVersionUID = -762987655085029215L;
 	
-	private long rlen; 
-	private long clen; 
-	private int in_brlen; 
-	private int in_bclen; 
-	private int out_brlen; 
-	private int out_bclen;
+	private final long rlen, clen; 
+	private final int in_brlen, in_bclen;
+	private final int out_brlen, out_bclen;
 	
 	public ExtractBlockForBinaryReblock(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {
-		rlen = mcIn.getRows(); 
+		rlen = mcIn.getRows();
 		clen = mcIn.getCols();
-		in_brlen = mcIn.getRowsPerBlock(); 
+		in_brlen = mcIn.getRowsPerBlock();
 		in_bclen = mcIn.getColsPerBlock();
 		out_brlen = mcOut.getRowsPerBlock(); 
 		out_bclen = mcOut.getColsPerBlock();
@@ -54,7 +51,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		//sanity check block sizes
 		if(in_brlen <= 0 || in_bclen <= 0 || out_brlen <= 0 || out_bclen <= 0) {
 			throw new DMLRuntimeException("Block sizes not unknown:" + 
-		       in_brlen + "," + in_bclen + "," +  out_brlen + "," + out_bclen);
+				in_brlen + "," + in_bclen + "," +  out_brlen + "," + out_bclen);
 		}
 	}
 	
@@ -65,55 +62,55 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 		MatrixIndexes ixIn = arg0._1();
 		MatrixBlock in = arg0._2();
 		
-		// The global cell indexes don't change in reblock operations
-		long startRowGlobalCellIndex = UtilFunctions.computeCellIndex(ixIn.getRowIndex(), in_brlen, 0);
-		long endRowGlobalCellIndex = getEndGlobalIndex(ixIn.getRowIndex(), true, true);
-		long startColGlobalCellIndex = UtilFunctions.computeCellIndex(ixIn.getColumnIndex(), in_bclen, 0);
-		long endColGlobalCellIndex = getEndGlobalIndex(ixIn.getColumnIndex(), true, false);
+		final long startRowGlobalCellIndex = UtilFunctions.computeCellIndex(ixIn.getRowIndex(), in_brlen, 0);
+		final long endRowGlobalCellIndex = getEndGlobalIndex(ixIn.getRowIndex(), true, true);
+		final long startColGlobalCellIndex = UtilFunctions.computeCellIndex(ixIn.getColumnIndex(), in_bclen, 0);
+		final long endColGlobalCellIndex = getEndGlobalIndex(ixIn.getColumnIndex(), true, false);
 		
-		long out_startRowBlockIndex = UtilFunctions.computeBlockIndex(startRowGlobalCellIndex, out_brlen);
-		long out_endRowBlockIndex = UtilFunctions.computeBlockIndex(endRowGlobalCellIndex, out_brlen);
-		long out_startColBlockIndex = UtilFunctions.computeBlockIndex(startColGlobalCellIndex, out_bclen);
-		long out_endColBlockIndex = UtilFunctions.computeBlockIndex(endColGlobalCellIndex, out_bclen);
+		final long out_startRowBlockIndex = UtilFunctions.computeBlockIndex(startRowGlobalCellIndex, out_brlen);
+		final long out_endRowBlockIndex = UtilFunctions.computeBlockIndex(endRowGlobalCellIndex, out_brlen);
+		final long out_startColBlockIndex = UtilFunctions.computeBlockIndex(startColGlobalCellIndex, out_bclen);
+		final long out_endColBlockIndex = UtilFunctions.computeBlockIndex(endColGlobalCellIndex, out_bclen);
+		final boolean aligned = out_brlen%in_brlen==0 && out_bclen%in_bclen==0; //e.g, 1K -> 2K
 		
 		ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> retVal = new ArrayList<>();
-		
 		for(long i = out_startRowBlockIndex; i <= out_endRowBlockIndex; i++) {
 			for(long j = out_startColBlockIndex; j <= out_endColBlockIndex; j++) {
 				MatrixIndexes indx = new MatrixIndexes(i, j);
-				int new_lrlen = UtilFunctions.computeBlockSize(rlen, i, out_brlen);
-				int new_lclen = UtilFunctions.computeBlockSize(clen, j, out_bclen);
+				final int new_lrlen = UtilFunctions.computeBlockSize(rlen, i, out_brlen);
+				final int new_lclen = UtilFunctions.computeBlockSize(clen, j, out_bclen);
 				MatrixBlock blk = new MatrixBlock(new_lrlen, new_lclen, true);
+				if( in.isEmptyBlock(false) ) continue;
 				
-				if( !in.isEmptyBlock(false) ) {
-					long rowLower = Math.max(UtilFunctions.computeCellIndex(i, out_brlen, 0), startRowGlobalCellIndex);
-					long rowUpper = Math.min(getEndGlobalIndex(i, false, true), endRowGlobalCellIndex);
-					long colLower = Math.max(UtilFunctions.computeCellIndex(j, out_bclen, 0), startColGlobalCellIndex);
-					long colUpper = Math.min(getEndGlobalIndex(j, false, false), endColGlobalCellIndex);
-					int in_i1 = UtilFunctions.computeCellInBlock(rowLower, in_brlen);
-					int out_i1 = UtilFunctions.computeCellInBlock(rowLower, out_brlen);
-					
-					for(long i1 = rowLower; i1 <= rowUpper; i1++, in_i1++, out_i1++) {
-						int in_j1 = UtilFunctions.computeCellInBlock(colLower, in_bclen);
-						int out_j1 = UtilFunctions.computeCellInBlock(colLower, out_bclen);
-						for(long j1 = colLower; j1 <= colUpper; j1++, in_j1++, out_j1++) {
-							double val = in.quickGetValue(in_i1, in_j1);
-							blk.appendValue(out_i1, out_j1, val);
-						}
-					}
+				final long rowLower = Math.max(UtilFunctions.computeCellIndex(i, out_brlen, 0), startRowGlobalCellIndex);
+				final long rowUpper = Math.min(getEndGlobalIndex(i, false, true), endRowGlobalCellIndex);
+				final long colLower = Math.max(UtilFunctions.computeCellIndex(j, out_bclen, 0), startColGlobalCellIndex);
+				final long colUpper = Math.min(getEndGlobalIndex(j, false, false), endColGlobalCellIndex);
+				final int aixi = UtilFunctions.computeCellInBlock(rowLower, in_brlen);
+				final int aixj = UtilFunctions.computeCellInBlock(colLower, in_bclen);
+				final int cixi = UtilFunctions.computeCellInBlock(rowLower, out_brlen);
+				final int cixj = UtilFunctions.computeCellInBlock(colLower, out_bclen);
+				
+				if( aligned ) {
+					blk.appendToSparse(in, cixi, cixj);
+					blk.setNonZeros(in.getNonZeros());
+				}
+				else { //general case
+					for(int i2 = 0; i2 <= (int)(rowUpper-rowLower); i2++)
+						for(int j2 = 0; j2 <= (int)(colUpper-colLower); j2++)
+							blk.appendValue(cixi+i2, cixj+j2, in.quickGetValue(aixi+i2, aixj+j2));
 				}
 				retVal.add(new Tuple2<>(indx, blk));
 			}
 		}
+		
 		return retVal.iterator();
 	}
 
-	private long getEndGlobalIndex(long blockIndex, boolean isIn, boolean isRow) 
-	{
+	private long getEndGlobalIndex(long blockIndex, boolean isIn, boolean isRow) {
 		//determine dimension and block sizes
 		long len = isRow ? rlen : clen;
-		int blen = isIn ? (isRow ? in_brlen : in_bclen) 
-				        : (isRow ? out_brlen : out_bclen);
+		int blen = isIn ? (isRow ? in_brlen : in_bclen) : (isRow ? out_brlen : out_bclen);
 		
 		//compute 1-based global cell index in block
 		int new_len = UtilFunctions.computeBlockSize(len, blockIndex, blen);

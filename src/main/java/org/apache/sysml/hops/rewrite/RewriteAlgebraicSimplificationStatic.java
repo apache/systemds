@@ -438,8 +438,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					&& HopRewriteUtils.isLiteralOfValue(min, 0)
 					&& HopRewriteUtils.isLiteralOfValue(max, 0) )
 				{
-					gen.setInput(DataExpression.RAND_MIN, right);
-					gen.setInput(DataExpression.RAND_MAX, right);
+					gen.setInput(DataExpression.RAND_MIN, right, true);
+					gen.setInput(DataExpression.RAND_MAX, right, true);
 					//rewire all parents (avoid anomalies with replicated datagen)
 					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )
@@ -454,8 +454,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 					&& HopRewriteUtils.isLiteralOfValue(max, 1) )
 				{
 					if( HopRewriteUtils.isLiteralOfValue(min, 1) )
-						gen.setInput(DataExpression.RAND_MIN, right);
-					gen.setInput(DataExpression.RAND_MAX, right);
+						gen.setInput(DataExpression.RAND_MIN, right, true);
+					gen.setInput(DataExpression.RAND_MAX, right, true);
 					//rewire all parents (avoid anomalies with replicated datagen)
 					List<Hop> parents = new ArrayList<>(bop.getParent());
 					for( Hop p : parents )

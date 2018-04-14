@@ -374,8 +374,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		return getInput().get(getParamIndex(key));
 	}
 	
-	public void setInput(String key, Hop hop) {
+	public void setInput(String key, Hop hop, boolean linkParent) {
 		getInput().set(getParamIndex(key), hop);
+		if( linkParent )
+			hop.getParent().add(this);
 	}
 
 	public boolean hasConstantValue() 

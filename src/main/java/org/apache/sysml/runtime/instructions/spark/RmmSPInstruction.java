@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.TripleIndexes;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -188,10 +189,10 @@ public class RmmSPInstruction extends BinarySPInstruction {
 			MatrixIndexes ixOut = new MatrixIndexes(ixIn.getFirstIndex(), ixIn.getSecondIndex()); //i,j
 			MatrixBlock blkIn1 = arg0._2()._1();
 			MatrixBlock blkIn2 = arg0._2()._2();
-			MatrixBlock blkOut = new MatrixBlock();
 			
 			//core block matrix multiplication 
-			blkIn1.aggregateBinaryOperations(blkIn1, blkIn2, blkOut, _op);
+			MatrixBlock blkOut = OperationsOnMatrixValues
+				.performAggregateBinaryIgnoreIndexes(blkIn1, blkIn2, new MatrixBlock(), _op);
 			
 			//output new tuple
 			return new Tuple2<>(ixOut, blkOut);

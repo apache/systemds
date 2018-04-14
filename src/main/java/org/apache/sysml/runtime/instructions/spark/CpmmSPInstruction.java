@@ -43,6 +43,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
@@ -203,10 +204,10 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock blkIn1 = (MatrixBlock)arg0._2()._1().getValue();
 			MatrixBlock blkIn2 = (MatrixBlock)arg0._2()._2().getValue();
 			MatrixIndexes ixOut = new MatrixIndexes();
-			MatrixBlock blkOut = new MatrixBlock();
 			
 			//core block matrix multiplication 
-			blkIn1.aggregateBinaryOperations(blkIn1, blkIn2, blkOut, _op);
+			MatrixBlock blkOut = OperationsOnMatrixValues
+				.performAggregateBinaryIgnoreIndexes(blkIn1, blkIn2, new MatrixBlock(), _op);
 			
 			//return target block
 			ixOut.setIndexes(arg0._2()._1().getIndexes().getRowIndex(),
@@ -234,7 +235,8 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock in2 = (MatrixBlock)arg0._2()
 				.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 			//core block matrix multiplication
-			return in1.aggregateBinaryOperations(in1, in2, new MatrixBlock(), _op);
+			return OperationsOnMatrixValues
+				.performAggregateBinaryIgnoreIndexes(in1, in2, new MatrixBlock(), _op);
 		}
 	}
 }

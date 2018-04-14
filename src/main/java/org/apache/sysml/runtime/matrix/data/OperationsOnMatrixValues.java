@@ -228,14 +228,13 @@ public class OperationsOnMatrixValues
 			value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
 	}
 
-	public static MatrixValue performAggregateBinaryIgnoreIndexes(MatrixBlock value1, MatrixBlock value2,
+	public static MatrixBlock performAggregateBinaryIgnoreIndexes(MatrixBlock value1, MatrixBlock value2,
 			MatrixBlock valueOut, AggregateBinaryOperator op) {
 		//perform on the value
 		if( value2 instanceof CompressedMatrixBlock )
-			value2.aggregateBinaryOperations(value1, value2, valueOut, op);
+			return value2.aggregateBinaryOperations(value1, value2, valueOut, op);
 		else
-			value1.aggregateBinaryOperations(value1, value2, valueOut, op);
-		return valueOut;
+			return value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 
 	@SuppressWarnings("rawtypes")

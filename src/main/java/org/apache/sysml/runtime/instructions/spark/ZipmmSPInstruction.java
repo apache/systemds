@@ -36,6 +36,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -124,7 +125,8 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock tmp = (MatrixBlock)in2.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 				
 			//core matrix multiplication (for t(y)%*%X or t(X)%*%y)
-			return tmp.aggregateBinaryOperations(tmp, in1, new MatrixBlock(), _abop);
+			return OperationsOnMatrixValues
+				.performAggregateBinaryIgnoreIndexes(tmp, in1, new MatrixBlock(), _abop);
 		}
 	}
 }

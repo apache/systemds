@@ -341,117 +341,83 @@ public class Builtin extends ValueFunction
 
 	/*
 	 * Builtin functions with two inputs
-	 */	
+	 */
 	@Override
 	public double execute (double in1, double in2) {
 		switch(bFunc) {
-		
-		/*
-		 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
-		 * <code>Double.compare()</code> due to the inconsistencies in the way
-		 * NaN and -0.0 are handled. The behavior of methods in
-		 * <code>Double</code> class are designed mainly to make Java
-		 * collections work properly. For more details, see the help for
-		 * <code>Double.equals()</code> and <code>Double.comapreTo()</code>.
-		 */
-		case MAX:
-		case CUMMAX:
-			//return (Double.compare(in1, in2) >= 0 ? in1 : in2);
-			return (in1 >= in2 ? in1 : in2);
-		case MIN:
-		case CUMMIN:
-			//return (Double.compare(in1, in2) <= 0 ? in1 : in2);
-			return (in1 <= in2 ? in1 : in2);
-			
-			// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
-			// rowIndexMax() and its siblings require comparing four values, but
-			// the aggregation API only allows two values. So the execute()
-			// method receives as its argument the two cell values to be
-			// compared and performs just the value part of the comparison. We
-			// return an integer cast down to a double, since the aggregation
-			// API doesn't have any way to return anything but a double. The
-			// integer returned takes on three posssible values: //
-			// .     0 => keep the index associated with in1 //
-			// .     1 => use the index associated with in2 //
-			// .     2 => use whichever index is higher (tie in value) //
-		case MAXINDEX:
-			if (in1 == in2) {
-				return 2;
-			} else if (in1 > in2) {
-				return 1;
-			} else { // in1 < in2
-				return 0;
-			}
-		case MININDEX:
-			if (in1 == in2) {
-				return 2;
-			} else if (in1 < in2) {
-				return 1;
-			} else { // in1 > in2
-				return 0;
-			}
-			// *** END HACK ***
-		case LOG:
-			//faster in Math
-			return (Math.log(in1)/Math.log(in2)); 
-		case LOG_NZ:
-			//faster in Math
-			return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2));
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
-		}
-	}
-	
-	/**
-	 * Simplified version without exception handling
-	 * 
-	 * @param in1 double 1
-	 * @param in2 double 2
-	 * @return result
-	 */
-	public double execute2(double in1, double in2) 
-	{
-		switch(bFunc) {
+			/*
+			 * Arithmetic relational operators (==, !=, <=, >=) must be instead of
+			 * <code>Double.compare()</code> due to the inconsistencies in the way
+			 * NaN and -0.0 are handled. The behavior of methods in
+			 * <code>Double</code> class are designed mainly to make Java
+			 * collections work properly. For more details, see the help for
+			 * <code>Double.equals()</code> and <code>Double.comapreTo()</code>.
+			 */
 			case MAX:
 			case CUMMAX:
-				//return (Double.compare(in1, in2) >= 0 ? in1 : in2); 
-				return (in1 >= in2 ? in1 : in2);
+				return Math.max(in1, in2);
 			case MIN:
 			case CUMMIN:
-				//return (Double.compare(in1, in2) <= 0 ? in1 : in2); 
-				return (in1 <= in2 ? in1 : in2);
-			case MAXINDEX: 
-				return (in1 >= in2) ? 1 : 0;
-			case MININDEX: 
-				return (in1 <= in2) ? 1 : 0;
+				return Math.min(in1, in2);
+				
+				// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
+				// rowIndexMax() and its siblings require comparing four values, but
+				// the aggregation API only allows two values. So the execute()
+				// method receives as its argument the two cell values to be
+				// compared and performs just the value part of the comparison. We
+				// return an integer cast down to a double, since the aggregation
+				// API doesn't have any way to return anything but a double. The
+				// integer returned takes on three posssible values: //
+				// .     0 => keep the index associated with in1 //
+				// .     1 => use the index associated with in2 //
+				// .     2 => use whichever index is higher (tie in value) //
+			case MAXINDEX:
+				if (in1 == in2) {
+					return 2;
+				} else if (in1 > in2) {
+					return 1;
+				} else { // in1 < in2
+					return 0;
+				}
+			case MININDEX:
+				if (in1 == in2) {
+					return 2;
+				} else if (in1 < in2) {
+					return 1;
+				} else { // in1 > in2
+					return 0;
+				}
+				// *** END HACK ***
+			case LOG://faster in Math
+				return (Math.log(in1)/Math.log(in2)); 
+			case LOG_NZ: //faster in Math
+				return (in1==0) ? 0 : (Math.log(in1)/Math.log(in2));
 			default:
-				// For performance reasons, avoid throwing an exception 
-				return -1;
+				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
 	
 	@Override
 	public double execute (long in1, long in2) {
 		switch(bFunc) {
-		
-		case MAX:    
-		case CUMMAX:   return (in1 >= in2 ? in1 : in2); 
-		
-		case MIN:    
-		case CUMMIN:   return (in1 <= in2 ? in1 : in2); 
-		
-		case MAXINDEX: return (in1 >= in2) ? 1 : 0;
-		case MININDEX: return (in1 <= in2) ? 1 : 0;
-		
-		case LOG:
-			//faster in Math
-			return Math.log(in1)/Math.log(in2);
-		case LOG_NZ:
-			//faster in Math
-			return (in1==0) ? 0 : Math.log(in1)/Math.log(in2);
-
-		default:
-			throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
+			case MAX:
+			case CUMMAX:   return Math.max(in1, in2);
+			
+			case MIN:
+			case CUMMIN:   return Math.min(in1, in2);
+			
+			case MAXINDEX: return (in1 >= in2) ? 1 : 0;
+			case MININDEX: return (in1 <= in2) ? 1 : 0;
+			
+			case LOG:
+				//faster in Math
+				return Math.log(in1)/Math.log(in2);
+			case LOG_NZ:
+				//faster in Math
+				return (in1==0) ? 0 : Math.log(in1)/Math.log(in2);
+	
+			default:
+				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
 

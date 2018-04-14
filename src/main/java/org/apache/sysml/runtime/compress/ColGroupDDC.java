@@ -197,7 +197,7 @@ public abstract class ColGroupDDC extends ColGroupValue
 		
 		for( int i=rl; i<ru; i++ )
 			for( int j=0; j<ncol; j++ )
-				c[i] = builtin.execute2(c[i], getData(i, j));
+				c[i] = builtin.execute(c[i], getData(i, j));
 	}
 	
 	protected final void postScaling(double[] vals, double[] c) {

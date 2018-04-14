@@ -2388,7 +2388,7 @@ public class LibMatrixAgg
 			//note: we need to determine if there are only nnz in a column
 			for( int j=0; j<n; j++ )
 				if( cnt[j] < i+1 ) //no dense column
-					cmxx[j] = builtin.execute2(cmxx[j], 0);
+					cmxx[j] = builtin.execute(cmxx[j], 0);
 			
 			//always copy current sum (not sparse-safe)
 			System.arraycopy(cmxx, 0, c, ix, n);
@@ -2431,19 +2431,19 @@ public class LibMatrixAgg
 		if( a.isContiguous() ) {
 			int alen = (int) a.size(rl, ru);
 			double val = builtin(a.values(rl), a.pos(rl), init, alen, builtin);
-			ret = builtin.execute2(ret, val);
+			ret = builtin.execute(ret, val);
 			//correction (not sparse-safe)
-			ret = (alen<(ru-rl)*n) ? builtin.execute2(ret, 0) : ret;
+			ret = (alen<(ru-rl)*n) ? builtin.execute(ret, 0) : ret;
 		}
 		else {
 			for( int i=rl; i<ru; i++ ) {
 				if( !a.isEmpty(i) ) {
 					double lval = builtin(a.values(i), a.pos(i), init, a.size(i), builtin);
-					ret = builtin.execute2(ret, lval);
+					ret = builtin.execute(ret, lval);
 				}		
 				//correction (not sparse-safe)
 				if( a.size(i) < n )
-					ret = builtin.execute2(ret, 0); 
+					ret = builtin.execute(ret, 0); 
 			}
 		}
 		c.set(0, 0, ret);
@@ -2469,7 +2469,7 @@ public class LibMatrixAgg
 				c.set(i, 0, builtin(a.values(i), a.pos(i), init, a.size(i), builtin));
 			//correction (not sparse-safe)
 			if( a.size(i) < n )
-				c.set(i, 0, builtin.execute2(c.get(i, 0), 0));
+				c.set(i, 0, builtin.execute(c.get(i, 0), 0));
 		}
 	}
 	
@@ -2520,7 +2520,7 @@ public class LibMatrixAgg
 		// to be replaced with a 0 because there was a missing nonzero. 
 		for( int i=0; i<n; i++ )
 			if( cnt[i] < m ) //no dense column
-				c[i] = builtin.execute2(c[i], 0);
+				c[i] = builtin.execute(c[i], 0);
 	}
 
 	/**
@@ -2546,7 +2546,7 @@ public class LibMatrixAgg
 				c.set(i, 0, (double)aix[apos+maxindex] + 1);
 				c.set(i, 1, maxvalue);
 				//correction (not sparse-safe)
-				if( alen < n && builtin.execute2(0, maxvalue) == 1 ) {
+				if( alen < n && builtin.execute(0, maxvalue) == 1 ) {
 					int ix = n-1; //find last 0 value
 					for( int j=apos+alen-1; j>=apos; j--, ix-- )
 						if( aix[j]!=ix )
@@ -2585,8 +2585,8 @@ public class LibMatrixAgg
 				double minvalue = avals[apos+minindex];
 				c.set(i, 0, (double)aix[apos+minindex] + 1);
 				c.set(i, 1, minvalue); //min value among non-zeros
-				//correction (not sparse-safe)	
-				if(alen < n && builtin.execute2(0, minvalue) == 1) {
+				//correction (not sparse-safe)
+				if(alen < n && builtin.execute(0, minvalue) == 1) {
 					int ix = n-1; //find last 0 value
 					for( int j=alen-1; j>=0; j--, ix-- )
 						if( aix[apos+j]!=ix )
@@ -3065,18 +3065,18 @@ public class LibMatrixAgg
 	private static double builtin( double[] a, int ai, final double init, final int len, Builtin aggop ) {
 		double val = init;
 		for( int i=0; i<len; i++, ai++ )
-			val = aggop.execute2( val, a[ ai ] );
+			val = aggop.execute( val, a[ ai ] );
 		return val;
 	}
 
 	private static void builtinAgg( double[] a, double[] c, int ai, final int len, Builtin aggop ) {
 		for( int i=0; i<len; i++ )
-			c[ i ] = aggop.execute2( c[ i ], a[ ai+i ] );
+			c[ i ] = aggop.execute( c[ i ], a[ ai+i ] );
 	}
 
 	private static void builtinAgg( double[] a, double[] c, int[] aix, int ai, final int len, Builtin aggop ) {
 		for( int i=ai; i<ai+len; i++ )
-			c[ aix[i] ] = aggop.execute2( c[ aix[i] ], a[ i ] );
+			c[ aix[i] ] = aggop.execute( c[ aix[i] ], a[ i ] );
 	}
 
 	private static int indexmax( double[] a, int ai, final double init, final int len, Builtin aggop ) {

@@ -642,7 +642,7 @@ public class ColGroupOLE extends ColGroupOffset
 				slen = _data[boff+bix];
 				for (int i = 1; i <= slen; i++) {
 					int rix = off + _data[boff+bix + i];
-					c[rix] = builtin.execute2(c[rix], val);
+					c[rix] = builtin.execute(c[rix], val);
 				}
 			}
 		}

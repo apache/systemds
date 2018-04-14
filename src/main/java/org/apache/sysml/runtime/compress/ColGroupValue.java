@@ -278,17 +278,17 @@ public abstract class ColGroupValue extends ColGroup
 		double val = (builtin.getBuiltinCode()==BuiltinCode.MAX) ?
 			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		if( zeros )
-			val = builtin.execute2(val, 0);
+			val = builtin.execute(val, 0);
 		
 		//iterate over all values only
 		final int numVals = getNumValues();
-		final int numCols = getNumCols();		
+		final int numCols = getNumCols();
 		for (int k = 0; k < numVals; k++)
 			for( int j=0, valOff = k*numCols; j<numCols; j++ )
-				val = builtin.execute2(val, _values[ valOff+j ]);
+				val = builtin.execute(val, _values[ valOff+j ]);
 		
 		//compute new partial aggregate
-		val = builtin.execute2(val, result.quickGetValue(0, 0));
+		val = builtin.execute(val, result.quickGetValue(0, 0));
 		result.quickSetValue(0, 0, val);
 	}
 	
@@ -310,13 +310,13 @@ public abstract class ColGroupValue extends ColGroup
 			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
 		if( zeros ) {
 			for( int j = 0; j < numCols; j++ )
-				vals[j] = builtin.execute2(vals[j], 0);
+				vals[j] = builtin.execute(vals[j], 0);
 		}
 		
 		//iterate over all values only
 		for (int k = 0; k < numVals; k++) 
 			for( int j=0, valOff=k*numCols; j<numCols; j++ )
-				vals[j] = builtin.execute2(vals[j], _values[ valOff+j ]);
+				vals[j] = builtin.execute(vals[j], _values[ valOff+j ]);
 		
 		//copy results to output
 		for( int j=0; j<numCols; j++ )

@@ -667,7 +667,7 @@ public class ColGroupRLE extends ColGroupOffset
 				curRunStartOff = curRunEnd + _data[boff+bix];
 				curRunEnd = curRunStartOff + _data[boff+bix+1];
 				for (int rix=curRunStartOff; rix<curRunEnd && rix<ru; rix++)
-					c[rix] = builtin.execute2(c[rix], val);
+					c[rix] = builtin.execute(c[rix], val);
 			}
 		}
 	}

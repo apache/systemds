@@ -1301,7 +1301,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 			Builtin builtin = (Builtin)op.aggOp.increOp.fn;
 			for( int i=0; i<rlen; i++ )
 				if( rnnz[i] < clen )
-					ret.quickSetValue(i, 0, builtin.execute2(ret.quickGetValue(i, 0), 0));
+					ret.quickSetValue(i, 0, builtin.execute(ret.quickGetValue(i, 0), 0));
 		}
 		
 		//drop correction if necessary

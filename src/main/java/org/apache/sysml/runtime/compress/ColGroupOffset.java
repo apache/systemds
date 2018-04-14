@@ -244,7 +244,7 @@ public abstract class ColGroupOffset extends ColGroupValue
 		double val = (builtin.getBuiltinCode()==BuiltinCode.MAX) ?
 			Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
 		for( int i = 0; i < numCols; i++ )
-			val = builtin.execute2(val, _values[valOff+i]);
+			val = builtin.execute(val, _values[valOff+i]);
 		
 		return val;
 	}

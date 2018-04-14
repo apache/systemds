@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	AggregateInfTest.class,
+	AggregateNaNTest.class,
 	ColStdDevsTest.class,
 	ColSumsSqTest.class,
 	ColSumTest.class,

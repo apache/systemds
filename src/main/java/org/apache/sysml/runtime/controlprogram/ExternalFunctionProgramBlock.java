@@ -285,8 +285,9 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 	}
 	
 	protected void verifyFunctionInputsOutputs(PackageFunction fun, CPOperand[] inputs, CPOperand[] outputs) {
-		// verify number of outputs
-		if( outputs.length != fun.getNumFunctionOutputs() ) {
+		// verify number of outputs if fixed, otherwise best effort handle of outputs
+		if( !fun.hasVarNumFunctionOutputs()
+			&& outputs.length != fun.getNumFunctionOutputs() ) {
 			throw new DMLRuntimeException(
 					"Number of function outputs ("+fun.getNumFunctionOutputs()+") " +
 					"does not match with declaration ("+outputs.length+").");

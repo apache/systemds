@@ -79,6 +79,16 @@ public abstract class PackageFunction implements Serializable
 	public abstract int getNumFunctionOutputs();
 
 	/**
+	 * Indicates if the function has a variable number of outputs, that
+	 * is unknown until the function has been executed.
+	 * 
+	 * @return true if the number of outputs is unknown; otherwise false.
+	 */
+	public boolean hasVarNumFunctionOutputs() {
+		return false;
+	}
+	
+	/**
 	 * Method to get a specific output of this package function. This method
 	 * should be implemented in the user's function.
 	 * 

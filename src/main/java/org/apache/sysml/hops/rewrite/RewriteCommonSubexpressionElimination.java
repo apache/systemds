@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 
 /**
  * Rule: CommonSubexpressionElimination. For all statement blocks, 
@@ -99,7 +100,8 @@ public class RewriteCommonSubexpressionElimination extends HopRewriteRule
 		if( hop.isVisited() )
 			return ret;
 
-		if( hop.getInput().isEmpty() ) //LEAF NODE
+		if( hop.getInput().isEmpty() //LEAF NODE
+			|| HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
 		{
 			if( hop instanceof LiteralOp )
 			{

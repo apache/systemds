@@ -209,8 +209,9 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		return (index >= 0) ? values[index] : 0;
 	}
 
-	public int searchIndexesFirstLTE(int col)
-	{
+	public int searchIndexesFirstLTE(int col) {
+		if( size == 0 ) return -1;
+		
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 )
@@ -221,8 +222,9 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		return (index-1 < size) ? index-1 : -1;
 	}
 
-	public int searchIndexesFirstGTE(int col)
-	{
+	public int searchIndexesFirstGTE(int col) {
+		if( size == 0 ) return -1;
+		
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 )
@@ -233,8 +235,9 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		return (index < size) ? index : -1;
 	}
 
-	public int searchIndexesFirstGT(int col)
-	{
+	public int searchIndexesFirstGT(int col) {
+		if( size == 0 ) return -1;
+		
 		//search for existing col index
 		int index = Arrays.binarySearch(indexes, 0, size, col);
 		if( index >= 0 )

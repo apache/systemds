@@ -457,7 +457,6 @@ public class LibMatrixReorg
 	 * 
 	 * @param in indexed matrix value
 	 * @param mcIn input matrix characteristics
-	 * @param out list of indexed matrix values
 	 * @param mcOut output matrix characteristics
 	 * @param rowwise if true, reshape by row
 	 * @param outputEmptyBlocks output blocks with nnz=0

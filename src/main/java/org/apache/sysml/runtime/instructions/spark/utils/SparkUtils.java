@@ -70,40 +70,28 @@ public class SparkUtils
 		return new Tuple2<>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
-	public static ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( ArrayList<IndexedMatrixValue> in ) {
-		ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
-		for( IndexedMatrixValue imv : in )
-			ret.add(fromIndexedMatrixBlock(imv));
-		return ret;
+	public static List<Tuple2<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlock( List<IndexedMatrixValue> in ) {
+		return in.stream().map(imv -> fromIndexedMatrixBlock(imv)).collect(Collectors.toList());
 	}
 
 	public static Pair<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlockToPair( IndexedMatrixValue in ){
 		return new Pair<>(in.getIndexes(), (MatrixBlock)in.getValue());
 	}
 
-	public static ArrayList<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( ArrayList<IndexedMatrixValue> in ) {
-		ArrayList<Pair<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
-		for( IndexedMatrixValue imv : in )
-			ret.add(fromIndexedMatrixBlockToPair(imv));
-		return ret;
+	public static List<Pair<MatrixIndexes,MatrixBlock>> fromIndexedMatrixBlockToPair( List<IndexedMatrixValue> in ) {
+		return in.stream().map(imv -> fromIndexedMatrixBlockToPair(imv)).collect(Collectors.toList());
 	}
 
 	public static Tuple2<Long,FrameBlock> fromIndexedFrameBlock( Pair<Long, FrameBlock> in ){
 		return new Tuple2<>(in.getKey(), in.getValue());
 	}
 
-	public static ArrayList<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock( ArrayList<Pair<Long, FrameBlock>> in ) {
-		ArrayList<Tuple2<Long, FrameBlock>> ret = new ArrayList<>();
-		for( Pair<Long, FrameBlock> ifv : in )
-			ret.add(fromIndexedFrameBlock(ifv));
-		return ret;
+	public static List<Tuple2<Long,FrameBlock>> fromIndexedFrameBlock(List<Pair<Long, FrameBlock>> in) {
+		return in.stream().map(ifv -> fromIndexedFrameBlock(ifv)).collect(Collectors.toList());
 	}
 
-	public static ArrayList<Pair<Long,Long>> toIndexedLong( List<Tuple2<Long, Long>> in ) {
-		ArrayList<Pair<Long, Long>> ret = new ArrayList<>();
-		for( Tuple2<Long, Long> e : in )
-			ret.add(new Pair<>(e._1(), e._2()));
-		return ret;
+	public static List<Pair<Long,Long>> toIndexedLong( List<Tuple2<Long, Long>> in ) {
+		return in.stream().map(e -> new Pair<>(e._1(), e._2())).collect(Collectors.toList());
 	}
 
 	public static Pair<Long,FrameBlock> toIndexedFrameBlock( Tuple2<Long,FrameBlock> in ) {

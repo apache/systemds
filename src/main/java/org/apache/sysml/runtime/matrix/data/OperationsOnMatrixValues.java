@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -238,7 +239,7 @@ public class OperationsOnMatrixValues
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) {
+	public static List performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, CacheBlock in) {
 		if( in instanceof MatrixBlock )
 			return performSlice(ixrange, brlen, bclen, iix, jix, (MatrixBlock)in);
 		else if( in instanceof FrameBlock )
@@ -246,13 +247,11 @@ public class OperationsOnMatrixValues
 		throw new DMLRuntimeException("Unsupported cache block type: "+in.getClass().getName());
 	}
 	
-	
 	@SuppressWarnings("rawtypes")
-	public static ArrayList performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, MatrixBlock in) {
+	public static List performSlice(IndexRange ixrange, int brlen, int bclen, int iix, int jix, MatrixBlock in) {
 		IndexedMatrixValue imv = new IndexedMatrixValue(new MatrixIndexes(iix, jix), (MatrixBlock)in);
 		ArrayList<IndexedMatrixValue> outlist = new ArrayList<>();
 		performSlice(imv, ixrange, brlen, bclen, outlist);
-	
 		return SparkUtils.fromIndexedMatrixBlockToPair(outlist);
 	}
 

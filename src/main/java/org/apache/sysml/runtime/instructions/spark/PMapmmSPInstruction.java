@@ -193,8 +193,8 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 				MatrixBlock left = pm.getBlock(i, (int)ixIn.getRowIndex());
 			
 				//execute matrix-vector mult
-				OperationsOnMatrixValues.performAggregateBinary( 
-						new MatrixIndexes(i,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
+				OperationsOnMatrixValues.matMult(new MatrixIndexes(i,ixIn.getRowIndex()),
+					left, ixIn, blkIn, ixOut, blkOut, _op);
 				
 				//output new tuple
 				ixOut.setIndexes(_offset+i, ixOut.getColumnIndex());

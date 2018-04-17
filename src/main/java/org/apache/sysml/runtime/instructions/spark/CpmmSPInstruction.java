@@ -207,7 +207,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 			
 			//core block matrix multiplication 
 			MatrixBlock blkOut = OperationsOnMatrixValues
-				.performAggregateBinaryIgnoreIndexes(blkIn1, blkIn2, new MatrixBlock(), _op);
+				.matMult(blkIn1, blkIn2, new MatrixBlock(), _op);
 			
 			//return target block
 			ixOut.setIndexes(arg0._2()._1().getIndexes().getRowIndex(),
@@ -236,7 +236,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 				.reorgOperations(_rop, new MatrixBlock(), 0, 0, 0);
 			//core block matrix multiplication
 			return OperationsOnMatrixValues
-				.performAggregateBinaryIgnoreIndexes(in1, in2, new MatrixBlock(), _op);
+				.matMult(in1, in2, new MatrixBlock(), _op);
 		}
 	}
 }

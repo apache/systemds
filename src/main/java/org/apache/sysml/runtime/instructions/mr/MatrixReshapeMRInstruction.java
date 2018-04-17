@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.mr;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -36,8 +37,6 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	private MatrixCharacteristics _mcIn = null;
 	private MatrixCharacteristics _mcOut = null;
 
-	private ArrayList<IndexedMatrixValue> _cache = null;
-
 	private MatrixReshapeMRInstruction(Operator op, byte in, long rows, long cols, boolean byrow, byte out,
 			String istr) {
 		super(MRType.MMTSJ, op, in, out, istr);
@@ -46,8 +45,7 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 		_byrow = byrow;
 	}
 
-	public void setMatrixCharacteristics( MatrixCharacteristics mcIn, MatrixCharacteristics mcOut )
-	{
+	public void setMatrixCharacteristics( MatrixCharacteristics mcIn, MatrixCharacteristics mcOut ) {
 		_mcIn = mcIn;
 	}
 
@@ -73,25 +71,17 @@ public class MatrixReshapeMRInstruction extends UnaryInstruction {
 	{
 		ArrayList<IndexedMatrixValue> blkList = cachedValues.get(input);
 		if( blkList != null )
-			for(IndexedMatrixValue imv : blkList)
-			{
-				if( imv == null )
-					continue;
+			for(IndexedMatrixValue imv : blkList) {
+				if( imv == null ) continue;
 				
-				//get cached blocks
-				ArrayList<IndexedMatrixValue> out = _cache;
-	
 				//process instruction
 				_mcOut.setBlockSize(brlen, bclen);
-				out = LibMatrixReorg.reshape(imv, _mcIn, out, _mcOut, _byrow, true);
+				List<IndexedMatrixValue> out =
+					LibMatrixReorg.reshape(imv, _mcIn, _mcOut, _byrow, true);
 				
 				//put the output values in the output cache
 				for( IndexedMatrixValue outBlk : out )
 					cachedValues.add(output, outBlk);
-				
-				//put blocks into own cache
-				if( LibMatrixReorg.ALLOW_BLOCK_REUSE )
-					_cache = out;	
 			}
 	}
 	

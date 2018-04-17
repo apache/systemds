@@ -19,8 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -138,8 +138,8 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 			IndexedMatrixValue in = SparkUtils.toIndexedMatrixBlock(arg0);
 			
 			//execute actual reshape operation
-			ArrayList<IndexedMatrixValue> out = LibMatrixReorg
-				.reshape(in, _mcIn, new ArrayList<>(), _mcOut, _byrow, _outputEmptyBlocks);
+			List<IndexedMatrixValue> out = LibMatrixReorg
+				.reshape(in, _mcIn, _mcOut, _byrow, _outputEmptyBlocks);
 
 			//output conversion (for compatibility w/ rdd schema)
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();

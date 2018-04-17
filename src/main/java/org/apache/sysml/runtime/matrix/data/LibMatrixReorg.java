@@ -28,10 +28,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -68,9 +69,6 @@ public class LibMatrixReorg
 	//allow shallow dense/sparse copy for unchanged data (which is 
 	//safe due to copy-on-write and safe update-in-place handling)
 	public static final boolean SHALLOW_COPY_REORG = true;
-	
-	//allow reuse of temporary blocks for certain operations
-	public static final boolean ALLOW_BLOCK_REUSE = false;
 	
 	//use csr instead of mcsr sparse block for rexpand columns / diag v2m
 	public static final boolean SPARSE_OUTPUTS_IN_CSR = true;
@@ -465,15 +463,15 @@ public class LibMatrixReorg
 	 * @param outputEmptyBlocks output blocks with nnz=0
 	 * @return list of indexed matrix values
 	 */
-	public static ArrayList<IndexedMatrixValue> reshape( IndexedMatrixValue in, MatrixCharacteristics mcIn, 
-			ArrayList<IndexedMatrixValue> out, MatrixCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
+	public static List<IndexedMatrixValue> reshape(IndexedMatrixValue in, MatrixCharacteristics mcIn,
+			MatrixCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
 		
 		//prepare result blocks (no reuse in order to guarantee mem constraints)
 		Collection<MatrixIndexes> rix = computeAllResultBlockIndexes(ixIn, mcIn, mcOut, mbIn, rowwise, outputEmptyBlocks);
-		HashMap<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, mcIn, mcOut, rowwise, out);
+		Map<MatrixIndexes, MatrixBlock> rblk = createAllResultBlocks(rix, mbIn.nonZeros, mcOut);
 		
 		//basic algorithm
 		long row_offset = (ixIn.getRowIndex()-1)*mcIn.getRowsPerBlock();
@@ -483,15 +481,11 @@ public class LibMatrixReorg
 		else //dense
 			reshapeDense(mbIn, row_offset, col_offset, rblk, mcIn, mcOut, rowwise);
 		
-		//prepare output
-		out = new ArrayList<>();
-		for( Entry<MatrixIndexes, MatrixBlock> e : rblk.entrySet() )
-			if( outputEmptyBlocks || !e.getValue().isEmptyBlock(false) ) {
-				e.getValue().examSparsity(); //ensure correct format
-				out.add(new IndexedMatrixValue(e.getKey(),e.getValue()));
-			}
-		
-		return out;
+		//prepare output (sparsity switch, wrapper)
+		return rblk.entrySet().stream()
+			.filter( e -> outputEmptyBlocks || !e.getValue().isEmptyBlock(false))
+			.map(e -> {e.getValue().examSparsity(); return new IndexedMatrixValue(e.getKey(),e.getValue());})
+			.collect(Collectors.toList());
 	}
 
 	/**
@@ -1552,46 +1546,26 @@ public class LibMatrixReorg
 				row_offset+cell.getI(), col_offset+cell.getJ(), mcIn, mcOut, rowwise));
 		}
 	}
-
-	@SuppressWarnings("unused")
-	private static HashMap<MatrixIndexes, MatrixBlock> createAllResultBlocks( Collection<MatrixIndexes> rix, 
-			long nnz, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut,
-			boolean rowwise, ArrayList<IndexedMatrixValue> reuse )
-	{
-		HashMap<MatrixIndexes, MatrixBlock> ret = new HashMap<MatrixIndexes,MatrixBlock>();
-		long nBlocks = rix.size();
-		int count = 0;
-		
-		for( MatrixIndexes ix : rix )
-		{
-			//compute indexes
-			long bi = ix.getRowIndex();
-			long bj = ix.getColumnIndex();
-			int lbrlen = UtilFunctions.computeBlockSize(mcOut.getRows(), bi, mcOut.getRowsPerBlock());
-			int lbclen = UtilFunctions.computeBlockSize(mcOut.getCols(), bj, mcOut.getColsPerBlock());
-			
-			//create result block
-			int estnnz = (int) (nnz/nBlocks); //force initialcapacity per row to 1, for many blocks
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
-			MatrixBlock block = null;
-			if( ALLOW_BLOCK_REUSE && reuse!=null && !reuse.isEmpty()) {
-				block = (MatrixBlock) reuse.get(count++).getValue();
-				block.reset(lbrlen, lbclen, sparse, estnnz);
-			}
-			else
-				block = new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
-			
-			if( lbrlen<1 || lbclen<1 )
-				throw new RuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
-			
-			ret.put(ix, block);
-		}
-		
-		return ret;
+	
+	private static Map<MatrixIndexes, MatrixBlock> createAllResultBlocks(Collection<MatrixIndexes> rix, long nnz, MatrixCharacteristics mcOut) {
+		return rix.stream().collect(Collectors.toMap(ix -> ix, ix -> createResultBlock(ix, nnz, rix.size(), mcOut)));
+	}
+	
+	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, MatrixCharacteristics mcOut) {
+		//compute indexes
+		long bi = ix.getRowIndex();
+		long bj = ix.getColumnIndex();
+		int lbrlen = UtilFunctions.computeBlockSize(mcOut.getRows(), bi, mcOut.getRowsPerBlock());
+		int lbclen = UtilFunctions.computeBlockSize(mcOut.getCols(), bj, mcOut.getColsPerBlock());
+		if( lbrlen<1 || lbclen<1 )
+			throw new DMLRuntimeException("Computed block dimensions ("+bi+","+bj+" -> "+lbrlen+","+lbclen+") are invalid!");
+		//create result block
+		int estnnz = (int) (nnz/nBlocks); //force initial capacity per row to 1, for many blocks
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(lbrlen, lbclen, estnnz);
+		return new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
 	}
 
-	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, 
-			HashMap<MatrixIndexes,MatrixBlock> rix,
+	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1622,14 +1596,12 @@ public class LibMatrixReorg
 		
 		//cleanup for sparse blocks
 		if( !rowwise && mcIn.getRows() > 1 ) {
-			for( MatrixBlock block : rix.values() )
-				if( block.sparse )
-					block.sortSparseRows();
+			rix.values().stream().filter(b -> b.sparse)
+				.forEach(b -> b.sortSparseRows());
 		}
 	}
 
-	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, 
-			HashMap<MatrixIndexes,MatrixBlock> rix, 
+	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix, 
 			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
@@ -1639,33 +1611,34 @@ public class LibMatrixReorg
 		
 		//append all values to right blocks
 		MatrixIndexes ixtmp = new MatrixIndexes();
-		for( int i=0; i<rlen; i++ )
-		{
-			if( !a.isEmpty(i) ) {
-				long ai = row_offset+i;
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				
-				for( int j=apos; j<apos+alen; j++ )  {
-					long aj = col_offset+aix[j];
-					ixtmp = computeResultBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
-					MatrixBlock out = rix.get(ixtmp);
-					if( out == null )
-						throw new DMLRuntimeException("Missing result block: "+ixtmp);
-					ixtmp = computeInBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
-					out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
-				}
+		for( int i=0; i<rlen; i++ ) {
+			if( a.isEmpty(i) ) continue;
+			long ai = row_offset+i;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			for( int j=apos; j<apos+alen; j++ )  {
+				long aj = col_offset+aix[j];
+				ixtmp = computeResultBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
+				MatrixBlock out = getAllocatedBlock(rix, ixtmp);
+				ixtmp = computeInBlockIndex(ixtmp, ai, aj, mcIn, mcOut, rowwise);
+				out.appendValue((int)ixtmp.getRowIndex(),(int)ixtmp.getColumnIndex(), avals[j]);
 			}
 		}
 		
 		//cleanup for sparse blocks
 		if( !rowwise && mcIn.getRows() > 1 ) {
-			for( MatrixBlock block : rix.values() )
-				if( block.sparse )
-					block.sortSparseRows();
+			rix.values().stream().filter(b -> b.sparse)
+				.forEach(b -> b.sortSparseRows());
 		}
+	}
+	
+	private static MatrixBlock getAllocatedBlock(Map<MatrixIndexes,MatrixBlock> rix, MatrixIndexes ix) {
+		MatrixBlock out = rix.get(ix);
+		if( out == null )
+			throw new DMLRuntimeException("Missing result block: "+ix);
+		return out;
 	}
 	
 	/**
@@ -1682,25 +1655,27 @@ public class LibMatrixReorg
 	private static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
 		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
-		long tempc = rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
+		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? tempc/mcOut.getCols() : tempc%mcOut.getRows();
 		long cj = rowwise ? tempc%mcOut.getCols() : tempc/mcOut.getRows();
 		long bci = ci/mcOut.getRowsPerBlock() + 1;
-		long bcj = cj/mcOut.getColsPerBlock() + 1; 
-		return (ixout != null) ? ixout.setIndexes(bci, bcj) :
-			new MatrixIndexes(bci, bcj);
+		long bcj = cj/mcOut.getColsPerBlock() + 1;
+		return ixout.setIndexes(bci, bcj);
 	}
-
+	
 	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
 		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
 	{
-		long tempc = rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
+		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getRowsPerBlock() : 
 			(tempc%mcOut.getRows())%mcOut.getRowsPerBlock();
 		long cj = rowwise ? (tempc%mcOut.getCols())%mcOut.getColsPerBlock() : 
 			(tempc/mcOut.getRows())%mcOut.getColsPerBlock();
-		return (ixout != null) ? ixout.setIndexes(ci, cj) :
-			new MatrixIndexes(ci, cj);
+		return ixout.setIndexes(ci, cj);
+	}
+	
+	private static long computeGlobalCellIndex(MatrixCharacteristics mcIn, long ai, long aj, boolean rowwise) {
+		return rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
 	}
 
 	private static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, MatrixBlock select, boolean emptyReturn) {

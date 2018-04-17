@@ -20,8 +20,8 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.stream.IntStream;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -275,8 +275,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 				
 				//execute matrix-vector mult
-				OperationsOnMatrixValues.performAggregateBinary( 
-						new MatrixIndexes(1,ixIn.getRowIndex()), left, ixIn, blkIn, ixOut, blkOut, _op);
+				OperationsOnMatrixValues.matMult(new MatrixIndexes(1,ixIn.getRowIndex()),
+					left, ixIn, blkIn, ixOut, blkOut, _op);
 			}
 			else //if( _type == CacheType.RIGHT )
 			{
@@ -284,8 +284,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute matrix-vector mult
-				OperationsOnMatrixValues.performAggregateBinary(
-						ixIn, blkIn, new MatrixIndexes(ixIn.getColumnIndex(),1), right, ixOut, blkOut, _op);
+				OperationsOnMatrixValues.matMult(ixIn, blkIn,
+					new MatrixIndexes(ixIn.getColumnIndex(),1), right, ixOut, blkOut, _op);
 			}
 			
 			//output new tuple
@@ -327,7 +327,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 				
 				//execute matrix-vector mult
-				return OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes( 
+				return OperationsOnMatrixValues.matMult( 
 					left, blkIn, new MatrixBlock(), _op);
 			}
 			else //if( _type == CacheType.RIGHT )
@@ -336,7 +336,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 				
 				//execute matrix-vector mult
-				return OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(
+				return OperationsOnMatrixValues.matMult(
 					blkIn, right, new MatrixBlock(), _op);
 			}
 		}
@@ -392,7 +392,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
 					
 					//execute index preserving matrix multiplication
-					OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(left, blkIn, blkOut, _op);
+					OperationsOnMatrixValues.matMult(left, blkIn, blkOut, _op);
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
@@ -400,7 +400,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 
 					//execute index preserving matrix multiplication
-					OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes(blkIn, right, blkOut, _op);
+					OperationsOnMatrixValues.matMult(blkIn, right, blkOut, _op);
 				}
 			
 				return new Tuple2<>(ixIn, blkOut);
@@ -430,32 +430,23 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
 		{
-			ArrayList<Tuple2<MatrixIndexes, MatrixBlock>> ret = new ArrayList<>();
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
-
+			
 			if( _type == CacheType.LEFT ) {
-				//for all matching left-hand-side blocks
-				int len = _pbc.getNumRowBlocks();
-				for( int i=1; i<=len; i++ ) {
-					MatrixBlock left = _pbc.getBlock(i, (int)ixIn.getRowIndex());
-					MatrixBlock blkOut = OperationsOnMatrixValues
-						.performAggregateBinaryIgnoreIndexes(left, blkIn, new MatrixBlock(), _op);
-					ret.add(new Tuple2<>(new MatrixIndexes(i, ixIn.getColumnIndex()), blkOut));
-				}
+				//for all matching left-hand-side blocks, returned as lazy iterator
+				return IntStream.range(1, _pbc.getNumRowBlocks()+1).mapToObj(i ->
+					new Tuple2<>(new MatrixIndexes(i, ixIn.getColumnIndex()),
+					OperationsOnMatrixValues.matMult(_pbc.getBlock(i, (int)ixIn.getRowIndex()), blkIn,
+						new MatrixBlock(), _op))).iterator();
 			}
 			else { //RIGHT
-				//for all matching right-hand-side blocks
-				int len = _pbc.getNumColumnBlocks();
-				for( int j=1; j<=len; j++ )  {
-					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), j);
-					MatrixBlock blkOut = OperationsOnMatrixValues
-						.performAggregateBinaryIgnoreIndexes(blkIn, right, new MatrixBlock(), _op);
-					ret.add(new Tuple2<>(new MatrixIndexes(ixIn.getRowIndex(), j), blkOut));
-				}
+				//for all matching right-hand-side blocks, returned as lazy iterator
+				return IntStream.range(1, _pbc.getNumColumnBlocks()+1).mapToObj(j ->
+					new Tuple2<>(new MatrixIndexes(ixIn.getRowIndex(), j),
+					OperationsOnMatrixValues.matMult(blkIn, _pbc.getBlock((int)ixIn.getColumnIndex(), j),
+						new MatrixBlock(), _op))).iterator();
 			}
-			
-			return ret.iterator();
 		}
 	}
 }

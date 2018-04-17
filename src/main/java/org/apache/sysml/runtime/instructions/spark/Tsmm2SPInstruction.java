@@ -154,7 +154,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 						(int)(_type.isLeft()?1:ixin.getColumnIndex()));
 				MatrixBlock mbin2t = transpose(mbin2, new MatrixBlock()); //prep for transpose rewrite mm
 				
-				MatrixBlock out2 = (MatrixBlock) OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes( //mm
+				MatrixBlock out2 = (MatrixBlock) OperationsOnMatrixValues.matMult( //mm
 						_type.isLeft() ? mbin2t : mbin, _type.isLeft() ? mbin : mbin2t, new MatrixBlock(), _op);
 				MatrixIndexes ixout2 = _type.isLeft() ? new MatrixIndexes(2,1) : new MatrixIndexes(1,2);
 				ret.add(new Tuple2<>(ixout2, out2));
@@ -215,7 +215,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 						(int)(_type.isLeft()?1:ixin.getColumnIndex()));
 				MatrixBlock mbin2t = transpose(mbin2, new MatrixBlock()); //prep for transpose rewrite mm
 				
-				MatrixBlock out2 = OperationsOnMatrixValues.performAggregateBinaryIgnoreIndexes( //mm
+				MatrixBlock out2 = OperationsOnMatrixValues.matMult( //mm
 						_type.isLeft() ? mbin2t : mbin, _type.isLeft() ? mbin : mbin2t, new MatrixBlock(), _op);
 				
 				MatrixIndexes ixout2 = _type.isLeft() ? new MatrixIndexes(2,1) : new MatrixIndexes(1,2);

@@ -154,7 +154,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				out=cachedValues.holdPlace(output, valueClass);
 
 			//process instruction
-			OperationsOnMatrixValues.performAggregateBinary(
+			OperationsOnMatrixValues.matMult(
 				in1.getIndexes(), (MatrixBlock) in1.getValue(),
 				in2.getIndexes(), (MatrixBlock) in2.getValue(),
 				out.getIndexes(), (MatrixBlock) out.getValue(),
@@ -200,7 +200,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
-				OperationsOnMatrixValues.performAggregateBinary(in1.getIndexes(), (MatrixBlock)in1.getValue(), 
+				OperationsOnMatrixValues.matMult(in1.getIndexes(), (MatrixBlock)in1.getValue(), 
 					in2BlockIndex, (MatrixBlock) in2BlockValue, out.getIndexes(), (MatrixBlock)out.getValue(), 
 					((AggregateBinaryOperator)optr));
 				removeOutput &= ( !_outputEmptyBlocks && out.getValue().isEmpty() );
@@ -227,7 +227,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				IndexedMatrixValue out = cachedValues.holdPlace(output, valueClass);
 				
 				//process instruction
-				OperationsOnMatrixValues.performAggregateBinary(
+				OperationsOnMatrixValues.matMult(
 					in1BlockIndex, (MatrixBlock)in1BlockValue,
 					in2.getIndexes(), (MatrixBlock)in2.getValue(),
 					out.getIndexes(), (MatrixBlock)out.getValue(),

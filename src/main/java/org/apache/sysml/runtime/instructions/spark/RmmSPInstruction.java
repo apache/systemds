@@ -191,8 +191,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock blkIn2 = arg0._2()._2();
 			
 			//core block matrix multiplication 
-			MatrixBlock blkOut = OperationsOnMatrixValues
-				.performAggregateBinaryIgnoreIndexes(blkIn1, blkIn2, new MatrixBlock(), _op);
+			MatrixBlock blkOut = OperationsOnMatrixValues.matMult(blkIn1, blkIn2, new MatrixBlock(), _op);
 			
 			//output new tuple
 			return new Tuple2<>(ixOut, blkOut);

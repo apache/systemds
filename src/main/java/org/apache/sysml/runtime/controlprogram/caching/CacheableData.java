@@ -76,21 +76,22 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	/** Global logging instance for all subclasses of CacheableData */
 	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
-    
+	
 	// global constant configuration parameters
-	public static final long 	CACHING_THRESHOLD = 4*1024; //obj not s.t. caching if below threshold [in bytes]
-	public static final double 	CACHING_BUFFER_SIZE = 0.15; 
+	public static final long    CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
+		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
+	public static final double  CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;	
 	public static final String  CACHING_COUNTER_GROUP_NAME    = "SystemML Caching Counters";
 	public static final String  CACHING_EVICTION_FILEEXTENSION = ".dat";
 	public static final boolean CACHING_ASYNC_FILECLEANUP = true;
-    
+	
 	/**
 	 * Defines all possible cache status types for a data blob.
-     * An object of class {@link CacheableData} can be in one of the following
-     * five status types:
+	 * An object of class {@link CacheableData} can be in one of the following
+	 * five status types:
 	 *
 	 * <code>EMPTY</code>: Either there is no data blob at all, or the data blob  
 	 * resides in a specified import file and has never been downloaded yet.
@@ -102,13 +103,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * <code>CACHED</code>:   The data blob is in main memory, and nobody is using nor referencing it. 
 	 * There is always an persistent recovery object for it
 	 **/
-    protected enum CacheStatus {
-    	EMPTY, 
-    	READ, 
-    	MODIFY, 
-    	CACHED,
-    	CACHED_NOWRITE,
-    }
+	protected enum CacheStatus {
+		EMPTY, 
+		READ, 
+		MODIFY, 
+		CACHED,
+		CACHED_NOWRITE,
+	}
 	
 	/** Global flag indicating if caching is enabled (controls eviction) */
 	private static volatile boolean _activeFlag = false;

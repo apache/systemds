@@ -3555,10 +3555,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else { //general case
 			//handle csr sparse blocks separately to avoid repeated shifting on column-wise access
-			if( !result.isEmptyBlock(false) && result.sparse && result.sparseBlock instanceof SparseBlockCSR ) {
+			//(note that for sparse inputs this only applies to aligned column indexes)
+			if( !result.isEmptyBlock(false) && result.sparse && (!src.sparse || rl==0)
+				&& result.sparseBlock instanceof SparseBlockCSR ) {
 				SparseBlockCSR sblock = (SparseBlockCSR) result.sparseBlock;
-				if( src.sparse || src.isEmptyBlock(false) )
+				if( src.sparse || src.isEmptyBlock(false) ) {
 					sblock.setIndexRange(rl, ru+1, cl, cu+1, src.getSparseBlock());
+				}
 				else { //dense
 					for(int bi=0; bi<src.denseBlock.numBlocks(); bi++) {
 						int rpos = bi * src.denseBlock.blockSize();

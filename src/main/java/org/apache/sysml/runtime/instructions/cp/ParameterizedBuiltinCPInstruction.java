@@ -268,7 +268,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			String[] colnames = meta.getColumnNames();
 			
 			//compute transformdecode
-			Decoder decoder = DecoderFactory.createDecoder(getParameterMap().get("spec"), colnames, null, meta);
+			Decoder decoder = DecoderFactory.createDecoder(
+				getParameterMap().get("spec"), colnames, null, meta, data.getNumColumns());
 			FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
 			fbout.setColumnNames(Arrays.copyOfRange(colnames, 0, fbout.getNumColumns()));
 			

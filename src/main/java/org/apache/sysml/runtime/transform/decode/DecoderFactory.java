@@ -36,45 +36,50 @@ import org.apache.wink.json4j.JSONObject;
 
 public class DecoderFactory 
 {
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
+		return createDecoder(spec, colnames, schema, meta, meta.getNumColumns());
+	}
+	
 	@SuppressWarnings("unchecked")
-	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) 
+	public static Decoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int clen) 
 	{
 		Decoder decoder = null;
 		
-		try 
+		try
 		{
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
 			List<Decoder> ldecoders = new ArrayList<>();
-		
+			
 			//create decoders 'recode', 'dummy' and 'pass-through'
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
+			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils
-					.subtract(UtilFunctions.getSeqList(1, meta.getNumColumns(), 1), rcIDs)); 
-
+				.subtract(UtilFunctions.getSeqList(1, len, 1), rcIDs));
+			
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {
-				schema = UtilFunctions.nCopies(meta.getNumColumns(), ValueType.STRING);
+				schema = UtilFunctions.nCopies(len, ValueType.STRING);
 				for( Integer col : ptIDs )
 					schema[col-1] = ValueType.DOUBLE;
 			}
 			
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 
-						ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
 			}
 			if( !rcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
-						ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
 			}
 			if( !ptIDs.isEmpty() ) {
 				ldecoders.add(new DecoderPassThrough(schema, 
-						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
-						ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));	
+					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
 			}
 			
 			//create composite decoder of all created decoders

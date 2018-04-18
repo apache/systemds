@@ -44,8 +44,9 @@ public class DecoderPassThrough extends Decoder
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {
 		out.ensureAllocatedColumns(in.getNumRows());
+		int clen = Math.min(_colList.length, out.getNumColumns());
 		for( int i=0; i<in.getNumRows(); i++ ) {
-			for( int j=0; j<_colList.length; j++ ) {
+			for( int j=0; j<clen; j++ ) {
 				int srcColID = _srcCols[j];
 				int tgtColID = _colList[j];
 				double val = in.quickGetValue(i, srcColID-1);

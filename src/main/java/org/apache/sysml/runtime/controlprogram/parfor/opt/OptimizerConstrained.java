@@ -54,9 +54,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
  * - 4) rewrite set execution strategy
  * - 9) rewrite set degree of parallelism
  * - 10) rewrite set task partitioner
- * - 11) rewrite set result merge 		 		
- *
- * TODO generalize for nested parfor (currently only awareness of top-level constraints, if present leave child as they are)
+ * - 11) rewrite set result merge
  *
  */
 public class OptimizerConstrained extends OptimizerRuleBased
@@ -167,7 +165,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 			//rewrite 14:
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
+			super.rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 
 			//rewrite 15:
 			super.rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -183,7 +181,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 			// rewrite 14: set in-place result indexing
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
-			super.rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
+			super.rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking
@@ -316,7 +314,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		if( !pn.getParam(ParamType.TASK_PARTITIONER).equals(PTaskPartitioner.UNSPECIFIED.toString()) )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-                    .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 			pfpb.setTaskPartitioner(PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER)));
 			String tsExt = "";
 			if( pn.getParam(ParamType.TASK_SIZE)!=null )

@@ -21,8 +21,10 @@ package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
@@ -30,15 +32,15 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 
 public class CostEstimatorHops extends CostEstimator
 {
-	public static double DEFAULT_MEM_MR = -1;
-	public static double DEFAULT_MEM_SP = 20*1024*1024;
+	public static final double DEFAULT_MEM_SP = 20*1024*1024;
+	public static final double DEFAULT_MEM_MR;
 	
 	private OptTreePlanMappingAbstract _map = null;
 	
 	static {
-		DEFAULT_MEM_MR = DEFAULT_MEM_ESTIMATE_MR; //20MB
-		if( InfrastructureAnalyzer.isLocalMode() )
-			DEFAULT_MEM_MR = DEFAULT_MEM_MR + InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
+		DEFAULT_MEM_MR = DEFAULT_MEM_ESTIMATE_MR //20MB
+			+ (InfrastructureAnalyzer.isLocalMode() ?
+			InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer() : 0);
 	}
 	
 	
@@ -61,30 +63,26 @@ public class CostEstimatorHops extends CostEstimator
 		
 		//handle specific cases 
 		double DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
-								DEFAULT_MEM_SP : DEFAULT_MEM_MR;
+			DEFAULT_MEM_SP : DEFAULT_MEM_MR;
 		
-		if( value >= DEFAULT_MEM_REMOTE )   	  
+		if( value >= DEFAULT_MEM_REMOTE )
 		{
 			//check for CP estimate but MR type
-			if( h.getExecType()==ExecType.MR ) 
-			{
+			if( h.getExecType()==ExecType.MR ) {
 				value = DEFAULT_MEM_REMOTE;
 			}
 			//check for CP estimate but Spark type (include broadcast requirements)
-			else if( h.getExecType()==ExecType.SPARK )
-			{
+			else if( h.getExecType()==ExecType.SPARK ) {
 				value = DEFAULT_MEM_REMOTE + h.getSpBroadcastSize();
 			}
 			//check for invalid cp memory estimate
-			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() )
-			{
+			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() ) {
 				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_REMOTE;
 			}
 			//check for non-existing exec type
-			else if ( h.getExecType()==null)
-			{
+			else if ( h.getExecType()==null) {
 				//note: if exec type is 'null' lops have never been created (e.g., r(T) for tsmm),
 				//in that case, we do not need to raise a warning 
 				value = DEFAULT_MEM_REMOTE;
@@ -92,18 +90,23 @@ public class CostEstimatorHops extends CostEstimator
 		}
 		
 		//check for forced runtime platform
-		if( h.getForcedExecType()==ExecType.MR  || h.getForcedExecType()==ExecType.SPARK) 
-		{
+		if( h.getForcedExecType()==ExecType.MR  || h.getForcedExecType()==ExecType.SPARK) {
 			value = DEFAULT_MEM_REMOTE;
 		}
 		
-		if( value <= 0 ) //no mem estimate
-		{
+		if( value <= 0 ) { //no mem estimate
 			LOG.warn("Cannot get memory estimate for hop (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		}
 		
-		LOG.trace("Memory estimate "+h.getName()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		//correction for disabled result indexing
+		value = (_exclRetVars!=null && h instanceof LeftIndexingOp
+			&& ResultVar.contains(_exclRetVars, h.getName())) ? 0 : value;
+		
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Memory estimate "+h.getName()+", "+h.getOpString()
+				+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		}
 		
 		return value;
 	}
@@ -125,7 +128,10 @@ public class CostEstimatorHops extends CostEstimator
 		if( value <= 0 ) //no mem estimate
 			value = CostEstimator.DEFAULT_MEM_ESTIMATE_CP;
 		
-		LOG.trace("Memory estimate (forced exec type) "+h.getName()+", "+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		if( LOG.isTraceEnabled() ) {
+			LOG.trace("Memory estimate (forced exec type) "+h.getName()+", "
+				+h.getOpString()+"("+node.getExecType()+")"+"="+OptimizerRuleBased.toMB(value));
+		}
 		
 		return value;
 	}

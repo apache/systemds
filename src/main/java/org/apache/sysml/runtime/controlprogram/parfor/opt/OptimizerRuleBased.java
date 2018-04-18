@@ -166,25 +166,22 @@ public class OptimizerRuleBased extends Optimizer
 	protected double _lm = -1; //local memory constraint
 	protected double _rm = -1; //remote memory constraint (mappers)
 	protected double _rm2 = -1; //remote memory constraint (reducers)
-		
+	
 	protected CostEstimator _cost = null;
 
 	@Override
-	public CostModelType getCostModelType() 
-	{
+	public CostModelType getCostModelType() {
 		return CostModelType.STATIC_MEM_METRIC;
 	}
 
 
 	@Override
-	public PlanInputType getPlanInputType() 
-	{
+	public PlanInputType getPlanInputType() {
 		return PlanInputType.ABSTRACT_PLAN;
 	}
 
 	@Override
-	public POptMode getOptMode() 
-	{
+	public POptMode getOptMode() {
 		return POptMode.RULEBASED;
 	}
 	
@@ -261,7 +258,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( flagRecompMR ){
 				//rewrite 5: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
-				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 			}
 			
 			// rewrite 6: data colocation
@@ -287,7 +284,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 14: set in-place result indexing
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
-			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
+			rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 			
 			// rewrite 15: disable caching
 			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
@@ -302,7 +299,7 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 14: set in-place result indexing
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
-			rewriteSetInPlaceResultIndexing(pn, M1, ec.getVariables(), inplaceResultVars, ec);
+			rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 			
 			if( !OptimizerUtils.isSparkExecutionMode() ) {
 				// rewrite 16: runtime piggybacking
@@ -1609,7 +1606,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( inMatrix.equals(varName) )
 			{
 				//check that all parents are transpose-safe operations
-				//(even a transient write would not be safe due to indirection into other DAGs)			
+				//(even a transient write would not be safe due to indirection into other DAGs)
 				ArrayList<Hop> parent = h.getParent();
 				for( Hop p : parent )
 					ret &= p.isTransposeSafe();
@@ -1624,7 +1621,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set in-place result indexing
 	///
 
-	protected void rewriteSetInPlaceResultIndexing(OptNode pn, double M, LocalVariableMap vars, HashSet<ResultVar> inPlaceResultVars, ExecutionContext ec) 
+	protected void rewriteSetInPlaceResultIndexing(OptNode pn, CostEstimator cost, LocalVariableMap vars, HashSet<ResultVar> inPlaceResultVars, ExecutionContext ec) 
 	{
 		//assertions (warnings of corrupt optimizer decisions)
 		if( pn.getNodeType() != NodeType.PARFOR )
@@ -1639,16 +1636,17 @@ public class OptimizerRuleBased extends Optimizer
 		//only if all fit pinned in remaining budget, we apply this rewrite.
 		ArrayList<ResultVar> retVars = pfpb.getResultVariables();
 		
-		//compute total sum of pinned result variable memory
-		double sum = computeTotalSizeResultVariables(retVars, vars, pfpb.getDegreeOfParallelism());
-		
-		//NOTE: currently this rule is too conservative (the result variable is assumed to be dense and
-		//most importantly counted twice if this is part of the maximum operation)
-		double totalMem = Math.max((M+sum), rComputeSumMemoryIntermediates(pn, new HashSet<ResultVar>()));
-		
-		//optimization decision
-		if( rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) ) //basic correctness constraint
+		//basic correctness constraint
+		double totalMem = -1;
+		if( rHasOnlyInPlaceSafeLeftIndexing(pn, retVars) )
 		{
+			//compute total sum of pinned result variable memory 
+			double sum = computeTotalSizeResultVariables(retVars, vars, pfpb.getDegreeOfParallelism());
+		
+			//compute memory estimate without result indexing, and total sum per worker
+			double M = cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true, retVars);
+			totalMem = M + sum;
+			
 			//result update in-place for MR/Spark (w/ remote memory constraint)
 			if( (  pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR
 				|| pfpb.getExecMode() == PExecMode.REMOTE_SPARK_DP || pfpb.getExecMode() == PExecMode.REMOTE_SPARK) 
@@ -1706,14 +1704,9 @@ public class OptimizerRuleBased extends Optimizer
 			if( !(dat instanceof MatrixObject) )
 				continue;
 			MatrixObject mo = (MatrixObject)dat;
-			if( mo.getNnz() == 0 ) 
-				sum += OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), 1.0);
-			else {
-				// Every worker will consume memory for (MatrixSize/k + nnz) data.
-				// This is applicable only when there is non-zero nnz. 
-				sum += (k+1) * (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), 
-					mo.getNumColumns(), Math.min((1.0/k)+mo.getSparsity(), 1.0)));
-			} 
+			// every worker will consume memory for at most (max_nnz/k + in_nnz)
+			sum += (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), 
+				mo.getNumColumns(), Math.min((1.0/k)+mo.getSparsity(), 1.0)));
 		}
 		return sum;
 	}

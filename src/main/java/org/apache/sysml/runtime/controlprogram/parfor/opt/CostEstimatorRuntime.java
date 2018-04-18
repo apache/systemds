@@ -71,10 +71,10 @@ public class CostEstimatorRuntime extends CostEstimator
 		//(currently only called for entire parfor program in order to
 		//decide for LOCAL vs REMOTE parfor execution)
 		double ret = DEFAULT_TIME_ESTIMATE;
-		boolean isCP = (et == ExecType.CP || et == null);		
+		boolean isCP = (et == ExecType.CP || et == null);
 		if( !node.isLeaf() && isCP ) {
 			ProgramBlock pb = (ProgramBlock)_map.getMappedProg(node.getID())[1];
-			ret = CostEstimationWrapper.getTimeEstimate(pb, _ec, true);				
+			ret = CostEstimationWrapper.getTimeEstimate(pb, _ec, true);
 		}
 		return ret;
 	}

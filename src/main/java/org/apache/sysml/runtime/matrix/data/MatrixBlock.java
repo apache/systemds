@@ -3726,7 +3726,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		
 		//compute nnz of output (not maintained due to native calls)
-		dest.recomputeNonZeros();
+		dest.setNonZeros((getNonZeros() == getLength()) ? 
+			(ru-rl+1) * (cu-cl+1) : dest.recomputeNonZeros());
 	}
 	
 	@Override

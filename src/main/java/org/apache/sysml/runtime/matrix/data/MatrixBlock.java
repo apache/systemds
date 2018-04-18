@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -1578,6 +1579,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param appendOnly ?
 	 */
 	public void merge(MatrixBlock that, boolean appendOnly) {
+		merge(that, appendOnly, false);
+	}
+	
+	public void merge(MatrixBlock that, boolean appendOnly, boolean par) {
 		//check for empty input source (nothing to merge)
 		if( that == null || that.isEmptyBlock(false) )
 			return;
@@ -1599,6 +1604,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		long nnz = nonZeros + that.nonZeros;
 		if( sparse )
 			mergeIntoSparse(that, appendOnly);
+		else if( par )
+			mergeIntoDensePar(that);
 		else
 			mergeIntoDense(that);
 		
@@ -1608,33 +1615,52 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	private void mergeIntoDense(MatrixBlock that)
 	{
-		if( that.sparse ) //DENSE <- SPARSE
-		{
+		if( that.sparse ) { //DENSE <- SPARSE
 			double[] a = getDenseBlockValues();
 			SparseBlock b = that.sparseBlock;
 			int m = rlen;
 			int n = clen;
-			
-			for( int i=0, aix=0; i<m; i++, aix+=n )
-				if( !b.isEmpty(i) )
-				{
-					int bpos = b.pos(i);
-					int blen = b.size(i);
-					int[] bix = b.indexes(i);
-					double[] bval = b.values(i);
-					for( int j=bpos; j<bpos+blen; j++ )
-						if( bval[j] != 0 )
-							a[ aix + bix[j] ] = bval[j];
-				}
+			for( int i=0, aix=0; i<m; i++, aix+=n ) {
+				if( b.isEmpty(i) ) continue;
+				int bpos = b.pos(i);
+				int blen = b.size(i);
+				int[] bix = b.indexes(i);
+				double[] bval = b.values(i);
+				for( int j=bpos; j<bpos+blen; j++ )
+					if( bval[j] != 0 )
+						a[ aix + bix[j] ] = bval[j];
+			}
 		}
-		else //DENSE <- DENSE
-		{
+		else { //DENSE <- DENSE
 			double[] a = getDenseBlockValues();
 			double[] b = that.getDenseBlockValues();
 			int len = rlen * clen;
-			
 			for( int i=0; i<len; i++ )
 				a[i] = ( b[i] != 0 ) ? b[i] : a[i];
+		}
+	}
+	
+	private void mergeIntoDensePar(MatrixBlock that)
+	{
+		if( that.sparse ) { //DENSE <- SPARSE
+			double[] a = getDenseBlockValues();
+			SparseBlock b = that.sparseBlock;
+			IntStream.range(0, rlen).parallel().forEach(i -> {
+				if( b.isEmpty(i) ) return;
+				int aix = i*clen;
+				int bpos = b.pos(i);
+				int blen = b.size(i);
+				int[] bix = b.indexes(i);
+				double[] bval = b.values(i);
+				for( int j=bpos; j<bpos+blen; j++ )
+					if( bval[j] != 0 )
+						a[ aix + bix[j] ] = bval[j];
+			});
+		}
+		else { //DENSE <- DENSE
+			double[] a = getDenseBlockValues();
+			double[] b = that.getDenseBlockValues();
+			Arrays.parallelSetAll(a, i -> (b[i]!=0) ? b[i] : a[i]);
 		}
 	}
 

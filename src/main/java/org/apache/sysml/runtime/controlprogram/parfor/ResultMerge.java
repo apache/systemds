@@ -83,19 +83,16 @@ public abstract class ResultMerge implements Serializable
 	 */
 	public abstract MatrixObject executeParallelMerge( int par );
 	
-	/**
-	 * ?
-	 * 
-	 * @param out initially empty block
-	 * @param in input matrix block
-	 * @param appendOnly ?
-	 */
 	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly ) {
+		mergeWithoutComp(out, in, appendOnly, false);
+	}
+	
+	protected void mergeWithoutComp( MatrixBlock out, MatrixBlock in, boolean appendOnly, boolean par ) {
 		//pass through to matrix block operations
 		if( _isAccum )
 			out.binaryOperationsInPlace(PLUS, in);
 		else
-			out.merge(in, appendOnly);
+			out.merge(in, appendOnly, par);
 	}
 
 	/**

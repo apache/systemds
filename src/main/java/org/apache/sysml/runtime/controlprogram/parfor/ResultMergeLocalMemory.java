@@ -262,7 +262,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 	 */
 	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) {
 		if( _compare == null )
-			mergeWithoutComp(out, in, appendOnly);
+			mergeWithoutComp(out, in, appendOnly, true);
 		else
 			mergeWithComp(out, in, _compare);
 	}

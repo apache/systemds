@@ -42,6 +42,7 @@ import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.NativeHelper;
 
 /**
  * MB: Library for matrix multiplications including MM, MV, VV for all
@@ -557,7 +558,13 @@ public class LibMatrixMult
 		ret.allocateBlock();
 		
 		//core weighted square sum mm computation
-		if( !mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock() )
+		boolean allDense = !mW.sparse && !mU.sparse && !mV.sparse
+			&& !mU.isEmptyBlock() && !mV.isEmptyBlock();
+		if( NativeHelper.isNativeLibraryLoaded() && allDense && (mW.rlen == 1 || mW.clen == 1) 
+			&& !LibMatrixNative.isMatMultMemoryBound(mU.rlen, mU.clen, mV.rlen)
+			&& mW.getDenseBlock().isContiguous() && mU.getDenseBlock().isContiguous() && mV.getDenseBlock().isContiguous() )
+			matrixMultWSigmoidDenseNative(mW, mU, mV, ret, wt);
+		else if( allDense )
 			matrixMultWSigmoidDense(mW, mU, mV, ret, wt, 0, mW.rlen);
 		else if( mW.sparse && !mU.sparse && !mV.sparse && !mU.isEmptyBlock() && !mV.isEmptyBlock())
 			matrixMultWSigmoidSparseDense(mW, mU, mV, ret, wt, 0, mW.rlen);
@@ -2384,6 +2391,30 @@ public class LibMatrixMult
 			dotProduct(tmp1.getDenseBlockValues(), tmp2.getDenseBlockValues(), mU.clen*mU.clen)));
 	}
 
+	private static void matrixMultWSigmoidDenseNative(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt) {
+		double[] w = mW.getDenseBlockValues();
+		double[] c = ret.getDenseBlockValues();
+		final int m = mW.rlen, n = mW.clen;
+		final int cd = mU.clen;
+		boolean flagminus = (wt==WSigmoidType.MINUS || wt==WSigmoidType.LOG_MINUS); 
+		boolean flaglog = (wt==WSigmoidType.LOG || wt==WSigmoidType.LOG_MINUS);
+		
+		//call native matrix multiplication (only called for single-threaded and matrix-vector
+		//because this ensures that we can deal with the transpose mV without additional transpose)
+		if(!NativeHelper.dmmdd(((m==1)?mV:mU).getDenseBlockValues(),
+			((m==1)?mU:mV).getDenseBlockValues(), c, (m==1)?n:m, cd, 1, 1) )
+			throw new DMLRuntimeException("Error executing native matrix mult.");
+		
+		//compute remaining wsigmoid for all relevant outputs
+		for(int i=0, ix=0; i<m; i++, ix+=n) {
+			for(int j=0; j<n; j++) {
+				double wij = w[ix +j];
+				//if( wij != 0 )
+					c[ix+j] = wsigmoid(wij, c[ix+j], flagminus, flaglog);
+			}
+		}
+	}
+	
 	private static void matrixMultWSigmoidDense(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int rl, int ru) {
 		DenseBlock w = mW.getDenseBlock();
 		DenseBlock c = ret.getDenseBlock();
@@ -3459,6 +3490,16 @@ public class LibMatrixMult
 				1 / (1 + FastMath.exp(uvij)) :
 				1 / (1 + FastMath.exp(-uvij));
 				
+		//compute weighted output
+		return wij * ((flaglog) ? Math.log(cval) : cval);
+	}
+	
+	private static double wsigmoid(final double wij, final double uvij, final boolean flagminus, final boolean flaglog) {
+		//compute core sigmoid function
+		double cval = flagminus ?
+				1 / (1 + FastMath.exp(uvij)) :
+				1 / (1 + FastMath.exp(-uvij));
+		
 		//compute weighted output
 		return wij * ((flaglog) ? Math.log(cval) : cval);
 	}

@@ -49,7 +49,9 @@ public class LibMatrixNative
 	// We could encapsulate heuristics in this function
 	// For now, we only consider matrix-vector operation to be memory bound
 	private static boolean isMatMultMemoryBound(int m1Rlen, int m1Clen, int m2Clen) {
-		return m1Rlen == 1 || m1Clen == 1 || m2Clen == 1;
+		return (m1Rlen == 1 || m1Clen == 1 || m2Clen == 1)
+			&& (8L*m1Rlen*m1Clen > 16 * LibMatrixMult.L3_CACHESIZE 
+				|| 8L*m1Clen*m2Clen > 16 * LibMatrixMult.L3_CACHESIZE);
 	}
 
 	/**

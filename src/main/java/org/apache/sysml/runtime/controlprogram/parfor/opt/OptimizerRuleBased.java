@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -81,6 +82,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
+import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.ExcludeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
@@ -271,7 +273,7 @@ public class OptimizerRuleBased extends Optimizer
 			rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 			
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, false );
+			rewriteSetDegreeOfParallelism( pn, _cost, ec.getVariables(), M1, false );
 			
 			// rewrite 11: task partitioning 
 			rewriteSetTaskPartitioner( pn, false, flagLIX );
@@ -292,7 +294,7 @@ public class OptimizerRuleBased extends Optimizer
 		else //if( pn.getExecType() == ExecType.CP )
 		{
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, false );
+			rewriteSetDegreeOfParallelism( pn, _cost, ec.getVariables(), M1, false );
 			
 			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
@@ -1173,25 +1175,36 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set degree of parallelism
 	///
 
-	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) 
+	protected void rewriteSetDegreeOfParallelism(OptNode n, CostEstimator cost, LocalVariableMap vars, double M, boolean flagNested) 
 	{
 		ExecType type = n.getExecType();
 		long id = n.getID();
-				
+		
 		//special handling for different exec models (CP, MR, MR nested)
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-										.getAbstractPlanMapping().getMappedProg(id)[1];
+		Object[] map = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+		ParForStatementBlock pfsb = (ParForStatementBlock)map[0];
+		ParForProgramBlock pfpb = (ParForProgramBlock)map[1];
 		
 		if( type == ExecType.CP ) 
 		{
 			//determine local max parallelism constraint
 			int kMax = ConfigurationManager.isParallelParFor() ?
-					(n.isCPOnly() ? _lkmaxCP : _lkmaxMR) : 1;
+				(n.isCPOnly() ? _lkmaxCP : _lkmaxMR) : 1;
+			
+			//compute memory budgets and partial estimates for handling shared reads
+			double mem = (OptimizerUtils.isSparkExecutionMode() && !n.isCPOnly()) ? _lm/2 : _lm;
+			double sharedM = 0, nonSharedM = M;
+			if( computeMaxK(M, M, 0, mem) < kMax ) { //account for shared read if necessary
+				sharedM = pfsb.getReadOnlyParentVars().stream().map(s -> vars.get(s))
+					.filter(d -> d instanceof MatrixObject).mapToDouble(mo -> OptimizerUtils
+					.estimateSize(((MatrixObject)mo).getMatrixCharacteristics())).sum();
+				nonSharedM = cost.getEstimate(TestMeasure.MEMORY_USAGE, n, true,
+					pfsb.getReadOnlyParentVars(), ExcludeType.SHARED_READ);
+			}
 			
 			//ensure local memory constraint (for spark more conservative in order to 
 			//prevent unnecessary guarded collect)
-			double mem = (OptimizerUtils.isSparkExecutionMode() && !n.isCPOnly()) ? _lm/2 : _lm;
-			kMax = Math.min( kMax, (int)Math.floor( mem / M ) );
+			kMax = Math.min( kMax, computeMaxK(M, nonSharedM, sharedM, mem) );
 			kMax = Math.max( kMax, 1);
 			
 			//constrain max parfor parallelism by problem size
@@ -1226,21 +1239,17 @@ public class OptimizerRuleBased extends Optimizer
 		else // ExecType.MR/ExecType.SPARK
 		{
 			int kMax = -1;
-			if( flagNested )
-			{
+			if( flagNested ) {
 				//determine remote max parallelism constraint
 				pfpb.setDegreeOfParallelism( _rnk ); //guaranteed <= _N (see nested)
-				n.setK( _rnk );	
-			
+				n.setK( _rnk );
 				kMax = _rkmax / _rnk; //per node (CP only inside)
 			}
-			else //not nested (default)
-			{
+			else { //not nested (default)
 				//determine remote max parallelism constraint
 				int tmpK = (int)((_N<_rk)? _N : _rk);
 				pfpb.setDegreeOfParallelism(tmpK);
-				n.setK(tmpK);	
-				
+				n.setK(tmpK);
 				kMax = _rkmax / tmpK; //per node (CP only inside)
 			}
 			
@@ -1252,13 +1261,21 @@ public class OptimizerRuleBased extends Optimizer
 			//disable nested parallelism, if required
 			if( !ALLOW_REMOTE_NESTED_PARALLELISM )
 				kMax = 1;
-					
+			
 			//distribute remaining parallelism and recompile parallel instructions
-			rAssignRemainingParallelism( n, kMax, 1 ); 
-		}		
+			rAssignRemainingParallelism( n, kMax, 1 );
+		}
 		
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set degree of parallelism' - result=(see EXPLAIN)" );
+	}
+	
+	private int computeMaxK(double M, double memNonShared, double memShared, double memBudget) {
+		//note: we compute max K for both w/o and w/ shared reads and take the max, because
+		//the latter might reduce the degree of parallelism if shared reads don't dominate
+		int k1 = (int)Math.floor(memBudget / M);
+		int k2 = (int)Math.floor(memBudget-memShared / memNonShared);
+		return Math.max(k1, k2);
 	}
 
 	protected void rAssignRemainingParallelism(OptNode n, int parforK, int opsK) 
@@ -1644,7 +1661,8 @@ public class OptimizerRuleBased extends Optimizer
 			double sum = computeTotalSizeResultVariables(retVars, vars, pfpb.getDegreeOfParallelism());
 		
 			//compute memory estimate without result indexing, and total sum per worker
-			double M = cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true, retVars);
+			double M = cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true, retVars.stream()
+				.map(var -> var._name).collect(Collectors.toList()), ExcludeType.RESULT_LIX);
 			totalMem = M + sum;
 			
 			//result update in-place for MR/Spark (w/ remote memory constraint)

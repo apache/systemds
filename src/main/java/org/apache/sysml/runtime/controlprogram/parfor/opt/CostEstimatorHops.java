@@ -24,7 +24,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
@@ -60,6 +59,10 @@ public class CostEstimatorHops extends CostEstimator
 		//core mem estimation (use hops estimate)
 		Hop h = _map.getMappedHop( node.getID() );
 		double value = h.getMemEstimate();
+		
+		//correction for disabled shared read accounting
+		value = (_exclVars!=null && _exclType==ExcludeType.SHARED_READ) ?
+			h.getInputOutputSize(_exclVars) : value;
 		
 		//handle specific cases 
 		double DEFAULT_MEM_REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
@@ -100,8 +103,8 @@ public class CostEstimatorHops extends CostEstimator
 		}
 		
 		//correction for disabled result indexing
-		value = (_exclRetVars!=null && h instanceof LeftIndexingOp
-			&& ResultVar.contains(_exclRetVars, h.getName())) ? 0 : value;
+		value = (_exclVars!=null && _exclType==ExcludeType.RESULT_LIX 
+			&& h instanceof LeftIndexingOp && _exclVars.contains(h.getName())) ? 0 : value;
 		
 		if( LOG.isTraceEnabled() ) {
 			LOG.trace("Memory estimate "+h.getName()+", "+h.getOpString()

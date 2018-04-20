@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 
 /**
@@ -47,17 +46,20 @@ public abstract class CostEstimator
 	public static final double DEFAULT_MEM_ESTIMATE_MR = 20*1024*1024; //default memory consumption: 20MB 
 
 	public enum TestMeasure {
-		EXEC_TIME,
-		MEMORY_USAGE
+		EXEC_TIME, MEMORY_USAGE
 	}
 	
 	public enum DataFormat {
-		DENSE,
-		SPARSE
+		DENSE, SPARSE
+	}
+	
+	public enum ExcludeType {
+		NONE, SHARED_READ, RESULT_LIX
 	}
 	
 	protected boolean _inclCondPart = false;
-	protected Collection<ResultVar> _exclRetVars = null;
+	protected Collection<String> _exclVars = null;
+	protected ExcludeType _exclType = ExcludeType.NONE;
 	
 	/**
 	 * Main leaf node estimation method - to be overwritten by specific cost estimators
@@ -102,12 +104,14 @@ public abstract class CostEstimator
 		return val;
 	}
 	
-	public double getEstimate(TestMeasure measure, OptNode node, boolean inclCondPart, Collection<ResultVar> retVars) {
+	public double getEstimate(TestMeasure measure, OptNode node, boolean inclCondPart, Collection<String> vars, ExcludeType extype) {
 		_inclCondPart = inclCondPart; //temporary
-		_exclRetVars = retVars;
+		_exclVars = vars;
+		_exclType = extype;
 		double val = getEstimate(measure, node, null);
 		_inclCondPart = false; 
-		_exclRetVars = null;
+		_exclVars = null;
+		_exclType = ExcludeType.NONE;
 		return val;
 	}
 	

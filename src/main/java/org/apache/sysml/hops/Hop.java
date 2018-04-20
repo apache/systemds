@@ -20,6 +20,7 @@
 package org.apache.sysml.hops;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -459,6 +460,19 @@ public abstract class Hop implements ParseInfo
 		return _outputEmptyBlocks;
 	}
 	
+
+	protected double getInputOutputSize() {
+		return _outputMemEstimate
+			+ _processingMemEstimate
+			+ getInputSize();
+	}
+	
+	public double getInputOutputSize(Collection<String> exclVars) {
+		return _outputMemEstimate
+			+ _processingMemEstimate
+			+ getInputSize(exclVars);
+	}
+	
 	/**
 	 * Returns the memory estimate for the output produced from this Hop.
 	 * It must be invoked only within Hops. From outside Hops, one must 
@@ -467,21 +481,22 @@ public abstract class Hop implements ParseInfo
 	 * 
 	 * @return output size memory estimate
 	 */
-	protected double getOutputSize() 
-	{
+	protected double getOutputSize() {
 		return _outputMemEstimate;
 	}
+	
+	protected double getInputSize() {
+		return getInputSize(null);
+	}
 
-	protected double getInputSize() 
-	{
-		double sum = 0;		
+	protected double getInputSize(Collection<String> exclVars) {
+		double sum = 0;
 		int len = _input.size();
-		
-		for( int i=0; i<len; i++ ) //for all inputs
-		{
+		for( int i=0; i<len; i++ ) { //for all inputs
 			Hop hi = _input.get(i);
+			if( exclVars != null && exclVars.contains(hi.getName()) )
+				continue;
 			double hmout = hi.getOutputMemEstimate();
-			
 			if( hmout > 1024*1024 ) {//for relevant sizes
 				//check if already included in estimate (if an input is used
 				//multiple times it is still only required once in memory)
@@ -491,23 +506,8 @@ public abstract class Hop implements ParseInfo
 					flag |= (hi == _input.get(j));
 				hmout = flag ? 0 : hmout;
 			}
-			
 			sum += hmout;
 		}
-		
-		//for(Hop h : _input ) {
-		//	sum += h._outputMemEstimate;
-		//}
-		
-		return sum;
-	}
-
-	protected double getInputOutputSize() 
-	{
-		double sum = 0;
-		sum += _outputMemEstimate;
-		sum += _processingMemEstimate;
-		sum += getInputSize();
 		
 		return sum;
 	}

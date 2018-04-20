@@ -152,7 +152,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			super.rewriteSetExportReplicationFactor( pn, ec.getVariables() );
 
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, false );
+			rewriteSetDegreeOfParallelism( pn, _cost, ec.getVariables(), M1, false );
 
 			// rewrite 11: task partitioning 
 			rewriteSetTaskPartitioner( pn, false, flagLIX );
@@ -174,7 +174,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		else //if( pn.getExecType() == ExecType.CP )
 		{
 			// rewrite 10: determine parallelism
-			rewriteSetDegreeOfParallelism( pn, M1, false );
+			rewriteSetDegreeOfParallelism( pn, _cost, ec.getVariables(), M1, false );
 
 			// rewrite 11: task partitioning
 			rewriteSetTaskPartitioner( pn, false, false ); //flagLIX always false 
@@ -282,7 +282,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected void rewriteSetDegreeOfParallelism(OptNode n, double M, boolean flagNested) {
+	protected void rewriteSetDegreeOfParallelism(OptNode n, CostEstimator cost, LocalVariableMap vars, double M, boolean flagNested) {
 		// constraint awareness
 		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
@@ -299,7 +299,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			LOG.debug(getOptMode()+" OPT: forced 'set degree of parallelism' - result=(see EXPLAIN)" );
 		}
 		else
-			super.rewriteSetDegreeOfParallelism(n, M, flagNested);
+			super.rewriteSetDegreeOfParallelism(n, cost, vars, M, flagNested);
 	}
 
 

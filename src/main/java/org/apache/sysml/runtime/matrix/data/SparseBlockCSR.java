@@ -269,9 +269,9 @@ public class SparseBlockCSR extends SparseBlock
 		
 		//32B overhead per array, int arr in nrows, int/double arr in nnz 
 		double size = 16 + 4;        //object + int field
-		size += 32 + (nrows+1) * 4d; //ptr array (row pointers)
-		size += 32 + lnnz * 4d;      //indexes array (column indexes)
-		size += 32 + lnnz * 8d;      //values array (non-zero values)
+		size += 24 + (nrows+1) * 4d; //ptr array (row pointers)
+		size += 24 + lnnz * 4d;      //indexes array (column indexes)
+		size += 24 + lnnz * 8d;      //values array (non-zero values)
 		
 		//robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

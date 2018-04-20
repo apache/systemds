@@ -146,9 +146,9 @@ public class SparseBlockCOO extends SparseBlock
 		
 		//32B overhead per array, int/int/double arr in nnz 
 		double size = 16 + 8;   //object + 2 int fields
-		size += 32 + lnnz * 4d; //rindexes array (row indexes)
-		size += 32 + lnnz * 4d; //cindexes array (column indexes)
-		size += 32 + lnnz * 8d; //values array (non-zero values)
+		size += 24 + lnnz * 4d; //rindexes array (row indexes)
+		size += 24 + lnnz * 4d; //cindexes array (column indexes)
+		size += 24 + lnnz * 8d; //values array (non-zero values)
 		
 		//robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

@@ -102,14 +102,14 @@ public class SparseBlockMCSR extends SparseBlock
 		double cnnz = Math.max(SparseRowVector.initialCapacity, Math.ceil(sparsity*ncols));
 		double rlen = Math.min(nrows, Math.ceil(sparsity*nrows*ncols));
 		
-		//Each sparse row has a fixed overhead of 8B (reference) + 32B (object) +
-		//12B (3 int members), 32B (overhead int array), 32B (overhead double array),
+		//Each sparse row has a fixed overhead of 16B (object) + 12B (3 ints),
+		//24B (int array), 24B (double array), i.e., in total 76B
 		//Each non-zero value requires 12B for the column-index/value pair.
 		//Overheads for arrays, objects, and references refer to 64bit JVMs
-		//If nnz < than rows we have only also empty rows.
-		double size = 16;                 //object
-		size += rlen * (116 + cnnz * 12); //sparse rows
-		size += 32 + nrows * 8d;          //references
+		//If nnz < rows we have guaranteed also empty rows.
+		double size = 16;                //object
+		size += 24 + nrows * 8d;         //references
+		size += rlen * (76 + cnnz * 12); //sparse rows
 		
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);

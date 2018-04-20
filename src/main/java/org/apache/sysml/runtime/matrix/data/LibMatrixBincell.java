@@ -44,6 +44,7 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.SortUtils;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * MB:
@@ -211,6 +212,10 @@ public class LibMatrixBincell
 				safeBinaryMVDense(m1, m2, ret, op);
 			else if( m1.sparse ) //SPARSE m1
 				safeBinaryMVSparse(m1, m2, ret, op);
+			else if( !m1.sparse && !m2.sparse && ret.sparse && op.fn instanceof Multiply
+				&& atype == BinaryAccessType.MATRIX_COL_VECTOR
+				&& (long)m1.rlen * m2.clen < Integer.MAX_VALUE )
+				safeBinaryMVDenseSparseMult(m1, m2, ret, op);
 			else //generic combinations
 				safeBinaryMVGeneric(m1, m2, ret, op);
 		}	
@@ -440,6 +445,44 @@ public class LibMatrixBincell
 		//no need to recomputeNonZeros since maintained in append value
 	}
 
+	private static void safeBinaryMVDenseSparseMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
+		if( m1.isEmptyBlock(false) || m2.isEmptyBlock(false) )
+			return;
+		int rlen = m1.rlen;
+		int clen = m1.clen;
+		BinaryAccessType atype = getBinaryAccessType(m1, m2);
+		double[] a = m1.getDenseBlockValues();
+		double[] b = m2.getDenseBlockValues();
+		
+		//note: invocation condition ensures max int nnz
+		if( atype == BinaryAccessType.MATRIX_COL_VECTOR ) {
+			//count output nnz (for CSR preallocation)
+			int nnz = 0;
+			for(int i=0, aix=0; i<rlen; i++, aix+=clen)
+				nnz += (b[i] != 0) ? UtilFunctions
+					.countNonZeros(a, aix, clen) : 0;
+			//allocate and compute output in CSR format
+			int[] rptr = new int[rlen+1];
+			int[] indexes = new int[nnz];
+			double[] vals = new double[nnz];
+			rptr[0] = 0;
+			for( int i=0, aix=0, pos=0; i<rlen; i++, aix+=clen ) {
+				double bval = b[i];
+				if( bval != 0 ) {
+					for( int j=0; j<clen; j++ ) {
+						indexes[pos] = j;
+						vals[pos] = a[aix+j] * bval;
+						pos++;
+					}
+				}
+				rptr[i+1] = pos;
+			}
+			ret.sparseBlock = new SparseBlockCSR(
+				rptr, indexes, vals, nnz);
+			ret.setNonZeros(nnz);
+		}
+	}
+	
 	private static void safeBinaryMVGeneric(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean isMultiply = (op.fn instanceof Multiply);
 		boolean skipEmpty = (isMultiply);
@@ -486,22 +529,21 @@ public class LibMatrixBincell
 			//if the right hand side row vector is sparse we have to exploit that;
 			//otherwise, both sparse access (binary search) and asymtotic behavior
 			//in the number of cells become major bottlenecks
-			if( m2.sparse && isMultiply ) //SPARSE *
+			if( m2.sparse && ret.sparse && isMultiply ) //SPARSE *
 			{
 				//note: sparse block guaranteed to be allocated (otherwise early about)
 				SparseBlock b = m2.sparseBlock;
+				SparseBlock c = ret.sparseBlock;
 				if( b.isEmpty(0) ) return; 
 				int blen = b.size(0); //always pos 0
 				int[] bix = b.indexes(0);
 				double[] bvals = b.values(0);
 				for( int i=0; i<rlen; i++ ) {
-					//for each row iterate only over non-zeros elements in rhs
-					for( int j=0; j<blen; j++ ) {
-						double v1 = m1.quickGetValue(i, bix[j]);
-						double v = op.fn.execute( v1, bvals[j] );
-						ret.appendValue(i, bix[j], v);
-					}
+					c.allocate(i, blen);
+					for( int j=0; j<blen; j++ )
+						c.append(i, bix[j], m1.quickGetValue(i, bix[j]) * bvals[j]);
 				}
+				ret.setNonZeros(c.size());
 			}
 			else //GENERAL CASE
 			{

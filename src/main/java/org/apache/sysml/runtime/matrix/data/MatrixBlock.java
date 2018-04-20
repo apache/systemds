@@ -3433,13 +3433,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else
 			out.reset(dim, dim, false);
 		
+		//pre=processing (outside LibMatrixMult for seamless integration
+		//with native BLAS library, e.g., for sparse-dense conversion)
+		MatrixBlock m1 = LibMatrixMult
+			.prepMatrixMultTransposeSelfInput(this, leftTranspose, k > 1);
+		
 		//compute matrix mult
 		if( NativeHelper.isNativeLibraryLoaded() )
-			LibMatrixNative.tsmm(this, out, leftTranspose, k);
+			LibMatrixNative.tsmm(m1, out, leftTranspose, k);
 		else if( k > 1 )
-			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose, k);
+			LibMatrixMult.matrixMultTransposeSelf(m1, out, leftTranspose, k);
 		else
-			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);
+			LibMatrixMult.matrixMultTransposeSelf(m1, out, leftTranspose);
 		
 		return out;
 	}

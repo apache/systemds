@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -337,7 +338,6 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing
-		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 
@@ -370,7 +370,6 @@ public class LibMatrixMult
 		//Timing time = new Timing(true);
 		
 		//pre-processing (no need to check isThreadSafe)
-		m1 = prepMatrixMultTransposeSelfInput(m1, leftTranspose);
 		ret.sparse = false;
 		ret.allocateDenseBlock();
 	
@@ -1839,28 +1838,36 @@ public class LibMatrixMult
 		SparseBlock a = m1.sparseBlock;
 		DenseBlock c = ret.getDenseBlock();
 		int m = m1.rlen;
-
+		
 		if( leftTranspose ) // t(X)%*%X 
 		{
 			//only general case (because vectors always dense)
 			//algorithm: scan rows, foreach row self join (KIJ)
-			if( LOW_LEVEL_OPTIMIZATION )
-			{
-				int arlen = a.numRows();
+			if( LOW_LEVEL_OPTIMIZATION ) {
+				final int n = m1.clen;
+				final int arlen = a.numRows();
 				for( int r=0; r<arlen; r++ ) {
 					if( a.isEmpty(r) ) continue;
-					int apos = a.pos(r);
 					int alen = a.size(r);
-					int[] aix = a.indexes(r);
 					double[] avals = a.values(r);
-					int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
-					rlix = (rlix>=0) ? apos+rlix : apos+alen;
-					int len = apos + alen;
-					for(int i = rlix; i < len && aix[i]<ru; i++) {
-						double val = avals[i];
-						if( val != 0 )
-							vectMultiplyAdd(val, avals, c.values(aix[i]),
-								aix, i, c.pos(aix[i]), len-i);
+					if( alen == n ) { //dense row
+						for( int i=rl; i<ru; i++ ) {
+							vectMultiplyAdd(avals[i], avals,
+								c.values(i), i, c.pos(i), n-i);
+						}
+					}
+					else { //non-full sparse row
+						int apos = a.pos(r);
+						int[] aix = a.indexes(r);
+						int rlix = (rl==0) ? 0 : a.posFIndexGTE(r, rl);
+						rlix = (rlix>=0) ? apos+rlix : apos+alen;
+						int len = apos + alen;
+						for(int i = rlix; i < len && aix[i]<ru; i++) {
+							double val = avals[i];
+							if( val != 0 )
+								vectMultiplyAdd(val, avals, c.values(aix[i]),
+									aix, i, c.pos(aix[i]), len-i);
+						}
 					}
 				}
 			}
@@ -3666,15 +3673,33 @@ public class LibMatrixMult
 		return nnz;
 	}
 
-	private static MatrixBlock prepMatrixMultTransposeSelfInput( MatrixBlock m1, boolean leftTranspose ) {
+	public static MatrixBlock prepMatrixMultTransposeSelfInput( MatrixBlock m1, boolean leftTranspose, boolean par ) {
 		MatrixBlock ret = m1;
+		final int rlen = m1.rlen;
+		final int clen = m1.clen;
 		
-		if( !leftTranspose && m1.sparse && m1.rlen > 1) //X%*%t(X) SPARSE MATRIX
-		{	
+		if( !leftTranspose && m1.sparse && rlen > 1) { //X%*%t(X) SPARSE MATRIX
 			//directly via LibMatrixReorg in order to prevent sparsity change
-			MatrixBlock tmpBlock = new MatrixBlock(m1.clen, m1.rlen, m1.sparse);
+			MatrixBlock tmpBlock = new MatrixBlock(clen, rlen, m1.sparse);
 			LibMatrixReorg.reorg(m1, tmpBlock, new ReorgOperator(SwapIndex.getSwapIndexFnObject()));
 			ret = tmpBlock;
+		}
+		else if( leftTranspose && m1.sparse && m1.sparseBlock instanceof SparseBlockCSR ) {
+			//for a special case of CSR inputs where all non-empty rows are dense, we can
+			//create a shallow copy of the values arrays to a "dense" block and perform
+			//tsmm with the existing dense block operations w/o unnecessary gather/scatter
+			SparseBlockCSR sblock = (SparseBlockCSR)m1.sparseBlock;
+			boolean convertDense = (par ?
+				IntStream.range(0, rlen).parallel() : IntStream.range(0, rlen))
+				.allMatch(i -> sblock.isEmpty(i) || sblock.size(i)==clen );
+			if( convertDense ) {
+				int rows = (int) sblock.size() / clen;
+				MatrixBlock tmpBlock = new MatrixBlock(rows, clen, false);
+				tmpBlock.denseBlock = DenseBlockFactory
+					.createDenseBlock(sblock.values(), rows, clen);
+				tmpBlock.setNonZeros(m1.nonZeros);
+				ret = tmpBlock;
+			}
 		}
 		
 		return ret;

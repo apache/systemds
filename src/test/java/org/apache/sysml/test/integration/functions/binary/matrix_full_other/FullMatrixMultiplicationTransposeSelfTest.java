@@ -35,7 +35,6 @@ import org.apache.sysml.test.utils.TestUtils;
 
 public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase 
 {
-
 	private final static String TEST_NAME1 = "TransposeSelfMatrixMultiplication1";
 	private final static String TEST_NAME2 = "TransposeSelfMatrixMultiplication2";
 	private final static String TEST_DIR = "functions/binary/matrix_full_other/";
@@ -46,7 +45,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	private final static int rows1 = 3500;
 	private final static int cols1 = 1500;
 	//for MR
-	private final static int rows2 = 7000;//7000;  
+	private final static int rows2 = 7000;//7000;
 	private final static int cols2 = 750;//750; 
 	
 	private final static double sparsity1 = 0.7;
@@ -70,121 +69,97 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	}
 
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 
 	@Test
-	public void testMMLeftDenseCP() 
-	{
+	public void testMMLeftDenseCP() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testMMRightDenseCP() 
-	{
+	public void testMMRightDenseCP() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
 	}
 
 	@Test
-	public void testMMLeftSparseCP() 
-	{
+	public void testMMLeftSparseCP() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testMMRightSparseCP() 
-	{
+	public void testMMRightSparseCP() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testMMLeftDenseMR() 
-	{
+	public void testMMLeftDenseMR() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
 	}
 	
 	@Test
-	public void testMMRightDenseMR() 
-	{
+	public void testMMRightDenseMR() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
 	}
 
 	@Test
-	public void testMMLeftSparseMR() 
-	{
+	public void testMMLeftSparseMR() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
 	}
 	
 	@Test
-	public void testMMRightSparseMR() 
-	{
+	public void testMMRightSparseMR() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
 	}	
 	
 	@Test
-	public void testVVLeftDenseCP() 
-	{
+	public void testVVLeftDenseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testVVRightDenseCP() 
-	{
+	public void testVVRightDenseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, false);
 	}
 
 	@Test
-	public void testVVLeftSparseCP() 
-	{
+	public void testVVLeftSparseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testVVRightSparseCP() 
-	{
+	public void testVVRightSparseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
 	@Test
-	public void testVVLeftDenseMR() 
-	{
+	public void testVVLeftDenseMR() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
 	}
 	
 	@Test
-	public void testVVRightDenseMR() 
-	{
+	public void testVVRightDenseMR() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
 	}
 
 	@Test
-	public void testVVLeftSparseMR() 
-	{
+	public void testVVLeftSparseMR() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
 	}
 	
 	@Test
-	public void testVVRightSparseMR() 
-	{
+	public void testVVRightSparseMR() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
 	}
 
-	/**
-	 * 
-	 * @param type
-	 * @param instType
-	 * @param sparse
-	 */
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols
@@ -251,18 +226,11 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 		}
 	}
 	
-	/**
-	 * 
-	 * @param type
-	 * @param instType
-	 * @param sparse
-	 */
 	private void runTransposeSelfVectorMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols
@@ -329,10 +297,8 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 		}
-	}	
-	
+	}
 }

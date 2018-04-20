@@ -31,6 +31,7 @@ import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData.CacheStatus;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.BreakPointInstruction;
@@ -291,7 +292,7 @@ public class DMLDebuggerFunctions {
 						
 						try {
 							mo = (MatrixObject) variables.get(varname);
-							if (mo.getStatusAsString().equals("EMPTY") && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
+							if (mo.getStatus()==CacheStatus.EMPTY && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
 								//TODO @jlugoma Need to add functionality to bring and display a block. 
 								System.err.println("ERROR: Matrix dimensions are too large to fit in main memory.");
 								return;
@@ -367,7 +368,7 @@ public class DMLDebuggerFunctions {
 				if (variables.get(varname).getDataType() == DataType.MATRIX) {
 					try {
 						MatrixObject mo = (MatrixObject) variables.get(varname);
-						if (mo.getStatusAsString().equals("EMPTY") && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
+						if (mo.getStatus()==CacheStatus.EMPTY && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
 							//TODO @jlugoma Need to add functionality to bring and display a block. 
 							System.err.println("ERROR: DML matrix/vector dimensions are too large to fit in main memory.");
 							return;
@@ -417,7 +418,7 @@ public class DMLDebuggerFunctions {
 					double cellValue;
 					try {
 						MatrixObject mo = (MatrixObject) variables.get(varname);
-						if (mo.getStatusAsString().equals("EMPTY") && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
+						if (mo.getStatus()==CacheStatus.EMPTY && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
 							//TODO @jlugoma Need to add functionality to bring and display a block. 
 							System.err.println("ERROR: DML matrix/vector dimensions are too large to fit in main memory.");
 							return;
@@ -464,14 +465,16 @@ public class DMLDebuggerFunctions {
 					double updatedCellValue;
 					try {
 						MatrixObject mo = (MatrixObject) variables.get(varname);
-						if (mo.getStatusAsString().equals("EMPTY") && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
+						if (mo.getStatus()==CacheStatus.EMPTY && (OptimizerUtils.estimateSizeExactSparsity(mo.getNumRows(), mo.getNumColumns(), mo.getSparsity()) > OptimizerUtils.getLocalMemBudget())) {
 							//TODO @jlugoma Need to add functionality to bring and display a block. 
 							System.err.println("ERROR: DML matrix/vector dimensions are too large to fit in main memory.");
 							return;
-						}						
-						MatrixBlock mb = mo.acquireModify();
+						}
+						MatrixBlock mb = mo.acquireRead();
+						mo.release();
 						mb.setValue(rowIndex, columnIndex, value);
 						updatedCellValue = mb.getValue(rowIndex, columnIndex);
+						mo.acquireModify(mb);
 						mo.release();
 					} catch (Exception e) {
 						System.err.println("Error processing DML matrix variable "+varname+". Certain matrix operations are disabled due to memory constraints or read-only restrictions.");

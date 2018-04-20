@@ -380,19 +380,17 @@ public class ExecutionContext {
 	 * 
 	 * @param varName variable name
 	 */
+	public void releaseMatrixInput(String varName) {
+		getMatrixObject(varName).release();
+	}
+	
 	public void releaseMatrixInput(String varName, String opcode) {
 		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		MatrixObject mo = getMatrixObject(varName);
-		mo.release(opcode);
+		releaseMatrixInput(varName);
 		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
 			long t2 = System.nanoTime();
 			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_INPUT_MB, t2-t1);
 		}
-	}
-	
-	public void releaseMatrixInput(String varName) {
-		MatrixObject mo = getMatrixObject(varName);
-		mo.release(null);
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName) {
@@ -450,25 +448,27 @@ public class ExecutionContext {
 	}
 	
 	public void setMatrixOutput(String varName, MatrixBlock outputData) {
-		setMatrixOutput(varName, outputData, null);
-	}
-
-	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) {
 		MatrixObject mo = getMatrixObject(varName);
-		mo.acquireModify(outputData, opcode);
-		mo.release(opcode);
+		mo.acquireModify(outputData);
+		mo.release();
 		setVariable(varName, mo);
 	}
+	
+	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) {
+		setMatrixOutput(varName, outputData);
+	}
 
-	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) {
+	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {
 		if( flag.isInPlace() ) {
 			//modify metadata to carry update status
 			MatrixObject mo = getMatrixObject(varName);
 			mo.setUpdateType( flag );
 		}
-		
-		//default case
-		setMatrixOutput(varName, outputData, opcode);
+		setMatrixOutput(varName, outputData);
+	}
+	
+	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) {
+		setMatrixOutput(varName, outputData, flag);
 	}
 
 	public void setFrameOutput(String varName, FrameBlock outputData) {

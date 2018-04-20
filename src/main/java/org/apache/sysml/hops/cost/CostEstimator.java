@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData.CacheStatus;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
@@ -223,7 +224,7 @@ public abstract class CostEstimator
 				int brlen = mc.getRowsPerBlock();
 				int bclen = mc.getColsPerBlock();
 				long nnz = mc.getNonZeros();
-				boolean inmem = mo.getStatusAsString().equals("CACHED");
+				boolean inmem = mo.getStatus()==CacheStatus.CACHED;
 				vs = new VarStats(rlen, clen, brlen, bclen, nnz, inmem);
 			}
 			else //scalar

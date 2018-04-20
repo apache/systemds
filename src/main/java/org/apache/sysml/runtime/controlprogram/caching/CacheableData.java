@@ -40,7 +40,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
@@ -53,11 +52,9 @@ import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.GPUStatistics;
 
 
 /**
@@ -103,7 +100,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * <code>CACHED</code>:   The data blob is in main memory, and nobody is using nor referencing it. 
 	 * There is always an persistent recovery object for it
 	 **/
-	protected enum CacheStatus {
+	public enum CacheStatus {
 		EMPTY, 
 		READ, 
 		MODIFY, 
@@ -115,7 +112,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private static volatile boolean _activeFlag = false;
 	
 	/** Global sequence for generating unique ids. */
-	private static IDSequence _seq = null;   
+	private static IDSequence _seq = null;
 
 	// Global eviction path and prefix (prefix used for isolation purposes)
 	public static String cacheEvictionLocalFilePath = null; //set during init
@@ -245,6 +242,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public boolean isCleanupEnabled() {
 		return _cleanupFlag;
+	}
+	
+	public CacheStatus getStatus() {
+		return _cacheStatus;
 	}
 
 	public boolean isHDFSFileExists() {
@@ -411,18 +412,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 			}
 		}
-
+		
 		//read data from HDFS/RDD if required
 		//(probe data for cache_nowrite / jvm_reuse)
-		if( isEmpty(true) && _data==null )
-		{
-			try
-			{
+		if( _data==null && isEmpty(true) ) {
+			try {
 				if( DMLScript.STATISTICS )
 					CacheStatistics.incrementHDFSHits();
 				
-				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-				{
+				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					//check filename
 					if( _hdfsFileName == null )
 						throw new DMLRuntimeException("Cannot read matrix for empty filename.");
@@ -433,8 +431,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = CACHING_WRITE_CACHE_ON_READ;
 				}
-				else
-				{
+				else {
 					//read matrix from rdd (incl execute pending rdd operations)
 					MutableBoolean writeStatus = new MutableBoolean();
 					_data = readBlobFromRDD( getRDDHandle(), writeStatus );
@@ -449,74 +446,15 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			catch (IOException e) {
 				throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 			}
-			
 			_isAcquireFromEmpty = true;
 		}
-		else if( DMLScript.STATISTICS ) {
-			if( _data!=null )
-				CacheStatistics.incrementMemHits();
+		else if( _data!=null && DMLScript.STATISTICS ) {
+			CacheStatistics.incrementMemHits();
 		}
 		
 		//cache status maintenance
 		acquire( false, _data==null );
 		return _data;
-	}
-
-	/**
-	 * Acquires the exclusive "write" lock for a thread that wants to change cache block
-	 * cell values.  Produces the reference to the cache block, restores the cache block
-	 * to main memory, reads from HDFS if needed.
-	 * 
-	 * In-Status:  EMPTY, EVICTABLE, EVICTED;
-	 * Out-Status: MODIFY.
-	 * 
-	 * @return cacheable data
-	 */
-	public synchronized T acquireModify() 
-	{
-		//TODO remove after debugger (as only consumer) has been removed, because
-		//recent features such as gpu data transfers are not yet integrated
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		
-		if ( !isAvailableToModify() )
-			throw new DMLRuntimeException("MatrixObject not available to modify.");
-		
-		//get object from cache
-		if( _data == null )
-			getCache();
-
-		//read data from HDFS if required
-		if( isEmpty(true) && _data == null )
-		{
-			//check filename
-			if( _hdfsFileName == null )
-				throw new DMLRuntimeException("Cannot read matrix for empty filename.");
-			
-			//load data
-			try {
-				_data = readBlobFromHDFS( _hdfsFileName );
-			}
-			catch (IOException e) {
-				throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
-			}
-		}
-
-		//cache status maintenance
-		acquire( true, _data==null );
-		updateStatusPinned(true);
-		setDirty(true);
-		_isAcquireFromEmpty = false;
-		
-		if( DMLScript.STATISTICS ){
-			long t1 = System.nanoTime();
-			CacheStatistics.incrementAcquireMTime(t1-t0);
-		}
-		
-		return _data;
-	}
-	
-	public T acquireModify(T newData) {
-		return acquireModify(newData, null);
 	}
 	
 	/**
@@ -528,13 +466,28 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: MODIFY.
 	 * 
 	 * @param newData new data
-	 * @param opcode extended instruction opcode
 	 * @return cacheable data
 	 */
-	public synchronized T acquireModify(T newData, String opcode)
-	{
+	public T acquireModify(T newData) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
+		//core internal acquire (synchronized per object)
+		T ret = acquireModifyIntern(newData);
+		
+		//update thread-local status (after pin but outside the
+		//critical section of accessing a shared object)
+		if( !isBelowCachingThreshold() )
+			updateStatusPinned(true);
+		
+		if( DMLScript.STATISTICS ){
+			long t1 = System.nanoTime();
+			CacheStatistics.incrementAcquireMTime(t1-t0);
+		}
+		
+		return ret;
+	}
+	
+	private synchronized T acquireModifyIntern(T newData) {
 		if (! isAvailableToModify ())
 			throw new DMLRuntimeException("CacheableData not available to modify.");
 		
@@ -550,29 +503,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//set references to new data
 		if (newData == null)
 			throw new DMLRuntimeException("acquireModify with empty cache block.");
-		_data = newData;
-		if( !isBelowCachingThreshold() )
-			updateStatusPinned(true);
-		
-		if( DMLScript.STATISTICS ){
-			long t1 = System.nanoTime();
-			CacheStatistics.incrementAcquireMTime(t1-t0);
-			if(DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
-				if(_data instanceof MatrixBlock) {
-					MatrixBlock currObject = (MatrixBlock)_data;
-					if(currObject.isInSparseFormat())
-						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_SPARSE_MB, t1-t0);
-					else
-						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_ACQ_MODIFY_DENSE_MB, t1-t0);
-				}
-			}
-		}
-		
-		return _data;
-	}
-	
-	public void release() {
-		release(null);
+		return _data = newData;
 	}
 	
 	/**
@@ -586,7 +517,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * Out-Status: READ(-1), EVICTABLE, EMPTY.
 	 * 
 	 */
-	public void release(String opcode) {
+	public void release() {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		
 		//update thread-local status (before unpin but outside
@@ -595,7 +526,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			updateStatusPinned(false);
 		
 		//core internal release (synchronized per object)
-		releaseIntern(opcode);
+		releaseIntern();
 		
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
@@ -603,8 +534,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 	}
 	
-	private synchronized void releaseIntern(String opcode)
-	{
+	private synchronized void releaseIntern() {
 		boolean write = false;
 		if ( isModify() ) {
 			//set flags for write
@@ -613,10 +543,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			//update meta data
 			refreshMetaData();
+			
+			//compact empty in-memory block 
+			_data.compactEmptyBlock();
 		}
-		
-		//compact empty in-memory block 
-		_data.compactEmptyBlock();
 		
 		//cache status maintenance (pass cacheNoWrite flag)
 		release(_isAcquireFromEmpty && !_requiresLocalWrite);
@@ -626,17 +556,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			&& !isBelowCachingThreshold() ) //min size for caching
 		{
 			if( write || _requiresLocalWrite ) {
-				//evict blob
 				String filePath = getCacheFilePathAndName();
 				try {
-					long t1 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-					
-					int numEvicted = LazyWriteBuffer.writeBlock(filePath, _data);
-					
-					if(DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS && opcode != null) {
-						long t2 = DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-						GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_BUFF_WRITE, t2-t1, numEvicted);
-					}
+					LazyWriteBuffer.writeBlock(filePath, _data);
 				}
 				catch (Exception e) {
 					throw new DMLRuntimeException("Eviction to local path " + filePath + " ("+hashCode()+") failed.", e);
@@ -666,7 +588,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			return; // do nothing
 		if( !isAvailableToModify() )
 			throw new DMLRuntimeException("CacheableData (" + getDebugName() + ") not available to "
-					+ "modify. Status = " + getStatusAsString() + ".");
+					+ "modify. Status = " + _cacheStatus.name() + ".");
 		
 		// clear existing WB / FS representation (but prevent unnecessary probes)
 		if( !(isEmpty(true)||(_data!=null && isBelowCachingThreshold()) 
@@ -810,7 +732,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				throw new DMLRuntimeException("Export to " + fName + " failed.", e);
 			}
 			finally {
-				release(opcode);
+				release();
 			}
 		}
 		else if( pWrite ) // pwrite with same output format
@@ -1078,7 +1000,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquired lock on " + this.getDebugName() + ", status: " + this.getStatusAsString() );		
+			LOG.trace("Acquired lock on " + getDebugName() + ", status: " + _cacheStatus.name() );
 	}
 
 	
@@ -1114,7 +1036,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		}
 		
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Released lock on " + this.getDebugName() + ", status: " + this.getStatusAsString());
+			LOG.trace("Released lock on " + getDebugName() + ", status: " + _cacheStatus.name());
 		
 	}
 
@@ -1125,16 +1047,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	//  ***                                            ***
 	//  **************************************************
 	
-	
-	public String getStatusAsString() {
-		return _cacheStatus.toString();
-	}
-
 	public boolean isCached(boolean inclCachedNoWrite) {
-		if( inclCachedNoWrite )
-			return (_cacheStatus == CacheStatus.CACHED || _cacheStatus == CacheStatus.CACHED_NOWRITE);
-		else
-			return (_cacheStatus == CacheStatus.CACHED);
+		return _cacheStatus == CacheStatus.CACHED
+			|| (inclCachedNoWrite && _cacheStatus == CacheStatus.CACHED_NOWRITE);
 	}
 	
 	public void setEmptyStatus() {
@@ -1142,10 +1057,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	protected boolean isEmpty(boolean inclCachedNoWrite) {
-		if( inclCachedNoWrite )
-			return (_cacheStatus == CacheStatus.EMPTY || _cacheStatus == CacheStatus.CACHED_NOWRITE);
-		else
-			return (_cacheStatus == CacheStatus.EMPTY);
+		return _cacheStatus == CacheStatus.EMPTY
+			|| (inclCachedNoWrite && _cacheStatus == CacheStatus.CACHED_NOWRITE);
 	}
 	
 	protected boolean isModify() {
@@ -1170,22 +1083,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	protected void removeOneRead(boolean doesBlobExist, boolean cacheNoWrite) {
-		_numReadThreads --;					
+		_numReadThreads --;
 		if (_numReadThreads == 0) {
 			if( cacheNoWrite )
 				_cacheStatus = (doesBlobExist ? 
-						CacheStatus.CACHED_NOWRITE : CacheStatus.EMPTY);
+					CacheStatus.CACHED_NOWRITE : CacheStatus.EMPTY);
 			else
 				_cacheStatus = (doesBlobExist ? 
-						CacheStatus.CACHED : CacheStatus.EMPTY);
+					CacheStatus.CACHED : CacheStatus.EMPTY);
 		}
 	}
 	
 	protected boolean isAvailableToRead() {
-		return (   _cacheStatus == CacheStatus.EMPTY 
-				|| _cacheStatus == CacheStatus.CACHED
-				|| _cacheStatus == CacheStatus.CACHED_NOWRITE
-				|| _cacheStatus == CacheStatus.READ);
+		return (_cacheStatus != CacheStatus.MODIFY);
 	}
 	
 	protected boolean isAvailableToModify() {
@@ -1206,7 +1116,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * referenced cache block.  
 	 */
 	protected void createCache( ) {
-		_cache = new SoftReference<>( _data );
+		if( _cache == null || _cache.get() == null )
+			_cache = new SoftReference<>( _data );
 	}
 
 	/**
@@ -1214,9 +1125,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * and subsequently clears the cache soft reference if existing.
 	 */
 	protected void getCache() {
-		if( _cache !=null ) {
+		if( _cache != null ) {
 			_data = _cache.get();
-			clearCache();
 		}
 	}
 	

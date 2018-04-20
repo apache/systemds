@@ -322,7 +322,7 @@ public class NativeHelper {
 	//single-precision matrix multiply dense-dense
 	public static native boolean smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen, int numThreads);
 	//transpose-self matrix multiply
-	private static native boolean tsmm(double [] m1, double [] ret, int m1rlen, int m1clen, boolean isLeftTranspose, int numThreads);
+	public static native boolean tsmm(double[] m1, double[] ret, int m1rlen, int m1clen, boolean leftTrans, int numThreads);
 
 	// ----------------------------------------------------------------------------------------------------------------
 	// LibMatrixDNN operations:

@@ -118,6 +118,33 @@ public class LibMatrixNative
 			LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
 	
+	public static void tsmm(MatrixBlock m1, MatrixBlock ret, boolean leftTrans, int k) {
+		if( m1.isEmptyBlock(false) )
+			return;
+		if( NativeHelper.isNativeLibraryLoaded() && ret.clen > 1 
+			&& (!m1.sparse && m1.getDenseBlock().isContiguous() ) ) {
+			ret.sparse = false;
+			ret.allocateDenseBlock();
+			if( NativeHelper.tsmm(m1.getDenseBlockValues(), 
+				ret.getDenseBlockValues(), m1.rlen, m1.clen, leftTrans, k) ) 
+			{
+				long nnz = (ret.clen==1) ? ret.recomputeNonZeros() :
+					LibMatrixMult.copyUpperToLowerTriangle(ret);
+				ret.setNonZeros(nnz);
+				ret.examSparsity();
+				return;
+			}
+			else {
+				Statistics.incrementNativeFailuresCounter();
+				//fallback to default java implementation
+			}
+		}
+		if( k > 1 )
+			LibMatrixMult.matrixMultTransposeSelf(m1, ret, leftTrans, k);
+		else
+			LibMatrixMult.matrixMultTransposeSelf(m1, ret, leftTrans);
+	}
+	
 	/**
 	 * This method performs convolution (i.e. cross-correlation) operation on input
 	 * 

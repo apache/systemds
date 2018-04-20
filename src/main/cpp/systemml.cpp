@@ -109,13 +109,13 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_smmdd(
 }
 
 JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
-  (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray ret, jint m1rlen, jint m1clen, jboolean isLeftTranspose, jint numThreads) {
+  (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray ret, jint m1rlen, jint m1clen, jboolean leftTrans, jint numThreads) {
   double* m1Ptr = GET_DOUBLE_ARRAY(env, m1, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
   if(m1Ptr == NULL || retPtr == NULL)
   	return (jboolean) false;
 
-  tsmm(m1Ptr, retPtr, (int) m1rlen, (int) m1clen, (bool) isLeftTranspose, (int) numThreads);
+  tsmm(m1Ptr, retPtr, (int)m1rlen, (int)m1clen, (bool)leftTrans, (int)numThreads);
   
   RELEASE_INPUT_ARRAY(env, m1, m1Ptr, numThreads);
   RELEASE_ARRAY(env, ret, retPtr, numThreads);

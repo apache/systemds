@@ -51,11 +51,9 @@ void smatmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m, int k, int n, in
   cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, m, n, k, 1, m1Ptr, k, m2Ptr, n, 0, retPtr, n);
 }
 
-void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose, int numThreads) {
-  int m = isLeftTranspose ? m1clen : m1rlen;
-  int n = isLeftTranspose ? m1clen : m1rlen;
-  int k = isLeftTranspose ? m1rlen : m1clen;
-  
+void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTrans, int numThreads) {
+  int n = isLeftTrans ? m1clen : m1rlen;
+  int k = isLeftTrans ? m1rlen : m1clen;
   setNumThreadsForBLAS(numThreads);
-  cblas_dgemm(CblasRowMajor, isLeftTranspose ? CblasTrans : CblasNoTrans, isLeftTranspose ? CblasNoTrans : CblasTrans, m, n, k, 1, m1Ptr, k, m1Ptr, n, 0, retPtr, n);
+  cblas_dsyrk(CblasRowMajor, CblasUpper, isLeftTrans ? CblasTrans : CblasNoTrans, n, k, 1, m1Ptr, n, 0, retPtr, n);
 }

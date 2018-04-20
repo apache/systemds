@@ -3434,7 +3434,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			out.reset(dim, dim, false);
 		
 		//compute matrix mult
-		if( k > 1 )
+		if( NativeHelper.isNativeLibraryLoaded() )
+			LibMatrixNative.tsmm(this, out, leftTranspose, k);
+		else if( k > 1 )
 			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose, k);
 		else
 			LibMatrixMult.matrixMultTransposeSelf(this, out, leftTranspose);

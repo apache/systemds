@@ -56,6 +56,6 @@ void setNumThreadsForBLAS(int numThreads);
 void dmatmult(double* m1Ptr, double* m2Ptr, double* retPtr, int m, int k, int n, int numThreads);
 void smatmult(float* m1Ptr, float* m2Ptr, float* retPtr, int m, int k, int n, int numThreads);
 
-void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTranspose,  int numThreads);
+void tsmm(double* m1Ptr, double* retPtr, int m1rlen, int m1clen, bool isLeftTrans, int numThreads);
 
 #endif

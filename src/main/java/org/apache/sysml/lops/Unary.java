@@ -325,11 +325,14 @@ public class Unary extends Lop
 		}
 	}
 	
-	public static boolean isCumulativeOp(OperationTypes op) {
+	public static boolean isMultiThreadedOp(OperationTypes op) {
 		return op==OperationTypes.CUMSUM
 			|| op==OperationTypes.CUMPROD
 			|| op==OperationTypes.CUMMIN
-			|| op==OperationTypes.CUMMAX;
+			|| op==OperationTypes.CUMMAX
+			|| op==OperationTypes.EXP
+			|| op==OperationTypes.LOG
+			|| op==OperationTypes.SIGMOID;
 	}
 	
 	@Override
@@ -351,7 +354,7 @@ public class Unary extends Lop
 		sb.append( prepOutputOperand(output) );
 		
 		//num threads for cumulative cp ops
-		if( getExecType() == ExecType.CP && isCumulativeOp(operation) ) {
+		if( getExecType() == ExecType.CP && isMultiThreadedOp(operation) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}

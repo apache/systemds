@@ -62,7 +62,7 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
-			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucummin","ucummax"}).contains(opcode) )
+			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucummin","ucummax","exp","log","sigmoid"}).contains(opcode) )
 				return new UnaryMatrixCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
 			else
 				return new UnaryScalarCPInstruction(null, in, out, opcode, str);

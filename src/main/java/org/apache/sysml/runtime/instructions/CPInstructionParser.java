@@ -64,6 +64,7 @@ import org.apache.sysml.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CPInstructionParser extends InstructionParser 
 {
@@ -385,7 +386,8 @@ public class CPInstructionParser extends InstructionParser
 			case Builtin: 
 				String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
-					if ( parts.length == 3 ) {
+					if ( parts.length == 3 || (parts.length == 4 &&
+						UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryCPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {

@@ -1317,7 +1317,8 @@ public class OptimizerRuleBased extends Optimizer
 							 && !HopRewriteUtils.isValidOp(((ParameterizedBuiltinOp)h).getOp(), 
 								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND))
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
-							 && !((UnaryOp)h).isCumulativeUnaryOperation() )
+							 && !((UnaryOp)h).isCumulativeUnaryOperation()
+							 && !((UnaryOp)h).isExpensiveUnaryOperation())
 						&& !( h instanceof ReorgOp //only reorgop-transpose
 							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANS ))
 					{

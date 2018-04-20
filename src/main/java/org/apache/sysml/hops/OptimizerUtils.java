@@ -414,29 +414,29 @@ public class OptimizerUtils
 	 * 
 	 * @return local memory budget
 	 */
-	public static double getLocalMemBudget()
-	{
+	public static double getLocalMemBudget() {
 		double ret = InfrastructureAnalyzer.getLocalMaxMemory();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 	
-	public static double getRemoteMemBudgetMap()
-	{
+	public static double getRemoteMemBudgetMap() {
 		return getRemoteMemBudgetMap(false);
 	}
 	
-	public static double getRemoteMemBudgetMap(boolean substractSortBuffer)
-	{
+	public static double getRemoteMemBudgetMap(boolean substractSortBuffer) {
 		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryMap();
 		if( substractSortBuffer )
 			ret -= InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
 	}
 
-	public static double getRemoteMemBudgetReduce()
-	{
+	public static double getRemoteMemBudgetReduce() {
 		double ret = InfrastructureAnalyzer.getRemoteMaxMemoryReduce();
 		return ret * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+	
+	public static boolean isMaxLocalParallelism(int k) {
+		return InfrastructureAnalyzer.getLocalParallelism() == k;
 	}
 
 	public static boolean checkSparkBroadcastMemoryBudget( double size )

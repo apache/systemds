@@ -301,10 +301,10 @@ public abstract class SpoofOperator implements Serializable
 			//move to next row if necessary
 			if( rowIndex > currRowIndex ) {
 				currRowIndex = rowIndex;
-				currColPos = mdat.getSparseBlock().pos(currRowIndex);
-				currLen = mdat.getSparseBlock().size(currRowIndex) + currColPos;
-				indexes = mdat.getSparseBlock().indexes(currRowIndex);
-				values = mdat.getSparseBlock().values(currRowIndex);
+				currColPos = sblock.pos(currRowIndex);
+				currLen = sblock.size(currRowIndex) + currColPos;
+				indexes = sblock.indexes(currRowIndex);
+				values = sblock.values(currRowIndex);
 			}
 			//move to next colpos if necessary
 			while( currColPos < currLen && indexes[currColPos]<colIndex )

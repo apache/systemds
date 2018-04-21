@@ -47,8 +47,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRepeatedOptimizationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	
-	private final static int rows = 1000000; 
-	private final static int cols = 10;  
+	private final static int rows = 1000000;
+	private final static int cols = 10;
 	private final static double sparsity = 0.7;
 	
 	@Override

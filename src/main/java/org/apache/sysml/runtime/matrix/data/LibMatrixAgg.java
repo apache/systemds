@@ -2519,7 +2519,7 @@ public class LibMatrixAgg
 		// in order to know if for example a colMax of -8 is true or need
 		// to be replaced with a 0 because there was a missing nonzero. 
 		for( int i=0; i<n; i++ )
-			if( cnt[i] < m ) //no dense column
+			if( cnt[i] < ru-rl ) //no dense column
 				c[i] = builtin.execute(c[i], 0);
 	}
 

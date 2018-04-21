@@ -2406,6 +2406,9 @@ public class LibMatrixMult
 		boolean flagminus = (wt==WSigmoidType.MINUS || wt==WSigmoidType.LOG_MINUS); 
 		boolean flaglog = (wt==WSigmoidType.LOG || wt==WSigmoidType.LOG_MINUS);
 		
+		//note: experiments with a fully native implementation of this method (even with #pragma omp simd)
+		//showed performance regressions compared to this version because we benefit from FastMath.exp 
+		
 		//call native matrix multiplication (only called for single-threaded and matrix-vector
 		//because this ensures that we can deal with the transpose mV without additional transpose)
 		if(!NativeHelper.dmmdd(((m==1)?mV:mU).getDenseBlockValues(),
@@ -2413,12 +2416,13 @@ public class LibMatrixMult
 			throw new DMLRuntimeException("Error executing native matrix mult.");
 		
 		//compute remaining wsigmoid for all relevant outputs
-		for(int i=0, ix=0; i<m; i++, ix+=n) {
-			for(int j=0; j<n; j++) {
-				double wij = w[ix +j];
-				//if( wij != 0 )
-					c[ix+j] = wsigmoid(wij, c[ix+j], flagminus, flaglog);
-			}
+		for( int i=0; i<m*n; i++ ) {
+			//compute core sigmoid function
+			double cval = flagminus ?
+				1 / (1 + FastMath.exp(c[i])) :
+				1 / (1 + FastMath.exp(-c[i]));
+			//compute weighted output
+			c[i] = w[i] * ((flaglog) ? Math.log(cval) : cval);
 		}
 	}
 	
@@ -3501,16 +3505,6 @@ public class LibMatrixMult
 		return wij * ((flaglog) ? Math.log(cval) : cval);
 	}
 	
-	private static double wsigmoid(final double wij, final double uvij, final boolean flagminus, final boolean flaglog) {
-		//compute core sigmoid function
-		double cval = flagminus ?
-				1 / (1 + FastMath.exp(uvij)) :
-				1 / (1 + FastMath.exp(-uvij));
-		
-		//compute weighted output
-		return wij * ((flaglog) ? Math.log(cval) : cval);
-	}
-
 	private static void wdivmm( final double wij, double[] u, double[] v, double[] c, final int uix, final int vix, final boolean left, final boolean mult, final boolean minus, final int len )
 	{
 		//compute dot product over ui vj

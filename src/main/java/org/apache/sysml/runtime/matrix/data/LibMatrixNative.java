@@ -123,7 +123,7 @@ public class LibMatrixNative
 	public static void tsmm(MatrixBlock m1, MatrixBlock ret, boolean leftTrans, int k) {
 		if( m1.isEmptyBlock(false) )
 			return;
-		if( NativeHelper.isNativeLibraryLoaded() && ret.clen > 1 
+		if( NativeHelper.isNativeLibraryLoaded() && (ret.clen > 1 || ret.getLength()==1)
 			&& (!m1.sparse && m1.getDenseBlock().isContiguous() ) ) {
 			ret.sparse = false;
 			ret.allocateDenseBlock();
@@ -136,10 +136,8 @@ public class LibMatrixNative
 				ret.examSparsity();
 				return;
 			}
-			else {
-				Statistics.incrementNativeFailuresCounter();
-				//fallback to default java implementation
-			}
+			//fallback to default java implementation
+			Statistics.incrementNativeFailuresCounter();
 		}
 		if( k > 1 )
 			LibMatrixMult.matrixMultTransposeSelf(m1, ret, leftTrans, k);

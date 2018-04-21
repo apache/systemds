@@ -470,8 +470,10 @@ public class LibMatrixBincell
 				double bval = b[i];
 				if( bval != 0 ) {
 					for( int j=0; j<clen; j++ ) {
+						double aval = a[aix+j];
+						if( aval == 0 ) continue;
 						indexes[pos] = j;
-						vals[pos] = a[aix+j] * bval;
+						vals[pos] = aval * bval;
 						pos++;
 					}
 				}

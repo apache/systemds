@@ -79,9 +79,11 @@ public class LibMatrixNative
 			return;
 		}
 		
-		if (NativeHelper.isNativeLibraryLoaded()
+		if( NativeHelper.isNativeLibraryLoaded()
 			&& !isMatMultMemoryBound(m1.rlen, m1.clen, m2.clen) 
-			&& !m1.isInSparseFormat() && !m2.isInSparseFormat()) 
+			&& !m1.isInSparseFormat() && !m2.isInSparseFormat()
+			&& m1.getDenseBlock().isContiguous() && m2.getDenseBlock().isContiguous()
+			&& 8L * ret.getLength() < Integer.MAX_VALUE ) //contiguous but not allocated
 		{
 			ret.sparse = false;
 			ret.allocateDenseBlock();

@@ -2584,15 +2584,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			else
 				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
 		}
-		else if(!sparse && !isEmptyBlock(false) && getDenseBlock().isContiguous()
+		else if(!sparse && !isEmptyBlock(false)
 			&& OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {
 			//note: we apply multi-threading in a best-effort manner here
 			//only for expensive operators such as exp, log, sigmoid, because
 			//otherwise allocation, read and write anyway dominates
 			ret.allocateDenseBlock(false);
-			double[] a = getDenseBlockValues();
-			double[] c = ret.getDenseBlockValues();
-			Arrays.parallelSetAll(c, i -> op.fn.execute(a[i]));
+			DenseBlock a = getDenseBlock();
+			DenseBlock c = ret.getDenseBlock();
+			for(int bi=0; bi<a.numBlocks(); bi++) {
+				double[] avals = a.valuesAt(bi), cvals = c.valuesAt(bi);
+				Arrays.parallelSetAll(cvals, i -> op.fn.execute(avals[i]));
+			}
 			ret.recomputeNonZeros();
 		}
 		else {

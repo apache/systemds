@@ -54,6 +54,10 @@ public class ReaderBinaryBlock extends MatrixReader
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
 		throws IOException, DMLRuntimeException 
 	{
+		//early abort for known empty matrices (e.g., remote parfor result vars)
+		if( RETURN_EMPTY_NNZ0 && estnnz == 0 )
+			return new MatrixBlock((int)rlen, (int)clen, true);
+		
 		//allocate output matrix block
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, brlen, bclen, estnnz, false, false);
 		

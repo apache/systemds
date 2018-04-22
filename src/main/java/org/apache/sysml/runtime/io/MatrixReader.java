@@ -49,6 +49,7 @@ public abstract class MatrixReader
 {
 	//internal configuration
 	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
+	protected static final boolean RETURN_EMPTY_NNZ0 = true;
 	
 	public abstract MatrixBlock readMatrixFromHDFS( String fname, long rlen, long clen, int brlen, int bclen, long estnnz )
 		throws IOException, DMLRuntimeException;

@@ -1254,8 +1254,11 @@ public class ProgramConverter
 	////////////////////////////////
 	// PARSING 
 	////////////////////////////////
-
 	public static ParForBody parseParForBody( String in, int id ) {
+		return parseParForBody(in, id, false);
+	}
+	
+	public static ParForBody parseParForBody( String in, int id, boolean inSpark ) {
 		ParForBody body = new ParForBody();
 		
 		//header elimination
@@ -1284,7 +1287,8 @@ public class ProgramConverter
 		
 		//handle additional configs
 		String aconfs = st.nextToken();
-		parseAndSetAdditionalConfigurations( aconfs );
+		if( !inSpark )
+			parseAndSetAdditionalConfigurations( aconfs );
 		
 		//handle program
 		String progStr = st.nextToken();

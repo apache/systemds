@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -98,8 +97,6 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	public Iterator<Tuple2<Long, String>> call(Iterator<Tuple2<Long, Iterable<Writable>>> arg0)
 		throws Exception 
 	{
-		ArrayList<Tuple2<Long,String>> ret = new ArrayList<>();
-		
 		//lazy parworker initialization
 		configureWorker( TaskContext.get().taskAttemptId() );
 	
@@ -132,12 +129,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			_aIters.add( (int)(getExecutedIterations()-numIter) );
 		}
 		
-		//write output if required (matrix indexed write) 
-		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
-		for( String val : tmp )
-			ret.add(new Tuple2<>(_workerID, val));
-		
-		return ret.iterator();
+		//write output if required (matrix indexed write)
+		return RemoteParForUtils.exportResultVariables(_workerID, _ec.getVariables(), _resultVars)
+			.stream().map(s -> new Tuple2<>(_workerID, s)).iterator();
 	}
 
 	private void configureWorker( long ID ) 
@@ -150,7 +144,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			CodegenUtils.getClassSync(e.getKey(), e.getValue());
 	
 		//parse and setup parfor body program
-		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
+		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID, true);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
 		_resultVars  = body.getResultVariables();
@@ -171,7 +165,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
 				//register entire working dir for delete on shutdown
 				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
-			}	
+			}
 		}
 		
 		//ensure that resultvar files are not removed

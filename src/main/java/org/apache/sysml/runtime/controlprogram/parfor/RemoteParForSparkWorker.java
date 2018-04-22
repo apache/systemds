@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,12 +82,8 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		//write output if required (matrix indexed write) 
 		//note: this copy is necessary for environments without spark libraries
-		ArrayList<Tuple2<Long,String>> ret = new ArrayList<>();
-		ArrayList<String> tmp = RemoteParForUtils.exportResultVariables( _workerID, _ec.getVariables(), _resultVars );
-		for( String val : tmp )
-			ret.add(new Tuple2<>(_workerID, val));
-		
-		return ret.iterator();
+		return RemoteParForUtils.exportResultVariables(_workerID, _ec.getVariables(), _resultVars)
+			.stream().map(s -> new Tuple2<>(_workerID, s)).iterator();
 	}
 	
 	private void configureWorker(long taskID) 
@@ -101,7 +96,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 			CodegenUtils.getClassSync(e.getKey(), e.getValue());
 	
 		//parse and setup parfor body program
-		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID);
+		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)_workerID, true);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
 		_resultVars  = body.getResultVariables();

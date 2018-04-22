@@ -180,7 +180,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = rewrites;
 			
 			fullDMLScriptName = SCRIPT_DIR + TEST_DIR + testname + ".dml";
-			programArgs = new String[]{"-explain","-args",
+			programArgs = new String[]{"-stats", "-explain", "hops", "-args",
 				String.valueOf(type.ordinal()), String.valueOf(blen),
 				input("A"), input("B"), output("C"), output("D"), output("E") };
 			

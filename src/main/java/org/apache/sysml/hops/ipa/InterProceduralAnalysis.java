@@ -181,9 +181,14 @@ public class InterProceduralAnalysis
 			//step 1: intra- and inter-procedural 
 			if( INTRA_PROCEDURAL_ANALYSIS ) {
 				//get unary dimension-preserving non-candidate functions
-				for( String tmp : fcallSizes.getInvalidFunctions() )
-					if( isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
+				//note: we have to guard against recursive functions because these might
+				//be seen at top-level as a unary size-preserving function but internally
+				//called with different sizes (e.g., common block-recursive cholesky)
+				for( String tmp : fcallSizes.getInvalidFunctions() ) {
+					if( !_fgraph.isRecursiveFunction(tmp)
+						&& isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
 						fcallSizes.addDimsPreservingFunction(tmp);
+				}
 				if( LOG.isDebugEnabled() )
 					LOG.debug("IPA: Extended FunctionCallSummary: \n" + fcallSizes);
 				

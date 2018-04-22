@@ -324,7 +324,7 @@ public class FunctionCallSizeInfo
 		}
 		
 		if( !getInvalidFunctions().isEmpty() ) {
-			sb.append("Invaid functions for propagation: \n");
+			sb.append("Invalid functions for propagation: \n");
 			for( String fkey : getInvalidFunctions() ) {
 				sb.append("--");
 				sb.append(fkey);

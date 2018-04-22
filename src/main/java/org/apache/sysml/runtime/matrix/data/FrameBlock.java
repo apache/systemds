@@ -117,7 +117,11 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 		for( int i=0; i<data.length; i++ )
 			appendRow(data[i]);
 	}
-	
+
+	public boolean isEmpty() {
+		return _numRows == 0;
+	}
+
 	/**
 	 * Get the number of rows of the frame block.
 	 * 

@@ -33,6 +33,10 @@ public class CachedReuseVariables
 	public CachedReuseVariables() {
 		_data = new HashMap<>();
 	}
+
+	public synchronized boolean containsVariables(long pfid) {
+		return _data.containsKey(pfid);
+	}
 	
 	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> blacklist) {
 		//check for existing reuse map

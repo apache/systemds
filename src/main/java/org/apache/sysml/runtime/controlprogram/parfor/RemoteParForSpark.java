@@ -21,12 +21,17 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
@@ -74,11 +79,17 @@ public class RemoteParForSpark
 		long jobid = _jobID.getNextID();
 		if( InfrastructureAnalyzer.isLocalMode() )
 			RemoteParForSparkWorker.cleanupCachedVariables(jobid);
-		
+
+		// broadcast the inputs except the result variables
+		Map<String, Broadcast> brInputs = null;
+		if (OptimizerUtils.ALLOW_BROADCAST_INPUTS_PAR_FOR) {
+			brInputs = broadcastInputs(sec);
+		}
+
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		List<Tuple2<Long,String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
-			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, clsMap, cpCaching, aTasks, aIters))
+			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, clsMap, cpCaching, aTasks, aIters, brInputs))
 			.collect(); //execute and get output handles
 		
 		//de-serialize results
@@ -96,5 +107,26 @@ public class RemoteParForSpark
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		
 		return ret;
+	}
+
+	private static Map<String, Broadcast> broadcastInputs(SparkExecutionContext sec) {
+		LocalVariableMap inputs = sec.getVariables();
+		Map<String, Broadcast> result = new HashMap<>();
+		for (String key : inputs.keySet()) {
+			if (sec.isMatrixObject(key)) {
+				Broadcast<MatrixBlock> bcmb = sec.getBroadcastMatrixVariable(key);
+				if (bcmb != null) {
+					// do not broadcast the empty matrix
+					result.put(key, bcmb);
+				}
+			} else if (sec.isFrameObject(key)) {
+				Broadcast<FrameBlock> bcfb = sec.getBroadcastFrameVariable(key);
+				if (bcfb != null) {
+					// do not broadcast the empty frame
+					result.put(key, bcfb);
+				}
+			}
+		}
+		return result;
 	}
 }

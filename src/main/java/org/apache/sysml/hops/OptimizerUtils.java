@@ -201,6 +201,11 @@ public class OptimizerUtils
 	 */
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 
+	/**
+	 * Enables to broadcast inputs for PARFOR block
+	 */
+	public static final boolean ALLOW_BROADCAST_INPUTS_PAR_FOR = false;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

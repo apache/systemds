@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
@@ -98,16 +97,12 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) {
-		String opcode = getOpcode();
-		MatrixObject mo = ec.getMatrixObject(input1.getName());
-		MatrixBlock[] out = null;
+		if(!LibCommonsMath.isSupportedMultiReturnOperation(getOpcode()))
+			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + getOpcode());
 		
-		if(LibCommonsMath.isSupportedMultiReturnOperation(opcode))
-			out = LibCommonsMath.multiReturnOperations(mo, opcode);
-		else 
-			throw new DMLRuntimeException("Invalid opcode in MultiReturnBuiltin instruction: " + opcode);
-
-		
+		MatrixBlock in = ec.getMatrixInput(input1.getName());
+		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		for(int i=0; i < _outputs.size(); i++) {
 			ec.setMatrixOutput(_outputs.get(i).getName(), out[i], getExtendedOpcode());
 		}

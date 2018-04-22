@@ -31,7 +31,6 @@ import java.util.Map.Entry;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
@@ -780,10 +779,8 @@ public class DataConverter
 	 * @param mo matrix object
 	 * @return matrix as a commons-math3 Array2DRowRealMatrix
 	 */
-	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixObject mo) {
-		MatrixBlock mb = mo.acquireRead();
+	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixBlock mb) {
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
-		mo.release();
 		return new Array2DRowRealMatrix(data, false);
 	}
 

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -35,11 +34,12 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		String opcode = getOpcode();
-		if ( LibCommonsMath.isSupportedMatrixMatrixOperation(opcode) ) {
+		if ( LibCommonsMath.isSupportedMatrixMatrixOperation(getOpcode()) ) {
 			MatrixBlock solution = LibCommonsMath.matrixMatrixOperations(
-				ec.getMatrixObject(input1.getName()), (MatrixObject)ec.getVariable(input2.getName()), opcode);
+				ec.getMatrixInput(input1.getName()), ec.getMatrixInput(input2.getName()), getOpcode());
 			ec.setMatrixOutput(output.getName(), solution, getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName());
+			ec.releaseMatrixInput(input2.getName());
 			return;
 		}
 		

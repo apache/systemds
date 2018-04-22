@@ -28,7 +28,6 @@ import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.util.DataConverter;
 
 /**
@@ -56,7 +55,7 @@ public class LibCommonsMath
 		return ( opcode.equals("solve") );
 	}
 		
-	public static MatrixBlock unaryOperations(MatrixObject inj, String opcode) {
+	public static MatrixBlock unaryOperations(MatrixBlock inj, String opcode) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
 		if(opcode.equals("inverse"))
 			return computeMatrixInverse(matrixInput);
@@ -65,7 +64,7 @@ public class LibCommonsMath
 		return null;
 	}
 	
-	public static MatrixBlock[] multiReturnOperations(MatrixObject in, String opcode) {
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
 		if(opcode.equals("qr"))
 			return computeQR(in);
 		else if (opcode.equals("lu"))
@@ -77,7 +76,7 @@ public class LibCommonsMath
 		return null;
 	}
 	
-	public static MatrixBlock matrixMatrixOperations(MatrixObject in1, MatrixObject in2, String opcode) {
+	public static MatrixBlock matrixMatrixOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
 		if(opcode.equals("solve")) {
 			if (in1.getNumRows() != in1.getNumColumns())
 				throw new DMLRuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
@@ -93,7 +92,7 @@ public class LibCommonsMath
 	 * @param in2 matrix object 2
 	 * @return matrix block
 	 */
-	private static MatrixBlock computeSolve(MatrixObject in1, MatrixObject in2) {
+	private static MatrixBlock computeSolve(MatrixBlock in1, MatrixBlock in2) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in1);
 		Array2DRowRealMatrix vectorInput = DataConverter.convertToArray2DRowRealMatrix(in2);
 		
@@ -116,7 +115,7 @@ public class LibCommonsMath
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeQR(MatrixObject in) {
+	private static MatrixBlock[] computeQR(MatrixBlock in) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
 		
 		// Perform QR decomposition
@@ -137,7 +136,7 @@ public class LibCommonsMath
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeLU(MatrixObject in) {
+	private static MatrixBlock[] computeLU(MatrixBlock in) {
 		if ( in.getNumRows() != in.getNumColumns() ) {
 			throw new DMLRuntimeException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
 		}
@@ -165,7 +164,7 @@ public class LibCommonsMath
 	 * @param in matrix object
 	 * @return array of matrix blocks
 	 */
-	private static MatrixBlock[] computeEigen(MatrixObject in) {
+	private static MatrixBlock[] computeEigen(MatrixBlock in) {
 		if ( in.getNumRows() != in.getNumColumns() ) {
 			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
 		}
@@ -180,23 +179,23 @@ public class LibCommonsMath
 		//Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
 		int n = eValues.length;
 		for (int i = 0; i < n; i++) {
-		    int k = i;
-		    double p = eValues[i];
-		    for (int j = i + 1; j < n; j++) {
-		        if (eValues[j] < p) {
-		            k = j;
-		            p = eValues[j];
-		        }
-		    }
-		    if (k != i) {
-		        eValues[k] = eValues[i];
-		        eValues[i] = p;
-		        for (int j = 0; j < n; j++) {
-		            p = eVectors[j][i];
-		            eVectors[j][i] = eVectors[j][k];
-		            eVectors[j][k] = p;
-		        }
-		    }
+			int k = i;
+			double p = eValues[i];
+			for (int j = i + 1; j < n; j++) {
+				if (eValues[j] < p) {
+					k = j;
+					p = eValues[j];
+				}
+			}
+			if (k != i) {
+				eValues[k] = eValues[i];
+				eValues[i] = p;
+				for (int j = 0; j < n; j++) {
+					p = eVectors[j][i];
+					eVectors[j][i] = eVectors[j][k];
+					eVectors[j][k] = p;
+				}
+			}
 		}
 
 		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
@@ -216,7 +215,7 @@ public class LibCommonsMath
 	 * @param in Input matrix
 	 * @return An array containing U, Sigma & V
 	 */
-	private static MatrixBlock[] computeSvd(MatrixObject in) {
+	private static MatrixBlock[] computeSvd(MatrixBlock in) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
 
 		SingularValueDecomposition svd = new SingularValueDecomposition(matrixInput);

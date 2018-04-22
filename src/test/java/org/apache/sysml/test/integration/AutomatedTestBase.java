@@ -53,6 +53,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -504,6 +505,11 @@ public abstract class AutomatedTestBase
 		return matrix;
 	}
 
+	protected double[][] writeInputMatrixWithMTD(String name, MatrixBlock matrix, boolean bIncludeR) {
+		double[][] data = DataConverter.convertToDoubleMatrix(matrix);
+		return writeInputMatrixWithMTD(name, data, bIncludeR);
+	}
+	
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, -1);
 		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc);

@@ -62,6 +62,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 
@@ -693,20 +694,16 @@ public class TestUtils
 			assertEquals(expected, actual);
 	}
 
-	/**
-	 * 
-	 * @param m1
-	 * @param m2
-	 * @param tolerance
-	 * @param name1
-	 * @param name2
-	 * @param ignoreNaN
-	 * @return
-	 */
 	public static boolean compareMatrices(HashMap<CellIndex, Double> m1, HashMap<CellIndex, Double> m2,
 			double tolerance, String name1, String name2) 
 	{
 		return compareMatrices(m1, m2, tolerance, name1, name2, false);
+	}
+	
+	public static void compareMatrices(HashMap<CellIndex, Double> m1, MatrixBlock m2, double tolerance) {
+		double[][] ret1 = convertHashMapToDoubleArray(m1);
+		double[][] ret2 = DataConverter.convertToDoubleMatrix(m2);
+		compareMatrices(ret1, ret2, m2.getNumRows(), m2.getNumColumns(), tolerance);
 	}
 	
 	/**

@@ -27,7 +27,6 @@ import org.junit.runners.Suite;
  *  they should not be run in parallel. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	
   // .applications.dml package
   org.apache.sysml.test.integration.applications.dml.ApplyTransformDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.ArimaDMLTest.class,
@@ -45,6 +44,7 @@ import org.junit.runners.Suite;
   org.apache.sysml.test.integration.applications.dml.NaiveBayesDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.NaiveBayesParforDMLTest.class,
   org.apache.sysml.test.integration.applications.dml.PageRankDMLTest.class,
+  org.apache.sysml.test.integration.applications.dml.ScalableDecompositionTest.class,
   org.apache.sysml.test.integration.applications.dml.WelchTDMLTest.class,
 
   // .applications.pydml package

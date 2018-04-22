@@ -87,6 +87,7 @@ import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_T
 import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
+import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
@@ -864,5 +865,10 @@ public class InstructionUtils
 			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode)   //redwcemm
 			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)         //mapwumm
 			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);       //redwumm
+	}
+	
+	public static AggregateBinaryOperator getMatMultOperator(int k) {
+		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+		return new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
 	}
 }

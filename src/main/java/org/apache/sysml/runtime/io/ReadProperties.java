@@ -24,12 +24,11 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 public class ReadProperties 
 {
-
 	// Properties common to all file formats 
 	public String path;
 	public long rlen, clen;
 	public int brlen, bclen;
-	public double expectedSparsity;
+	public long expectedNnz;
 	public InputInfo inputInfo;
 	public boolean localFS;
 	
@@ -41,7 +40,7 @@ public class ReadProperties
 		clen = -1;
 		brlen = -1;
 		bclen = -1;
-		expectedSparsity = 0.1d;
+		expectedNnz = -1;
 		inputInfo = null;
 		localFS = false;
 	}

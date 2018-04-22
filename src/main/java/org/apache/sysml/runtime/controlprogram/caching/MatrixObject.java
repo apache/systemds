@@ -431,10 +431,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		}
 		
 		//read matrix and maintain meta data
-		double sparsity = (mc.getNonZeros() < 0) ? (iimd.getInputInfo().isTextIJV()?-1:1) :
-			OptimizerUtils.getSparsity(mc.getNonZeros(),mc.getRows(),mc.getCols());
 		MatrixBlock newData = DataConverter.readMatrixFromHDFS(fname, iimd.getInputInfo(), rlen, clen,
-				mc.getRowsPerBlock(), mc.getColsPerBlock(), sparsity, getFileFormatProperties());
+				mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros(), getFileFormatProperties());
 		setHDFSFileExists(true);
 		
 		//sanity check correct output

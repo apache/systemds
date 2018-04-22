@@ -324,6 +324,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			int cols = (intype==InputType.COL_VECTOR) ? 1 : colsMatrix;
 			int rows = (intype==InputType.ROW_VECTOR) ? 1 : rowsMatrix;
 			double sparsity = (sparse) ? spSparse : spDense;
+			long nnz = (long)Math.round(sparsity * rows * cols);
 			
 			//generate data
 			double[][] A = getRandomMatrix(rows, cols, -5, 5, sparsity, 7); 
@@ -362,7 +363,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 			if( !expectExcept ) {
 				//compare matrices 
 				MatrixBlock ret = DataConverter.readMatrixFromHDFS(output("A"), InputInfo.TextCellInputInfo,
-						rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, sparsity, null);
+					rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz, null);
 				double[][] dret = DataConverter.convertToDoubleMatrix(ret);
 				TestUtils.compareMatrices(A, dret, rows, cols, eps);
 			}

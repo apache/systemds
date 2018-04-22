@@ -60,27 +60,21 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 	}
 	
 	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runTestExport( String outputFormat )
-	{				
+	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args", input("V"),
 			Integer.toString(rows), Integer.toString(cols), output("V"), outputFormat };
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+		long nnz = (long)Math.round(sparsity * rows * cols);
+		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 		writeInputMatrix("V", V, true); //always text
 		writeExpectedMatrix("V", V);
 		
@@ -96,7 +90,8 @@ public class CachingPWriteExportTest extends AutomatedTestBase
 			else
 				ii = InputInfo.TextCellInputInfo;
 			
-			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"), ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, sparsity);
+			MatrixBlock mb = DataConverter.readMatrixFromHDFS(output("V"),
+				ii, rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE, nnz);
 			Vp = DataConverter.convertToDoubleMatrix(mb);
 		}
 		catch(Exception ex)

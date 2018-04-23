@@ -324,7 +324,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	{
 		try
 		{
-			MatrixCharacteristics mcMatrix = new MatrixCharacteristics(rows, schema.length, 1000, 1000, 0);
+			MatrixCharacteristics mcMatrix = new MatrixCharacteristics(rows, schema.length, 1000, 1000, -1);
 			MatrixCharacteristics mcFrame = new MatrixCharacteristics(rows, schema.length, -1, -1, -1);
 			
 			MatrixBlock matrixBlock1 = null;

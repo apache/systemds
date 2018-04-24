@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 
 /**
  * Base class for all hop rewrites in order to enable generic
@@ -34,6 +35,17 @@ import org.apache.sysml.parser.StatementBlock;
 public abstract class StatementBlockRewriteRule 
 {
 	protected static final Log LOG = LogFactory.getLog(StatementBlockRewriteRule.class.getName());
+
+	private static final String SB_CUT_PREFIX = "_sbcvar";
+	private static final String FUN_CUT_PREFIX = "_funvar";
+	private static IDSequence _seq = new IDSequence();
+	
+	public static String createCutVarName(boolean fun) {
+		return fun ?
+			FUN_CUT_PREFIX + _seq.getNextID() :
+			SB_CUT_PREFIX + _seq.getNextID();
+		
+	}
 	
 	/**
 	 * Indicates if the rewrite potentially splits dags, which is used
@@ -52,7 +64,7 @@ public abstract class StatementBlockRewriteRule
 	 * @param sate program rewrite status
 	 * @return list of statement blocks
 	 */
-	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus sate);
+	public abstract List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state);
 	
 	/**
 	 * Handle a list of statement blocks. Specific type constraints have to be ensured
@@ -63,5 +75,5 @@ public abstract class StatementBlockRewriteRule
 	 * @param sate program rewrite status
 	 * @return list of statement blocks
 	 */
-	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate);
+	public abstract List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state);
 }

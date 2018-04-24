@@ -499,7 +499,31 @@ public class HopRewriteUtils
 	
 	public static Hop getDataGenOpConstantValue(Hop hop) {
 		return ((DataGenOp) hop).getConstantValue();
-	} 
+	}
+	
+	public static DataOp createTransientRead(String name, Hop h) {
+		//note: different constructor necessary for formattype
+		DataOp tread = new DataOp(name, h.getDataType(), h.getValueType(),
+			DataOpTypes.TRANSIENTREAD, null, h.getDim1(), h.getDim2(), h.getNnz(),
+			h.getUpdateType(), h.getRowsInBlock(), h.getColsInBlock());
+		tread.setVisited();
+		copyLineNumbers(h, tread);
+		return tread;
+	}
+	
+	public static DataOp createTransientWrite(String name, Hop in) {
+		return createDataOp(name, in, DataOpTypes.TRANSIENTWRITE);
+	}
+	
+	public static DataOp createDataOp(String name, Hop in, DataOpTypes type) {
+		DataOp dop = new DataOp(name, in.getDataType(),
+			in.getValueType(), in, type, null);
+		dop.setVisited();
+		dop.setOutputParams(in.getDim1(), in.getDim2(), in.getNnz(),
+			in.getUpdateType(), in.getRowsInBlock(), in.getColsInBlock());
+		copyLineNumbers(in, dop);
+		return dop;
+	}
 	
 	public static ReorgOp createTranspose(Hop input) {
 		return createReorg(input, ReOrgOp.TRANS);
@@ -682,14 +706,6 @@ public class HopRewriteUtils
 		copyLineNumbers(mleft, ternOp);
 		ternOp.refreshSizeInformation();
 		return ternOp;
-	}
-	
-	public static DataOp createDataOp(String name, Hop input, DataOpTypes type) {
-		DataOp dop = new DataOp(name, input.getDataType(), input.getValueType(), input, type, null);
-		dop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
-		copyLineNumbers(input, dop);
-		dop.refreshSizeInformation();
-		return dop;
 	}
 	
 	public static void setOutputParameters( Hop hop, long rlen, long clen, int brlen, int bclen, long nnz ) {
@@ -1293,6 +1309,11 @@ public class HopRewriteUtils
 			|| sb instanceof WhileStatementBlock
 			|| sb instanceof IfStatementBlock
 			|| sb instanceof ForStatementBlock); //incl parfor
+	}
+	
+	public static boolean isLoopStatementBlock(StatementBlock sb) {
+		return sb instanceof WhileStatementBlock
+			|| sb instanceof ForStatementBlock; //incl parfor
 	}
 	
 	public static long getMaxNrowInput(Hop hop) {

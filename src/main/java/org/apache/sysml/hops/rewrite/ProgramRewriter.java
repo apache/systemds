@@ -112,6 +112,8 @@ public class ProgramRewriter
  			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_sbRuleSet.add(  new RewriteForLoopVectorization()               ); //dependency: reblock (reblockop)
  			_sbRuleSet.add( new RewriteInjectSparkLoopCheckpointing(true)        ); //dependency: reblock (blocksizes)
+ 			if( OptimizerUtils.ALLOW_CODE_MOTION )
+ 				_sbRuleSet.add(  new RewriteHoistLoopInvariantOperations()       ); //dependency: vectorize, but before inplace
  			if( OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE )
  				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
 		}

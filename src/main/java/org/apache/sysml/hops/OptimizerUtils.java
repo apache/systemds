@@ -182,6 +182,12 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_LOOP_UPDATE_IN_PLACE = true;
 	
+	/**
+	 * Enables a specific rewrite for code motion, i.e., hoisting loop invariant code
+	 * out of while, for, and parfor loops.
+	 */
+	public static boolean ALLOW_CODE_MOTION = false;
+	
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel

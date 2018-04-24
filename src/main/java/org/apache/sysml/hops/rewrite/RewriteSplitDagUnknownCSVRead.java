@@ -34,7 +34,6 @@ import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 
 /**
  * Rule: Split Hop DAG after CSV reads with unknown size. This is
@@ -81,13 +80,6 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 				ArrayList<Hop> sb1hops = new ArrayList<>();
 				for( Hop reblock : cand )
 				{
-					long rlen = reblock.getDim1();
-					long clen = reblock.getDim2();
-					long nnz = reblock.getNnz();
-					UpdateType update = reblock.getUpdateType();
-					int brlen = reblock.getRowsInBlock();
-					int bclen = reblock.getColsInBlock();
-					
 					//replace reblock inputs to avoid dangling references across dags
 					//(otherwise, for instance, literal ops are shared across dags)
 					for( int i=0; i<reblock.getInput().size(); i++ )
@@ -96,9 +88,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 								new LiteralOp((LiteralOp)reblock.getInput().get(i)));
 					
 					//create new transient read
-					DataOp tread = new DataOp(reblock.getName(), reblock.getDataType(), reblock.getValueType(),
-						DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
-					HopRewriteUtils.copyLineNumbers(reblock, tread);
+					DataOp tread = HopRewriteUtils.createTransientRead(reblock.getName(), reblock);
 					
 					//replace reblock with transient read
 					ArrayList<Hop> parents = new ArrayList<>(reblock.getParent());
@@ -108,10 +98,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 					}
 					
 					//add reblock sub dag to first statement block
-					DataOp twrite = new DataOp(reblock.getName(), reblock.getDataType(), reblock.getValueType(),
-							                   reblock, DataOpTypes.TRANSIENTWRITE, null);
-					twrite.setOutputParams(rlen, clen, nnz, update, brlen, bclen);
-					HopRewriteUtils.copyLineNumbers(reblock, twrite);
+					DataOp twrite = HopRewriteUtils.createTransientWrite(reblock.getName(), reblock);
 					sb1hops.add(twrite);
 					
 					//update live in and out of new statement block (for piggybacking)
@@ -128,8 +115,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 				ret.add(sb); //statement block with remaining hops
 				sb.setSplitDag(true); //avoid later merge by other rewrites
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				throw new HopsException("Failed to split hops dag for csv read with unknown size.", ex);
 			}
 			LOG.debug("Applied splitDagUnknownCSVRead.");

@@ -61,6 +61,7 @@ import org.junit.runners.Suite;
 	RewriteFoldRCBindTest.class,
 	RewriteFuseBinaryOpChainTest.class,
 	RewriteFusedRandTest.class,
+	RewriteHoistingLoopInvariantOpsTest.class,
 	RewriteIndexingVectorizationTest.class,
 	RewriteLoopVectorization.class,
 	RewriteMatrixMultChainOptTest.class,

@@ -45,8 +45,6 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.VariableSet;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.matrix.data.Pair;
 
 /**
@@ -68,10 +66,6 @@ import org.apache.sysml.runtime.matrix.data.Pair;
  */
 public class RewriteSplitDagDataDependentOperators extends StatementBlockRewriteRule
 {
-	private static final String SB_CUT_PREFIX = "_sbcvar";
-	private static final String FUN_CUT_PREFIX = "_funvar";
-	private static IDSequence _seq = new IDSequence();
-	
 	@Override
 	public boolean createsSplitDag() {
 		return true;
@@ -123,8 +117,6 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					String varname = null;
 					long rlen = c.getDim1();
 					long clen = c.getDim2();
-					long nnz = c.getNnz();
-					UpdateType update = c.getUpdateType();
 					int brlen = c.getRowsInBlock();
 					int bclen = c.getColsInBlock();
 					
@@ -134,10 +126,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						varname = twrite.getName();
 						
 						//create new transient read
-						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
-							DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
-						tread.setVisited();
-						HopRewriteUtils.copyLineNumbers(c, tread);
+						DataOp tread = HopRewriteUtils.createTransientRead(varname, c);
 						
 						//replace data-dependent operator with transient read
 						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
@@ -160,10 +149,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						varname = createCutVarName(false);
 						
 						//create new transient read
-						DataOp tread = new DataOp(varname, c.getDataType(), c.getValueType(),
-							DataOpTypes.TRANSIENTREAD, null, rlen, clen, nnz, update, brlen, bclen);
-						tread.setVisited();
-						HopRewriteUtils.copyLineNumbers(c, tread);
+						DataOp tread = HopRewriteUtils.createTransientRead(varname, c);
 						
 						//replace data-dependent operator with transient read
 						ArrayList<Hop> parents = new ArrayList<>(c.getParent());
@@ -175,11 +161,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 						}
 						
 						//add data-dependent operator sub dag to first statement block
-						DataOp twrite = new DataOp(varname, c.getDataType(),
-							c.getValueType(), c, DataOpTypes.TRANSIENTWRITE, null);
-						twrite.setVisited();
-						twrite.setOutputParams(rlen, clen, nnz, update, brlen, bclen);
-						HopRewriteUtils.copyLineNumbers(c, twrite);
+						DataOp twrite = HopRewriteUtils.createTransientWrite(varname, c);
 						sb1hops.add(twrite);
 					}
 					
@@ -364,16 +346,10 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			if( tread == null ) {
 				String varname = createCutVarName(false);
 				
-				tread = new DataOp(varname, c.getDataType(), c.getValueType(), DataOpTypes.TRANSIENTREAD, null,
-					c.getDim1(), c.getDim2(), c.getNnz(), c.getUpdateType(), c.getRowsInBlock(), c.getColsInBlock());
-				tread.setVisited();
-				HopRewriteUtils.copyLineNumbers(c, tread);
+				tread = HopRewriteUtils.createTransientRead(varname, c);
 				reuseTRead.put(c.getHopID(), tread);
 				
-				DataOp twrite = new DataOp(varname, c.getDataType(), c.getValueType(), c, DataOpTypes.TRANSIENTWRITE, null);
-				twrite.setVisited();
-				twrite.setOutputParams(c.getDim1(), c.getDim2(), c.getNnz(), c.getUpdateType(), c.getRowsInBlock(), c.getColsInBlock());
-				HopRewriteUtils.copyLineNumbers(c, twrite);
+				DataOp twrite = HopRewriteUtils.createTransientWrite(varname, c);
 				
 				//update live in and out of new statement block (for piggybacking)
 				DataIdentifier diVar = new DataIdentifier(varname);
@@ -483,12 +459,5 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	@Override
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus sate) {
 		return sbs;
-	}
-	
-	public static String createCutVarName(boolean fun) {
-		return fun ?
-			FUN_CUT_PREFIX + _seq.getNextID() :
-			SB_CUT_PREFIX + _seq.getNextID();
-		
 	}
 }

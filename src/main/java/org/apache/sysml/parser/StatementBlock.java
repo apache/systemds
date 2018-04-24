@@ -30,7 +30,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.hops.rewrite.RewriteSplitDagDataDependentOperators;
+import org.apache.sysml.hops.rewrite.StatementBlockRewriteRule;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.FormatType;
@@ -537,7 +537,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			for( ParameterExpression pexpr : fexpr.getParamExprs() )
 				pexpr.setExpr(rHoistFunctionCallsFromExpressions(pexpr.getExpr(), false, tmp));
 			if( !root ) { //core hoisting
-				String varname = RewriteSplitDagDataDependentOperators.createCutVarName(true);
+				String varname = StatementBlockRewriteRule.createCutVarName(true);
 				DataIdentifier di = new DataIdentifier(varname);
 				di.setDataType(fexpr.getDataType());
 				di.setValueType(fexpr.getValueType());

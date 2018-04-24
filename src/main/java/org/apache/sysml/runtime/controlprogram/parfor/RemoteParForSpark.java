@@ -19,9 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,9 +33,13 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
@@ -52,7 +60,6 @@ import org.apache.sysml.utils.Statistics;
  * pre-aggregation by overwriting partial task results with pre-paggregated results from subsequent
  * iterations)
  * 
- * TODO broadcast variables if possible
  * TODO reducebykey on variable names
  */
 public class RemoteParForSpark 
@@ -81,9 +88,10 @@ public class RemoteParForSpark
 			RemoteParForSparkWorker.cleanupCachedVariables(jobid);
 
 		// broadcast the inputs except the result variables
-		Map<String, Broadcast> brInputs = null;
-		if (OptimizerUtils.ALLOW_BROADCAST_INPUTS_PAR_FOR) {
-			brInputs = broadcastInputs(sec);
+		Map<String, Broadcast<CacheBlock>> brInputs = null;
+		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS) {
+			ArrayList<ParForStatementBlock.ResultVar> resultVars = ProgramConverter.getResultVariables(prog);
+			brInputs = broadcastInputs(sec, resultVars);
 		}
 
 		//run remote_spark parfor job 
@@ -109,23 +117,22 @@ public class RemoteParForSpark
 		return ret;
 	}
 
-	private static Map<String, Broadcast> broadcastInputs(SparkExecutionContext sec) {
+	private static Map<String, Broadcast<CacheBlock>> broadcastInputs(SparkExecutionContext sec, ArrayList<ParForStatementBlock.ResultVar> resultVars) {
 		LocalVariableMap inputs = sec.getVariables();
-		Map<String, Broadcast> result = new HashMap<>();
-		for (String key : inputs.keySet()) {
-			if (sec.isMatrixObject(key)) {
-				Broadcast<MatrixBlock> bcmb = sec.getBroadcastMatrixVariable(key);
-				if (bcmb != null) {
-					// do not broadcast the empty matrix
-					result.put(key, bcmb);
-				}
-			} else if (sec.isFrameObject(key)) {
-				Broadcast<FrameBlock> bcfb = sec.getBroadcastFrameVariable(key);
-				if (bcfb != null) {
-					// do not broadcast the empty frame
-					result.put(key, bcfb);
-				}
+		// exclude the result variables
+		Set<String> brVars = new HashSet<>(inputs.keySet());
+		brVars.removeAll(resultVars.stream().map(v -> v._name).collect(Collectors.toSet()));
+
+		Map<String, Broadcast<CacheBlock>> result = new HashMap<>();
+		for (String key : brVars) {
+			Data var = sec.getVariable(key);
+			if ((var instanceof ScalarObject) || (var instanceof MatrixObject && ((MatrixObject) var).isPartitioned())) {
+				// 1. do not broadcast a scalar object
+				// 2. can not broadcast a matrix which has already been partitioned
+				continue;
 			}
+			Broadcast<CacheBlock> bccb = sec.broadcastVariable((CacheableData<CacheBlock>) var);
+			result.put(key, bccb);
 		}
 		return result;
 	}

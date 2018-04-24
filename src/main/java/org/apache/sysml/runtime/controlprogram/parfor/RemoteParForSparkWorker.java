@@ -32,18 +32,11 @@ import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
-import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
-import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -64,9 +57,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 
-	private final Map<String, Broadcast> _brInputs;
+	private final Map<String, Broadcast<CacheBlock>> _brInputs;
 	
-	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast> brInputs) {
+	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs) {
 		_jobid = jobid;
 		_prog = program;
 		_clsMap = clsMap;
@@ -121,17 +114,12 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_numTasks    = 0;
 		_numIters    = 0;
 
-		//fetch the broadcast variables
-		if (OptimizerUtils.ALLOW_BROADCAST_INPUTS_PAR_FOR && !reuseVars.containsVariables(_jobid)) {
-			loadBroadcastVariables(_ec.getVariables(), _brInputs);
-		}
-
 		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
 		//we reuse everything except result variables and partitioned input matrices)
 		_ec.pinVariables(_ec.getVarList()); //avoid cleanup of shared inputs
 		Collection<String> blacklist = UtilFunctions.asSet(_resultVars.stream()
 			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
-		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist);
+		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist, _brInputs);
 		
 		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
 		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
@@ -159,28 +147,6 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		//mark as initialized
 		_initialized = true;
-	}
-
-	private void loadBroadcastVariables(LocalVariableMap variables, Map<String, Broadcast> _brInputs) {
-		for (String key : variables.keySet()) {
-			if (!_brInputs.containsKey(key)) {
-				continue;
-			}
-			Data d = variables.get(key);
-			if (d instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) d;
-				MatrixBlock mb = (MatrixBlock) _brInputs.get(key).getValue();
-				mo.acquireModify(mb);
-				mo.setEmptyStatus();// set status from modified to empty
-				mo.updateMatrixCharacteristics(new MatrixCharacteristics(mb.getNumRows(), mb.getNumColumns(), 1, 1));
-			} else if (d instanceof FrameObject) {
-				FrameObject fo = (FrameObject) d;
-				FrameBlock fb = (FrameBlock) _brInputs.get(key).getValue();
-				fo.acquireModify(fb);
-				fo.setEmptyStatus(); // set status from modified to empty
-				fo.updateMatrixCharacteristics(new MatrixCharacteristics(fb.getNumRows(), fb.getNumColumns(), 1, 1));
-			}
-		}
 	}
 
 	public static void cleanupCachedVariables(long pfid) {

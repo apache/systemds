@@ -316,6 +316,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final String PARFOR_DATAPARTITIONS_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_datapartitions%VAR%"; 
 	
 	public static final String PARFOR_COUNTER_GROUP_NAME    = "SystemML ParFOR Counters";
+
+
+	public static final boolean ALLOW_BROADCAST_INPUTS = false; // enables to broadcast inputs
 	
 	// static ID generator sequences
 	private final static IDSequence _pfIDSeq = new IDSequence();

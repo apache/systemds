@@ -506,99 +506,47 @@ public class SparkExecutionContext extends ExecutionContext
 		return rdd;
 	}
 
-	/**
-	 * Broadcast the matrix variable in a non partitioned way
-	 * @param varName
-	 * @return
-	 */
 	@SuppressWarnings("unchecked")
-	public Broadcast<MatrixBlock> getBroadcastMatrixVariable(String varName) {
+	public Broadcast<CacheBlock> broadcastVariable(CacheableData<CacheBlock> cd) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-
-		MatrixObject mo = getMatrixObject(varName);
-		if (mo.isPartitioned()) {
-			return null; // can not broadcast partitioned matrix
-		}
-		Broadcast<MatrixBlock> bcmb = null;
-		// reuse existing non partitioned broadcast handle
-		if (mo.getBroadcastHandle() != null && mo.getBroadcastHandle().isValid()) {
-			bcmb = mo.getBroadcastHandle().getNonPartitionedBroadcast();
-		}
-
-		if (bcmb == null) {
-			//create new broadcast handle (never created, evicted)
-			// account for overwritten invalid broadcast (e.g., evicted)
-			if (mo.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
-
-			// read the matrix block
-			MatrixBlock mb = mo.acquireRead();
-			mo.release();
-			if (mb.isEmpty()) {
-				return null;
-			}
-			bcmb = getSparkContext().broadcast(mb);
-
-			// create the broadcast handle
-			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<MatrixBlock>(bcmb, OptimizerUtils.estimateSize(mo.getMatrixCharacteristics()));
-			mo.setBroadcastHandle(bchandle);
-			CacheableData.addBroadcastSize(bchandle.getSize());
-		}
-
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-			Statistics.incSparkBroadcastCount(1);
-		}
-		return bcmb;
-	}
-
-	/**
-	 * Broadcast the frame variable in non partitioned way
-	 * @param varName
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public Broadcast<FrameBlock> getBroadcastFrameVariable(String varName) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-
-		FrameObject fo = getFrameObject(varName);
-		Broadcast<FrameBlock> bcfb = null;
+		Broadcast<CacheBlock> brBlock = null;
 
 		// reuse existing non partitioned broadcast handle
-		if (fo.getBroadcastHandle() != null && fo.getBroadcastHandle().isValid()) {
-			bcfb = fo.getBroadcastHandle().getNonPartitionedBroadcast();
+		if (cd.getBroadcastHandle() != null && cd.getBroadcastHandle().isNonPartitionedBroadcastValid()) {
+			brBlock = cd.getBroadcastHandle().getNonPartitionedBroadcast();
 		}
 
-		if (bcfb == null) {
+		if (brBlock == null) {
 			//create new broadcast handle (never created, evicted)
 			// account for overwritten invalid broadcast (e.g., evicted)
-			if (fo.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getSize());
+			if (cd.getBroadcastHandle() != null)
+				CacheableData.addBroadcastSize(-cd.getBroadcastHandle().getNonPartitionedBroadcastSize());
 
 			// read the matrix block
-			FrameBlock fb = fo.acquireRead();
-			fo.release();
-			if (fb.isEmpty()) {
-				return null;
+			CacheBlock cb = cd.acquireRead();
+			cd.release();
+
+			// broadcast a non-empty frame whose size is smaller than 2G
+			if (cb.getExactSerializedSize() > 0 && cb.getExactSerializedSize() <= Integer.MAX_VALUE) {
+				brBlock = getSparkContext().broadcast(cb);
+				// create the broadcast handle if the matrix or flame has never been broadcasted
+				if (cd.getBroadcastHandle() == null) {
+					cd.setBroadcastHandle(new BroadcastObject<>());
+				}
+				cd.getBroadcastHandle().setNonPartitionedBroadcast(brBlock, OptimizerUtils.estimateSize(cd.getMatrixCharacteristics()));
+				CacheableData.addBroadcastSize(cd.getBroadcastHandle().getNonPartitionedBroadcastSize());
+
+				if (DMLScript.STATISTICS) {
+					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+					Statistics.incSparkBroadcastCount(1);
+				}
 			}
-			bcfb = getSparkContext().broadcast(fb);
-
-			// create the broadcast handle
-			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<FrameBlock>(bcfb, OptimizerUtils.estimateSize(fo.getMatrixCharacteristics()));
-			fo.setBroadcastHandle(bchandle);
-			CacheableData.addBroadcastSize(bchandle.getSize());
 		}
-
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-			Statistics.incSparkBroadcastCount(1);
-		}
-		return bcfb;
+		return brBlock;
 	}
 
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable( String varname )
-	{
+	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable(String varname) {
 		//NOTE: The memory consumption of this method is the in-memory size of the 
 		//matrix object plus the partitioned size in 1k-1k blocks. Since the call
 		//to broadcast happens after the matrix object has been released, the memory
@@ -614,18 +562,15 @@ public class SparkExecutionContext extends ExecutionContext
 		PartitionedBroadcast<MatrixBlock> bret = null;
 
 		//reuse existing broadcast handle
-		if( mo.getBroadcastHandle()!=null
-			&& mo.getBroadcastHandle().isValid() )
-		{
+		if (mo.getBroadcastHandle() != null && mo.getBroadcastHandle().isPartitionedBroadcastValid()) {
 			bret = mo.getBroadcastHandle().getPartitionedBroadcast();
 		}
 
 		//create new broadcast handle (never created, evicted)
-		if( bret == null )
-		{
+		if (bret == null) {
 			//account for overwritten invalid broadcast (e.g., evicted)
-			if( mo.getBroadcastHandle()!=null )
-				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
+			if (mo.getBroadcastHandle() != null)
+				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for matrix
 			int brlen = (int) mo.getNumRowsPerBlock();
@@ -638,24 +583,26 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
-			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart);
+			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
 			if (numParts > 1) {
 				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
-			} 
-			else { //single partition
+			} else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
 				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 			
 			bret = new PartitionedBroadcast<>(ret, mo.getMatrixCharacteristics());
-			BroadcastObject<MatrixBlock> bchandle = new BroadcastObject<>(bret,
+			// create the broadcast handle if the matrix or flame has never been broadcasted
+			if (mo.getBroadcastHandle() == null) {
+				mo.setBroadcastHandle(new BroadcastObject());
+			}
+			mo.getBroadcastHandle().setPartitionedBroadcast(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getMatrixCharacteristics()));
-			mo.setBroadcastHandle(bchandle);
-			CacheableData.addBroadcastSize(bchandle.getSize());
+			CacheableData.addBroadcastSize(mo.getBroadcastHandle().getPartitionedBroadcastSize());
 		}
 
 		if (DMLScript.STATISTICS) {
@@ -667,8 +614,7 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcast<FrameBlock> getBroadcastForFrameVariable( String varname)
-	{
+	public PartitionedBroadcast<FrameBlock> getBroadcastForFrameVariable(String varname) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		FrameObject fo = getFrameObject(varname);
@@ -676,18 +622,15 @@ public class SparkExecutionContext extends ExecutionContext
 		PartitionedBroadcast<FrameBlock> bret = null;
 
 		//reuse existing broadcast handle
-		if( fo.getBroadcastHandle()!=null
-			&& fo.getBroadcastHandle().isValid() )
-		{
+		if (fo.getBroadcastHandle() != null && fo.getBroadcastHandle().isPartitionedBroadcastValid()) {
 			bret = fo.getBroadcastHandle().getPartitionedBroadcast();
 		}
 
 		//create new broadcast handle (never created, evicted)
-		if( bret == null )
-		{
+		if (bret == null) {
 			//account for overwritten invalid broadcast (e.g., evicted)
-			if( fo.getBroadcastHandle()!=null )
-				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getSize());
+			if (fo.getBroadcastHandle() != null)
+				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for frame
 			int bclen = (int) fo.getNumColumns();
@@ -700,24 +643,25 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
-			int numParts = (int) Math.ceil((double)pmb.getNumRowBlocks()*pmb.getNumColumnBlocks() / numPerPart);
+			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
 			if (numParts > 1) {
 				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
-			}
-			else { //single partition
+			} else { //single partition
 				ret[0] = getSparkContext().broadcast(pmb);
 				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
 
 			bret = new PartitionedBroadcast<>(ret, fo.getMatrixCharacteristics());
-			BroadcastObject<FrameBlock> bchandle = new BroadcastObject<>(bret,
+			if (fo.getBroadcastHandle() == null) {
+				fo.setBroadcastHandle(new BroadcastObject());
+			}
+			fo.getBroadcastHandle().setPartitionedBroadcast(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
-			fo.setBroadcastHandle(bchandle);
-			CacheableData.addBroadcastSize(bchandle.getSize());
+			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getPartitionedBroadcastSize());
 		}
 
 		if (DMLScript.STATISTICS) {
@@ -1214,11 +1158,19 @@ public class SparkExecutionContext extends ExecutionContext
 				_parRDDs.deregisterRDD(rddID);
 		}
 		else if( lob instanceof BroadcastObject ) {
-			PartitionedBroadcast pbm = ((BroadcastObject)lob).getPartitionedBroadcast();
-			if( pbm != null ) //robustness for evictions
-				for( Broadcast<PartitionedBlock> bc : pbm.getBroadcasts() )
-					cleanupBroadcastVariable(bc);
-			CacheableData.addBroadcastSize(-((BroadcastObject)lob).getSize());
+			// clean the partitioned broadcast
+			if (((BroadcastObject) lob).isPartitionedBroadcastValid()) {
+				PartitionedBroadcast pbm = ((BroadcastObject)lob).getPartitionedBroadcast();
+				pbm.destroy();
+				CacheableData.addBroadcastSize(-((BroadcastObject)lob).getPartitionedBroadcastSize());
+			}
+
+			// clean the non-partitioned broadcast
+			if (((BroadcastObject) lob).isNonPartitionedBroadcastValid()) {
+				Broadcast<CacheableData> bc = ((BroadcastObject) lob).getNonPartitionedBroadcast();
+				cleanupBroadcastVariable(bc);
+				CacheableData.addBroadcastSize(-((BroadcastObject)lob).getNonPartitionedBroadcastSize());
+			}
 		}
 
 		//recursively process lineage children

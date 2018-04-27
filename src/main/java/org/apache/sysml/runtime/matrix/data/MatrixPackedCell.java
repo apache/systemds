@@ -73,7 +73,7 @@ public class MatrixPackedCell extends MatrixCell
 	//with corrections
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, 
-			MatrixValue newWithCorrection) {
+			MatrixValue newWithCorrection, boolean deep) {
 		incrementalAggregate(aggOp, newWithCorrection);
 	}
 	

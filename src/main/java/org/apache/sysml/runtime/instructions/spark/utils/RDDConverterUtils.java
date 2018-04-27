@@ -65,7 +65,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
@@ -491,10 +490,8 @@ public class RDDConverterUtils
 		protected void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
 			throws IOException, DMLRuntimeException
 		{
-			//temporary list of indexed matrix values to prevent library dependencies
-			ArrayList<IndexedMatrixValue> rettmp = new ArrayList<>();
-			rbuff.flushBufferToBinaryBlocks(rettmp);
-			ret.addAll(SparkUtils.fromIndexedMatrixBlock(rettmp));
+			rbuff.flushBufferToBinaryBlocks().stream() // prevent library dependencies
+				.map(b -> SparkUtils.fromIndexedMatrixBlock(b)).forEach(b -> ret.add(b));
 		}
 	}
 
@@ -574,11 +571,11 @@ public class RDDConverterUtils
 	/////////////////////////////////
 	// BINARYCELL-SPECIFIC FUNCTIONS
 
-	private static class BinaryCellToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixCell>>,MatrixIndexes,MatrixBlock> 
+	public static class BinaryCellToBinaryBlockFunction extends CellToBinaryBlockFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixCell>>,MatrixIndexes,MatrixBlock> 
 	{
 		private static final long serialVersionUID = 3928810989462198243L;
 
-		protected BinaryCellToBinaryBlockFunction(MatrixCharacteristics mc) {
+		public BinaryCellToBinaryBlockFunction(MatrixCharacteristics mc) {
 			super(mc);
 		}
 

@@ -428,18 +428,11 @@ public class TernaryOp extends Hop
 			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			setLineNumbers(ternary);
 			
-			//force blocked output in CP (see below), otherwise binarycell
-			if ( et == ExecType.SPARK ) {
-				ternary.getOutputParameters().setDimensions(_dim1, _dim2, -1, -1, -1);
-				setRequiresReblock( true );
-			}
-			else
-				ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+			//force blocked output in CP and SPARK
+			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
 			
 			//ternary opt, w/o reblock in CP
 			setLops(ternary);
-			
-			
 		}
 		else //MR
 		{

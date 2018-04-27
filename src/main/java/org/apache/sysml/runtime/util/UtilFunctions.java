@@ -22,8 +22,11 @@ package org.apache.sysml.runtime.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -662,5 +665,10 @@ public class UtilFunctions
 		for( T element : inputs )
 			ret.add(element);
 		return ret;
+	}
+	
+	public static <T> Stream<T> getStream(Iterator<T> iter) {
+		Iterable<T> iterable = () -> iter;
+		return StreamSupport.stream(iterable.spliterator(), false);
 	}
 }

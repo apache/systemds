@@ -23,8 +23,10 @@ package org.apache.sysml.runtime.matrix.mapred;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -223,11 +225,11 @@ public class ReblockBuffer
 		_count = 0;
 	}
 
-	public void flushBufferToBinaryBlocks( ArrayList<IndexedMatrixValue> outList ) 
+	public List<IndexedMatrixValue> flushBufferToBinaryBlocks() 
 		throws IOException, DMLRuntimeException
 	{
 		if( _count == 0 )
-			return;
+			return Collections.emptyList();
 		
 		//Step 1) sort reblock buffer (blockwise, no in-block sorting!)
 		Arrays.sort( _buff, 0 ,_count, new ReblockBufferComparator() );
@@ -248,7 +250,8 @@ public class ReblockBuffer
 			}
 		}
 		
-		//Step 3) output blocks 
+		//Step 3) output blocks
+		ArrayList<IndexedMatrixValue> ret = new ArrayList<>();
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(_brlen, _bclen, _count/numBlocks);
 		MatrixIndexes tmpIx = new MatrixIndexes();
 		MatrixBlock tmpBlock = new MatrixBlock();
@@ -262,7 +265,7 @@ public class ReblockBuffer
 			
 			//output block and switch to next index pair
 			if( bi != cbi || bj != cbj ) {
-				outputBlock(outList, tmpIx, tmpBlock);
+				outputBlock(ret, tmpIx, tmpBlock);
 				cbi = bi;
 				cbj = bj;
 				tmpIx = new MatrixIndexes(bi, bj);
@@ -278,9 +281,9 @@ public class ReblockBuffer
 		}
 		
 		//output last block 
-		outputBlock(outList, tmpIx, tmpBlock);
-		
+		outputBlock(ret, tmpIx, tmpBlock);
 		_count = 0;
+		return ret;
 	}
 
 	private static void outputBlock( OutputCollector<Writable, Writable> out, MatrixIndexes key, TaggedAdaptivePartialBlock value, MatrixBlock block ) 

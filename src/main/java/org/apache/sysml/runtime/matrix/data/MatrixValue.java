@@ -127,10 +127,6 @@ public abstract class MatrixValue implements WritableComparable
 	
 	public abstract MatrixValue unaryOperations(UnaryOperator op, MatrixValue result);
 	
-	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection) {
-		incrementalAggregate(aggOp, correction, newWithCorrection, true);
-	}
-	
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection, boolean deep);
 	
 	public abstract void incrementalAggregate(AggregateOperator aggOp, MatrixValue newWithCorrection);

@@ -19,13 +19,14 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -34,7 +35,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.functionobjects.CTable;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -43,15 +43,10 @@ import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.CTableMap;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
-import org.apache.sysml.runtime.matrix.data.Pair;
-import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
-import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
+import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CtableSPInstruction extends ComputationSPInstruction {
 	private String _outDim1;
@@ -106,401 +101,209 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	
+		Ctable.OperationTypes ctableOp = Ctable.findCtableOperationByInputDataTypes(
+			input1.getDataType(), input2.getDataType(), input3.getDataType());
+		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
+		
 		//get input rdd handle
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
-		double scalar_input2 = -1, scalar_input3 = -1;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = !ctableOp.hasSecondInput() ? null :
+			sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 		
-		Ctable.OperationTypes ctableOp = Ctable.findCtableOperationByInputDataTypes(
-				input1.getDataType(), input2.getDataType(), input3.getDataType());
-		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
+		double s2 = -1, s3 = -1; //scalars
 		
 		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-		// First get the block sizes and then set them as -1 to allow for binary cell reblock
-		int brlen = mc1.getRowsPerBlock();
-		int bclen = mc1.getColsPerBlock();
+		// handle known/unknown dimensions
+		long dim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) :
+			(sec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
+		long dim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) :
+			(sec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
+		if( dim1 == -1 && dim2 == -1 ) {
+			//note: if we need to determine the dimensions to we do so before 
+			//creating cells to avoid unnecessary caching, repeated joins, etc.
+			dim1 = (long) RDDAggregateUtils.max(in1);
+			dim2 = ctableOp.hasSecondInput() ? (long) RDDAggregateUtils.max(in2) :
+				sec.getScalarInput(input3).getLongValue();
+		}
+		mcOut.set(dim1, dim2, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		mcOut.setNonZerosBound(mc1.getRows());
 		
-		JavaPairRDD<MatrixIndexes, ArrayList<MatrixBlock>> inputMBs = null;
-		JavaPairRDD<MatrixIndexes, CTableMap> ctables = null;
-		JavaPairRDD<MatrixIndexes, Double> bincellsNoFilter = null;
-		boolean setLineage2 = false;
-		boolean setLineage3 = false;
+		//compute preferred degree of parallelism
+		int numParts = Math.max(4 * (mc1.dimsKnown() ?
+			SparkUtils.getNumPreferredPartitions(mc1) : in1.getNumPartitions()),
+			SparkUtils.getNumPreferredPartitions(mcOut));
+		
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
 		switch(ctableOp) {
 			case CTABLE_TRANSFORM: //(VECTOR)
 				// F=ctable(A,B,W) 
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
 				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
-				setLineage2 = true;
-				setLineage3 = true;
-				
-				inputMBs = in1.cogroup(in2).cogroup(in3)
-							.mapToPair(new MapThreeMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-							scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
+				out = in1.join(in2, numParts).join(in3, numParts)
+					.mapValues(new MapJoinSignature3())
+					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
 				break;
 			
-				
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
-				// F = ctable(seq,A) or F = ctable(seq,B,1)
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				if(scalar_input3 == 1) {
-					in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-					setLineage2 = true;
-					bincellsNoFilter = in2.flatMapToPair(new ExpandScalarCtableOperation(brlen));
-					break;
-				}
 			case CTABLE_TRANSFORM_SCALAR_WEIGHT: //(VECTOR/MATRIX)
 				// F = ctable(A,B) or F = ctable(A,B,1)
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-				setLineage2 = true;
-
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				inputMBs = in1.cogroup(in2).mapToPair(new MapTwoMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
+				s3 = sec.getScalarInput(input3).getDoubleValue();
+				out = in1.join(in2, numParts).mapValues(new MapJoinSignature2())
+					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
 				break;
 				
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)
-				scalar_input2 = sec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				scalar_input3 = sec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
-				inputMBs = in1.mapToPair(new MapMBIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
+				s2 = sec.getScalarInput(input2).getDoubleValue();
+				s3 = sec.getScalarInput(input3).getDoubleValue();
+				out = in1.mapValues(new MapJoinSignature1())
+					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
 				break;
 				
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1,W)
 				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
-				setLineage3 = true;
-				
-				scalar_input2 = sec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getDoubleValue();
-				inputMBs = in1.cogroup(in3).mapToPair(new MapTwoMBIterableIntoAL());
-				
-				ctables = inputMBs.mapToPair(new PerformCTableMapSideOperation(ctableOp, scalar_input2, 
-						scalar_input3, this.instString, (SimpleOperator)_optr, _ignoreZeros));
+				s2 = sec.getScalarInput(input2).getDoubleValue();
+				out = in1.join(in3, numParts).mapValues(new MapJoinSignature2())
+					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
 				break;
 			
 			default:
 				throw new DMLRuntimeException("Encountered an invalid ctable operation ("+ctableOp+") while executing instruction: " + this.toString());
 		}
 		
-		// Now perform aggregation on ctables to get binaryCells 
-		if(bincellsNoFilter == null && ctables != null) {
-			bincellsNoFilter =  
-					ctables.values()
-					.flatMapToPair(new ExtractBinaryCellsFromCTable());
-			bincellsNoFilter = RDDAggregateUtils.sumCellsByKeyStable(bincellsNoFilter);
-		}
-		else if(!(bincellsNoFilter != null && ctables == null)) {
-			throw new DMLRuntimeException("Incorrect ctable operation");
-		}
-		
-		// handle known/unknown dimensions
-		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (sec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
-		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (sec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
-		MatrixCharacteristics mcBinaryCells = null;
-		boolean findDimensions = (outputDim1 == -1 && outputDim2 == -1); 
-		
-		if( !findDimensions ) {
-			if((outputDim1 == -1 && outputDim2 != -1) || (outputDim1 != -1 && outputDim2 == -1))
-				throw new DMLRuntimeException("Incorrect output dimensions passed to TernarySPInstruction:" + outputDim1 + " " + outputDim2);
-			else 
-				mcBinaryCells = new MatrixCharacteristics(outputDim1, outputDim2, brlen, bclen);	
-			
-			// filtering according to given dimensions
-			bincellsNoFilter = bincellsNoFilter
-					.filter(new FilterCells(mcBinaryCells.getRows(), mcBinaryCells.getCols()));
-		}
-		
-		// convert double values to matrix cell
-		JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = bincellsNoFilter
-				.mapToPair(new ConvertToBinaryCell());
-		
-		// find dimensions if necessary (w/ cache for reblock)
-		if( findDimensions ) {						
-			binaryCells = SparkUtils.cacheBinaryCellRDD(binaryCells);
-			mcBinaryCells = SparkUtils.computeMatrixCharacteristics(binaryCells);
-		}
+		//perform fused aggregation and reblock
+		out = out.union(SparkUtils.getEmptyBlockRDD(sec.getSparkContext(), mcOut));
+		out = RDDAggregateUtils.sumByKeyStable(out, numParts, false);
 		
 		//store output rdd handle
-		sec.setRDDHandleForVariable(output.getName(), binaryCells);
-		mcOut.set(mcBinaryCells);
-		// Since we are outputing binary cells, we set block sizes = -1
-		mcOut.setRowsPerBlock(-1); mcOut.setColsPerBlock(-1);
+		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if(setLineage2)
+		if( ctableOp.hasSecondInput() )
 			sec.addLineageRDD(output.getName(), input2.getName());
-		if(setLineage3)
+		if( ctableOp.hasThirdInput() )
 			sec.addLineageRDD(output.getName(), input3.getName());
-	}	
+	}
 
-	private static class ExpandScalarCtableOperation implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, Double> 
+	private static class CTableFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>>, MatrixIndexes, MatrixBlock> 
 	{
-		private static final long serialVersionUID = -12552669148928288L;
-	
-		private int _brlen;
-		
-		public ExpandScalarCtableOperation(int brlen) {
-			_brlen = brlen;
-		}
-
-		@Override
-		public Iterator<Tuple2<MatrixIndexes, Double>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) 
-			throws Exception 
-		{
-			MatrixIndexes ix = arg0._1();
-			MatrixBlock mb = arg0._2(); //col-vector
-			
-			//create an output cell per matrix block row (aligned w/ original source position)
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
-			CTable ctab = CTable.getCTableFnObject();
-			for( int i=0; i<mb.getNumRows(); i++ )
-			{
-				//compute global target indexes (via ctable obj for error handling consistency)
-				long row = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
-				double v2 = mb.quickGetValue(i, 0);
-				Pair<MatrixIndexes,Double> p = ctab.execute(row, v2, 1.0);
-				
-				//indirect construction over pair to avoid tuple2 dependency in general ctable obj
-				if( p.getKey().getRowIndex() >= 1 ) //filter rejected entries
-					retVal.add(new Tuple2<>(p.getKey(), p.getValue()));
-			}
-			
-			return retVal.iterator();
-		}
-	}
-	
-	private static class MapTwoMBIterableIntoAL implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = 271459913267735850L;
-
-		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
-			for(MatrixBlock blk1 : blks) {
-				if(retVal != null) {
-					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
-				}
-				retVal = blk1;
-			}
-			if(retVal == null) {
-				throw new Exception("ERROR: No matrixblock found for one of the inputs at a given index");
-			}
-			return retVal;
-		}
-		
-		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> kv)
-				throws Exception {
-			MatrixBlock in1 = null; MatrixBlock in2 = null;
-			in1 = extractBlock(kv._2._1, in1);
-			in2 = extractBlock(kv._2._2, in2);
-			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<>();
-			inputs.add(in1); inputs.add(in2);  
-			return new Tuple2<>(kv._1, inputs);
-		}
-		
-	}
-	
-	private static class MapThreeMBIterableIntoAL implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>,Iterable<MatrixBlock>>>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = -4873754507037646974L;
-		
-		private static MatrixBlock extractBlock(Iterable<MatrixBlock> blks, MatrixBlock retVal) throws Exception {
-			for(MatrixBlock blk1 : blks) {
-				if(retVal != null) {
-					throw new Exception("ERROR: More than 1 matrixblock found for one of the inputs at a given index");
-				}
-				retVal = blk1;
-			}
-			if(retVal == null) {
-				throw new Exception("ERROR: No matrixblock found for one of the inputs at a given index");
-			}
-			return retVal;
-		}
-
-		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, Tuple2<Iterable<Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>>, Iterable<MatrixBlock>>> kv)
-				throws Exception {
-			MatrixBlock in1 = null; MatrixBlock in2 = null; MatrixBlock in3 = null;
-			
-			for(Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>> blks : kv._2._1) {
-				in1 = extractBlock(blks._1, in1);
-				in2 = extractBlock(blks._2, in2);
-			}
-			in3 = extractBlock(kv._2._2, in3);
-			
-			// Now return unflatten AL
-			ArrayList<MatrixBlock> inputs = new ArrayList<>();
-			inputs.add(in1); inputs.add(in2); inputs.add(in3);  
-			return new Tuple2<>(kv._1, inputs);
-		}
-		
-	}
-	
-	private static class PerformCTableMapSideOperation implements PairFunction<Tuple2<MatrixIndexes,ArrayList<MatrixBlock>>, MatrixIndexes, CTableMap> {
-
 		private static final long serialVersionUID = 5348127596473232337L;
 
-		Ctable.OperationTypes ctableOp;
-		double scalar_input2; double scalar_input3;
-		String instString;
-		Operator optr;
-		boolean ignoreZeros;
+		private final Ctable.OperationTypes _ctableOp;
+		private final double _scalar_input2, _scalar_input3;
+		private final boolean _ignoreZeros;
+		private final long _dim1, _dim2;
+		private final int _brlen, _bclen;
 		
-		public PerformCTableMapSideOperation(Ctable.OperationTypes ctableOp, double scalar_input2, double scalar_input3, String instString, Operator optr, boolean ignoreZeros) {
-			this.ctableOp = ctableOp;
-			this.scalar_input2 = scalar_input2;
-			this.scalar_input3 = scalar_input3;
-			this.instString = instString;
-			this.optr = optr;
-			this.ignoreZeros = ignoreZeros;
+		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, MatrixCharacteristics mcOut) {
+			this(ctableOp, s2, s3, ignoreZeros, false, mcOut);
 		}
 		
-		private static void expectedALSize(int length, ArrayList<MatrixBlock> al) throws Exception {
-			if(al.size() != length) {
-				throw new Exception("Expected arraylist of size:" + length + ", but found " + al.size());
-			}
+		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, boolean emitEmpty, MatrixCharacteristics mcOut) {
+			_ctableOp = ctableOp;
+			_scalar_input2 = s2;
+			_scalar_input3 = s3;
+			_ignoreZeros = ignoreZeros;
+			_dim1 = mcOut.getRows();
+			_dim2 = mcOut.getCols();
+			_brlen = mcOut.getRowsPerBlock();
+			_bclen = mcOut.getColsPerBlock();
 		}
 		
 		@Override
-		public Tuple2<MatrixIndexes, CTableMap> call(
-				Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> kv) throws Exception {
-			CTableMap ctableResult = new CTableMap();
-			MatrixBlock ctableResultBlock = null;
+		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Iterator<Tuple2<MatrixIndexes, MatrixBlock[]>> arg0)
+			throws Exception
+		{
+			CTableMap map = new CTableMap(); MatrixBlock block = null;
 			
-			IndexedMatrixValue in1, in2, in3 = null;
-			in1 = new IndexedMatrixValue(kv._1, kv._2.get(0));
-			MatrixBlock matBlock1 = kv._2.get(0);
-			
-			switch( ctableOp )
-			{
-				case CTABLE_TRANSFORM: {
-					in2 = new IndexedMatrixValue(kv._1, kv._2.get(1));
-					in3 = new IndexedMatrixValue(kv._1, kv._2.get(2));
-					expectedALSize(3, kv._2);
-					
-					if(in1==null || in2==null || in3 == null )
-						break;	
-					else
-						OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), in2.getIndexes(),
-							in2.getValue(), in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);
-					break;
-				}
-				case CTABLE_TRANSFORM_SCALAR_WEIGHT: 
-				case CTABLE_EXPAND_SCALAR_WEIGHT:
-				{
-					// 3rd input is a scalar
-					in2 = new IndexedMatrixValue(kv._1, kv._2.get(1));
-					expectedALSize(2, kv._2);
-					if(in1==null || in2==null )
+			//local aggregation of entire partition
+			while( arg0.hasNext() ) {
+				Tuple2<MatrixIndexes,MatrixBlock[]> tmp = arg0.next();
+				MatrixIndexes ix = tmp._1();
+				MatrixBlock[] mb = tmp._2();
+				
+				switch( _ctableOp ) {
+					case CTABLE_TRANSFORM: {
+						OperationsOnMatrixValues.performCtable(ix, mb[0], ix,
+							mb[1], ix, mb[2], map, block, null);
 						break;
-					else
-						matBlock1.ctableOperations((SimpleOperator)optr, kv._2.get(1), scalar_input3, ignoreZeros, ctableResult, ctableResultBlock);
+					}
+					case CTABLE_EXPAND_SCALAR_WEIGHT:
+					case CTABLE_TRANSFORM_SCALAR_WEIGHT: {
+						// 3rd input is a scalar
+						mb[0].ctableOperations(null, mb[1], _scalar_input3, _ignoreZeros, map, block);
+						break;
+					}
+					case CTABLE_TRANSFORM_HISTOGRAM: {
+						OperationsOnMatrixValues.performCtable(ix, mb[0],
+							_scalar_input2, _scalar_input3, map, block, null);
+						break;
+					}
+					case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
+						// 2nd and 3rd inputs are scalars
+						OperationsOnMatrixValues.performCtable(ix, mb[0],
+							_scalar_input2, ix, mb[1], map, block, null);
+						break;
+					}
+					default:
 						break;
 				}
-				case CTABLE_TRANSFORM_HISTOGRAM: {
-					expectedALSize(1, kv._2);
-					OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), scalar_input2, 
-							scalar_input3, ctableResult, ctableResultBlock, optr);
-					break;
-				}
-				case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: {
-					// 2nd and 3rd inputs are scalars
-					expectedALSize(2, kv._2);
-					in3 = new IndexedMatrixValue(kv._1, kv._2.get(1)); // Note: kv._2.get(1), not kv._2.get(2)
-					
-					if(in1==null || in3==null)
-						break;
-					else
-						OperationsOnMatrixValues.performCtable(in1.getIndexes(), in1.getValue(), scalar_input2, 
-								in3.getIndexes(), in3.getValue(), ctableResult, ctableResultBlock, optr);		
-					break;
-				}
-				default:
-					throw new DMLRuntimeException("Unrecognized opcode in Tertiary Instruction: " + instString);
 			}
-			return new Tuple2<>(kv._1, ctableResult);
-		}
-		
-	}
-	
-	private static class MapMBIntoAL implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, ArrayList<MatrixBlock>> {
-
-		private static final long serialVersionUID = 2068398913653350125L;
-
-		@Override
-		public Tuple2<MatrixIndexes, ArrayList<MatrixBlock>> call(
-				Tuple2<MatrixIndexes, MatrixBlock> kv) throws Exception {
-			ArrayList<MatrixBlock> retVal = new ArrayList<>();
-			retVal.add(kv._2);
-			return new Tuple2<>(kv._1, retVal);
-		}
-		
-	}
-	
-	private static class ExtractBinaryCellsFromCTable implements PairFlatMapFunction<CTableMap, MatrixIndexes, Double> {
-
-		private static final long serialVersionUID = -5933677686766674444L;
-		
-		@Override
-		public Iterator<Tuple2<MatrixIndexes, Double>> call(CTableMap ctableMap)
-				throws Exception {
-			ArrayList<Tuple2<MatrixIndexes, Double>> retVal = new ArrayList<>();
-			Iterator<ADoubleEntry> iter = ctableMap.getIterator();
+			
+			ReblockBuffer rbuff = new ReblockBuffer(Math.min(
+				4*1024*1024, map.size()), _dim1, _dim2, _brlen, _bclen);
+			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
+			
+			//append to buffer for blocked output
+			Iterator<ADoubleEntry> iter = map.getIterator();
 			while( iter.hasNext() ) {
-				ADoubleEntry ijv = iter.next();
-				long i = ijv.getKey1();
-				long j =  ijv.getKey2();
-				double v =  ijv.value;
-				retVal.add(new Tuple2<>(new MatrixIndexes(i, j), v));
+				ADoubleEntry e = iter.next();
+				if( e.getKey1() <= _dim1 && e.getKey2() <= _dim2 ) { 
+					if( rbuff.getSize() >= rbuff.getCapacity() )
+						flushBufferToList(rbuff, ret);
+					rbuff.appendCell(e.getKey1(), e.getKey2(), e.value);
+				}
 			}
-			return retVal.iterator();
-		}
-		
-	}
-	
-	private static class ConvertToBinaryCell implements PairFunction<Tuple2<MatrixIndexes,Double>, MatrixIndexes, MatrixCell> {
-
-		private static final long serialVersionUID = 7481186480851982800L;
-		
-		@Override
-		public Tuple2<MatrixIndexes, MatrixCell> call(
-				Tuple2<MatrixIndexes, Double> kv) throws Exception {
 			
-			MatrixCell cell = new MatrixCell(kv._2().doubleValue());
-			return new Tuple2<>(kv._1(), cell);
+			//final flush buffer
+			if( rbuff.getSize() > 0 )
+				flushBufferToList(rbuff, ret);
+			
+			return ret.iterator();
 		}
-		
+	
+		protected void flushBufferToList( ReblockBuffer rbuff,  ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret ) 
+			throws IOException, DMLRuntimeException
+		{
+			rbuff.flushBufferToBinaryBlocks().stream() // prevent library dependencies
+				.map(b -> SparkUtils.fromIndexedMatrixBlock(b)).forEach(b -> ret.add(b));
+		}
 	}
 	
-	private static class FilterCells implements Function<Tuple2<MatrixIndexes,Double>, Boolean> {
-		private static final long serialVersionUID = 108448577697623247L;
+	public static class MapJoinSignature1 implements Function<MatrixBlock, MatrixBlock[]> {
+		private static final long serialVersionUID = -8819908424033945028L;
 
-		long rlen; long clen;
-		public FilterCells(long rlen, long clen) {
-			this.rlen = rlen;
-			this.clen = clen;
-		}
-		
 		@Override
-		public Boolean call(Tuple2<MatrixIndexes, Double> kv) throws Exception {
-			if(kv._1.getRowIndex() <= 0 || kv._1.getColumnIndex() <= 0) {
-				throw new Exception("Incorrect cell values in TernarySPInstruction:" + kv._1);
-			}
-			if(kv._1.getRowIndex() <= rlen && kv._1.getColumnIndex() <= clen) {
-				return true;
-			}
-			return false;
+		public MatrixBlock[] call(MatrixBlock v1) throws Exception {
+			return ArrayUtils.toArray(v1);
 		}
-		
+	}
+	
+	public static class MapJoinSignature2 implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock[]> {
+		private static final long serialVersionUID = 7690448020081435520L;
+		@Override
+		public MatrixBlock[] call(Tuple2<MatrixBlock, MatrixBlock> v1) throws Exception {
+			return ArrayUtils.toArray(v1._1(), v1._2());
+		}
+	}
+	
+	public static class MapJoinSignature3 implements Function<Tuple2<Tuple2<MatrixBlock,MatrixBlock>,MatrixBlock>, MatrixBlock[]> {
+		private static final long serialVersionUID = -5222678882354280164L;
+		@Override
+		public MatrixBlock[] call(Tuple2<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> v1) throws Exception {
+			return ArrayUtils.toArray(v1._1()._1(), v1._1()._2(), v1._2());
+		}
 	}
 }

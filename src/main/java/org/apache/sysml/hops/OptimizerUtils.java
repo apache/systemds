@@ -686,7 +686,7 @@ public class OptimizerUtils
 				mc.getCols(), 
 				mc.getRowsPerBlock(), 
 				mc.getColsPerBlock(), 
-				mc.getNonZeros());
+				mc.getNonZerosBound());
 	}
 	
 	/**
@@ -725,7 +725,7 @@ public class OptimizerUtils
 		long tnrblks = (long)Math.ceil((double)rlen/brlen);
 		long tncblks = (long)Math.ceil((double)clen/bclen);
 		long nnz = (long) Math.ceil(sp * rlen * clen);
-		if( nnz < tnrblks * tncblks ) {
+		if( nnz <= tnrblks * tncblks ) {
 			long lrlen = Math.min(rlen, brlen);
 			long lclen = Math.min(clen, bclen);
 			return nnz * estimateSizeExactSparsity(lrlen, lclen, 1)

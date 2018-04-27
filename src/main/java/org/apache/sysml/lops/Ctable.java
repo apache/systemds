@@ -42,7 +42,16 @@ public class Ctable extends Lop
 		CTABLE_TRANSFORM_HISTOGRAM, 
 		CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM, 
 		CTABLE_EXPAND_SCALAR_WEIGHT, 
-		INVALID 
+		INVALID;
+		public boolean hasSecondInput() {
+			return this == CTABLE_TRANSFORM
+				|| this == CTABLE_EXPAND_SCALAR_WEIGHT
+				|| this == CTABLE_TRANSFORM_SCALAR_WEIGHT;
+		}
+		public boolean hasThirdInput() {
+			return this == CTABLE_TRANSFORM
+				|| this == CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM;
+		}
 	}
 	
 	OperationTypes operation;

@@ -373,7 +373,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return reset;
 	}
 	
-	public void allocateAndResetSparseRowsBlock(boolean clearNNZ, SparseBlock.Type stype)
+	public void allocateAndResetSparseBlock(boolean clearNNZ, SparseBlock.Type stype)
 	{
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized)
 		if( sparseBlock == null || sparseBlock.numRows()<rlen
@@ -1874,7 +1874,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//and to allow efficient reset without repeated sparse row allocation
 		
 		//adjust size and ensure reuse block is in CSR format
-		allocateAndResetSparseRowsBlock(false, SparseBlock.Type.CSR);
+		allocateAndResetSparseBlock(false, SparseBlock.Type.CSR);
 		
 		if( clen > 1 ) { //ULTRA-SPARSE BLOCK
 			//block: read ijv-triples (ordered by row and column) via custom 
@@ -2026,14 +2026,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( clen > 1 ) //ULTRA-SPARSE BLOCK
 		{
 			//block: write ijv-triples
-			for(int r=0;r<Math.min(rlen, sparseBlock.numRows()); r++)
-				if( !sparseBlock.isEmpty(r) )
-				{
+			if( sparseBlock instanceof SparseBlockCOO ) {
+				SparseBlockCOO sblock = (SparseBlockCOO)sparseBlock;
+				int[] rix = sblock.rowIndexes();
+				int[] cix = sblock.indexes();
+				double[] vals = sblock.values();
+				for(int i=0; i<sblock.size(); i++) {
+					//ultra-sparse block: write ijv-triples
+					out.writeInt(rix[i]);
+					out.writeInt(cix[i]);
+					out.writeDouble(vals[i]);
+					wnnz++;
+				}
+			}
+			else {
+				for(int r=0;r<Math.min(rlen, sparseBlock.numRows()); r++) {
+					if( sparseBlock.isEmpty(r) ) continue;
 					int apos = sparseBlock.pos(r);
 					int alen = sparseBlock.size(r);
 					int[] aix = sparseBlock.indexes(r);
 					double[] avals = sparseBlock.values(r);
-					
 					for(int j=apos; j<apos+alen; j++) {
 						//ultra-sparse block: write ijv-triples
 						out.writeInt(r);
@@ -2041,7 +2053,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						out.writeDouble(avals[j]);
 						wnnz++;
 					}
-				}	
+				}
+			}
 		}
 		else //ULTRA-SPARSE COL
 		{
@@ -2209,7 +2222,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void readExternal(ObjectInput is) 
 		throws IOException
 	{
-		if( is instanceof ObjectInputStream )
+		if( is instanceof ObjectInputStream
+			&& !(is instanceof MatrixBlockDataInput) )
 		{
 			//fast deserialize of dense/sparse blocks
 			ObjectInputStream ois = (ObjectInputStream)is;
@@ -2232,7 +2246,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{
-		if( os instanceof ObjectOutputStream ) {
+		//note: in case of a CorrMatrixBlock being wrapped around a matrix
+		//block, the object output is already a FastBufferedDataOutputStream;
+		//so in general we try to avoid unnecessary buffer allocations here.
+		
+		if( os instanceof ObjectOutputStream && !isEmptyBlock(false)
+			&& !(os instanceof MatrixBlockDataOutput) ) {
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
 			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
@@ -2828,7 +2847,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	@Override
-	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection) {
+	public void incrementalAggregate(AggregateOperator aggOp, MatrixValue correction, MatrixValue newWithCorrection, boolean deep) {
 		//assert(aggOp.correctionExists); 
 		MatrixBlock cor=checkType(correction);
 		MatrixBlock newWithCor=checkType(newWithCorrection);
@@ -2900,7 +2919,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		{
 			//e.g., ak+ kahan plus as used in sum, mapmult, mmcj and tsmm
 			if(aggOp.increOp.fn instanceof KahanPlus) {
-				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, cor);
+				LibMatrixAgg.aggregateBinaryMatrix(newWithCor, this, cor, deep);
 			}
 			else
 			{

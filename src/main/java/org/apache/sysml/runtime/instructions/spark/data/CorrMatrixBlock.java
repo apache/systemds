@@ -101,7 +101,7 @@ public class CorrMatrixBlock implements Externalizable
 	public void writeExternal(ObjectOutput os) 
 		throws IOException
 	{
-		if( os instanceof ObjectOutputStream ) {
+		if( os instanceof ObjectOutputStream && !_value.isEmptyBlock(false) ) {
 			//fast serialize of dense/sparse blocks
 			ObjectOutputStream oos = (ObjectOutputStream)os;
 			FastBufferedDataOutputStream fos = new FastBufferedDataOutputStream(oos);
@@ -117,9 +117,11 @@ public class CorrMatrixBlock implements Externalizable
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException 
 	{
-		dos.writeByte((_corr!=null)?1:0);
+		boolean writeCorr = (_corr != null
+			&& !_corr.isEmptyBlock(false));
+		dos.writeByte(writeCorr ? 1 : 0);
 		_value.write(dos);
-		if( _corr!=null )
+		if( writeCorr )
 			_corr.write(dos);
 	}
 

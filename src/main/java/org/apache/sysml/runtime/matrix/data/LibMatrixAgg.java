@@ -122,11 +122,22 @@ public class LibMatrixAgg
 	 * @param in input matrix
 	 * @param aggVal current aggregate values (in/out)
 	 * @param aggCorr current aggregate correction (in/out)
+	 * @param deep deep copy flag
 	 */
-	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
+	public static void aggregateBinaryMatrix(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr, boolean deep) {
 		//Timing time = new Timing(true);
 		//boolean saggVal = aggVal.sparse, saggCorr = aggCorr.sparse;
 		//long naggVal = aggVal.nonZeros, naggCorr = aggCorr.nonZeros;
+		
+		//common empty block handling
+		if( in.isEmptyBlock(false) ) {
+			return;
+		}
+		if( !deep && aggVal.isEmptyBlock(false) ) {
+			//shallow copy without correction allocation
+			aggVal.copyShallow(in);
+			return;
+		}
 		
 		//ensure MCSR instead of CSR for update in-place
 		if( aggVal.sparse && aggVal.isAllocated() && aggVal.getSparseBlock() instanceof SparseBlockCSR )
@@ -977,9 +988,6 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixAllDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
-		if( in.denseBlock==null || in.isEmptyBlock(false) )
-			return;
-		
 		//allocate output arrays (if required)
 		aggVal.allocateDenseBlock(); //should always stay in dense
 		aggCorr.allocateDenseBlock(); //should always stay in dense
@@ -1011,9 +1019,6 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixSparseDense(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
-		if( in.isEmptyBlock(false) )
-			return;
-		
 		//allocate output arrays (if required)
 		aggVal.allocateDenseBlock(); //should always stay in dense
 		aggCorr.allocateDenseBlock(); //should always stay in dense
@@ -1055,9 +1060,6 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixSparseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
-		if( in.isEmptyBlock(false) )
-			return;
-		
 		SparseBlock a = in.getSparseBlock();
 		
 		KahanObject buffer1 = new KahanObject(0, 0);
@@ -1095,9 +1097,6 @@ public class LibMatrixAgg
 	}
 
 	private static void aggregateBinaryMatrixDenseGeneric(MatrixBlock in, MatrixBlock aggVal, MatrixBlock aggCorr) {
-		if( in.denseBlock==null || in.isEmptyBlock(false) )
-			return;
-		
 		final int m = in.rlen;
 		final int n = in.clen;
 		

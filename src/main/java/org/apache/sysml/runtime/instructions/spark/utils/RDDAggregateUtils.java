@@ -26,13 +26,16 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
+import org.apache.sysml.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2;
 import org.apache.sysml.runtime.instructions.spark.data.CorrMatrixBlock;
 import org.apache.sysml.runtime.instructions.spark.data.RowMatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
  * Collection of utility methods for aggregating binary block rdds. As a general
@@ -82,25 +85,30 @@ public class RDDAggregateUtils
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates
 		JavaPairRDD<MatrixIndexes, CorrMatrixBlock> tmp = 
-				in.combineByKey( new CreateCorrBlockCombinerFunction(deepCopyCombiner), 
-							     new MergeSumBlockValueFunction(), 
-							     new MergeSumBlockCombinerFunction(), numPartitions );
+			in.combineByKey( new CreateCorrBlockCombinerFunction(deepCopyCombiner), 
+				new MergeSumBlockValueFunction(deepCopyCombiner),
+				new MergeSumBlockCombinerFunction(deepCopyCombiner), numPartitions );
 		
 		//strip-off correction blocks from
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out =
-				tmp.mapValues( new ExtractMatrixBlock() );
+			tmp.mapValues( new ExtractMatrixBlock() );
 		
 		//return the aggregate rdd
 		return out;
 	}
 
-	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in )
+	
+	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in ) {
+		return sumCellsByKeyStable(in, in.getNumPartitions());
+	}
+	
+	public static JavaPairRDD<MatrixIndexes, Double> sumCellsByKeyStable( JavaPairRDD<MatrixIndexes, Double> in, int numParts )
 	{
 		//stable sum of blocks per key, by passing correction blocks along with aggregates
-		JavaPairRDD<MatrixIndexes, KahanObject> tmp = 
-				in.combineByKey( new CreateCellCombinerFunction(), 
-							     new MergeSumCellValueFunction(), 
-							     new MergeSumCellCombinerFunction() );
+		JavaPairRDD<MatrixIndexes, KahanObject> tmp =
+				in.combineByKey( new CreateCellCombinerFunction(),
+					new MergeSumCellValueFunction(), 
+					new MergeSumCellCombinerFunction(), numParts);
 		
 		//strip-off correction blocks from
 		JavaPairRDD<MatrixIndexes, Double> out =
@@ -164,6 +172,12 @@ public class RDDAggregateUtils
 		
 		//return the aggregate rdd
 		return out;
+	}
+	
+	public static double max(JavaPairRDD<MatrixIndexes, MatrixBlock> in) {
+		AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
+		MatrixBlock tmp = aggStable(in.map(new RDDUAggFunction2(auop, -1, -1)), auop.aggOp);
+		return tmp.quickGetValue(0, 0);
 	}
 	
 	/**
@@ -258,6 +272,12 @@ public class RDDAggregateUtils
 		
 		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);
 		
+		private final boolean _deep;
+
+		public MergeSumBlockValueFunction(boolean deep) {
+			_deep = deep;
+		}
+		
 		@Override
 		public CorrMatrixBlock call(CorrMatrixBlock arg0, MatrixBlock arg1) 
 			throws Exception 
@@ -270,12 +290,12 @@ public class RDDAggregateUtils
 			MatrixBlock corr = arg0.getCorrection();
 			
 			//correction block allocation on demand
-			if( corr == null )
+			if( corr == null && !arg1.isEmptyBlock(false) )
 				corr = new MatrixBlock(value.getNumRows(), value.getNumColumns(), false);
 			
 			//aggregate other input and maintain corrections 
 			//(existing value and corr are used in place)
-			OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, false);
+			OperationsOnMatrixValues.incrementalAggregation(value, corr, arg1, _op, false, _deep);
 			return arg0.set(value, corr);
 		}
 	}
@@ -285,6 +305,11 @@ public class RDDAggregateUtils
 		private static final long serialVersionUID = 7664941774566119853L;
 		
 		private AggregateOperator _op = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.NONE);	
+		private final boolean _deep;
+
+		public MergeSumBlockCombinerFunction(boolean deep) {
+			_deep = deep;
+		}
 		
 		@Override
 		public CorrMatrixBlock call(CorrMatrixBlock arg0, CorrMatrixBlock arg1) 
@@ -297,15 +322,16 @@ public class RDDAggregateUtils
 			
 			//correction block allocation on demand (but use second if exists)
 			if( corr == null ) {
-				corr = (arg1.getCorrection()!=null)?arg1.getCorrection():
+				corr = (arg1.getCorrection()!=null) ? arg1.getCorrection() :
+					value2.isEmptyBlock(false) || (!_deep && value1.isEmptyBlock(false)) ? null :
 					new MatrixBlock(value1.getNumRows(), value1.getNumColumns(), false);
 			}
 			
 			//aggregate other input and maintain corrections
 			//(existing value and corr are used in place)
-			OperationsOnMatrixValues.incrementalAggregation(value1, corr, value2, _op, false);
+			OperationsOnMatrixValues.incrementalAggregation(value1, corr, value2, _op, false, _deep);
 			return arg0.set(value1, corr);
-		}	
+		}
 	}
 
 	private static class CreateBlockCombinerFunction implements Function<MatrixBlock, MatrixBlock> 

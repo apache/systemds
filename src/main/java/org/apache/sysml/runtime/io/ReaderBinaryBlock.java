@@ -113,7 +113,7 @@ public class ReaderBinaryBlock extends MatrixReader
 		//where ultra-sparse deserialization only reuses CSR blocks
 		MatrixBlock value = new MatrixBlock(brlen, bclen, sparse);
 		if( sparse ) {
-			value.allocateAndResetSparseRowsBlock(true, SparseBlock.Type.CSR);
+			value.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
 			value.getSparseBlock().allocate(0, brlen*bclen);
 		}
 		return value;

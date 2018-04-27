@@ -98,7 +98,7 @@ public class CM_N_COVCell extends MatrixValue implements WritableComparable
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue correction, MatrixValue newWithCorrection) {
+			MatrixValue correction, MatrixValue newWithCorrection, boolean deep) {
 		throw new RuntimeException("operation not supported for CM_N_COVCell");
 	}
 	

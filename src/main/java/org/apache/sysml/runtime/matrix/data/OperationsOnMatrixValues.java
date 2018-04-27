@@ -196,12 +196,18 @@ public class OperationsOnMatrixValues
 	}
 	
 	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
-			AggregateOperator op, boolean imbededCorrection)
+			AggregateOperator op, boolean imbededCorrection) {
+		incrementalAggregation(valueAgg, correction, valueAdd, op, imbededCorrection, true);
+	}
+	
+	
+	public static void incrementalAggregation(MatrixValue valueAgg, MatrixValue correction, MatrixValue valueAdd, 
+			AggregateOperator op, boolean imbededCorrection, boolean deep)
 	{
 		if(op.correctionExists)
 		{
 			if(!imbededCorrection || op.correctionLocation==CorrectionLocationType.NONE)
-				valueAgg.incrementalAggregate(op, correction, valueAdd);
+				valueAgg.incrementalAggregate(op, correction, valueAdd, deep);
 			else
 				valueAgg.incrementalAggregate(op, valueAdd);
 		}

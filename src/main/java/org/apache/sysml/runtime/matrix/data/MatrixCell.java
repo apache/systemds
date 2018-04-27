@@ -266,7 +266,7 @@ public class MatrixCell extends MatrixValue implements WritableComparable, Seria
 
 	@Override
 	public void incrementalAggregate(AggregateOperator aggOp,
-			MatrixValue correction, MatrixValue newWithCorrection) {
+			MatrixValue correction, MatrixValue newWithCorrection, boolean deep) {
 		throw new DMLRuntimeException("MatrixCell.incrementalAggregate should never be called");
 	}
 

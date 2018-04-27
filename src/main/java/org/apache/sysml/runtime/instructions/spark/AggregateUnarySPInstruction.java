@@ -34,6 +34,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import org.apache.sysml.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
+import org.apache.sysml.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -91,6 +92,9 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
+			if( auop.sparseSafe )
+				out = out.filter(new FilterNonEmptyBlocksFunction());
+			
 			JavaRDD<MatrixBlock> out2 = out.map(
 					new RDDUAggFunction2(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
 			MatrixBlock out3 = RDDAggregateUtils.aggStable(out2, aggop);
@@ -111,7 +115,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			}
 			else if( _aggtype == SparkAggType.MULTI_BLOCK ) {
 				//in case of multi-block aggregation, we always keep the correction
-				out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));			
+				out = out.mapToPair(new RDDUAggFunction(auop, mc.getRowsPerBlock(), mc.getColsPerBlock()));
 				out = RDDAggregateUtils.aggByKeyStable(out, aggop, false);
 	
 				//drop correction after aggregation if required (aggbykey creates 
@@ -124,7 +128,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			updateUnaryAggOutputMatrixCharacteristics(sec, auop.indexFn);
 			sec.setRDDHandleForVariable(output.getName(), out);	
 			sec.addLineageRDD(output.getName(), input1.getName());
-		}		
+		}
 	}
 
 	private static class RDDUAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
@@ -164,7 +168,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 	/**
 	 * Similar to RDDUAggFunction but single output block.
 	 */
-	private static class RDDUAggFunction2 implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
+	public static class RDDUAggFunction2 implements Function<Tuple2<MatrixIndexes, MatrixBlock>, MatrixBlock> 
 	{
 		private static final long serialVersionUID = 2672082409287856038L;
 		

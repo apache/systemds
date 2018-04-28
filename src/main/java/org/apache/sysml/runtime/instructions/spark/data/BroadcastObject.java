@@ -24,39 +24,68 @@ import java.lang.ref.SoftReference;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 
-public class BroadcastObject<T extends CacheBlock> extends LineageObject
-{
+public class BroadcastObject<T extends CacheBlock> extends LineageObject {
 	//soft reference storage for graceful cleanup in case of memory pressure
-	protected final SoftReference<PartitionedBroadcast<T>> _bcHandle;
-	private final long _size;
-	
-	public BroadcastObject( PartitionedBroadcast<T> bvar, long size ) {
+	private SoftReference<PartitionedBroadcast<T>> _pbcRef; // partitioned broadcast object reference
+	private SoftReference<Broadcast<T>> _npbcRef; // non partitioned broadcast object reference
+
+	private long _pbcSize; // partitioned broadcast size
+	private long _npbcSize; // non-partitioned broadcast size
+
+	public BroadcastObject() {
 		super();
-		_bcHandle = new SoftReference<>(bvar);
-		_size = size;
+	}
+
+	public void setNonPartitionedBroadcast(Broadcast<T> bvar, long size) {
+		_npbcRef = new SoftReference<>(bvar);
+		_npbcSize = size;
+	}
+
+	public void setPartitionedBroadcast(PartitionedBroadcast<T> bvar, long size) {
+		_pbcRef = new SoftReference<>(bvar);
+		_pbcSize = size;
 	}
 
 	@SuppressWarnings("rawtypes")
-	public PartitionedBroadcast getBroadcast() {
-		return _bcHandle.get();
-	}
-	
-	public long getSize() {
-		return _size;
+	public PartitionedBroadcast getPartitionedBroadcast() {
+		return _pbcRef.get();
 	}
 
-	public boolean isValid() 
-	{
+	public Broadcast<T> getNonPartitionedBroadcast() {
+		return _npbcRef.get();
+	}
+
+	public long getPartitionedBroadcastSize() {
+		return _pbcSize;
+	}
+
+	public long getNonPartitionedBroadcastSize() {
+		return _npbcSize;
+	}
+
+	public boolean isPartitionedBroadcastValid() {
+		return _pbcRef != null && checkPartitionedBroadcastValid();
+	}
+
+	public boolean isNonPartitionedBroadcastValid() {
+		return _npbcRef != null && checkNonPartitionedBroadcastValid();
+	}
+
+	private boolean checkNonPartitionedBroadcastValid() {
+		return _npbcRef.get() != null;
+	}
+
+	private boolean checkPartitionedBroadcastValid() {
 		//check for evicted soft reference
-		PartitionedBroadcast<T> pbm = _bcHandle.get();
-		if( pbm == null )
+		PartitionedBroadcast<T> pbm = _pbcRef.get();
+		if (pbm == null)
 			return false;
-		
+
 		//check for validity of individual broadcasts
 		Broadcast<PartitionedBlock<T>>[] tmp = pbm.getBroadcasts();
-		for( Broadcast<PartitionedBlock<T>> bc : tmp )
-			if( !bc.isValid() )
-				return false;		
+		for (Broadcast<PartitionedBlock<T>> bc : tmp)
+			if (!bc.isValid())
+				return false;
 		return true;
 	}
 }

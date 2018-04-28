@@ -195,7 +195,12 @@ public class ExecutionContext {
 		
 		return (MatrixObject) dat;
 	}
-	
+
+	public boolean isFrameObject(String varName) {
+		Data d = getVariable(varName);
+		return d instanceof FrameObject;
+	}
+
 	public FrameObject getFrameObject(CPOperand input) {
 		return getFrameObject(input.getName());
 	}

@@ -1313,6 +1313,19 @@ public class ProgramConverter
 		return body;
 	}
 
+	public static ArrayList<ResultVar> getResultVariables(String in) {
+		//header elimination
+		String tmpin = in.replaceAll(NEWLINE, ""); //normalization
+		tmpin = tmpin.substring(PARFORBODY_BEGIN.length(), tmpin.length() - PARFORBODY_END.length()); //remove start/end
+		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(tmpin, COMPONENTS_DELIM);
+		//handle result variable names
+		for (int i = 0; i < 4; i++) {
+			st.nextToken();
+		}
+		String rvarStr = st.nextToken();
+		return parseResultVariables(rvarStr);
+	}
+
 	public static Program parseProgram( String in, int id ) {
 		String lin = in.substring( PARFOR_PROG_BEGIN.length(),in.length()-PARFOR_PROG_END.length()).trim(); 
 		

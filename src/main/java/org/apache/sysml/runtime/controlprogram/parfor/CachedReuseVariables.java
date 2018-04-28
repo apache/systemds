@@ -23,8 +23,15 @@ import java.lang.ref.SoftReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.cp.Data;
 
 public class CachedReuseVariables
 {
@@ -33,11 +40,22 @@ public class CachedReuseVariables
 	public CachedReuseVariables() {
 		_data = new HashMap<>();
 	}
+
+	public synchronized boolean containsVars(long pfid) {
+		return _data.containsKey(pfid);
+	}
 	
-	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> blacklist) {
+	@SuppressWarnings("unused")
+	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> blacklist, Map<String, Broadcast<CacheBlock>> _brInputs) {
+
+		//fetch the broadcast variables
+		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS && !containsVars(pfid)) {
+			loadBroadcastVariables(vars, _brInputs);
+		}
+
 		//check for existing reuse map
 		LocalVariableMap tmp = null;
-		if( _data.containsKey(pfid) )
+		if( containsVars(pfid) )
 			tmp = _data.get(pfid).get();
 		
 		//build reuse map if not created yet or evicted
@@ -56,5 +74,16 @@ public class CachedReuseVariables
 
 	public synchronized void clearVariables(long pfid) {
 		_data.remove(pfid);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void loadBroadcastVariables(LocalVariableMap variables, Map<String, Broadcast<CacheBlock>> brInputs) {
+		for( Entry<String, Broadcast<CacheBlock>> e : brInputs.entrySet() ) {
+			Data d = variables.get(e.getKey());
+			CacheableData<CacheBlock> cdcb = (CacheableData<CacheBlock>) d;
+			cdcb.acquireModify(e.getValue().getValue());
+			cdcb.setEmptyStatus(); // avoid eviction
+			cdcb.refreshMetaData();
+		}
 	}
 }

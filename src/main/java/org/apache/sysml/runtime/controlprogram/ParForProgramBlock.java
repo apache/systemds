@@ -308,15 +308,16 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
- 	
- 	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
+	public static final boolean ALLOW_BROADCAST_INPUTS      = false; // enables to broadcast inputs for remote_spark
+	
+	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = PARFOR_FNAME_PREFIX + "%ID%_MR_taskfile"; 
 	public static final String PARFOR_MR_RESULT_TMP_FNAME   = PARFOR_FNAME_PREFIX + "%ID%_MR_results"; 
 	public static final String PARFOR_MR_RESULTMERGE_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_resultmerge%VAR%"; 
 	public static final String PARFOR_DATAPARTITIONS_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_datapartitions%VAR%"; 
 	
 	public static final String PARFOR_COUNTER_GROUP_NAME    = "SystemML ParFOR Counters";
-	
+
 	// static ID generator sequences
 	private final static IDSequence _pfIDSeq = new IDSequence();
 	private final static IDSequence _pwIDSeq = new IDSequence();
@@ -1042,8 +1043,8 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec);
 		
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
-		//MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? (MatrixObject)ec.getVariable(_colocatedDPMatrix) : null;
-		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program, clsMap, tasks, ec, _enableCPCaching, _numThreads);
+		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
+			clsMap, tasks, ec, _resultVars, _enableCPCaching, _numThreads);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

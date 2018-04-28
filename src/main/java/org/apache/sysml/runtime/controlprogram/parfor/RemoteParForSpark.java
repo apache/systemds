@@ -19,14 +19,27 @@
 
 package org.apache.sysml.runtime.controlprogram.parfor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.LongAccumulator;
 
+import org.apache.sysml.parser.ParForStatementBlock;
+import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import scala.Tuple2;
 
 import org.apache.sysml.api.DMLScript;
@@ -47,7 +60,6 @@ import org.apache.sysml.utils.Statistics;
  * pre-aggregation by overwriting partial task results with pre-paggregated results from subsequent
  * iterations)
  * 
- * TODO broadcast variables if possible
  * TODO reducebykey on variable names
  */
 public class RemoteParForSpark 
@@ -58,7 +70,7 @@ public class RemoteParForSpark
 	private static final IDSequence _jobID = new IDSequence();
 	
 	public static RemoteParForJobReturn runJob(long pfid, String prog, HashMap<String, byte[]> clsMap, 
-			List<Task> tasks, ExecutionContext ec, boolean cpCaching, int numMappers) 
+			List<Task> tasks, ExecutionContext ec, ArrayList<ResultVar> resultVars, boolean cpCaching, int numMappers) 
 	{
 		String jobname = "ParFor-ESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -74,11 +86,17 @@ public class RemoteParForSpark
 		long jobid = _jobID.getNextID();
 		if( InfrastructureAnalyzer.isLocalMode() )
 			RemoteParForSparkWorker.cleanupCachedVariables(jobid);
-		
+
+		// broadcast the inputs except the result variables
+		Map<String, Broadcast<CacheBlock>> brInputs = null;
+		if (ParForProgramBlock.ALLOW_BROADCAST_INPUTS) {
+			brInputs = broadcastInputs(sec, resultVars);
+		}
+
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		List<Tuple2<Long,String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
-			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, clsMap, cpCaching, aTasks, aIters))
+			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, clsMap, cpCaching, aTasks, aIters, brInputs))
 			.collect(); //execute and get output handles
 		
 		//de-serialize results
@@ -96,5 +114,26 @@ public class RemoteParForSpark
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		
 		return ret;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static Map<String, Broadcast<CacheBlock>> broadcastInputs(SparkExecutionContext sec, ArrayList<ParForStatementBlock.ResultVar> resultVars) {
+		LocalVariableMap inputs = sec.getVariables();
+		// exclude the result variables
+		// TODO use optimizer-picked list of amenable objects (e.g., size constraints)
+		Set<String> retVars = resultVars.stream()
+			.map(v -> v._name).collect(Collectors.toSet());
+		Set<String> brVars = inputs.keySet().stream()
+			.filter(v -> !retVars.contains(v)).collect(Collectors.toSet());
+		
+		// construct broadcast objects
+		Map<String, Broadcast<CacheBlock>> result = new HashMap<>();
+		for (String key : brVars) {
+			Data var = sec.getVariable(key);
+			if ((var instanceof ScalarObject) || (var instanceof MatrixObject && ((MatrixObject) var).isPartitioned()))
+				continue;
+			result.put(key, sec.broadcastVariable((CacheableData<CacheBlock>) var));
+		}
+		return result;
 	}
 }

@@ -1182,7 +1182,7 @@ public class LibMatrixMult
 					c.set(0, 0, dotProduct(a.values(0), b.values(0), a.indexes(0), a.pos(0), 0, a.size(0)));
 			}
 			else if( n==1 && cd<=2*1024 ) { //MATRIX-VECTOR (short rhs)
-				matrixMultSparseDenseMVShortRHS(a, b, c, rl, ru);
+				matrixMultSparseDenseMVShortRHS(a, b, c, cd, rl, ru);
 			}
 			else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
 				matrixMultSparseDenseMVTallRHS(a, b, c, cd, xsp, rl, ru);
@@ -1220,13 +1220,17 @@ public class LibMatrixMult
 		}
 	}
 	
-	private static void matrixMultSparseDenseMVShortRHS(SparseBlock a, DenseBlock b, DenseBlock c, int rl, int ru) {
+	private static void matrixMultSparseDenseMVShortRHS(SparseBlock a, DenseBlock b, DenseBlock c, int cd, int rl, int ru) {
 		double[] bvals = b.valuesAt(0);
 		double[] cvals = c.valuesAt(0);
-		for( int i=rl; i<ru; i++ )
-			if( !a.isEmpty(i) )
-				cvals[i] = dotProduct(a.values(i), bvals,
-					a.indexes(i), a.pos(i), 0, a.size(i));
+		for( int i=rl; i<ru; i++ ) {
+			if( a.isEmpty(i) ) continue;
+			int alen = a.size(i);
+			int apos = a.pos(i);
+			double[] avals = a.values(i);
+			cvals[i] = (alen==cd) ? dotProduct(avals, bvals, apos, 0, cd) :
+				dotProduct(avals, bvals, a.indexes(i), apos, 0, alen);
+		}
 	}
 	
 	private static void matrixMultSparseDenseMVTallRHS(SparseBlock a, DenseBlock b, DenseBlock c, int cd, long xsp, int rl, int ru) {

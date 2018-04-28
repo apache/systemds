@@ -827,19 +827,15 @@ public class HopRewriteUtils
 		return hop.getSparsity() < threshold;
 	}
 	
-	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) 
-	{
+	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) {
 		//check for string (no defined double value)
-		if(    hop1.getValueType()==ValueType.STRING 
-			|| hop2.getValueType()==ValueType.STRING )
-		{
-			return false;
+		if( hop1.getValueType()==ValueType.STRING 
+			|| hop2.getValueType()==ValueType.STRING ) {
+			return hop1.getStringValue()
+				.equals(hop2.getStringValue());
 		}
-		
-		double val1 = getDoubleValue(hop1);
-		double val2 = getDoubleValue(hop2);
-		
-		return ( val1 == val2 );
+		return getDoubleValue(hop1)
+			== getDoubleValue(hop2);
 	}
 	
 	public static boolean isNotMatrixVectorBinaryOperation( Hop hop )

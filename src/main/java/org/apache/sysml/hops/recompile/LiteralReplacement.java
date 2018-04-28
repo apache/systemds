@@ -40,6 +40,7 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
+import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.Statistics;
 
@@ -116,22 +117,9 @@ public class LiteralReplacement
 			&& c.getDataType()==DataType.SCALAR )
 		{
 			Data dat = vars.get(c.getName());
-			if( dat != null ) //required for selective constant propagation
-			{
+			if( dat != null ) { //required for selective constant propagation
 				ScalarObject sdat = (ScalarObject)dat;
-				switch( sdat.getValueType() ) {
-					case INT:
-						ret = new LiteralOp(sdat.getLongValue());		
-						break;
-					case DOUBLE:
-						ret = new LiteralOp(sdat.getDoubleValue());	
-						break;
-					case BOOLEAN:
-						ret = new LiteralOp(sdat.getBooleanValue());
-						break;
-					default:	
-						//otherwise: do nothing
-				}
+				ret = ScalarObjectFactory.createLiteralOp(sdat);
 			}
 		}
 		

@@ -463,6 +463,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return OptimizerUtils.getSparsity(rlen, clen, nonZeros);
 	}
 	
+	public MatrixCharacteristics getMatrixCharacteristics() {
+		return new MatrixCharacteristics(rlen, clen, -1, -1, nonZeros);
+	}
+	
 	public boolean isVector() {
 		return (rlen == 1 || clen == 1);
 	}

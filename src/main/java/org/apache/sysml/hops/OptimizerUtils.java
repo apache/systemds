@@ -984,7 +984,7 @@ public class OptimizerUtils
 			return Math.min(1, nnz1/m) * Math.min(1, nnz2/n);
 		}
 		else
-			return (1 - Math.pow(1-sp1*sp2, k) );
+			return 1 - Math.pow(1-sp1*sp2, k);
 	}
 
 	public static double getLeftIndexingSparsity( long rlen1, long clen1, long nnz1, long rlen2, long clen2, long nnz2 )

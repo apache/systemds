@@ -35,6 +35,7 @@ public class EstimatorBasicWorst extends SparsityEstimator
 {
 	@Override
 	public double estim(MMNode root) {
+		//recursive sparsity evaluation of non-leaf nodes
 		double sp1 = !root.getLeft().isLeaf() ? estim(root.getLeft()) :
 			OptimizerUtils.getSparsity(root.getLeft().getMatrixCharacteristics());
 		double sp2 = !root.getRight().isLeaf() ? estim(root.getRight()) :

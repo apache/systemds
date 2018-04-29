@@ -222,6 +222,24 @@ public abstract class DenseBlock implements Serializable
 	public abstract int pos(int r, int c);
 	
 	/**
+	 * Increments the given value for a given row and column.
+	 * 
+	 * @param r row index
+	 * @param c column index
+	 */
+	public abstract void incr(int r, int c);
+	
+	/**
+	 * Increments the given value for a given row and column
+	 * by delta.
+	 * 
+	 * @param r row index
+	 * @param c column index
+	 * @param delta increment value
+	 */
+	public abstract void incr(int r, int c, double delta);
+	
+	/**
 	 * Set the given value for the entire dense block (fill).
 	 * 
 	 * @param v value

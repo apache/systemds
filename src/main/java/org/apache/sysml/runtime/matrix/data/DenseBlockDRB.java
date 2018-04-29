@@ -171,6 +171,16 @@ public class DenseBlockDRB extends DenseBlock
 	}
 
 	@Override
+	public void incr(int r, int c) {
+		data[pos(r, c)] ++;
+	}
+	
+	@Override
+	public void incr(int r, int c, double delta) {
+		data[pos(r, c)] += delta;
+	}
+	
+	@Override
 	public DenseBlock set(double v) {
 		Arrays.fill(data, 0, rlen*clen, v);
 		return this;

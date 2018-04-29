@@ -19,11 +19,15 @@
 
 package org.apache.sysml.hops.estim;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class SparsityEstimator 
 {
+	protected static final Log LOG = LogFactory.getLog(SparsityEstimator.class.getName());
+	
 	/**
 	 * Estimates the output sparsity of a DAG of matrix multiplications
 	 * for the given operator graph of a single root node.

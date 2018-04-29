@@ -32,6 +32,7 @@ public class MMNode
 	private final MMNode _m2;
 	private final MatrixBlock _data;
 	private final MatrixCharacteristics _mc;
+	private Object _synops = null;
 	
 	public MMNode(MMNode left, MMNode right) {
 		_m1 = left;
@@ -42,12 +43,12 @@ public class MMNode
 			_data.getNumColumns(), -1, -1);
 	}
 	
-	public long getRows() {
-		return _mc.getRows();
+	public int getRows() {
+		return (int)_mc.getRows();
 	}
 	
-	public long getCols() {
-		return _mc.getCols();
+	public int getCols() {
+		return (int)_mc.getCols();
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics() {
@@ -64,5 +65,17 @@ public class MMNode
 	
 	public boolean isLeaf() {
 		return _data != null;
+	}
+	
+	public MatrixBlock getData() {
+		return _data;
+	}
+	
+	public void setSynopsis(Object obj) {
+		_synops = obj;
+	}
+	
+	public Object getSynopsis() {
+		return _synops;
 	}
 }

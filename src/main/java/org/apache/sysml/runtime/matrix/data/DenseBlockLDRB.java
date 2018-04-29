@@ -198,6 +198,16 @@ public class DenseBlockLDRB extends DenseBlock
 	public int pos(int r, int c) {
 		return (r % blen) * clen + c;
 	}
+	
+	@Override
+	public void incr(int r, int c) {
+		data[index(r)][pos(r, c)] ++;
+	}
+	
+	@Override
+	public void incr(int r, int c, double delta) {
+		data[index(r)][pos(r, c)] += delta;
+	}
 
 	@Override
 	public DenseBlock set(double v) {

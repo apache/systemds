@@ -290,8 +290,6 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
         cd svn-release-staging/$RELEASE_VERSION-$RELEASE_RC/
         rm -f *.asc
         for i in *.zip *.tgz *.tar.gz; do gpg --output $i.asc --detach-sig --armor $i; done
-        rm -f *.md5
-        for i in *.zip *.tgz *.tar.gz; do openssl md5 -hex $i | sed 's/MD5(\([^)]*\))= \([0-9a-f]*\)/\2 *\1/' > $i.md5; done
         rm -f *.sha512
         for i in *.zip *.tgz *.tar.gz; do shasum -a 512 $i > $i.sha512; done
 

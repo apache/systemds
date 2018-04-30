@@ -1441,7 +1441,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		DataPartitioner dp = null;
 		
 		//determine max degree of parallelism
-		int numReducers = ConfigurationManager.getNumReducers();
+		int numReducers = OptimizerUtils.isSparkExecutionMode() ?
+			SparkExecutionContext.getDefaultParallelism(false) :
+			ConfigurationManager.getNumReducers();
 		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )

@@ -80,8 +80,8 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);
 			DataPartitionerRemoteSparkReducer wfun = new DataPartitionerRemoteSparkReducer(fnameNew, oi, _replication);
 			inRdd.flatMapToPair(dpfun) //partition the input blocks
-			     .groupByKey(numRed)   //group partition blocks 		          
-			     .foreach(wfun);       //write partitions to hdfs 
+				.groupByKey(numRed)    //group partition blocks
+				.foreach(wfun);        //write partitions to hdfs
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

@@ -139,7 +139,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			if( flagRecompMR ){
 				//rewrite 5: set operations exec type
 				rewriteSetOperationsExecType( pn, flagRecompMR );
-				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 			}
 
 			// rewrite 6: data colocation
@@ -259,7 +259,6 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
 			PExecMode mode = PExecMode.LOCAL;
-
 			if (n.getExecType()==ExecType.MR) {
 				mode = PExecMode.REMOTE_MR;
 			}
@@ -267,6 +266,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				mode = PExecMode.REMOTE_SPARK;
 			}
 
+			ret = ((mode == PExecMode.REMOTE_MR ||
+				mode == PExecMode.REMOTE_SPARK) && !n.isCPOnly() );
 			pfpb.setExecMode( mode );
 			LOG.debug(getOptMode()+" OPT: forced 'set execution strategy' - result="+mode );
 		}

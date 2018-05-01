@@ -67,12 +67,10 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( parts[0].equalsIgnoreCase(LeftIndex.OPCODE)) 
-		{
-			throw new DMLRuntimeException("Invalid opcode while parsing a MatrixIndexingCPFileInstruction: " + str);	
+		else if ( parts[0].equalsIgnoreCase(LeftIndex.OPCODE)) {
+			throw new DMLRuntimeException("Invalid opcode while parsing a MatrixIndexingCPFileInstruction: " + str);
 		}
-		else 
-		{
+		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a MatrixIndexingCPFileInstruction: " + str);
 		}
 	}
@@ -89,45 +87,46 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
-			if( MapReduceTool.existsFileOnHDFS(pfname) )
-			{
+			if( MapReduceTool.existsFileOnHDFS(pfname) ) { //default
 				//create output matrix object
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
 				MatrixCharacteristics mcNew = null;
-				switch( mo.getPartitionFormat() )
-				{
+				switch( mo.getPartitionFormat() ) {
 					case ROW_WISE:
 						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
 						break;
 					case ROW_BLOCK_WISE_N:
 						mcNew = new MatrixCharacteristics( mo.getPartitionSize(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
-						break;	
+						break;
 					case COLUMN_WISE:
 						mcNew = new MatrixCharacteristics( mc.getRows(), 1, mc.getRowsPerBlock(), mc.getColsPerBlock() );
 						break;
 					case COLUMN_BLOCK_WISE_N:
 						mcNew = new MatrixCharacteristics( mc.getRows(), mo.getPartitionSize(), mc.getRowsPerBlock(), mc.getColsPerBlock() );
-						break;	
+						break;
 					default:
 						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+RightIndex.OPCODE+": "+ mo.getPartitionFormat());
 				}
 				
 				MetaDataFormat metaNew = new MetaDataFormat(mcNew,meta.getOutputInfo(),meta.getInputInfo());
-				mobj.setMetaData(metaNew);	 
+				mobj.setMetaData(metaNew);
+				
+				//note: disable cleanup to ensure that the partitioning file is not deleted 
+				//(e.g., for nested loops or reused partitioned matrices across loops)
+				mobj.enableCleanup(false);
 				
 				//put output object into symbol table
 				ec.setVariable(output.getName(), mobj);
 			}
-			else
-			{
-				//will return an empty matrix partition 
+			else { //empty matrix partition
+				//note: for binary cell data partitioning empty partitions are not materialized
 				MatrixBlock resultBlock = mo.readMatrixPartition( ixrange );
 				ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
 			}
 		}
-		else
-		{
-			throw new DMLRuntimeException("Invalid opcode or index predicate for MatrixIndexingCPFileInstruction: " + instString);	
+		else {
+			throw new DMLRuntimeException("Invalid opcode or index predicate "
+				+ "for MatrixIndexingCPFileInstruction: " + instString);
 		}
 	}
 }

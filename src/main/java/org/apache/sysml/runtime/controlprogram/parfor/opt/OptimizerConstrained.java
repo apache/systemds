@@ -312,7 +312,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	protected void rewriteSetTaskPartitioner(OptNode pn, boolean flagNested, boolean flagLIX)
 	{
 		// constraint awareness
-		if( !pn.getParam(ParamType.TASK_PARTITIONER).equals(PTaskPartitioner.UNSPECIFIED.toString()) )
+		if( !pn.getParam(ParamType.TASK_PARTITIONER).equals(PTaskPartitioner.UNSPECIFIED.name()) )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
@@ -342,7 +342,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	@Override
 	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) {
 		// constraint awareness
-		if( !n.getParam(ParamType.RESULT_MERGE).equals(PResultMerge.UNSPECIFIED.toString()) )
+		if( !n.getParam(ParamType.RESULT_MERGE).equals(PResultMerge.UNSPECIFIED.name()) )
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 				    .getAbstractPlanMapping().getMappedProg(n.getID())[1];

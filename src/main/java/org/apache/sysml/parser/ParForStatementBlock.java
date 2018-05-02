@@ -205,7 +205,8 @@ public class ParForStatementBlock extends ForStatementBlock
 			
 			//set defaults for all non-specified values
 			//(except if CONSTRAINT optimizer, in order to distinguish specified parameters)
-			boolean constrained = (params.containsKey( OPT_MODE ) && params.get( OPT_MODE ).equals(POptMode.CONSTRAINED.toString()));
+			boolean constrained = (params.containsKey( OPT_MODE ) 
+				&& params.get( OPT_MODE ).equalsIgnoreCase(POptMode.CONSTRAINED.name()));
 			for( String key : _paramNames )
 				if( !params.containsKey(key) )
 				{
@@ -214,7 +215,7 @@ public class ParForStatementBlock extends ForStatementBlock
 					}
 					//special treatment for degree of parallelism
 					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
-							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR.toString()))
+							&& params.get(EXEC_MODE).equalsIgnoreCase(PExecMode.REMOTE_MR.name()))
 					{
 						int maxPMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
 						//correction max number of reducers on yarn clusters
@@ -223,7 +224,7 @@ public class ParForStatementBlock extends ForStatementBlock
 						params.put(key, String.valueOf(maxPMap));
 					}
 					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
-							&& params.get(EXEC_MODE).equals(PExecMode.REMOTE_MR_DP.toString()) )
+							&& params.get(EXEC_MODE).equalsIgnoreCase(PExecMode.REMOTE_MR_DP.name()) )
 					{
 						int maxPRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 						//correction max number of reducers on yarn clusters

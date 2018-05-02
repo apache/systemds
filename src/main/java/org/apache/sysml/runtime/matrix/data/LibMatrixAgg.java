@@ -3098,7 +3098,7 @@ public class LibMatrixAgg
 		return minindex;
 	}
 
-	private static void countAgg( double[] a, int[] c, int[] aix, int ai, final int len ) {
+	public static void countAgg( double[] a, int[] c, int[] aix, int ai, final int len ) {
 		final int bn = len%8;
 		//compute rest, not aligned to 8-block
 		for( int i=ai; i<ai+bn; i++ )

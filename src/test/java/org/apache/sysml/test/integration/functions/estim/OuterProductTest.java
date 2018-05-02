@@ -24,6 +24,7 @@ import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
+import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -95,6 +96,16 @@ public class OuterProductTest extends AutomatedTestBase
 	@Test
 	public void testBitsetMatrixCase2() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, case2);
+	}
+	
+	@Test
+	public void testMatrixHistogramCase1() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, case1);
+	}
+	
+	@Test
+	public void testMatrixHistogramCase2() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, case2);
 	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {

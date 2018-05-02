@@ -61,11 +61,11 @@ public class EstimatorDensityMap extends SparsityEstimator
 		MatrixBlock m1Map = !root.getLeft().isLeaf() ?
 			(MatrixBlock)root.getLeft().getSynopsis() : computeDensityMap(root.getLeft().getData());
 		MatrixBlock m2Map = !root.getRight().isLeaf() ?
-			(MatrixBlock)root.getLeft().getSynopsis() : computeDensityMap(root.getLeft().getData());
+			(MatrixBlock)root.getRight().getSynopsis() : computeDensityMap(root.getRight().getData());
 		
 		//estimate output density map and sparsity
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
-			true, root.getRows(), root.getLeft().getCols(), root.getCols());
+			false, root.getRows(), root.getLeft().getCols(), root.getCols());
 		root.setSynopsis(outMap); //memoize density map
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			root.getRows(), root.getCols(), (long)outMap.sum());

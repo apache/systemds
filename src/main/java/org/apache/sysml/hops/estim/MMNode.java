@@ -34,13 +34,19 @@ public class MMNode
 	private final MatrixCharacteristics _mc;
 	private Object _synops = null;
 	
+	public MMNode(MatrixBlock in) {
+		_m1 = null;
+		_m2 = null;
+		_data = in;
+		_mc = in.getMatrixCharacteristics();
+	}
+	
 	public MMNode(MMNode left, MMNode right) {
 		_m1 = left;
 		_m2 = right;
 		_data = null;
-		_mc = isLeaf() ? _data.getMatrixCharacteristics() :
-			new MatrixCharacteristics(_data.getNumRows(),
-			_data.getNumColumns(), -1, -1);
+		_mc = new MatrixCharacteristics(
+			_m1.getRows(), _m2.getCols(), -1, -1);
 	}
 	
 	public int getRows() {

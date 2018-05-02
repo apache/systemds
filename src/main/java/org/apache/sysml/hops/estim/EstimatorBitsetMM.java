@@ -45,7 +45,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		BitsetMatrix m1Map = !root.getLeft().isLeaf() ?
 			(BitsetMatrix)root.getLeft().getSynopsis() : new BitsetMatrix(root.getLeft().getData());
 		BitsetMatrix m2Map = !root.getRight().isLeaf() ?
-			(BitsetMatrix)root.getLeft().getSynopsis() : new BitsetMatrix(root.getLeft().getData());
+			(BitsetMatrix)root.getRight().getSynopsis() : new BitsetMatrix(root.getRight().getData());
 		
 		//estimate output density map and sparsity via boolean matrix mult
 		BitsetMatrix outMap = m1Map.matMult(m2Map);

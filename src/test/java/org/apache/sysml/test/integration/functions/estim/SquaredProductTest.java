@@ -32,16 +32,21 @@ import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * This is a basic sanity check for all estimator, which need
- * to compute the exact sparsity for the special case of outer products.
+ * to compute a reasonable estimate for uniform data.
  */
-public class OuterProductTest extends AutomatedTestBase 
+public class SquaredProductTest extends AutomatedTestBase 
 {
-	private final static int m = 1154;
-	private final static int k = 1;
-	private final static int n = 900;
-	private final static double[] case1 = new double[]{0.1, 0.7};
-	private final static double[] case2 = new double[]{0.6, 0.7};
+	private final static int m = 1000;
+	private final static int k = 1000;
+	private final static int n = 1000;
+	private final static double[] case1 = new double[]{0.0001, 0.00007};
+	private final static double[] case2 = new double[]{0.0006, 0.00007};
 
+	private final static double eps1 = 0.05;
+	private final static double eps2 = 1e-4;
+	private final static double eps3 = 0;
+	
+	
 	@Override
 	public void setUp() {
 		//do  nothing
@@ -105,6 +110,8 @@ public class OuterProductTest extends AutomatedTestBase
 		
 		//compare estimated and real sparsity
 		double est = estim.estim(m1, m2);
-		TestUtils.compareScalars(est, m3.getSparsity(), 1e-16);
+		TestUtils.compareScalars(est, m3.getSparsity(),
+			(estim instanceof EstimatorBitsetMM) ? eps3 : //exact
+			(estim instanceof EstimatorBasicWorst) ? eps1 : eps2);
 	}
 }

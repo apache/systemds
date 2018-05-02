@@ -65,7 +65,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		
 		//estimate output density map and sparsity
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
-			true, root.getRows(), root.getCols());
+			true, root.getRows(), root.getLeft().getCols(), root.getCols());
 		root.setSynopsis(outMap); //memoize density map
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			root.getRows(), root.getCols(), (long)outMap.sum());
@@ -76,7 +76,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		MatrixBlock m1Map = computeDensityMap(m1);
 		MatrixBlock m2Map = computeDensityMap(m2);
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
-			true, m1.getNumRows(), m2.getNumColumns());
+			true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
 	}
@@ -135,11 +135,12 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 * @param m1Map density map left-hand-side operand
 	 * @param m2Map density map right-hand-side operand
 	 * @param retNnz return number of non-zeros instead of sparsity per cell
-	 * @param rlen number of rows of output matrix, required for returning nnz
-	 * @param clen number of columns of output matrix, required for returning nnz
+	 * @param mOrig number of rows of output matrix, required for returning nnz
+	 * @param cdOrig common dimension of original matrix multiply
+	 * @param nOrig number of columns of output matrix, required for returning nnz
 	 * @return density map
 	 */
-	private MatrixBlock estimIntern(MatrixBlock m1Map, MatrixBlock m2Map, boolean retNnz, int rlen, int clen) {
+	private MatrixBlock estimIntern(MatrixBlock m1Map, MatrixBlock m2Map, boolean retNnz, int mOrig, int cdOrig, int nOrig) {
 		final int m = m1Map.getNumRows();
 		final int cd = m1Map.getNumColumns();
 		final int n = m2Map.getNumColumns();
@@ -151,7 +152,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		DenseBlock c = out.allocateBlock().getDenseBlock();
 		for(int i=0; i<m; i++) {
 			for(int k=0; k<cd; k++) {
-				int lbk = UtilFunctions.computeBlockSize(cd, k+1, _b);
+				int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
 				double sp1 = m1Map.quickGetValue(i, k);
 				for(int j=0; j<n; j++) {
 					double sp2 = m2Map.quickGetValue(k, j);
@@ -164,9 +165,9 @@ public class EstimatorDensityMap extends SparsityEstimator
 			}
 			//scale to non-zeros instead of sparsity if needed
 			if( retNnz ) {
-				int lbm = UtilFunctions.computeBlockSize(rlen, i+1, _b);
+				int lbm = UtilFunctions.computeBlockSize(mOrig, i+1, _b);
 				for( int j=0; j<n; j++ ) {
-					int lbn = UtilFunctions.computeBlockSize(clen, j+1, _b);
+					int lbn = UtilFunctions.computeBlockSize(nOrig, j+1, _b);
 					c.set(i, j, c.get(i, j) * lbm * lbn);
 				}
 			}

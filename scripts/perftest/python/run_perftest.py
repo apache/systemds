@@ -144,7 +144,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     return exit_flag_success
 
 
-def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mode, temp_dir, file_system_type):
+def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mode, temp_dir):
     """
     This function is the entry point for performance testing
 
@@ -171,9 +171,6 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
 
     temp_dir: String
     Location to store all output files created during perf test
-
-    file_system_type: String
-
     """
     # algos to run is a list of tuples with
     # [(m-svm, binomial), (m-svm, multinomial)...]
@@ -419,8 +416,9 @@ if __name__ == '__main__':
     logging.info('New performance test started at {}'.format(time_now))
     logging.info('algorithm,run_type,intercept,matrix_type,data_shape,time_sec')
 
-    # Remove filename item from dictionary as its already used to create the log above
+    # Remove filename item from dictionary and file_system_type as they have already been used
     del perftest_args_dict['filename']
+    del perftest_args_dict['file_system_type']
     perf_test_entry(**perftest_args_dict)
 
     total_time = (time.time() - start_time)

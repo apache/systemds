@@ -106,24 +106,6 @@ def split_config_args(args):
     return perftest_args_dict, systemml_args_dict, backend_args_dict
 
 
-def args_dict_split(all_arguments):
-    """
-    This functions split the super set of arguments to smaller dictionaries
-
-    all_arguments: Dictionary
-    All input arguments parsed
-
-    return: Dictionary, Dictionary, Dictionary
-    We return four dictionaries for init, script, spark arguments, singlenode arguments
-    """
-    args_dict = dict(list(all_arguments.items())[0:9])
-    config_dict = dict(list(all_arguments.items())[9:13])
-    spark_dict = dict(list(all_arguments.items())[13:19])
-    singlenode_dict = dict(list(all_arguments.items())[19:])
-
-    return args_dict, config_dict, spark_dict, singlenode_dict
-
-
 def get_families(current_algo, ml_algo):
     """
     Given current algorithm we get its families.

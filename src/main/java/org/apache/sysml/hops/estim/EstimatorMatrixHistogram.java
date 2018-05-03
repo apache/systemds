@@ -20,7 +20,6 @@
 package org.apache.sysml.hops.estim;
 
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
@@ -37,8 +36,23 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 {
 	@Override
 	public double estim(MMNode root) {
-		throw new DMLRuntimeException("Estimation of "
-			+ "intermediate matrix histograms not supported yet.");
+		//recursive histogram computation of non-leaf nodes
+		if( !root.getLeft().isLeaf() )
+			estim(root.getLeft()); //obtain synopsis
+		if( !root.getRight().isLeaf() )
+			estim(root.getLeft()); //obtain synopsis
+		MatrixHistogram h1 = !root.getLeft().isLeaf() ?
+			(MatrixHistogram)root.getLeft().getSynopsis() : new MatrixHistogram(root.getLeft().getData());
+		MatrixHistogram h2 = !root.getRight().isLeaf() ?
+			(MatrixHistogram)root.getRight().getSynopsis() : new MatrixHistogram(root.getRight().getData());
+		
+		//estimate output sparsity based on input histograms
+		double ret = estimIntern(h1, h2);
+		
+		//derive and memoize output histogram
+		root.setSynopsis(MatrixHistogram.deriveOutputHistogram(h1, h2, ret));
+		
+		return ret;
 	}
 
 	@Override
@@ -83,6 +97,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private final int[] rNnz;
 		private final int[] cNnz;
 		private int rMaxNnz = 0;
+		@SuppressWarnings("unused")
 		private int cMaxNnz = 0;
 		
 		public MatrixHistogram(MatrixBlock in) {
@@ -117,9 +132,14 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 					rMaxNnz = Math.max(rMaxNnz, lnnz);
 				}
 			}
-			
-			for(int j=0; j<in.getNumColumns(); j++)
-				cMaxNnz = Math.max(cMaxNnz, cNnz[j]);
+			cMaxNnz = max(cNnz, 0, in.getNumColumns());
+		}
+		
+		public MatrixHistogram(int[] r, int[] c, int rmax, int cmax) {
+			rNnz = r;
+			cNnz = c;
+			rMaxNnz = rmax;
+			cMaxNnz = cmax;
 		}
 		
 		public int getRows() {
@@ -128,6 +148,44 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		public int getCols() {
 			return cNnz.length;
+		}
+		
+		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut) {
+			//get input/output nnz for scaling
+			long nnz1 = sum(h1.rNnz, 0, h1.getRows());
+			long nnz2 = sum(h2.cNnz, 0, h2.getCols());
+			double nnzOut = spOut * h1.getRows() * h2.getCols();
+			
+			//propagate h1.r and h2.c to output via simple scaling
+			//(this implies 0s propagate and distribution is preserved)
+			int rMaxNnz = 0, cMaxNnz = 0;
+			int[] rNnz = new int[h1.getRows()];
+			for( int i=0; i<h1.getRows(); i++ ) {
+				rNnz[i] = (int) Math.round(nnzOut/nnz1 * h1.rNnz[i]);
+				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+			}
+			int[] cNnz = new int[h2.getCols()];
+			for( int i=0; i<h2.getCols(); i++ ) {
+				cNnz[i] = (int) Math.round(nnzOut/nnz2 * h2.cNnz[i]);
+				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+			}
+			
+			//construct new histogram object
+			return new MatrixHistogram(rNnz, cNnz, rMaxNnz, cMaxNnz);
+		}
+		
+		private static int max(int[] a, int ai, int alen) {
+			int ret = Integer.MIN_VALUE;
+			for(int i=ai; i<ai+alen; i++)
+				ret = Math.max(ret, a[i]);
+			return ret;
+		}
+		
+		private static long sum(int[] a, int ai, int alen) {
+			int ret = 0;
+			for(int i=ai; i<ai+alen; i++)
+				ret += a[i];
+			return ret;
 		}
 	}
 }

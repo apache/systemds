@@ -27,18 +27,13 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
-import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
-import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
-import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * This class is for partitioned matrix/frame blocks, to be used as broadcasts. 
@@ -194,57 +189,6 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 				ret += block.getExactSerializedSize();
 		
 		return ret;
-	}
-
-	/**
-	 * Utility for slice operations over partitioned matrices, where the index range can cover
-	 * multiple blocks. The result is always a single result matrix block. All semantics are 
-	 * equivalent to the core matrix block slice operations. 
-	 * 
-	 * @param rl row lower bound
-	 * @param ru row upper bound
-	 * @param cl column lower bound
-	 * @param cu column upper bound
-	 * @param block block object
-	 * @return block object
-	 */
-	@SuppressWarnings("unchecked")
-	public T slice(long rl, long ru, long cl, long cu, T block) {
-		int lrl = (int) rl;
-		int lru = (int) ru;
-		int lcl = (int) cl;
-		int lcu = (int) cu;
-		
-		ArrayList<Pair<?, ?>> allBlks = (ArrayList<Pair<?, ?>>) CacheBlockFactory.getPairList(block);
-		int start_iix = (lrl-1)/_brlen+1;
-		int end_iix = (lru-1)/_brlen+1;
-		int start_jix = (lcl-1)/_bclen+1;
-		int end_jix = (lcu-1)/_bclen+1;
-				
-		for( int iix = start_iix; iix <= end_iix; iix++ )
-			for(int jix = start_jix; jix <= end_jix; jix++) {
-				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-				allBlks.addAll(OperationsOnMatrixValues.performSlice(
-						ixrange, _brlen, _bclen, iix, jix, getBlock(iix, jix)));
-			}
-		
-		if(allBlks.size() == 1) {
-			return (T) allBlks.get(0).getValue();
-		}
-		else {
-			//allocate output matrix
-			Constructor<?> constr;
-			try {
-				constr = block.getClass().getConstructor(int.class, int.class, boolean.class);
-				T ret = (T) constr.newInstance(lru-lrl+1, lcu-lcl+1, false);
-				for(Pair<?, ?> kv : allBlks) {
-					ret.merge((T)kv.getValue(), false);
-				}
-				return ret;
-			} catch (Exception e) {
-				throw new DMLRuntimeException(e);
-			}
-		}
 	}
 	
 	public void clearBlocks() {

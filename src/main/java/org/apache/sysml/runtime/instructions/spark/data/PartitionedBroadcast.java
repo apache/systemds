@@ -20,11 +20,18 @@
 package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
+import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.util.IndexRange;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -90,20 +97,57 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		return _pbc[pix].value().getBlock(rowIndex, colIndex);
 	}
 	
+	/**
+	 * Utility for slice operations over partitioned matrices, where the index range can cover
+	 * multiple blocks. The result is always a single result matrix block. All semantics are 
+	 * equivalent to the core matrix block slice operations. 
+	 * 
+	 * @param rl row lower bound
+	 * @param ru row upper bound
+	 * @param cl column lower bound
+	 * @param cu column upper bound
+	 * @param block block object
+	 * @return block object
+	 */
+	@SuppressWarnings("unchecked")
 	public T slice(long rl, long ru, long cl, long cu, T block) {
-		T ret = null;
-		for( Broadcast<PartitionedBlock<T>> bc : _pbc ) {
-			PartitionedBlock<T> pm = bc.value();
-			T tmp = pm.slice(rl, ru, cl, cu, block);
-			if( ret != null )
-				ret.merge(tmp, false);
-			else
-				ret = tmp;
-		}
+		int lrl = (int) rl;
+		int lru = (int) ru;
+		int lcl = (int) cl;
+		int lcu = (int) cu;
 		
-		return ret;
+		ArrayList<Pair<?, ?>> allBlks = (ArrayList<Pair<?, ?>>) CacheBlockFactory.getPairList(block);
+		int start_iix = (lrl-1)/_mc.getRowsPerBlock()+1;
+		int end_iix = (lru-1)/_mc.getRowsPerBlock()+1;
+		int start_jix = (lcl-1)/_mc.getColsPerBlock()+1;
+		int end_jix = (lcu-1)/_mc.getColsPerBlock()+1;
+				
+		for( int iix = start_iix; iix <= end_iix; iix++ )
+			for(int jix = start_jix; jix <= end_jix; jix++) {
+				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
+				allBlks.addAll(OperationsOnMatrixValues.performSlice(
+					ixrange, _mc.getRowsPerBlock(), _mc.getColsPerBlock(), iix, jix, getBlock(iix, jix)));
+			}
+		
+		if(allBlks.size() == 1) {
+			return (T) allBlks.get(0).getValue();
+		}
+		else {
+			//allocate output matrix
+			Constructor<?> constr;
+			try {
+				constr = block.getClass().getConstructor(int.class, int.class, boolean.class);
+				T ret = (T) constr.newInstance(lru-lrl+1, lcu-lcl+1, false);
+				for(Pair<?, ?> kv : allBlks) {
+					ret.merge((T)kv.getValue(), false);
+				}
+				return ret;
+			} catch (Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
 	}
-
+	
 	/**
 	 * This method cleanups all underlying broadcasts of a partitioned broadcast,
 	 * by forward the calls to SparkExecutionContext.cleanupBroadcastVariable.

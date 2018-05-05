@@ -654,11 +654,12 @@ public class SparkExecutionContext extends ExecutionContext
 				if (!isLocalMaster())
 					pmb.clearBlocks();
 			}
-
-			bret = new PartitionedBroadcast<>(ret, fo.getMatrixCharacteristics());
-			if (fo.getBroadcastHandle() == null) {
+			
+			bret = new PartitionedBroadcast<>(ret, new MatrixCharacteristics(
+				fo.getMatrixCharacteristics()).setBlockSize(brlen, bclen));
+			if (fo.getBroadcastHandle() == null)
 				fo.setBroadcastHandle(new BroadcastObject<FrameBlock>());
-			}
+			
 			fo.getBroadcastHandle().setPartitionedBroadcast(bret,
 				OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getMatrixCharacteristics()));
 			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getPartitionedBroadcastSize());

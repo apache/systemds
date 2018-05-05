@@ -20,11 +20,9 @@
 package org.apache.sysml.runtime.instructions.spark.data;
 
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -121,7 +119,7 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int end_iix = (lru-1)/_mc.getRowsPerBlock()+1;
 		int start_jix = (lcl-1)/_mc.getColsPerBlock()+1;
 		int end_jix = (lcu-1)/_mc.getColsPerBlock()+1;
-				
+		
 		for( int iix = start_iix; iix <= end_iix; iix++ )
 			for(int jix = start_jix; jix <= end_jix; jix++) {
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
@@ -129,23 +127,10 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 					ixrange, _mc.getRowsPerBlock(), _mc.getColsPerBlock(), iix, jix, getBlock(iix, jix)));
 			}
 		
-		if(allBlks.size() == 1) {
-			return (T) allBlks.get(0).getValue();
-		}
-		else {
-			//allocate output matrix
-			Constructor<?> constr;
-			try {
-				constr = block.getClass().getConstructor(int.class, int.class, boolean.class);
-				T ret = (T) constr.newInstance(lru-lrl+1, lcu-lcl+1, false);
-				for(Pair<?, ?> kv : allBlks) {
-					ret.merge((T)kv.getValue(), false);
-				}
-				return ret;
-			} catch (Exception e) {
-				throw new DMLRuntimeException(e);
-			}
-		}
+		T ret = (T) allBlks.get(0).getValue();
+		for(int i=1; i<allBlks.size(); i++)
+			ret.merge((T)allBlks.get(i).getValue(), false);
+		return ret;
 	}
 	
 	/**

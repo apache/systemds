@@ -179,13 +179,14 @@ public class MatrixCharacteristics implements Serializable
 		numColumns = nc;
 	}
 	
-	public void setBlockSize(int blen) {
-		setBlockSize(blen, blen);
+	public MatrixCharacteristics setBlockSize(int blen) {
+		return setBlockSize(blen, blen);
 	}
 	
-	public void setBlockSize(int bnr, int bnc) {
+	public MatrixCharacteristics setBlockSize(int bnr, int bnc) {
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
+		return this;
 	}
 	
 	public void setNonZeros(long nnz) {

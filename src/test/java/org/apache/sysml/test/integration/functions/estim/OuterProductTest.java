@@ -100,12 +100,22 @@ public class OuterProductTest extends AutomatedTestBase
 	
 	@Test
 	public void testMatrixHistogramCase1() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, case1);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(false), m, k, n, case1);
 	}
 	
 	@Test
 	public void testMatrixHistogramCase2() {
-		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, n, case2);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(false), m, k, n, case2);
+	}
+	
+	@Test
+	public void testMatrixHistogramExceptCase1() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, case1);
+	}
+	
+	@Test
+	public void testMatrixHistogramExceptCase2() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, case2);
 	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {

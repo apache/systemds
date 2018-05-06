@@ -73,7 +73,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		long nnz = 0;
 		//special case, with exact sparsity estimate, where the dot product
 		//dot(h1.cNnz,h2rNnz) gives the exact number of non-zeros in the output
-		if( h1.rMaxNnz <= 1 ) {
+		if( h1.rMaxNnz <= 1 || h2.cMaxNnz <= 1 ) {
 			for( int j=0; j<h1.getCols(); j++ )
 				nnz += h1.cNnz[j] * h2.rNnz[j];
 		}
@@ -97,7 +97,6 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private final int[] rNnz;
 		private final int[] cNnz;
 		private int rMaxNnz = 0;
-		@SuppressWarnings("unused")
 		private int cMaxNnz = 0;
 		
 		public MatrixHistogram(MatrixBlock in) {

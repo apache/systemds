@@ -693,7 +693,7 @@ public class DMLScript
 		
 		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
 		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.liveVariableAnalysis(prog);			
+		dmlt.liveVariableAnalysis(prog);
 		dmlt.validateParseTree(prog);
 		dmlt.constructHops(prog);
 		

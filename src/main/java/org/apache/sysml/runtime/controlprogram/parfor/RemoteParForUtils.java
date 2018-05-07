@@ -174,6 +174,8 @@ public class RemoteParForUtils
 					//(only if actually exported, hence in check for dirty, otherwise potential problems in result merge)
 					ret.add( ProgramConverter.serializeDataObject(rvar._name, mo) );
 				}
+				//cleanup pinned result variable from buffer pool
+				mo.freeEvictedBlob();
 			}
 		}
 		

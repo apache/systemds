@@ -22,9 +22,11 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.spark.TaskContext;
@@ -52,22 +54,24 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 	private final HashMap<String, byte[]> _clsMap;
 	private boolean _initialized = false;
 	private boolean _caching = true;
+	private final boolean _cleanCache;
 	
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 
 	private final Map<String, Broadcast<CacheBlock>> _brInputs;
 	
-	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching, LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs) {
+	public RemoteParForSparkWorker(long jobid, String program, HashMap<String, byte[]> clsMap, boolean cpCaching,
+			LongAccumulator atasks, LongAccumulator aiters, Map<String, Broadcast<CacheBlock>> brInputs, boolean cleanCache) {
 		_jobid = jobid;
 		_prog = program;
 		_clsMap = clsMap;
 		_initialized = false;
 		_caching = cpCaching;
-		//setup spark accumulators
 		_aTasks = atasks;
 		_aIters = aiters;
 		_brInputs = brInputs;
+		_cleanCache = cleanCache;
 	}
 	
 	@Override 
@@ -78,6 +82,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		if( !_initialized )
 			configureWorker(TaskContext.get().taskAttemptId());
 		
+		//keep input var names
+		Set<String> inVars = new HashSet<>(_ec.getVariables().keySet());
+		
 		//execute a single task
 		long numIter = getExecutedIterations();
 		super.executeTask( arg0 );
@@ -86,9 +93,15 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		_aTasks.add( 1 );
 		_aIters.add( (int)(getExecutedIterations()-numIter) );
 		
-		//write output if required (matrix indexed write) 
+		//cleanup remaining intermediate variables from buffer pool
+		_ec.getVariables().keySet().stream().filter(v -> !inVars.contains(v))
+			.map(v -> _ec.getVariable(v)).filter(d -> d instanceof CacheableData)
+			.forEach(c -> ((CacheableData<?>)c).freeEvictedBlob());
+		
+		//write output if required (matrix indexed write), incl cleanup pinned vars
 		//note: this copy is necessary for environments without spark libraries
-		return RemoteParForUtils.exportResultVariables(_workerID, _ec.getVariables(), _resultVars)
+		return RemoteParForUtils
+			.exportResultVariables(_workerID, _ec.getVariables(), _resultVars)
 			.stream().map(s -> new Tuple2<>(_workerID, s)).iterator();
 	}
 	
@@ -111,10 +124,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 
 		//reuse shared inputs (to read shared inputs once per process instead of once per core; 
 		//we reuse everything except result variables and partitioned input matrices)
-		_ec.pinVariables(_ec.getVarList()); //avoid cleanup of shared inputs
 		Collection<String> blacklist = UtilFunctions.asSet(_resultVars.stream()
 			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
-		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist, _brInputs);
+		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist, _brInputs, _cleanCache);
 		
 		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
 		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 

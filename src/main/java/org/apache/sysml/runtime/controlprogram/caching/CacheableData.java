@@ -836,17 +836,17 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * evicted data blob, without reading it.
 	 * Must be defined by a subclass, never called by users.
 	 */
-	protected void freeEvictedBlob() {
+	public final void freeEvictedBlob() {
 		String cacheFilePathAndName = getCacheFilePathAndName();
 		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
 		if( LOG.isTraceEnabled() )
 			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
-						(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
+				(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
 		
 		LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
 		
 		if( LOG.isTraceEnabled() )
-			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");		
+			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
 	}
 
 	protected boolean isBelowCachingThreshold() {

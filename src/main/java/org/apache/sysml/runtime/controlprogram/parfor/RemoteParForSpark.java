@@ -69,8 +69,8 @@ public class RemoteParForSpark
 	//globally unique id for parfor spark job instances (unique across spark contexts)
 	private static final IDSequence _jobID = new IDSequence();
 	
-	public static RemoteParForJobReturn runJob(long pfid, String prog, HashMap<String, byte[]> clsMap, 
-			List<Task> tasks, ExecutionContext ec, ArrayList<ResultVar> resultVars, boolean cpCaching, int numMappers) 
+	public static RemoteParForJobReturn runJob(long pfid, String prog, HashMap<String, byte[]> clsMap, List<Task> tasks,
+		ExecutionContext ec, ArrayList<ResultVar> resultVars, boolean cpCaching, int numMappers, boolean topLevelPF)
 	{
 		String jobname = "ParFor-ESP";
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -96,7 +96,8 @@ public class RemoteParForSpark
 		//run remote_spark parfor job 
 		//(w/o lazy evaluation to fit existing parfor framework, e.g., result merge)
 		List<Tuple2<Long,String>> out = sc.parallelize(tasks, tasks.size()) //create rdd of parfor tasks
-			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog, clsMap, cpCaching, aTasks, aIters, brInputs))
+			.flatMapToPair(new RemoteParForSparkWorker(jobid, prog,
+				clsMap, cpCaching, aTasks, aIters, brInputs, topLevelPF))
 			.collect(); //execute and get output handles
 		
 		//de-serialize results

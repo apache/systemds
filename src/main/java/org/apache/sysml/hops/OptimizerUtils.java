@@ -445,6 +445,12 @@ public class OptimizerUtils
 		return InfrastructureAnalyzer.getLocalParallelism() == k;
 	}
 
+	public static boolean isTopLevelParFor() {
+		//since every local parfor with degree of parallelism k>1 changes the
+		//local memory budget, we can simply probe the current memory fraction
+		return InfrastructureAnalyzer.getLocalMaxMemoryFraction() >= 0.99;
+	}
+	
 	public static boolean checkSparkBroadcastMemoryBudget( double size )
 	{
 		double memBudgetExec = SparkExecutionContext.getBroadcastMemoryBudget();

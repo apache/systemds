@@ -1043,8 +1043,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		exportMatricesToHDFS(ec);
 		
 		// Step 3) submit Spark parfor job (no lazy evaluation, since collect on result)
+		boolean topLevelPF = OptimizerUtils.isTopLevelParFor();
 		RemoteParForJobReturn ret = RemoteParForSpark.runJob(_ID, program,
-			clsMap, tasks, ec, _resultVars, _enableCPCaching, _numThreads);
+			clsMap, tasks, ec, _resultVars, _enableCPCaching, _numThreads, topLevelPF);
 		
 		if( _monitor ) 
 			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());

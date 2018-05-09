@@ -78,7 +78,7 @@ public class NativeHelper {
 		if(!isBLASLoaded()) {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
 			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
-			String customLibPath = (dmlConfig == null) ? "none" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS_DIR).trim().toLowerCase();
+			String customLibPath = (dmlConfig == null) ? "none" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS_DIR).trim();
 			performLoading(customLibPath, userSpecifiedBLAS);
 		}
 		if(maxNumThreads == -1)
@@ -179,6 +179,8 @@ public class NativeHelper {
 					if(userSpecifiedBLAS.equalsIgnoreCase("auto")) {
 						blas = new String[] { "mkl", "openblas" };
 					}
+
+
 					if(checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
 						LOG.info("Using native blas: " + blasType + getNativeBLASPath());
 						CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;

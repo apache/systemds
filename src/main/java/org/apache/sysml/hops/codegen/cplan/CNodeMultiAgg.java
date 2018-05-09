@@ -44,7 +44,7 @@ public class CNodeMultiAgg extends CNodeTpl
 			+ "    super(%SPARSE_SAFE%, %AGG_OP%);\n"
 			+ "  }\n"
 			+ "  protected void genexec(double a, SideInput[] b, double[] scalars, double[] c, "
-					+ "int m, int n, int rix, int cix) { \n"
+					+ "int m, int n, long grix, int rix, int cix) { \n"
 			+ "%BODY_dense%"
 			+ "  }\n"
 			+ "}\n";

@@ -665,8 +665,10 @@ public class SpoofCompiler
 			CNodeTpl tpl = e.getValue().getValue();
 			Hop[] inHops = e.getValue().getKey();
 			
-			//remove invalid plans with null inputs 
-			if( Arrays.stream(inHops).anyMatch(h -> (h==null)) )
+			//remove invalid plans with null, empty, or all scalar inputs 
+			if( inHops == null || inHops.length == 0
+				|| Arrays.stream(inHops).anyMatch(h -> (h==null))
+				|| Arrays.stream(inHops).allMatch(h -> h.isScalar()))
 				continue;
 			
 			//perform simplifications and cse rewrites

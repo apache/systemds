@@ -485,6 +485,13 @@ public class HopRewriteUtils
 			&& ArrayUtils.contains(ops, ((DataGenOp)hop).getOp()));
 	}
 	
+	public static boolean isDataGenOpWithLiteralInputs(Hop hop, DataGenMethod... ops) {
+		boolean ret = isDataGenOp(hop, ops);
+		for( Hop c : hop.getInput() )
+			ret &= c instanceof LiteralOp;
+		return ret;
+	}
+	
 	public static boolean isDataGenOpWithConstantValue(Hop hop) {
 		return hop instanceof DataGenOp
 			&& ((DataGenOp)hop).getOp()==DataGenMethod.RAND
@@ -1167,13 +1174,10 @@ public class HopRewriteUtils
 			|| (isColumnRightIndexing(input) && size.getInput().get(0)==input.getInput().get(0))));
 	}
 	
-	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent )
-	{
+	public static boolean hasOnlyWriteParents( Hop hop, boolean inclTransient, boolean inclPersistent ) {
 		boolean ret = true;
-		
 		ArrayList<Hop> parents = hop.getParent();
-		for( Hop p : parents )
-		{
+		for( Hop p : parents ) {
 			if( inclTransient && inclPersistent )
 				ret &= ( p instanceof DataOp && (((DataOp)p).getDataOpType()==DataOpTypes.TRANSIENTWRITE
 				|| ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE));
@@ -1182,8 +1186,14 @@ public class HopRewriteUtils
 			else if(inclPersistent)
 				ret &= ( p instanceof DataOp && ((DataOp)p).getDataOpType()==DataOpTypes.PERSISTENTWRITE);
 		}
-			
-				
+		return ret;
+	}
+	
+	public static boolean hasOnlyUnaryBinaryParents(Hop hop, boolean disallowLhs) {
+		boolean ret = true;
+		for( Hop p : hop.getParent() )
+			ret &= (p instanceof UnaryOp || (p instanceof BinaryOp 
+				&& (!disallowLhs || p.getInput().get(1)==hop)));
 		return ret;
 	}
 	

@@ -366,6 +366,10 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 		return _paramIndexMap;
 	}
 	
+	public Hop getParam(String key) {
+		return getInput().get(getParamIndex(key));
+	}
+	
 	public int getParamIndex(String key) {
 		return _paramIndexMap.get(key);
 	}

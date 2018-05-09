@@ -44,6 +44,7 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp2;
@@ -718,7 +719,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			|| (hop instanceof AggBinaryOp && (inRow || !hop.dimsKnown()
 				|| (hop.getDim1()!=1 && hop.getDim2()!=1)))
 			|| (HopRewriteUtils.isTransposeOperation(hop)
-				&& (hop.getDim1()!=1 && hop.getDim2()!=1))
+				&& (hop.getDim1()!=1 && hop.getDim2()!=1)
+				&& !HopRewriteUtils.isDataGenOp(hop.getInput().get(0),DataGenMethod.SEQ))
 			|| (hop instanceof AggUnaryOp && inRow);
 	}
 	

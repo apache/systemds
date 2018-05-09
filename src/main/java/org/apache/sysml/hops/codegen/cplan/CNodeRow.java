@@ -41,10 +41,10 @@ public class CNodeRow extends CNodeTpl
 			+ "  public %TMP%() {\n"
 			+ "    super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n"
 			+ "  }\n"
-			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, int rix) { \n"
+			+ "  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) { \n"
 			+ "%BODY_dense%"
 			+ "  }\n"
-			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, int rix) { \n"
+			+ "  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, long grix, int rix) { \n"
 			+ "%BODY_sparse%"
 			+ "  }\n"
 			+ "}\n";

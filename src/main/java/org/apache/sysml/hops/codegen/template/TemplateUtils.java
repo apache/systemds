@@ -239,6 +239,19 @@ public class TemplateUtils
 		throw new RuntimeException("Undefined outer product type for hop "+out.getHopID());
 	}
 	
+	public static CNodeData getLiteral(CNode node) {
+		return ((CNodeData) node).isLiteral() ? (CNodeData)node :
+			createCNodeData(new LiteralOp(node.getVarname()), true);
+	}
+	
+	public static boolean isLiteral(CNode node) {
+		return node instanceof CNodeData && ((CNodeData)node).isLiteral();
+	}
+	
+	public static boolean isLiteral(CNode node, String val) {
+		return isLiteral(node) && ((CNodeData)node).getVarname().equals(val);
+	}
+	
 	public static boolean isLookup(CNode node, boolean includeRC1) {
 		return isUnary(node, UnaryType.LOOKUP_C, UnaryType.LOOKUP_RC)
 			|| (includeRC1 && isUnary(node, UnaryType.LOOKUP_R))

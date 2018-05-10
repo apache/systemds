@@ -191,14 +191,14 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					
 						if (getDataType() == DataType.SCALAR) {
 							UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-									                    getDataType(), getValueType());
+								getDataType(), getValueType());
 							unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 							setLineNumbers(unary1);
-							setLops(unary1);
+							agg1 = unary1;
 						}
 					
-					}				
-					else { //general case		
+					}
+					else { //general case
 						int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 						agg1 = new PartialAggregate(input.constructLops(), 
 								HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), getDataType(),getValueType(), et, k);

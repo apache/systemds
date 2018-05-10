@@ -44,7 +44,6 @@ import org.apache.sysml.utils.Statistics;
  */
 public class UaggOuterChainTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "UaggOuterChain";
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + UaggOuterChainTest.class.getSimpleName() + "/";
@@ -1318,7 +1317,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 			
 			loadTestConfiguration(config, TEST_CACHE_DIR);
 			
-			String HOME = SCRIPT_DIR + TEST_DIR;			
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + suffix + strSumTypeSuffix + ".dml";
 			programArgs = new String[]{"-stats", "-explain","-args", 
 				input("A"), input("B"), output("C")};

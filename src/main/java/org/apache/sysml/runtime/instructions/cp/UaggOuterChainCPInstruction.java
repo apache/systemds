@@ -74,7 +74,7 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		boolean rightCached = (_uaggOp.indexFn instanceof ReduceCol || _uaggOp.indexFn instanceof ReduceAll
 				|| !LibMatrixOuterAgg.isSupportedUaggOp(_uaggOp, _bOp));
 
-		MatrixBlock mbLeft = null, mbRight = null, mbOut = null;		
+		MatrixBlock mbLeft = null, mbRight = null, mbOut = null;
 		//get the main data input
 		if( rightCached ) { 
 			mbLeft = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
@@ -94,26 +94,13 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		if( _uaggOp.aggOp.correctionExists )
 			mbOut.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
 		
-		String output_name = output.getName();
-		//final aggregation if required
-		if(_uaggOp.indexFn instanceof ReduceAll ) //RC AGG (output is scalar)
-		{
-			//create and set output scalar
-			ScalarObject ret = null;
-			switch( output.getValueType() ) {
-				case DOUBLE:  ret = new DoubleObject(mbOut.quickGetValue(0, 0)); break;
-				
-				default: 
-					throw new DMLRuntimeException("Invalid output value type: "+output.getValueType());
-			}
-			ec.setScalarOutput(output_name, ret);
+		if(_uaggOp.indexFn instanceof ReduceAll ) { //RC AGG (output is scalar)
+			ec.setMatrixOutput(output.getName(), new MatrixBlock(
+				mbOut.quickGetValue(0, 0)), getExtendedOpcode());
 		}
-		else //R/C AGG (output is rdd)
-		{	
-			//Additional memory requirement to convert from dense to sparse can be leveraged from released memory needed for input data above.
+		else { //R/C AGG (output is rdd)
 			mbOut.examSparsity();
-			ec.setMatrixOutput(output_name, mbOut, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), mbOut, getExtendedOpcode());
 		}
-		
-	}		
+	}
 }

@@ -309,9 +309,8 @@ public class QuaternaryInstruction extends MRInstruction implements IDistributed
 				IndexedMatrixValue iWij = (_input4 != -1) ? cachedValues.getFirst(_input4) : null; 
 				MatrixValue Wij = (iWij!=null) ? iWij.getValue() : null;
 				if (null == Wij && qop.hasFourInputs()) {
-					MatrixBlock mb = new MatrixBlock(1, 1, false);
 					String[] parts = InstructionUtils.getInstructionParts(instString);
-					mb.quickSetValue(0, 0, Double.valueOf(parts[4]));
+					MatrixBlock mb = new MatrixBlock(Double.valueOf(parts[4]));
 					Wij = mb;
 				}
 				

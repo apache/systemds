@@ -581,8 +581,7 @@ public class VariableCPInstruction extends CPInstruction {
 			else if( getInput1().getDataType()==DataType.SCALAR ) {
 				ScalarObject scalarInput = ec.getScalarInput(
 					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
-				MatrixBlock out = new MatrixBlock(1,1,false);
-				out.quickSetValue(0, 0, scalarInput.getDoubleValue());
+				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
 				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
 			else if( getInput1().getDataType()==DataType.LIST ) {

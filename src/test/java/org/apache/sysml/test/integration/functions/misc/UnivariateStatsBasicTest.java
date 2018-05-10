@@ -77,8 +77,7 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 						
 			
 			//write input types
-			MatrixBlock mb = new MatrixBlock(1,1,false);
-			mb.quickSetValue(0, 0, 1);
+			MatrixBlock mb = new MatrixBlock(1d);
 			MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo)
 				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1, 1);
 			MapReduceTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.DOUBLE, 

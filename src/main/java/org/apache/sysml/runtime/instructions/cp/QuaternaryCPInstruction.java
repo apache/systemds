@@ -106,14 +106,10 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName(), getExtendedOpcode());
 		MatrixBlock matBlock4 = null;
 		if( qop.hasFourInputs() ) {
-			if (input4.getDataType() == DataType.SCALAR) {
-				matBlock4 = new MatrixBlock(1, 1, false);
-				final double eps = ec.getScalarInput(input4.getName(), input4.getValueType(), input4.isLiteral()).getDoubleValue();
-				matBlock4.quickSetValue(0, 0, eps);
-			}
-			else {
+			if (input4.getDataType() == DataType.SCALAR)
+				matBlock4 = new MatrixBlock(ec.getScalarInput(input4).getDoubleValue());
+			else
 				matBlock4 = ec.getMatrixInput(input4.getName(), getExtendedOpcode());
-			}
 		}
 		
 		//core execute

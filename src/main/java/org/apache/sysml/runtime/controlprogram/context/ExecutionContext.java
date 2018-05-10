@@ -497,7 +497,7 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @return indicator vector of old cleanup state of matrix objects
 	 */
-	public boolean[] pinVariables(ArrayList<String> varList) 
+	public boolean[] pinVariables(List<String> varList) 
 	{
 		//2-pass approach since multiple vars might refer to same matrix object
 		boolean[] varsState = new boolean[varList.size()];
@@ -535,7 +535,7 @@ public class ExecutionContext {
 	 * @param varList variable list
 	 * @param varsState variable state
 	 */
-	public void unpinVariables(ArrayList<String> varList, boolean[] varsState) {
+	public void unpinVariables(List<String> varList, boolean[] varsState) {
 		for( int i=0; i<varList.size(); i++ ) {
 			Data dat = _variables.get(varList.get(i));
 			if( dat instanceof MatrixObject )

@@ -123,7 +123,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		}
 		else if( _type == AUType.EXISTS ) {
 			//probe existence of variable in symbol table w/o error
-			String varName = input1.isMatrix() ? input1.getName() :
+			String varName = !input1.isScalar() ? input1.getName() :
 				ec.getScalarInput(input1).getStringValue();
 			boolean rval = ec.getVariables().keySet().contains(varName);
 			//create and set output scalar

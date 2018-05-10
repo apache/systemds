@@ -20,10 +20,11 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.lops.Nary;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -44,7 +45,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if (Nary.OperationType.PRINTF.toString().equalsIgnoreCase(getOpcode())) {
+		if( "printf".equals(getOpcode()) ) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
 				ScalarObject so = ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral());
@@ -86,13 +87,26 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			if (!DMLScript.suppressPrint2Stdout()) {
 				System.out.println(result);
 			}
-
-			// this is necessary so that the remove variable operation can be
-			// performed
+			
 			ec.setScalarOutput(output.getName(), new StringObject(result));
-		} else {
-			throw new DMLRuntimeException(
-					"Opcode (" + getOpcode() + ") not recognized in ScalarBuiltinMultipleCPInstruction");
+		}
+		else if( "list".equals(getOpcode()) ) {
+			//obtain all input data objects, incl handling of literals
+			List<Data> data = Arrays.stream(inputs)
+				.map(in -> ec.getVariable(in)).collect(Collectors.toList());
+		
+			//create list object over all inputs
+			ListObject list = new ListObject(data);
+			
+			//disable cleanup of individual objects and store cleanup state
+			list.setStatus(ec.pinVariables(Arrays.stream(inputs)
+				.map(in -> in.getName()).collect(Collectors.toList())));
+			
+			ec.setVariable(output.getName(), list);
+		}
+		else {
+			throw new DMLRuntimeException("Opcode (" + getOpcode() 
+				+ ") not recognized in ScalarBuiltinMultipleCPInstruction");
 		}
 
 	}

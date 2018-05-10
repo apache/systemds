@@ -257,11 +257,12 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		{
 			for (int i = 0, valuesLength = Expression.DataType.values().length; i < valuesLength; i++)
 				switch(Expression.DataType.values()[i]) {
-				case SCALAR: orderDataType[i] = 0; break;
-				case MATRIX: orderDataType[i] = 1; break;
-				case FRAME:  orderDataType[i] = 2; break;
-				case OBJECT: orderDataType[i] = 3; break;
-				case UNKNOWN:orderDataType[i] = 4; break;
+					case SCALAR: orderDataType[i] = 0; break;
+					case MATRIX: orderDataType[i] = 1; break;
+					case FRAME:  orderDataType[i] = 2; break;
+					case OBJECT: orderDataType[i] = 3; break;
+					case UNKNOWN:orderDataType[i] = 4; break;
+					case LIST:   orderDataType[i] = 5; break;
 				}
 		}
 

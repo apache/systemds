@@ -98,7 +98,8 @@ public abstract class Expression implements ParseInfo
 		INTERQUANTILE,
 		INVERSE,
 		IQM,
-		LENGTH, 
+		LENGTH,
+		LIST,
 		LOG,
 		LU,
 		MAX,
@@ -180,7 +181,7 @@ public abstract class Expression implements ParseInfo
 	 * Data types (matrix, scalar, frame, object, unknown).
 	 */
 	public enum DataType {
-		MATRIX, SCALAR, FRAME, OBJECT, UNKNOWN;
+		MATRIX, SCALAR, FRAME, LIST, OBJECT, UNKNOWN;
 		
 		public boolean isMatrix() {
 			return (this == MATRIX);
@@ -190,6 +191,9 @@ public abstract class Expression implements ParseInfo
 		}
 		public boolean isScalar() {
 			return (this == SCALAR);
+		}
+		public boolean isComposite() {
+			return (this == LIST);
 		}
 	}
 

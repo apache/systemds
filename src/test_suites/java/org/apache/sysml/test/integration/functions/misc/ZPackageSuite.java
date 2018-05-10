@@ -45,6 +45,7 @@ import org.junit.runners.Suite;
 	IPAScalarRecursionTest.class,
 	IPAScalarVariablePropagationTest.class,
 	IPAUnknownRecursionTest.class,
+	ListAndStructTest.class,
 	LongOverflowTest.class,
 	NegativeLoopIncrementsTest.class,
 	NrowNcolStringTest.class,

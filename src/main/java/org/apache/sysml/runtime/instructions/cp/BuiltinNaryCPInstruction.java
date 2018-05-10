@@ -58,7 +58,7 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 				inputOperands[i-1] = new CPOperand(parts[i]);
 		}
 		
-		if( Nary.OperationType.PRINTF.name().equalsIgnoreCase(opcode) ) {
+		if( "printf".equals(opcode) || "list".equals(opcode)) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
 			return new ScalarBuiltinNaryCPInstruction(new SimpleOperator(func), 
 				opcode, str, outputOperand, inputOperands);

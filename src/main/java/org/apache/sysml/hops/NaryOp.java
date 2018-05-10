@@ -155,7 +155,7 @@ public class NaryOp extends Hop {
 		setRequiresRecompileIfNecessary();
 		
 		//ensure cp exec type for single-node operations
-		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL)
+		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL || _op == OpOpN.LIST)
 			_etype = ExecType.CP;
 		
 		return _etype;
@@ -182,6 +182,9 @@ public class NaryOp extends Hop {
 				setDim1(HopRewriteUtils.getSumValidInputDims(this, true));
 				setDim2(HopRewriteUtils.getMaxInputDim(this, false));
 				break;
+			case LIST:
+				setDim1(getInput().size());
+				setDim2(1);
 			case PRINTF:
 			case EVAL:
 				//do nothing:

@@ -71,8 +71,10 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 				out = new CPOperand(parts[6]);
 				if( in.getDataType()==DataType.MATRIX )
 					return new MatrixIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
-				else if (in.getDataType() == DataType.FRAME)
+				else if( in.getDataType() == DataType.FRAME )
 					return new FrameIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
+				else if( in.getDataType() == DataType.LIST )
+					return new ListIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
 				else 
 					throw new DMLRuntimeException("Can index only on Frames or Matrices");
 			}

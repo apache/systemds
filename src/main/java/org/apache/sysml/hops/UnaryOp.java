@@ -685,8 +685,9 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		setRequiresRecompileIfNecessary();
 		
 		//ensure cp exec type for single-node operations
-		if( _op == OpOp1.PRINT || _op == OpOp1.ASSERT || _op == OpOp1.STOP 
-			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.SVD)
+		if( _op == OpOp1.PRINT || _op == OpOp1.ASSERT || _op == OpOp1.STOP
+			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.SVD
+			|| getInput().get(0).getDataType() == DataType.LIST )
 		{
 			_etype = ExecType.CP;
 		}
@@ -697,9 +698,13 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if ( getDataType() == DataType.SCALAR ) 
-		{
+		if ( getDataType() == DataType.SCALAR )  {
 			//do nothing always known
+		}
+		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME
+			|| _op == OpOp1.CAST_AS_SCALAR) && getInput().get(0).getDataType()==DataType.LIST ){
+			setDim1( -1 );
+			setDim2( -1 );
 		}
 		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME)
 			&& getInput().get(0).getDataType()==DataType.SCALAR )

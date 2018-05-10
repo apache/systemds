@@ -610,8 +610,7 @@ public abstract class Hop implements ParseInfo
 		
 		switch( getDataType() )
 		{
-			case SCALAR:
-			{
+			case SCALAR: {
 				//memory estimate always known
 				if( getValueType()== ValueType.DOUBLE) //default case
 					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
@@ -666,8 +665,8 @@ public abstract class Hop implements ParseInfo
 				break;
 			}
 			case OBJECT:
-			case UNKNOWN:	
-			{
+			case UNKNOWN:
+			case LIST: {
 				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				break;
@@ -1088,7 +1087,7 @@ public abstract class Hop implements ParseInfo
 	
 	// Operations that require a variable number of operands
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, EVAL
+		PRINTF, CBIND, RBIND, EVAL, LIST,
 	}
 	
 	public enum AggOp {
@@ -1375,6 +1374,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOpNLops.put(OpOpN.CBIND, Nary.OperationType.CBIND);
 		HopsOpOpNLops.put(OpOpN.RBIND, Nary.OperationType.RBIND);
 		HopsOpOpNLops.put(OpOpN.EVAL, Nary.OperationType.EVAL);
+		HopsOpOpNLops.put(OpOpN.LIST, Nary.OperationType.LIST);
 	}
 
 	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;

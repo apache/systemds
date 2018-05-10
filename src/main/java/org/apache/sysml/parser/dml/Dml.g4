@@ -114,7 +114,7 @@ dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo 
 } :
     // ------------------------------------------
     // IndexedIdentifier
-    name=ID '[' (rowLower=expression (':' rowUpper=expression)?)? ',' (colLower=expression (':' colUpper=expression)?)? ']' # IndexedExpression
+    name=ID '[' (rowLower=expression (':' rowUpper=expression)?)? (',' (colLower=expression (':' colUpper=expression)?)?)? ']' # IndexedExpression
     // ------------------------------------------
     | ID                                            # SimpleDataIdentifierExpression
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression

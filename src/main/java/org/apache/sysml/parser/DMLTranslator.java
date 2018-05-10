@@ -2372,6 +2372,11 @@ public class DMLTranslator
 				target.getValueType(), Hop.OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
 			break;
 		
+		case LIST:
+			currBuiltinOp = new NaryOp(target.getName(), DataType.LIST, ValueType.UNKNOWN,
+				OpOpN.LIST, processAllExpressions(source.getAllExpr(), hops));
+			break;
+			
 		case EXISTS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp1.EXISTS, expr);

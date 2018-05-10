@@ -572,18 +572,28 @@ public class VariableCPInstruction extends CPInstruction {
 			}
 			break;
 		case CastAsMatrixVariable:{
-			MatrixBlock out = null;
 			if( getInput1().getDataType()==DataType.FRAME ) {
 				FrameBlock fin = ec.getFrameInput(getInput1().getName());
-				out = DataConverter.convertToMatrixBlock(fin);
+				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
 				ec.releaseFrameInput(getInput1().getName());
+				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
-			else { //assume DataType.SCALAR otherwise
-				ScalarObject scalarInput = ec.getScalarInput(getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
-				out = new MatrixBlock(1,1,false);
-				out.quickSetValue(0, 0, scalarInput.getDoubleValue());		
+			else if( getInput1().getDataType()==DataType.SCALAR ) {
+				ScalarObject scalarInput = ec.getScalarInput(
+					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
+				MatrixBlock out = new MatrixBlock(1,1,false);
+				out.quickSetValue(0, 0, scalarInput.getDoubleValue());
+				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
-			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+			else if( getInput1().getDataType()==DataType.LIST ) {
+				//TODO handling of cleanup status, potentially new object
+				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
+				ec.setVariable(output.getName(), list.slice(0));
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported data type "
+					+ "in as.matrix(): "+getInput1().getDataType().name());
+			}
 			break;
 		}
 		case CastAsFrameVariable:{
@@ -592,7 +602,7 @@ public class VariableCPInstruction extends CPInstruction {
 				ScalarObject scalarInput = ec.getScalarInput(getInput1());
 				out = new FrameBlock(1, getInput1().getValueType());
 				out.ensureAllocatedColumns(1);
-				out.set(0, 0, scalarInput.getStringValue());	
+				out.set(0, 0, scalarInput.getStringValue());
 			}
 			else { //DataType.FRAME
 				MatrixBlock min = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());

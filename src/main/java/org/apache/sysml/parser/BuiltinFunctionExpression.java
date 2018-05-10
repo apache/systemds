@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -510,7 +511,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
-			checkScalarFrameParam(getFirstExpr());
+			checkDataTypeParam(getFirstExpr(),
+				DataType.SCALAR, DataType.FRAME, DataType.LIST);
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
@@ -689,13 +691,21 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case NCOL:
 		case LENGTH:
 			checkNumParameters(1);
-			checkMatrixFrameParam(getFirstExpr());
+			checkDataTypeParam(getFirstExpr(),
+				DataType.MATRIX, DataType.FRAME, DataType.LIST);
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.INT);
 			break;
-
+			
+		case LIST:
+			output.setDataType(DataType.LIST);
+			output.setValueType(ValueType.UNKNOWN);
+			output.setDimensions(getAllExpr().length, 1);
+			output.setBlockDimensions(-1, -1);
+			break;
+		
 		case EXISTS:
 			checkNumParameters(1);
 			checkStringOrDataIdentifier(getFirstExpr());
@@ -704,7 +714,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.BOOLEAN);
 			break;
-			
+		
 		// Contingency tables
 		case TABLE:
 			
@@ -1496,6 +1506,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
+	protected void checkDataTypeParam(Expression e, DataType... dt) { //always unconditional
+		if( !ArrayUtils.contains(dt, e.getOutput().getDataType()) )
+			raiseValidateError("Non-matching expected data type for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+	}
+	
 	protected void checkMatrixFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting matrix or frame parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
@@ -1514,6 +1529,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private void checkScalarFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.SCALAR && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting scalar parameter for function " + this.getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
@@ -1639,6 +1655,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.MAX;
 		else if (functionName.equals("ppred"))
 			bifop = Expression.BuiltinFunctionOp.PPRED;
+		else if(functionName.equals("list"))
+			bifop = Expression.BuiltinFunctionOp.LIST;
 		else if (functionName.equals("log"))
 			bifop = Expression.BuiltinFunctionOp.LOG;
 		else if (functionName.equals("length"))

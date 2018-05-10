@@ -2276,7 +2276,7 @@ public class Dag<N extends Lop>
 		// since outputs are explicitly specified
 		if (node.getExecLocation() != ExecLocation.Data ) 
 		{
-			if (node.getDataType() == DataType.SCALAR) {
+			if (node.getDataType() == DataType.SCALAR || node.getDataType() == DataType.LIST) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
 				out.setVarName(oparams.getLabel());
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());

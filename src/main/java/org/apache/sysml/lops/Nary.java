@@ -32,7 +32,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class Nary extends Lop {
 
 	public enum OperationType {
-		PRINTF, CBIND, RBIND, EVAL
+		PRINTF, CBIND, RBIND, EVAL, LIST
 	}
 	
 	private OperationType operationType;
@@ -119,6 +119,7 @@ public class Nary extends Lop {
 			case CBIND:
 			case RBIND:
 			case EVAL:
+			case LIST:
 				return operationType.name().toLowerCase();
 			default:
 				throw new UnsupportedOperationException(

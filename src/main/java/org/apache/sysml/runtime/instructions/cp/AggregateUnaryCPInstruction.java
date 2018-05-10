@@ -87,34 +87,40 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				throw new DMLRuntimeException("Variable '"+input1.getName()+"' does not exist.");
 			
 			//get meta data information
-			MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
-			long rval = getSizeMetaData(_type, mc);
-
-			//check for valid output, and acquire read if necessary
-			//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
-			//we however, support unspecified input sizes, which requires a read to obtain the
-			//required meta data)
-			//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
-			if( !mc.dimsKnown() ) //invalid nrow/ncol/length
-			{
-				if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
-					|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
+			long rval = -1;
+			if (input1.getDataType() == DataType.LIST && _type == AUType.LENGTH ) {
+				rval = ((ListObject)ec.getVariable(input1.getName())).getLength();
+			}
+			else if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
+				MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
+				rval = getSizeMetaData(_type, mc);
+	
+				//check for valid output, and acquire read if necessary
+				//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
+				//we however, support unspecified input sizes, which requires a read to obtain the
+				//required meta data)
+				//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
+				if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 				{
-					if( OptimizerUtils.isHadoopExecutionMode() )
-						LOG.warn("Reading csv input frame of unkown size into memory for '"+opcode+"'.");
-					
-					//read the input matrix/frame and explicitly refresh meta data
-					CacheableData<?> obj = ec.getCacheableData(input1.getName());
-					obj.acquireRead();
-					obj.refreshMetaData();
-					obj.release();
-					
-					//update meta data information
-					mc = ec.getMatrixCharacteristics(input1.getName());
-					rval = getSizeMetaData(_type, mc);
-				}
-				else {
-					throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
+					if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+						|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
+					{
+						if( OptimizerUtils.isHadoopExecutionMode() )
+							LOG.warn("Reading csv input frame of unkown size into memory for '"+opcode+"'.");
+						
+						//read the input matrix/frame and explicitly refresh meta data
+						CacheableData<?> obj = ec.getCacheableData(input1.getName());
+						obj.acquireRead();
+						obj.refreshMetaData();
+						obj.release();
+						
+						//update meta data information
+						mc = ec.getMatrixCharacteristics(input1.getName());
+						rval = getSizeMetaData(_type, mc);
+					}
+					else {
+						throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
+					}
 				}
 			}
 			

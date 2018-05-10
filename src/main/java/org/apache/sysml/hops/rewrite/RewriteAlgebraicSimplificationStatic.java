@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -1568,7 +1569,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			&& HopRewriteUtils.isBinaryMatrixScalar(hi.getInput().get(1).getInput().get(0), OpOp2.EQUAL, 0)
 			&& hi.getInput().get(1).getInput().get(0).getInput().contains(hi.getInput().get(0)) )
 		{
-			HashMap<String, Hop> args = new HashMap<>();
+			LinkedHashMap<String, Hop> args = new LinkedHashMap<>();
 			args.put("target", hi.getInput().get(0));
 			args.put("pattern", new LiteralOp(0));
 			args.put("replacement", hi.getInput().get(1).getInput().get(1));
@@ -1785,7 +1786,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				String direction = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0)) ? "rows" : "cols";
 				
 				//setup input parameter hops
-				HashMap<String,Hop> inputargs = new HashMap<>();
+				LinkedHashMap<String,Hop> inputargs = new LinkedHashMap<>();
 				inputargs.put("target", trgt);
 				inputargs.put("max", HopRewriteUtils.getBasic1NSequenceMax(seq));
 				inputargs.put("dir", new LiteralOp(direction));
@@ -1800,7 +1801,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				HopRewriteUtils.replaceChildReference(parent, hi, pbop, pos);
 				hi = pbop;
 				
-				LOG.debug("Applied simplifyOuterSeqExpand (line "+hi.getBeginLine()+")");	
+				LOG.debug("Applied simplifyOuterSeqExpand (line "+hi.getBeginLine()+")");
 			}
 		}
 	

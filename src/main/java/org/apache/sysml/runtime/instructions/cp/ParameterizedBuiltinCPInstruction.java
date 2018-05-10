@@ -19,8 +19,12 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
@@ -55,9 +59,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	private static final String TOSTRING_SEPARATOR = " ";
 	private static final String TOSTRING_LINESEPARATOR = "\n";
 
-	protected final HashMap<String, String> params;
+	protected final LinkedHashMap<String, String> params;
 
-	protected ParameterizedBuiltinCPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
+	protected ParameterizedBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr) {
 		super(CPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
@@ -71,9 +75,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		return getParameterMap().get(key);
 	}
 	
-	public static HashMap<String, String> constructParameterMap(String[] params) {
+	public static LinkedHashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
-		HashMap<String,String> paramMap = new HashMap<>();
+		LinkedHashMap<String,String> paramMap = new LinkedHashMap<>();
 		
 		// all parameters are of form <name=value>
 		String[] parts;
@@ -93,7 +97,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		CPOperand out = new CPOperand( parts[parts.length-1] ); 
 
 		// process remaining parts and build a hash map
-		HashMap<String,String> paramsMap = constructParameterMap(parts);
+		LinkedHashMap<String,String> paramsMap = constructParameterMap(parts);
 
 		// determine the appropriate value function
 		ValueFunction func = null;
@@ -136,11 +140,9 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		else if (   opcode.equals("transformapply")
 				 || opcode.equals("transformdecode")
 				 || opcode.equals("transformcolmap")
-				 || opcode.equals("transformmeta")) 
-		{
-			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
-		}
-		else if (	opcode.equals("toString"))
+				 || opcode.equals("transformmeta")
+				 || opcode.equals("toString")
+				 || opcode.equals("nvlist") )
 		{
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -336,6 +338,20 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			}
 			ec.releaseCacheableData(getParam("target"));
 			ec.setScalarOutput(output.getName(), new StringObject(out));
+		}
+		else if( opcode.equals("nvlist") ) {
+			//obtain all input data objects and names in insertion order
+			List<Data> data = params.values().stream().map(d -> ec.containsVariable(d) ?
+				ec.getVariable(d) : new StringObject(d)).collect(Collectors.toList());
+			List<String> names = new ArrayList<>(params.keySet());
+			
+			//create list object over all inputs
+			ListObject list = new ListObject(data, names);
+			
+			//disable cleanup of individual objects and store cleanup state
+			list.setStatus(ec.pinVariables(new ArrayList<>(params.values())));
+			
+			ec.setVariable(output.getName(), list);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

@@ -186,6 +186,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
+		String2CPInstructionType.put( "nvlist",  CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "invcdf",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "groupedagg",     CPType.ParameterizedBuiltin);

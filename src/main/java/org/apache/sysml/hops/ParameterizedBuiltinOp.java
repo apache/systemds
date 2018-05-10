@@ -20,6 +20,7 @@
 package org.apache.sysml.hops;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.apache.sysml.hops.Hop.MultiThreadedHop;
@@ -87,7 +88,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	 * @param inputParameters map of input parameters
 	 */
 	public ParameterizedBuiltinOp(String l, DataType dt, ValueType vt,
-			ParamBuiltinOp op, HashMap<String, Hop> inputParameters) {
+			ParamBuiltinOp op, LinkedHashMap<String, Hop> inputParameters) {
 		super(l, dt, vt);
 		
 		_op = op;
@@ -191,10 +192,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:
 			case TRANSFORMMETA:
-			case TOSTRING: {
+			case TOSTRING:
+			case LIST: {
 				ExecType et = optFindExecType();
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
-						HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
+					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
 				setOutputDimensions(pbilop);
 				setLineNumbers(pbilop);
 				setLops(pbilop);
@@ -1064,11 +1066,9 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		//force CP for in-memory only transform builtins
 		if( (_op == ParamBuiltinOp.TRANSFORMAPPLY && REMOTE==ExecType.MR)
 			|| _op == ParamBuiltinOp.TRANSFORMDECODE && REMOTE==ExecType.MR
-			|| _op == ParamBuiltinOp.TRANSFORMCOLMAP 
-			|| _op == ParamBuiltinOp.TRANSFORMMETA 
-			|| _op == ParamBuiltinOp.TOSTRING 
-			|| _op == ParamBuiltinOp.CDF 
-			|| _op == ParamBuiltinOp.INVCDF) {
+			|| _op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA 
+			|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
+			|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF) {
 			_etype = ExecType.CP;
 		}
 		
@@ -1174,6 +1174,11 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 				Hop target = getTargetHop();
 				setDim1( target.getDim2() );
 				setDim2( 3 ); //fixed schema
+				break;
+			}
+			case LIST: {
+				setDim1( getInput().size() );
+				setDim2(1);
 				break;
 			}
 			default:

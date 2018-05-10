@@ -21,9 +21,9 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.lops.LeftIndex;
 import org.apache.sysml.lops.RightIndex;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.util.IndexRange;
 
 public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 
@@ -40,15 +40,22 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
-		IndexRange ixrange = getIndexRange(ec);
+		ScalarObject rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral());
+		ScalarObject ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral());
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
 			ListObject list = (ListObject) ec.getVariable(input1.getName());
 			
 			//execute right indexing operation and set output
-			ec.setVariable(output.getName(),
-				list.slice((int)ixrange.rowStart, (int)ixrange.rowEnd));
+			if( rl.getValueType()==ValueType.STRING || ru.getValueType()==ValueType.STRING ) {
+				ec.setVariable(output.getName(),
+					list.slice(rl.getStringValue(), ru.getStringValue()));
+			}
+			else {
+				ec.setVariable(output.getName(),
+					list.slice((int)rl.getLongValue()-1, (int)ru.getLongValue()-1));
+			}
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {

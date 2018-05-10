@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,9 +36,10 @@ import org.apache.wink.json4j.JSONObject;
 
 public class ParameterizedBuiltinFunctionExpression extends DataIdentifier 
 {
-	
+	//note: we use a linked hashmap to preserve the order of
+	//parameters if needed, such as for named lists
 	private ParameterizedBuiltinFunctionOp _opcode;
-	private HashMap<String,Expression> _varParams;
+	private LinkedHashMap<String,Expression> _varParams;
 	
 	public static final String TF_FN_PARAM_DATA = "target";
 	public static final String TF_FN_PARAM_MTD2 = "meta";
@@ -79,6 +81,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		// toString
 		opcodeMap.put("toString", Expression.ParameterizedBuiltinFunctionOp.TOSTRING);
+		opcodeMap.put("list", Expression.ParameterizedBuiltinFunctionOp.LIST);
 	}
 	
 	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
@@ -123,17 +126,17 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if ( pbifop == null ) 
 			return null;
 		
-		HashMap<String,Expression> varParams = new HashMap<>();
+		LinkedHashMap<String,Expression> varParams = new LinkedHashMap<>();
 		for (ParameterExpression pexpr : paramExprsPassed)
 			varParams.put(pexpr.getName(), pexpr.getExpr());
 		
-		ParameterizedBuiltinFunctionExpression retVal = new ParameterizedBuiltinFunctionExpression(ctx, pbifop,
-				varParams, fileName);
+		ParameterizedBuiltinFunctionExpression retVal = 
+			new ParameterizedBuiltinFunctionExpression(ctx, pbifop,varParams, fileName);
 		return retVal;
 	}
 	
 			
-	public ParameterizedBuiltinFunctionExpression(ParserRuleContext ctx, ParameterizedBuiltinFunctionOp op, HashMap<String,Expression> varParams,
+	public ParameterizedBuiltinFunctionExpression(ParserRuleContext ctx, ParameterizedBuiltinFunctionOp op, LinkedHashMap<String,Expression> varParams,
 			String filename) {
 		_opcode = op;
 		_varParams = varParams;
@@ -141,7 +144,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op,
-			HashMap<String, Expression> varParams, ParseInfo parseInfo) {
+			LinkedHashMap<String, Expression> varParams, ParseInfo parseInfo) {
 		_opcode = op;
 		_varParams = varParams;
 		setParseInfo(parseInfo);
@@ -149,7 +152,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	@Override
 	public Expression rewriteExpression(String prefix) {
-		HashMap<String,Expression> newVarParams = new HashMap<>();
+		LinkedHashMap<String,Expression> newVarParams = new LinkedHashMap<>();
 		for (String key : _varParams.keySet()){
 			Expression newExpr = _varParams.get(key).rewriteExpression(prefix);
 			newVarParams.put(key, newExpr);
@@ -258,7 +261,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case TOSTRING:
 			validateCastAsString(output, conditional);
 			break;
-			
+		
+		case LIST:
+			validateNamedList(output, conditional);
+			break;
+		
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
 			if( getOpCode()==ParameterizedBuiltinFunctionOp.TRANSFORMENCODE )
@@ -760,6 +767,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDataType(DataType.SCALAR);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(0, 0);
+	}
+	
+	private void validateNamedList(DataIdentifier output, boolean conditional) {
+		HashMap<String, Expression> varParams = getVarParams();
+		
+		// set output characteristics
+		output.setDataType(DataType.LIST);
+		output.setValueType(ValueType.UNKNOWN);
+		output.setDimensions(varParams.size(), 1);
+		output.setBlockDimensions(-1, -1);
 	}
 
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {

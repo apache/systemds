@@ -1373,7 +1373,7 @@ public class Recompiler
 			updatedSizeExpr = initUnknown & d.dimsKnown();
 		}
 		//update size expression for indexing according to symbol table entries
-		else if( hop instanceof IndexingOp )
+		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST )
 		{
 			IndexingOp iop = (IndexingOp)hop;
 			Hop input2 = iop.getInput().get(1); //inpRowL

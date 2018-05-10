@@ -161,47 +161,43 @@ public abstract class Identifier extends Expression
 				
 				if (indexedIdentiferOut.getRowLowerBound() != null) {
 					indexedIdentiferOut.getRowLowerBound().validateExpression(ids, constVars, conditional);
-					
 					Expression tempExpr = indexedIdentiferOut.getRowLowerBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
+					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
 						raiseValidateError("Matrix values for row lower index bound are not supported, which includes indexed identifiers.", conditional);
 					}
-					
 				}
+				
 				if (indexedIdentiferOut.getRowUpperBound() != null) {
 					indexedIdentiferOut.getRowUpperBound().validateExpression(ids, constVars, conditional);
-					
 					Expression tempExpr = indexedIdentiferOut.getRowUpperBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
+					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
 						raiseValidateError("Matrix values for row upper index bound are not supported, which includes indexed identifiers.", conditional);
 					}
-				
 				}
-				if (indexedIdentiferOut.getColLowerBound() != null) {
-					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars, conditional);	
 				
+				if (indexedIdentiferOut.getColLowerBound() != null) {
+					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars, conditional);
 					Expression tempExpr = indexedIdentiferOut.getColLowerBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
+					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
 						raiseValidateError("Matrix values for column lower index bound are not supported, which includes indexed identifiers.", conditional);
 					}
-				
 				}
+				
 				if (indexedIdentiferOut.getColUpperBound() != null) {
 					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars, conditional);
-					
-					Expression tempExpr = indexedIdentiferOut.getColUpperBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){	
+					Expression tempExpr = indexedIdentiferOut.getColUpperBound();
+					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
 						raiseValidateError("Matrix values for column upper index bound are not supported, which includes indexed identifiers.", conditional);
 					}
-				
 				}
 				
-				IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars, conditional);
-				((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
-				
+				if( this.getOutput().getDataType() != DataType.LIST ) {
+					IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars, conditional);
+					((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
+				}
 			}
-							
-		} else {
+		}
+		else {
 			this.getOutput().setProperties(this.getOutput());
 		}
 	}

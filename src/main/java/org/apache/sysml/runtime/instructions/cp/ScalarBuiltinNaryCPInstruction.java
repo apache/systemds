@@ -94,7 +94,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			//obtain all input data objects, incl handling of literals
 			List<Data> data = Arrays.stream(inputs)
 				.map(in -> ec.getVariable(in)).collect(Collectors.toList());
-		
+			
 			//create list object over all inputs
 			ListObject list = new ListObject(data);
 			

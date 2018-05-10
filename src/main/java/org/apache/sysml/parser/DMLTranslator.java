@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -1962,7 +1963,7 @@ public class DMLTranslator
 		}
 	}
 
-	private static Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, HashMap<String,Hop> paramHops) {
+	private static Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, LinkedHashMap<String,Hop> paramHops) {
 		
 		// Add a hop to paramHops to store distribution information. 
 		// Distribution parameter hops would have been already present in paramHops.
@@ -2055,7 +2056,7 @@ public class DMLTranslator
 			HashMap<String, Hop> hops) {
 		
 		// this expression has multiple "named" parameters
-		HashMap<String, Hop> paramHops = new HashMap<>();
+		LinkedHashMap<String, Hop> paramHops = new LinkedHashMap<>();
 		
 		// -- construct hops for all input parameters
 		// -- store them in hashmap so that their "name"s are maintained
@@ -2120,6 +2121,11 @@ public class DMLTranslator
 					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
 				break;
 			
+			case LIST:
+				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
+					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
+				break;
+				
 			default:
 				throw new ParseException(source.printErrorLocation() + 
 					"processParameterizedBuiltinFunctionExpression() -- Unknown operation: " + source.getOpCode());

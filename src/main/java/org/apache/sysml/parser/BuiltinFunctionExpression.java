@@ -1655,7 +1655,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.MAX;
 		else if (functionName.equals("ppred"))
 			bifop = Expression.BuiltinFunctionOp.PPRED;
-		else if(functionName.equals("list"))
+		else if(functionName.equals("list") //unnamed list
+			&& paramExprsPassed.stream().allMatch(p -> p.getName()==null))
 			bifop = Expression.BuiltinFunctionOp.LIST;
 		else if (functionName.equals("log"))
 			bifop = Expression.BuiltinFunctionOp.LOG;
@@ -1682,7 +1683,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else if (functionName.equals("t"))
 			 bifop = Expression.BuiltinFunctionOp.TRANS;
 		else if (functionName.equals("rev"))
-			 bifop = Expression.BuiltinFunctionOp.REV;		
+			 bifop = Expression.BuiltinFunctionOp.REV;
 		else if (functionName.equals("cbind") || functionName.equals("append"))
 			bifop = Expression.BuiltinFunctionOp.CBIND;
 		else if (functionName.equals("rbind"))

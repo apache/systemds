@@ -21,6 +21,7 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -2542,7 +2543,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(3), second, true) )
 			{
 				//setup input parameter hops
-				HashMap<String,Hop> args = new HashMap<>();
+				LinkedHashMap<String,Hop> args = new LinkedHashMap<>();
 				args.put("target", second);
 				args.put("max", hi.getInput().get(4));
 				args.put("dir", new LiteralOp("cols"));
@@ -2563,7 +2564,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				&& HopRewriteUtils.isSizeExpressionOf(hi.getInput().get(4), first, true) )
 			{
 				//setup input parameter hops
-				HashMap<String,Hop> args = new HashMap<>();
+				LinkedHashMap<String,Hop> args = new LinkedHashMap<>();
 				args.put("target", first);
 				args.put("max", hi.getInput().get(3));
 				args.put("dir", new LiteralOp("rows"));
@@ -2572,7 +2573,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 				//create new hop
 				ParameterizedBuiltinOp pbop = HopRewriteUtils
-						.createParameterizedBuiltinOp(first, args, ParamBuiltinOp.REXPAND);
+					.createParameterizedBuiltinOp(first, args, ParamBuiltinOp.REXPAND);
 				HopRewriteUtils.replaceChildReference(parent, hi, pbop, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi);
 				hi = pbop;

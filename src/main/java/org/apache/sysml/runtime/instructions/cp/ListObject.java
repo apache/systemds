@@ -72,15 +72,34 @@ public class ListObject extends Data
 	public Data slice(String name) {
 		//check for existing named list
 		if( _names == null )
-			throw new DMLRuntimeException("Invalid lookup by name in unnamed list.");
+			throw new DMLRuntimeException("Invalid lookup by name"
+				+ " in unnamed list: "+name+".");
 		
 		//find position and check for existing entry
 		int pos = _names.indexOf(name);
 		if( pos <= 0 || pos >= _data.size() )
-			throw new DMLRuntimeException("List lookup return no entry for name='"+name+"'");
+			throw new DMLRuntimeException("List lookup returned no entry for name='"+name+"'");
 		
 		//return existing entry
 		return slice(pos);
+	}
+	
+	public ListObject slice(String name1, String name2) {
+		//check for existing named list
+		if( _names == null )
+			throw new DMLRuntimeException("Invalid lookup by name"
+				+ " in unnamed list: "+name1+", "+name2+".");
+		
+		//find position and check for existing entry
+		int pos1 = _names.indexOf(name1);
+		int pos2 = _names.indexOf(name2);
+		if( pos1 <= 0 || pos1 >= _data.size() )
+			throw new DMLRuntimeException("List lookup returned no entry for name='"+name1+"'");
+		if( pos2 <= 0 || pos2 >= _data.size() )
+			throw new DMLRuntimeException("List lookup returned no entry for name='"+name2+"'");
+		
+		//return list object
+		return slice(pos1, pos2);
 	}
 	
 	@Override

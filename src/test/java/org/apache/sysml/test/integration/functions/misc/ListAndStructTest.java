@@ -55,15 +55,15 @@ public class ListAndStructTest extends AutomatedTestBase
 		runListStructTest(TEST_NAME1, true);
 	}
 	
-//	@Test
-//	public void testListNamed() {
-//		runListStructTest(TEST_NAME2, false);
-//	}
-//	
-//	@Test
-//	public void testListNamedRewrites() {
-//		runListStructTest(TEST_NAME2, true);
-//	}
+	@Test
+	public void testListNamed() {
+		runListStructTest(TEST_NAME2, false);
+	}
+	
+	@Test
+	public void testListNamedRewrites() {
+		runListStructTest(TEST_NAME2, true);
+	}
 	
 	private void runListStructTest(String testname, boolean rewrites)
 	{

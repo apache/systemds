@@ -34,6 +34,9 @@ public class ListAndStructTest extends AutomatedTestBase
 {
 	private static final String TEST_NAME1 = "ListUnnamed";
 	private static final String TEST_NAME2 = "ListNamed";
+	private static final String TEST_NAME3 = "ListUnnamedFun";
+	private static final String TEST_NAME4 = "ListNamedFun";
+	
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ListAndStructTest.class.getSimpleName() + "/";
@@ -43,6 +46,8 @@ public class ListAndStructTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -63,6 +68,26 @@ public class ListAndStructTest extends AutomatedTestBase
 	@Test
 	public void testListNamedRewrites() {
 		runListStructTest(TEST_NAME2, true);
+	}
+	
+	@Test
+	public void testListUnnamedFun() {
+		runListStructTest(TEST_NAME3, false);
+	}
+	
+	@Test
+	public void testListUnnamedFunRewrites() {
+		runListStructTest(TEST_NAME3, true);
+	}
+	
+	@Test
+	public void testListNamedFun() {
+		runListStructTest(TEST_NAME4, false);
+	}
+	
+	@Test
+	public void testListNamedFunRewrites() {
+		runListStructTest(TEST_NAME4, true);
 	}
 	
 	private void runListStructTest(String testname, boolean rewrites)

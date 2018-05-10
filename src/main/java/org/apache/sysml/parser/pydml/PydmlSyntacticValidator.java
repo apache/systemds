@@ -42,8 +42,6 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.DoubleIdentifier;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.FunctionCallIdentifier;
@@ -1371,43 +1369,15 @@ public class PydmlSyntacticValidator extends CommonSyntacticValidator implements
 		ArrayList<DataIdentifier> retVal = new ArrayList<>();
 		for(TypedArgNoAssignContext paramCtx : ctx) {
 			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
-			String dataType = null;
-			String valueType = null;
-
-			if(paramCtx.paramType == null || paramCtx.paramType.dataType() == null
-					|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) {
-				dataType = "scalar";
-			}
-			else {
-				dataType = paramCtx.paramType.dataType().getText();
-			}
-
+			String dataType = (paramCtx.paramType == null || paramCtx.paramType.dataType() == null
+				|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) ?
+				"scalar" : paramCtx.paramType.dataType().getText();
+			String valueType = paramCtx.paramType.valueType().getText();
+			
 			//check and assign data type
 			checkValidDataType(dataType, paramCtx.start);
-			if( dataType.equals("matrix") )
-				dataId.setDataType(DataType.MATRIX);
-			else if( dataType.equals("frame") )
-				dataId.setDataType(DataType.FRAME);
-			else if( dataType.equals("scalar") )
-				dataId.setDataType(DataType.SCALAR);
-
-			valueType = paramCtx.paramType.valueType().getText();
-			if(valueType.equals("int")) {
-				dataId.setValueType(ValueType.INT);
-			}
-			else if(valueType.equals("str")) {
-				dataId.setValueType(ValueType.STRING);
-			}
-			else if(valueType.equals("bool")) {
-				dataId.setValueType(ValueType.BOOLEAN);
-			}
-			else if(valueType.equals("float")) {
-				dataId.setValueType(ValueType.DOUBLE);
-			}
-			else {
-				notifyErrorListeners("invalid valuetype " + valueType, paramCtx.start);
+			if( !setDataAndValueType(dataId, dataType, valueType, paramCtx.start, true, false) )
 				return null;
-			}
 			retVal.add(dataId);
 		}
 		return retVal;

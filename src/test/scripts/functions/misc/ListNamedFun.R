@@ -18,7 +18,11 @@
 # under the License.
 #
 #-------------------------------------------------------------
-          
+
+
+args <- commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
 A = matrix(1, 10, 10);
 B = matrix(2, 10, 10);
@@ -28,11 +32,11 @@ D = matrix(4, 10, 10);
 X = list(a=A, b=B, c=c, d=D, e=matrix(5, 3, 3), f=6);
 
 for( i in 1:length(X) ) {
-  tmp = X[i];
-  if( !exists(tmp) )
+  tmp = X[i]
+  if( !exists("tmp") )
      print("ERROR: non-existing entry "+i );
 }
 
-R = as.matrix(sum(as.matrix(X['e'])));
+R = as.matrix(sum(as.matrix(X[['e']])));
 
-write(R, $1);
+writeMM(as(R, "CsparseMatrix"), paste(args[1], "R", sep=""));

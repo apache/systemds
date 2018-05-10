@@ -190,8 +190,8 @@ ID : (ALPHABET (ALPHABET|DIGIT|'_')*  '::')? ALPHABET (ALPHABET|DIGIT|'_')*
 ml_type :  valueType | dataType '[' valueType ']';
 // Note to reduce number of keywords, these are case-sensitive,
 // To allow case-insenstive,  'int' becomes: ('i' | 'I') ('n' | 'N') ('t' | 'T')
-valueType: 'int' | 'integer' | 'string' | 'boolean' | 'double'
-            | 'Int' | 'Integer' | 'String' | 'Boolean' | 'Double';
+valueType: 'int' | 'integer' | 'string' | 'boolean' | 'double' | 'unknown'
+            | 'Int' | 'Integer' | 'String' | 'Boolean' | 'Double' | 'Unknown';
 dataType:
         // 'scalar' # ScalarDataTypeDummyCheck
         // |

@@ -42,6 +42,8 @@ import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.DoubleIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataOp;
+import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
@@ -705,12 +707,52 @@ public abstract class CommonSyntacticValidator {
 	 * @param start antlr token
 	 */
 	protected void checkValidDataType(String datatype, Token start) {
-		boolean validMatrixType = 
-				datatype.equals("matrix") || datatype.equals("Matrix") || 
-				datatype.equals("frame") || datatype.equals("Frame") ||
-				datatype.equals("scalar") || datatype.equals("Scalar");
-		if(!validMatrixType	) {
-			notifyErrorListeners("incorrect datatype (expected matrix, frame or scalar)", start);
+		boolean validMatrixType = datatype.equals("matrix") || datatype.equals("Matrix")
+			|| datatype.equals("frame") || datatype.equals("Frame")
+			|| datatype.equals("list") || datatype.equals("List")
+			|| datatype.equals("scalar") || datatype.equals("Scalar");
+		if( !validMatrixType )
+			notifyErrorListeners("incorrect datatype (expected matrix, frame, list, or scalar)", start);
+	}
+	
+	protected boolean setDataAndValueType(DataIdentifier dataId, String dataType, String valueType, Token start, boolean shortVt, boolean helpBool) {
+		if( dataType.equalsIgnoreCase("matrix") )
+			dataId.setDataType(DataType.MATRIX);
+		else if( dataType.equalsIgnoreCase("frame") )
+			dataId.setDataType(DataType.FRAME);
+		else if( dataType.equalsIgnoreCase("list") )
+			dataId.setDataType(DataType.LIST);
+		else if( dataType.equalsIgnoreCase("scalar") )
+			dataId.setDataType(DataType.SCALAR);
+
+		if( (shortVt && valueType.equals("int"))
+			|| valueType.equals("int") || valueType.equals("integer")
+			|| valueType.equals("Int") || valueType.equals("Integer")) {
+			dataId.setValueType(ValueType.INT);
 		}
+		else if( (shortVt && valueType.equals("str"))
+			|| valueType.equals("string") || valueType.equals("String")) {
+			dataId.setValueType(ValueType.STRING);
+		}
+		else if( (shortVt && valueType.equals("bool"))
+			|| valueType.equals("boolean") || valueType.equals("Boolean")) {
+			dataId.setValueType(ValueType.BOOLEAN);
+		}
+		else if( (shortVt && valueType.equals("float") )
+			|| valueType.equals("double") || valueType.equals("Double")) {
+			dataId.setValueType(ValueType.DOUBLE);
+		}
+		else if(valueType.equals("unknown") || (!shortVt && valueType.equals("Unknown"))) {
+			dataId.setValueType(ValueType.UNKNOWN);
+		}
+		else if(helpBool && valueType.equals("bool")) {
+			notifyErrorListeners("invalid valuetype " + valueType + " (Quickfix: use \'boolean\' instead)", start);
+			return false;
+		}
+		else {
+			notifyErrorListeners("invalid valuetype " + valueType, start);
+			return false;
+		}
+		return true;
 	}
 }

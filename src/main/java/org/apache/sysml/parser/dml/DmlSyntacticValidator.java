@@ -38,8 +38,6 @@ import org.apache.sysml.parser.ConditionalPredicate;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
-import org.apache.sysml.parser.Expression.DataType;
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ExpressionList;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
@@ -702,49 +700,15 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ArrayList<DataIdentifier> retVal = new ArrayList<>();
 		for(TypedArgNoAssignContext paramCtx : ctx) {
 			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
-			String dataType = null;
-			String valueType = null;
-
-			if(paramCtx.paramType == null || paramCtx.paramType.dataType() == null
-					|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) {
-				dataType = "scalar";
-			}
-			else {
-				dataType = paramCtx.paramType.dataType().getText();
-			}
-
-
+			String dataType = (paramCtx.paramType == null || paramCtx.paramType.dataType() == null
+				|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) ?
+				"scalar" : paramCtx.paramType.dataType().getText();
+			String valueType = paramCtx.paramType.valueType().getText();
+			
 			//check and assign data type
 			checkValidDataType(dataType, paramCtx.start);
-			if( dataType.equalsIgnoreCase("matrix") )
-				dataId.setDataType(DataType.MATRIX);
-			else if( dataType.equalsIgnoreCase("frame") )
-				dataId.setDataType(DataType.FRAME);
-			else if( dataType.equalsIgnoreCase("scalar") )
-				dataId.setDataType(DataType.SCALAR);
-
-			valueType = paramCtx.paramType.valueType().getText();
-			if(valueType.equals("int") || valueType.equals("integer")
-				|| valueType.equals("Int") || valueType.equals("Integer")) {
-				dataId.setValueType(ValueType.INT);
-			}
-			else if(valueType.equals("string") || valueType.equals("String")) {
-				dataId.setValueType(ValueType.STRING);
-			}
-			else if(valueType.equals("boolean") || valueType.equals("Boolean")) {
-				dataId.setValueType(ValueType.BOOLEAN);
-			}
-			else if(valueType.equals("double") || valueType.equals("Double")) {
-				dataId.setValueType(ValueType.DOUBLE);
-			}
-			else if(valueType.equals("bool")) {
-				notifyErrorListeners("invalid valuetype " + valueType + " (Quickfix: use \'boolean\' instead)", paramCtx.start);
+			if( !setDataAndValueType(dataId, dataType, valueType, paramCtx.start, false, true) )
 				return null;
-			}
-			else {
-				notifyErrorListeners("invalid valuetype " + valueType, paramCtx.start);
-				return null;
-			}
 			retVal.add(dataId);
 		}
 		return retVal;

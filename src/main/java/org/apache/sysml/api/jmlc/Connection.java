@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -201,7 +201,7 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) {
-		return prepareScript(script, new HashMap<String,String>(), inputs, outputs, parsePyDML);
+		return prepareScript(script, Collections.emptyMap(), inputs, outputs, parsePyDML);
 	}
 	
 	/**
@@ -215,6 +215,21 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
+		return prepareScript(script, Collections.emptyMap(), args, inputs, outputs, parsePyDML);
+	}
+	
+	/**
+	 * Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.
+	 * 
+	 * @param script string representing of the DML or PyDML script
+	 * @param nsscript map (name, script) of the DML or PyDML namespace scripts
+	 * @param args map of input parameters ($) and their values
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @return PreparedScript object representing the precompiled script
+	 */
+	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
 		
 		//check for valid names of passed arguments
@@ -235,7 +250,8 @@ public class Connection implements Closeable
 		Program rtprog = null;
 		try {
 			//parsing
-			ParserWrapper parser = ParserFactory.createParser(parsePyDML ? ScriptType.PYDML : ScriptType.DML);
+			ParserWrapper parser = ParserFactory.createParser(
+				parsePyDML ? ScriptType.PYDML : ScriptType.DML, nsscripts);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

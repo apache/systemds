@@ -19,6 +19,9 @@
 
 package org.apache.sysml.parser;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
@@ -26,24 +29,25 @@ import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 
 public class ParserFactory {
 
+	public static ParserWrapper createParser(ScriptType scriptType) {
+		return createParser(scriptType, Collections.emptyMap());
+	}
+	
 	/**
 	 * Factory method for creating parser wrappers
 	 * 
-	 * @param scriptType
-	 *            type of script
+	 * @param scriptType type of script
+	 * @param nsscripts map of namespace scripts (name, script)
 	 * @return parser wrapper (DMLParserWrapper or PyDMLParserWrapper)
 	 */
-	public static ParserWrapper createParser(ScriptType scriptType) {
+	public static ParserWrapper createParser(ScriptType scriptType, Map<String, String> nsscripts) {
 		ParserWrapper ret = null;
-
 		// create the parser instance
 		switch (scriptType) {
 			case DML: ret = new DMLParserWrapper(); break;
 			case PYDML: ret = new PyDMLParserWrapper(); break;
 		}
-		CommonSyntacticValidator.init();
-
+		CommonSyntacticValidator.init(nsscripts);
 		return ret;
 	}
-
 }

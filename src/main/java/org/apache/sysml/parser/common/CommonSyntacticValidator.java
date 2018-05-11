@@ -19,11 +19,13 @@
 
 package org.apache.sysml.parser.common;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -45,6 +47,7 @@ import org.apache.sysml.parser.Expression.DataOp;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.FunctionCallIdentifier;
+import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.IntIdentifier;
 import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.MultiAssignmentStatement;
@@ -63,24 +66,26 @@ import org.apache.sysml.parser.BuiltinConstant;
  * Contains fields and (helper) methods common to {@link DmlSyntacticValidator} and {@link PydmlSyntacticValidator}
  */
 public abstract class CommonSyntacticValidator {
-
-	protected final CustomErrorListener errorListener;
-	protected final String currentFile;
-	protected String _workingDir = ".";   //current working directory
-	protected Map<String,String> argVals = null;
-	protected String sourceNamespace = null;
-	// Track imported scripts to prevent infinite recursion
-	protected static ThreadLocal<HashMap<String, String>> _scripts = new ThreadLocal<HashMap<String, String>>() {
+	private static final String DEF_WORK_DIR = ".";
+	
+	//externally loaded dml scripts filename (unmodified) / script
+	protected static ThreadLocal<HashMap<String, String>> _tScripts = new ThreadLocal<HashMap<String, String>>() {
 		@Override protected HashMap<String, String> initialValue() { return new HashMap<>(); }
 	};
+	//imported scripts to prevent infinite recursion, modified filename / namespace
+	protected static ThreadLocal<HashMap<String, String>> _f2NS = new ThreadLocal<HashMap<String, String>>() {
+		@Override protected HashMap<String, String> initialValue() { return new HashMap<>(); }
+	};
+	
+	protected final CustomErrorListener errorListener;
+	protected final String currentFile;
+	protected String _workingDir = DEF_WORK_DIR;
+	protected Map<String,String> argVals = null;
+	protected String sourceNamespace = null;
 	// Map namespaces to full paths as defined only from source statements in this script (i.e., currentFile)
 	protected HashMap<String, String> sources;
 	// Names of new internal and external functions defined in this script (i.e., currentFile)
 	protected Set<String> functions;
-	
-	public static void init() {
-		_scripts.get().clear();
-	}
 
 	public CommonSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		this.errorListener = errorListener;
@@ -89,6 +94,17 @@ public abstract class CommonSyntacticValidator {
 		this.sourceNamespace = sourceNamespace;
 		sources = new HashMap<>();
 		functions = (null != prepFunctions) ? prepFunctions : new HashSet<>();
+	}
+	
+	public static void init() {
+		_f2NS.get().clear();
+	}
+	
+	public static void init(Map<String, String> scripts) {
+		_f2NS.get().clear();
+		_tScripts.get().clear();
+		for( Entry<String,String> e : scripts.entrySet() )
+			_tScripts.get().put(getDefWorkingFilePath(e.getKey()), e.getValue());
 	}
 
 	protected void notifyErrorListeners(String message, Token op) {
@@ -150,6 +166,24 @@ public abstract class CommonSyntacticValidator {
 		String path = sources.get(namespace);
 		return (path != null && path.length() > 0) ? path : namespace;
 	}
+	
+	public String getWorkingFilePath(String filePath) {
+		return getWorkingFilePath(filePath, _workingDir);
+	}
+	
+	public static String getDefWorkingFilePath(String filePath) {
+		return getWorkingFilePath(filePath, DEF_WORK_DIR);
+	}
+	
+	private static String getWorkingFilePath(String filePath, String workingDir) {
+		return !new File(filePath).isAbsolute() ?
+			workingDir + File.separator + filePath : filePath;
+	}
+	
+	public String getNamespaceSafe(Token ns) {
+		return (ns != null && ns.getText() != null && !ns.getText().isEmpty()) ?
+			ns.getText() : DMLProgram.DEFAULT_NAMESPACE;
+	}
 
 	protected void validateNamespace(String namespace, String filePath, ParserRuleContext ctx) {
 		if (!sources.containsKey(namespace)) {
@@ -160,6 +194,16 @@ public abstract class CommonSyntacticValidator {
 			// If the filepath is same, ignore the statement. This is useful for repeated definition of common dml files such as source("nn/util.dml") as util
 			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
 		}
+	}
+	
+	protected void setupContextInfo(StatementInfo info, String namespace, String filePath, String filePath2, DMLProgram prog ) {
+		info.namespaces = new HashMap<>();
+		info.namespaces.put(getQualifiedNamespace(namespace), prog);
+		ImportStatement istmt = new ImportStatement();
+		istmt.setCompletePath(filePath);
+		istmt.setFilename(filePath2);
+		istmt.setNamespace(namespace);
+		info.stmt = istmt;
 	}
 
 	protected void setFileLineColumn(Expression expr, ParserRuleContext ctx) {

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.parser.dml;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +43,6 @@ import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.FunctionCallIdentifier;
 import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.IfStatement;
-import org.apache.sysml.parser.ImportStatement;
 import org.apache.sysml.parser.IndexedIdentifier;
 import org.apache.sysml.parser.IterablePredicate;
 import org.apache.sysml.parser.LanguageException;
@@ -110,6 +108,7 @@ import org.apache.sysml.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
 import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 public class DmlSyntacticValidator extends CommonSyntacticValidator implements DmlListener {
@@ -375,67 +374,39 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 
 	// -----------------------------------------------------------------
-	// 			"src" statment
+	// 			"source" statement
 	// -----------------------------------------------------------------
 
 	@Override
-	public void exitImportStatement(ImportStatementContext ctx)
-	{
-		//prepare import filepath
-		String filePath = ctx.filePath.getText();
-		String namespace = DMLProgram.DEFAULT_NAMESPACE;
-		if(ctx.namespace != null && ctx.namespace.getText() != null && !ctx.namespace.getText().isEmpty()) {
-			namespace = ctx.namespace.getText();
-		}
-		if((filePath.startsWith("\"") && filePath.endsWith("\"")) ||
-				filePath.startsWith("'") && filePath.endsWith("'")) {
-			filePath = filePath.substring(1, filePath.length()-1);
-		}
-
-		File file = new File(filePath);
-		if (!file.isAbsolute()) {
-			//concatenate working directory to filepath
-			filePath = _workingDir + File.separator + filePath;
-		}
+	public void exitImportStatement(ImportStatementContext ctx) {
+		String filePath = getWorkingFilePath(UtilFunctions.unquote(ctx.filePath.getText()));
+		String namespace = getNamespaceSafe(ctx.namespace);
 
 		validateNamespace(namespace, filePath, ctx);
 		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
 
 		DMLProgram prog = null;
-		if (!_scripts.get().containsKey(scriptID))
-		{
-			_scripts.get().put(scriptID, namespace);
+		if (!_f2NS.get().containsKey(scriptID)) {
+			_f2NS.get().put(scriptID, namespace);
 			try {
-				prog = (new DMLParserWrapper()).doParse(filePath, null, getQualifiedNamespace(namespace), argVals);
-			} catch (ParseException e) {
+				prog = (new DMLParserWrapper()).doParse(filePath,
+					_tScripts.get().get(filePath), getQualifiedNamespace(namespace), argVals);
+			}
+			catch (ParseException e) {
 				notifyErrorListeners(e.getMessage(), ctx.start);
 				return;
 			}
-	        // Custom logic whether to proceed ahead or not. Better than the current exception handling mechanism
 			if(prog == null) {
 				notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
 				return;
 			}
-			else {
-				ctx.info.namespaces = new HashMap<>();
-				ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
-				ctx.info.stmt = new ImportStatement();
-				((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
-				((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
-				((ImportStatement) ctx.info.stmt).setNamespace(namespace);
-			}
+			setupContextInfo(ctx.info, namespace, filePath, ctx.filePath.getText(), prog);
 		}
-		else
-		{
+		else {
 			// Skip redundant parsing (to prevent potential infinite recursion) and
 			// create empty program for this context to allow processing to continue.
 			prog = new DMLProgram();
-			ctx.info.namespaces = new HashMap<>();
-			ctx.info.namespaces.put(getQualifiedNamespace(namespace), prog);
-			ctx.info.stmt = new ImportStatement();
-			((ImportStatement) ctx.info.stmt).setCompletePath(filePath);
-			((ImportStatement) ctx.info.stmt).setFilePath(ctx.filePath.getText());
-			((ImportStatement) ctx.info.stmt).setNamespace(namespace);
+			setupContextInfo(ctx.info, namespace, filePath, ctx.filePath.getText(), prog);
 		}
 	}
 
@@ -826,12 +797,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
 		PathStatement stmt = new PathStatement(ctx.pathValue.getText());
-		String filePath = ctx.pathValue.getText();
-		if((filePath.startsWith("\"") && filePath.endsWith("\"")) ||
-				filePath.startsWith("'") && filePath.endsWith("'")) {
-			filePath = filePath.substring(1, filePath.length()-1);
-		}
-
+		String filePath = UtilFunctions.unquote(ctx.pathValue.getText());
 		_workingDir = filePath;
 		ctx.info.stmt = stmt;
 	}

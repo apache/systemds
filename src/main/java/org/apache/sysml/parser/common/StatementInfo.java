@@ -34,7 +34,6 @@ import org.apache.sysml.parser.Statement;
  */
 
 public class StatementInfo {
-
 	public Statement stmt = null;
 	
 	// Valid only for import statements
@@ -43,5 +42,4 @@ public class StatementInfo {
 	// Valid only for function statement
 	//public String namespace = DMLProgram.DEFAULT_NAMESPACE;
 	public String functionName = "";
-
 }

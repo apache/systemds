@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
 	JMLCInputStreamReadTest.class,
 	JMLCParfor2ForCompileTest.class,
 	ReuseModelVariablesTest.class,
+	NamespaceFunctionTest.class,
 	MulticlassSVMScoreTest.class
 })
 

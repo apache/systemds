@@ -38,5 +38,5 @@ jdk:
 
 script:
   - sudo Rscript ./src/test/scripts/installDependencies.R
-  - travis_wait 180 mvn clean verify
+  - mvn -Dit.test=**/integration/applications/**/*Suite.java verify
   

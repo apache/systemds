@@ -442,13 +442,13 @@
 						<include>**/integration/applications/**/*Suite.java</include>
 						<include>**/integration/conversion/*Suite.java</include>
 						<include>**/integration/functions/data/*Suite.java</include>
-						<!-- <include>**/integration/functions/sparse/*Suite.java</include> -->
-						<!-- <include>**/integration/functions/codegenalg/*Suite.java</include> -->
-						<!-- <include>**/integration/functions/**/*Test*.java</include> -->
-						<!-- <include>**/integration/mlcontext/*Suite.java</include> -->
-						<!-- <include>**/integration/mlcontext/algorithms/*Suite.java</include> -->
-						<!-- <include>**/integration/scripts/nn/*Suite.java</include> -->
-						<!-- <include>**/integration/scalability/**/*Test.java</include> -->
+						<include>**/integration/functions/sparse/*Suite.java</include>
+						<include>**/integration/functions/codegenalg/*Suite.java</include>
+						<include>**/integration/functions/**/*Test*.java</include>
+						<include>**/integration/mlcontext/*Suite.java</include>
+						<include>**/integration/mlcontext/algorithms/*Suite.java</include>
+						<include>**/integration/scripts/nn/*Suite.java</include>
+						<include>**/integration/scalability/**/*Test.java</include>
 					</includes>
 
 					<excludes>

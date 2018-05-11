@@ -212,8 +212,9 @@ public class Dag<N extends Lop>
 	}
 	
 	public static String getNextUniqueVarname(DataType dt) {
-		return (dt==DataType.MATRIX ? Lop.MATRIX_VAR_NAME_PREFIX :
-			Lop.FRAME_VAR_NAME_PREFIX) + var_index.getNextID();
+		return (dt.isMatrix() ? Lop.MATRIX_VAR_NAME_PREFIX :
+			dt.isFrame() ? Lop.FRAME_VAR_NAME_PREFIX :
+			Lop.SCALAR_VAR_NAME_PREFIX) + var_index.getNextID();
 	}
 	
 	///////

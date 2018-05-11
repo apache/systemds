@@ -29,6 +29,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.apache.sysml.utils.Statistics;
 
 public class ListAndStructTest extends AutomatedTestBase 
 {
@@ -114,6 +115,10 @@ public class ListAndStructTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			Assert.assertEquals(dmlfile.get(new CellIndex(1,1)), rfile.get(new CellIndex(1,1)));
+			
+			//check for properly compiled CP operations
+			Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
+			Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

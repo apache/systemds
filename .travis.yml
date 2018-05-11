@@ -19,12 +19,8 @@ dist: trusty
 
 language: java
 
-cache:
-  apt: true
-  directories:
-    - ${HOME}/.m2
-    - ${HOME}/R
-    - /usr/local/lib/R/site-library
+jdk:
+  - oraclejdk8
 
 addons:
   apt:
@@ -33,10 +29,21 @@ addons:
     packages:
     - r-base-dev
 
-jdk:
-  - oraclejdk8
+cache:
+  apt: true
+  directories:
+    - ${HOME}/.m2
+    - ${HOME}/R
+    - /usr/local/lib/R/site-library
+
+install:
+  - sudo Rscript ./src/test/scripts/installDependencies.R
 
 script:
-  - sudo Rscript ./src/test/scripts/installDependencies.R
-  - mvn -Dit.test=**/integration/applications/**/*Suite.java verify
-  
+  - mvn -Dit.test=**/integration/applications/*Suite.java verify
+
+# after_script:
+#  - 
+
+# after_success:
+#   -  mvn clean test jacoco:report coveralls:report

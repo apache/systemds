@@ -24,6 +24,7 @@ cache:
   directories:
     - ${HOME}/.m2
     - ${HOME}/R
+    - /usr/local/lib/R/site-library
 
 addons:
   apt:
@@ -37,5 +38,5 @@ jdk:
 
 script:
   - sudo Rscript ./src/test/scripts/installDependencies.R
-  - mvn clean verify
+  - travis_wait 180 mvn clean verify
   

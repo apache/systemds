@@ -145,6 +145,7 @@ public class TemplateCell extends TemplateBase
 		tpl.setAggOp(TemplateUtils.getAggOp(hop));
 		tpl.setSparseSafe(isSparseSafe(Arrays.asList(hop), sinHops[0], 
 			Arrays.asList(tpl.getOutput()), Arrays.asList(tpl.getAggOp()), false));
+		tpl.setContainsSeq(rContainsSeq(tpl.getOutput(), new HashSet<>()));
 		tpl.setRequiresCastDtm(hop instanceof AggBinaryOp);
 		tpl.setBeginLine(hop.getBeginLine());
 		
@@ -342,6 +343,16 @@ public class TemplateCell extends TemplateBase
 			if( onlySum )
 				ret &= (aggOps.get(i)==AggOp.SUM || aggOps.get(i)==AggOp.SUM_SQ);
 		}
+		return ret;
+	}
+	
+	protected boolean rContainsSeq(CNode node, HashSet<Long> memo) {
+		if( memo.contains(node.getID()) )
+			return false;
+		boolean ret = TemplateUtils.isBinary(node, BinType.SEQ_RIX);
+		for( CNode c : node.getInput() )
+			ret |= rContainsSeq(c, memo);
+		memo.add(node.getID());
 		return ret;
 	}
 	

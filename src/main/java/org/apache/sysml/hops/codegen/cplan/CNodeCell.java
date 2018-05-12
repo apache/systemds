@@ -39,7 +39,7 @@ public class CNodeCell extends CNodeTpl
 			+ "\n"
 			+ "public final class %TMP% extends SpoofCellwise {\n" 
 			+ "  public %TMP%() {\n"
-			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %AGG_OP%);\n"
+			+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP%);\n"
 			+ "  }\n"
 			+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
 			+ "%BODY_dense%"
@@ -50,6 +50,7 @@ public class CNodeCell extends CNodeTpl
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
+	private boolean _containsSeq = true;
 	private boolean _requiresCastdtm = false;
 	private boolean _multipleConsumers = false;
 	
@@ -91,6 +92,14 @@ public class CNodeCell extends CNodeTpl
 		return _sparseSafe;
 	}
 	
+	public void setContainsSeq(boolean flag) {
+		_containsSeq = flag;
+	}
+	
+	public boolean containsSeq() {
+		return _containsSeq;
+	}
+	
 	public void setRequiresCastDtm(boolean flag) {
 		_requiresCastdtm = flag;
 		_hash = 0;
@@ -124,6 +133,7 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%TYPE%", getCellType().name());
 		tmp = tmp.replace("%AGG_OP%", (_aggOp!=null) ? "AggOp."+_aggOp.name() : "null" );
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
+		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
 		
 		return tmp;
 	}

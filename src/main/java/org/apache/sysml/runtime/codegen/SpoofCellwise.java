@@ -73,11 +73,13 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	private final CellType _type;
 	private final AggOp _aggOp;
 	private final boolean _sparseSafe;
+	private final boolean _containsSeq;
 	
-	public SpoofCellwise(CellType type, boolean sparseSafe, AggOp aggOp) {
+	public SpoofCellwise(CellType type, boolean sparseSafe, boolean containsSeq, AggOp aggOp) {
 		_type = type;
 		_aggOp = aggOp;
 		_sparseSafe = sparseSafe;
+		_containsSeq = containsSeq;
 	}
 	
 	public CellType getCellType() {
@@ -90,6 +92,10 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	
 	public boolean isSparseSafe() {
 		return _sparseSafe;
+	}
+	
+	public boolean containsSeq() {
+		return _containsSeq;
 	}
 	
 	@Override
@@ -1051,15 +1057,14 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 	}
 	
 	private double executeCompressedAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
+		int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
-		//TODO handle sequences in special case summation
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
 		KahanObject kbuff2 = new KahanObject(0, 0);
 		
 		//special case: computation over value-tuples only
-		if( sparseSafe && b.length==0 && !a.hasUncompressedColGroup() ) {
+		if( sparseSafe && b.length==0 && !a.hasUncompressedColGroup() && !containsSeq()) {
 			//note: all remaining groups are guaranteed ColGroupValue
 			boolean entireGrp = (rl==0 && ru==a.getNumRows());
 			int maxNumVals = a.getColGroups().stream().mapToInt(

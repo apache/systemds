@@ -39,6 +39,9 @@ cache:
 install:
   - sudo Rscript ./src/test/scripts/installDependencies.R
 
+before_script:
+  - chmod -R 755 *
+
 script:
   - mvn -Dit.test=**/integration/applications/**/*Suite.java verify
 

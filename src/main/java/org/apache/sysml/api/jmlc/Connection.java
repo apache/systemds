@@ -222,7 +222,7 @@ public class Connection implements Closeable
 	 * Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.
 	 * 
 	 * @param script string representing of the DML or PyDML script
-	 * @param nsscript map (name, script) of the DML or PyDML namespace scripts
+	 * @param nsscripts map (name, script) of the DML or PyDML namespace scripts
 	 * @param args map of input parameters ($) and their values
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register

@@ -90,14 +90,13 @@ Before you get started on SystemML, make sure that your environment is set up an
 
   2. **Install Java (need Java 8).**
   ```
-  brew tap caskroom/cask
-  brew install Caskroom/cask/java
+  brew tap caskroom/versions
+  brew cask install java8
   ```
 
-  3. **Install Spark 2.1.**
+  3. **Install Spark (Newest)**
   ```
-  brew tap homebrew/versions
-  brew install apache-spark21
+  brew install apache-spark
   ```
 
   4. **Download SystemML.**

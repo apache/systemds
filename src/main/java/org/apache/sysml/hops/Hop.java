@@ -1088,7 +1088,7 @@ public abstract class Hop implements ParseInfo
 	
 	// Operations that require a variable number of operands
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, EVAL, LIST,
+		PRINTF, PARAMSERV, CBIND, RBIND, EVAL, LIST,
 	}
 	
 	public enum AggOp {
@@ -1117,7 +1117,7 @@ public abstract class Hop implements ParseInfo
 		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
 		LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
-		TOSTRING, LIST,
+		TOSTRING, LIST, PARAMSERV
 	}
 
 	public enum FileFormatTypes {

@@ -43,7 +43,8 @@ before_script:
   - chmod -R 755 *
 
 script:
-  - mvn -Dit.test=**/integration/applications/**/*Suite.java verify
+#  - mvn -Dit.test=**/integration/applications/**/*Suite.java verify
+  - mvn -Dit.test=**/integration/functions/data/*Suite.java verify
 
 # after_script:
 #  - 

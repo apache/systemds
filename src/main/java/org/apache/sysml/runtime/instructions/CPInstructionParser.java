@@ -187,6 +187,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
+		String2CPInstructionType.put("paramserv", 		CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "nvlist",  CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "invcdf",         CPType.ParameterizedBuiltin);
@@ -291,9 +292,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "partition", 	CPType.Partition);
 		String2CPInstructionType.put( "compress", 	CPType.Compression);
 		String2CPInstructionType.put( "spoof", 		CPType.SpoofFused);
-
-		// parameter server builtin function
-		String2CPInstructionType.put("paramserv", CPType.ParamservBuiltin);
 	}
 
 	public static CPInstruction parseSingleInstruction (String str ) {
@@ -367,10 +365,7 @@ public class CPInstructionParser extends InstructionParser
 			case External:
 				return FunctionCallCPInstruction.parseInstruction(str);
 
-			case ParamservBuiltin:
-				return ParamservBuiltinCPInstruction.parseInstruction(str);
-
-			case ParameterizedBuiltin: 
+			case ParameterizedBuiltin:
 				return ParameterizedBuiltinCPInstruction.parseInstruction(str);
 			
 			case MultiReturnParameterizedBuiltin:

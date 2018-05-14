@@ -61,7 +61,38 @@ public abstract class Statement implements ParseInfo
 	public static final String GAGG_FN_CM       = "centralmoment";
 	public static final String GAGG_FN_CM_ORDER = "order";
 	public static final String GAGG_NUM_GROUPS  = "ngroups";
-	
+
+	// String constants related to parameter server builtin function
+	public static final String PS_FEATURES = "features";
+	public static final String PS_LABELS = "labels";
+	public static final String PS_VAL_FEATURES = "val_features";
+	public static final String PS_VAL_LABELS = "val_labels";
+	public static final String PS_UPDATE_FUN = "upd";
+	public static final String PS_AGGREGATION_FUN = "agg";
+	public static final String PS_MODE = "mode";
+	public static final String PS_MODE_LOCAL = "LOCAL";
+	public static final String PS_MODE_REMOTE_SPARK = "REMOTE_SPARK";
+	public static final String PS_UPDATE_TYPE = "utype";
+	public static final String PS_UPDATE_TYPE_BSP = "BSP";
+	public static final String PS_UPDATE_TYPE_ASP = "ASP";
+	public static final String PS_UPDATE_TYPE_SSP = "SSP";
+	public static final String PS_FREQUENCY = "freq";
+	public static final String PS_FREQUENCY_BATCH = "BATCH";
+	public static final String PS_FREQUENCY_EPOCH = "EPOCH";
+	public static final String PS_EPOCHS = "epochs";
+	public static final String PS_BATCH_SIZE = "batchsize";
+	public static final String PS_PARALLELISM = "k";
+	public static final String PS_SCHEME = "scheme";
+	public static final String PS_SCHEME_DC = "disjoint_contiguous";
+	public static final String PS_SCHEME_DRR = "disjoint_round_robin";
+	public static final String PS_SCHEME_DR = "disjoint_random";
+	public static final String PS_SCHEME_OR = "overlap_reshuffle";
+	public static final String PS_HYPER_PARAMS = "hyperparams";
+	public static final String PS_CHECKPOINTING = "checkpointing";
+	public static final String PS_CHECKPOINTING_NONE = "NONE";
+	public static final String PS_CHECKPOINTING_EPOCH = "EPOCH";
+	public static final String PS_CHECKPOINTING_EPOCH10 = "EPOCH10";
+
 	public abstract boolean controlStatement();
 	
 	public abstract VariableSet variablesRead();

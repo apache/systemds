@@ -323,28 +323,28 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Should provide more arguments for function " + fname, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet("", "features", "labels", "val_features", "val_labels", "upd", "agg", "mode", "utype", "freq", "epochs", "batchsize", "k", "scheme", "hyperparam", "checkpointing");
+		Set<String> valid = UtilFunctions.asSet(Statement.PS_FEATURES, Statement.PS_LABELS, Statement.PS_VAL_FEATURES, Statement.PS_VAL_LABELS, Statement.PS_UPDATE_FUN, Statement.PS_AGGREGATION_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS, Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING);
 		Set<String> params = new HashSet<>(getVarParams().keySet());
 		params.removeIf(Objects::isNull);
 		checkInvalidParameters(getOpCode(), params, valid);
 
 		// check existence and correctness of parameters
 		checkDataType(fname, null, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
-		checkDataType(fname, "features", DataType.MATRIX, conditional);
-		checkDataType(fname, "labels", DataType.MATRIX, conditional);
-		checkDataType(fname, "val_features", DataType.MATRIX, conditional);
-		checkDataType(fname, "val_labels", DataType.MATRIX, conditional);
-		checkDataValueType(false, fname, "upd", DataType.SCALAR, ValueType.STRING, conditional);
-		checkDataValueType(false, fname, "agg", DataType.SCALAR, ValueType.STRING, conditional);
-		checkStringParam(false, fname, "mode", UtilFunctions.asSet("LOCAL", "REMOTE_SPARK"), conditional);
-		checkStringParam(false, fname, "utype", UtilFunctions.asSet("BSP", "ASP", "SSP"), conditional);
-		checkStringParam(false, fname, "freq", UtilFunctions.asSet("BATCH", "EPOCH"), conditional);
-		checkDataValueType(false, fname, "epochs", DataType.SCALAR, ValueType.INT, conditional);
-		checkDataValueType(true, fname, "batchsize", DataType.SCALAR, ValueType.INT, conditional);
-		checkDataValueType(false, fname, "k", DataType.SCALAR, ValueType.INT, conditional);
-		checkStringParam(false, fname, "scheme", UtilFunctions.asSet("disjoint_contiguous", "disjoint_round_robin", "disjoint_random", "overlap_reshuffle"), conditional);
-		checkDataValueType(true, fname, "hyperparam", DataType.LIST, ValueType.UNKNOWN, conditional);
-		checkStringParam(true, fname, "checkpointing", UtilFunctions.asSet("NONE", "EPOCH", "EPOCH10"), conditional);
+		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
+		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
+		checkDataType(fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, conditional);
+		checkDataType(fname, Statement.PS_VAL_LABELS, DataType.MATRIX, conditional);
+		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
+		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
+		checkStringParam(false, fname, Statement.PS_MODE, UtilFunctions.asSet(Statement.PS_MODE_LOCAL, Statement.PS_MODE_REMOTE_SPARK), conditional);
+		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, UtilFunctions.asSet(Statement.PS_UPDATE_TYPE_ASP, Statement.PS_UPDATE_TYPE_BSP, Statement.PS_UPDATE_TYPE_SSP), conditional);
+		checkStringParam(false, fname, Statement.PS_FREQUENCY, UtilFunctions.asSet(Statement.PS_FREQUENCY_BATCH, Statement.PS_FREQUENCY_EPOCH), conditional);
+		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);
+		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT, conditional);
+		checkDataValueType(false, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
+		checkStringParam(false, fname, Statement.PS_SCHEME, UtilFunctions.asSet(Statement.PS_SCHEME_DC, Statement.PS_SCHEME_DRR, Statement.PS_SCHEME_DR, Statement.PS_SCHEME_OR), conditional);
+		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
+		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, UtilFunctions.asSet(Statement.PS_CHECKPOINTING_NONE, Statement.PS_CHECKPOINTING_EPOCH, Statement.PS_CHECKPOINTING_EPOCH10), conditional);
 
 		// set output characteristics
 		output.setDataType(DataType.LIST);

@@ -1076,7 +1076,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 
 		// For paramserv function, determine the execution type according to the mode
 		if (_op == ParamBuiltinOp.PARAMSERV) {
-			String mode = ((LiteralOp) getParameterHop(ParamservBuiltinCPInstruction.FunctionArguments.mode.name())).getStringValue();
+			String mode = ((LiteralOp) getParameterHop("mode")).getStringValue();
 			if ("REMOTE_SPARK".equals(mode) && REMOTE == ExecType.SPARK) {
 				_etype = ExecType.SPARK;
 			} else {

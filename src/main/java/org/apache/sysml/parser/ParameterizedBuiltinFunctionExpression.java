@@ -271,7 +271,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		case PARAMSERV:
 			validateParamserv(output, conditional);
-		
+			break;
+
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
 			if( getOpCode()==ParameterizedBuiltinFunctionOp.TRANSFORMENCODE )

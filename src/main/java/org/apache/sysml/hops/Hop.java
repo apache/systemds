@@ -1088,7 +1088,7 @@ public abstract class Hop implements ParseInfo
 	
 	// Operations that require a variable number of operands
 	public enum OpOpN {
-		PRINTF, PARAMSERV, CBIND, RBIND, EVAL, LIST,
+		PRINTF, CBIND, RBIND, EVAL, LIST
 	}
 	
 	public enum AggOp {
@@ -1428,6 +1428,7 @@ public abstract class Hop implements ParseInfo
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TRANSFORMMETA, ParameterizedBuiltin.OperationTypes.TRANSFORMMETA);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.TOSTRING, ParameterizedBuiltin.OperationTypes.TOSTRING);
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.LIST, ParameterizedBuiltin.OperationTypes.LIST);
+		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.PARAMSERV, ParameterizedBuiltin.OperationTypes.PARAMSERV);
 	}
 
 	protected static final HashMap<Hop.OpOp2, String> HopsOpOp2String;

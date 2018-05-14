@@ -42,6 +42,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
+import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -193,6 +194,7 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 			case TRANSFORMCOLMAP:
 			case TRANSFORMMETA:
 			case TOSTRING:
+			case PARAMSERV:
 			case LIST: {
 				ExecType et = optFindExecType();
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops,
@@ -1066,12 +1068,22 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 		//force CP for in-memory only transform builtins
 		if( (_op == ParamBuiltinOp.TRANSFORMAPPLY && REMOTE==ExecType.MR)
 			|| _op == ParamBuiltinOp.TRANSFORMDECODE && REMOTE==ExecType.MR
-			|| _op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA 
+			|| _op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
 			|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
 			|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF) {
 			_etype = ExecType.CP;
 		}
-		
+
+		// For paramserv function, determine the execution type according to the mode
+		if (_op == ParamBuiltinOp.PARAMSERV) {
+			String mode = ((LiteralOp) getParameterHop(ParamservBuiltinCPInstruction.FunctionArguments.mode.name())).getStringValue();
+			if ("REMOTE_SPARK".equals(mode) && REMOTE == ExecType.SPARK) {
+				_etype = ExecType.SPARK;
+			} else {
+				_etype = ExecType.CP;
+			}
+		}
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

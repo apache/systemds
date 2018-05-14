@@ -63,6 +63,7 @@ import org.apache.sysml.runtime.instructions.spark.MatrixReshapeSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PMapmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.ParamservBuiltinSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysml.runtime.instructions.spark.PmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.QuantilePickSPInstruction;
@@ -247,6 +248,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sigmoid", SPType.Unary);
 		
 		// Parameterized Builtin Functions
+		String2SPInstructionType.put( "paramserv", 		SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty",        SPType.ParameterizedBuiltin);

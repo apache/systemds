@@ -323,7 +323,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Should provide more arguments for function " + fname, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet("", "features", "labels", "val_features", "val_labels", "upd", "agg", "mode", "freq", "epochs", "batchsize", "k", "scheme", "hyperparam", "checkpointing");
+		Set<String> valid = UtilFunctions.asSet("", "features", "labels", "val_features", "val_labels", "upd", "agg", "mode", "utype", "freq", "epochs", "batchsize", "k", "scheme", "hyperparam", "checkpointing");
 		Set<String> params = new HashSet<>(getVarParams().keySet());
 		params.removeIf(Objects::isNull);
 		checkInvalidParameters(getOpCode(), params, valid);
@@ -336,7 +336,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataType(fname, "val_labels", DataType.MATRIX, conditional);
 		checkDataValueType(false, fname, "upd", DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, "agg", DataType.SCALAR, ValueType.STRING, conditional);
-		checkStringParam(false, fname, "mode", UtilFunctions.asSet("BSP", "ASP", "SSP"), conditional);
+		checkStringParam(false, fname, "mode", UtilFunctions.asSet("LOCAL", "REMOTE_SPARK"), conditional);
+		checkStringParam(false, fname, "utype", UtilFunctions.asSet("BSP", "ASP", "SSP"), conditional);
 		checkStringParam(false, fname, "freq", UtilFunctions.asSet("BATCH", "EPOCH"), conditional);
 		checkDataValueType(false, fname, "epochs", DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(true, fname, "batchsize", DataType.SCALAR, ValueType.INT, conditional);

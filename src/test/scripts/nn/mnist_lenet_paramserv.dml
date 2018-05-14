@@ -107,7 +107,16 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4, lr, mu, decay, C, Hin, Win, Hf, Wf, stride, pad, lambda, F1, F2, N3)
 
   # Use paramserv function
-  model2 = paramserv(model, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", hyperparam=params, checkpointing="NONE")
+  model2 = paramserv(model, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", hyperparam=params, checkpointing="NONE")
+
+  W1 = as.matrix(model2[1])
+  b1 = as.matrix(model2[2])
+  W2 = as.matrix(model2[3])
+  b2 = as.matrix(model2[4])
+  W3 = as.matrix(model2[5])
+  b3 = as.matrix(model2[6])
+  W4 = as.matrix(model2[7])
+  b4 = as.matrix(model2[8])
 }
 
 gradients = function(matrix[double] X_batch,

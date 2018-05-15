@@ -312,7 +312,7 @@ public class LibMatrixDNN {
 		}
 		else {
 			// Handles both dense and sparse inputs and copies it to dense output
-			outputBlock.copy(input); 
+			outputBlock.copy(input, false); 
 			int index = 0;
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array

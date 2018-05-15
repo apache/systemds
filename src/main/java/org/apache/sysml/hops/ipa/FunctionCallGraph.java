@@ -35,7 +35,9 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
+import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -43,6 +45,8 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
+import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
@@ -64,8 +68,9 @@ public class FunctionCallGraph
 	
 	//subset of direct or indirect recursive functions
 	private final HashSet<String> _fRecursive;
-	
-	private final boolean _containsEval;
+
+	// a boolean value to indicate if exists the second order function (e.g. eval, paramserv)
+	private final boolean _containsSecondOrder;
 	
 	/**
 	 * Constructs the function call graph for all functions
@@ -78,7 +83,7 @@ public class FunctionCallGraph
 		_fCalls = new HashMap<>();
 		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
-		_containsEval = constructFunctionCallGraph(prog);
+		_containsSecondOrder = constructFunctionCallGraph(prog);
 	}
 	
 	/**
@@ -92,7 +97,7 @@ public class FunctionCallGraph
 		_fCalls = new HashMap<>();
 		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
-		_containsEval = constructFunctionCallGraph(sb);
+		_containsSecondOrder = constructFunctionCallGraph(sb);
 	}
 
 	/**
@@ -240,13 +245,13 @@ public class FunctionCallGraph
 	
 	/**
 	 * Indicates if the function call graph, i.e., functions that are transitively
-	 * reachable from the main program, contains a second-order eval call, which
-	 * prohibits the removal of unused functions.
-	 * 
-	 * @return true if the function call graph contains an eval call.
+	 * reachable from the main program, contains a second-order builtin function call (e.g., eval, paramserv)
+	 * , which prohibits the removal of unused functions.
+	 *
+	 * @return true if the function call graph contains a second-order builtin function call.
 	 */
-	public boolean containsEvalCall() {
-		return _containsEval;
+	public boolean containsSecondOrderCall() {
+		return _containsSecondOrder;
 	}
 	
 	private boolean constructFunctionCallGraph(DMLProgram prog) {
@@ -307,6 +312,16 @@ public class FunctionCallGraph
 				ret |= rConstructFunctionCallGraph(fkey, current, fstack, lfset);
 		} 
 		else {
+			// check if it contains the paramserv builtin function
+			for (Statement s : sb.getStatements()) {
+				if (s instanceof AssignmentStatement
+						&& ((AssignmentStatement) s).getSource() instanceof ParameterizedBuiltinFunctionExpression
+						&& ((ParameterizedBuiltinFunctionExpression) ((AssignmentStatement) s).getSource()).getOpCode()
+						== Expression.ParameterizedBuiltinFunctionOp.PARAMSERV) {
+					return true;
+				}
+			}
+
 			// For generic StatementBlock
 			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 

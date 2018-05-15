@@ -239,17 +239,18 @@ public class SortMR
 		    job.setReducerClass(ValueSortReducer.class);	
 		    job.setOutputKeyClass(outputInfo.outputKeyClass); //double
 		    job.setOutputValueClass(outputInfo.outputValueClass); //int
-	    }
-	    job.setPartitionerClass(TotalOrderPartitioner.class);
-	    
-	    
-	    //setup distributed cache
-	    DistributedCache.addCacheFile(partitionUri, job);
-	    DistributedCache.createSymlink(job);
-	    
-	    //setup replication factor
-	    job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
-	    
+		}
+		job.setPartitionerClass(TotalOrderPartitioner.class);
+
+		//setup distributed cache
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			DistributedCache.addCacheFile(partitionUri, job);
+			DistributedCache.createSymlink(job);
+		}
+
+		//setup replication factor
+		job.setInt(MRConfigurationNames.DFS_REPLICATION, replication);
+
 		//set up custom map/reduce configurations 
 		DMLConfig config = ConfigurationManager.getDMLConfig();
 		MRJobConfiguration.setupCustomMRConfigurations(job, config);

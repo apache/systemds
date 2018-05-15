@@ -914,11 +914,13 @@ public class MRJobConfiguration
 		job.set(DISTCACHE_INPUT_PATHS, pathsString);
 		Path p = null;
 		
-		for(String spath : paths) {
-			p = new Path(spath);
-			
-			DistributedCache.addCacheFile(p.toUri(), job);
-			DistributedCache.createSymlink(job);
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			for(String spath : paths) {
+				p = new Path(spath);
+				
+				DistributedCache.addCacheFile(p.toUri(), job);
+				DistributedCache.createSymlink(job);
+			}
 		}
 	}
 	
@@ -1132,16 +1134,13 @@ public class MRJobConfiguration
 				outputInfos, inBlockRepresentation, false);
 	}
 
-	public static String setUpSortPartitionFilename( JobConf job ) 
-	{
+	public static String setUpSortPartitionFilename( JobConf job ) {
 		String pfname = constructPartitionFilename();
 		job.set( SORT_PARTITION_FILENAME, pfname );
-		
 		return pfname;
 	}
 
-	public static String getSortPartitionFilename( JobConf job )
-	{
+	public static String getSortPartitionFilename( JobConf job ) {
 		return job.get( SORT_PARTITION_FILENAME );
 	}
 	

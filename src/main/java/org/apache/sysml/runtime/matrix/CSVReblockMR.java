@@ -42,6 +42,7 @@ import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -442,8 +443,10 @@ public class CSVReblockMR
 		//set unique working dir
 		MRJobConfiguration.setUniqueWorkingDir(job);
 		Path cachefile=new Path(counterFile, "part-00000");
-		DistributedCache.addCacheFile(cachefile.toUri(), job);
-		DistributedCache.createSymlink(job);
+		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
+			DistributedCache.addCacheFile(cachefile.toUri(), job);
+			DistributedCache.createSymlink(job);
+		}
 		job.set(ROWID_FILE_NAME, cachefile.toString());
 		
 		RunningJob runjob=JobClient.runJob(job);

@@ -52,19 +52,17 @@ If you already have an Apache Spark installation, you can skip this step.
 <div data-lang="OSX" markdown="1">
 ```bash
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew tap caskroom/cask
-brew install Caskroom/cask/java
-brew tap homebrew/versions
-brew install apache-spark16
+brew tap caskroom/versions
+brew cask install java8
+brew install apache-spark
 ```
 </div>
 <div data-lang="Linux" markdown="1">
 ```bash
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install)"
-brew tap caskroom/cask
-brew install Caskroom/cask/java
-brew tap homebrew/versions
-brew install apache-spark16
+brew tap caskroom/versions
+brew cask install java8
+brew install apache-spark
 ```
 </div>
 </div>

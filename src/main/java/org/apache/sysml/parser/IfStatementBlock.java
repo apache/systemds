@@ -287,7 +287,6 @@ public class IfStatementBlock extends StatementBlock
 	{
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		_read = new VariableSet();
@@ -420,7 +419,6 @@ public class IfStatementBlock extends StatementBlock
 	{
 		IfStatement ifstmt = (IfStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 			throw new LanguageException(ifstmt.printErrorLocation() + "IfStatementBlock should have only 1 statement (if statement)");
 		}
 		

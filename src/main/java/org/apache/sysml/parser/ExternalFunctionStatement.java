@@ -149,13 +149,11 @@ public class ExternalFunctionStatement extends FunctionStatement
 
 	@Override
 	public void initializeforwardLV(VariableSet activeIn) {
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 	}
 	
 	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) {
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for ExternalFunctionStatement");
 		
 	}

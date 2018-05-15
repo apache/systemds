@@ -30,7 +30,6 @@ public class WhileStatement extends Statement
 	
 	@Override
 	public Statement rewriteStatement(String prefix) {
-		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for WhileStatement");
 	}
 	

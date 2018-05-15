@@ -1149,8 +1149,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		else  //error and exception if unconditional
 		{
 			String fullMsg = this.printErrorLocation() + msg;
-
-			//LOG.error( fullMsg ); //no redundant error
 			if( errorCode != null )
 				throw new LanguageException( fullMsg, errorCode );
 			else

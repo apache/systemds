@@ -31,7 +31,6 @@ public class IfStatement extends Statement
 	
 	@Override
 	public Statement rewriteStatement(String prefix) {
-		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for IfStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for IfStatement");
 	}
 	

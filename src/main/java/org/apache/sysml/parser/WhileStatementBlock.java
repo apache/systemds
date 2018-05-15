@@ -166,7 +166,6 @@ public class WhileStatementBlock extends StatementBlock
 		
 		WhileStatement wstmt = (WhileStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "WhileStatementBlock should have only 1 statement (while statement)");
 		}
 		

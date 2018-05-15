@@ -32,7 +32,6 @@ public class FunctionStatement extends Statement
 	
 	@Override
 	public Statement rewriteStatement(String prefix) {
-		LOG.error(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should not call rewriteStatement for FunctionStatement");
 	}
 	
@@ -114,13 +113,11 @@ public class FunctionStatement extends Statement
 
 	@Override
 	public void initializeforwardLV(VariableSet activeIn) {
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 	}
 	
 	@Override
 	public VariableSet initializebackwardLV(VariableSet lo) {
-		LOG.error(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 		throw new LanguageException(this.printErrorLocation() + "should never call initializeforwardLV for FunctionStatement");
 	}
 	

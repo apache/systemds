@@ -64,7 +64,6 @@ public class IterablePredicate extends Expression
 	public Expression rewriteExpression(String prefix) {
 		//DataIdentifier newIterVar = (DataIdentifier)_iterVar.rewriteExpression(prefix);
 		//return new IterablePredicate(newIterVar, _from, _to, _increment);
-		LOG.error(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
 		throw new LanguageException(this.printErrorLocation() + "rewriteExpression not supported for IterablePredicate");
 	}
 	
@@ -193,7 +192,6 @@ public class IterablePredicate extends Expression
 			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BOOLEAN || 
 			ident.getValueType() == ValueType.STRING || ident.getValueType() == ValueType.OBJECT)) )
 		{
-			LOG.error(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
 			throw new LanguageException(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
 		}
 	}

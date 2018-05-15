@@ -19,17 +19,10 @@
 #
 #-------------------------------------------------------------
 
-X = read("./tmp/X", rows=-1, cols=-1);
-W = read("./tmp/W", rows=-1, cols=-1);
+X = read($1);
+W = read($2);
 
-Nt = nrow(X);
-num_classes = ncol(W)
-n = ncol(X);
-
-b = W[n+1,]
-ones = matrix(1, rows=Nt, cols=1)
-scores = X %*% W[1:n,] + ones %*% b;
-
+scores = X %*% W[1:ncol(X),] + W[ncol(X)+1,];
 predicted_y = rowIndexMax(scores);
-write(predicted_y, "./tmp", format="text");
-  
+
+write(predicted_y, $3);

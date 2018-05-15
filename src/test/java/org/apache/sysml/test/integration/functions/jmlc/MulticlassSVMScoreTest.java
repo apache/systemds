@@ -53,10 +53,6 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	
-	//This testcase recently caused intermittent test failures on jenkins that are not 
-	//reproducible in local environments; hence we perform additional sanity checks here.
-	private final static boolean CHECK_IN_OUT = true;
-	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "predicted_y" }) ); 
@@ -89,57 +85,42 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 	
 		//generate inputs
-		ArrayList<double[][]> Xset = generateInputs(nRuns, rows, cols, sparse?sparsity2:sparsity1);
-		if( CHECK_IN_OUT )
-			checkSelfEquivalence(Xset, rows, cols);
+		ArrayList<double[][]> Xset = generateInputs(nRuns, rows, cols, sparse?sparsity2:sparsity1, 7);
 		
 		//run DML via JMLC
 		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( Xset, flags );
-		if( CHECK_IN_OUT )
-			checkSelfEquivalence(Yset, rows, 1);
 		
-		//run R and compare results to DML result
+		//write out R input and model once
+		MatrixBlock mb = DataConverter.readMatrixFromHDFS(SCRIPT_DIR + TEST_DIR + MODEL_FILE,
+			InputInfo.TextCellInputInfo, rows, cols, 1000, 1000);
+		writeInputMatrix("X", Xset.get(0), true);
+		writeInputMatrix("W", DataConverter.convertToDoubleMatrix(mb), true);
+		
+		//run R test once
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = getRCmd(inputDir(), expectedDir());
-
-		//write model data once
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(SCRIPT_DIR + TEST_DIR + MODEL_FILE,
-				InputInfo.TextCellInputInfo, rows, cols, 1000, 1000);
-		double[][] W = DataConverter.convertToDoubleMatrix( mb );
-		writeInputMatrix("W", W, true);
+		runRScript(true);
 		
-		//for each input data set
-		int lnRuns = CHECK_IN_OUT ? 1 : nRuns;
-		for( int i=0; i<lnRuns; i++ ) {
-			//write input data
-			writeInputMatrix("X", Xset.get(i), true);
-			
-			//run the R script
-			runRScript(true); 
-			
-			//compare results
-			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("predicted_y");
-			double[][] expected = TestUtils.convertHashMapToDoubleArray(rfile, rows, 1);
-			
+		//read and convert R output
+		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("predicted_y");
+		double[][] expected = TestUtils.convertHashMapToDoubleArray(rfile, rows, 1);
+		
+		//for each input data set compare results
+		for( int i=0; i<nRuns; i++ )
 			TestUtils.compareMatrices(expected, Yset.get(i), rows, 1, eps);
-		}
 	}
 
 	private static ArrayList<double[][]> execDMLScriptviaJMLC(ArrayList<double[][]> X, boolean flags) 
 		throws IOException
 	{
 		Timing time = new Timing(true);
-		
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();
 		
-		//establish connection to SystemML
-		Connection conn = !flags ? new Connection():
+		try( Connection conn = !flags ? new Connection():
 			new Connection(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS,
-				ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
-				ConfigType.ALLOW_DYN_RECOMPILATION);
-		
-		try
+			ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
+			ConfigType.ALLOW_DYN_RECOMPILATION) )
 		{
 			// For now, JMLC pipeline only allows dml
 			boolean parsePyDML = false;
@@ -168,12 +149,7 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 			}
 		}
 		catch(Exception ex) {
-			ex.printStackTrace();
 			throw new IOException(ex);
-		}
-		finally {
-			if( conn != null )
-				conn.close();
 		}
 		
 		System.out.println("JMLC scoring w/ "+nRuns+" runs in "+time.stop()+"ms.");
@@ -181,18 +157,10 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 		return ret;
 	}
 
-	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity ) {
+	private ArrayList<double[][]> generateInputs( int num, int rows, int cols, double sparsity, int seed ) {
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();
 		for( int i=0; i<num; i++ )
-			ret.add(getRandomMatrix(rows, cols, -1, 1, sparsity, 7));
+			ret.add(getRandomMatrix(rows, cols, -1, 1, sparsity, seed));
 		return ret;
-	}
-	
-	private void checkSelfEquivalence(ArrayList<double[][]> data, int rows, int cols) {
-		if( data == null || data.size() < 2 )
-			return;
-		double[][] data0 = data.get(0);
-		for(int i=1; i<data.size(); i++)
-			TestUtils.compareMatrices(data0, data.get(i), rows, cols, eps);
 	}
 }

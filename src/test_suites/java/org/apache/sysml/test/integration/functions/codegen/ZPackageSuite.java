@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
 	MultiAggTmplTest.class,
 	OuterProdTmplTest.class,
 	RowAggTmplTest.class,
+	RowConv2DOperationsTest.class,
 	RowVectorComparisonTest.class,
 	SparseSideInputTest.class,
 	SumProductChainTest.class,

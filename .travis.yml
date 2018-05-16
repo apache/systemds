@@ -43,9 +43,10 @@ before_script:
   - chmod -R 755 *
 
 script:
-  - mvn -Dit.test=**/integration/functions/sparse/*Suite.java verify
-  - mvn -Dit.test=**/integration/mlcontext/*Suite.java verify
-  - mvn -Dit.test=**/integration/scripts/nn/*Suite.java verify
+#  - mvn -Dit.test=**/integration/functions/sparse/*Suite.java verify
+#  - mvn -Dit.test=**/integration/mlcontext/*Suite.java verify
+#  - mvn -Dit.test=**/integration/scripts/nn/*Suite.java verify
+  - mvn clean verify
 
 after_success:
   -  mvn clean test jacoco:report coveralls:report

@@ -47,5 +47,5 @@ script:
   - mvn -Dit.test=**/integration/mlcontext/*Suite.java verify
   - mvn -Dit.test=**/integration/scripts/nn/*Suite.java verify
 
-# after_success:
-#   -  mvn clean test jacoco:report coveralls:report
+after_success:
+  -  mvn clean test jacoco:report coveralls:report

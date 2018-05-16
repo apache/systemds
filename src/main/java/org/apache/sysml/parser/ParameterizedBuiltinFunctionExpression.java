@@ -329,7 +329,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkInvalidParameters(getOpCode(), params, valid);
 
 		// check existence and correctness of parameters
-		checkDataType(fname, null, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
+		checkNonParameterizedDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
 		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, conditional);
@@ -359,16 +359,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			if (optional) {
 				return;
 			}
-			raiseValidateError(String.format("Function $s should provide parameter '$s'", fname, pname), conditional);
+			raiseValidateError(String.format("Function %s should provide parameter '%s'", fname, pname), conditional);
 		}
 		if (!(param.getOutput().getDataType().isScalar() && param.getOutput().getValueType().equals(ValueType.STRING))) {
 			raiseValidateError(
-					String.format("Function $s should provide a string value for $s parameter.", fname, pname),
+					String.format("Function %s should provide a string value for %s parameter.", fname, pname),
 					conditional);
 		}
 		StringIdentifier si = (StringIdentifier) param;
 		if (!validOptions.contains(si.getValue())) {
-			raiseValidateError(String.format("Function $s does not support value '$s' as the '$s' parameter.", fname,
+			raiseValidateError(String.format("Function %s does not support value '%s' as the '%s' parameter.", fname,
 					si.getValue(), pname), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 	}
@@ -847,12 +847,31 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setBlockDimensions(-1, -1);
 	}
 
+	/**
+	 * Check the data type for a non parameterized data type
+	 * @param fname	name of function
+	 * @param pname name of variable for log
+	 * @param dt data type
+	 * @param conditional
+	 */
+	private void checkNonParameterizedDataType(String fname, String pname, DataType dt, boolean conditional) {
+		Expression data = getVarParam(null);
+		if (data == null)
+			raiseValidateError("Parameter '" + pname + "' missing. Please specify the input.", conditional,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+		else if (data.getOutput().getDataType() != dt)
+			raiseValidateError(
+					"Input to " + fname + "::" + pname + " must be of type '" + dt.toString() + "'. It should not be of type '"
+							+ data.getOutput().getDataType() + "'.", conditional,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+	}
+
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {
 		Expression data = getVarParam(pname);
 		if( data==null )
 			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		else if( data.getOutput().getDataType() != dt )
-			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It is of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);		
+			raiseValidateError("Input to "+fname+"::"+pname+" must be of type '"+dt.toString()+"'. It should not be of type '"+data.getOutput().getDataType()+"'.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
 	private void checkDataValueType(boolean optional, String fname, String pname, DataType dt, ValueType vt,
@@ -867,7 +886,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		} else if (data.getOutput().getDataType() != dt || data.getOutput().getValueType() != vt)
 			raiseValidateError(
 					"Input to " + fname + "::" + pname + " must be of type '" + dt.toString() + "', '" + vt.toString()
-							+ "'. " + "It is of type '" + data.getOutput().getDataType().toString() + "', '" + data
+							+ "'. " + "It should not be of type '" + data.getOutput().getDataType().toString() + "', '" + data
 							.getOutput().getValueType().toString() + "'.", conditional,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 	}

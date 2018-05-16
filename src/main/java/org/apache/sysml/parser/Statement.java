@@ -63,6 +63,7 @@ public abstract class Statement implements ParseInfo
 	public static final String GAGG_NUM_GROUPS  = "ngroups";
 
 	// String constants related to parameter server builtin function
+	public static final String PS_MODEL = "model";
 	public static final String PS_FEATURES = "features";
 	public static final String PS_LABELS = "labels";
 	public static final String PS_VAL_FEATURES = "val_features";

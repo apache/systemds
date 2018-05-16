@@ -79,7 +79,6 @@ public class DMLProgram
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null){
-			LOG.error("ERROR: namespace " + namespaceKey + " is undefined");
 			throw new LanguageException("ERROR: namespace " + namespaceKey + " is undefined");
 		}
 		// for the namespace DMLProgram, get the functions in its current namespace

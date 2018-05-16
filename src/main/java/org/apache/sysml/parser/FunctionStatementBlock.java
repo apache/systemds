@@ -45,7 +45,6 @@ public class FunctionStatementBlock extends StatementBlock
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 	{
 		if (_statements.size() > 1){
-			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (FunctionStatement)");
 		}
 		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
@@ -110,10 +109,6 @@ public class FunctionStatementBlock extends StatementBlock
 							}
 							else {
 								// THROW EXCEPTION -- CANNOT CONVERT
-								LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() 
-										+ ", return variable " + curr.getName() + " value type of " 
-										+ curr.getValueType() + " does not match value type in function signature of " 
-										+ returnValue.getValueType() + " and cannot safely cast value");
 								throw new LanguageException(curr.printErrorLocation() + "for function " 
 										+ fstmt.getName() + ", return variable " + curr.getName() 
 										+ " value type of " + curr.getValueType() 
@@ -123,11 +118,6 @@ public class FunctionStatementBlock extends StatementBlock
 						}
 						if (returnValue.getValueType() == ValueType.INT){
 							// THROW EXCEPTION -- CANNOT CONVERT
-							LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() 
-									+ ", return variable " + curr.getName() + " value type of " 
-									+ curr.getValueType() + " does not match value type in function signature of " 
-									+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
-									+ " as " + returnValue.getValueType());
 							throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() 
 									+ ", return variable " + curr.getName() + " value type of " + curr.getValueType() 
 									+ " does not match value type in function signature of " 
@@ -137,7 +127,6 @@ public class FunctionStatementBlock extends StatementBlock
 						} 
 					}	
 					else {
-						LOG.error(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast double as int");
 						throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
 					}
 				}
@@ -193,7 +182,6 @@ public class FunctionStatementBlock extends StatementBlock
 	public VariableSet initializeforwardLV(VariableSet activeInPassed) {
 		FunctionStatement fstmt = (FunctionStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 			throw new LanguageException(this.printBlockErrorLocation() + "FunctionStatementBlock should have only 1 statement (while statement)");
 		}
 		_read = new VariableSet();
@@ -255,8 +243,7 @@ public class FunctionStatementBlock extends StatementBlock
 	
 	@Override
 	public VariableSet analyze(VariableSet loPassed) {
-		LOG.error(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
-		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");	
+		throw new LanguageException(this.printBlockErrorLocation() + "Both liveIn and liveOut variables need to be specified for liveness analysis for FunctionStatementBlock");
 	}
 	
 	public VariableSet analyze(VariableSet liPassed, VariableSet loPassed) {

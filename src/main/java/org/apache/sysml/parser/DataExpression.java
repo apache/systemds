@@ -1868,7 +1868,6 @@ public class DataExpression extends DataIdentifier
 			}
 			
 		} catch (IOException e){
-			//LOG.error(this.printErrorLocation() + "Error reading MatrixMarket file: " + filename );
 			//throw new LanguageException(this.printErrorLocation() + "Error reading MatrixMarket file: " + filename );
 			throw new LanguageException(e);
 		}

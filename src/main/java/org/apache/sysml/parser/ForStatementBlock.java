@@ -184,7 +184,6 @@ public class ForStatementBlock extends StatementBlock
 		
 		ForStatement fstmt = (ForStatement)_statements.get(0);
 		if (_statements.size() > 1){
-			LOG.error(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 			throw new LanguageException(_statements.get(0).printErrorLocation() + "ForStatementBlock should have only 1 statement (for statement)");
 		}
 		

@@ -428,6 +428,11 @@
 					<forkCount>1C</forkCount>
 					<reuseForks>false</reuseForks>
 
+					<!-- Limit Spark log output-->
+					<systemPropertyVariables>
+					  <log4j.configuration>file:${basedir}/conf/log4j-silent.properties</log4j.configuration>
+					</systemPropertyVariables>
+					
 					<!-- Last argument prevents Java from popping up lots of windows on 
 						MacOS -->
 					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m

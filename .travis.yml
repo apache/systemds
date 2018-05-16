@@ -32,7 +32,7 @@ addons:
 cache:
   apt: true
   directories:
-#    - ${HOME}/.m2
+    - ${HOME}/.m2
     - ${HOME}/R
     - /usr/local/lib/R/site-library
 

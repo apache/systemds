@@ -312,16 +312,6 @@ public class FunctionCallGraph
 				ret |= rConstructFunctionCallGraph(fkey, current, fstack, lfset);
 		} 
 		else {
-			// check if it contains the paramserv builtin function
-			for (Statement s : sb.getStatements()) {
-				if (s instanceof AssignmentStatement
-						&& ((AssignmentStatement) s).getSource() instanceof ParameterizedBuiltinFunctionExpression
-						&& ((ParameterizedBuiltinFunctionExpression) ((AssignmentStatement) s).getSource()).getOpCode()
-						== Expression.ParameterizedBuiltinFunctionOp.PARAMSERV) {
-					return true;
-				}
-			}
-
 			// For generic StatementBlock
 			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
@@ -379,9 +369,9 @@ public class FunctionCallGraph
 						&& ((ExternalFunctionStatement)fsb.getStatement(0)).isSecondOrder() ) {
 						ret = true;
 					}
-				}
-				else if( HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
-					&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {
+				} else if (HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
+						&& (HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL)
+						|| HopRewriteUtils.isParameterBuiltinOp(h.getInput().get(0), Hop.ParamBuiltinOp.PARAMSERV))) {
 					//NOTE: after RewriteSplitDagDataDependentOperators, eval operators
 					//will always appear as childs to root nodes which allows for an
 					//efficient existence check without DAG traversal.

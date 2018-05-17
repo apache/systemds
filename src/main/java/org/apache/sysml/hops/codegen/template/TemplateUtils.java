@@ -21,8 +21,12 @@ package org.apache.sysml.hops.codegen.template;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -34,6 +38,7 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
@@ -353,12 +358,23 @@ public class TemplateUtils
 		return ret;
 	}
 	
-	public static int determineMinVectorIntermediates(CNode node) {
+	public static int determineMinVectorIntermediates(CNode node, CNode main) {
 		node.resetVisitStatus();
-		boolean unaryPipe = isUnaryOperatorPipeline(node);
-		node.resetVisitStatus();
-		int count = unaryPipe ? getMaxVectorIntermediates(node) :
-			countVectorIntermediates(node);
+		int count = -1;
+		switch( SpoofCompiler.REG_ALLOC_POLICY ) {
+			case HEURISTIC:
+				boolean unaryPipe = isUnaryOperatorPipeline(node);
+				node.resetVisitStatus();
+				count = unaryPipe ? getMaxVectorIntermediates(node) :
+					countVectorIntermediates(node);
+				break;
+			case EXACT:
+				Map<Long, Set<Long>> parents = getAllParents(node);
+				node.resetVisitStatus();
+				count = getMaxLiveVectorIntermediates(
+					node, main, parents, new HashSet<>());
+				break;
+		}
 		node.resetVisitStatus();
 		return count;
 	}
@@ -410,6 +426,46 @@ public class TemplateUtils
 		int cntTn = (node instanceof CNodeTernary
 				&& ((CNodeTernary)node).getType().isVectorPrimitive()) ? 1 : 0;
 		return ret + cntBin + cntUn + cntTn;
+	}
+	
+	
+	
+	public static int getMaxLiveVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Set<Pair<Long, Long>> stack) {
+		if( node.isVisited() )
+			return -1;
+		//recursively process inputs
+		int max = -1;
+		for( CNode c : node.getInput() )
+			max = Math.max(max, getMaxLiveVectorIntermediates(c, main, parents, stack));
+		// add current node consumers
+		if( !node.getDataType().isScalar() && parents.containsKey(node.getID())
+			&& node != main ) {
+			for( Long pID : parents.get(node.getID()) )
+				stack.add(Pair.of(pID, node.getID()));
+		}
+		//get current maximum (distinct dep targets)
+		max = Math.max(max, (int)stack.stream()
+			.map(p -> p.getValue()).distinct().count());
+		//remove input dependencies
+		for( CNode c : node.getInput() )
+			stack.remove(Pair.of(node.getID(), c.getID()));
+		node.setVisited();
+		return max;
+	}
+	
+	public static Map<Long, Set<Long>> getAllParents(CNode node) {
+		Map<Long, Set<Long>> ret = new HashMap<>();
+		getAllParents(node, ret);
+		return ret;
+	}
+	
+	public static void getAllParents(CNode node, Map<Long, Set<Long>> parents) {
+		for( CNode c : node.getInput() ) {
+			if( !parents.containsKey(c) )
+				parents.put(c.getID(), new HashSet<>());
+			parents.get(c.getID()).add(node.getID());
+			getAllParents(c, parents);
+		}
 	}
 
 	public static boolean isType(TemplateType type, TemplateType... validTypes) {

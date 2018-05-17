@@ -235,7 +235,8 @@ public class TemplateRow extends TemplateBase
 		if( tpl.getRowType().isConstDim2(n2) )
 			tpl.setConstDim2(n2);
 		tpl.setNumVectorIntermediates(TemplateUtils
-			.determineMinVectorIntermediates(output));
+			.determineMinVectorIntermediates(output,
+			inputs.isEmpty() ? null : inputs.get(0)));
 		tpl.getOutput().resetVisitStatus();
 		tpl.rReorderCommutativeBinaryOps(tpl.getOutput(), sinHops[0].getHopID());
 		tpl.setBeginLine(hop.getBeginLine());

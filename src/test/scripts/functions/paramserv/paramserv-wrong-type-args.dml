@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-model = matrix(3, rows=1, cols=2)
+modelList = matrix(3, rows=1, cols=2)
 X = matrix(1, rows=2, cols=3)
 Y = matrix(2, rows=2, cols=3)
 X_val = matrix(3, rows=2, cols=3)
@@ -37,4 +37,4 @@ e2 = "element2"
 params = list(e2)
 
 # Use paramserv function
-model2 = paramserv(model, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", hyperparams=params, checkpointing="NONE")
+modelList2 = paramserv(model=modelList, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")

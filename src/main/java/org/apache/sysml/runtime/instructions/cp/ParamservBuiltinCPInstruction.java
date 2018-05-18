@@ -21,17 +21,21 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.LinkedHashMap;
 
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
-	protected ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
+	protected ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
+			String opcode, String istr) {
 		super(op, paramsMap, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		// bobo's TODO runtime development
+		ListObject model = (ListObject) ec.getVariable(getParam(Statement.PS_MODEL));
+		ListObject outList = model.slice(0, model.getLength() - 1);
+		ec.setVariable(output.getName(), outList);
 	}
 }

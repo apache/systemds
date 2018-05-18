@@ -172,8 +172,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
 						false);
-			} else if ("paramserv".equals(opcode)) {
-				return new ParamservBuiltinSPInstruction(null, paramsMap, out, opcode, str, false);
 			} else {
 				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 			}

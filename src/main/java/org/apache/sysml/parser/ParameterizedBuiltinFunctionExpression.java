@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.Objects;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -320,36 +320,41 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		String fname = getOpCode().name();
 		// validate the first five arguments
 		if (getVarParams().size() < 1) {
-			raiseValidateError("Should provide more arguments for function " + fname, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError("Should provide more arguments for function " + fname, false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		//check for invalid parameters
-		Set<String> valid = UtilFunctions.asSet(Statement.PS_FEATURES, Statement.PS_LABELS, Statement.PS_VAL_FEATURES, Statement.PS_VAL_LABELS, Statement.PS_UPDATE_FUN, Statement.PS_AGGREGATION_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS, Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING);
-		Set<String> params = new HashSet<>(getVarParams().keySet());
-		params.removeIf(Objects::isNull);
-		checkInvalidParameters(getOpCode(), params, valid);
+		Set<String> valid = UtilFunctions.asSet(Statement.PS_MODEL, Statement.PS_FEATURES, Statement.PS_LABELS, Statement.PS_VAL_FEATURES, Statement.PS_VAL_LABELS, Statement.PS_UPDATE_FUN, Statement.PS_AGGREGATION_FUN, Statement.PS_MODE, Statement.PS_UPDATE_TYPE, Statement.PS_FREQUENCY, Statement.PS_EPOCHS, Statement.PS_BATCH_SIZE, Statement.PS_PARALLELISM, Statement.PS_SCHEME, Statement.PS_HYPER_PARAMS, Statement.PS_CHECKPOINTING);
+		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 
 		// check existence and correctness of parameters
-		checkNonParameterizedDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
+		checkDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
 		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_VAL_LABELS, DataType.MATRIX, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
-		checkStringParam(false, fname, Statement.PS_MODE, UtilFunctions.asSet(Statement.PS_MODE_LOCAL, Statement.PS_MODE_REMOTE_SPARK), conditional);
-		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, UtilFunctions.asSet(Statement.PS_UPDATE_TYPE_ASP, Statement.PS_UPDATE_TYPE_BSP, Statement.PS_UPDATE_TYPE_SSP), conditional);
-		checkStringParam(false, fname, Statement.PS_FREQUENCY, UtilFunctions.asSet(Statement.PS_FREQUENCY_BATCH, Statement.PS_FREQUENCY_EPOCH), conditional);
+		Set<String> modes = Arrays.stream(Statement.PSModeType.values()).map(Enum::name)
+				.collect(Collectors.toSet());
+		checkStringParam(false, fname, Statement.PS_MODE, modes, conditional);
+		Set<String> utypes = Arrays.stream(Statement.PSUpdateType.values()).map(Enum::name)
+				.collect(Collectors.toSet());
+		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, utypes, conditional);
+		Set<String> frequencies = Arrays.stream(Statement.PSFrequency.values()).map(Enum::name).collect(Collectors.toSet());
+		checkStringParam(false, fname, Statement.PS_FREQUENCY, frequencies, conditional);
 		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(false, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
-		checkStringParam(false, fname, Statement.PS_SCHEME, UtilFunctions.asSet(Statement.PS_SCHEME_DC, Statement.PS_SCHEME_DRR, Statement.PS_SCHEME_DR, Statement.PS_SCHEME_OR), conditional);
+		Set<String> schemes = Arrays.stream(Statement.PSScheme.values()).map(Enum::name).collect(Collectors.toSet());
+		checkStringParam(false, fname, Statement.PS_SCHEME, schemes, conditional);
 		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
-		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, UtilFunctions.asSet(Statement.PS_CHECKPOINTING_NONE, Statement.PS_CHECKPOINTING_EPOCH, Statement.PS_CHECKPOINTING_EPOCH10), conditional);
+		Set<String> checkpointings = Arrays.stream(Statement.PSCheckpointing.values()).map(Enum::name).collect(Collectors.toSet());
+		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, checkpointings, conditional);
 
 		// set output characteristics
 		output.setDataType(DataType.LIST);
 		output.setValueType(ValueType.UNKNOWN);
-		output.setDimensions(getVarParam(null).getOutput().getDim1(), 1);
+		output.setDimensions(getVarParam(Statement.PS_MODEL).getOutput().getDim1(), 1);
 		output.setBlockDimensions(-1, -1);
 	}
 
@@ -473,7 +478,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//check for invalid parameters
 		Set<String> valid = UtilFunctions.asSet("target", "diag", "values");
-		checkInvalidParameters(op, getVarParams().keySet(), valid);
+		checkInvalidParameters(op, getVarParams(), valid);
 		
 		//check existence and correctness of arguments
 		checkTargetParam(getVarParam("target"), conditional);
@@ -725,11 +730,16 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private void checkInvalidParameters(ParameterizedBuiltinFunctionOp op, Set<String> params, Set<String> valid) {
-		Set<String> invalid = params.stream().filter(k -> !valid.contains(k)).collect(Collectors.toSet());
-		if (!invalid.isEmpty())
-			raiseValidateError("Invalid parameters for " + op.name() + ": " + Arrays.toString(invalid.toArray(new String[0])),
-					false);
+	private void checkInvalidParameters(ParameterizedBuiltinFunctionOp op, HashMap<String, Expression> params,
+			Set<String> valid) {
+		Set<String> invalid = params.keySet().stream().filter(k -> !valid.contains(k)).collect(Collectors.toSet());
+		if (!invalid.isEmpty()) {
+			List<String> invalidMsg = invalid.stream().map(k -> {
+				String val = params.get(k).getText();
+				return k == null ? val : k + "=" + val;
+			}).collect(Collectors.toList());
+			raiseValidateError(String.format("Invalid parameters for %s: %s", op.name(), invalidMsg), false);
+		}
 	}
 
 	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) {
@@ -845,25 +855,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setValueType(ValueType.UNKNOWN);
 		output.setDimensions(varParams.size(), 1);
 		output.setBlockDimensions(-1, -1);
-	}
-
-	/**
-	 * Check the data type for a non parameterized data type
-	 * @param fname	name of function
-	 * @param pname name of variable for log
-	 * @param dt data type
-	 * @param conditional
-	 */
-	private void checkNonParameterizedDataType(String fname, String pname, DataType dt, boolean conditional) {
-		Expression data = getVarParam(null);
-		if (data == null)
-			raiseValidateError("Parameter '" + pname + "' missing. Please specify the input.", conditional,
-					LanguageErrorCodes.INVALID_PARAMETERS);
-		else if (data.getOutput().getDataType() != dt)
-			raiseValidateError(
-					"Input to " + fname + "::" + pname + " must be of type '" + dt.toString() + "'. It should not be of type '"
-							+ data.getOutput().getDataType() + "'.", conditional,
-					LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 
 	private void checkDataType( String fname, String pname, DataType dt, boolean conditional ) {

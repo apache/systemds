@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 e1 = "element1"
-model = list(e1)
+modelList = list(e1)
 X = matrix(1, rows=2, cols=3)
 Y = matrix(2, rows=2, cols=3)
 X_val = matrix(3, rows=2, cols=3)
@@ -39,10 +39,10 @@ params = list(e2)
 
 # Use paramserv function
 # Remove the optional "hyperparams"
-model2 = paramserv(model, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", checkpointing="NONE")
+modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
 
 # Remove the optional "batchsize"
-model3 = paramserv(model, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, k=7, scheme="disjoint_contiguous", hyperparams=params, checkpointing="NONE")
+modelList3 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="ASP", freq="BATCH", epochs=100, k=7, scheme="DISJOINT_RANDOM", hyperparams=params, checkpointing="NONE")
 
 # Remove the optional "checkpointing"
-model4 = paramserv(model, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", batchsize=64, epochs=100, k=7, scheme="disjoint_contiguous", hyperparams=params)
+modelList4 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="SSP", freq="EPOCH", batchsize=64, epochs=100, k=7, scheme="OVERLAP_RESHUFFLE", hyperparams=params)

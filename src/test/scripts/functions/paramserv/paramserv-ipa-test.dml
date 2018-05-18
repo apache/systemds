@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 e1 = "element1"
-modelList = list(e1)
+paramsList = list(e1)
 X = matrix(1, rows=2, cols=3)
 Y = matrix(2, rows=2, cols=3)
 X_val = matrix(3, rows=2, cols=3)
@@ -35,7 +35,13 @@ aggregation = function (matrix[double] input) return (matrix[double] output) {
 }
 
 e2 = "element2"
-params = list(e2)
+hps = list(e2)
 
 # Use paramserv function
-modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="NSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")
+paramsList2 = list(1, 2, 3)
+
+if (length(paramsList2) == 3) {
+  paramsList2 = paramserv(model=paramsList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=hps, checkpointing="NONE")
+}
+
+print(length(paramsList2))

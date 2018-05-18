@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -35,9 +36,7 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
-import org.apache.sysml.parser.AssignmentStatement;
 import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.ExternalFunctionStatement;
 import org.apache.sysml.parser.ForStatement;
 import org.apache.sysml.parser.ForStatementBlock;
@@ -45,11 +44,11 @@ import org.apache.sysml.parser.FunctionStatement;
 import org.apache.sysml.parser.FunctionStatementBlock;
 import org.apache.sysml.parser.IfStatement;
 import org.apache.sysml.parser.IfStatementBlock;
-import org.apache.sysml.parser.ParameterizedBuiltinFunctionExpression;
-import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.parser.WhileStatement;
 import org.apache.sysml.parser.WhileStatementBlock;
+
+import com.google.common.collect.Lists;
 
 public class FunctionCallGraph 
 {
@@ -70,6 +69,7 @@ public class FunctionCallGraph
 	private final HashSet<String> _fRecursive;
 
 	// a boolean value to indicate if exists the second order function (e.g. eval, paramserv)
+	// and the UDFs that are marked secondorder="true"
 	private final boolean _containsSecondOrder;
 	
 	/**
@@ -316,6 +316,23 @@ public class FunctionCallGraph
 			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
+
+			// BFS traverse the dag to find paramserv operator
+			// which can occur anyway in the entire dag
+			LinkedList<Hop> queue = Lists.newLinkedList(hopsDAG);
+			while (!queue.isEmpty()) {
+				Hop h = queue.poll();
+				if (h.isVisited()) {
+					continue;
+				}
+				if (HopRewriteUtils.isParameterBuiltinOp(h, Hop.ParamBuiltinOp.PARAMSERV)) {
+					return true;
+				}
+				if (h.getInput() != null && h.getInput().size() > 0) {
+					queue.addAll(h.getInput());
+				}
+				h.setVisited();
+			}
 			
 			//function ops can only occur as root nodes of the dag
 			for( Hop h : hopsDAG ) {
@@ -369,9 +386,9 @@ public class FunctionCallGraph
 						&& ((ExternalFunctionStatement)fsb.getStatement(0)).isSecondOrder() ) {
 						ret = true;
 					}
-				} else if (HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
-						&& (HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL)
-						|| HopRewriteUtils.isParameterBuiltinOp(h.getInput().get(0), Hop.ParamBuiltinOp.PARAMSERV))) {
+				}
+				else if( HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
+						&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {
 					//NOTE: after RewriteSplitDagDataDependentOperators, eval operators
 					//will always appear as childs to root nodes which allows for an
 					//efficient existence check without DAG traversal.

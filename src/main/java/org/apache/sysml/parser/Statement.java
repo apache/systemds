@@ -71,28 +71,30 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_UPDATE_FUN = "upd";
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";
-	public static final String PS_MODE_LOCAL = "LOCAL";
-	public static final String PS_MODE_REMOTE_SPARK = "REMOTE_SPARK";
+	public enum PSModeType {
+		LOCAL, REMOTE_SPARK
+	}
 	public static final String PS_UPDATE_TYPE = "utype";
-	public static final String PS_UPDATE_TYPE_BSP = "BSP";
-	public static final String PS_UPDATE_TYPE_ASP = "ASP";
-	public static final String PS_UPDATE_TYPE_SSP = "SSP";
+	public enum PSUpdateType {
+		BSP, ASP, SSP
+	}
 	public static final String PS_FREQUENCY = "freq";
-	public static final String PS_FREQUENCY_BATCH = "BATCH";
-	public static final String PS_FREQUENCY_EPOCH = "EPOCH";
+	public enum PSFrequency {
+		BATCH, EPOCH
+	}
 	public static final String PS_EPOCHS = "epochs";
 	public static final String PS_BATCH_SIZE = "batchsize";
 	public static final String PS_PARALLELISM = "k";
 	public static final String PS_SCHEME = "scheme";
-	public static final String PS_SCHEME_DC = "disjoint_contiguous";
-	public static final String PS_SCHEME_DRR = "disjoint_round_robin";
-	public static final String PS_SCHEME_DR = "disjoint_random";
-	public static final String PS_SCHEME_OR = "overlap_reshuffle";
+	public enum PSScheme {
+		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
+	}
 	public static final String PS_HYPER_PARAMS = "hyperparams";
 	public static final String PS_CHECKPOINTING = "checkpointing";
-	public static final String PS_CHECKPOINTING_NONE = "NONE";
-	public static final String PS_CHECKPOINTING_EPOCH = "EPOCH";
-	public static final String PS_CHECKPOINTING_EPOCH10 = "EPOCH10";
+	public enum PSCheckpointing {
+		NONE, EPOCH, EPOCH10
+	}
+
 
 	public abstract boolean controlStatement();
 	

@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -103,6 +104,7 @@ import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -1273,6 +1275,9 @@ public class ParForProgramBlock extends ForProgramBlock
 					case FRAME:
 						//currently we do not create any unscoped matrix or frame outputs
 						//because metadata (e.g., outputinfo) not known at this place.
+						break;
+					case LIST:
+						dataObj = new ListObject(Collections.emptyList());
 						break;
 					case UNKNOWN:
 						break;

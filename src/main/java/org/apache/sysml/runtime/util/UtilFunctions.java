@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -515,17 +516,22 @@ public class UtilFunctions
 		return 0; //equal 
 	}
 	
-	public static boolean isIntegerNumber( String str )
-	{
+	public static boolean isIntegerNumber( String str ) {
 		byte[] c = str.getBytes();
 		for( int i=0; i<c.length; i++ )
 			if( c[i] < 48 || c[i] > 57 )
 				return false;
 		return true;
 	}
+	
+	public static int[] getSortedSampleIndexes(int range, int sampleSize) {
+		RandomDataGenerator rng = new RandomDataGenerator();
+		int[] sample = rng.nextPermutation(range, sampleSize);
+		Arrays.sort(sample);
+		return sample;
+	}
 
-	public static byte max( byte[] array )
-	{
+	public static byte max( byte[] array ) {
 		byte ret = Byte.MIN_VALUE;
 		for( int i=0; i<array.length; i++ )
 			ret = (array[i]>ret)?array[i]:ret;

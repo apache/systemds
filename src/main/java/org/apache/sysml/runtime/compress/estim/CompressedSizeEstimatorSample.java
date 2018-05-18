@@ -27,13 +27,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
-import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysml.runtime.compress.BitmapEncoder;
 import org.apache.sysml.runtime.compress.ReaderColumnSelection;
 import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysml.runtime.compress.UncompressedBitmap;
 import org.apache.sysml.runtime.compress.utils.DblArray;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator 
 {
@@ -303,12 +303,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator
 	 * @return sorted array of integers
 	 */
 	private static int[] getSortedUniformSample(int range, int smplSize) {
-		if (smplSize == 0)
-			return new int[] {};
-		RandomDataGenerator rng = new RandomDataGenerator();
-		int[] sample = rng.nextPermutation(range, smplSize);
-		Arrays.sort(sample);
-		return sample;
+		if (smplSize == 0) return new int[] {};
+		return UtilFunctions.getSortedSampleIndexes(range, smplSize);
 	}
 	
 

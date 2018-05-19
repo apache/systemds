@@ -1105,7 +1105,7 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
-		runTest(false, exceptionExpected, expectedException, maxMRJobs);
+		runTest(false, exceptionExpected, expectedException, null, maxMRJobs);
 	}
 
 	/**
@@ -1125,6 +1125,29 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, int maxMRJobs) {
+		runTest(newWay, exceptionExpected, expectedException, null, maxMRJobs);
+	}
+
+	/**
+	 * <p>
+	 * Runs a test for which the exception expectation and the error message
+	 * can be specified as well as the specific expectation which is expected.
+	 * If SystemML executes more MR jobs than specified in maxMRJobs this test
+	 * will fail.
+	 * </p>
+	 * @param newWay
+	 * 			  in the new way if it is set to true
+	 * @param exceptionExpected
+	 *            exception expected
+	 * @param expectedException
+	 *            expected exception
+	 * @param errMessage
+	 * 		      expected error message
+	 * @param maxMRJobs
+	 *            specifies a maximum limit for the number of MR jobs. If set to
+	 *            -1 there is no limit.
+	 */
+	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxMRJobs) {
 
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 
@@ -1227,6 +1250,10 @@ public abstract class AutomatedTestBase
 			if (exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
 		} catch (Exception e) {
+			if (exceptionExpected && e.getClass().equals(expectedException) && errMessage != null
+					&& !e.getMessage().contains(errMessage)) {
+				fail("expected exception message has not been raised: " + errMessage);
+			}
 			if (!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
 				e.printStackTrace();
 				StringBuilder errorMessage = new StringBuilder();

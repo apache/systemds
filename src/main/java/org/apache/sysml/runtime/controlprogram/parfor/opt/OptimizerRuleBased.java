@@ -1313,9 +1313,9 @@ public class OptimizerRuleBased extends Optimizer
 					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
 					if(    ConfigurationManager.isParallelMatrixOperations() 
 						&& h instanceof MultiThreadedHop //abop, datagenop, qop, paramop
-						&& !( h instanceof ParameterizedBuiltinOp //only paramop-grpagg
+						&& !( h instanceof ParameterizedBuiltinOp //paramop-grpagg, rexpand, paramserv
 							 && !HopRewriteUtils.isValidOp(((ParameterizedBuiltinOp)h).getOp(), 
-								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND))
+								ParamBuiltinOp.GROUPEDAGG, ParamBuiltinOp.REXPAND, ParamBuiltinOp.PARAMSERV))
 						&& !( h instanceof UnaryOp //only unaryop-cumulativeagg
 							 && !((UnaryOp)h).isCumulativeUnaryOperation()
 							 && !((UnaryOp)h).isExpensiveUnaryOperation())

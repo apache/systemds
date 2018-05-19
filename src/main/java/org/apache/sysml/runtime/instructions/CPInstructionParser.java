@@ -52,6 +52,7 @@ import org.apache.sysml.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.QuantileSortCPInstruction;
@@ -186,6 +187,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
+		String2CPInstructionType.put("paramserv", 		CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "nvlist",  CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "invcdf",         CPType.ParameterizedBuiltin);
@@ -362,8 +364,8 @@ public class CPInstructionParser extends InstructionParser
 				
 			case External:
 				return FunctionCallCPInstruction.parseInstruction(str);
-			
-			case ParameterizedBuiltin: 
+
+			case ParameterizedBuiltin:
 				return ParameterizedBuiltinCPInstruction.parseInstruction(str);
 			
 			case MultiReturnParameterizedBuiltin:

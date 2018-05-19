@@ -45,7 +45,7 @@ public class ParameterizedBuiltin extends ValueFunction
 	
 	public enum ParameterizedBuiltinCode { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, LOWER_TRI, UPPER_TRI,
-		TRANSFORMAPPLY, TRANSFORMDECODE }
+		TRANSFORMAPPLY, TRANSFORMDECODE, PARAMSERV }
 	public enum ProbabilityDistributionCode { 
 		INVALID, NORMAL, EXP, CHISQ, F, T }
 	
@@ -64,6 +64,7 @@ public class ParameterizedBuiltin extends ValueFunction
 		String2ParameterizedBuiltinCode.put( "rexpand", ParameterizedBuiltinCode.REXPAND);
 		String2ParameterizedBuiltinCode.put( "transformapply", ParameterizedBuiltinCode.TRANSFORMAPPLY);
 		String2ParameterizedBuiltinCode.put( "transformdecode", ParameterizedBuiltinCode.TRANSFORMDECODE);
+		String2ParameterizedBuiltinCode.put( "paramserv", ParameterizedBuiltinCode.PARAMSERV);
 	}
 	
 	static public HashMap<String, ProbabilityDistributionCode> String2DistCode;
@@ -178,6 +179,9 @@ public class ParameterizedBuiltin extends ValueFunction
 			
 			case TRANSFORMDECODE:
 				return new ParameterizedBuiltin(ParameterizedBuiltinCode.TRANSFORMDECODE);
+
+			case PARAMSERV:
+				return new ParameterizedBuiltin(ParameterizedBuiltinCode.PARAMSERV);
 				
 			default:
 				throw new DMLRuntimeException("Invalid parameterized builtin code: " + code);

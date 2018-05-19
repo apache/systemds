@@ -89,8 +89,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	// removeEmpty-specific attributes
 	private boolean _bRmEmptyBC = false;
 
-	private ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
-			String opcode, String istr, boolean bRmEmptyBC) {
+	ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode,
+			String istr, boolean bRmEmptyBC) {
 		super(SPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
 		_bRmEmptyBC = bRmEmptyBC;
@@ -155,27 +155,24 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				
 				Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
-			}
-			else if(   opcode.equalsIgnoreCase("rmempty") ) 
-			{
-				boolean bRmEmptyBC = false; 
-				if(parts.length > 6)
+			} else if (opcode.equalsIgnoreCase("rmempty")) {
+				boolean bRmEmptyBC = false;
+				if (parts.length > 6)
 					bRmEmptyBC = Boolean.parseBoolean(parts[5]);
-									
+
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
-			}
-			else if(   opcode.equalsIgnoreCase("rexpand") 
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
+						bRmEmptyBC);
+			} else if (opcode.equalsIgnoreCase("rexpand")
 					|| opcode.equalsIgnoreCase("replace")
 					|| opcode.equalsIgnoreCase("lowertri")
 					|| opcode.equalsIgnoreCase("uppertri")
 					|| opcode.equalsIgnoreCase("transformapply")
-					|| opcode.equalsIgnoreCase("transformdecode")) 
-			{
+					|| opcode.equalsIgnoreCase("transformdecode")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
-			}
-			else {
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
+						false);
+			} else {
 				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 			}
 		}

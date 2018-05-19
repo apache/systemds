@@ -127,26 +127,23 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
-		}
-		else if(   opcode.equalsIgnoreCase("rmempty") 
-				|| opcode.equalsIgnoreCase("replace") 
+		} else if (opcode.equalsIgnoreCase("rmempty")
+				|| opcode.equalsIgnoreCase("replace")
 				|| opcode.equalsIgnoreCase("rexpand")
 				|| opcode.equalsIgnoreCase("lowertri")
-				|| opcode.equalsIgnoreCase("uppertri")) 
-		{
+				|| opcode.equalsIgnoreCase("uppertri")) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
-		}
-		else if (   opcode.equals("transformapply")
-				 || opcode.equals("transformdecode")
-				 || opcode.equals("transformcolmap")
-				 || opcode.equals("transformmeta")
-				 || opcode.equals("toString")
-				 || opcode.equals("nvlist") )
-		{
+		} else if (opcode.equals("transformapply")
+				|| opcode.equals("transformdecode")
+				|| opcode.equals("transformcolmap")
+				|| opcode.equals("transformmeta")
+				|| opcode.equals("toString")
+				|| opcode.equals("nvlist")) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
-		}
-		else {
+		} else if ("paramserv".equals(opcode)) {
+			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+		} else {
 			throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 		}
 

@@ -61,7 +61,41 @@ public abstract class Statement implements ParseInfo
 	public static final String GAGG_FN_CM       = "centralmoment";
 	public static final String GAGG_FN_CM_ORDER = "order";
 	public static final String GAGG_NUM_GROUPS  = "ngroups";
-	
+
+	// String constants related to parameter server builtin function
+	public static final String PS_MODEL = "model";
+	public static final String PS_FEATURES = "features";
+	public static final String PS_LABELS = "labels";
+	public static final String PS_VAL_FEATURES = "val_features";
+	public static final String PS_VAL_LABELS = "val_labels";
+	public static final String PS_UPDATE_FUN = "upd";
+	public static final String PS_AGGREGATION_FUN = "agg";
+	public static final String PS_MODE = "mode";
+	public enum PSModeType {
+		LOCAL, REMOTE_SPARK
+	}
+	public static final String PS_UPDATE_TYPE = "utype";
+	public enum PSUpdateType {
+		BSP, ASP, SSP
+	}
+	public static final String PS_FREQUENCY = "freq";
+	public enum PSFrequency {
+		BATCH, EPOCH
+	}
+	public static final String PS_EPOCHS = "epochs";
+	public static final String PS_BATCH_SIZE = "batchsize";
+	public static final String PS_PARALLELISM = "k";
+	public static final String PS_SCHEME = "scheme";
+	public enum PSScheme {
+		DISJOINT_CONTIGUOUS, DISJOINT_ROUND_ROBIN, DISJOINT_RANDOM, OVERLAP_RESHUFFLE
+	}
+	public static final String PS_HYPER_PARAMS = "hyperparams";
+	public static final String PS_CHECKPOINTING = "checkpointing";
+	public enum PSCheckpointing {
+		NONE, EPOCH, EPOCH10
+	}
+
+
 	public abstract boolean controlStatement();
 	
 	public abstract VariableSet variablesRead();

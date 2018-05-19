@@ -40,7 +40,7 @@ public class IPAPassRemoveUnusedFunctions extends IPAPass
 	@Override
 	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return InterProceduralAnalysis.REMOVE_UNUSED_FUNCTIONS
-			&& !fgraph.containsEvalCall();
+			&& !fgraph.containsSecondOrderCall();
 	}
 	
 	@Override

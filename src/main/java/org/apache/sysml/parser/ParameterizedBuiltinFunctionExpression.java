@@ -872,13 +872,12 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			if (optional) {
 				return;
 			}
-			raiseValidateError("Named parameter '" + pname + "' missing. Please specify the input.", conditional,
-					LanguageErrorCodes.INVALID_PARAMETERS);
+			raiseValidateError(String.format("Named parameter '%s' is missing. Please specify the input.", fname),
+					conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		} else if (data.getOutput().getDataType() != dt || data.getOutput().getValueType() != vt)
-			raiseValidateError(
-					"Input to " + fname + "::" + pname + " must be of type '" + dt.toString() + "', '" + vt.toString()
-							+ "'. " + "It should not be of type '" + data.getOutput().getDataType().toString() + "', '" + data
-							.getOutput().getValueType().toString() + "'.", conditional,
+			raiseValidateError(String.format("Input to %s::%s must be of type '%s', '%s'.It should not be of type '%s', '%s'.",
+							fname, pname, dt.toString(), vt.toString(), data.getOutput().getDataType().toString(),
+							data.getOutput().getValueType().toString()), conditional,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 

@@ -247,7 +247,6 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "sigmoid", SPType.Unary);
 		
 		// Parameterized Builtin Functions
-		String2SPInstructionType.put( "paramserv", 		SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty",        SPType.ParameterizedBuiltin);

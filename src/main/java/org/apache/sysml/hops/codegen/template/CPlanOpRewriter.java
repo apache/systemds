@@ -67,10 +67,13 @@ public class CPlanOpRewriter
 			node.getInput().set(i, rSimplifyCNode(node.getInput().get(i)));
 		
 		//apply all node-local simplification rewrites
-		node = rewriteRowCountNnz(node); //rowSums(X!=0) -> rowNnz(X)
-		node = rewriteRowSumSq(node);    //rowSums(X^2) -> rowSumSqs(X)
-		node = rewriteBinaryPow2(node);  //x^2 -> x*x
-		node = rewriteBinaryMult2(node); //x*2 -> x+x;
+		node = rewriteRowCountNnz(node);     //rowSums(X!=0) -> rowNnz(X)
+		node = rewriteRowSumSq(node);        //rowSums(X^2) -> rowSumSqs(X)
+		node = rewriteBinaryPow2(node);      //x^2 -> x*x
+		node = rewriteBinaryPow2Vect(node);  //X^2 -> X*X
+		node = rewriteBinaryMult2(node);     //x*2 -> x+x;
+		node = rewriteBinaryMult2Vect(node); //X*2 -> X+X;
+		
 		return node;
 	}
 	
@@ -97,11 +100,25 @@ public class CPlanOpRewriter
 			new CNodeUnary(node.getInput().get(0), UnaryType.POW2) : node;
 	}
 	
+	private static CNode rewriteBinaryPow2Vect(CNode node) {
+		return (TemplateUtils.isBinary(node, BinType.VECT_POW_SCALAR) 
+			&& node.getInput().get(1).isLiteral()
+			&& node.getInput().get(1).getVarname().equals("2")) ?
+			new CNodeUnary(node.getInput().get(0), UnaryType.VECT_POW2) : node;
+	}
+	
 	private static CNode rewriteBinaryMult2(CNode node) {
 		return (TemplateUtils.isBinary(node, BinType.MULT) 
 			&& node.getInput().get(1).isLiteral()
 			&& node.getInput().get(1).getVarname().equals("2")) ?
 			new CNodeUnary(node.getInput().get(0), UnaryType.MULT2) : node;
+	}
+	
+	private static CNode rewriteBinaryMult2Vect(CNode node) {
+		return (TemplateUtils.isBinary(node, BinType.VECT_MULT) 
+			&& node.getInput().get(1).isLiteral()
+			&& node.getInput().get(1).getVarname().equals("2")) ?
+			new CNodeUnary(node.getInput().get(0), UnaryType.VECT_MULT2) : node;
 	}
 	
 	private static CNodeTpl rewriteRemoveOuterNeq0(CNodeTpl tpl) {

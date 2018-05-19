@@ -22,9 +22,6 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.apache.sysml.runtime.controlprogram.Program;
 
 
@@ -35,7 +32,6 @@ public class DMLProgram
 	private HashMap<String,DMLProgram> _namespaces;
 	public static final String DEFAULT_NAMESPACE = ".defaultNS";
 	public static final String INTERNAL_NAMESPACE = "_internal"; // used for multi-return builtin functions
-	private static final Log LOG = LogFactory.getLog(DMLProgram.class.getName());
 	
 	public DMLProgram(){
 		_blocks = new ArrayList<>();

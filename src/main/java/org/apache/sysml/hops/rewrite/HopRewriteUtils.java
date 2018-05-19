@@ -1018,6 +1018,10 @@ public class HopRewriteUtils
 	public static boolean isSumSq(Hop hop) {
 		return (hop instanceof AggUnaryOp && ((AggUnaryOp)hop).getOp()==AggOp.SUM_SQ);
 	}
+
+	public static boolean isParameterBuiltinOp(Hop hop, ParamBuiltinOp type) {
+		return hop instanceof ParameterizedBuiltinOp && ((ParameterizedBuiltinOp) hop).getOp().equals(type);
+	}
 	
 	public static boolean isNary(Hop hop, OpOpN type) {
 		return hop instanceof NaryOp && ((NaryOp)hop).getOp()==type;

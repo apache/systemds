@@ -89,8 +89,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	// removeEmpty-specific attributes
 	private boolean _bRmEmptyBC = false;
 
-	private ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out,
-			String opcode, String istr, boolean bRmEmptyBC) {
+	ParameterizedBuiltinSPInstruction(Operator op, HashMap<String, String> paramsMap, CPOperand out, String opcode,
+			String istr, boolean bRmEmptyBC) {
 		super(SPType.ParameterizedBuiltin, op, null, null, out, opcode, istr);
 		params = paramsMap;
 		_bRmEmptyBC = bRmEmptyBC;
@@ -142,7 +142,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 			// determine the appropriate value function
 			ValueFunction func = null;
-					
 			if ( opcode.equalsIgnoreCase("groupedagg")) {
 				// check for mandatory arguments
 				String fnStr = paramsMap.get("fn");
@@ -152,26 +151,20 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					if ( paramsMap.get("order") == null )
 						throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 				}
-				
 				Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
-			}
-			else if(   opcode.equalsIgnoreCase("rmempty") ) 
-			{
-				boolean bRmEmptyBC = false; 
-				if(parts.length > 6)
-					bRmEmptyBC = Boolean.parseBoolean(parts[5]);
-									
+			} 
+			else if (opcode.equalsIgnoreCase("rmempty")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
-				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, bRmEmptyBC);
+				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str,
+						parts.length > 6 ? Boolean.parseBoolean(parts[5]) : false);
 			}
-			else if(   opcode.equalsIgnoreCase("rexpand") 
-					|| opcode.equalsIgnoreCase("replace")
-					|| opcode.equalsIgnoreCase("lowertri")
-					|| opcode.equalsIgnoreCase("uppertri")
-					|| opcode.equalsIgnoreCase("transformapply")
-					|| opcode.equalsIgnoreCase("transformdecode")) 
-			{
+			else if (opcode.equalsIgnoreCase("rexpand")
+				|| opcode.equalsIgnoreCase("replace")
+				|| opcode.equalsIgnoreCase("lowertri")
+				|| opcode.equalsIgnoreCase("uppertri")
+				|| opcode.equalsIgnoreCase("transformapply")
+				|| opcode.equalsIgnoreCase("transformdecode")) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str, false);
 			}
@@ -190,7 +183,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		
 		//opcode guaranteed to be a valid opcode (see parsing)
 		if( opcode.equalsIgnoreCase("mapgroupedagg") )
-		{		
+		{
 			//get input rdd handle
 			String targetVar = params.get(Statement.GAGG_TARGET);
 			String groupsVar = params.get(Statement.GAGG_GROUPS);
@@ -214,21 +207,21 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//multi-block aggregation
 			else {
 				//execute map grouped aggregate
-				JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
-						target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr, 
-								ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out =
+					target.flatMapToPair(new RDDMapGroupedAggFunction(groups, _optr,
+					ngroups, mc1.getRowsPerBlock(), mc1.getColsPerBlock()));
 				
 				out = RDDAggregateUtils.sumByKeyStable(out, false);
 				
 				//updated characteristics and handle outputs
 				mcOut.set(ngroups, mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1);
-				sec.setRDDHandleForVariable(output.getName(), out);			
+				sec.setRDDHandleForVariable(output.getName(), out);
 				sec.addLineageRDD( output.getName(), targetVar );
-				sec.addLineageBroadcast( output.getName(), groupsVar );	
+				sec.addLineageBroadcast( output.getName(), groupsVar );
 			}
 		}
-		else if ( opcode.equalsIgnoreCase("groupedagg") ) 
-		{	
+		else if ( opcode.equalsIgnoreCase("groupedagg") )
+		{
 			boolean broadcastGroups = Boolean.parseBoolean(params.get("broadcast"));
 			
 			//get input rdd handle
@@ -256,7 +249,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				}
 				
 				groupWeightedCells = groups.join(target).join(weights)
-						.flatMapToPair(new ExtractGroupNWeights());	
+					.flatMapToPair(new ExtractGroupNWeights());
 			}
 			else //input vector or matrix
 			{
@@ -267,7 +260,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				if( broadcastGroups ) {
 					PartitionedBroadcast<MatrixBlock> pbm = sec.getBroadcastForVariable(groupsVar);
 					groupWeightedCells = target
-							.flatMapToPair(new ExtractGroupBroadcast(pbm, mc1.getColsPerBlock(), ngroups, _optr));						
+						.flatMapToPair(new ExtractGroupBroadcast(pbm, mc1.getColsPerBlock(), ngroups, _optr));
 				}
 				else { //general case
 					
@@ -278,7 +271,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					}
 					
 					groupWeightedCells = groups.join(target)
-							.flatMapToPair(new ExtractGroupJoin(mc1.getColsPerBlock(), ngroups, _optr));		
+						.flatMapToPair(new ExtractGroupJoin(mc1.getColsPerBlock(), ngroups, _optr));
 				}
 			}
 			
@@ -293,20 +286,20 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			if(_optr instanceof CMOperator && ((CMOperator) _optr).isPartialAggregateOperator() 
 				|| _optr instanceof AggregateOperator ) {
 				out = groupWeightedCells.reduceByKey(new PerformGroupByAggInCombiner(_optr))
-						.mapValues(new CreateMatrixCell(brlen, _optr));
+					.mapValues(new CreateMatrixCell(brlen, _optr));
 			}
 			else {
 				// Use groupby key because partial aggregation is not supported
 				out = groupWeightedCells.groupByKey()
-						.mapValues(new PerformGroupByAggInReducer(_optr))
-						.mapValues(new CreateMatrixCell(brlen, _optr));
+					.mapValues(new PerformGroupByAggInReducer(_optr))
+					.mapValues(new CreateMatrixCell(brlen, _optr));
 			}
 			
 			// Step 4: Set output characteristics and rdd handle 
 			setOutputCharacteristicsForGroupedAgg(mc1, mcOut, out);
 			
 			//store output rdd handle
-			sec.setRDDHandleForVariable(output.getName(), out);			
+			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD( output.getName(), params.get(Statement.GAGG_TARGET) );
 			sec.addLineage( output.getName(), groupsVar, broadcastGroups );
 			if ( params.get(Statement.GAGG_WEIGHTS) != null ) {
@@ -425,7 +418,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			//repartition input vector for higher degree of parallelism 
 			//(avoid scenarios where few input partitions create huge outputs)
-			MatrixCharacteristics mcTmp = new MatrixCharacteristics(dirRows?lmaxVal:mcIn.getRows(), 
+			MatrixCharacteristics mcTmp = new MatrixCharacteristics(dirRows?lmaxVal:mcIn.getRows(),
 					dirRows?mcIn.getRows():lmaxVal, (int)brlen, (int)bclen, mcIn.getRows());
 			int numParts = (int)Math.min(SparkUtils.getNumPreferredPartitions(mcTmp, in), mcIn.getNumBlocks());
 			if( numParts > in.getNumPartitions()*2 )
@@ -434,7 +427,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//execute rexpand rows/cols operation (no shuffle required because outputs are
 			//block-aligned with the input, i.e., one input block generates n output blocks)
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
-					.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, brlen, bclen));
+				.flatMapToPair(new RDDRExpandFunction(maxVal, dirRows, cast, ignore, brlen, bclen));
 			
 			//store output rdd handle
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -454,7 +447,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(params.get("target"));
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(params.get("spec")) ?
-					in.lookup(1L).get(0).getColumnNames() : null; 
+				in.lookup(1L).get(0).getColumnNames() : null; 
 			
 			//compute omit offset map for block shifts
 			TfOffsetMap omap = null;
@@ -462,19 +455,19 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				omap = new TfOffsetMap(SparkUtils.toIndexedLong(in.mapToPair(
 					new RDDTransformApplyOffsetFunction(params.get("spec"), colnames)).collect()));
 			}
-				
+			
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colnames,
-					fo.getSchema(), (int)fo.getNumColumns(), meta);
+				fo.getSchema(), (int)fo.getNumColumns(), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
 			
 			//execute transform apply
 			JavaPairRDD<Long,FrameBlock> tmp = in
-					.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
+				.mapToPair(new RDDTransformApplyFunction(bmeta, bomap));
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = FrameRDDConverterUtils
-					.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
+				.binaryBlockToMatrixBlock(tmp, mcOut, mcOut);
 			
 			//set output and maintain lineage/output characteristics
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -749,7 +742,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		{
 			//get all inputs
 			MatrixIndexes ix = arg0._1();
-			MatrixBlock target = arg0._2();		
+			MatrixBlock target = arg0._2();
 			MatrixBlock groups = _pbm.getBlock((int)ix.getRowIndex(), 1);
 			
 			//execute map grouped aggregate operations

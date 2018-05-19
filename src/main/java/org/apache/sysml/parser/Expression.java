@@ -161,6 +161,7 @@ public abstract class Expression implements ParseInfo
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMENCODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOSTRING, // The "toString" method for DML; named arguments accepted to format output
 		LIST, // named argument lists; unnamed lists become builtin function
+		PARAMSERV,
 		INVALID
 	}
 	

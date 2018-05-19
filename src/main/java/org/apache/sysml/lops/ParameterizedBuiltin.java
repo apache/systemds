@@ -38,7 +38,7 @@ public class ParameterizedBuiltin extends Lop
 	public enum OperationTypes { 
 		CDF, INVCDF, RMEMPTY, REPLACE, REXPAND, LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
-		TOSTRING, LIST
+		TOSTRING, LIST, PARAMSERV
 	}
 	
 	private OperationTypes _operation;
@@ -229,6 +229,13 @@ public class ParameterizedBuiltin extends Lop
 			}
 			case TOSTRING: {
 				sb.append("toString"); //opcode
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(compileGenericParamMap(_inputParams));
+				break;
+			}
+
+			case PARAMSERV: {
+				sb.append("paramserv");
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
 				break;

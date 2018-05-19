@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -64,8 +65,10 @@ public class FunctionCallGraph
 	
 	//subset of direct or indirect recursive functions
 	private final HashSet<String> _fRecursive;
-	
-	private final boolean _containsEval;
+
+	// a boolean value to indicate if exists the second order function (e.g. eval, paramserv)
+	// and the UDFs that are marked secondorder="true"
+	private final boolean _containsSecondOrder;
 	
 	/**
 	 * Constructs the function call graph for all functions
@@ -78,7 +81,7 @@ public class FunctionCallGraph
 		_fCalls = new HashMap<>();
 		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
-		_containsEval = constructFunctionCallGraph(prog);
+		_containsSecondOrder = constructFunctionCallGraph(prog);
 	}
 	
 	/**
@@ -92,7 +95,7 @@ public class FunctionCallGraph
 		_fCalls = new HashMap<>();
 		_fCallsSB = new HashMap<>();
 		_fRecursive = new HashSet<>();
-		_containsEval = constructFunctionCallGraph(sb);
+		_containsSecondOrder = constructFunctionCallGraph(sb);
 	}
 
 	/**
@@ -240,13 +243,13 @@ public class FunctionCallGraph
 	
 	/**
 	 * Indicates if the function call graph, i.e., functions that are transitively
-	 * reachable from the main program, contains a second-order eval call, which
-	 * prohibits the removal of unused functions.
-	 * 
-	 * @return true if the function call graph contains an eval call.
+	 * reachable from the main program, contains a second-order builtin function call 
+	 * (e.g., eval, paramserv), which prohibits the removal of unused functions.
+	 *
+	 * @return true if the function call graph contains a second-order builtin function call.
 	 */
-	public boolean containsEvalCall() {
-		return _containsEval;
+	public boolean containsSecondOrderCall() {
+		return _containsSecondOrder;
 	}
 	
 	private boolean constructFunctionCallGraph(DMLProgram prog) {
@@ -311,6 +314,20 @@ public class FunctionCallGraph
 			ArrayList<Hop> hopsDAG = sb.getHops();
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
+
+			// BFS traverse the dag to find paramserv operator
+			// which can occur anyway in the entire dag
+			LinkedList<Hop> queue = new LinkedList<>(hopsDAG);
+			while (!queue.isEmpty()) {
+				Hop h = queue.poll();
+				if (h.isVisited())
+					continue;
+				if (HopRewriteUtils.isParameterBuiltinOp(h, Hop.ParamBuiltinOp.PARAMSERV))
+					return true;
+				if (!h.getInput().isEmpty())
+					queue.addAll(h.getInput());
+				h.setVisited();
+			}
 			
 			//function ops can only occur as root nodes of the dag
 			for( Hop h : hopsDAG ) {
@@ -366,7 +383,7 @@ public class FunctionCallGraph
 					}
 				}
 				else if( HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
-					&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {
+						&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {
 					//NOTE: after RewriteSplitDagDataDependentOperators, eval operators
 					//will always appear as childs to root nodes which allows for an
 					//efficient existence check without DAG traversal.

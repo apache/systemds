@@ -295,14 +295,16 @@ public class Data extends Lop
 	 * Method to check if this represents a transient variable.
 	 * @return true if this data lop is a transient variable
 	 */
-	public boolean isTransient()
-	{
+	public boolean isTransient() {
 		return transient_var;
 	}
 	
-	public boolean isPersistentWrite()
-	{
+	public boolean isPersistentWrite() {
 		return operation == OperationTypes.WRITE && !transient_var;
+	}
+	
+	public boolean isPersistentRead() {
+		return operation == OperationTypes.READ && !transient_var;
 	}
 	
 	/**

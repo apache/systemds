@@ -21,7 +21,7 @@
 
 custom_install <- function(pkg) {
     if(!is.element(pkg, installed.packages()[,1])) {
- 		install.packages(pkg, repos="http://cran.stat.ucla.edu/");
+ 		install.packages(pkg, repos="https://cran.cnr.berkeley.edu/");
 	}
 } 
 

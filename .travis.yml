@@ -32,7 +32,7 @@ addons:
 cache:
   apt: true
   directories:
-#    - ${HOME}/.m2
+    - ${HOME}/.m2
     - ${HOME}/R
     - /usr/local/lib/R/site-library
 
@@ -43,8 +43,8 @@ before_script:
   - chmod -R 755 *
 
 script:
-#  - mvn -Dit.test=**/integration/functions/sparse/*Suite.java verify
-  - mvn clean verify jacoco:report coveralls:report
+#  - mvn clean verify jacoco:report coveralls:report
+  - mvn clean verify
 
 after_success:
 #  -  mvn test jacoco:report coveralls:report

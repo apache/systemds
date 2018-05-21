@@ -424,8 +424,7 @@
 					<threadCount>1</threadCount>
 
 					<!-- 2 processes per test -->
-					<!-- <forkCount>0.5C</forkCount> -->
-					<forkCount>1C</forkCount>
+					<forkCount>0.5C</forkCount>
 					<reuseForks>false</reuseForks>
 
 					<!-- Limit Spark log output-->

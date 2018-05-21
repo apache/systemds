@@ -377,28 +377,27 @@ public class LibMatrixDNN {
 				}
 			}
 			else {
+				SparseBlock sblock = outputBlock.sparseBlock;
 				// First delete those elements which will become zero 
 				for(int k = 0; k < K; k++) {
 					if(biasArr[k] == 0) {
 						for(int n = 0; n < N; n++) {
-							outputBlock.sparseBlock.deleteIndexRange(n, k*PQ, (k+1)*PQ);
+							if( sblock.isEmpty(n) ) continue;
+							sblock.deleteIndexRange(n, k*PQ, (k+1)*PQ);
 						}
 					}
 				}
 				// Then perform bias_multiply for non-zero bias entries
 				for(int n = 0; n < N; n++) {
-					if( !outputBlock.sparseBlock.isEmpty(n) ) {
-						int apos = outputBlock.sparseBlock.pos(n);
-						int alen = outputBlock.sparseBlock.size(n);
-						int[] aix = outputBlock.sparseBlock.indexes(n);
-						double[] avals = outputBlock.sparseBlock.values(n);
-						
-						for(int j=apos; j<apos+alen; j++) {
-							// Since aix[j] => KPQ
-							int k = aix[j] % PQ;
-							if(biasArr[k] != 0)
-								avals[j] *= biasArr[k];
-						}
+					if( sblock.isEmpty(n) ) continue;
+					int apos = sblock.pos(n);
+					int alen = sblock.size(n);
+					int[] aix = sblock.indexes(n);
+					double[] avals = sblock.values(n);
+					for(int j=apos; j<apos+alen; j++) {
+						int k = aix[j] / PQ; //aix[j] KPQ
+						if(biasArr[k] != 0)
+							avals[j] *= biasArr[k];
 					}
 				}
 			}

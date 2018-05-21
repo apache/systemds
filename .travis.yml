@@ -33,7 +33,7 @@ cache:
   apt: true
   directories:
 # caching .m2 causes an error loading hadoop-yarn-common-2.6.0.jar. Not sure why.
-    - ${HOME}/.m2
+#    - ${HOME}/.m2
     - ${HOME}/R
     - /usr/local/lib/R/site-library
 

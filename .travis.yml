@@ -41,7 +41,8 @@ install:
   - sudo Rscript ./src/test/scripts/installDependencies.R
 
 before_script:
-  - chmod -R 755 *
+#  this is not needed anymore since adding authentication object in code for running hadoop/spark local
+#  - chmod -R 755 *
 
 script:
 #  - mvn clean verify jacoco:report coveralls:report

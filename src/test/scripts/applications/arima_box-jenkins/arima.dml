@@ -138,7 +138,7 @@ if(num_rows <= d){
 }
 
 Y = X
-for(i in 1:d){
+for(i in seq(1, d, 1)){
 	n1 = nrow(Y)+0.0
 	Y = Y[2:n1,] - Y[1:n1-1,]
 }
@@ -148,7 +148,7 @@ if(num_rows <= s*D){
 	print("seasonal differencing order should be larger than number of observations divided by length of season")
 }
 
-for(i in 1:D){
+for(i in seq(1,D, 1)){
 	n1 = nrow(Y)+0.0
 	Y = Y[s+1:n1,] - Y[1:n1-s,]
 }

@@ -444,6 +444,10 @@ public class IndexingOp extends Hop
 		else if( isBlockIndexingExpression(input2, input3) ) {
 			setDim1(getBlockIndexingExpressionSize(input2, input3));
 		}
+		else {
+			//for reset (e.g., on reconcile after loops)
+			setDim1(-1);
+		}
 		
 		if( _colLowerEqualsUpper ) //COLS
 			setDim2(1);
@@ -457,6 +461,10 @@ public class IndexingOp extends Hop
 		}
 		else if( isBlockIndexingExpression(input4, input5) ) {
 			setDim2(getBlockIndexingExpressionSize(input4, input5));
+		}
+		else {
+			//for reset (e.g., on reconcile after loops)
+			setDim2(-1);
 		}
 	}
 	

@@ -23,14 +23,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-
-import org.junit.runners.Parameterized.Parameters;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.runners.Parameterized.Parameters;
+
+import com.google.common.collect.Sets;
 
 public abstract class ArimaTest extends AutomatedTestBase {
 	
@@ -55,13 +59,26 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] {{ 10, 1, 1, 1, 1, 1, 1, 24, 1, 1}};
-		return Arrays.asList(data);
+    	    	Set<Object> max_func_invoc = new HashSet<>(Arrays.asList(1, 10, 1000));
+        	Set<Object> p = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> d = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> q = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> P = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> D = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> Q = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> s = new HashSet<>(Arrays.asList(0, 24, 200));
+        	Set<Object> include_mean = new HashSet<>(Arrays.asList(0, 1));
+        	Set<Object> useJacobi = new HashSet<>(Arrays.asList(0, 1));
+	    	
+		return Sets.cartesianProduct(max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi)
+			.stream()
+			.map((objectList) -> objectList.stream().toArray())
+			.collect(Collectors.toSet());
 	}
 	
 	@Override
 	public void setUp() {
-    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+    		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testArima(ScriptType scriptType) {

@@ -450,8 +450,8 @@
 						<!-- <include>**/integration/applications/**/*Suite.java</include> -->
 						<!-- <include>**/integration/conversion/*Suite.java</include> -->
 						<!-- <include>**/integration/functions/data/*Suite.java</include> -->
-						<include>**/integration/functions/compress/*Suite.java</include>
 						<include>**/integration/functions/jmlc/*Suite.java</include>
+						<include>**/integration/functions/misc/*Suite.java</include>
 						<include>**/integration/functions/sparse/*Suite.java</include>
 						<!-- <include>**/integration/functions/codegenalg/*Suite.java</include> -->
 						<!-- <include>**/integration/functions/**/*Test*.java</include> -->

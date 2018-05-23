@@ -21,7 +21,7 @@ limitations under the License.
 
 **Documentation:** [SystemML Documentation](http://systemml.apache.org/documentation)<br/>
 **Mailing List:** [Dev Mailing List](mailto:dev@systemml.apache.org)<br/>
-**Build Status:** [![Build Status](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest/badge/icon)](https://sparktc.ibmcloud.com/jenkins/job/SystemML-DailyTest)<br/>
+**Build Status:** [![Build Status](https://travis-ci.org/apache/systemml.svg?branch=master)](https://travis-ci.org/apache/systemml)<br/>
 **Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
 **Download:** [Download SystemML](http://systemml.apache.org/download.html)<br/>
 

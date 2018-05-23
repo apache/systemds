@@ -26,8 +26,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 
-public class ListObject extends Data
-{
+public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
 
 	private final List<String> _names;
@@ -63,57 +62,63 @@ public class ListObject extends Data
 	}
 	
 	public ListObject slice(int ix1, int ix2) {
-		ListObject ret = new ListObject(_data.subList(ix1, ix2+1),
-			(_names!=null) ? _names.subList(ix1, ix2+1) : null);
-		ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2+1));
+		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
+			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
+		ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
 		return ret;
 	}
 	
 	public Data slice(String name) {
 		//check for existing named list
-		if( _names == null )
-			throw new DMLRuntimeException("Invalid lookup by name"
-				+ " in unnamed list: "+name+".");
-		
+		if (_names == null)
+			throw new DMLRuntimeException("Invalid lookup by name" + " in unnamed list: " + name + ".");
+
 		//find position and check for existing entry
 		int pos = _names.indexOf(name);
-		if( pos <= 0 || pos >= _data.size() )
-			throw new DMLRuntimeException("List lookup returned no entry for name='"+name+"'");
-		
+		if (pos < 0 || pos >= _data.size())
+			throw new DMLRuntimeException("List lookup returned no entry for name='" + name + "'");
+
 		//return existing entry
 		return slice(pos);
 	}
 	
 	public ListObject slice(String name1, String name2) {
 		//check for existing named list
-		if( _names == null )
-			throw new DMLRuntimeException("Invalid lookup by name"
-				+ " in unnamed list: "+name1+", "+name2+".");
-		
+		if (_names == null)
+			throw new DMLRuntimeException("Invalid lookup by name" + " in unnamed list: " + name1 + ", " + name2 + ".");
+
 		//find position and check for existing entry
 		int pos1 = _names.indexOf(name1);
 		int pos2 = _names.indexOf(name2);
-		if( pos1 <= 0 || pos1 >= _data.size() )
-			throw new DMLRuntimeException("List lookup returned no entry for name='"+name1+"'");
-		if( pos2 <= 0 || pos2 >= _data.size() )
-			throw new DMLRuntimeException("List lookup returned no entry for name='"+name2+"'");
-		
+		if (pos1 < 0 || pos1 >= _data.size())
+			throw new DMLRuntimeException("List lookup returned no entry for name='" + name1 + "'");
+		if (pos2 < 0 || pos2 >= _data.size())
+			throw new DMLRuntimeException("List lookup returned no entry for name='" + name2 + "'");
+
 		//return list object
 		return slice(pos1, pos2);
 	}
-	
+
+	public List<String> getNames() {
+		return _names;
+	}
+
+	public String getName(int ix) {
+		return (_names == null) ? null : _names.get(ix);
+	}
+
 	@Override
 	public String getDebugName() {
 		return toString();
 	}
 	
 	@Override
-	public String toString() { 
+	public String toString() {
 		StringBuilder sb = new StringBuilder("List (");
-		for( int i=0; i<_data.size(); i++ ) {
-			if( i > 0 )
+		for (int i = 0; i < _data.size(); i++) {
+			if (i > 0)
 				sb.append(", ");
-			if( _names != null ) {
+			if (_names != null) {
 				sb.append(_names.get(i));
 				sb.append("=");
 			}

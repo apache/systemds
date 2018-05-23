@@ -25,12 +25,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.runners.Parameterized.Parameters;
-
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.runners.Parameterized.Parameters;
 
 public abstract class ArimaTest extends AutomatedTestBase {
 	
@@ -55,13 +54,17 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] {{ 10, 1, 1, 1, 1, 1, 1, 24, 1, 1}};
-		return Arrays.asList(data);
+		return Arrays.asList(new Object[][] {
+			{10, 1, 1, 1, 1, 1, 1, 24, 1, 1}});
+			//TODO include after ARIMA script modifications
+			//(these tests are currently failing due to invalid loop ranges)
+			//{0, 7, 0, 0, 0, 0, 0, 0, 0, 0},   //AR(7)
+			//{0, 0, 0, 3, 0, 0, 0, 0, 0, 0}}); //MA(3)
 	}
 	
 	@Override
 	public void setUp() {
-    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
 	protected void testArima(ScriptType scriptType) {
@@ -116,7 +119,7 @@ public abstract class ArimaTest extends AutomatedTestBase {
 
 		double tol = Math.pow(10, -14);
 		HashMap<CellIndex, Double> arima_model_R = readRMatrixFromFS("learnt.model");
-        HashMap<CellIndex, Double> arima_model_SYSTEMML= readDMLMatrixFromHDFS("learnt.model");
-        TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMML, tol, "arima_model_R", "arima_model_SYSTEMML");
-	}   
+		HashMap<CellIndex, Double> arima_model_SYSTEMML= readDMLMatrixFromHDFS("learnt.model");
+		TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMML, tol, "arima_model_R", "arima_model_SYSTEMML");
+	}
 }

@@ -84,9 +84,7 @@ public class DMLParserWrapper extends ParserWrapper
 	 */
 	@Override
 	public DMLProgram parse(String fileName, String dmlScript, Map<String,String> argVals) {
-		DMLProgram prog = doParse(fileName, dmlScript, null, argVals);
-		
-		return prog;
+		return doParse(fileName, dmlScript, null, argVals);
 	}
 	
 	/**

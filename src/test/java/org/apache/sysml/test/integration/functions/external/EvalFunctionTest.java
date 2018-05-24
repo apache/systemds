@@ -29,7 +29,9 @@ import org.apache.sysml.test.integration.TestConfiguration;
 
 public class EvalFunctionTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "SecondOrder";
+	private final static String TEST_NAME1 = "SecondOrderExternal";
+	private final static String TEST_NAME2 = "SecondOrderBuiltin";
+	
 	private final static String TEST_DIR = "functions/external/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + EvalFunctionTest.class.getSimpleName() + "/";
 	
@@ -38,22 +40,30 @@ public class EvalFunctionTest extends AutomatedTestBase
 	private final static int cols = 110;
 	private final static double sparsity = 0.7;
 	
-	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Y" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Y" }) );
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Y" }) );
 	}
 
 	@Test
-	public void runEvalFunctionTest() {
-		
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
+	public void runEvalFunctionExternalTest() {
+		runEvalFunctionTest(TEST_NAME1);
+	}
+	
+	@Test
+	public void runEvalFunctionBuiltinTest() {
+		runEvalFunctionTest(TEST_NAME2);
+	}
+	
+	private void runEvalFunctionTest(String testname) {
+		TestConfiguration config = getTestConfiguration(testname);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		fullDMLScriptName = HOME + testname + ".dml";
 		programArgs = new String[]{"-args", input("X"), output("Y") };
 		
 		try {

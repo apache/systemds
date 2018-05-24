@@ -1351,4 +1351,17 @@ public class HopRewriteUtils
 		return hop.getInput().stream().allMatch(
 			h -> dim1 ? h.rowsKnown() : h.colsKnown());
 	}
+	
+	public static boolean containsSecondOrderBuiltin(ArrayList<Hop> roots) {
+		Hop.resetVisitStatus(roots);
+		return roots.stream().anyMatch(r -> containsSecondOrderBuiltin(r));
+	}
+	
+	private static boolean containsSecondOrderBuiltin(Hop hop) {
+		if( hop.isVisited() ) return false;
+		hop.setVisited();
+		return HopRewriteUtils.isNary(hop, OpOpN.EVAL)
+			|| HopRewriteUtils.isParameterBuiltinOp(hop, Hop.ParamBuiltinOp.PARAMSERV)
+			|| hop.getInput().stream().anyMatch(c -> containsSecondOrderBuiltin(c));
+	}
 }

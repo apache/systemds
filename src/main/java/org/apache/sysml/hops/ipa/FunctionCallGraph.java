@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -33,8 +32,6 @@ import java.util.stream.Collectors;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.HopsException;
-import org.apache.sysml.hops.Hop.DataOpTypes;
-import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.ExternalFunctionStatement;
@@ -315,21 +312,8 @@ public class FunctionCallGraph
 			if( hopsDAG == null || hopsDAG.isEmpty() ) 
 				return false; //nothing to do
 
-			// BFS traverse the dag to find paramserv operator
-			// which can occur anyway in the entire dag
-			LinkedList<Hop> queue = new LinkedList<>(hopsDAG);
-			while (!queue.isEmpty()) {
-				Hop h = queue.poll();
-				if (h.isVisited())
-					continue;
-				if (HopRewriteUtils.isParameterBuiltinOp(h, Hop.ParamBuiltinOp.PARAMSERV))
-					return true;
-				if (!h.getInput().isEmpty())
-					queue.addAll(h.getInput());
-				h.setVisited();
-			}
-			
 			//function ops can only occur as root nodes of the dag
+			ret = HopRewriteUtils.containsSecondOrderBuiltin(hopsDAG);
 			for( Hop h : hopsDAG ) {
 				if( h instanceof FunctionOp ) {
 					FunctionOp fop = (FunctionOp) h;
@@ -381,13 +365,6 @@ public class FunctionCallGraph
 						&& ((ExternalFunctionStatement)fsb.getStatement(0)).isSecondOrder() ) {
 						ret = true;
 					}
-				}
-				else if( HopRewriteUtils.isData(h, DataOpTypes.TRANSIENTWRITE)
-						&& HopRewriteUtils.isNary(h.getInput().get(0), OpOpN.EVAL) ) {
-					//NOTE: after RewriteSplitDagDataDependentOperators, eval operators
-					//will always appear as childs to root nodes which allows for an
-					//efficient existence check without DAG traversal.
-					ret = true;
 				}
 			}
 		}

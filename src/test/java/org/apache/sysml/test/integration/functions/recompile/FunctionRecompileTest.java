@@ -103,15 +103,15 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			//note: change from previous version due to fix in op selection (unknown size XtX and mapmult)
 			//CHECK compiled MR jobs
 			int expectNumCompiled = -1;
-			if( IPA ) expectNumCompiled = 4; //reblock TODO investigate 1-4 recompile side effect
-			else      expectNumCompiled = 5;//reblock, GMR,GMR,GMR,GMR (last two should piggybacked)
+			if( IPA ) expectNumCompiled = 1; //reblock
+			else      expectNumCompiled = 5; //reblock, GMR,GMR,GMR,GMR (last two should piggybacked)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0;
-			else if( IPA )  expectNumExecuted = 31; //reblock TODO investigate 1-31 recompile side effect
+			else if( IPA )  expectNumExecuted = 1; //reblock
 			else            expectNumExecuted = 41; //reblock, 10*(GMR,GMR,GMR, GMR) (last two should piggybacked)
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedMRJobs());

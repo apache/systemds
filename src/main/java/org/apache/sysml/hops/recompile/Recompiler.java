@@ -46,12 +46,12 @@ import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -1282,17 +1282,12 @@ public class Recompiler
 			for( Hop c : hop.getInput() )
 				rUpdateStatistics(c, vars);	
 		
-		boolean updatedSizeExpr = false;
-		
 		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
-		if(     hop instanceof DataOp 
-			&& ((DataOp)hop).getDataOpType() != DataOpTypes.PERSISTENTREAD )
-		{
+		if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) ) {
 			DataOp d = (DataOp) hop;
 			String varName = d.getName();
-			if( vars.keySet().contains( varName ) )
-			{
+			if( vars.keySet().contains( varName ) ) {
 				Data dat = vars.get(varName);
 				if( dat instanceof MatrixObject ) {
 					MatrixObject mo = (MatrixObject) dat;
@@ -1308,10 +1303,9 @@ public class Recompiler
 			}
 		}
 		//special case for persistent reads with unknown size (read-after-write)
-		else if( hop instanceof DataOp 
-				&& ((DataOp)hop).getDataOpType() == DataOpTypes.PERSISTENTREAD
-				&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV
-				&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
+		else if( HopRewriteUtils.isData(hop, DataOpTypes.PERSISTENTREAD)
+			&& !hop.dimsKnown() && ((DataOp)hop).getInputFormatType()!=FileFormatTypes.CSV
+			&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA) )
 		{
 			//update hop with read meta data
 			DataOp dop = (DataOp) hop; 
@@ -1332,7 +1326,8 @@ public class Recompiler
 				HashMap<Long, Long> memo = new HashMap<>();
 				d.refreshRowsParameterInformation(d.getInput().get(ix1), vars, memo);
 				d.refreshColsParameterInformation(d.getInput().get(ix2), vars, memo);
-				updatedSizeExpr = initUnknown & d.dimsKnown();
+				if( !(initUnknown & d.dimsKnown()) )
+					d.refreshSizeInformation();
 			} 
 			else if ( d.getOp() == DataGenMethod.SEQ ) 
 			{
@@ -1355,47 +1350,40 @@ public class Recompiler
 					d.setDim2( 1 );
 					d.setIncrementValue( incr );
 				}
-				updatedSizeExpr = initUnknown & d.dimsKnown();
+				if( !(initUnknown & d.dimsKnown()) )
+					d.refreshSizeInformation();
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data generation method: " + d.getOp());
 			}
 		}
 		//update size expression for reshape according to symbol table entries
-		else if (    hop instanceof ReorgOp 
-				 && ((ReorgOp)(hop)).getOp()==Hop.ReOrgOp.RESHAPE )
-		{
-			ReorgOp d = (ReorgOp) hop;
-			boolean initUnknown = !d.dimsKnown();
-			HashMap<Long, Long> memo = new HashMap<>();
-			d.refreshRowsParameterInformation(d.getInput().get(1), vars, memo);
-			d.refreshColsParameterInformation(d.getInput().get(2), vars, memo);
-			updatedSizeExpr = initUnknown & d.dimsKnown();
+		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.RESHAPE) ) {
+			hop.refreshSizeInformation(); //update incl reset
+			if( !hop.dimsKnown() ) {
+				HashMap<Long, Long> memo = new HashMap<>();
+				hop.refreshRowsParameterInformation(hop.getInput().get(1), vars, memo);
+				hop.refreshColsParameterInformation(hop.getInput().get(2), vars, memo);
+			}
 		}
 		//update size expression for indexing according to symbol table entries
-		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST )
-		{
-			IndexingOp iop = (IndexingOp)hop;
-			Hop input2 = iop.getInput().get(1); //inpRowL
-			Hop input3 = iop.getInput().get(2); //inpRowU
-			Hop input4 = iop.getInput().get(3); //inpColL
-			Hop input5 = iop.getInput().get(4); //inpColU
-			boolean initUnknown = !iop.dimsKnown();
-			HashMap<Long, Double> memo = new HashMap<>();
-			double rl = iop.computeBoundsInformation(input2, vars, memo);
-			double ru = iop.computeBoundsInformation(input3, vars, memo);
-			double cl = iop.computeBoundsInformation(input4, vars, memo);
-			double cu = iop.computeBoundsInformation(input5, vars, memo);
-			if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
-				iop.setDim1( (long)(ru-rl+1) );
-			if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
-				iop.setDim2( (long)(cu-cl+1) );
-			updatedSizeExpr = initUnknown & iop.dimsKnown();
+		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST ) {
+			hop.refreshSizeInformation(); //update, incl reset
+			if( !hop.dimsKnown() ) {
+				HashMap<Long, Double> memo = new HashMap<>();
+				double rl = hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
+				double ru = hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
+				double cl = hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
+				double cu = hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
+				if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
+					hop.setDim1( (long)(ru-rl+1) );
+				if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
+					hop.setDim2( (long)(cu-cl+1) );
+			}
 		}
-		
+		else {
 		//propagate statistics along inner nodes of DAG,
 		//without overwriting inferred size expressions
-		if( !updatedSizeExpr ) {
 			hop.refreshSizeInformation();
 		}
 		

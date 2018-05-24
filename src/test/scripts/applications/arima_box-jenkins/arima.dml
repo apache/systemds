@@ -39,14 +39,15 @@ arima_css = function(Matrix[Double] w, Matrix[Double] X, Integer pIn, Integer P,
 	b = X[,2:ncol(X)]%*%w
 	
 	R = Rand(rows=nrow(X), cols=nrow(X), min=0, max=0)
-	for(i7 in 1:qIn){
+	
+	for(i7 in seq(1, qIn, 1)){
 		ma_ind_ns = P+pIn+i7
 		err_ind_ns = i7
 		ones_ns = Rand(rows=nrow(R)-err_ind_ns, cols=1, min=1, max=1)
 		d_ns = ones_ns * as.scalar(w[ma_ind_ns,1])
 		R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] = R[1+err_ind_ns:nrow(R),1:ncol(R)-err_ind_ns] + diag(d_ns)
 	}
-	for(i8 in 1:Q){
+	for(i8 in seq(1, Q, 1)){
 		ma_ind_s = P+pIn+qIn+i8
 		err_ind_s = s*i8
 		ones_s = Rand(rows=nrow(R)-err_ind_s, cols=1, min=1, max=1)
@@ -138,7 +139,7 @@ if(num_rows <= d){
 }
 
 Y = X
-for(i in 1:d){
+for(i in seq(1, d, 1)){
 	n1 = nrow(Y)+0.0
 	Y = Y[2:n1,] - Y[1:n1-1,]
 }
@@ -148,7 +149,7 @@ if(num_rows <= s*D){
 	print("seasonal differencing order should be larger than number of observations divided by length of season")
 }
 
-for(i in 1:D){
+for(i in seq(1,D, 1)){
 	n1 = nrow(Y)+0.0
 	Y = Y[s+1:n1,] - Y[1:n1-s,]
 }
@@ -174,16 +175,16 @@ totcols = 1+p+P+Q+q #target col (X), p-P cols, q-Q cols
 Z = Rand(rows=n, cols=totcols, min=0, max=0)
 Z[,1] = Y #target col
 
-parfor(i1 in 1:p, check=0){
+parfor(i1 in seq(1, p, 1), check=0){
 	Z[i1+1:n,1+i1] = Y[1:n-i1,]
 }
-parfor(i2 in 1:P, check=0){
+parfor(i2 in seq(1, P, 1), check=0){
 	Z[s*i2+1:n,1+p+i2] = Y[1:n-s*i2,]
 }
-parfor(i5 in 1:q, check=0){
+parfor(i5 in seq(1, q, 1), check=0){
 	Z[i5+1:n,1+P+p+i5] = Y[1:n-i5,]
 }
-parfor(i6 in 1:Q, check=0){
+parfor(i6 in seq(1,Q, 1), check=0){
 	Z[s*i6+1:n,1+P+p+q+i6] = Y[1:n-s*i6,]
 }
 

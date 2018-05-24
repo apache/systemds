@@ -453,9 +453,14 @@
 						<include>**/integration/functions/estim/*Suite.java</include>
 						<include>**/integration/functions/external/*Suite.java</include>
 						<include>**/integration/functions/frame/*Suite.java</include>
+						<include>**/integration/functions/io/*Suite.java</include>
 						<include>**/integration/functions/jmlc/*Suite.java</include>
 						<include>**/integration/functions/misc/*Suite.java</include>
+						<include>**/integration/functions/parfor/*Suite.java</include>
 						<include>**/integration/functions/sparse/*Suite.java</include>
+						<include>**/integration/functions/tensor/*Suite.java</include>
+						<include>**/integration/functions/updateinplace/*Suite.java</include>
+						<include>**/integration/functions/vect/*Suite.java</include>
 						<!-- <include>**/integration/functions/codegenalg/*Suite.java</include> -->
 						<!-- <include>**/integration/functions/**/*Test*.java</include> -->
 						<include>**/integration/mlcontext/*Suite.java</include>

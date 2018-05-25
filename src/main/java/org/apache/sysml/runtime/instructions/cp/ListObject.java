@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,10 +21,12 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 
 public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
@@ -32,7 +34,7 @@ public class ListObject extends Data {
 	private final List<String> _names;
 	private final List<Data> _data;
 	private boolean[] _dataState = null;
-	
+
 	public ListObject(List<Data> data) {
 		super(DataType.LIST, ValueType.UNKNOWN);
 		_data = data;
@@ -44,30 +46,44 @@ public class ListObject extends Data {
 		_data = data;
 		_names = names;
 	}
-	
+
+	public boolean isParameterizedList() {
+		return _names != null;
+	}
+
+	public List<Data> getData() {
+		return _data;
+	}
+
+	public long getDataSize() {
+		Optional<Long> result = _data.stream().filter(data -> data instanceof CacheableData)
+				.map(data -> ((CacheableData) data).getDataSize()).reduce((l1, l2) -> l1 + l2);
+		return result.get();
+	}
+
 	public void setStatus(boolean[] status) {
 		_dataState = status;
 	}
-	
+
 	public boolean[] getStatus() {
 		return _dataState;
 	}
-	
+
 	public int getLength() {
 		return _data.size();
 	}
-	
+
 	public Data slice(int ix) {
 		return _data.get(ix);
 	}
-	
+
 	public ListObject slice(int ix1, int ix2) {
 		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
 			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
 		ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
 		return ret;
 	}
-	
+
 	public Data slice(String name) {
 		//check for existing named list
 		if (_names == null)
@@ -81,7 +97,34 @@ public class ListObject extends Data {
 		//return existing entry
 		return slice(pos);
 	}
-	
+
+	public Data slice(String name, ValueType vt, DataType dt) {
+		Data data = slice(name);
+		switch (dt) {
+		case LIST:
+		case MATRIX:
+		case FRAME:
+			break;
+		case SCALAR:
+			StringObject so = (StringObject) data;
+			String value = so.getStringValue();
+			switch (vt) {
+			case DOUBLE:
+				data = new DoubleObject(Double.valueOf(value));
+				break;
+			case INT:
+				data = new IntObject(Integer.valueOf(value));
+				break;
+			case BOOLEAN:
+				data = new BooleanObject(Boolean.valueOf(value));
+				break;
+			case STRING:
+				break;
+			}
+		}
+		return data;
+	}
+
 	public ListObject slice(String name1, String name2) {
 		//check for existing named list
 		if (_names == null)
@@ -111,7 +154,7 @@ public class ListObject extends Data {
 	public String getDebugName() {
 		return toString();
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("List (");

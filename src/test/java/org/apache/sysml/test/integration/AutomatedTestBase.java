@@ -1250,9 +1250,11 @@ public abstract class AutomatedTestBase
 			if (exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
 		} catch (Exception e) {
-			boolean result = rCompareException(exceptionExpected, errMessage, e, false);
-			if (exceptionExpected && !result) {
-				fail(String.format("expected exception message '%s' has not been raised.", errMessage));
+			if (errMessage != null && !errMessage.equals("")) {
+				boolean result = rCompareException(exceptionExpected, errMessage, e, false);
+				if (exceptionExpected && !result) {
+					fail(String.format("expected exception message '%s' has not been raised.", errMessage));
+				}
 			}
 			if (!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
 				e.printStackTrace();

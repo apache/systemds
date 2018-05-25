@@ -35,7 +35,9 @@ import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.NativeHelper;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -47,7 +49,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// Determine the number of workers
-		int workerNum = Integer.valueOf(getParam(Statement.PS_PARALLELISM));
+		int workerNum = getWorkerNum();
 
 		// Start the parameter server
 		ParamServer ps = createPS();
@@ -88,7 +90,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		threads.forEach(Thread::start);
 		aggThread.start();
 
-		// Wait for the threads stoping
+		// Wait for the threads stopping
 		threads.forEach(thread -> {
 			try {
 				thread.join();
@@ -117,13 +119,43 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ps.getParams().clear();
 	}
 
+	/**
+	 * Get the worker numbers according to the vcores
+	 *
+	 * @return worker numbers
+	 */
+	private int getWorkerNum() {
+		int workerNum = Integer.valueOf(getParam(Statement.PS_PARALLELISM));
+		Statement.PSModeType mode = Statement.PSModeType.valueOf(getParam(Statement.PS_MODE));
+		switch (mode) {
+		case LOCAL:
+			int vcores = InfrastructureAnalyzer.getLocalParallelism();
+			if ("openblas".equals(NativeHelper.getCurrentBLAS())) {
+				workerNum = Math.min(workerNum, vcores / 2);
+			} else {
+				workerNum = Math.min(workerNum, vcores);
+			}
+			break;
+		case REMOTE_SPARK:
+			throw new DMLRuntimeException("Do not support remote spark.");
+		}
+		return workerNum;
+	}
+
+	/**
+	 * Create a server which serves the local or remote workers
+	 *
+	 * @return parameter server
+	 */
 	private ParamServer createPS() {
 		ParamServer ps = null;
-		final Statement.PSModeType mode = Statement.PSModeType.valueOf(getParam(Statement.PS_MODE));
+		Statement.PSModeType mode = Statement.PSModeType.valueOf(getParam(Statement.PS_MODE));
 		switch (mode) {
 		case LOCAL:
 			ps = new LocalParamServer();
 			break;
+		case REMOTE_SPARK:
+			throw new DMLRuntimeException("Do not support remote spark.");
 		}
 		return ps;
 	}
@@ -131,9 +163,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private long getBatchSize(Statement.PSFrequency freq, ExecutionContext ec) {
 		long batchSize = Integer.valueOf(getParam(Statement.PS_BATCH_SIZE));
 		if (batchSize <= 0) {
-			throw new DMLRuntimeException(
-					String.format("In paramserv function, the argument '%s' could not be less than or equal to 0.",
-							Statement.PS_BATCH_SIZE));
+			throw new DMLRuntimeException(String.format(
+					"Paramserv function: the number of argument '%s' could not be less than or equal to 0.",
+					Statement.PS_BATCH_SIZE));
 		}
 		if (freq.equals(Statement.PSFrequency.EPOCH)) {
 			batchSize = ec.getMatrixObject(getParam(Statement.PS_FEATURES)).getNumRows();
@@ -159,6 +191,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		case DISJOINT_CONTIGUOUS:
 			disjointContiguous(workerNum, features, labels, valFeatures, valLabels, workers);
 			break;
+		case DISJOINT_RANDOM:
+		case OVERLAP_RESHUFFLE:
+		case DISJOINT_ROUND_ROBIN:
+			throw new DMLRuntimeException(
+					String.format("Paramserv function: the scheme '%s' is not supported.", scheme));
 		}
 	}
 

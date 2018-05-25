@@ -81,7 +81,34 @@ public class ListObject extends Data {
 		//return existing entry
 		return slice(pos);
 	}
-	
+
+	public Data slice(String name, ValueType vt, DataType dt) {
+		Data data = slice(name);
+		switch (dt) {
+		case LIST:
+		case MATRIX:
+		case FRAME:
+			break;
+		case SCALAR:
+			StringObject so = (StringObject) data;
+			String value = so.getStringValue();
+			switch (vt) {
+			case DOUBLE:
+				data = new DoubleObject(Double.valueOf(value));
+				break;
+			case INT:
+				data = new IntObject(Integer.valueOf(value));
+				break;
+			case BOOLEAN:
+				data = new BooleanObject(Boolean.valueOf(value));
+				break;
+			case STRING:
+				break;
+			}
+		}
+		return data;
+	}
+
 	public ListObject slice(String name1, String name2) {
 		//check for existing named list
 		if (_names == null)

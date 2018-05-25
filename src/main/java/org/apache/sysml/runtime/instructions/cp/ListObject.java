@@ -47,6 +47,10 @@ public class ListObject extends Data {
 		_names = names;
 	}
 
+	public boolean isParameterizedList() {
+		return _names != null;
+	}
+
 	public List<Data> getData() {
 		return _data;
 	}

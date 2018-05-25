@@ -32,7 +32,8 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME4 = "paramserv-wrong-type-args";
 	private static final String TEST_NAME5 = "paramserv-wrong-args";
 	private static final String TEST_NAME6 = "paramserv-wrong-args2";
-	private static final String TEST_NAME7 = "paramserv-ipa-test";
+	private static final String TEST_NAME7 = "paramserv-wrong-list-test";
+	private static final String TEST_NAME8 = "paramserv-nn-test";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -48,6 +49,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
 	}
 
 	@Test
@@ -85,8 +87,14 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParamservIpaTest() {
-		runDMLTest(TEST_NAME7, true, false, null, "1");
+	public void testParamservWrongListTest() {
+		runDMLTest(TEST_NAME7, true, true, DMLException.class,
+				"Paramserv function: 'List (element1)' needs to be a parameterized list.");
+	}
+
+	@Test
+	public void testParamservNNTest() {
+		runDMLTest(TEST_NAME8, true, false, null, null);
 	}
 
 	private void runDMLTest(String testname, boolean newWay, boolean exceptionExpected, Class<?> exceptionClass,

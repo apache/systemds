@@ -1250,9 +1250,9 @@ public abstract class AutomatedTestBase
 			if (exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
 		} catch (Exception e) {
-			if (exceptionExpected && e.getClass().equals(expectedException) && errMessage != null
-					&& !e.getMessage().contains(errMessage)) {
-				fail("expected exception message has not been raised: " + errMessage);
+			boolean result = rCompareException(exceptionExpected, errMessage, e, false);
+			if (exceptionExpected && !result) {
+				fail(String.format("expected exception message '%s' has not been raised.", errMessage));
 			}
 			if (!exceptionExpected || (expectedException != null && !(e.getClass().equals(expectedException)))) {
 				e.printStackTrace();
@@ -1267,6 +1267,16 @@ public abstract class AutomatedTestBase
 				fail(errorMessage.toString());
 			}
 		}
+	}
+
+	private boolean rCompareException(boolean exceptionExpected, String errMessage, Throwable e, boolean result) {
+		if (e.getCause() != null) {
+			result |= rCompareException(exceptionExpected, errMessage, e.getCause(), result);
+		}
+		if (exceptionExpected && errMessage != null && e.getMessage().contains(errMessage)) {
+			result = true;
+		}
+		return result;
 	}
 
 	public void cleanupScratchSpace()

@@ -49,12 +49,18 @@ import org.apache.sysml.runtime.instructions.cp.ListObject;
 public class ParamservUtils {
 
 	/**
-	 * Deep copy the list object
+	 * Deep copy the parameterized list object
 	 *
-	 * @param lo ListObject
+	 * @param lo A parameterized list
 	 * @return a new copied list object
 	 */
 	public static ListObject copyList(ListObject lo) {
+		if (lo.getLength() == 0) {
+			return lo;
+		}
+		if (!lo.isParameterizedList()) {
+			throw new DMLRuntimeException(String.format("Paramserv function: '%s' needs to be a parameterized list.", lo));
+		}
 		List<Data> newData = lo.getNames().stream().map(name -> {
 			Data oldData = lo.slice(name);
 			if (oldData instanceof MatrixObject) {

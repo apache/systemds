@@ -83,7 +83,7 @@ public class LocalAggregationService extends AggregationService implements Runna
 			int finished = 0;
 			boolean[] tables = new boolean[_workerNum];
 
-			for (int i = 0; i < _workerNum && finished < _workerNum && isAlive(); i++) {
+			for (int i = 0; i < _workerNum && finished < _workerNum; i++) {
 				if (tables[i]) {
 					continue;
 				}

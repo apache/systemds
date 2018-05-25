@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,26 +34,26 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 /**
  * Replaces <code>HashMap&lang;String, Data&rang;</code> as the table of
  * variable names and references.  No longer supports global consistency.
- * 
+ *
  */
 public class LocalVariableMap implements Cloneable
 {
 	private static final String eol = System.getProperty ("line.separator");
 	private static final String ELEMENT_DELIM = ProgramConverter.ELEMENT_DELIM;
 	private static final IDSequence _seq = new IDSequence();
-	
+
 	//variable map data and id
 	private final HashMap<String, Data> localMap;
 	private final long localID;
-	
+
 	//optional set of registered outputs
 	private HashSet<String> outputs = null;
-	
+
 	public LocalVariableMap() {
 		localMap = new HashMap<>();
 		localID = _seq.getNextID();
 	}
-	
+
 	public LocalVariableMap(LocalVariableMap vars) {
 		localMap = new HashMap<>(vars.localMap);
 		localID = _seq.getNextID();
@@ -62,32 +62,32 @@ public class LocalVariableMap implements Cloneable
 	public Set<String> keySet() {
 		return localMap.keySet();
 	}
-	
+
 	public Set<Entry<String, Data>> entrySet() {
 		return localMap.entrySet();
 	}
-	
+
 	/**
 	 * Retrieves the data object given its name.
-	 * 
+	 *
 	 * @param name the variable name for the data object
 	 * @return the direct reference to the data object
 	 */
 	public Data get( String name ) {
 		return localMap.get( name );
 	}
-	
+
 	/**
 	 * Adds a new (name, value) pair to the variable map, or replaces an old pair with
 	 * the same name.  Several different variable names may refer to the same value.
-	 * 
+	 *
 	 * @param name the variable name for the data value
 	 * @param val the data value object (such as envelope)
 	 */
 	public void put(String name, Data val) {
 		localMap.put( name, val );
 	}
-	
+
 	public void putAll(Map<String, Data> vals) {
 		localMap.putAll(vals);
 	}
@@ -99,12 +99,12 @@ public class LocalVariableMap implements Cloneable
 	public void removeAll() {
 		localMap.clear();
 	}
-	
+
 	public void removeAllIn(Set<String> blacklist) {
 		localMap.entrySet().removeIf(
 			e -> blacklist.contains(e.getKey()));
 	}
-	
+
 	public void removeAllNotIn(Set<String> blacklist) {
 		localMap.entrySet().removeIf(
 			e -> !blacklist.contains(e.getKey()));
@@ -113,11 +113,11 @@ public class LocalVariableMap implements Cloneable
 	public boolean hasReferences( Data d ) {
 		return localMap.containsValue(d);
 	}
-	
+
 	public void setRegisteredOutputs(HashSet<String> outputs) {
 		this.outputs = outputs;
 	}
-	
+
 	public HashSet<String> getRegisteredOutputs() {
 		return outputs;
 	}
@@ -129,7 +129,7 @@ public class LocalVariableMap implements Cloneable
 			.filter(d -> (d instanceof CacheableData))
 			.mapToDouble(d -> ((CacheableData<?>)d).getDataSize()).sum();
 	}
-	
+
 	public String serialize() {
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
@@ -170,7 +170,7 @@ public class LocalVariableMap implements Cloneable
 		}
 		return sb.toString();
 	}
-		
+
 	@Override
 	public Object clone() {
 		return new LocalVariableMap(this);

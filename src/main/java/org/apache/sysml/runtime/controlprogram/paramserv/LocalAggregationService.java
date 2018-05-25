@@ -44,8 +44,6 @@ public class LocalAggregationService extends AggregationService implements Runna
 
 	private String _funcNS;
 	private String _funcName;
-	private int _finished;
-	private boolean[] _tables;
 	private ArrayList<DataIdentifier> _inputs;
 	private ArrayList<DataIdentifier> _outputs;
 	private CPOperand[] _boundInputs;
@@ -55,10 +53,6 @@ public class LocalAggregationService extends AggregationService implements Runna
 	public LocalAggregationService(String aggFunc, ExecutionContext ec, ListObject models, ListObject hyperParams,
 			ParamServer ps, int workerNum) {
 		super(aggFunc, ec, models, hyperParams, ps, workerNum);
-
-		// Populate the variables table with the hyperparams and global parameters
-		ParamservUtils.populate(_ec, _hyperParams);
-		ParamservUtils.populate(_ec, _models);
 
 		// Fetch the agg function
 		String[] keys = DMLProgram.splitFunctionKey(_aggFunc);
@@ -80,42 +74,52 @@ public class LocalAggregationService extends AggregationService implements Runna
 	@Override
 	public void run() {
 
-		// Push the global parameters
+		// Firstly, start by broadcasting the model
 		pushGlobalParams();
+		ParamservUtils.populate(_ec, _hyperParams, _inputs);
+		ParamservUtils.populate(_ec, _model, _inputs);
 
 		while (isAlive()) {
-			// Pull the gradients from ps
-			_finished = 0;
-			_tables = new boolean[_workerNum];
-			while (_finished < _workerNum) {
-				IntStream.range(0, _workerNum).forEach(i -> {
-					if (!_tables[i]) {
-						//LOG.info(String.format("Try to pull the gradients of worker_%d.", i));
-						Data gradients = _ps.pull(ParamServer.GRADIENTS_PREFIX + i);
-						if (gradients != null) {
-							LOG.info(String.format("Successfully pulled the gradients of worker_%d.", i));
-							aggregate((ListObject) gradients);
-							_finished++;
-							_tables[i] = true;
-						}
-						try {
-							TimeUnit.SECONDS.sleep(POLL_FREQUENCY);
-						} catch (InterruptedException e) {
-							throw new DMLRuntimeException(
-									"Aggregation service: Failed to sleep when polling the gradients.", e);
-						}
-					}
-				});
+			int finished = 0;
+			boolean[] tables = new boolean[_workerNum];
+
+			for (int i = 0; i < _workerNum && finished < _workerNum && isAlive(); i++) {
+				if (tables[i]) {
+					continue;
+				}
+				// Pull the gradients of each worker and update the model
+				Data gradients = _ps.pull(ParamServer.GRADIENTS_PREFIX + i);
+				if (gradients != null) {
+					LOG.info(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
+							((ListObject) gradients).getDataSize() / 1024, i));
+					aggregate((ListObject) gradients);
+					finished++;
+					tables[i] = true;
+				}
+				try {
+					TimeUnit.SECONDS.sleep(POLL_FREQUENCY);
+				} catch (InterruptedException e) {
+					throw new DMLRuntimeException("Aggregation service: Failed to sleep when polling the gradients.",
+							e);
+				}
 			}
+
 			// Push the updated model to ps
 			pushGlobalParams();
+
 		}
+
+		_ps.push(ParamServer.RESULT_MODEL, ParamservUtils.copyList(_model));
+
+		// Clean up the old model
+		ParamservUtils.cleanupListObject(_ec, _model);
+		ParamservUtils.cleanupListObject(_ec, _hyperParams);
+		_ec.getVariables().removeAll();
 	}
 
 	private void aggregate(ListObject gradients) {
-
 		// Populate the variables table with the gradients
-		ParamservUtils.populate(_ec, gradients);
+		ParamservUtils.populate(_ec, gradients, _inputs);
 
 		// Invoke the aggregate function
 		FunctionCallCPInstruction inst = new FunctionCallCPInstruction(_funcNS, _funcName, _boundInputs, _inputNames,
@@ -124,24 +128,24 @@ public class LocalAggregationService extends AggregationService implements Runna
 
 		// Get the output
 		List<Data> paramsList = _outputs.stream().map(id -> _ec.getVariable(id.getName())).collect(Collectors.toList());
-		ListObject output = new ListObject(paramsList, _outputNames);
 
-		// Update the model
-		List<Data> newData = _models.getNames().stream().map(output::slice).collect(Collectors.toList());
-		_models = new ListObject(newData, _models.getNames());
+		// Update the model with the new output
+		_model = new ListObject(paramsList, _outputNames);
 
-		// Clean up the local execution context
-		//_ec.destroy();
+		// Clean up the gradients
+		ParamservUtils.cleanupListObject(_ec, gradients);
 	}
 
 	/**
 	 * Push the global parameters to ps
 	 */
 	private void pushGlobalParams() {
-		_ps.push(ParamServer.RESULT_MODEL, _models);
-		// Pin the model to avoid being cleaned up
-		_models.setStatus(_ec.pinVariables(_models.getNames()));
-		IntStream.range(0, _workerNum).forEach(i -> _ps.push(ParamServer.GLOBAL_PREFIX + i, _models));
-		LOG.info(String.format("Successfully pushed %d copies of global parameters to ps.", _workerNum));
+		IntStream.range(0, _workerNum).forEach(i -> {
+			// Copy the model
+			ListObject copiedLO = ParamservUtils.copyList(_model);
+			_ps.push(ParamServer.GLOBAL_PREFIX + i, copiedLO);
+		});
+		LOG.info(String.format("Successfully pushed %d copies of global parameters [size:%d kb] to ps.", _workerNum,
+				_model.getDataSize() / 1024));
 	}
 }

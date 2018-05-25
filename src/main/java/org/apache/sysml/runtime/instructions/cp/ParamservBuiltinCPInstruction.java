@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -45,10 +44,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		super(op, paramsMap, out, opcode, istr);
 	}
 
-	private CPOperand createOperand(String name, Expression.ValueType vt) {
-		return new CPOperand(name, vt, Expression.DataType.SCALAR, true);
-	}
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// Determine the number of workers
@@ -57,15 +52,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Start the parameter server
 		ParamServer ps = createPS();
 
-		// Create aggregation service
 		String aggFunc = getParam(Statement.PS_AGGREGATION_FUN);
 		ListObject globalParams = ec.getListObject(getParam(Statement.PS_MODEL));
 		ListObject hyperParams = getHyperParams(ec);
+
+		// Create aggregation service
 		LocalAggregationService aggService = new LocalAggregationService(aggFunc,
-				ExecutionContextFactory.createContext(ec.getProgram()), globalParams, hyperParams, ps, workerNum);
+				ExecutionContextFactory.createContext(ec.getProgram()), ParamservUtils.copyList(globalParams),
+				ParamservUtils.copyList(hyperParams), ps, workerNum);
+
 		Thread aggThread = new Thread(aggService);
 
-		// Create the local workers
 		String updFunc = getParam(Statement.PS_UPDATE_FUN);
 		Statement.PSFrequency freq = Statement.PSFrequency.valueOf(getParam(Statement.PS_FREQUENCY));
 		int epochs = Integer.valueOf(getParam(Statement.PS_EPOCHS));
@@ -75,8 +72,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 							Statement.PS_EPOCHS));
 		}
 		long batchSize = getBatchSize(freq, ec);
+
+		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum).mapToObj(
-				i -> new LocalPSWorker((long) i, updFunc, freq, epochs, batchSize, hyperParams,
+				i -> new LocalPSWorker((long) i, updFunc, freq, epochs, batchSize, ParamservUtils.copyList(hyperParams),
 						ExecutionContextFactory.createContext(ec.getProgram()), ps)).collect(Collectors.toList());
 
 		// Do data partition
@@ -98,11 +97,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			}
 		});
 		LOG.info("All workers finished.");
+
 		aggService.kill();
+		try {
+			aggThread.join();
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException("Paramserv function: Failed to join the aggregation service thread.", e);
+		}
+		LOG.info("Aggregation service finished.");
 
 		// Create the output
 		ListObject result = (ListObject) ps.pull(ParamServer.RESULT_MODEL);
+		result.setStatus(ec.pinVariables(result.getNames()));
 		ec.setVariable(output.getName(), result);
+
+		ParamservUtils.cleanupListObject(ec, globalParams);
+		ParamservUtils.cleanupListObject(ec, hyperParams);
+
+		ps.getParams().clear();
 	}
 
 	private ParamServer createPS() {

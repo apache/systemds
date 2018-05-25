@@ -19,9 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.sysml.runtime.instructions.cp.Data;
 
@@ -31,13 +29,13 @@ public abstract class ParamServer {
 	public static final String GRADIENTS_PREFIX = "gradients_";
 	public static final String RESULT_MODEL = "result_model";
 
-	private Map<String, Data> _params;
+	private ConcurrentHashMap<String, Data> _params;
 
 	ParamServer() {
-		this._params = Collections.synchronizedMap(new HashMap<>());
+		this._params = new ConcurrentHashMap<>();
 	}
 
-	public Map<String, Data> getParams() {
+	public ConcurrentHashMap<String, Data> getParams() {
 		return _params;
 	}
 

@@ -26,7 +26,7 @@ public abstract class AggregationService {
 
 	protected String _aggFunc;
 	protected ExecutionContext _ec;
-	protected ListObject _models;
+	protected ListObject _model;
 	protected ListObject _hyperParams;
 	protected ParamServer _ps;
 	protected int _workerNum;
@@ -35,7 +35,7 @@ public abstract class AggregationService {
 	public AggregationService(String aggFunc, ExecutionContext ec, ListObject models, ListObject hyperParams, ParamServer ps, int workerNum) {
 		this._aggFunc = aggFunc;
 		this._ec = ec;
-		this._models = models;
+		this._model = models;
 		this._hyperParams = hyperParams;
 		this._ps = ps;
 		this._workerNum = workerNum;

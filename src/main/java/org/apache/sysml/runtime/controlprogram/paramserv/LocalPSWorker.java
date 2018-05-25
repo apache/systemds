@@ -56,13 +56,13 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 		super(workerID, updFunc, freq, epochs, batchSize, hyperParams, ec, ps);
 
 		// Get the update function
-		String[] keys = DMLProgram.splitFunctionKey(getUpdFunc());
+		String[] keys = DMLProgram.splitFunctionKey(_updFunc);
 		_funcName = keys[0];
 		if (keys.length == 2) {
 			_funcNS = keys[0];
 			_funcName = keys[1];
 		}
-		FunctionProgramBlock func = getEC().getProgram().getFunctionProgramBlock(_funcNS, _funcName);
+		FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(_funcNS, _funcName);
 		_inputs = func.getInputParams();
 		_outputs = func.getOutputParams();
 		_boundInputs = _inputs.stream()
@@ -70,70 +70,79 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 				.toArray(CPOperand[]::new);
 		_inputNames = _inputs.stream().map(DataIdentifier::getName).collect(Collectors.toCollection(ArrayList::new));
 		_outputNames = _outputs.stream().map(DataIdentifier::getName).collect(Collectors.toCollection(ArrayList::new));
-
-		ParamservUtils.populate(_ec, _hyperParams, _inputs);
 	}
 
 	@Override
 	public void run() {
-		int epochs = getEpochs();
 
-		// Load training data
-		MatrixObject features = getFeatures();
-		MatrixObject labels = getLabels();
-		long dataSize = features.getNumRows();
+		ParamservUtils.populate(_ec, _hyperParams, _inputs);
 
-		for (int i = 0; i < epochs; i++) {
-			long begin = 1;
-			while (begin < dataSize) {
+		long dataSize = _features.getNumRows();
+
+		for (int i = 0; i < _epochs; i++) {
+			int totalIter = (int) Math.ceil(dataSize / _batchSize);
+			for (int j = 0; j < totalIter; j++) {
 				// Pull the global parameters from ps
 				ListObject globalParams = pollGlobalParams();
-				ParamservUtils.populate(getEC(), globalParams);
+				ParamservUtils.populate(_ec, globalParams, _inputs);
 
-				// Get batch features and labels
-				long end = begin + getBatchSize();
-				if (end > dataSize) {
+				long begin = j * _batchSize + 1;
+				long end = begin + _batchSize;
+				if (j == totalIter - 1) {
+					// If it is the last iteration
 					end = dataSize;
 				}
-				LOG.info(String.format("Local worker_%d: Try to get the batch data of index from %d to %d.", _workerID,
-						begin, end));
-				MatrixObject bFeatures = ParamservUtils.sliceMatrix(features, begin, end);
-				MatrixObject bLabels = ParamservUtils.sliceMatrix(labels, begin, end);
-				begin = end + 1;
 
-				getEC().setVariable(Statement.PS_FEATURES, bFeatures);
-				getEC().setVariable(Statement.PS_LABELS, bLabels);
+				// Get batch features and labels
+				MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
+				MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
+				_ec.setVariable(Statement.PS_FEATURES, bFeatures);
+				_ec.setVariable(Statement.PS_LABELS, bLabels);
+
+				LOG.info(String.format(
+						"Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. [Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
+						_workerID, bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, i + 1,
+						_epochs, j + 1, totalIter));
 
 				// Invoke the update function
 				FunctionCallCPInstruction inst = new FunctionCallCPInstruction(_funcNS, _funcName, _boundInputs,
 						_inputNames, _outputNames, "update function");
-				inst.processInstruction(getEC());
+				inst.processInstruction(_ec);
 
-				// Get the output
-				List<Data> gradientsList = _outputs.stream().map(id -> getEC().getVariable(id.getName()))
+				// Get the gradients
+				List<Data> gradientsList = _outputs.stream().map(id -> _ec.getVariable(id.getName()))
 						.collect(Collectors.toList());
 				ListObject gradients = new ListObject(gradientsList, _outputNames);
+
+				// Pin the gradients
+				gradients.setStatus(_ec.pinVariables(gradients.getNames()));
 
 				// Push the gradients to ps
 				pushGradients(gradients);
 
+				ParamservUtils.cleanupListObject(_ec, globalParams);
+				ParamservUtils.cleanupListObject(_ec, gradients);
+				ParamservUtils.cleanupData(bFeatures);
+				ParamservUtils.cleanupData(bLabels);
 			}
-			LOG.info(String.format("Local worker_%d: Finished %d epoch.", _workerID, i));
+			LOG.info(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
 		}
+
 		LOG.info(String.format("Local worker_%d: Job finished.", _workerID));
+		ParamservUtils.cleanupListObject(_ec, _hyperParams);
+		_ec.getVariables().removeAll();
 	}
 
 	private void pushGradients(ListObject gradients) {
-		// Pin the output to avoiding being cleaned up
-		gradients.setStatus(_ec.pinVariables(gradients.getNames()));
-		getPS().push(ParamServer.GRADIENTS_PREFIX + _workerID, gradients);
-		LOG.info(String.format("Local worker_%d: Successfully push the gradients to ps.", _workerID));
+		_ps.push(ParamServer.GRADIENTS_PREFIX + _workerID, ParamservUtils.copyList(gradients));
+		LOG.info(String.format("Local worker_%d: Successfully push the gradients [size:%d kb] to ps.", _workerID,
+				gradients.getDataSize() / 1024));
 	}
 
 	private ListObject pollGlobalParams() {
 		ListObject globalParams = null;
 		while (globalParams == null) {
-			globalParams = (ListObject) getPS().pull(ParamServer.GLOBAL_PREFIX + _workerID);
+			globalParams = (ListObject) _ps.pull(ParamServer.GLOBAL_PREFIX + _workerID);
 			try {
 				TimeUnit.SECONDS.sleep(POLL_FREQUENCY);
 			} catch (InterruptedException e) {
@@ -141,7 +150,8 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 						String.format("Local worker_%d: Failed to pull the global parameters.", _workerID), e);
 			}
 		}
-		LOG.info(String.format("Local worker_%d: Successfully pull the global parameters from ps.", _workerID));
+		LOG.info(String.format("Local worker_%d: Successfully pull the global parameters [size:%d kb] from ps.",
+				_workerID, globalParams.getDataSize() / 1024));
 		return globalParams;
 	}
 }

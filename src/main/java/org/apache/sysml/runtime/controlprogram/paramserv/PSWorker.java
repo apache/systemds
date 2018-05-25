@@ -51,99 +51,20 @@ public abstract class PSWorker {
 		this._ps = _ps;
 	}
 
-	public long getWorkerID() {
-		return _workerID;
-	}
-
-	public void setWorkerID(long workerID) {
-		this._workerID = workerID;
-	}
-
-	public String getUpdFunc() {
-		return _updFunc;
-	}
-
-	public void setUpdFunc(String updFunc) {
-		this._updFunc = updFunc;
-	}
-
-	public Statement.PSFrequency getFreq() {
-		return _freq;
-	}
-
-	public void setFreq(Statement.PSFrequency freq) {
-		this._freq = freq;
-	}
-
-	public int getEpochs() {
-		return _epochs;
-	}
-
-	public void setEpochs(int epochs) {
-		this._epochs = epochs;
-	}
-
-	public long getBatchSize() {
-		return _batchSize;
-	}
-
-	public void setBatchSize(long batchSize) {
-		this._batchSize = batchSize;
-	}
-
-	public MatrixObject getFeatures() {
-		return _features;
-	}
-
 	public void setFeatures(MatrixObject features) {
 		this._features = features;
-	}
-
-	public MatrixObject getLabels() {
-		return _labels;
 	}
 
 	public void setLabels(MatrixObject labels) {
 		this._labels = labels;
 	}
 
-	public MatrixObject getValFeatures() {
-		return _valFeatures;
-	}
-
 	public void setValFeatures(MatrixObject valFeatures) {
 		this._valFeatures = valFeatures;
-	}
-
-	public MatrixObject getValLabels() {
-		return _valLabels;
 	}
 
 	public void setValLabels(MatrixObject valLabels) {
 		this._valLabels = valLabels;
 	}
 
-	public ListObject getHyperParams() {
-		return _hyperParams;
-	}
-
-	public void setHyperParams(ListObject hyperParams) {
-		this._hyperParams = hyperParams;
-	}
-
-	public ExecutionContext getEC() {
-		return _ec;
-	}
-
-	public void setEC(ExecutionContext ec) {
-		this._ec = ec;
-	}
-
-	public ParamServer getPS() {
-		return _ps;
-	}
-
-	public void setPS(ParamServer ps) {
-		this._ps = ps;
-	}
 }

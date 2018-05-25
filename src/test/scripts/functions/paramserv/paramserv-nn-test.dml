@@ -37,7 +37,7 @@ Y = labels[(val_size+1):n,]
 Y_val = labels[1:val_size,]
 
 # Arguments
-epochs = 20
+epochs = 10
 workers = 4
 
 # Train

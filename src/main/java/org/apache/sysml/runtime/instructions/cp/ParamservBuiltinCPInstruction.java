@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +41,11 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.NativeHelper;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
+
+	private static final int DEFAULT_BATCH_SIZE = 64;
+	private static final Statement.PSFrequency DEFAULT_UPDATE_FREQUENCY = Statement.PSFrequency.BATCH;
+	private static final int DEFAULT_LEVEL_PARALLELISM = InfrastructureAnalyzer.getLocalParallelism();
+	private static final Statement.PSScheme DEFAULT_SCHEME = Statement.PSScheme.DISJOINT_CONTIGUOUS;
 
 	protected ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out,
 			String opcode, String istr) {
@@ -66,14 +72,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		Thread aggThread = new Thread(aggService);
 
 		String updFunc = getParam(Statement.PS_UPDATE_FUN);
-		Statement.PSFrequency freq = Statement.PSFrequency.valueOf(getParam(Statement.PS_FREQUENCY));
+		Statement.PSFrequency freq = getFrequency();
 		int epochs = Integer.valueOf(getParam(Statement.PS_EPOCHS));
 		if (epochs <= 0) {
 			throw new DMLRuntimeException(
 					String.format("Paramserv function: The argument '%s' could not be less than or equal to 0.",
 							Statement.PS_EPOCHS));
 		}
-		long batchSize = getBatchSize(freq, ec);
+		long batchSize = getBatchSize();
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum).mapToObj(
@@ -119,13 +125,23 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ps.getParams().clear();
 	}
 
+	private Statement.PSFrequency getFrequency() {
+		if (!getParameterMap().containsKey(Statement.PS_FREQUENCY)) {
+			return DEFAULT_UPDATE_FREQUENCY; // default updating frequency
+		}
+		return Statement.PSFrequency.valueOf(getParam(Statement.PS_FREQUENCY));
+	}
+
 	/**
 	 * Get the worker numbers according to the vcores
 	 *
 	 * @return worker numbers
 	 */
 	private int getWorkerNum() {
-		int workerNum = Integer.valueOf(getParam(Statement.PS_PARALLELISM));
+		int workerNum = DEFAULT_LEVEL_PARALLELISM;
+		if (getParameterMap().containsKey(Statement.PS_PARALLELISM)) {
+			workerNum = Integer.valueOf(getParam(Statement.PS_PARALLELISM));
+		}
 		Statement.PSModeType mode = Statement.PSModeType.valueOf(getParam(Statement.PS_MODE));
 		switch (mode) {
 		case LOCAL:
@@ -160,21 +176,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return ps;
 	}
 
-	private long getBatchSize(Statement.PSFrequency freq, ExecutionContext ec) {
+	private long getBatchSize() {
+		if (!getParameterMap().containsKey(Statement.PS_BATCH_SIZE)) {
+			return DEFAULT_BATCH_SIZE;
+		}
 		long batchSize = Integer.valueOf(getParam(Statement.PS_BATCH_SIZE));
 		if (batchSize <= 0) {
 			throw new DMLRuntimeException(String.format(
 					"Paramserv function: the number of argument '%s' could not be less than or equal to 0.",
 					Statement.PS_BATCH_SIZE));
 		}
-		if (freq.equals(Statement.PSFrequency.EPOCH)) {
-			batchSize = ec.getMatrixObject(getParam(Statement.PS_FEATURES)).getNumRows();
-		}
 		return batchSize;
 	}
 
 	private ListObject getHyperParams(ExecutionContext ec) {
-		ListObject hyperparams = null;
+		ListObject hyperparams = new ListObject(Collections.emptyList());
 		if (getParameterMap().containsKey(Statement.PS_HYPER_PARAMS)) {
 			hyperparams = ec.getListObject(getParam(Statement.PS_HYPER_PARAMS));
 		}
@@ -186,7 +202,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject labels = ec.getMatrixObject(getParam(Statement.PS_LABELS));
 		MatrixObject valFeatures = ec.getMatrixObject(getParam(Statement.PS_VAL_FEATURES));
 		MatrixObject valLabels = ec.getMatrixObject(getParam(Statement.PS_VAL_LABELS));
-		Statement.PSScheme scheme = Statement.PSScheme.valueOf(getParam(Statement.PS_SCHEME));
+		Statement.PSScheme scheme = DEFAULT_SCHEME;
+		if (getParameterMap().containsKey(Statement.PS_SCHEME)) {
+			scheme = Statement.PSScheme.valueOf(getParam(Statement.PS_SCHEME));
+		}
 		switch (scheme) {
 		case DISJOINT_CONTIGUOUS:
 			disjointContiguous(workerNum, features, labels, valFeatures, valLabels, workers);

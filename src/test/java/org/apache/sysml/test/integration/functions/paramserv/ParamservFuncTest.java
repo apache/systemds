@@ -34,6 +34,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME6 = "paramserv-wrong-args2";
 	private static final String TEST_NAME7 = "paramserv-wrong-list-test";
 	private static final String TEST_NAME8 = "paramserv-nn-test";
+	private static final String TEST_NAME9 = "paramserv-minimum-version";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -50,6 +51,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
 	}
 
 	@Test
@@ -95,6 +97,11 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	@Test
 	public void testParamservNNTest() {
 		runDMLTest(TEST_NAME8, true, false, null, null);
+	}
+
+	@Test
+	public void testParamservMinimumVersionTest() {
+		runDMLTest(TEST_NAME9, true, false, null, null);
 	}
 
 	private void runDMLTest(String testname, boolean newWay, boolean exceptionExpected, Class<?> exceptionClass,

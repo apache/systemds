@@ -34,8 +34,8 @@ import org.apache.sysml.utils.Statistics;
 
 public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 
-	protected MatrixIndexingCPInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl,
-			CPOperand cu, CPOperand out, String opcode, String istr) {
+	public MatrixIndexingCPInstruction(CPOperand in, CPOperand rl, CPOperand ru, CPOperand cl, CPOperand cu,
+			CPOperand out, String opcode, String istr) {
 		super(in, rl, ru, cl, cu, out, opcode, istr);
 	}
 

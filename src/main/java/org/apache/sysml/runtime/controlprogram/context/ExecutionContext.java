@@ -42,6 +42,7 @@ import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
@@ -443,7 +444,17 @@ public class ExecutionContext {
 	public void setScalarOutput(String varName, ScalarObject so) {
 		setVariable(varName, so);
 	}
-	
+
+	public ListObject getListObject(String name) {
+		Data dat = getVariable(name);
+		//error handling if non existing or no list
+		if (dat == null)
+			throw new DMLRuntimeException("Variable '" + name + "' does not exist in the symbol table.");
+		if (!(dat instanceof ListObject))
+			throw new DMLRuntimeException("Variable '" + name + "' is not a list.");
+		return (ListObject) dat;
+	}
+
 	public void releaseMatrixOutputForGPUInstruction(String varName) {
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {

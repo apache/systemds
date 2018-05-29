@@ -73,7 +73,7 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 				_inst.processInstruction(_ec);
 
 				// Get the gradients
-				ListObject gradients = (ListObject) _ec.getVariable(_outputs.get(0).getName());
+				ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
 
 				// Push the gradients to ps
 				_ps.push(_workerID, gradients);

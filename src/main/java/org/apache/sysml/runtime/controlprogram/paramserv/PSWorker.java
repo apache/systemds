@@ -50,7 +50,7 @@ public abstract class PSWorker {
 	private MatrixObject _valFeatures;
 	private MatrixObject _valLabels;
 
-	ArrayList<DataIdentifier> _outputs;
+	DataIdentifier _output;
 	FunctionCallCPInstruction _inst;
 
 	public PSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
@@ -68,46 +68,47 @@ public abstract class PSWorker {
 
 		// Get the update function
 		String[] keys = DMLProgram.splitFunctionKey(updFunc);
-		String _funcName = keys[0];
-		String _funcNS = null;
+		String funcName = keys[0];
+		String funcNS = null;
 		if (keys.length == 2) {
-			_funcNS = keys[0];
-			_funcName = keys[1];
+			funcNS = keys[0];
+			funcName = keys[1];
 		}
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(_funcNS, _funcName);
-		ArrayList<DataIdentifier> _inputs = func.getInputParams();
-		_outputs = func.getOutputParams();
-		CPOperand[] _boundInputs = _inputs.stream()
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(funcNS, funcName);
+		ArrayList<DataIdentifier> inputs = func.getInputParams();
+		ArrayList<DataIdentifier> outputs = func.getOutputParams();
+		CPOperand[] boundInputs = inputs.stream()
 				.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 				.toArray(CPOperand[]::new);
-		ArrayList<String> _inputNames = _inputs.stream().map(DataIdentifier::getName)
+		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-		ArrayList<String> _outputNames = _outputs.stream().map(DataIdentifier::getName)
+		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(_funcNS, _funcName, _boundInputs, _inputNames, _outputNames,
+		_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames,
 				"update function");
 
 		// Check the inputs of the update function
-		checkInput(_inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
-		checkInput(_inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
-		checkInput(_inputs, Expression.DataType.LIST, Statement.PS_MODEL);
+		checkInput(inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
+		checkInput(inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
+		checkInput(inputs, Expression.DataType.LIST, Statement.PS_MODEL);
 		if (hyperParams != null) {
-			checkInput(_inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
+			checkInput(inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
 		}
 
 		// Check the output of the update function
-		if (_outputs.size() != 1) {
+		if (outputs.size() != 1) {
 			throw new DMLRuntimeException(
 				String.format("The output of the '%s' function should provide one list containing the gradients.", updFunc));
 		}
-		if (_outputs.get(0).getDataType() != Expression.DataType.LIST) {
+		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
 			throw new DMLRuntimeException(
 					String.format("The output of the '%s' function should be type of list.", updFunc));
 		}
+		_output = outputs.get(0);
 	}
 
-	private void checkInput(ArrayList<DataIdentifier> _inputs, Expression.DataType dt, String pname) {
-		if (_inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
+	private void checkInput(ArrayList<DataIdentifier> inputs, Expression.DataType dt, String pname) {
+		if (inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
 			throw new DMLRuntimeException(
 				String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt, pname));
 		}

@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 e1 = "element1"
-modelList = list(e1)
+modelList = list(e1=e1)
 X = matrix(1, rows=2, cols=3)
 Y = matrix(2, rows=2, cols=3)
 X_val = matrix(3, rows=2, cols=3)
@@ -35,7 +35,7 @@ aggregation = function (matrix[double] input) return (matrix[double] output) {
 }
 
 e2 = "element2"
-params = list(e2)
+params = list(e2=e2)
 
 # Use paramserv function
 # Remove the optional "hyperparams"

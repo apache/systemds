@@ -486,7 +486,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
-		int D = toInt(numRowsW) - M - 2; // since W:(D+M+2, 4M) ... numFeatures 
+		int D = toInt(numRowsW) - M; // since W:(D+M, 4M) ... numFeatures 
 		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
 		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instructionName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);

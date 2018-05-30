@@ -73,7 +73,7 @@
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
-		<jcuda.version>0.8.0</jcuda.version>
+		<jcuda.version>0.9.0d</jcuda.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
@@ -1401,6 +1401,7 @@
 			<scope>${jcuda.scope}</scope>
 		</dependency>
 
+		<!-- Commented until the PowerPC jcuda libraries are deployed for 0.9.0 version
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda-natives</artifactId>
@@ -1436,6 +1437,7 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+		 -->
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>

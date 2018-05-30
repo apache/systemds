@@ -125,7 +125,7 @@ batch_norm2d = function() {
   [gamma, beta, ema_mean, ema_var] = batch_norm2d::init(C)
 
   # Forward
-  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
       batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
 
   # Equivalency check
@@ -1125,4 +1125,3 @@ elu = function() {
     }
   }
 }
-

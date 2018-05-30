@@ -27,7 +27,6 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Transform;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -132,18 +131,18 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 			return false;
 		switch( op ) {
 			case TRANS: {
-				Lop lin;
-				try {
-					lin = getInput().get(0).constructLops();
-				} catch (HopsException | LopsException e) {
-					throw new RuntimeException("Unable to create child lop", e);
-				}
-				if( lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose )
-					return false; //if input is already a transpose, avoid redundant transpose ops
-				else if( getDim1()==1 && getDim2()==1 )
+				if( getDim1()==1 && getDim2()==1 ) {
 					return false; //if input of size 1x1, avoid unnecessary transpose
-				else
+				}
+				else if( getInput().get(0) instanceof ReorgOp &&  ((ReorgOp) getInput().get(0)).getOp() == ReOrgOp.TRANS) {
+					// Following checks causes stackoverflow:
+					// lin = getInput().get(0).constructLops();
+					// lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose
+					return false; //if input is already a transpose, avoid redundant transpose ops
+				}
+				else {
 					return true;
+				}
 			}
 			case DIAG:
 			case REV:

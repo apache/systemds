@@ -82,19 +82,19 @@ public class DMLConfig
 	public static final String CODEGEN_PLANCACHE    = "sysml.codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "sysml.codegen.literals"; //1..heuristic, 2..always
 	public static final String CACHING_BUFFER_SIZE 	= "sysml.caching.bufferSize"; //double: default:0.15
-	
 	public static final String EXTRA_FINEGRAINED_STATS = "sysml.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN   = "sysml.stats.maxWrapLength"; //int
 	public static final String AVAILABLE_GPUS       = "sysml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 	public static final String SYNCHRONIZE_GPU      = "sysml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
 	public static final String EAGER_CUDA_FREE		= "sysml.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
 	public static final String GPU_EVICTION_POLICY	= "sysml.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
+	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
 	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
 	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
-	
+
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
 	public static final String PREFIX_MAPREDUCE = "mapreduce";
@@ -135,13 +135,13 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
+		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 		_defaultVals.put(GPU_EVICTION_POLICY,    "align_memory");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
 		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
-		_defaultVals.put(SYNCHRONIZE_GPU,        "true" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false");

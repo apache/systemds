@@ -194,7 +194,7 @@ public abstract class Expression implements ParseInfo
 		public boolean isScalar() {
 			return (this == SCALAR);
 		}
-		public boolean isComposite() {
+		public boolean isList() {
 			return (this == LIST);
 		}
 	}

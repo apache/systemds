@@ -285,7 +285,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 					toInt(outRLen), C, toInt(outCLen));
 			if (!DMLScript.EAGER_CUDA_FREE)
 				JCuda.cudaDeviceSynchronize();
-			gCtx.cudaFreeHelper(output, DMLScript.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, output, DMLScript.EAGER_CUDA_FREE);
 			if (DMLScript.FINEGRAINED_STATISTICS)
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime()
 						- t0);

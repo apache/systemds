@@ -20,7 +20,7 @@
 /**********************************
 When updating a kernel or adding a new one,
 please compile the ptx file and commit it:
-nvcc -ptx -arch=sm_30 --std c++11 SystemML.cu
+nvcc -w -ptx -arch=sm_30 --std c++11 SystemML.cu
 ***********************************/
 
 #include <cfloat>
@@ -1960,4 +1960,101 @@ extern "C" __global__ void matrix_sigmoid_d(double *A, double *C,
 extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
                                          unsigned int size) {
   matrix_sigmoid(A, C, size);
+}
+
+// We can later fold it in our reduce method
+template <typename T>
+__device__ void compute_nnz(
+    T *g_idata,  ///< input data stored in device memory (of size n)
+    T *g_odata,  ///< output/temporary array stored in device memory (of size n)
+    unsigned int n)  ///< size of the input and temporary/output arrays
+{
+  // extern __shared__ T sdata[];
+  extern __shared__ __align__(sizeof(T)) unsigned char my_sdata[];
+  T *sdata = reinterpret_cast<T *>(my_sdata);
+
+  // perform first level of reduction,
+  // reading from global memory, writing to shared memory
+  unsigned int tid = threadIdx.x;
+  unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
+  unsigned int gridSize = blockDim.x * 2 * gridDim.x;
+
+  T v = 0;
+
+  // we reduce multiple elements per thread.  The number is determined by the
+  // number of active thread blocks (via gridDim).  More blocks will result
+  // in a larger gridSize and therefore fewer elements per thread
+  while (i < n) {
+    v += g_idata[i] != 0 ? 1 : 0;
+    // ensure we don't read out of bounds
+    if (i + blockDim.x < n) v += g_idata[i + blockDim.x] != 0 ? 1 : 0;
+    i += gridSize;
+  }
+
+  // each thread puts its local sum into shared memory
+  sdata[tid] = v;
+  __syncthreads();
+
+  // do reduction in shared mem
+  if (blockDim.x >= 1024) {
+    if (tid < 512) {
+      sdata[tid] = v = v + sdata[tid + 512];
+    }
+    __syncthreads();
+  }
+  if (blockDim.x >= 512) {
+    if (tid < 256) {
+      sdata[tid] = v = v + sdata[tid + 256];
+    }
+    __syncthreads();
+  }
+  if (blockDim.x >= 256) {
+    if (tid < 128) {
+      sdata[tid] = v = v + sdata[tid + 128];
+    }
+    __syncthreads();
+  }
+  if (blockDim.x >= 128) {
+    if (tid < 64) {
+      sdata[tid] = v = v + sdata[tid + 64];
+    }
+    __syncthreads();
+  }
+
+  if (tid < 32) {
+    // now that we are using warp-synchronous programming (below)
+    // we need to declare our shared memory volatile so that the compiler
+    // doesn't reorder stores to it and induce incorrect behavior.
+    volatile T *smem = sdata;
+    if (blockDim.x >= 64) {
+      smem[tid] = v = v + smem[tid + 32];
+    }
+    if (blockDim.x >= 32) {
+      smem[tid] = v = v + smem[tid + 16];
+    }
+    if (blockDim.x >= 16) {
+      smem[tid] = v = v + smem[tid + 8];
+    }
+    if (blockDim.x >= 8) {
+      smem[tid] = v = v + smem[tid + 4];
+    }
+    if (blockDim.x >= 4) {
+      smem[tid] = v = v + smem[tid + 2];
+    }
+    if (blockDim.x >= 2) {
+      smem[tid] = v = v + smem[tid + 1];
+    }
+  }
+
+  // write result for this block to global mem
+  if (tid == 0) g_odata[blockIdx.x] = sdata[0];
+}
+
+
+extern "C" __global__ void compute_nnz_d(double *g_idata, double *g_odata, unsigned int n) {
+	compute_nnz(g_idata, g_odata, n);
+}
+
+extern "C" __global__ void compute_nnz_f(float *g_idata, float *g_odata, unsigned int n) {
+	compute_nnz(g_idata, g_odata, n);
 }

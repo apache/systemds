@@ -112,6 +112,7 @@ public class DMLScript
 		LFU, 				// Evict the least frequently used GPUObject. 
 		MIN_EVICT,
 		MRU, 				// http://www.vldb.org/conf/1985/P127.PDF
+		ALIGN_MEMORY
 		// TODO:
 		// ARC, // https://dbs.uni-leipzig.de/file/ARC.pdf
 		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
@@ -172,7 +173,8 @@ public class DMLScript
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double"; 							// data type to use internally
-	public static EvictionPolicy	GPU_EVICTION_POLICY = EvictionPolicy.LRU;						// currently employed GPU eviction policy
+	public static EvictionPolicy	GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;				// currently employed GPU eviction policy
+	public static boolean 			PRINT_GPU_MEMORY_INFO = false;									// whether to print GPU memory-related information
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used

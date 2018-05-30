@@ -76,7 +76,7 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	@Override
 	public void close() {
 		try {
-			gCtx.cudaFreeHelper(outPointer, true);
+			gCtx.cudaFreeHelper(null, outPointer, true);
 		} catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);
 		}

@@ -72,7 +72,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_output = out;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
-	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, 
+	public ConvolutionGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, CPOperand in6, 
 			CPOperand out, CPOperand out2, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
@@ -81,6 +81,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		_input3 = in3;
 		_input4 = in4;
 		_input5 = in5;
+		_input6 = in6;
 		_gputype = GPUINSTRUCTION_TYPE.Convolution;
 		_output = out;
 		_output2 = out2;
@@ -281,15 +282,16 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 			return new ConvolutionGPUInstruction(in, in2, in3, out, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 7);
+			InstructionUtils.checkNumFields(parts, 8);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand in4 = new CPOperand(parts[4]);
 			CPOperand in5 = new CPOperand(parts[5]);
-			CPOperand out = new CPOperand(parts[6]);
-			CPOperand out2 = new CPOperand(parts[7]);
-			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, out, out2, opcode, str, 0);
+			CPOperand in6 = new CPOperand(parts[6]);
+			CPOperand out = new CPOperand(parts[7]);
+			CPOperand out2 = new CPOperand(parts[8]);
+			return new ConvolutionGPUInstruction(in1, in2, in3, in4, in5, in6, out, out2, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
 			InstructionUtils.checkNumFields(parts, 13);
@@ -477,22 +479,23 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		GPUContext gCtx = ec.getGPUContext(0);
 		String instructionName = getExtendedOpcode();
 		
-		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instructionName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
 		int D = toInt(numRowsW) - M - 2; // since W:(D+M+2, 4M) ... numFeatures 
-		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M+2, 4*M);
-		Pointer sysmlBiasPointer = sysmlWPointer.withByteOffset((D+M)*4*M*LibMatrixCUDA.sizeOfDataType); // TODO:
+		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
+		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instructionName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
 				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
 				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		
-		boolean return_sequences = ec.getScalarInput(_input5.getName(), _input5.getValueType(), _input5.isLiteral()).getBooleanValue();
+		boolean return_sequences = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getBooleanValue();
 		
 		// Beause the matrices are released immediately, the output for transpose need not be taken into account
 		MatrixObject X = getMatrixInputForGPUInstruction(ec, _input1.getName());
@@ -506,7 +509,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 				xPointer, cudnnInput, N, D, T*D, N*T*D);
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
-		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input4.getName()), instructionName); 
+		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instructionName); 
 		
 		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
 		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, DMLScript.EAGER_CUDA_FREE);
@@ -515,6 +518,7 @@ public class ConvolutionGPUInstruction extends GPUInstruction {
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}

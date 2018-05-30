@@ -200,12 +200,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 		case LSTM:
 		{
-			// X,  W, out0, c0, return_sequences
-			checkNumParameters(5);
+			// X,  W, bias, out0, c0, return_sequences
+			checkNumParameters(6);
 			checkMatrixParam(getFirstExpr());
 			checkMatrixParam(getSecondExpr());
 			checkMatrixParam(getThirdExpr());
 			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
 			
 			// setup output properties
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
@@ -220,8 +221,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// Output2 - Cell state for final timestep.
 			cy.setDataType(DataType.MATRIX);
 			cy.setValueType(ValueType.DOUBLE);
-			cy.setDimensions(getExpr(3).getOutput().getDim1(), getExpr(3).getOutput().getDim2());
-			cy.setBlockDimensions(getExpr(3).getOutput().getRowsInBlock(), getExpr(3).getOutput().getColumnsInBlock());
+			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
+			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
 			
 			break;
 		}

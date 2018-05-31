@@ -58,12 +58,14 @@ public class GPUMatrixMemoryManager {
 		}
 		else if(gpuObj.getJcudaSparseMatrixPtr() != null) {
 			CSRPointer sparsePtr = gpuObj.getJcudaSparseMatrixPtr();
-			if(sparsePtr.rowPtr != null)
-				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.rowPtr).getSizeInBytes());
-			if(sparsePtr.colInd != null)
-				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.colInd).getSizeInBytes());
-			if(sparsePtr.val != null)
-				ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.val).getSizeInBytes());
+			if(sparsePtr.nnz > 0) {
+				if(sparsePtr.rowPtr != null)
+					ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.rowPtr).getSizeInBytes());
+				if(sparsePtr.colInd != null)
+					ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.colInd).getSizeInBytes());
+				if(sparsePtr.val != null)
+					ret = Math.max(ret, gpuManager.allPointers.get(sparsePtr.val).getSizeInBytes());
+			}
 		}
 		return ret;
 	}

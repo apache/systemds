@@ -42,6 +42,9 @@ import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -68,10 +71,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	//internal local debug level
 	private static final boolean LDEBUG = false;
 
+	private ExecutorService _ec;
+	public static final int TIMEOUT = 10;
+
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
-			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel((Level) Level.DEBUG);
+			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
 		}
 	}
 
@@ -85,6 +91,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		PSModeType mode = PSModeType.valueOf(getParam(PS_MODE));
 		int workerNum = getWorkerNum(mode);
+		_ec = Executors.newFixedThreadPool(workerNum);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 		PSFrequency freq = getFrequency();
@@ -111,27 +118,25 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		doDataPartition(ec, workers);
 
 		// Create the worker threads
-		List<Thread> threads = workers.stream().map(Thread::new).collect(Collectors.toList());
+		workers.parallelStream().forEach(_ec::submit);
 
-		// Start the ps
-		ps.start();
-
-		// Start the workers
-		threads.forEach(Thread::start);
-
-		// Wait for the workers stopping
-		threads.forEach(thread -> {
-			try {
-				thread.join();
-			} catch (InterruptedException e) {
-				throw new DMLRuntimeException("Paramserv function: Failed to join the worker threads.", e);
-			}
-		});
-
-		ps.stop();
+		// Wait for the worker finishing
+		_ec.shutdown();
+		try {
+			_ec.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException(
+					String.format("ParamservBuiltinCPInstruction: an error occur: %s", e.getMessage()));
+		}
 
 		// Create the output
-		ListObject result = ps.getResult();
+		ListObject result;
+		try {
+			result = ps.getResult();
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException(
+					String.format("ParamservBuiltinCPInstruction: an error occur: %s", e.getMessage()));
+		}
 		ec.setVariable(output.getName(), result);
 	}
 

@@ -19,13 +19,18 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction.TIMEOUT;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -61,7 +66,7 @@ public abstract class ParamServer {
 	Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
 	private AggregationService _aggService;
-	private Thread _aggThread;
+	private ExecutorService _es;
 	private boolean[] _pulledStates;
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
@@ -81,28 +86,20 @@ public abstract class ParamServer {
 		this._model = model;
 		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum, hyperParams);
 		this._pulledStates = new boolean[workerNum];
-		this._aggThread = new Thread(_aggService);
+		this._es = Executors.newSingleThreadExecutor();
+	}
+
+	void launchService() {
+		_es.submit(_aggService);
 	}
 
 	public abstract void push(long workerID, ListObject value);
 
 	public abstract Data pull(long workerID);
 
-	public void start() {
-		_aggService._alive = true;
-		_aggThread.start();
-	}
-
-	public void stop() {
-		_aggService._alive = false;
-		try {
-			_aggThread.join();
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Parameter server: failed when stopping the server.", e);
-		}
-	}
-
-	public ListObject getResult() {
+	public ListObject getResult() throws InterruptedException {
+		_es.shutdown();
+		_es.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
 		return _model;
 	}
 
@@ -212,39 +209,35 @@ public abstract class ParamServer {
 
 		@Override
 		public void run() {
-			while (isAlive()) {
-				do {
-					Gradient p;
-					try {
-						p = _gradientsQueue.take();
-					} catch (InterruptedException e) {
-						throw new DMLRuntimeException(
-								"Aggregation service: error when waiting for the coming gradients.", e);
-					}
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-								p._gradients.getDataSize() / 1024, p._workerID));
-					}
+			Gradient p;
+			try {
+				p = _gradientsQueue.take();
+			} catch (InterruptedException e) {
+				throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.", e);
+			}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
+						p._gradients.getDataSize() / 1024, p._workerID));
+			}
 
-					setFinishedState((int) p._workerID);
+			setFinishedState((int) p._workerID);
 
-					// Populate the variables table with the gradients and model
-					_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
-					_ec.setVariable(Statement.PS_MODEL, _model);
+			// Populate the variables table with the gradients and model
+			_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
+			_ec.setVariable(Statement.PS_MODEL, _model);
 
-					// Invoke the aggregate function
-					_inst.processInstruction(_ec);
+			// Invoke the aggregate function
+			_inst.processInstruction(_ec);
 
-					// Get the output
-					ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
+			// Get the output
+			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
 
-					// Update the model with the new output
-					ParamservUtils.cleanupListObject(_ec, _model);
-					ParamservUtils.cleanupListObject(_ec, p._gradients);
-					_model = newModel;
+			// Update the model with the new output
+			ParamservUtils.cleanupListObject(_ec, _model);
+			ParamservUtils.cleanupListObject(_ec, p._gradients);
+			_model = newModel;
 
-				} while (!allFinished());
-
+			if (allFinished()) {
 				// Broadcast the updated model
 				resetPulledStates();
 				resetFinishedStates();

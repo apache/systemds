@@ -36,6 +36,7 @@ public class LocalParamServer extends ParamServer {
 	public void push(long workerID, ListObject gradients) {
 		try {
 			_gradientsQueue.put(new Gradient(workerID, gradients));
+			launchService();
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(
 					String.format("Local param server: failed to push the gradients for worker_%d.", workerID), e);

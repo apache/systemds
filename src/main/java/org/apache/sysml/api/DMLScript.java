@@ -678,8 +678,8 @@ public class DMLScript
 		try {
 			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
 		} catch(IllegalArgumentException e) {
-            throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
-        }
+			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+		}
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
@@ -726,11 +726,11 @@ public class DMLScript
 		//Step 9: prepare statistics [and optional explain output]
 		//count number compiled MR jobs / SP instructions	
 		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
-		Statistics.resetNoOfCompiledJobs( counts.numJobs );				
+		Statistics.resetNoOfCompiledJobs( counts.numJobs );
 		
 		//explain plan of program (hops or runtime)
 		if( EXPLAIN != ExplainType.NONE )
-			LOG.info(Explain.display(prog, rtprog, EXPLAIN, counts));
+			System.out.println(Explain.display(prog, rtprog, EXPLAIN, counts));
 		
 		Statistics.stopCompileTimer();
 		
@@ -750,7 +750,7 @@ public class DMLScript
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution( dmlconf );
 		}
-	}		
+	}
 	
 	/**
 	 * Launcher for DML debugger. This method should be called after 

@@ -97,7 +97,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			cudnnDestroyConvolutionDescriptor(convDesc);
 		if(sizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, workSpace);
+				gCtx.cudaFreeHelper(instName, workSpace, DMLScript.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}

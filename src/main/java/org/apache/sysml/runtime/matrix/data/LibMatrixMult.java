@@ -1237,14 +1237,14 @@ public class LibMatrixMult
 		double[] bvals = b.valuesAt(0);
 		double[] cvals = c.valuesAt(0);
 		
-		final int blocksizeI = 32;
-		final int blocksizeK = (int)Math.max(2*1024,2*1024*xsp/32); //~ 16KB L1
+		final int blocksizeI = 512; //8KB curk+cvals in L1
+		final int blocksizeK = (int)Math.max(2048,2048*xsp/32); //~256KB bvals in L2
 		int[] curk = new int[blocksizeI];
 		
 		for( int bi = rl; bi < ru; bi+=blocksizeI ) {
 			Arrays.fill(curk, 0); //reset positions
 			for( int bk=0, bimin = Math.min(ru, bi+blocksizeI); bk<cd; bk+=blocksizeK ) {
-				for( int i=bi, bkmin = Math.min(bk+blocksizeK, cd); i<bimin; i++) {
+				for( int i=bi, bkmin = bk+blocksizeK; i<bimin; i++) {
 					if( a.isEmpty(i) ) continue;
 					int apos = a.pos(i);
 					int alen = a.size(i);
@@ -3813,6 +3813,23 @@ public class LibMatrixMult
 			}
 		
 		return knnz;
+	}
+	
+	@SuppressWarnings("unused")
+	private static void resetPosVect(int[] curk, SparseBlock sblock, int rl, int ru) {
+		if( sblock instanceof SparseBlockMCSR ) {
+			//all rows start at position 0 (individual arrays)
+			Arrays.fill(curk, 0, ru-rl, 0);
+		}
+		else if( sblock instanceof SparseBlockCSR ) {
+			//row start positions given in row ptr array
+			SparseBlockCSR csr = (SparseBlockCSR) sblock;
+			System.arraycopy(csr.rowPointers(), rl, curk, 0, ru-rl);
+		}
+		else { //general case
+			for(int i=rl; i<ru; i++)
+				curk[i-rl] = sblock.pos(i);
+		}
 	}
 
 	private static void sumScalarResults(List<Future<Double>> tasks, MatrixBlock ret) 

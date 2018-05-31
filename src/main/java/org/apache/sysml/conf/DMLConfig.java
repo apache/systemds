@@ -144,6 +144,7 @@ public class DMLConfig
 		_defaultVals.put(SYNCHRONIZE_GPU,        "true" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
+		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false");
 	}
 	
 	public DMLConfig() {

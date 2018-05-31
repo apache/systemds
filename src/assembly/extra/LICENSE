@@ -257,22 +257,22 @@ The following compile-scope dependencies come under the MIT License
 
 JCuda (jcuda.org)
 
-org.jcuda:jcuda:0.8.0
-org.jcuda:jcublas:0.8.0
-org.jcuda:jcufft:0.8.0
-org.jcuda:jcusparse:0.8.0
-org.jcuda:jcusolver:0.8.0
-org.jcuda:jcurand:0.8.0
-org.jcuda:jnvgraph:0.8.0
-org.jcuda:jcudnn:0.8.0
-org.jcuda:jcuda-natives:0.8.0
-org.jcuda:jcublas-natives:0.8.0
-org.jcuda:jcufft-natives:0.8.0
-org.jcuda:jcusparse-natives:0.8.0
-org.jcuda:jcusolver-natives:0.8.0
-org.jcuda:jcurand-natives:0.8.0
-org.jcuda:jnvgraph-natives:0.8.0
-org.jcuda:jcudnn-natives:0.8.0
+org.jcuda:jcuda:0.9.0
+org.jcuda:jcublas:0.9.0
+org.jcuda:jcufft:0.9.0
+org.jcuda:jcusparse:0.9.0
+org.jcuda:jcusolver:0.9.0
+org.jcuda:jcurand:0.9.0
+org.jcuda:jnvgraph:0.9.0
+org.jcuda:jcudnn:0.9.0
+org.jcuda:jcuda-natives:0.9.0
+org.jcuda:jcublas-natives:0.9.0
+org.jcuda:jcufft-natives:0.9.0
+org.jcuda:jcusparse-natives:0.9.0
+org.jcuda:jcusolver-natives:0.9.0
+org.jcuda:jcurand-natives:0.9.0
+org.jcuda:jnvgraph-natives:0.9.0
+org.jcuda:jcudnn-natives:0.9.0
 
 
 The MIT License (MIT)

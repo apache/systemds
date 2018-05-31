@@ -215,7 +215,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
-				gCtx.cudaFreeHelper(instName, im2colPointer);
+				gCtx.cudaFreeHelper(instName, im2colPointer, DMLScript.EAGER_CUDA_FREE);
 				
 				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
 				// and return a matrix dstPointer with dimensions [N, KPQ]
@@ -224,7 +224,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 						matmultOutputPointer, dstPointer, NKPQ, NPQ, KPQ, P*Q);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_REORG_KNPQ_KERNEL, System.nanoTime() - t1);
-				gCtx.cudaFreeHelper(instName, matmultOutputPointer);
+				gCtx.cudaFreeHelper(instName, matmultOutputPointer, DMLScript.EAGER_CUDA_FREE);
 			}
 			else {
 				// Filter and output are accounted as dense in the memory estimation for conv2d
@@ -444,7 +444,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 						}
 						// Deallocate temporary array to hold one element of input
-						gCtx.cudaFreeHelper(tempdwPointer, true);
+						gCtx.cudaFreeHelper(instName, tempdwPointer, true);
 					}
 				}
 			}
@@ -772,7 +772,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			long t4=0;
 			if (DMLScript.FINEGRAINED_STATISTICS) t4 = System.nanoTime();
 			if(!isMaxPoolOutputProvided)
-				gCtx.cudaFreeHelper(instName, y);
+				gCtx.cudaFreeHelper(instName, y, DMLScript.EAGER_CUDA_FREE);
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}
 	}
@@ -818,17 +818,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		long N = in.getNumRows();
 		long CHW = in.getNumColumns();
-		MatrixObject output = ec.getMatrixObject(outputName);
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns()); // Allocated the dense output matrix
+		Pointer dstData = getDenseOutputPointer(ec, gCtx, instName, outputName, in.getNumRows(), in.getNumColumns());
 		long t0=0;
 		if(N*CHW >= maxNumElementsOfCuDNNTensor) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
-			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
-			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName); // TODO: FIXME: Add sparse kernel support for relu
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			getCudaKernels(gCtx).launchKernel("relu",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
 					srcData, dstData, toInt(N), toInt(CHW));
@@ -838,11 +836,18 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
 			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_TYPE, toInt(N), 1, 1, toInt(CHW));
-			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), tensorDescriptor);
+			cudnnReLU(gCtx, instName, in, dstData, tensorDescriptor);
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 		}
 	}
-
+	
+	private static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
+			long numRows, long numCols) throws DMLRuntimeException {
+		MatrixObject output = ec.getMatrixObject(outputName);
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
+		return getDensePointerForCuDNN(gCtx, output, instName, toInt(numRows), toInt(numCols));
+	}
+	
 	/**
 	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
 	 * 
@@ -857,6 +862,33 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
 		}
 		return getDensePointer(gCtx, image, instName);
+	}
+	
+	/**
+	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param image input matrix object
+	 * @param instName name of the instruction
+	 * @param numRows expected number of rows
+	 * @param numCols expected number of columns 
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
+	 */
+	public static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName, int numRows, int numCols) throws DMLRuntimeException {
+		long numElems = image.getNumRows()*image.getNumColumns();
+		if(image.getNumRows() != numRows || image.getNumColumns() != numCols) {
+			throw new DMLRuntimeException("Expected input of size:[" +  numRows + ", " + numCols + "], but found [" + image.getNumRows() + ", " + image.getNumColumns() + "]."); 
+		}
+		else if(numElems > maxNumElementsOfCuDNNTensor) {
+			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
+		}
+		Pointer ptr = getDensePointer(gCtx, image, instName);
+		long sizeOfPtr = gCtx.getMemoryManager().getSizeAllocatedGPUPointer(ptr);
+		if(sizeOfPtr != numElems*sizeOfDataType) {
+			throw new DMLRuntimeException("Incorrect pointer: expected size:" +  (numElems*sizeOfDataType) + ", but found " + sizeOfPtr);
+		}
+		return ptr;
 	}
 
 	/**

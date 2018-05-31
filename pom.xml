@@ -1266,66 +1266,65 @@
 			<artifactId>jcuda</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcuda-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions> 
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcublas-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcusparse-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcusolver-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcuda-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcublas-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusparse-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusolver-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcudnn-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcudnn-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 
 		<!-- for all platforms, to be included in the extra jar -->
@@ -1434,6 +1433,44 @@
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
 			<classifier>linux-ppc_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		 -->
+		 
+		 <!-- Commented until the MacOS jcuda libraries are deployed for 0.9.0 version
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcuda-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcublas-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusparse-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusolver-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcudnn-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>

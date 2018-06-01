@@ -209,8 +209,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFifthExpr());
 			
 			// setup output properties
+			if(getOutputs() == null || getOutputs().length != 3) {
+				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
+				raiseValidateError("The builtin function lstm has three outputs, but instead found: " + numOutputs, conditional);
+			}
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
 			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
+			DataIdentifier reserveSpace = (DataIdentifier) getOutputs()[2];
 			
 			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
 			out.setDataType(DataType.MATRIX);
@@ -223,6 +228,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			cy.setValueType(ValueType.DOUBLE);
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
+			
+			// Output3 - reserve space.
+			reserveSpace.setDataType(DataType.MATRIX);
+			reserveSpace.setValueType(ValueType.DOUBLE);
+			reserveSpace.setDimensions(-1, -1);
+			reserveSpace.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			break;
 		}

@@ -34,6 +34,7 @@ import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
@@ -53,8 +54,8 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	cudnnFilterDescriptor wDesc;
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; Pointer reserveSpace;
-	public LibMatrixCuDNNRnnAlgorithm(GPUContext gCtx, String instName, 
-			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
+	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
+			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w, String reserveSpaceName) throws DMLRuntimeException {
 		this.gCtx = gCtx;
 		this.instName = instName;
 		
@@ -99,10 +100,16 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		sizeInBytes = getWorkspaceSize(T);
 		if(sizeInBytes != 0)
 			workSpace = gCtx.allocate(sizeInBytes);
+		reserveSpaceSizeInBytes = 0;
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
-			if (reserveSpaceSizeInBytes != 0)
-				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
+			if (reserveSpaceSizeInBytes != 0) {
+				int numCols =  (int) Math.floor(((double)reserveSpaceSizeInBytes) / LibMatrixCUDA.sizeOfDataType);
+				reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, numCols);
+			}
+		}
+		if (reserveSpaceSizeInBytes == 0) {
+			reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, 1);
 		}
 		
 		/*

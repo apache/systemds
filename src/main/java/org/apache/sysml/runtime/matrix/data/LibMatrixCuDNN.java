@@ -846,7 +846,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 	
-	private static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
+	static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
@@ -867,6 +867,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param return_sequences Whether to return `out` at all timesteps, or just for the final timestep.
 	 * @param outputName name of the out variable. If `return_sequences` is True, outputs for all timesteps.
 	 * @param cyName name of the output cell state. Cell state for final timestep.
+	 * @param reserveSpaceName name of reserve space.
 	 * @param N minibatch size
 	 * @param M hidden size
 	 * @param D number of features
@@ -875,13 +876,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 */
 	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
-			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
-		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
+			String outputName, String cyName, String reserveSpaceName, int N, int M, int D, int T) throws DMLRuntimeException {
+		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, reserveSpaceName, "lstm", return_sequences, N, M, D, T);
 	}
 	
 	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
-			String outputName, String cyName,  // output
+			String outputName, String cyName, String reserveSpaceName,  // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
 		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
 		// Get output pointers
@@ -890,7 +891,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
 		// Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
 		
-		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(gCtx, instName, rnnMode, N, T, M, D, true, wPointer)) {
+		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, rnnMode, N, T, M, D, true, wPointer, reserveSpaceName)) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
 					algo.xDesc, x, 

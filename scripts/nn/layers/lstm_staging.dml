@@ -58,8 +58,9 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
    *      of shape (N, T*M).  Else, outputs for the final timestep, of
    *      shape (N, M).
    *  - c: Cell state for final timestep, of shape (N, M).
+   *  - reserveSpace: reserveSpace to be passed to output (row-vector whose size is determined at runtime). 
    */
-  [out, c] = lstm(X, W, b, out0, c0, return_sequences)
+  [out, c, reserveSpace] = lstm(X, W, b, out0, c0, return_sequences)
 }
 
 # TODO:

@@ -96,6 +96,36 @@ public class AlgorithmPageRank extends AutomatedTestBase
 	public void testPageRankSparseCPFuseNoRedundancy() {
 		runPageRankTest(TEST_NAME1, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
+	
+	@Test
+	public void testPageRankDenseCPNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.DEFAULT);
+	}
+	
+	@Test
+	public void testPageRankSparseCPNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.DEFAULT);
+	}
+
+	@Test
+	public void testPageRankDenseCPFuseAllNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPageRankSparseCPFuseAllNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_ALL);
+	}
+
+	@Test
+	public void testPageRankDenseCPFuseNoRedundancyNoR() {
+		runPageRankTest(TEST_NAME1, false, false, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
+
+	@Test
+	public void testPageRankSparseCPFuseNoRedundancyNoR() {
+		runPageRankTest(TEST_NAME1, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+	}
 
 	private void runPageRankTest( String testname, boolean rewrites, boolean sparse, ExecType instType, TestType testType)
 	{
@@ -125,8 +155,7 @@ public class AlgorithmPageRank extends AutomatedTestBase
 				String.valueOf(maxiter), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			//TODO test both with and without operator fusion
-			OptimizerUtils.ALLOW_OPERATOR_FUSION = false;
+			OptimizerUtils.ALLOW_OPERATOR_FUSION = rewrites;
 			
 			//generate actual datasets
 			double[][] G = getRandomMatrix(rows, cols, 1, 1, sparse?sparsity2:sparsity1, 234);

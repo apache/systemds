@@ -42,7 +42,7 @@ install:
 
 script:
 #  - mvn clean verify jacoco:report coveralls:report
-  - travis_wait 25 mvn clean verify
+  - travis_wait 180 mvn clean verify
 
 after_success:
 #  -  mvn test jacoco:report coveralls:report

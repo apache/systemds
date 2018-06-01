@@ -104,7 +104,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
 			if (reserveSpaceSizeInBytes != 0) {
-				int numCols =  (int) Math.floor(((double)reserveSpaceSizeInBytes) / LibMatrixCUDA.sizeOfDataType);
+				int numCols =  (int) Math.ceil(((double)reserveSpaceSizeInBytes) / LibMatrixCUDA.sizeOfDataType);
 				reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, numCols);
 			}
 		}

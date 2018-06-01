@@ -2212,10 +2212,12 @@ public class DMLTranslator
 		// Construct Hops for all inputs
 		ArrayList<Hop> inputs = new ArrayList<>();
 		inputs.add( processExpression(source.getFirstExpr(), null, hops) );
-		if ( source.getSecondExpr() != null )
-			inputs.add( processExpression(source.getSecondExpr(), null, hops) );
-		if ( source.getThirdExpr() != null )
-			inputs.add( processExpression(source.getThirdExpr(), null, hops) );
+		Expression[] expr = source.getAllExpr();
+		if(expr != null && expr.length > 1) {
+			for(int i = 1; i < expr.length; i++) {
+				inputs.add( processExpression(expr[i], null, hops) );
+			}
+		}
 		
 		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
 		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
@@ -2230,6 +2232,9 @@ public class DMLTranslator
 		case QR:
 		case LU:
 		case EIGEN:
+		case LSTM:
+		case BATCH_NORM2D:
+		case BATCH_NORM2D_BACKWARD:
 		case SVD:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs

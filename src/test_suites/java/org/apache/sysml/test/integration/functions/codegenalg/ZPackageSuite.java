@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
 	AlgorithmMDABivar.class,
 	AlgorithmMLogreg.class,
 	AlgorithmMSVM.class,
+	AlgorithmPageRank.class,
 	AlgorithmPNMF.class,
 	AlgorithmStepwiseRegression.class,
 })

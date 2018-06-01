@@ -42,12 +42,15 @@ import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -71,13 +74,43 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	//internal local debug level
 	private static final boolean LDEBUG = false;
 
-	private ExecutorService _ec;
-	public static final int TIMEOUT = 10;
+	private ExecutorService _es;
+	private ParamServer _ps;
+	public static final int TIMEOUT = 2;
 
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
 			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
+		}
+	}
+
+	/**
+	 * A thread error handler for workers and agg service
+	 */
+	public class PSErrorHandler implements Function<Throwable, Void> {
+
+		private List<Throwable> error = new ArrayList<>();
+
+		boolean hasError() {
+			return !error.isEmpty();
+		}
+
+		String getError() {
+			StringBuilder sb = new StringBuilder();
+			error.forEach(e -> sb.append(ExceptionUtils.getFullStackTrace(e)).append("\n"));
+			return sb.toString();
+		}
+
+		@Override
+		public Void apply(Throwable throwable) {
+			if (throwable != null) {
+				error.add(throwable);
+				// shutdown all the workers and agg service
+				_es.shutdownNow();
+				_ps.shutdown();
+			}
+			return null;
 		}
 	}
 
@@ -91,7 +124,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		PSModeType mode = PSModeType.valueOf(getParam(PS_MODE));
 		int workerNum = getWorkerNum(mode);
-		_ec = Executors.newFixedThreadPool(workerNum);
+		_es = Executors.newFixedThreadPool(workerNum);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 		PSFrequency freq = getFrequency();
@@ -104,38 +137,47 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 		long batchSize = getBatchSize();
 
+		// Create an error handler
+		PSErrorHandler handler = new PSErrorHandler();
+
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
 		ListObject hyperParams = getHyperParams(ec);
-		ParamServer ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, ec, hyperParams);
+		_ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, ec, hyperParams, handler);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-				.mapToObj(i -> new LocalPSWorker((long) i, updFunc, freq, epochs, batchSize, hyperParams, ec, ps))
+				.mapToObj(i -> new LocalPSWorker((long) i, updFunc, freq, epochs, batchSize, hyperParams, ec, _ps))
 				.collect(Collectors.toList());
 
 		// Do data partition
 		doDataPartition(ec, workers);
 
 		// Create the worker threads
-		workers.parallelStream().forEach(_ec::submit);
+		workers.forEach(w -> CompletableFuture.runAsync(w, _es).exceptionally(handler));
 
 		// Wait for the worker finishing
-		_ec.shutdown();
+		_es.shutdown();
 		try {
-			_ec.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
+			_es.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(
-					String.format("ParamservBuiltinCPInstruction: an error occur: %s", e.getMessage()));
+					String.format("ParamservBuiltinCPInstruction: an error occurred: %s", e.getMessage()));
+		}
+
+		// If failed
+		if (handler.hasError()) {
+			throw new DMLRuntimeException(
+					String.format("ParamservBuiltinCPInstruction: some error occurred: %s", handler.getError()));
 		}
 
 		// Create the output
 		ListObject result;
 		try {
-			result = ps.getResult();
+			result = _ps.getResult();
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(
-					String.format("ParamservBuiltinCPInstruction: an error occur: %s", e.getMessage()));
+					String.format("ParamservBuiltinCPInstruction: an error occurred: %s", e.getMessage()));
 		}
 		ec.setVariable(output.getName(), result);
 	}
@@ -201,11 +243,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private ParamServer createPS(PSModeType mode, String aggFunc, PSFrequency freq, PSUpdateType updateType,
-			int workerNum, ListObject model, ExecutionContext ec, ListObject hyperParams) {
+			int workerNum, ListObject model, ExecutionContext ec, ListObject hyperParams, PSErrorHandler handler) {
 		ParamServer ps = null;
 		switch (mode) {
 		case LOCAL:
-			ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum, hyperParams);
+			ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum, hyperParams, handler);
 			break;
 		case REMOTE_SPARK:
 			throw new DMLRuntimeException("Do not support remote spark.");

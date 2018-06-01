@@ -24,12 +24,14 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 
 public class LocalParamServer extends ParamServer {
 
 	public LocalParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams) {
-		super(model, aggFunc, freq, updateType, ec, workerNum, hyperParams);
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams,
+			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
+		super(model, aggFunc, freq, updateType, ec, workerNum, hyperParams, handler);
 	}
 
 	@Override

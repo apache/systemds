@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -49,6 +50,7 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 
 public abstract class ParamServer {
 
@@ -68,9 +70,11 @@ public abstract class ParamServer {
 	private AggregationService _aggService;
 	private ExecutorService _es;
 	private boolean[] _pulledStates;
+	private final ParamservBuiltinCPInstruction.PSErrorHandler _handler;
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams) {
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams,
+			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
 		this._gradientsQueue = new LinkedBlockingDeque<>();
 		this._modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -87,15 +91,20 @@ public abstract class ParamServer {
 		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum, hyperParams);
 		this._pulledStates = new boolean[workerNum];
 		this._es = Executors.newSingleThreadExecutor();
-	}
-
-	void launchService() {
-		_es.submit(_aggService);
+		this._handler = handler;
 	}
 
 	public abstract void push(long workerID, ListObject value);
 
 	public abstract Data pull(long workerID);
+
+	void launchService() {
+		CompletableFuture.runAsync(_aggService, _es).exceptionally(_handler);
+	}
+
+	public void shutdown() {
+		_es.shutdownNow();
+	}
 
 	public ListObject getResult() throws InterruptedException {
 		_es.shutdown();
@@ -209,43 +218,48 @@ public abstract class ParamServer {
 
 		@Override
 		public void run() {
-			Gradient p;
 			try {
-				p = _gradientsQueue.take();
-			} catch (InterruptedException e) {
-				throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.", e);
-			}
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-						p._gradients.getDataSize() / 1024, p._workerID));
-			}
-
-			setFinishedState((int) p._workerID);
-
-			// Populate the variables table with the gradients and model
-			_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
-			_ec.setVariable(Statement.PS_MODEL, _model);
-
-			// Invoke the aggregate function
-			_inst.processInstruction(_ec);
-
-			// Get the output
-			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
-
-			// Update the model with the new output
-			ParamservUtils.cleanupListObject(_ec, _model);
-			ParamservUtils.cleanupListObject(_ec, p._gradients);
-			_model = newModel;
-
-			if (allFinished()) {
-				// Broadcast the updated model
-				resetPulledStates();
-				resetFinishedStates();
-				broadcastModel();
-
-				if (LOG.isDebugEnabled()) {
-					LOG.debug("Global parameter is broadcasted successfully.");
+				Gradient p;
+				try {
+					p = _gradientsQueue.take();
+				} catch (InterruptedException e) {
+					throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.",
+							e);
 				}
+				if (LOG.isDebugEnabled()) {
+					LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
+							p._gradients.getDataSize() / 1024, p._workerID));
+				}
+
+				setFinishedState((int) p._workerID);
+
+				// Populate the variables table with the gradients and model
+				_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
+				_ec.setVariable(Statement.PS_MODEL, _model);
+
+				// Invoke the aggregate function
+				_inst.processInstruction(_ec);
+
+				// Get the output
+				ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
+
+				// Update the model with the new output
+				ParamservUtils.cleanupListObject(_ec, _model);
+				ParamservUtils.cleanupListObject(_ec, p._gradients);
+				_model = newModel;
+
+				if (allFinished()) {
+					// Broadcast the updated model
+					resetPulledStates();
+					resetFinishedStates();
+					broadcastModel();
+
+					if (LOG.isDebugEnabled()) {
+						LOG.debug("Global parameter is broadcasted successfully.");
+					}
+				}
+			} catch (Exception e) {
+				throw new DMLRuntimeException("Aggregation service failed.", e);
 			}
 		}
 	}

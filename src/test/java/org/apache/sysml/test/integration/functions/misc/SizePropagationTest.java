@@ -25,6 +25,7 @@ import org.junit.Assert;
 
 import java.util.HashMap;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -37,6 +38,7 @@ public class SizePropagationTest extends AutomatedTestBase
 	private static final String TEST_NAME1 = "SizePropagationRBind";
 	private static final String TEST_NAME2 = "SizePropagationLoopIx1";
 	private static final String TEST_NAME3 = "SizePropagationLoopIx2";
+	private static final String TEST_NAME4 = "SizePropagationLoopIx3";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + SizePropagationTest.class.getSimpleName() + "/";
@@ -49,6 +51,7 @@ public class SizePropagationTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 
 	@Test
@@ -81,6 +84,16 @@ public class SizePropagationTest extends AutomatedTestBase
 		testSizePropagation( TEST_NAME3, true, N-2 );
 	}
 	
+	@Test
+	public void testSizePropagationLoopIx3NoRewrites() {
+		testSizePropagation( TEST_NAME4, false, N-1 );
+	}
+	
+	@Test
+	public void testSizePropagationLoopIx3Rewrites() {
+		testSizePropagation( TEST_NAME4, true, N-1 );
+	}
+	
 	private void testSizePropagation( String testname, boolean rewrites, int expect ) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
@@ -93,7 +106,8 @@ public class SizePropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "hops", "-stats","-args", String.valueOf(N), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			runTest(true, false, null, -1); 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
@@ -101,6 +115,7 @@ public class SizePropagationTest extends AutomatedTestBase
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 			rtplatform = oldPlatform;
 		}
 	}

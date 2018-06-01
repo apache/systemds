@@ -1665,101 +1665,48 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * @param be binary expression
 	 * @return linear function
 	 */
-	private LinearFunction rParseBinaryExpression(BinaryExpression be) 
-	{
-		LinearFunction ret = null;
+	private LinearFunction rParseBinaryExpression(BinaryExpression be) {
 		Expression l = be.getLeft();
 		Expression r = be.getRight();
-		
-		if( be.getOpCode() == BinaryOp.PLUS )
-		{			
-			//parse binary expressions
-			if( l instanceof BinaryExpression)
-			{
-				ret = rParseBinaryExpression((BinaryExpression) l);
-				Long cvalR = parseLongConstant(r);
-				if( ret != null && cvalR != null )
-					ret.addConstant(cvalR);
-				else 
-					return null;
-			}
-			else if (r instanceof BinaryExpression)
-			{
-				ret = rParseBinaryExpression((BinaryExpression) r);
-				Long cvalL = parseLongConstant(l);
-				if( ret != null && cvalL != null )
-					ret.addConstant(cvalL);
-				else
-					return null;
-			}
-			else // atomic case
-			{
-				Long cvalL = parseLongConstant(l);
-				Long cvalR = parseLongConstant(r);
-				if( cvalL != null )
-					ret = new LinearFunction(cvalL,1,((DataIdentifier)r)._name);	
-				else if( cvalR != null )
-					ret = new LinearFunction(cvalR,1,((DataIdentifier)l)._name);
-				else
-					return null; //let dependency analysis fail
-			}
-		}
-		else if( be.getOpCode() == BinaryOp.MINUS ) 
-		{
+		if( be.getOpCode() == BinaryOp.PLUS || be.getOpCode() == BinaryOp.MINUS ) {
+			boolean plus = be.getOpCode() == BinaryOp.PLUS;
 			//parse binary expressions
 			if( l instanceof BinaryExpression) {
-				ret = rParseBinaryExpression((BinaryExpression) l);
-				if( ret != null ) //change to plus
-					ret.addConstant(parseLongConstant(r)*(-1));
+				LinearFunction f = rParseBinaryExpression((BinaryExpression) l);
+				Long cvalR = parseLongConstant(r);
+				if( f != null && cvalR != null )
+					return f.addConstant(cvalR * (plus?1:-1));
 			}
 			else if (r instanceof BinaryExpression) {
-				ret = rParseBinaryExpression((BinaryExpression) r);
-				if( ret != null ) { //change to plus
-					ret._a*=(-1);
-					for( int i=0; i<ret._b.length; i++ )
-						ret._b[i]*=(-1);
-					Long cvalL = parseLongConstant(l);
-					ret.addConstant(cvalL);
-				}
+				LinearFunction f = rParseBinaryExpression((BinaryExpression) r);
+				Long cvalL = parseLongConstant(l);
+				if( f != null && cvalL != null )
+					return f.scale(plus?1:-1).addConstant(cvalL);
 			}
 			else { // atomic case
-				//change everything to plus
+				//change everything to plus if necessary
 				Long cvalL = parseLongConstant(l);
 				Long cvalR = parseLongConstant(r);
 				if( cvalL != null )
-					ret = new LinearFunction(cvalL,-1,((DataIdentifier)r)._name);
+					return new LinearFunction(cvalL,plus?1:-1,((DataIdentifier)r)._name);
 				else if( cvalR != null )
-					ret = new LinearFunction(cvalR*(-1),1,((DataIdentifier)l)._name);
-				else
-					return null; //let dependency analysis fail
+					return new LinearFunction(cvalR*(plus?1:-1),1,((DataIdentifier)l)._name);
 			}
 		}
 		else if( be.getOpCode() == BinaryOp.MULT ) {
-			//NOTE: only recursion for MULT expressions, where one side is a constant 
-			
-			//atomic case
+			//atomic case (only recursion for MULT expressions, where one side is a constant)
 			Long cvalL = parseLongConstant(l);
 			Long cvalR = parseLongConstant(r);
-			
 			if( cvalL != null && r instanceof DataIdentifier )
-				ret = new LinearFunction(0, cvalL,((DataIdentifier)r)._name);
+				return new LinearFunction(0, cvalL,((DataIdentifier)r)._name);
 			else if( cvalR != null && l instanceof DataIdentifier )
-				ret = new LinearFunction(0, cvalR,((DataIdentifier)l)._name);
-			else if( cvalL != null && r instanceof BinaryExpression ) {
-				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)r);
-				return ltmp.scale(cvalL);
-			}
-			else if( cvalR != null && l instanceof BinaryExpression ) {
-				LinearFunction ltmp = rParseBinaryExpression((BinaryExpression)l);
-				return ltmp.scale(cvalR);
-			}
-			else
-				return null; //let dependency analysis fail
+				return new LinearFunction(0, cvalR,((DataIdentifier)l)._name);
+			else if( cvalL != null && r instanceof BinaryExpression )
+				return rParseBinaryExpression((BinaryExpression)r).scale(cvalL);
+			else if( cvalR != null && l instanceof BinaryExpression )
+				return rParseBinaryExpression((BinaryExpression)l).scale(cvalR);
 		}
-		else
-			return null; //let dependency analysis fail
-			
-		return ret;
+		return null; //let dependency analysis fail
 	}
 
 	private static Long parseLongConstant(Expression expr)
@@ -1837,10 +1784,9 @@ public class ParForStatementBlock extends ForStatementBlock
 	 * the applied GCD and Banerjee tests.
 	 *
 	 */
-	private class LinearFunction
-	{
-		long     _a;     // intercept
-		long[]   _b;     // slopes 
+	private class LinearFunction {
+		long _a;        // intercept
+		long[] _b;      // slopes 
 		String[] _vars; // b variable names
 		
 		LinearFunction( long a, long b, String name ) {
@@ -1851,11 +1797,12 @@ public class ParForStatementBlock extends ForStatementBlock
 			_vars[0] = name;
 		}
 		
-		public void addConstant(long value) {
+		public LinearFunction addConstant(long value) {
 			_a += value;
+			return this;
 		}
 
-		public void addFunction( LinearFunction f2) {
+		public LinearFunction addFunction( LinearFunction f2) {
 			_a = _a + f2._a;
 			long[] tmpb = new long[_b.length+f2._b.length];
 			System.arraycopy( _b,    0, tmpb, 0,         _b.length    );
@@ -1865,9 +1812,10 @@ public class ParForStatementBlock extends ForStatementBlock
 			System.arraycopy( _vars,    0, tmpvars, 0,            _vars.length    );
 			System.arraycopy( f2._vars, 0, tmpvars, _vars.length, f2._vars.length );
 			_vars = tmpvars;
+			return this;
 		}
 
-		public void removeVar( int i ) {
+		public LinearFunction removeVar( int i ) {
 			long[] tmpb = new long[_b.length-1];
 			System.arraycopy( _b, 0, tmpb, 0, i );
 			System.arraycopy( _b, i+1, tmpb, i, _b.length-i-1 );
@@ -1876,6 +1824,7 @@ public class ParForStatementBlock extends ForStatementBlock
 			System.arraycopy( _vars, 0, tmpvars, 0, i );
 			System.arraycopy( _vars, i+1, tmpvars, i, _vars.length-i-1 );
 			_vars = tmpvars;
+			return this;
 		}
 		
 		public LinearFunction scale( long scale ) {

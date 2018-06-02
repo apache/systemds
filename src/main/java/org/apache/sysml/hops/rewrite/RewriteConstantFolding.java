@@ -105,14 +105,6 @@ public class RewriteConstantFolding extends HopRewriteRule
 				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
 			}
 		}
-		//fold nrow as precondition for further constant folding 
-		else if( HopRewriteUtils.isUnary(root, OpOp1.NROW) && root.getInput().get(0).rowsKnown() ) {
-			literal = new LiteralOp(root.getInput().get(0).getDim1());
-		}
-		//fold ncol as precondition for further constant folding 
-		else if( HopRewriteUtils.isUnary(root, OpOp1.NCOL) && root.getInput().get(0).colsKnown() ) {
-			literal = new LiteralOp(root.getInput().get(0).getDim2());
-		}
 		//fold conjunctive predicate if at least one input is literal 'false'
 		else if( isApplicableFalseConjunctivePredicate(root) ) {
 			literal = new LiteralOp(false);

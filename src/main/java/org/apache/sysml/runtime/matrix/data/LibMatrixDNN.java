@@ -509,8 +509,8 @@ public class LibMatrixDNN {
 				double var = resultSaveInvVarianceArr[k]/NPQ - Math.pow(mean, 2.0);
 				resultSaveMeanArr[k] = mean;
 				resultSaveInvVarianceArr[k] = Math.pow(Math.sqrt(var + epsilon), -1.0);
-				retRunningMeanArr[k] = mu*runningMeanArr[k] + (1-mu)*mean;
-				retRunningVarArr[k] = mu*runningVarArr[k] + (1-mu)*mean;
+				retRunningMeanArr[k] = mu*((runningMeanArr!=null)?runningMeanArr[k]:0) + (1-mu)*mean;
+				retRunningVarArr[k] = mu*((runningVarArr!=null)?runningVarArr[k]:0) + (1-mu)*mean;
 			}
 		}
 		else if(phase.equalsIgnoreCase("test")) {

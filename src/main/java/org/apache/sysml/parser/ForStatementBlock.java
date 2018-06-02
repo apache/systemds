@@ -89,7 +89,8 @@ public class ForStatementBlock extends StatementBlock
 		//validate body
 		_dmlProg = dmlProg;
 		for(StatementBlock sb : body) {
-			ids = sb.validate(dmlProg, ids, constVars, true);
+			ids = sb.validate(dmlProg, ids, constVars,
+				!(this instanceof ParForStatementBlock));
 			constVars = sb.getConstOut();
 		}
 		
@@ -165,7 +166,8 @@ public class ForStatementBlock extends StatementBlock
 			//validate body
 			_dmlProg = dmlProg;
 			for(StatementBlock sb : body) {
-				ids = sb.validate(dmlProg, ids, constVars, true);
+				ids = sb.validate(dmlProg, ids, constVars,
+					!(this instanceof ParForStatementBlock));
 				constVars = sb.getConstOut();
 			}
 			if (!body.isEmpty()){

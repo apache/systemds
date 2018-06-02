@@ -535,10 +535,9 @@ public class DataExpression extends DataIdentifier
 		}	
 	
 		//general data expression constant propagation
-		if( !conditional ) {
+		if( !conditional )
 			performConstantPropagationRand( currConstVars );
-			performConstantPropagationReadWrite( currConstVars );
-		}
+		performConstantPropagationReadWrite( currConstVars );
 		
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
 		Expression dataParam1 = getVarParam(RAND_DATA);		

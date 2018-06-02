@@ -280,10 +280,8 @@ public class FunctionOp extends Hop
 	protected ExecType optFindExecType() 
 	{
 		checkAndSetForcedPlatform();
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
-			
 			// check if there is sufficient memory to execute this function
 			if( getFunctionName().equalsIgnoreCase("transformencode") ) {
 				_etype = ((_etypeForced==ExecType.SPARK 
@@ -291,19 +289,12 @@ public class FunctionOp extends Hop
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
 			else if( getFunctionName().equalsIgnoreCase("lstm")) {
-				if(DMLScript.USE_ACCELERATOR)
-					_etype = ExecType.GPU;
-				else
+				if(!DMLScript.USE_ACCELERATOR)
 					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
+				_etype = ExecType.GPU;
 			}
 			else if( getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
-				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
-					_etype = findExecTypeByMemEstimate();
-				}
-				else {
-					_etype = ExecType.CP;
-				}
-				_etype = _etype == REMOTE ?  ExecType.CP : _etype; // batch_norm2d and batch_norm2d_backward are  not supported on Spark
+				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
 			}
 			else {
 				// Since the memory estimate is only conservative, do not throw

@@ -99,7 +99,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	public Expression getSixthExpr() {
-		return (_args.length >= 5 ? _args[4] : null);
+		return (_args.length >= 6 ? _args[5] : null);
 	}
 
 	public Expression[] getAllExpr(){
@@ -107,7 +107,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 	
 	public Expression getExpr(int i) {
-		return (_args.length > i ? _args[i] : null);	
+		return (_args.length > i ? _args[i] : null);
 	}
 	
 	@Override

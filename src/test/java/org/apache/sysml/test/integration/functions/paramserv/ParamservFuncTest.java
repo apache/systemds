@@ -37,6 +37,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME9 = "paramserv-worker-failed";
 	private static final String TEST_NAME10 = "paramserv-agg-service-failed";
 	private static final String TEST_NAME11 = "paramserv-large-parallelism";
+	private static final String TEST_NAME12 = "paramserv-wrong-aggregate-func";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -56,6 +57,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
 		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {}));
 		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {}));
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] {}));
 	}
 
 	@Test
@@ -117,6 +119,12 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	@Test
 	public void testParamservLargeParallelismTest() {
 		runDMLTest(TEST_NAME11, false, null, null);
+	}
+
+	@Test
+	public void testParamservWrongAggregateFuncTest() {
+		runDMLTest(TEST_NAME12, true, DMLException.class,
+				"The './src/test/scripts/functions/paramserv/mnist_lenet_paramserv_wrong_aggregate_func.dml::gradients' function should provide an input of 'MATRIX' type named 'labels'.");
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {

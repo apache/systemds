@@ -2352,7 +2352,6 @@ public class DMLTranslator
 			currBuiltinOp = (expr.getDim1()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp1.NROW, expr) : new LiteralOp(expr.getDim1());
 			break;
-
 		case NCOL:
 			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
 			// Else create a UnaryOp so that a control program instruction is generated
@@ -2365,7 +2364,7 @@ public class DMLTranslator
 			currBuiltinOp = (expr.getDim1()==-1 || expr.getDim2()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
 			break;
-		
+
 		case LIST:
 			currBuiltinOp = new NaryOp(target.getName(), DataType.LIST, ValueType.UNKNOWN,
 				OpOpN.LIST, processAllExpressions(source.getAllExpr(), hops));

@@ -535,8 +535,10 @@ public class DataExpression extends DataIdentifier
 		}	
 	
 		//general data expression constant propagation
-		performConstantPropagationRand( currConstVars );
-		performConstantPropagationReadWrite( currConstVars );
+		if( !conditional ) {
+			performConstantPropagationRand( currConstVars );
+			performConstantPropagationReadWrite( currConstVars );
+		}
 		
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
 		Expression dataParam1 = getVarParam(RAND_DATA);		
@@ -1591,7 +1593,7 @@ public class DataExpression extends DataIdentifier
 				&& currConstVars.containsKey(((DataIdentifier) paramExp).getName()))
 			{
 				addVarParam(paramName, currConstVars.get(((DataIdentifier)paramExp).getName()));
-			}				
+			}
 		}
 	}
 	

@@ -48,7 +48,7 @@ public class IfStatementBlock extends StatementBlock
 		//validate conditional predicate (incl constant propagation)
 		Expression pred = ifstmt.getConditionalPredicate().getPredicate();
 		pred.validateExpression(ids.getVariables(), constVars, conditional);
-		if( pred instanceof DataIdentifier && constVars.containsKey( ((DataIdentifier)pred).getName()) ) {
+		if( pred instanceof DataIdentifier && constVars.containsKey( ((DataIdentifier)pred).getName()) && !conditional ) {
 			ifstmt.getConditionalPredicate().setPredicate(constVars.get(((DataIdentifier)pred).getName()));
 		}
 		

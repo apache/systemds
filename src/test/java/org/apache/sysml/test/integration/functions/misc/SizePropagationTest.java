@@ -39,6 +39,7 @@ public class SizePropagationTest extends AutomatedTestBase
 	private static final String TEST_NAME2 = "SizePropagationLoopIx1";
 	private static final String TEST_NAME3 = "SizePropagationLoopIx2";
 	private static final String TEST_NAME4 = "SizePropagationLoopIx3";
+	private static final String TEST_NAME5 = "SizePropagationLoopIx4";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + SizePropagationTest.class.getSimpleName() + "/";
@@ -52,6 +53,7 @@ public class SizePropagationTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 	}
 
 	@Test
@@ -92,6 +94,16 @@ public class SizePropagationTest extends AutomatedTestBase
 	@Test
 	public void testSizePropagationLoopIx3Rewrites() {
 		testSizePropagation( TEST_NAME4, true, N-1 );
+	}
+	
+	@Test
+	public void testSizePropagationLoopIx4NoRewrites() {
+		testSizePropagation( TEST_NAME5, false, N );
+	}
+	
+	@Test
+	public void testSizePropagationLoopIx4Rewrites() {
+		testSizePropagation( TEST_NAME5, true, N );
 	}
 	
 	private void testSizePropagation( String testname, boolean rewrites, int expect ) {

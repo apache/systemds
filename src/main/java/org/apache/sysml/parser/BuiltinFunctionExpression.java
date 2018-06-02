@@ -462,11 +462,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 	{
 		for(int i=0; i < _args.length; i++ ) {
-			
 			if (_args[i] instanceof FunctionCallIdentifier){
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
 			}
-			
 			_args[i].validateExpression(ids, constVars, conditional);
 		}
 		
@@ -876,9 +874,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				}
 				else {
 					// constant propagation
-					if( getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+					if( getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) && !conditional )
 						_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
-					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) && !conditional )
 						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
 					
 					if ( getThirdExpr().getOutput() instanceof ConstIdentifier ) 
@@ -903,9 +901,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				}
 				else {
 					// constant propagation
-					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName())  && !conditional )
 						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
-					if( _args[4] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[4]).getName()) )
+					if( _args[4] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[4]).getName())  && !conditional )
 						_args[4] = constVars.get(((DataIdentifier)_args[4]).getName());
 					
 					if ( _args[3].getOutput() instanceof ConstIdentifier ) 
@@ -1164,12 +1162,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkNumParameters(2);
 			
 			// constant propagation (from, to, incr)
-			if( getFirstExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getFirstExpr()).getName()) )
-				_args[0] = constVars.get(((DataIdentifier)getFirstExpr()).getName());
-			if( getSecondExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getSecondExpr()).getName()) )
-				_args[1] = constVars.get(((DataIdentifier)getSecondExpr()).getName());
-			if( getThirdExpr()!=null && getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
-				_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
+			if( !conditional ) {
+				if( getFirstExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getFirstExpr()).getName()) )
+					_args[0] = constVars.get(((DataIdentifier)getFirstExpr()).getName());
+				if( getSecondExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getSecondExpr()).getName()) )
+					_args[1] = constVars.get(((DataIdentifier)getSecondExpr()).getName());
+				if( getThirdExpr()!=null && getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+					_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
+			}
 			
 			// check if dimensions can be inferred
 			long dim1=-1, dim2=1;

@@ -36,6 +36,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME8 = "paramserv-minimum-version";
 	private static final String TEST_NAME9 = "paramserv-worker-failed";
 	private static final String TEST_NAME10 = "paramserv-agg-service-failed";
+	private static final String TEST_NAME11 = "paramserv-large-parallelism";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -54,6 +55,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
 		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
 		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {}));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {}));
 	}
 
 	@Test
@@ -110,6 +112,11 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	public void testParamservAggServiceFailedTest() {
 		runDMLTest(TEST_NAME10, true, DMLException.class,
 				"Caused by: org.apache.sysml.runtime.DMLRuntimeException: List lookup returned no entry for name='agg_service_err'");
+	}
+
+	@Test
+	public void testParamservLargeParallelismTest() {
+		runDMLTest(TEST_NAME11, false, null, null);
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {

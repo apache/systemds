@@ -30,10 +30,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 @SuppressWarnings("unused")
 public abstract class PSWorker {
@@ -54,16 +52,13 @@ public abstract class PSWorker {
 	FunctionCallCPInstruction _inst;
 
 	public PSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			ListObject hyperParams, ExecutionContext ec, ParamServer ps) {
+			ExecutionContext ec, ParamServer ps) {
 		this._workerID = workerID;
 		this._updFunc = updFunc;
 		this._freq = freq;
 		this._epochs = epochs;
 		this._batchSize = batchSize;
-		this._ec = ExecutionContextFactory.createContext(ec.getProgram());
-		if (hyperParams != null) {
-			this._ec.setVariable(Statement.PS_HYPER_PARAMS, hyperParams);
-		}
+		this._ec = ec;
 		this._ps = ps;
 
 		// Get the update function
@@ -88,17 +83,16 @@ public abstract class PSWorker {
 				"update function");
 
 		// Check the inputs of the update function
-		checkInput(inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
-		checkInput(inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
-		checkInput(inputs, Expression.DataType.LIST, Statement.PS_MODEL);
-		if (hyperParams != null) {
-			checkInput(inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
-		}
+		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
+		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
+		checkInput(false, inputs, Expression.DataType.LIST, Statement.PS_MODEL);
+		checkInput(true, inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
 
 		// Check the output of the update function
 		if (outputs.size() != 1) {
 			throw new DMLRuntimeException(
-				String.format("The output of the '%s' function should provide one list containing the gradients.", updFunc));
+					String.format("The output of the '%s' function should provide one list containing the gradients.",
+							updFunc));
 		}
 		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
 			throw new DMLRuntimeException(
@@ -107,10 +101,15 @@ public abstract class PSWorker {
 		_output = outputs.get(0);
 	}
 
-	private void checkInput(ArrayList<DataIdentifier> inputs, Expression.DataType dt, String pname) {
+	private void checkInput(boolean optional, ArrayList<DataIdentifier> inputs, Expression.DataType dt, String pname) {
+		if (optional && inputs.stream().noneMatch(input -> pname.equals(input.getName()))) {
+			// We do not need to check if the input is optional and is not provided
+			return;
+		}
 		if (inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
 			throw new DMLRuntimeException(
-				String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt, pname));
+					String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt,
+							pname));
 		}
 	}
 

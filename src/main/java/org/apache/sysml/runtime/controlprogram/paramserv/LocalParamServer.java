@@ -29,9 +29,9 @@ import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 public class LocalParamServer extends ParamServer {
 
 	public LocalParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams,
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum,
 			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
-		super(model, aggFunc, freq, updateType, ec, workerNum, hyperParams, handler);
+		super(model, aggFunc, freq, updateType, ec, workerNum, handler);
 	}
 
 	@Override

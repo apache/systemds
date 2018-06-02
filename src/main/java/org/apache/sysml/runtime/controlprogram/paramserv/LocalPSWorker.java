@@ -32,8 +32,8 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
 
 	public LocalPSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			ListObject hyperParams, ExecutionContext ec, ParamServer ps) {
-		super(workerID, updFunc, freq, epochs, batchSize, hyperParams, ec, ps);
+			ExecutionContext ec, ParamServer ps) {
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 	}
 
 	@Override

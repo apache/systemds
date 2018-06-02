@@ -40,7 +40,9 @@ import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -53,22 +55,28 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.NativeHelper;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.BATCH;
-	private static final int DEFAULT_LEVEL_PARALLELISM = InfrastructureAnalyzer.getLocalParallelism();
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 
 	//internal local debug level
@@ -76,7 +84,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private ExecutorService _es;
 	private ParamServer _ps;
-	public static final int TIMEOUT = 2;
+	public static final int TIMEOUT = Integer.MAX_VALUE;
 
 	static {
 		// for internal debugging only
@@ -127,6 +135,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		_es = Executors.newFixedThreadPool(workerNum);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
+
+		// Create the worker execution context
+		int k = getRemainingCores() / workerNum;
+		List<ExecutionContext> workerECs = createExecutionContext(ec, updFunc, workerNum, k);
+		// Create the agg service execution context
+		ExecutionContext aggServiceEC = createExecutionContext(ec, aggFunc, 1, 1).get(0);
+
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
 		int epochs = Integer.valueOf(getParam(PS_EPOCHS));
@@ -135,19 +150,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 					String.format("Paramserv function: The argument '%s' could not be less than or equal to 0.",
 							PS_EPOCHS));
 		}
-		long batchSize = getBatchSize();
 
 		// Create an error handler
 		PSErrorHandler handler = new PSErrorHandler();
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ListObject hyperParams = getHyperParams(ec);
-		_ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, ec, hyperParams, handler);
+		_ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, aggServiceEC, handler);
 
 		// Create the local workers
-		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-				.mapToObj(i -> new LocalPSWorker((long) i, updFunc, freq, epochs, batchSize, hyperParams, ec, _ps))
+		List<LocalPSWorker> workers = IntStream.range(0, workerNum).mapToObj(
+				i -> new LocalPSWorker((long) i, updFunc, freq, epochs, getBatchSize(), workerECs.get(i), _ps))
 				.collect(Collectors.toList());
 
 		// Do data partition
@@ -159,7 +172,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Wait for the worker finishing
 		_es.shutdown();
 		try {
-			_es.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
+			_es.awaitTermination(TIMEOUT, TimeUnit.DAYS);
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(
 					String.format("ParamservBuiltinCPInstruction: an error occurred: %s", e.getMessage()));
@@ -180,6 +193,49 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 					String.format("ParamservBuiltinCPInstruction: an error occurred: %s", e.getMessage()));
 		}
 		ec.setVariable(output.getName(), result);
+	}
+
+	private List<ExecutionContext> createExecutionContext(ExecutionContext ec, String funcName, int workerNum, int k) {
+		// Fetch the target function
+		String[] keys = DMLProgram.splitFunctionKey(funcName);
+		FunctionProgramBlock targetFunc = ec.getProgram().getFunctionProgramBlock(keys[0], keys[1]);
+		ProgramBlock pb = targetFunc.getChildBlocks().get(0);
+
+		// BFS travel all the hops
+		LinkedList<Hop> hops = new LinkedList<>(pb.getStatementBlock().getHops());
+		while (!hops.isEmpty()) {
+			Hop hop = hops.remove(0);
+			if (hop instanceof Hop.MultiThreadedHop) {
+				// Reassign the level of parallelism
+				Hop.MultiThreadedHop mhop = (Hop.MultiThreadedHop) hop;
+				mhop.setMaxNumThreads(k);
+			}
+			hops.addAll(hop.getInput());
+		}
+
+		// Create a new program,
+		// and only put the target function
+		Program prog = new Program();
+		FunctionProgramBlock copiedPB = new FunctionProgramBlock(prog, targetFunc.getInputParams(),
+				targetFunc.getOutputParams());
+		prog.addProgramBlock(copiedPB);
+		prog.addFunctionProgramBlock(keys[0], keys[1], copiedPB);
+		copiedPB.setChildBlocks(new ArrayList<>(Collections.singletonList(pb)));
+
+		return IntStream.range(0, workerNum).mapToObj(i -> {
+			// Put the hyperparam into the variables table
+			LocalVariableMap varsMap = new LocalVariableMap();
+			ListObject hyperParams = getHyperParams(ec);
+			if (hyperParams != null) {
+				varsMap.put(PS_HYPER_PARAMS, hyperParams);
+			}
+			ExecutionContext newEC = ExecutionContextFactory.createContext(varsMap, prog);
+			// Recompile the program block
+			Recompiler.recompileHopsDag(copiedPB.getChildBlocks().get(0).getStatementBlock(),
+					copiedPB.getChildBlocks().get(0).getStatementBlock().getHops(), newEC.getVariables(), null, false,
+					false, 0);
+			return newEC;
+		}).collect(Collectors.toList());
 	}
 
 	private PSUpdateType getUpdateType() {
@@ -208,6 +264,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return freq;
 	}
 
+	private int getRemainingCores() {
+		return InfrastructureAnalyzer.getLocalParallelism() - 1;
+	}
+
 	/**
 	 * Get the worker numbers according to the vcores
 	 *
@@ -215,20 +275,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return worker numbers
 	 */
 	private int getWorkerNum(PSModeType mode) {
-		int workerNum = DEFAULT_LEVEL_PARALLELISM;
-		if (getParameterMap().containsKey(PS_PARALLELISM)) {
-			workerNum = Integer.valueOf(getParam(PS_PARALLELISM));
-		}
+		int workerNum = -1;
 		switch (mode) {
 		case LOCAL:
-			//FIXME: this is a workaround for a maximum number of buffers in openblas
-			//However, the root cause is a missing function preparation for each worker
-			//(i.e., deep copy with unique file names, and reduced degree of parallelism)
-			int vcores = InfrastructureAnalyzer.getLocalParallelism();
-			if ("openblas".equals(NativeHelper.getCurrentBLAS())) {
-				workerNum = Math.min(workerNum, vcores / 2);
-			} else {
-				workerNum = Math.min(workerNum, vcores);
+			// default worker number: available cores - 1 (assign one process for agg service)
+			workerNum = getRemainingCores();
+			if (getParameterMap().containsKey(PS_PARALLELISM)) {
+				workerNum = Math.min(workerNum, Integer.valueOf(getParam(PS_PARALLELISM)));
 			}
 			break;
 		case REMOTE_SPARK:
@@ -243,11 +296,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private ParamServer createPS(PSModeType mode, String aggFunc, PSFrequency freq, PSUpdateType updateType,
-			int workerNum, ListObject model, ExecutionContext ec, ListObject hyperParams, PSErrorHandler handler) {
+			int workerNum, ListObject model, ExecutionContext ec, PSErrorHandler handler) {
 		ParamServer ps = null;
 		switch (mode) {
 		case LOCAL:
-			ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum, hyperParams, handler);
+			ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum, handler);
 			break;
 		case REMOTE_SPARK:
 			throw new DMLRuntimeException("Do not support remote spark.");

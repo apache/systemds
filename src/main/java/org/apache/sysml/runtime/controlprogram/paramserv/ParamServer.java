@@ -45,7 +45,6 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
@@ -73,7 +72,7 @@ public abstract class ParamServer {
 	private final ParamservBuiltinCPInstruction.PSErrorHandler _handler;
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams,
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum,
 			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
 		this._gradientsQueue = new LinkedBlockingDeque<>();
 		this._modelMap = new HashMap<>(workerNum);
@@ -88,7 +87,7 @@ public abstract class ParamServer {
 			_modelMap.put(i, bq);
 		});
 		this._model = model;
-		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum, hyperParams);
+		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum);
 		this._pulledStates = new boolean[workerNum];
 		this._es = Executors.newSingleThreadExecutor();
 		this._handler = handler;
@@ -141,13 +140,10 @@ public abstract class ParamServer {
 		private boolean[] _finishedStates;  // Workers' finished states
 
 		AggregationService(String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-				ExecutionContext ec, int workerNum, ListObject hyperParams) {
-			_ec = ExecutionContextFactory.createContext(ec.getProgram());
+				ExecutionContext ec, int workerNum) {
+			this._ec = ec;
 			_freq = freq;
 			_updateType = updateType;
-			if (hyperParams != null) {
-				_ec.setVariable(Statement.PS_HYPER_PARAMS, hyperParams);
-			}
 			_finishedStates = new boolean[workerNum];
 
 			// Fetch the aggregation function

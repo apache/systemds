@@ -247,6 +247,8 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "bias_add"      , CPType.Convolution);
 		String2CPInstructionType.put( "bias_multiply"      , CPType.Convolution);
 		String2CPInstructionType.put( "channel_sums"      , CPType.Convolution);
+		String2CPInstructionType.put( "batch_norm2d",           CPType.Convolution);
+		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Convolution);
 		
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);

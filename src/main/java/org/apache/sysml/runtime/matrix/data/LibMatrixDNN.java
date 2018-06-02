@@ -19,6 +19,7 @@
 package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.functionobjects.KahanPlus;
+import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 
@@ -330,6 +333,325 @@ public class LibMatrixDNN {
 		//post-processing: maintain nnz
 		outputBlock.recomputeNonZeros(); 
 		outputBlock.examSparsity();
+	}
+	
+	/**
+	 * Perform channel sum operation
+	 * 
+	 * @param input input matrix block
+	 * @param outputBlock output matrix block
+	 * @param C number of channels
+	 * @param HW height X width
+	 */
+	public static void channelSums(MatrixBlock input, MatrixBlock outputBlock, int C, int HW) {
+		double [] output = outputBlock.getDenseBlockValues();
+		if(input.isInSparseFormat()) {
+			SparseBlock sblock = input.getSparseBlock();
+			for(int n = 0; n < input.getNumRows(); n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					// Note: the input is of shape [N, CHW]
+					int chw = aix[j];
+					
+					// Get individual zero-based c,h,w indexes from zero-based 'chw'
+					int c = chw / HW;
+					output[c] += avals[j];
+				}
+			}
+		}
+		else {
+			double [] inArr = input.getDenseBlockValues();
+			if(inArr != null) {
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				for(int c = 0; c < C; c++) {
+					KahanObject sum = new KahanObject(0.0, 0.0);
+					for(int n = 0; n < input.getNumRows(); n++) {
+						int index =  n*C*HW + c*HW;
+						for(int hw = 0; hw < HW; hw++, index++) {
+							kplus.execute2(sum, inArr[index]);
+						}
+					}
+					output[c] = sum._sum; 
+				}
+			}
+		}
+		outputBlock.recomputeNonZeros();
+	}
+	
+	public static void batchNorm2DBackward(MatrixBlock image, MatrixBlock dout, MatrixBlock scale, double epsilon,  
+			MatrixBlock resultSaveMean, MatrixBlock resultSaveInvVariance,
+			MatrixBlock dX, MatrixBlock dScale, MatrixBlock dBias) {
+		int N = image.getNumRows();
+		int K = scale.getNumRows();
+		int PQ = image.getNumColumns() / K;
+		channelSums(image, dBias, K, PQ);
+		// Since output
+		if(dBias.isInSparseFormat())
+			dBias.sparseToDense();
+		if(dScale.isInSparseFormat())
+			dScale.sparseToDense();
+		if(dX.isInSparseFormat())
+			dX.sparseToDense();
+		// Very small matrices
+		if(resultSaveMean.isInSparseFormat())
+			resultSaveMean.sparseToDense();
+		if(resultSaveInvVariance.isInSparseFormat())
+			resultSaveInvVariance.sparseToDense();
+		if(scale.isInSparseFormat())
+			scale.sparseToDense();
+		double [] dBiasArr = dBias.getDenseBlockValues();
+		double [] dScaleArr = dScale.getDenseBlockValues();
+		double [] dXArr = dX.getDenseBlockValues();
+		double [] mean = resultSaveMean.getDenseBlockValues();
+		double [] invVar = resultSaveInvVariance.getDenseBlockValues();
+		double [] scaleArr = scale.getDenseBlockValues();
+		// since K is relatively small, it reduces code complexity. We can avoid this in subsequent commits.
+		mean = (mean==null) ? new double[K] : mean; 
+		invVar = (invVar==null) ? new double[K] : invVar;
+		scaleArr = (scaleArr == null) ? new double[K] : scaleArr;
+		
+		// TODO: Handle sparse image and dout cases:
+		if(image.isInSparseFormat())
+			image.sparseToDense();
+		if(dout.isInSparseFormat())
+			dout.sparseToDense();
+		
+		if(!image.isInSparseFormat() && !dout.isInSparseFormat()) {
+			double [] imageArr = image.getDenseBlockValues();
+			double [] doutArr = dout.getDenseBlockValues();
+			double constant1 = Math.pow(N*PQ, -1);
+			int KPQ = K*PQ;
+			for(int k = 0; k < K; k++) {
+				double dvar = 0; 
+				double dmean_norm_branch = 0; double dmean_var_branch  = 0;
+				double sumDout = 0; double sum = 0;
+				for(int n = 0; n < N; n++) {
+					int index = n*KPQ + k*PQ; 
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						double doutVal = doutArr != null ? doutArr[index] : 0;
+						double centered = imageArr != null ? imageArr[index] : 0;
+						centered -= mean[k];
+						double dnorm = doutVal*scaleArr[k];
+						dvar -= 0.5*centered*Math.pow(invVar[k], 3)*dnorm;
+						dmean_norm_branch -= dnorm*invVar[k];
+						sum += centered * invVar[k] * doutVal;
+						sumDout += doutVal;
+						dmean_var_branch -= 2*constant1*centered;
+					}
+				}
+				dBiasArr[k] = sumDout;
+				dScaleArr[k] = sum;
+				dmean_var_branch *= dvar;
+				double dmean = dmean_norm_branch + dmean_var_branch;
+				double dX_mean_branch = constant1*dmean;
+				
+				for(int n = 0; n < N; n++) {
+					int index = n*KPQ + k*PQ; 
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						double doutVal = doutArr != null ? doutArr[index] : 0;
+						double centered = imageArr != null ? imageArr[index] : 0;
+						centered -= mean[k];
+						double dnorm = doutVal*scaleArr[k];
+						double dX_norm_branch = dnorm*invVar[k];
+						double dX_var_branch = 2*constant1*centered*dvar;
+						dXArr[index] = dX_norm_branch + dX_mean_branch + dX_var_branch;
+					}
+				}
+			}
+		}
+		else {
+			throw new DMLRuntimeException("Sparse format is not yet supported for batch norm backward");
+		}
+		dBias.recomputeNonZeros();
+		dScale.recomputeNonZeros();
+		dX.recomputeNonZeros();
+	}
+	
+	public static void batchNorm2D(MatrixBlock image, MatrixBlock scale, MatrixBlock bias, MatrixBlock runningMean, 
+			MatrixBlock runningVar, String phase, double epsilon, double mu,
+			MatrixBlock ret, MatrixBlock retRunningMean, MatrixBlock retRunningVar, 
+			MatrixBlock resultSaveMean, MatrixBlock resultSaveInvVariance) {
+		// Since bias, scale, runningMean, runningVar are extremely small array
+		if(bias.isInSparseFormat())
+			bias.sparseToDense();
+		double [] biasArr = bias.getDenseBlockValues();
+		if(scale.isInSparseFormat())
+			scale.sparseToDense();
+		double [] scaleArr = scale.getDenseBlockValues();
+		if(runningMean.isInSparseFormat())
+			runningMean.sparseToDense();
+		double [] runningMeanArr = runningMean.getDenseBlockValues(); // ema_mean
+		if(runningVar.isInSparseFormat())
+			runningVar.sparseToDense(); 
+		double [] runningVarArr = runningVar.getDenseBlockValues(); // ema_var
+		
+		double [] retRunningMeanArr = retRunningMean.getDenseBlockValues(); // ema_mean_upd
+		double [] retRunningVarArr = retRunningVar.getDenseBlockValues(); // ema_var_upd
+		double [] resultSaveMeanArr = resultSaveMean.getDenseBlockValues(); // cache_mean
+		double [] resultSaveInvVarianceArr = resultSaveInvVariance.getDenseBlockValues(); // cache_inv_var
+		
+		int N = image.getNumRows();
+		int K = bias.getNumRows(); // number of output channels
+		int PQ = image.getNumColumns() / K; // output height X output width
+		
+		if(phase.equalsIgnoreCase("train")) { 
+			computeBiasSumAndSumSquares(image, resultSaveMeanArr, resultSaveInvVarianceArr, K, PQ);
+			int NPQ = N*PQ;
+			for(int k = 0; k < K; k++) {
+				double mean = resultSaveMeanArr[k] / NPQ;
+				double var = resultSaveInvVarianceArr[k]/NPQ - Math.pow(mean, 2.0);
+				resultSaveMeanArr[k] = mean;
+				resultSaveInvVarianceArr[k] = Math.pow(Math.sqrt(var + epsilon), -1.0);
+				retRunningMeanArr[k] = mu*runningMeanArr[k] + (1-mu)*mean;
+				retRunningVarArr[k] = mu*runningVarArr[k] + (1-mu)*mean;
+			}
+		}
+		else if(phase.equalsIgnoreCase("test")) {
+			copy(runningMean, retRunningMeanArr); // ema_mean_upd = ema_mean
+			copy(runningVar, retRunningVarArr); // ema_var_upd = ema_var
+			copy(runningMean, resultSaveMeanArr); // cache_mean = ema_mean
+			double invSqrtEps = Math.pow(Math.sqrt(epsilon), -1.0);
+			double [] inArr = runningVar.getDenseBlockValues();
+			if(inArr != null) {
+				for(int i = 0; i < inArr.length; i++) {
+					resultSaveInvVarianceArr[i] = Math.pow(Math.sqrt(inArr[i] + epsilon), -1.0);
+				}
+			}
+			else {
+				Arrays.fill(resultSaveInvVarianceArr, invSqrtEps);
+			}
+		}
+		else {
+			throw new DMLRuntimeException("Incorrect mode: Expected either train or test, but found " + phase);
+		}
+		
+		// Normalize, shift, and scale
+		double [] retArr = ret.getDenseBlockValues();
+		copy(image, retArr);
+		if(resultSaveMean != null && resultSaveInvVariance != null && biasArr != null && scaleArr != null) {
+			// Common scenario:
+			int index = 0;
+			for(int n = 0; n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						retArr[index] = (retArr[index]-resultSaveMeanArr[k])*resultSaveInvVarianceArr[k]*scaleArr[k] + biasArr[k];
+					}
+				}
+			}
+		}
+		else {
+			addBias(retArr, resultSaveMeanArr, -1, N, K, PQ);
+			multiplyBias(retArr, resultSaveInvVarianceArr, N, K, PQ);
+			multiplyBias(retArr, scaleArr, N, K, PQ);
+			addBias(retArr, biasArr, 1, N, K, PQ);
+		}
+		ret.recomputeNonZeros();
+		retRunningMean.recomputeNonZeros();
+		retRunningVar.recomputeNonZeros();
+		resultSaveMean.recomputeNonZeros();
+		resultSaveInvVariance.recomputeNonZeros();
+	}
+	
+	private static void copy(MatrixBlock input, double [] output) {
+		if(input.isInSparseFormat()) {
+			SparseBlock sblock = input.getSparseBlock();
+			int numCols = input.getNumColumns();
+			for(int n = 0; n < input.getNumRows(); n++) {
+				if( sblock.isEmpty(n) )
+					continue;
+				int apos = sblock.pos(n);
+				int alen = sblock.size(n);
+				int[] aix = sblock.indexes(n);
+				double[] avals = sblock.values(n);
+				
+				// Iterate over the sparse block
+				for(int j=apos; j<apos+alen; j++) {
+					output[n*numCols + aix[j]] = avals[j];
+				}
+			}
+		}
+		else {
+			double [] inputArr = input.getDenseBlockValues();
+			if(inputArr != null) {
+				System.arraycopy(inputArr, 0, output, 0, inputArr.length);
+			}
+		}
+	}
+	
+	private static void addBias(double [] arr, double [] bias, double biasMultiplier, int N, int K, int PQ) {
+		int index = 0;
+		if(bias != null) {
+			for(int n = 0; n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						arr[index] += biasMultiplier*bias[k];
+					}
+				}
+			}
+		}
+	}
+	
+	private static void multiplyBias(double [] arr, double [] bias, int N, int K, int PQ) {
+		int index = 0;
+		if(bias != null) {
+			for(int n = 0; n < N; n++) {
+				for(int k = 0; k < K; k++) {
+					for(int pq = 0; pq < PQ; pq++, index++) {
+						arr[index] *= bias[k];
+					}
+				}
+			}
+		}
+		else {
+			Arrays.fill(arr, 0);
+		}
+	}
+	
+	private static void computeBiasSumAndSumSquares(MatrixBlock image, double [] sumArr, double [] sumSquaresArr, int K, int PQ) {
+		if(sumArr.length != K) {
+			throw new DMLRuntimeException("Expected the length of array to be " + K + ", but instead is " + sumArr.length);
+		}
+		if(sumSquaresArr.length != K) {
+			throw new DMLRuntimeException("Expected the length of array to be " + K + ", but instead is " + sumSquaresArr.length);
+		}
+		if(image.isInSparseFormat()) {
+			SparseBlock sblock = image.getSparseBlock();
+			for(int r = 0; r < image.getNumRows(); r++) {
+				if( sblock.isEmpty(r) )
+					continue;
+				int apos = sblock.pos(r);
+				int alen = sblock.size(r);
+				int[] aix = sblock.indexes(r);
+				double[] avals = sblock.values(r);
+				for(int j=apos; j<apos+alen; j++) {
+					int k = aix[j] / PQ;
+					sumArr[k] += avals[j];
+					sumSquaresArr[k] += Math.pow(avals[j], 2.0);
+				}
+			}
+		}
+		else {
+			double [] X = image.getDenseBlockValues();
+			int N = image.getNumRows();
+			if(X != null) {
+				int index = 0;
+				for(int n = 0; n < N; n++) {
+					for(int k = 0; k < K; k++) {
+						for(int pq = 0; pq < PQ; pq++, index++) {
+							sumArr[k] += X[index];
+							sumSquaresArr[k] += Math.pow(X[index], 2.0);
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	

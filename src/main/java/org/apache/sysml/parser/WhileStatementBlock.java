@@ -247,11 +247,11 @@ public class WhileStatementBlock extends StatementBlock
 		return _predicateHops;
 	}
 	
-	public Lop get_predicateLops() {
+	public Lop getPredicateLops() {
 		return _predicateLops;
 	}
 
-	public void set_predicateLops(Lop predicateLops) {
+	public void setPredicateLops(Lop predicateLops) {
 		_predicateLops = predicateLops;
 	}
 	

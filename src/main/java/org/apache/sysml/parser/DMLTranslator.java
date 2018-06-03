@@ -334,7 +334,7 @@ public class DMLTranslator
 			
 			// handle while stmt predicate
 			Lop l = wsb.getPredicateHops().constructLops();
-			wsb.set_predicateLops(l);	
+			wsb.setPredicateLops(l);	
 			ret |= wsb.updatePredicateRecompilationFlag();
 		}
 		
@@ -355,7 +355,7 @@ public class DMLTranslator
 			
 			// handle if stmt predicate
 			Lop l = isb.getPredicateHops().constructLops();
-			isb.set_predicateLops(l);
+			isb.setPredicateLops(l);
 			ret |= isb.updatePredicateRecompilationFlag();
 		}
 		
@@ -460,7 +460,7 @@ public class DMLTranslator
 		
 			// create DAG for loop predicates
 			pred_dag = new Dag<>();
-			((WhileStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
+			((WhileStatementBlock) sb).getPredicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<>();
@@ -497,7 +497,7 @@ public class DMLTranslator
 		
 			// create DAG for loop predicates
 			pred_dag = new Dag<>();
-			((IfStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
+			((IfStatementBlock) sb).getPredicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<>();
@@ -1021,7 +1021,7 @@ public class DMLTranslator
 		
 		if (current instanceof WhileStatementBlock) {
 			WhileStatementBlock wstb = (WhileStatementBlock) current;
-			wstb.get_predicateLops().resetVisitStatus();
+			wstb.getPredicateLops().resetVisitStatus();
 			if (wstb.getNumStatements() > 1)
 				LOG.debug("While statement block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
@@ -1033,7 +1033,7 @@ public class DMLTranslator
 		
 		if (current instanceof IfStatementBlock) {
 			IfStatementBlock istb = (IfStatementBlock) current;
-			istb.get_predicateLops().resetVisitStatus();
+			istb.getPredicateLops().resetVisitStatus();
 			if (istb.getNumStatements() > 1)
 				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);

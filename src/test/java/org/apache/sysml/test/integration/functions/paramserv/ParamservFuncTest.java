@@ -34,6 +34,10 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME6 = "paramserv-wrong-args2";
 	private static final String TEST_NAME7 = "paramserv-nn-test";
 	private static final String TEST_NAME8 = "paramserv-minimum-version";
+	private static final String TEST_NAME9 = "paramserv-worker-failed";
+	private static final String TEST_NAME10 = "paramserv-agg-service-failed";
+	private static final String TEST_NAME11 = "paramserv-large-parallelism";
+	private static final String TEST_NAME12 = "paramserv-wrong-aggregate-func";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -50,6 +54,10 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
 		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {}));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {}));
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] {}));
 	}
 
 	@Test
@@ -96,8 +104,30 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		runDMLTest(TEST_NAME8, false, null, null);
 	}
 
-	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass,
-			String errmsg) {
+	@Test
+	public void testParamservWorkerFailedTest() {
+		runDMLTest(TEST_NAME9, true, DMLException.class,
+				"Caused by: org.apache.sysml.runtime.DMLRuntimeException: List lookup returned no entry for name='worker_err'");
+	}
+
+	@Test
+	public void testParamservAggServiceFailedTest() {
+		runDMLTest(TEST_NAME10, true, DMLException.class,
+				"Caused by: org.apache.sysml.runtime.DMLRuntimeException: List lookup returned no entry for name='agg_service_err'");
+	}
+
+	@Test
+	public void testParamservLargeParallelismTest() {
+		runDMLTest(TEST_NAME11, false, null, null);
+	}
+
+	@Test
+	public void testParamservWrongAggregateFuncTest() {
+		runDMLTest(TEST_NAME12, true, DMLException.class,
+				"The './src/test/scripts/functions/paramserv/mnist_lenet_paramserv_wrong_aggregate_func.dml::gradients' function should provide an input of 'MATRIX' type named 'labels'.");
+	}
+
+	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-explain" };

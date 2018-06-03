@@ -19,11 +19,21 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction.TIMEOUT;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
@@ -35,11 +45,11 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 
 public abstract class ParamServer {
 
@@ -53,41 +63,51 @@ public abstract class ParamServer {
 		}
 	}
 
-	Queue<Gradient> _queue;
-	final Object _lock = new Object();
+	BlockingQueue<Gradient> _gradientsQueue;
+	Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
 	private AggregationService _aggService;
-	private Thread _aggThread;
+	private ExecutorService _es;
 	private boolean[] _pulledStates;
+	private final ParamservBuiltinCPInstruction.PSErrorHandler _handler;
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum, ListObject hyperParams) {
-		this._queue = new ConcurrentLinkedQueue<>();
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum,
+			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
+		this._gradientsQueue = new LinkedBlockingDeque<>();
+		this._modelMap = new HashMap<>(workerNum);
+		IntStream.range(0, workerNum).forEach(i -> {
+			BlockingQueue<ListObject> bq = new ArrayBlockingQueue<>(1);
+			try {
+				bq.put(model);
+			} catch (InterruptedException e) {
+				throw new DMLRuntimeException(
+						String.format("Param server: failed to broadcast the model for worker_%d", i), e);
+			}
+			_modelMap.put(i, bq);
+		});
 		this._model = model;
-		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum, hyperParams);
+		this._aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum);
 		this._pulledStates = new boolean[workerNum];
-		this._aggThread = new Thread(_aggService);
+		this._es = Executors.newSingleThreadExecutor();
+		this._handler = handler;
 	}
 
 	public abstract void push(long workerID, ListObject value);
 
 	public abstract Data pull(long workerID);
 
-	public void start() {
-		_aggService._alive = true;
-		_aggThread.start();
+	void launchService() {
+		CompletableFuture.runAsync(_aggService, _es).exceptionally(_handler);
 	}
 
-	public void stop() {
-		_aggService._alive = false;
-		try {
-			_aggThread.join();
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException("Parameter server: failed when stopping the server.", e);
-		}
+	public void shutdown() {
+		_es.shutdownNow();
 	}
 
-	public ListObject getResult() {
+	public ListObject getResult() throws InterruptedException {
+		_es.shutdown();
+		_es.awaitTermination(TIMEOUT, TimeUnit.MINUTES);
 		return _model;
 	}
 
@@ -120,13 +140,10 @@ public abstract class ParamServer {
 		private boolean[] _finishedStates;  // Workers' finished states
 
 		AggregationService(String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-				ExecutionContext ec, int workerNum, ListObject hyperParams) {
-			_ec = ExecutionContextFactory.createContext(ec.getProgram());
+				ExecutionContext ec, int workerNum) {
+			this._ec = ec;
 			_freq = freq;
 			_updateType = updateType;
-			if (hyperParams != null) {
-				_ec.setVariable(Statement.PS_HYPER_PARAMS, hyperParams);
-			}
 			_finishedStates = new boolean[workerNum];
 
 			// Fetch the aggregation function
@@ -180,52 +197,65 @@ public abstract class ParamServer {
 			_finishedStates[workerID] = true;
 		}
 
+		private void broadcastModel() {
+			IntStream.range(0, _finishedStates.length).forEach(i -> _modelMap.compute(i, (id, q) -> {
+				if (q == null) {
+					q = new ArrayBlockingQueue<>(1);
+				}
+				try {
+					q.put(_model);
+				} catch (InterruptedException e) {
+					throw new DMLRuntimeException(
+							String.format("Param server: failed to broadcast the model for worker_%d", id), e);
+				}
+				return q;
+			}));
+		}
+
 		@Override
 		public void run() {
-			synchronized (_lock) {
-				while (isAlive()) {
-					do {
-						while (_queue.isEmpty()) {
-							try {
-								_lock.wait();
-							} catch (InterruptedException e) {
-								throw new DMLRuntimeException(
-										"Aggregation service: error when waiting for the coming gradients.", e);
-							}
-						}
-						Gradient p = _queue.remove();
-						if (LOG.isDebugEnabled()) {
-							LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-									p._gradients.getDataSize() / 1024, p._workerID));
-						}
+			try {
+				Gradient p;
+				try {
+					p = _gradientsQueue.take();
+				} catch (InterruptedException e) {
+					throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.",
+							e);
+				}
+				if (LOG.isDebugEnabled()) {
+					LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
+							p._gradients.getDataSize() / 1024, p._workerID));
+				}
 
-						setFinishedState((int) p._workerID);
+				setFinishedState((int) p._workerID);
 
-						// Populate the variables table with the gradients and model
-						_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
-						_ec.setVariable(Statement.PS_MODEL, _model);
+				// Populate the variables table with the gradients and model
+				_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
+				_ec.setVariable(Statement.PS_MODEL, _model);
 
-						// Invoke the aggregate function
-						_inst.processInstruction(_ec);
+				// Invoke the aggregate function
+				_inst.processInstruction(_ec);
 
-						// Get the output
-						ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
+				// Get the output
+				ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
 
-						// Update the model with the new output
-						ParamservUtils.cleanupListObject(_ec, _model);
-						ParamservUtils.cleanupListObject(_ec, p._gradients);
-						_model = newModel;
+				// Update the model with the new output
+				ParamservUtils.cleanupListObject(_ec, _model);
+				ParamservUtils.cleanupListObject(_ec, p._gradients);
+				_model = newModel;
 
-					} while (!allFinished());
-
-					// notify all the workers to get the updated model
+				if (allFinished()) {
+					// Broadcast the updated model
 					resetPulledStates();
 					resetFinishedStates();
-					_lock.notifyAll();
+					broadcastModel();
+
 					if (LOG.isDebugEnabled()) {
 						LOG.debug("Global parameter is broadcasted successfully.");
 					}
 				}
+			} catch (Exception e) {
+				throw new DMLRuntimeException("Aggregation service failed.", e);
 			}
 		}
 	}

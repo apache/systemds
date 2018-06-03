@@ -32,10 +32,18 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOp2;
+import org.apache.sysml.hops.IndexingOp;
+import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.parser.Expression.BinaryOp;
 import org.apache.sysml.parser.Expression.BuiltinFunctionOp;
 import org.apache.sysml.parser.Expression.DataType;
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.PrintStatement.PRINTTYPE;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
@@ -368,12 +376,12 @@ public class ParForStatementBlock extends ForStatementBlock
 		return vs;
 	}
 	
-	public List<String> getReadOnlyParentVars() {
+	public List<String> getReadOnlyParentMatrixVars() {
 		VariableSet read = variablesRead();
 		VariableSet updated = variablesUpdated();
 		return liveIn().getVariableNames().stream() //read-only vars
 			.filter(var -> read.containsVariable(var) && !updated.containsVariable(var))
-			.collect(Collectors.toList());
+			.filter(var -> read.isMatrix(var)).collect(Collectors.toList());
 	}
 
 	/**
@@ -476,100 +484,100 @@ public class ParForStatementBlock extends ForStatementBlock
 	 */
 	private void rDeterminePartitioningCandidates(String var, ArrayList<StatementBlock> asb, List<PartitionFormat> C) 
 	{
-		for(StatementBlock sb : asb ) // foreach statementblock in parforbody
-			for( Statement s : sb._statements ) // foreach statement in statement block
-			{
-				if( s instanceof ForStatement ) //includes for and parfor
-				{
-					ForStatement fs = (ForStatement) s;
-					//predicate
-					List<DataIdentifier> datsFromRead = rGetDataIdentifiers(fs.getIterablePredicate().getFromExpr());
-					List<DataIdentifier> datsToRead = rGetDataIdentifiers(fs.getIterablePredicate().getToExpr());
-					List<DataIdentifier> datsIncrementRead = rGetDataIdentifiers(fs.getIterablePredicate().getIncrementExpr());
-					rDeterminePartitioningCandidates(var, datsFromRead, C);
-					rDeterminePartitioningCandidates(var, datsToRead, C);
-					rDeterminePartitioningCandidates(var, datsIncrementRead, C);
-					//for / parfor body
-					rDeterminePartitioningCandidates(var,((ForStatement)s).getBody(), C);
-				}
-				else if( s instanceof WhileStatement ) 
-				{
-					WhileStatement ws = (WhileStatement) s;
-					//predicate
-					List<DataIdentifier> datsRead = rGetDataIdentifiers(ws.getConditionalPredicate().getPredicate());
-					rDeterminePartitioningCandidates(var, datsRead, C);
-					//while body
-					rDeterminePartitioningCandidates(var,((WhileStatement)s).getBody(), C);
-				}
-				else if( s instanceof IfStatement ) 
-				{
-					IfStatement is = (IfStatement) s;
-					//predicate
-					List<DataIdentifier> datsRead = rGetDataIdentifiers(is.getConditionalPredicate().getPredicate());
-					rDeterminePartitioningCandidates(var, datsRead, C);
-					//if and else branch
-					rDeterminePartitioningCandidates(var,((IfStatement)s).getIfBody(), C);
-					rDeterminePartitioningCandidates(var,((IfStatement)s).getElseBody(), C);
-				}
-				else if( s instanceof FunctionStatement ) 
-				{
-					rDeterminePartitioningCandidates(var,((FunctionStatement)s).getBody(), C);
-				}
-				else
-				{
-					List<DataIdentifier> datsRead = getDataIdentifiers(s, false);
-					rDeterminePartitioningCandidates(var, datsRead, C);
-				}
+		for( StatementBlock sb : asb ) {
+			if( sb instanceof FunctionStatementBlock ) {
+				FunctionStatement fs = (FunctionStatement) sb.getStatement(0);
+				rDeterminePartitioningCandidates(var, fs.getBody(), C);
 			}
+			else if( sb instanceof ForStatementBlock ) { //incl parfor
+				ForStatementBlock fsb = (ForStatementBlock) sb;
+				ForStatement fs = (ForStatement) fsb.getStatement(0);
+				List<Hop> datsRead = new ArrayList<>();
+				//predicate
+				rGetDataIdentifiers(resetVisitStatus(fsb.getFromHops()), datsRead);
+				rGetDataIdentifiers(resetVisitStatus(fsb.getToHops()), datsRead);
+				rGetDataIdentifiers(resetVisitStatus(fsb.getIncrementHops()), datsRead);
+				rDeterminePartitioningCandidates(var, datsRead, C);
+				//for / parfor body
+				rDeterminePartitioningCandidates(var, fs.getBody(), C);
+			}
+			else if( sb instanceof WhileStatementBlock ) {
+				WhileStatementBlock wsb = (WhileStatementBlock) sb;
+				WhileStatement ws = (WhileStatement) wsb.getStatement(0);
+				List<Hop> datsRead = new ArrayList<>();
+				//predicate
+				rGetDataIdentifiers(resetVisitStatus(wsb.getPredicateHops()), datsRead);
+				rDeterminePartitioningCandidates(var, datsRead, C);
+				//while body
+				rDeterminePartitioningCandidates(var, ws.getBody(), C);
+			}
+			else if( sb instanceof IfStatementBlock ) {
+				IfStatementBlock isb = (IfStatementBlock) sb;
+				IfStatement is = (IfStatement) isb.getStatement(0);
+				List<Hop> datsRead = new ArrayList<>();
+				//predicate
+				rGetDataIdentifiers(resetVisitStatus(isb.getPredicateHops()), datsRead);
+				rDeterminePartitioningCandidates(var, datsRead, C);
+				//if and else branch
+				rDeterminePartitioningCandidates(var, is.getIfBody(), C);
+				rDeterminePartitioningCandidates(var, is.getElseBody(), C);
+			}
+			else if( sb.getHops() != null ) {
+				Hop.resetVisitStatus(sb.getHops());
+				List<Hop> datsRead = new ArrayList<>();
+				for( Hop root : sb.getHops() )
+					rGetDataIdentifiers(root, datsRead);
+				rDeterminePartitioningCandidates(var, datsRead, C);
+			}
+		}
 	}
 
-	private void rDeterminePartitioningCandidates(String var, List<DataIdentifier> datsRead, List<PartitionFormat> C)
-	{
+	private void rDeterminePartitioningCandidates(String var, List<Hop> datsRead, List<PartitionFormat> C) {
 		if( datsRead == null )
 			return;
-		
-		for(DataIdentifier read : datsRead)
-			if( var.equals( read.getName() ) ) {
-				if( read instanceof IndexedIdentifier )
-					C.add( determineAccessPattern((IndexedIdentifier) read) );
-				else if( read instanceof DataIdentifier )
-					C.add( PartitionFormat.NONE );
-			}
+		for(Hop read : datsRead) {
+			if( read instanceof IndexingOp && var.equals( read.getInput().get(0).getName() ) )
+				C.add( determineAccessPattern((IndexingOp) read) );
+			else if( HopRewriteUtils.isData(read, DataOpTypes.TRANSIENTREAD) && var.equals(read.getName()) )
+				C.add( PartitionFormat.NONE );
+		}
 	}
 	
-	private PartitionFormat determineAccessPattern( IndexedIdentifier dat )
-	{
+	private Hop resetVisitStatus(Hop hop) {
+		return hop == null ? hop :
+			hop.resetVisitStatus();
+	}
+	
+	private PartitionFormat determineAccessPattern( IndexingOp rix ) {
 		boolean isSpark = OptimizerUtils.isSparkExecutionMode();
 		int blksz = ConfigurationManager.getBlocksize();
 		PartitionFormat dpf = null;
 		
 		//1) get all bounds expressions for index access
-		Expression rowL = dat.getRowLowerBound();
-		Expression rowU = dat.getRowUpperBound();
-		Expression colL = dat.getColLowerBound();
-		Expression colU = dat.getColUpperBound();
-		boolean allRows = (rowL == null && rowU == null);
-		boolean allCols = (colL == null && colU == null);
+		Hop rowL = rix.getInput().get(1);
+		Hop rowU = rix.getInput().get(2);
+		Hop colL = rix.getInput().get(3);
+		Hop colU = rix.getInput().get(4);
 		
 		try {
-			//2) decided on access pattern		
+			//2) decided on access pattern
 			//COLUMN_WISE if all rows and access to single column
-			if( allRows && colL!=null && colL.equals(colU) ) {
+			if( rix.isAllRows() && colL == colU ) {
 				dpf = PartitionFormat.COLUMN_WISE;
-			}		
+			}
 			//ROW_WISE if all cols and access to single row
-			else if( allCols && rowL!=null && rowL.equals(rowU) ) {
+			else if( rix.isAllCols() && rowL == rowU ) {
 				dpf = PartitionFormat.ROW_WISE;
 			}
 			//COLUMN_BLOCK_WISE
-			else if( isSpark && allRows && colL != colU ) {
+			else if( isSpark && rix.isAllRows() && colL != colU ) {
 				LinearFunction l1 = getLinearFunction(colL, true);
 				LinearFunction l2 = getLinearFunction(colU, true);
 				dpf = !isAlignedBlocking(l1, l2, blksz) ? PartitionFormat.NONE :
 					new PartitionFormat(PDataPartitionFormat.COLUMN_BLOCK_WISE_N, (int)l1._b[0]);
 			}
 			//ROW_BLOCK_WISE
-			else if( isSpark && allCols && rowL != rowU ) {
+			else if( isSpark && rix.isAllCols() && rowL != rowU ) {
 				LinearFunction l1 = getLinearFunction(rowL, true);
 				LinearFunction l2 = getLinearFunction(rowU, true);
 				dpf = !isAlignedBlocking(l1, l2, blksz) ?  PartitionFormat.NONE :
@@ -582,7 +590,6 @@ public class ParForStatementBlock extends ForStatementBlock
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		
 		return dpf;
 	}
 	
@@ -855,6 +862,29 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 
 		return ret;
+	}
+	
+	private List<Hop> rGetDataIdentifiers(Hop root, List<Hop> direads) {
+		if( root == null || root.isVisited() )
+			return direads;
+		//process children recursively (but disregard meta data ops and indexing)
+		if( !((HopRewriteUtils.isUnary(root, OpOp1.NROW, OpOp1.NCOL)
+			&& isDataIdentifier(root.getInput().get(0))) || isDataIdentifier(root)) ) {
+			for( Hop c : root.getInput() )
+				rGetDataIdentifiers(c, direads);
+		}
+		//handle transient read and right indexing over transient read
+		if( isDataIdentifier(root) )
+			direads.add(root);
+		root.setVisited();
+		return direads;
+	}
+	
+	private boolean isDataIdentifier(Hop hop) {
+		return HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD)
+			|| (hop instanceof IndexingOp && HopRewriteUtils.isData(
+			hop.getInput().get(0), DataOpTypes.TRANSIENTREAD))
+			|| hop instanceof LiteralOp;
 	}
 	
 	private void rDetermineBounds( ArrayList<StatementBlock> sbs, boolean flag ) {
@@ -1305,7 +1335,7 @@ public class ParForStatementBlock extends ForStatementBlock
 						
 						_bounds._lower.put(id, 1L);
 						_bounds._upper.put(id, _vsParent.getVariable(idat._name).getDim1()); //row dim
-						_bounds._increment.put(id, 1L);	
+						_bounds._increment.put(id, 1L);
 					}
 			}
 			else //range indexing
@@ -1461,9 +1491,9 @@ public class ParForStatementBlock extends ForStatementBlock
 				if( sub1 instanceof IntIdentifier )
 					out = new LinearFunction(((IntIdentifier)sub1).getValue(), 0, null);
 				else if( sub1 instanceof DataIdentifier )
-					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
+					out = new LinearFunction(0, 1, ((DataIdentifier)sub1).getName());
 				else
-					out = rParseBinaryExpression((BinaryExpression)sub1);			
+					out = rParseBinaryExpression((BinaryExpression)sub1);
 			}
 		}
 		catch(Exception ex) {
@@ -1498,7 +1528,7 @@ public class ParForStatementBlock extends ForStatementBlock
 				if( sub1 instanceof IntIdentifier )
 					out = new LinearFunction(((IntIdentifier)sub1).getValue(), 0, null);
 				else if( sub1 instanceof DataIdentifier )
-					out = new LinearFunction(0, 1, ((DataIdentifier)sub1)._name); //never use public members
+					out = new LinearFunction(0, 1, ((DataIdentifier)sub1).getName());
 				else
 					out = rParseBinaryExpression((BinaryExpression)sub1);
 			}
@@ -1518,6 +1548,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		return out;
 	}
 	
+	@SuppressWarnings("unused")
 	private LinearFunction getLinearFunction(Expression expr, boolean ignoreMinWithConstant) {
 		if( expr instanceof IntIdentifier )
 			return new LinearFunction(((IntIdentifier)expr).getValue(), 0, null);
@@ -1534,7 +1565,25 @@ public class ParForStatementBlock extends ForStatementBlock
 			}
 		}
 		else if( expr instanceof DataIdentifier )
-			return new LinearFunction(0, 1, ((DataIdentifier)expr)._name); //never use public members
+			return new LinearFunction(0, 1, ((DataIdentifier)expr).getName());
+		
+		return null;
+	}
+	
+	private LinearFunction getLinearFunction(Hop hop, boolean ignoreMinWithConstant) {
+		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT )
+			return new LinearFunction(HopRewriteUtils.getIntValue((LiteralOp)hop), 0, null);
+		else if( HopRewriteUtils.isBinary(hop, OpOp2.PLUS, OpOp2.MINUS, OpOp2.MULT) )
+			return rParseBinaryExpression(hop);
+		else if( HopRewriteUtils.isBinary(hop, OpOp2.MIN) && ignoreMinWithConstant ) {
+			//note: builtin function expression is also a data identifier and hence order before
+			if( hop.getInput().get(0) instanceof org.apache.sysml.hops.BinaryOp )
+				return rParseBinaryExpression(hop.getInput().get(0));
+			else if( hop.getInput().get(1) instanceof org.apache.sysml.hops.BinaryOp )
+				return rParseBinaryExpression(hop.getInput().get(1));
+		}
+		else if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
+			return new LinearFunction(0, 1, hop.getName());
 		
 		return null;
 	}
@@ -1708,22 +1757,74 @@ public class ParForStatementBlock extends ForStatementBlock
 		}
 		return null; //let dependency analysis fail
 	}
+	
+	private LinearFunction rParseBinaryExpression(Hop hop) {
+		org.apache.sysml.hops.BinaryOp bop = (org.apache.sysml.hops.BinaryOp) hop;
+		Hop l = bop.getInput().get(0);
+		Hop r = bop.getInput().get(1);
+		if( bop.getOp()==OpOp2.PLUS || bop.getOp()==OpOp2.MINUS ) {
+			boolean plus = bop.getOp() == OpOp2.PLUS;
+			//parse binary expressions
+			if( l instanceof org.apache.sysml.hops.BinaryOp) {
+				LinearFunction f = rParseBinaryExpression(l);
+				Long cvalR = parseLongConstant(r);
+				if( f != null && cvalR != null )
+					return f.addConstant(cvalR * (plus?1:-1));
+			}
+			else if (r instanceof org.apache.sysml.hops.BinaryOp) {
+				LinearFunction f = rParseBinaryExpression(r);
+				Long cvalL = parseLongConstant(l);
+				if( f != null && cvalL != null )
+					return f.scale(plus?1:-1).addConstant(cvalL);
+			}
+			else { // atomic case
+				//change everything to plus if necessary
+				Long cvalL = parseLongConstant(l);
+				Long cvalR = parseLongConstant(r);
+				if( cvalL != null )
+					return new LinearFunction(cvalL, plus?1:-1, r.getName() );
+				else if( cvalR != null )
+					return new LinearFunction(cvalR*(plus?1:-1), 1, l.getName());
+			}
+		}
+		else if( bop.getOp() == OpOp2.MULT ) {
+			//atomic case (only recursion for MULT expressions, where one side is a constant)
+			Long cvalL = parseLongConstant(l);
+			Long cvalR = parseLongConstant(r);
+			if( cvalL != null && HopRewriteUtils.isData(r, DataOpTypes.TRANSIENTREAD) )
+				return new LinearFunction(0, cvalL, r.getName());
+			else if( cvalR != null && HopRewriteUtils.isData(l, DataOpTypes.TRANSIENTREAD) )
+				return new LinearFunction(0, cvalR, l.getName());
+			else if( cvalL != null && r instanceof org.apache.sysml.hops.BinaryOp )
+				return rParseBinaryExpression(r).scale(cvalL);
+			else if( cvalR != null && l instanceof org.apache.sysml.hops.BinaryOp )
+				return rParseBinaryExpression(l).scale(cvalR);
+		}
+		return null; //let dependency analysis fail
+	}
 
-	private static Long parseLongConstant(Expression expr)
-	{
-		Long ret = null;
-		
+	private static Long parseLongConstant(Expression expr) {
 		if( expr instanceof IntIdentifier ) {
-			ret = ((IntIdentifier) expr).getValue();
+			return ((IntIdentifier) expr).getValue();
 		}
 		else if( expr instanceof DoubleIdentifier ) {
 			double tmp = ((DoubleIdentifier) expr).getValue();
-			//ensure double represent an integer number
-			if( tmp == Math.floor(tmp) ) 
-				ret = UtilFunctions.toLong(tmp);
+			if( tmp == Math.floor(tmp) ) //ensure int
+				return UtilFunctions.toLong(tmp);
 		}
-		
-		return ret;
+		return null;
+	}
+	
+	private static Long parseLongConstant(Hop hop) {
+		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT ) {
+			return HopRewriteUtils.getIntValue((LiteralOp)hop);
+		}
+		else if( hop instanceof LiteralOp && hop.getValueType()==ValueType.DOUBLE ) {
+			double tmp = HopRewriteUtils.getDoubleValue((LiteralOp)hop);
+			if( tmp == Math.floor(tmp) ) //ensure int
+				return UtilFunctions.toLong(tmp);
+		}
+		return null;
 	}
 	
 	public static class ResultVar {

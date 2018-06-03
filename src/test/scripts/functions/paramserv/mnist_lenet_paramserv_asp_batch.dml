@@ -107,7 +107,7 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(lr=lr, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
 
   # Use paramserv function
-  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp.dml::aggregation", mode="LOCAL", utype="ASP", epochs=epochs, hyperparams=params)
+  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp_batch.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp_batch.dml::aggregation", mode="LOCAL", utype="ASP", epochs=epochs, hyperparams=params)
 
   W1 = as.matrix(modelList2["W1"])
   b1 = as.matrix(modelList2["b1"])

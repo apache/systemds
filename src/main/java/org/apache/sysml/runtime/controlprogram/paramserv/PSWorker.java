@@ -38,13 +38,13 @@ public abstract class PSWorker {
 
 	final long _workerID;
 	final int _epochs;
-	final long _batchSize;
 	final ExecutionContext _ec;
 	final ParamServer _ps;
-	private final String _updFunc;
-	private final Statement.PSFrequency _freq;
+	final Statement.PSFrequency _freq;
+	long _batchSize;
 	MatrixObject _features;
 	MatrixObject _labels;
+	private final String _updFunc;
 	private MatrixObject _valFeatures;
 	private MatrixObject _valLabels;
 

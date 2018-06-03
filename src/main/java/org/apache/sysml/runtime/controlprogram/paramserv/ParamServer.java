@@ -66,8 +66,7 @@ public abstract class ParamServer {
 	private final ExecutorService _es;
 	private ListObject _model;
 
-	ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-			ExecutionContext ec, int workerNum) {
+	ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		_gradientsQueue = new LinkedBlockingDeque<>();
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -81,7 +80,7 @@ public abstract class ParamServer {
 			_modelMap.put(i, bq);
 		});
 		_model = model;
-		_aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum);
+		_aggService = new AggregationService(aggFunc, updateType, ec, workerNum);
 		_es = Executors.newSingleThreadExecutor();
 	}
 
@@ -110,17 +109,14 @@ public abstract class ParamServer {
 		protected final Log LOG = LogFactory.getLog(AggregationService.class.getName());
 
 		protected ExecutionContext _ec;
-		private Statement.PSFrequency _freq;
 		private Statement.PSUpdateType _updateType;
 		private FunctionCallCPInstruction _inst;
 		private DataIdentifier _output;
 		private boolean _alive;
 		private boolean[] _finishedStates;  // Workers' finished states
 
-		AggregationService(String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-				ExecutionContext ec, int workerNum) {
+		AggregationService(String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 			_ec = ec;
-			_freq = freq;
 			_updateType = updateType;
 			_finishedStates = new boolean[workerNum];
 

@@ -42,9 +42,11 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	public Void call() throws Exception {
 		try {
 			long dataSize = _features.getNumRows();
-
+			if (_freq == Statement.PSFrequency.EPOCH) {
+				_batchSize = dataSize;
+			}
+			int totalIter = (int) Math.ceil(dataSize / _batchSize);
 			for (int i = 0; i < _epochs; i++) {
-				int totalIter = (int) Math.ceil(dataSize / _batchSize);
 				for (int j = 0; j < totalIter; j++) {
 					// Pull the global parameters from ps
 					// Need to copy the global parameter

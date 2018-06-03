@@ -56,7 +56,6 @@ public class LocalParamServer extends ParamServer {
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(e);
 		}
-		setPulledState((int) workerID);
 		return model;
 	}
 }

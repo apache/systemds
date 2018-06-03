@@ -65,13 +65,13 @@ public abstract class ParamServer {
 	private final AggregationService _aggService;
 	private final ExecutorService _es;
 	private ListObject _model;
-	private boolean[] _pulledStates;
 
 	ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
 			ExecutionContext ec, int workerNum) {
 		_gradientsQueue = new LinkedBlockingDeque<>();
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
+			// Create a single element blocking queue for workers to receive the broadcasted model
 			BlockingQueue<ListObject> bq = new ArrayBlockingQueue<>(1);
 			try {
 				bq.put(model);
@@ -82,7 +82,6 @@ public abstract class ParamServer {
 		});
 		_model = model;
 		_aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum);
-		_pulledStates = new boolean[workerNum];
 		_es = Executors.newSingleThreadExecutor();
 	}
 
@@ -100,14 +99,6 @@ public abstract class ParamServer {
 
 	public ListObject getResult() {
 		return _model;
-	}
-
-	void setPulledState(int workerID) {
-		_pulledStates[workerID] = true;
-	}
-
-	private void resetPulledStates() {
-		_pulledStates = new boolean[_pulledStates.length];
 	}
 
 	/**
@@ -179,44 +170,37 @@ public abstract class ParamServer {
 
 		private void broadcastModel() throws InterruptedException {
 			for (Map.Entry<Integer, BlockingQueue<ListObject>> entry : _modelMap.entrySet()) {
-				entry.getValue().put(_model);
+				BlockingQueue<ListObject> q = entry.getValue();
+				q.clear();
+				q.put(_model);
 			}
+		}
+
+		private boolean isASP() {
+			return _updateType == Statement.PSUpdateType.ASP;
 		}
 
 		@Override
 		public Void call() throws Exception {
 			try {
-				Gradient p;
+				Gradient grad;
 				try {
-					p = _gradientsQueue.take();
+					grad = _gradientsQueue.take();
 				} catch (InterruptedException e) {
 					throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.", e);
 				}
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-							p._gradients.getDataSize() / 1024, p._workerID));
+							grad._gradients.getDataSize() / 1024, grad._workerID));
 				}
 
-				setFinishedState((int) p._workerID);
+				setFinishedState((int) grad._workerID);
 
-				// Populate the variables table with the gradients and model
-				_ec.setVariable(Statement.PS_GRADIENTS, p._gradients);
-				_ec.setVariable(Statement.PS_MODEL, _model);
+				// Update the model with the gradients
+				updateModel(grad);
 
-				// Invoke the aggregate function
-				_inst.processInstruction(_ec);
-
-				// Get the output
-				ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
-
-				// Update the model with the new output
-				ParamservUtils.cleanupListObject(_ec, _model);
-				ParamservUtils.cleanupListObject(_ec, p._gradients);
-				_model = newModel;
-
-				if (allFinished()) {
+				if (allFinished() || isASP()) {
 					// Broadcast the updated model
-					resetPulledStates();
 					resetFinishedStates();
 					broadcastModel();
 
@@ -228,6 +212,23 @@ public abstract class ParamServer {
 				throw new DMLRuntimeException("Aggregation service failed: ", e);
 			}
 			return null;
+		}
+
+		private void updateModel(Gradient grad) {
+			// Populate the variables table with the gradients and model
+			_ec.setVariable(Statement.PS_GRADIENTS, grad._gradients);
+			_ec.setVariable(Statement.PS_MODEL, _model);
+
+			// Invoke the aggregate function
+			_inst.processInstruction(_ec);
+
+			// Get the output
+			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
+
+			// Update the model with the new output
+			ParamservUtils.cleanupListObject(_ec, _model);
+			ParamservUtils.cleanupListObject(_ec, grad._gradients);
+			_model = newModel;
 		}
 	}
 }

@@ -264,9 +264,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private PSUpdateType getUpdateType() {
 		PSUpdateType updType = PSUpdateType.valueOf(getParam(PS_UPDATE_TYPE));
 		switch (updType) {
-		case ASP:
 		case SSP:
 			throw new DMLRuntimeException(String.format("Not support update type '%s'.", updType));
+		case ASP:
 		case BSP:
 			break;
 		}

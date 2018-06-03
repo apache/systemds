@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import java.util.concurrent.ExecutionException;
+
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -27,33 +29,33 @@ import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 public class LocalParamServer extends ParamServer {
 
-	public LocalParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum,
-			ListObject hyperParams) {
-		super(model, aggFunc, freq, updateType, ec, workerNum, hyperParams);
+	public LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec,
+			int workerNum) {
+		super(model, aggFunc, updateType, ec, workerNum);
 	}
 
 	@Override
 	public void push(long workerID, ListObject gradients) {
-		synchronized (_lock) {
-			_queue.add(new Gradient(workerID, gradients));
-			_lock.notifyAll();
+		try {
+			_gradientsQueue.put(new Gradient(workerID, gradients));
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException(e);
+		}
+		try {
+			launchService();
+		} catch (ExecutionException | InterruptedException e) {
+			throw new DMLRuntimeException("Aggregate service: some error occurred: ", e);
 		}
 	}
 
 	@Override
 	public Data pull(long workerID) {
-		synchronized (_lock) {
-			while (getPulledState((int) workerID)) {
-				try {
-					_lock.wait();
-				} catch (InterruptedException e) {
-					throw new DMLRuntimeException(
-							String.format("Local worker_%d: failed to pull the global parameters.", workerID), e);
-				}
-			}
-			setPulledState((int) workerID, true);
+		ListObject model;
+		try {
+			model = _modelMap.get((int) workerID).take();
+		} catch (InterruptedException e) {
+			throw new DMLRuntimeException(e);
 		}
-		return getResult();
+		return model;
 	}
 }

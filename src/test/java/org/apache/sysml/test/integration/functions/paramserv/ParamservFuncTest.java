@@ -106,14 +106,12 @@ public class ParamservFuncTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservWorkerFailedTest() {
-		runDMLTest(TEST_NAME9, true, DMLException.class,
-				"Caused by: org.apache.sysml.runtime.DMLRuntimeException: List lookup returned no entry for name='worker_err'");
+		runDMLTest(TEST_NAME9, true, DMLException.class, "Invalid lookup by name in unnamed list: worker_err.");
 	}
 
 	@Test
 	public void testParamservAggServiceFailedTest() {
-		runDMLTest(TEST_NAME10, true, DMLException.class,
-				"Caused by: org.apache.sysml.runtime.DMLRuntimeException: List lookup returned no entry for name='agg_service_err'");
+		runDMLTest(TEST_NAME10, true, DMLException.class, "Invalid lookup by name in unnamed list: agg_service_err");
 	}
 
 	@Test
@@ -124,7 +122,7 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	@Test
 	public void testParamservWrongAggregateFuncTest() {
 		runDMLTest(TEST_NAME12, true, DMLException.class,
-				"The './src/test/scripts/functions/paramserv/mnist_lenet_paramserv_wrong_aggregate_func.dml::gradients' function should provide an input of 'MATRIX' type named 'labels'.");
+				"The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.");
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {

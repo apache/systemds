@@ -19,34 +19,35 @@
 #
 #-------------------------------------------------------------
 
-source("src/test/scripts/functions/paramserv/mnist_lenet_paramserv_worker_failed.dml") as mnist_lenet
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+e1 = "element1"
+modelList = list(e1)
+X = matrix(1, rows=200, cols=30)
+Y = matrix(2, rows=200, cols=1)
+X_val = matrix(3, rows=200, cols=30)
+Y_val = matrix(4, rows=200, cols=1)
 
-# Generate the training data
-[images, labels, C, Hin, Win] = mnist_lenet::generate_dummy_data()
-n = nrow(images)
+gradients = function(matrix[double] features,
+                     matrix[double] labels,
+                     list[unknown] hyperparams,
+                     list[unknown] model)
+            return (list[unknown] gradients) {
+  gradients = model
+  print(toString(as.matrix(gradients["worker_err"])))
+}
 
-# Generate the training data
-[X, Y, C, Hin, Win] = mnist_lenet::generate_dummy_data()
+aggregation = function(list[unknown] model,
+                       list[unknown] gradients,
+                       list[unknown] hyperparams)
+              return (list[unknown] modelResult) {
+  modelResult = model
+}
 
-# Split into training and validation
-val_size = n * 0.1
-X = images[(val_size+1):n,]
-X_val = images[1:val_size,]
-Y = labels[(val_size+1):n,]
-Y_val = labels[1:val_size,]
+e2 = "element2"
+params = list(e2)
 
-# Arguments
-epochs = 10
-workers = 2
+modelList = list("model")
 
-# Train
-[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, Y, X_val, Y_val, C, Hin, Win, epochs, workers)
+# Use paramserv function
+modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", epochs=10, hyperparams=params)
 
-# Compute validation loss & accuracy
-probs_val = mnist_lenet::predict(X_val, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
-loss_val = cross_entropy_loss::forward(probs_val, Y_val)
-accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(Y_val))
-
-# Output results
-print("Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
+print(toString(as.matrix(modelList2[1])))

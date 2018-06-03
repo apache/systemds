@@ -118,7 +118,7 @@ public class ListObject extends Data {
 
 	public long getDataSize() {
 		return _data.stream().filter(data -> data instanceof CacheableData)
-				.map(data -> ((CacheableData) data).getDataSize()).reduce((l1, l2) -> l1 + l2).get();
+				.map(data -> ((CacheableData) data).getDataSize()).reduce((l1, l2) -> l1 + l2).orElse(0L);
 	}
 
 	@Override

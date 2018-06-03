@@ -36,30 +36,30 @@ import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 @SuppressWarnings("unused")
 public abstract class PSWorker {
 
-	long _workerID = -1;
-	int _epochs;
-	long _batchSize;
+	final long _workerID;
+	final int _epochs;
+	final long _batchSize;
+	final ExecutionContext _ec;
+	final ParamServer _ps;
+	private final String _updFunc;
+	private final Statement.PSFrequency _freq;
 	MatrixObject _features;
 	MatrixObject _labels;
-	ExecutionContext _ec;
-	ParamServer _ps;
-	private String _updFunc;
-	private Statement.PSFrequency _freq;
 	private MatrixObject _valFeatures;
 	private MatrixObject _valLabels;
 
 	DataIdentifier _output;
 	FunctionCallCPInstruction _inst;
 
-	public PSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			ExecutionContext ec, ParamServer ps) {
-		this._workerID = workerID;
-		this._updFunc = updFunc;
-		this._freq = freq;
-		this._epochs = epochs;
-		this._batchSize = batchSize;
-		this._ec = ec;
-		this._ps = ps;
+	PSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec,
+			ParamServer ps) {
+		_workerID = workerID;
+		_updFunc = updFunc;
+		_freq = freq;
+		_epochs = epochs;
+		_batchSize = batchSize;
+		_ec = ec;
+		_ps = ps;
 
 		// Get the update function
 		String[] keys = DMLProgram.splitFunctionKey(updFunc);
@@ -90,13 +90,11 @@ public abstract class PSWorker {
 
 		// Check the output of the update function
 		if (outputs.size() != 1) {
-			throw new DMLRuntimeException(
-					String.format("The output of the '%s' function should provide one list containing the gradients.",
+			throw new DMLRuntimeException(String.format("The output of the '%s' function should provide one list containing the gradients.",
 							updFunc));
 		}
 		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
-			throw new DMLRuntimeException(
-					String.format("The output of the '%s' function should be type of list.", updFunc));
+			throw new DMLRuntimeException(String.format("The output of the '%s' function should be type of list.", updFunc));
 		}
 		_output = outputs.get(0);
 	}
@@ -107,25 +105,24 @@ public abstract class PSWorker {
 			return;
 		}
 		if (inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
-			throw new DMLRuntimeException(
-					String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt,
+			throw new DMLRuntimeException(String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt,
 							pname));
 		}
 	}
 
 	public void setFeatures(MatrixObject features) {
-		this._features = features;
+		_features = features;
 	}
 
 	public void setLabels(MatrixObject labels) {
-		this._labels = labels;
+		_labels = labels;
 	}
 
 	public void setValFeatures(MatrixObject valFeatures) {
-		this._valFeatures = valFeatures;
+		_valFeatures = valFeatures;
 	}
 
 	public void setValLabels(MatrixObject valLabels) {
-		this._valLabels = valLabels;
+		_valLabels = valLabels;
 	}
 }

@@ -19,29 +19,32 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import java.util.concurrent.ExecutionException;
+
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.instructions.cp.ParamservBuiltinCPInstruction;
 
 public class LocalParamServer extends ParamServer {
 
 	public LocalParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq,
-			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum,
-			ParamservBuiltinCPInstruction.PSErrorHandler handler) {
-		super(model, aggFunc, freq, updateType, ec, workerNum, handler);
+			Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
+		super(model, aggFunc, freq, updateType, ec, workerNum);
 	}
 
 	@Override
 	public void push(long workerID, ListObject gradients) {
 		try {
 			_gradientsQueue.put(new Gradient(workerID, gradients));
-			launchService();
 		} catch (InterruptedException e) {
-			throw new DMLRuntimeException(
-					String.format("Local param server: failed to push the gradients for worker_%d.", workerID), e);
+			throw new DMLRuntimeException(e);
+		}
+		try {
+			launchService();
+		} catch (ExecutionException | InterruptedException e) {
+			throw new DMLRuntimeException("Aggregate service: some error occurred: ", e);
 		}
 	}
 
@@ -51,10 +54,9 @@ public class LocalParamServer extends ParamServer {
 		try {
 			model = _modelMap.get((int) workerID).take();
 		} catch (InterruptedException e) {
-			throw new DMLRuntimeException(
-					String.format("Local param server: failed to pull the model for worker_%d", workerID), e);
+			throw new DMLRuntimeException(e);
 		}
-		setPulledState((int) workerID, true);
+		setPulledState((int) workerID);
 		return model;
 	}
 }

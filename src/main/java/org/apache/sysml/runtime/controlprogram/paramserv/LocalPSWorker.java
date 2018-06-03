@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import java.util.concurrent.Callable;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.parser.Statement;
@@ -27,7 +29,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 
-public class LocalPSWorker extends PSWorker implements Runnable {
+public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
 
@@ -37,7 +39,7 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 	}
 
 	@Override
-	public void run() {
+	public Void call() throws Exception {
 		try {
 			long dataSize = _features.getNumRows();
 
@@ -48,8 +50,7 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 					// Need to copy the global parameter
 					ListObject globalParams = ParamservUtils.copyList((ListObject) _ps.pull(_workerID));
 					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format(
-								"Local worker_%d: Successfully pull the global parameters [size:%d kb] from ps.",
+						LOG.debug(String.format("Local worker_%d: Successfully pull the global parameters [size:%d kb] from ps.",
 								_workerID, globalParams.getDataSize() / 1024));
 					}
 					_ec.setVariable(Statement.PS_MODEL, globalParams);
@@ -64,10 +65,7 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 					_ec.setVariable(Statement.PS_LABELS, bLabels);
 
 					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format(
-								"Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. [Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
-								_workerID, bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end,
-								i + 1, _epochs, j + 1, totalIter));
+						LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. [Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID, bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, i + 1, _epochs, j + 1, totalIter));
 					}
 
 					// Invoke the update function
@@ -97,5 +95,6 @@ public class LocalPSWorker extends PSWorker implements Runnable {
 		} catch (Exception e) {
 			throw new DMLRuntimeException(String.format("Local worker_%d failed", _workerID), e);
 		}
+		return null;
 	}
 }

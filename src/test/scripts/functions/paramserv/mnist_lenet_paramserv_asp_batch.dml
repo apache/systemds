@@ -107,7 +107,7 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(lr=lr, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
 
   # Use paramserv function
-  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::aggregation", mode="LOCAL", utype="BSP", freq="BATCH", epochs=epochs, batchsize=64, k=workers, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")
+  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp_batch.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv_asp_batch.dml::aggregation", mode="LOCAL", utype="ASP", epochs=epochs, hyperparams=params)
 
   W1 = as.matrix(modelList2["W1"])
   b1 = as.matrix(modelList2["b1"])
@@ -120,16 +120,11 @@ train = function(matrix[double] X, matrix[double] Y,
 
 }
 
-# Should always use 'features' (batch features), 'labels' (batch labels),
-# 'hyperparams', 'model' as the arguments
-# and return the gradients of type list
 gradients = function(matrix[double] features,
                      matrix[double] labels,
                      list[unknown] hyperparams,
                      list[unknown] model)
           return (list[unknown] gradients) {
-
-# PB: not be able to get scalar from list
 
   C = 1
   Hin = 28
@@ -206,10 +201,9 @@ gradients = function(matrix[double] features,
   dW4 = dW4 + dW4_reg
 
   gradients = list(dW1=dW1, dW2=dW2, dW3=dW3, dW4=dW4, db1=db1, db2=db2, db3=db3, db4=db4)
+
 }
 
-# Should use the arguments named 'model', 'gradients', 'hyperparams'
-# and return always a model of type list
 aggregation = function(list[unknown] model,
                        list[unknown] gradients,
                        list[unknown] hyperparams)

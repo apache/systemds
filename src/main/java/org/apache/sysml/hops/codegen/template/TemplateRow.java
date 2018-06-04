@@ -448,18 +448,19 @@ public class TemplateRow extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			CNode cdata3 = tmp.get(hop.getInput().get(2).getHopID());
 			
-			//add lookups if required
-			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
-			cdata3 = TemplateUtils.wrapLookupIfNecessary(cdata3, hop.getInput().get(2));
-			
 			if( hop.getDim2() > 2 ) { //row vectors
 				out = new CNodeBinary(cdata1, new CNodeBinary(cdata2, cdata3, BinType.VECT_MULT_SCALAR),
 					top.getOp()==OpOp3.PLUS_MULT? BinType.VECT_PLUS : BinType.VECT_MINUS);
 			}
 			else {
+				//add lookups if required
+				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));
+				cdata3 = TemplateUtils.wrapLookupIfNecessary(cdata3, hop.getInput().get(2));
+				
 				//construct scalar ternary cnode, primitive operation derived from OpOp3 
 				out = new CNodeTernary(cdata1, cdata2, cdata3, 
-					TernaryType.valueOf(top.getOp().toString()));
+					TernaryType.valueOf(top.getOp().name()));
 			}
 		}
 		else if(HopRewriteUtils.isNary(hop, OpOpN.CBIND)) {

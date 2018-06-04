@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
@@ -56,10 +58,7 @@ public class CNodeBinary extends CNode
 		MINUS1_MULT, MINUS_NZ;
 
 		public static boolean contains(String value) {
-			for( BinType bt : values()  )
-				if( bt.name().equals(value) )
-					return true;
-			return false;
+			return Arrays.stream(values()).anyMatch(bt -> bt.name().equals(value));
 		}
 		
 		public boolean isCommutative() {

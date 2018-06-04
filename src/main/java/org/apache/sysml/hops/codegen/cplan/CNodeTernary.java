@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
+import java.util.Arrays;
+
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -30,12 +32,8 @@ public class CNodeTernary extends CNode
 		REPLACE, REPLACE_NAN, IFELSE,
 		LOOKUP_RC1, LOOKUP_RVECT1;
 		
-		
 		public static boolean contains(String value) {
-			for( TernaryType tt : values()  )
-				if( tt.name().equals(value) )
-					return true;
-			return false;
+			return Arrays.stream(values()).anyMatch(tt -> tt.name().equals(value));
 		}
 		
 		public String getTemplate(boolean sparse) {

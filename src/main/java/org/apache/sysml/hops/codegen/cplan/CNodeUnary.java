@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops.codegen.cplan;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.codegen.template.TemplateUtils;
@@ -43,10 +45,7 @@ public class CNodeUnary extends CNode
 		SPROP, SIGMOID; 
 		
 		public static boolean contains(String value) {
-			for( UnaryType ut : values()  )
-				if( ut.name().equals(value) )
-					return true;
-			return false;
+			return Arrays.stream(values()).anyMatch(ut -> ut.name().equals(value));
 		}
 		
 		public String getTemplate(boolean sparse) {

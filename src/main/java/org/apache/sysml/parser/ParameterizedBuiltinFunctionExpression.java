@@ -334,22 +334,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataType(fname, Statement.PS_VAL_LABELS, DataType.MATRIX, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
-		Set<String> modes = Arrays.stream(Statement.PSModeType.values()).map(Enum::name)
-				.collect(Collectors.toSet());
-		checkStringParam(false, fname, Statement.PS_MODE, modes, conditional);
-		Set<String> utypes = Arrays.stream(Statement.PSUpdateType.values()).map(Enum::name)
-				.collect(Collectors.toSet());
-		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, utypes, conditional);
-		Set<String> frequencies = Arrays.stream(Statement.PSFrequency.values()).map(Enum::name).collect(Collectors.toSet());
-		checkStringParam(true, fname, Statement.PS_FREQUENCY, frequencies, conditional);
+		checkStringParam(false, fname, Statement.PS_MODE, conditional);
+		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, conditional);
+		checkStringParam(true, fname, Statement.PS_FREQUENCY, conditional);
 		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(true, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
-		Set<String> schemes = Arrays.stream(Statement.PSScheme.values()).map(Enum::name).collect(Collectors.toSet());
-		checkStringParam(true, fname, Statement.PS_SCHEME, schemes, conditional);
+		checkStringParam(true, fname, Statement.PS_SCHEME, conditional);
 		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
-		Set<String> checkpointings = Arrays.stream(Statement.PSCheckpointing.values()).map(Enum::name).collect(Collectors.toSet());
-		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, checkpointings, conditional);
+		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, conditional);
 
 		// set output characteristics
 		output.setDataType(DataType.LIST);
@@ -358,7 +351,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setBlockDimensions(-1, -1);
 	}
 
-	private void checkStringParam(boolean optional, String fname, String pname, Set<String> validOptions, boolean conditional) {
+	private void checkStringParam(boolean optional, String fname, String pname, boolean conditional) {
 		Expression param = getVarParam(pname);
 		if (param == null) {
 			if (optional) {
@@ -370,11 +363,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError(
 					String.format("Function %s should provide a string value for %s parameter.", fname, pname),
 					conditional);
-		}
-		StringIdentifier si = (StringIdentifier) param;
-		if (!validOptions.contains(si.getValue())) {
-			raiseValidateError(String.format("Function %s does not support value '%s' as the '%s' parameter.", fname,
-					si.getValue(), pname), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 	}
 

@@ -35,7 +35,7 @@ source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 train = function(matrix[double] X, matrix[double] Y,
                  matrix[double] X_val, matrix[double] Y_val,
-                 int C, int Hin, int Win, int epochs, int workers)
+                 int C, int Hin, int Win, int epochs, int workers, string utype, string freq)
     return (matrix[double] W1, matrix[double] b1,
             matrix[double] W2, matrix[double] b2,
             matrix[double] W3, matrix[double] b3,
@@ -107,7 +107,7 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(lr=lr, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
 
   # Use paramserv function
-  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::aggregation", mode="LOCAL", utype="BSP", freq="BATCH", epochs=epochs, batchsize=64, k=workers, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")
+  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::aggregation", mode="LOCAL", utype=utype, freq=freq, epochs=epochs, batchsize=64, k=workers, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")
 
   W1 = as.matrix(modelList2["W1"])
   b1 = as.matrix(modelList2["b1"])
@@ -128,8 +128,6 @@ gradients = function(matrix[double] features,
                      list[unknown] hyperparams,
                      list[unknown] model)
           return (list[unknown] gradients) {
-
-# PB: not be able to get scalar from list
 
   C = 1
   Hin = 28
@@ -239,8 +237,8 @@ aggregation = function(list[unknown] model,
      vb2 = as.matrix(model["vb2"])
      vb3 = as.matrix(model["vb3"])
      vb4 = as.matrix(model["vb4"])
-     lr = 0.01
-     mu = 0.9
+     lr = as.scalar(hyperparams['lr']);
+     mu = as.scalar(hyperparams['mu']);
 
      # Optimize with SGD w/ Nesterov momentum
      [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)

@@ -316,7 +316,7 @@ public class Dag<N extends Lop>
 		// - store the constructed reachability information in $u$.reachable[] boolean array
 		for (int i = 0; i < nodearray.length; i++) {
 			dagDFS(nodearray[i], nodearray[i]
-				.create_reachable(nodearray.length));
+				.createReachable(nodearray.length));
 		}
 
 		// print the nodes in sorted order
@@ -1975,8 +1975,8 @@ public class Dag<N extends Lop>
 		if ( queuedNodes.isEmpty() )
 			return false;
 		
-		boolean[] nodeMarked = node.get_reachable();
-		boolean[] tmpMarked  = tmpNode.get_reachable();
+		boolean[] nodeMarked = node.getReachable();
+		boolean[] tmpMarked  = tmpNode.getReachable();
 		long nodeid = IDMap.get(node.getID());
 		long tmpid = IDMap.get(tmpNode.getID());
 		
@@ -3585,7 +3585,7 @@ public class Dag<N extends Lop>
 	 */
 	private static boolean isChild(Lop a, Lop b, Map<Long, Integer> IDMap) {
 		int bID = IDMap.get(b.getID());
-		return a.get_reachable()[bID];
+		return a.getReachable()[bID];
 	}
 
 	/**
@@ -3628,7 +3628,7 @@ public class Dag<N extends Lop>
 			return false;
 		int index = IDMap.get(node.getID());
 		for( Lop cnode : childNodes ) {
-			if ( (type == ExecLocation.INVALID || cnode.getExecLocation() == type) && cnode.get_reachable()[index])
+			if ( (type == ExecLocation.INVALID || cnode.getExecLocation() == type) && cnode.getReachable()[index])
 				return true;
 		}
 		return false;
@@ -3639,7 +3639,7 @@ public class Dag<N extends Lop>
 			return null;
 		int index = IDMap.get(node.getID());
 		for( Lop cnode : childNodes ) {
-			if ( cnode.getExecLocation() == type && cnode.get_reachable()[index])
+			if ( cnode.getExecLocation() == type && cnode.getReachable()[index])
 				return cnode;
 		}
 		return null;
@@ -3659,7 +3659,7 @@ public class Dag<N extends Lop>
 			return null;
 		for( Lop pn : parentNodes ) {
 			int index = IDMap.get( pn.getID() );
-			if ( pn.getExecLocation() == type && node.get_reachable()[index])
+			if ( pn.getExecLocation() == type && node.getReachable()[index])
 				return pn;
 		}
 		return null;
@@ -3673,7 +3673,7 @@ public class Dag<N extends Lop>
 		
 		int index = IDMap.get(node.getID());
 		for( Lop n : nodesVec ) {
-			if ( n.definesMRJob() && n.get_reachable()[index]) 
+			if ( n.definesMRJob() && n.getReachable()[index]) 
 				return true;
 		}
 		return false;
@@ -3686,7 +3686,7 @@ public class Dag<N extends Lop>
 		int index = IDMap.get(node.getID());
 		boolean onlyDatagen = true;
 		for( Lop n : nodesVec ) {
-			if ( n.definesMRJob() && n.get_reachable()[index] &&  JobType.findJobTypeFromLop(n) != JobType.DATAGEN )
+			if ( n.definesMRJob() && n.getReachable()[index] &&  JobType.findJobTypeFromLop(n) != JobType.DATAGEN )
 				onlyDatagen = false;
 		}
 		// return true also when there is no lop in "nodesVec" that defines a MR job.
@@ -3731,7 +3731,7 @@ public class Dag<N extends Lop>
 			return false;		
 		for( Lop pnode : parentNodes ) {
 			int index = IDMap.get( pnode.getID() );
-			if ( node.get_reachable()[index])
+			if ( node.getReachable()[index])
 				return true;
 		}
 		return false;

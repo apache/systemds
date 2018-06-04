@@ -32,7 +32,13 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME4 = "paramserv-wrong-type-args";
 	private static final String TEST_NAME5 = "paramserv-wrong-args";
 	private static final String TEST_NAME6 = "paramserv-wrong-args2";
-	private static final String TEST_NAME7 = "paramserv-ipa-test";
+	private static final String TEST_NAME7 = "paramserv-nn-test";
+	private static final String TEST_NAME8 = "paramserv-minimum-version";
+	private static final String TEST_NAME9 = "paramserv-worker-failed";
+	private static final String TEST_NAME10 = "paramserv-agg-service-failed";
+	private static final String TEST_NAME11 = "paramserv-large-parallelism";
+	private static final String TEST_NAME12 = "paramserv-wrong-aggregate-func";
+	private static final String TEST_NAME13 = "paramserv-nn-asp";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
@@ -48,53 +54,89 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {}));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {}));
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] {}));
+		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13, new String[] {}));
 	}
 
 	@Test
 	public void testParamservWithAllArgs() {
-		runDMLTest(TEST_NAME1, true, false, null, null);
+		runDMLTest(TEST_NAME1, false, null, null);
 	}
 
 	@Test
 	public void testParamservWithoutOptionalArgs() {
-		runDMLTest(TEST_NAME2, true, false, null, null);
+		runDMLTest(TEST_NAME2, false, null, null);
 	}
 
 	@Test
 	public void testParamservMissArgs() {
 		final String errmsg = "Named parameter 'features' missing. Please specify the input.";
-		runDMLTest(TEST_NAME3, true, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME3, true, DMLException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongTypeArgs() {
 		final String errmsg = "Input to PARAMSERV::model must be of type 'LIST'. It should not be of type 'MATRIX'";
-		runDMLTest(TEST_NAME4, true, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME4, true, DMLException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongArgs() {
 		final String errmsg = "Function PARAMSERV does not support value 'NSP' as the 'utype' parameter.";
-		runDMLTest(TEST_NAME5, true, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME5, true, DMLException.class, errmsg);
 	}
 
 	@Test
 	public void testParamservWrongArgs2() {
 		final String errmsg = "Invalid parameters for PARAMSERV: [modelList, val_featur=X_val]";
-		runDMLTest(TEST_NAME6, true, true, DMLException.class, errmsg);
+		runDMLTest(TEST_NAME6, true, DMLException.class, errmsg);
 	}
 
 	@Test
-	public void testParamservIpaTest() {
-		runDMLTest(TEST_NAME7, true, false, null, "1");
+	public void testParamservNNTest() {
+		runDMLTest(TEST_NAME7, false, null, null);
 	}
 
-	private void runDMLTest(String testname, boolean newWay, boolean exceptionExpected, Class<?> exceptionClass,
-			String errmsg) {
+	@Test
+	public void testParamservMinimumVersionTest() {
+		runDMLTest(TEST_NAME8, false, null, null);
+	}
+
+	@Test
+	public void testParamservWorkerFailedTest() {
+		runDMLTest(TEST_NAME9, true, DMLException.class, "Invalid lookup by name in unnamed list: worker_err.");
+	}
+
+	@Test
+	public void testParamservAggServiceFailedTest() {
+		runDMLTest(TEST_NAME10, true, DMLException.class, "Invalid lookup by name in unnamed list: agg_service_err");
+	}
+
+	@Test
+	public void testParamservLargeParallelismTest() {
+		runDMLTest(TEST_NAME11, false, null, null);
+	}
+
+	@Test
+	public void testParamservWrongAggregateFuncTest() {
+		runDMLTest(TEST_NAME12, true, DMLException.class,
+				"The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.");
+	}
+
+	@Test
+	public void testParamservASPTest() {
+		runDMLTest(TEST_NAME13, false, null, null);
+	}
+
+	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-explain" };
 		fullDMLScriptName = HOME + testname + ".dml";
-		runTest(newWay, exceptionExpected, exceptionClass, errmsg, -1);
+		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
 	}
 }

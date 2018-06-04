@@ -48,7 +48,7 @@ public class IfStatementBlock extends StatementBlock
 		//validate conditional predicate (incl constant propagation)
 		Expression pred = ifstmt.getConditionalPredicate().getPredicate();
 		pred.validateExpression(ids.getVariables(), constVars, conditional);
-		if( pred instanceof DataIdentifier && constVars.containsKey( ((DataIdentifier)pred).getName()) ) {
+		if( pred instanceof DataIdentifier && constVars.containsKey( ((DataIdentifier)pred).getName()) && !conditional ) {
 			ifstmt.getConditionalPredicate().setPredicate(constVars.get(((DataIdentifier)pred).getName()));
 		}
 		
@@ -452,11 +452,11 @@ public class IfStatementBlock extends StatementBlock
 		return _predicateHops;
 	}
 	
-	public Lop get_predicateLops() {
+	public Lop getPredicateLops() {
 		return _predicateLops;
 	}
 
-	public void set_predicateLops(Lop predicateLops) {
+	public void setPredicateLops(Lop predicateLops) {
 		_predicateLops = predicateLops;
 	}
 

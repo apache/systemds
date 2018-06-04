@@ -73,6 +73,11 @@ public class VariableSet
 		return _variables;
 	}
 	
+	public boolean isMatrix(String name) {
+		return _variables.containsKey(name)
+			&& _variables.get(name).getDataType().isMatrix();
+	}
+	
 	@Override
 	public String toString() {
 		return Arrays.toString(

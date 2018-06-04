@@ -104,16 +104,13 @@ public class RewriteConstantFolding extends HopRewriteRule
 			catch(Exception ex) {
 				LOG.error("Failed to execute constant folding instructions. No abort.", ex);
 			}
-			
 		}
 		//fold conjunctive predicate if at least one input is literal 'false'
-		else if( isApplicableFalseConjunctivePredicate(root) )
-		{
+		else if( isApplicableFalseConjunctivePredicate(root) ) {
 			literal = new LiteralOp(false);
 		}
 		//fold disjunctive predicate if at least one input is literal 'true'
-		else if( isApplicableTrueDisjunctivePredicate(root) )
-		{
+		else if( isApplicableTrueDisjunctivePredicate(root) ) {
 			literal = new LiteralOp(true);
 		}
 		

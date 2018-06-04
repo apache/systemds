@@ -1,0 +1,38 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# G: N x M, p: M x 1, e: N x 1: u: 1 x M
+# ./sparkDML2.sh SystemML.jar -f PageRank.dml -args "in/g" "in/p" "in/e" "in/u" 0.85 3 "out/w" 
+
+G = read($1);
+p = read($2);
+e = read($3);
+u = read($4);
+alpha = $5;
+max_iteration = $6;
+i = 0;
+
+while( i < max_iteration ) {
+  p = alpha * (G %*% p) + (1 - alpha) * (e %*% u %*% p);
+  i += 1;
+}
+
+write(p, $7);

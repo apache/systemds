@@ -121,6 +121,19 @@ public class NaryOp extends Hop {
 	}
 
 	@Override
+	public void computeMemEstimate(MemoTable memo) {
+		//overwrites default hops behavior
+		super.computeMemEstimate(memo);
+
+		//specific case for function call
+		if( _op == OpOpN.EVAL ) {
+			_memEstimate = OptimizerUtils.INT_SIZE;
+			_outputMemEstimate = OptimizerUtils.INT_SIZE;
+			_processingMemEstimate = 0;
+		}
+	}
+	
+	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
 		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);

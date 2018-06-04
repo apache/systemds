@@ -22,6 +22,11 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.stream.IntStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -163,7 +168,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
-		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// We invoke transfer matrix from device to host in two cases:
 		// 1. During eviction of unlocked matrices
 		// 2. During acquireHostRead
@@ -177,40 +182,46 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			Pointer deviceDoubleData = gCtx.allocate(((long)dest.length)*Sizeof.DOUBLE);
 			LibMatrixCUDA.float2double(gCtx, src, deviceDoubleData, dest.length);
 			cudaMemcpy(Pointer.to(dest), deviceDoubleData, ((long)dest.length)*Sizeof.DOUBLE, cudaMemcpyDeviceToHost);
-			gCtx.cudaFreeHelper(deviceDoubleData);
+			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
 			LOG.debug("Potential OOM: Allocated additional space on host in deviceToHost");
-			float [] floatData = new float[dest.length];
+			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*dest.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
 			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
-			for(int i = 0; i < dest.length; i++) {
-				dest[i] = floatData[i];
-			}
+			LibMatrixNative.fromFloatBuffer(floatData, dest);
 		}
-		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, System.nanoTime() - t1);
+		if(DMLScript.STATISTICS) {
+			long totalTime = System.nanoTime() - t0;
+			GPUStatistics.cudaFloat2DoubleTime.add(totalTime);
+			GPUStatistics.cudaFloat2DoubleCount.add(1);
+			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, totalTime);
+		}
 	}
 
 	@Override
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
-		long t1 = DMLScript.FINEGRAINED_STATISTICS  && instName != null? System.nanoTime() : 0;
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(PERFORM_CONVERSION_ON_DEVICE) {
 			Pointer deviceDoubleData = gCtx.allocate(((long)src.length)*Sizeof.DOUBLE);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
 			LibMatrixCUDA.double2float(gCtx, deviceDoubleData, dest, src.length);
-			gCtx.cudaFreeHelper(deviceDoubleData);
+			gCtx.cudaFreeHelper(instName, deviceDoubleData, DMLScript.EAGER_CUDA_FREE);
 		}
 		else {
-			float [] floatData = new float[src.length];
-			for(int i = 0; i < src.length; i++) {
-				floatData[i] = (float) src[i];
-			}
+			FloatBuffer floatData = ByteBuffer.allocateDirect(Sizeof.FLOAT*src.length).order(ByteOrder.nativeOrder()).asFloatBuffer();
+			IntStream.range(0, src.length).parallel().forEach(i -> floatData.put(i, (float)src[i]));
 			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 		}
 		
-		if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-			GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
+		if(DMLScript.STATISTICS) {
+			long totalTime = System.nanoTime() - t0;
+			GPUStatistics.cudaDouble2FloatTime.add(totalTime);
+			GPUStatistics.cudaDouble2FloatCount.add(1);
+			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
+		}
 	}
 }

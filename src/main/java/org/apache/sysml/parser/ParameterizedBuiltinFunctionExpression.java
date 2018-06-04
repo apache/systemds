@@ -341,12 +341,12 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				.collect(Collectors.toSet());
 		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, utypes, conditional);
 		Set<String> frequencies = Arrays.stream(Statement.PSFrequency.values()).map(Enum::name).collect(Collectors.toSet());
-		checkStringParam(false, fname, Statement.PS_FREQUENCY, frequencies, conditional);
+		checkStringParam(true, fname, Statement.PS_FREQUENCY, frequencies, conditional);
 		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);
 		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT, conditional);
-		checkDataValueType(false, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
+		checkDataValueType(true, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
 		Set<String> schemes = Arrays.stream(Statement.PSScheme.values()).map(Enum::name).collect(Collectors.toSet());
-		checkStringParam(false, fname, Statement.PS_SCHEME, schemes, conditional);
+		checkStringParam(true, fname, Statement.PS_SCHEME, schemes, conditional);
 		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
 		Set<String> checkpointings = Arrays.stream(Statement.PSCheckpointing.values()).map(Enum::name).collect(Collectors.toSet());
 		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, checkpointings, conditional);

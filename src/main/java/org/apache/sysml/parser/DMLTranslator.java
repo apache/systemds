@@ -334,7 +334,7 @@ public class DMLTranslator
 			
 			// handle while stmt predicate
 			Lop l = wsb.getPredicateHops().constructLops();
-			wsb.set_predicateLops(l);	
+			wsb.setPredicateLops(l);	
 			ret |= wsb.updatePredicateRecompilationFlag();
 		}
 		
@@ -355,7 +355,7 @@ public class DMLTranslator
 			
 			// handle if stmt predicate
 			Lop l = isb.getPredicateHops().constructLops();
-			isb.set_predicateLops(l);
+			isb.setPredicateLops(l);
 			ret |= isb.updatePredicateRecompilationFlag();
 		}
 		
@@ -460,7 +460,7 @@ public class DMLTranslator
 		
 			// create DAG for loop predicates
 			pred_dag = new Dag<>();
-			((WhileStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
+			((WhileStatementBlock) sb).getPredicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<>();
@@ -497,7 +497,7 @@ public class DMLTranslator
 		
 			// create DAG for loop predicates
 			pred_dag = new Dag<>();
-			((IfStatementBlock) sb).get_predicateLops().addToDag(pred_dag);
+			((IfStatementBlock) sb).getPredicateLops().addToDag(pred_dag);
 			
 			// create instructions for loop predicates
 			pred_instruct = new ArrayList<>();
@@ -1021,7 +1021,7 @@ public class DMLTranslator
 		
 		if (current instanceof WhileStatementBlock) {
 			WhileStatementBlock wstb = (WhileStatementBlock) current;
-			wstb.get_predicateLops().resetVisitStatus();
+			wstb.getPredicateLops().resetVisitStatus();
 			if (wstb.getNumStatements() > 1)
 				LOG.debug("While statement block has more than 1 stmt");
 			WhileStatement ws = (WhileStatement)wstb.getStatement(0);
@@ -1033,7 +1033,7 @@ public class DMLTranslator
 		
 		if (current instanceof IfStatementBlock) {
 			IfStatementBlock istb = (IfStatementBlock) current;
-			istb.get_predicateLops().resetVisitStatus();
+			istb.getPredicateLops().resetVisitStatus();
 			if (istb.getNumStatements() > 1)
 				LOG.debug("If statement block has more than 1 stmt");
 			IfStatement is = (IfStatement)istb.getStatement(0);
@@ -2212,10 +2212,12 @@ public class DMLTranslator
 		// Construct Hops for all inputs
 		ArrayList<Hop> inputs = new ArrayList<>();
 		inputs.add( processExpression(source.getFirstExpr(), null, hops) );
-		if ( source.getSecondExpr() != null )
-			inputs.add( processExpression(source.getSecondExpr(), null, hops) );
-		if ( source.getThirdExpr() != null )
-			inputs.add( processExpression(source.getThirdExpr(), null, hops) );
+		Expression[] expr = source.getAllExpr();
+		if(expr != null && expr.length > 1) {
+			for(int i = 1; i < expr.length; i++) {
+				inputs.add( processExpression(expr[i], null, hops) );
+			}
+		}
 		
 		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
 		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
@@ -2230,6 +2232,9 @@ public class DMLTranslator
 		case QR:
 		case LU:
 		case EIGEN:
+		case LSTM:
+		case BATCH_NORM2D:
+		case BATCH_NORM2D_BACKWARD:
 		case SVD:
 			
 			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
@@ -2347,7 +2352,6 @@ public class DMLTranslator
 			currBuiltinOp = (expr.getDim1()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp1.NROW, expr) : new LiteralOp(expr.getDim1());
 			break;
-
 		case NCOL:
 			// If the dimensions are available at compile time, then create a LiteralOp (constant propagation)
 			// Else create a UnaryOp so that a control program instruction is generated
@@ -2360,7 +2364,7 @@ public class DMLTranslator
 			currBuiltinOp = (expr.getDim1()==-1 || expr.getDim2()==-1) ? new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), Hop.OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
 			break;
-		
+
 		case LIST:
 			currBuiltinOp = new NaryOp(target.getName(), DataType.LIST, ValueType.UNKNOWN,
 				OpOpN.LIST, processAllExpressions(source.getAllExpr(), hops));

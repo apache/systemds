@@ -73,7 +73,7 @@
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
-		<jcuda.version>0.8.0</jcuda.version>
+		<jcuda.version>0.9.0d</jcuda.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
@@ -453,9 +453,14 @@
 						<include>**/integration/functions/estim/*Suite.java</include>
 						<include>**/integration/functions/external/*Suite.java</include>
 						<include>**/integration/functions/frame/*Suite.java</include>
+						<include>**/integration/functions/io/*Suite.java</include>
 						<include>**/integration/functions/jmlc/*Suite.java</include>
 						<include>**/integration/functions/misc/*Suite.java</include>
+						<include>**/integration/functions/parfor/*Suite.java</include>
 						<include>**/integration/functions/sparse/*Suite.java</include>
+						<include>**/integration/functions/tensor/*Suite.java</include>
+						<include>**/integration/functions/updateinplace/*Suite.java</include>
+						<include>**/integration/functions/vect/*Suite.java</include>
 						<!-- <include>**/integration/functions/codegenalg/*Suite.java</include> -->
 						<!-- <include>**/integration/functions/**/*Test*.java</include> -->
 						<include>**/integration/mlcontext/*Suite.java</include>
@@ -1261,66 +1266,65 @@
 			<artifactId>jcuda</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcuda-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions> 
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcublas-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcusparse-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcusolver-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcuda-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcublas-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusparse-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcusolver-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jcuda</groupId>
-			<artifactId>jcudnn-natives</artifactId>
-			<classifier>${jcuda.os}-${jcuda.arch}</classifier>
-			<version>${jcuda.version}</version>
-			<scope>${jcuda.scope}</scope>
+			<exclusions>
+	        	<exclusion>  
+	        		<!-- always exclude recursive fetching of native libraries -->
+	          		<groupId>org.jcuda</groupId>
+					<artifactId>jcudnn-natives</artifactId>
+	        	</exclusion>
+	      	</exclusions>
 		</dependency>
 
 		<!-- for all platforms, to be included in the extra jar -->
@@ -1396,6 +1400,7 @@
 			<scope>${jcuda.scope}</scope>
 		</dependency>
 
+		<!-- Commented until the PowerPC jcuda libraries are deployed for 0.9.0 version
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda-natives</artifactId>
@@ -1431,6 +1436,45 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
+		 -->
+		 
+		 <!-- Commented until the MacOS jcuda libraries are deployed for 0.9.0 version
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcuda-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcublas-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusparse-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcusolver-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jcuda</groupId>
+			<artifactId>jcudnn-natives</artifactId>
+			<classifier>apple-x86_64</classifier>
+			<version>${jcuda.version}</version>
+			<scope>${jcuda.scope}</scope>
+		</dependency>
+		 -->
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>

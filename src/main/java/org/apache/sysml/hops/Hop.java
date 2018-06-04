@@ -917,12 +917,13 @@ public abstract class Hop implements ParseInfo
 		}
 	}
 	
-	public void resetVisitStatus()  {
+	public Hop resetVisitStatus()  {
 		if( !isVisited() )
-			return;
+			return this;
 		for( Hop h : getInput() )
 			h.resetVisitStatus();
 		setVisited(false);
+		return this;
 	}
 	
 	public void resetVisitStatusForced(HashSet<Long> memo) {

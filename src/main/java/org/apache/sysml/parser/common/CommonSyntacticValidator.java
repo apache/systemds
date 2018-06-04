@@ -176,8 +176,10 @@ public abstract class CommonSyntacticValidator {
 	}
 	
 	private static String getWorkingFilePath(String filePath, String workingDir) {
-		return !new File(filePath).isAbsolute() ?
-			workingDir + File.separator + filePath : filePath;
+		//NOTE: the use of File.separator would lead to OS-specific inconsistencies,
+		//which is problematic for second order functions such as eval or paramserv.
+		//Since this is unnecessary, we now use "/" independent of the use OS.
+		return !new File(filePath).isAbsolute() ? workingDir + "/" + filePath : filePath;
 	}
 	
 	public String getNamespaceSafe(Token ns) {

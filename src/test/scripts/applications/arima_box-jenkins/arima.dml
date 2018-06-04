@@ -207,6 +207,7 @@ num_func_invoc = num_func_invoc + ncol(simplex)
 tol = 1.5 * 10^(-8) * as.scalar(objvals[1,1])
 
 continue = 1
+best_index = 1
 while(continue == 1 & num_func_invoc <= max_func_invoc) {
 	best_index = 1
 	worst_index = 1

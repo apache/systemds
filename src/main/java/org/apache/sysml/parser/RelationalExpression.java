@@ -126,10 +126,12 @@ public class RelationalExpression extends Expression
 			_right.validateExpression(ids, constVars, conditional);
 		
 		//constant propagation (precondition for more complex constant folding rewrite)
-		if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )
-			_left = constVars.get(((DataIdentifier) _left).getName());
-		if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
-			_right = constVars.get(((DataIdentifier) _right).getName());
+		if( !conditional ) {
+			if( _left instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _left).getName()) )
+				_left = constVars.get(((DataIdentifier) _left).getName());
+			if( _right instanceof DataIdentifier && constVars.containsKey(((DataIdentifier) _right).getName()) )
+				_right = constVars.get(((DataIdentifier) _right).getName());
+		}
 		
 		String outputName = getTempName();
 		DataIdentifier output = new DataIdentifier(outputName);

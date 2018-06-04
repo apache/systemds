@@ -46,7 +46,7 @@ public class CPOperand
 		this(name, vt, dt, false);
 	}
 
-	private CPOperand(String name, ValueType vt, DataType dt, boolean literal) {
+	public CPOperand(String name, ValueType vt, DataType dt, boolean literal) {
 		_name = name;
 		_valueType = vt;
 		_dataType = dt;

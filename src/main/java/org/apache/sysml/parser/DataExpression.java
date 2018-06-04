@@ -1591,7 +1591,7 @@ public class DataExpression extends DataIdentifier
 				&& currConstVars.containsKey(((DataIdentifier) paramExp).getName()))
 			{
 				addVarParam(paramName, currConstVars.get(((DataIdentifier)paramExp).getName()));
-			}				
+			}
 		}
 	}
 	

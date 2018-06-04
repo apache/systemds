@@ -1142,7 +1142,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			if( sb == null )
 				throw new DMLRuntimeException("ParFor statement block required for reasoning about data partitioning.");
 			
-			for( String var : sb.getReadOnlyParentVars() )
+			for( String var : sb.getReadOnlyParentMatrixVars() )
 			{
 				Data dat = ec.getVariable(var);
 				//skip non-existing input matrices (which are due to unknown sizes marked for

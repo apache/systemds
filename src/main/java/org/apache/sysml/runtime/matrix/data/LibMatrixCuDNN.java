@@ -32,6 +32,11 @@ import static jcuda.jcudnn.JCudnn.cudnnSetTensor4dDescriptor;
 import static jcuda.jcudnn.cudnnActivationMode.CUDNN_ACTIVATION_RELU;
 import static jcuda.jcudnn.cudnnNanPropagation.CUDNN_PROPAGATE_NAN;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
+import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardTraining;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationForwardInference;
+import static jcuda.jcudnn.JCudnn.cudnnBatchNormalizationBackward;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -215,7 +220,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				CSRPointer filterPointer = filter.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 				Pointer matmultOutputPointer = gCtx.allocate(instName, NKPQ*sizeOfDataType);
 				LibMatrixCuMatMult.sparseDenseMatMult(gCtx, instName, matmultOutputPointer, filterPointer, im2colPointer, K, CRS, CRS, NPQ, K, NPQ, false, false);
-				gCtx.cudaFreeHelper(instName, im2colPointer);
+				gCtx.cudaFreeHelper(instName, im2colPointer, DMLScript.EAGER_CUDA_FREE);
 				
 				// Perform reorg_knpq a reorg operation of matmultOutputPointer matrix with dimensions [K, NPQ]
 				// and return a matrix dstPointer with dimensions [N, KPQ]
@@ -224,7 +229,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 						matmultOutputPointer, dstPointer, NKPQ, NPQ, KPQ, P*Q);
 				if (DMLScript.FINEGRAINED_STATISTICS)
 					GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DENSE_REORG_KNPQ_KERNEL, System.nanoTime() - t1);
-				gCtx.cudaFreeHelper(instName, matmultOutputPointer);
+				gCtx.cudaFreeHelper(instName, matmultOutputPointer, DMLScript.EAGER_CUDA_FREE);
 			}
 			else {
 				// Filter and output are accounted as dense in the memory estimation for conv2d
@@ -444,7 +449,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 
 						}
 						// Deallocate temporary array to hold one element of input
-						gCtx.cudaFreeHelper(tempdwPointer, true);
+						gCtx.cudaFreeHelper(instName, tempdwPointer, true);
 					}
 				}
 			}
@@ -772,7 +777,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			long t4=0;
 			if (DMLScript.FINEGRAINED_STATISTICS) t4 = System.nanoTime();
 			if(!isMaxPoolOutputProvided)
-				gCtx.cudaFreeHelper(instName, y);
+				gCtx.cudaFreeHelper(instName, y, DMLScript.EAGER_CUDA_FREE);
 			if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_CLEANUP, System.nanoTime() - t4);
 		}
 	}
@@ -818,17 +823,15 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
 		long N = in.getNumRows();
 		long CHW = in.getNumColumns();
-		MatrixObject output = ec.getMatrixObject(outputName);
-		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in.getNumRows(), in.getNumColumns()); // Allocated the dense output matrix
+		Pointer dstData = getDenseOutputPointer(ec, gCtx, instName, outputName, in.getNumRows(), in.getNumColumns());
 		long t0=0;
 		if(N*CHW >= maxNumElementsOfCuDNNTensor) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : relu custom kernel" + ", GPUContext=" + gCtx);
 			}
 			// Invokes relu(double* A,  double* ret, int rlen, int clen)
-			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
-			Pointer dstData = getDensePointerForCuDNN(gCtx, output, instName);
 			Pointer srcData = getDensePointerForCuDNN(gCtx, in, instName); // TODO: FIXME: Add sparse kernel support for relu
+			if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 			getCudaKernels(gCtx).launchKernel("relu",
 					ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
 					srcData, dstData, toInt(N), toInt(CHW));
@@ -838,11 +841,282 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			cudnnTensorDescriptor tensorDescriptor = new cudnnTensorDescriptor();
 			cudnnCreateTensorDescriptor(tensorDescriptor);
 			cudnnSetTensor4dDescriptor(tensorDescriptor, CUDNN_TENSOR_NCHW, CUDNN_DATA_TYPE, toInt(N), 1, 1, toInt(CHW));
-			cudnnReLU(gCtx, instName, in, getDensePointerForCuDNN(gCtx, output, instName), tensorDescriptor);
+			cudnnReLU(gCtx, instName, in, dstData, tensorDescriptor);
 			cudnnDestroyTensorDescriptor(tensorDescriptor);
 		}
 	}
+	
+	static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
+			long numRows, long numCols) throws DMLRuntimeException {
+		MatrixObject output = ec.getMatrixObject(outputName);
+		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
+		return getDensePointerForCuDNN(gCtx, output, instName, toInt(numRows), toInt(numCols));
+	}
+	
+	/**
+	 * Computes the forward pass for an LSTM layer with M neurons.
+	 * The input data has N sequences of T examples, each with D features.
+	 * 
+	 * @param ec execution context 
+	 * @param gCtx gpu context 
+	 * @param instName name of the instruction
+	 * @param X input matrix pointer
+	 * @param wPointer weight matrix pointer
+	 * @param out0 Outputs from previous timestep
+	 * @param c0 Initial cell state
+	 * @param return_sequences Whether to return `out` at all timesteps, or just for the final timestep.
+	 * @param outputName name of the out variable. If `return_sequences` is True, outputs for all timesteps.
+	 * @param cyName name of the output cell state. Cell state for final timestep.
+	 * @param reserveSpaceName name of reserve space.
+	 * @param N minibatch size
+	 * @param M hidden size
+	 * @param D number of features
+	 * @param T sequence length
+	 * @throws DMLRuntimeException if error
+	 */
+	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
+			String outputName, String cyName, String reserveSpaceName, int N, int M, int D, int T) throws DMLRuntimeException {
+		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, reserveSpaceName, "lstm", return_sequences, N, M, D, T);
+	}
+	
+	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
+			String outputName, String cyName, String reserveSpaceName,  // output
+			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
+		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
+		// Get output pointers
+		Pointer cudnnYPointer = gCtx.allocate(instName, N*T*M*sizeOfDataType);
+		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName, N*M*sizeOfDataType);
+		Pointer cyPointer = hasCarry ? getDenseOutputPointer(ec, gCtx, instName, cyName, N, M) : new Pointer();
+		// Pointer wPointer = getDensePointerForCuDNN(gCtx, w, instName, D+M+2, 4*M);
+		
+		try(LibMatrixCuDNNRnnAlgorithm algo = new LibMatrixCuDNNRnnAlgorithm(ec, gCtx, instName, rnnMode, N, T, M, D, true, wPointer, reserveSpaceName)) {
+			jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			JCudnn.cudnnRNNForwardTraining(gCtx.getCudnnHandle(), algo.rnnDesc, T, 
+					algo.xDesc, x, 
+					algo.hxDesc, hx, 
+					algo.cxDesc, cx, 
+					algo.wDesc, wPointer, 
+					algo.yDesc, cudnnYPointer, 
+					algo.hyDesc, hyPointer, 
+					algo.cyDesc, cyPointer, 
+					algo.workSpace, algo.sizeInBytes, 
+					algo.reserveSpace, algo.reserveSpaceSizeInBytes);
+		}
+		
+		if(return_sequences) {
+			gCtx.cudaFreeHelper(instName, hyPointer, DMLScript.EAGER_CUDA_FREE);
+			Pointer sysmlYPointer = getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M);
+			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_output",
+					ExecutionConfig.getConfigForSimpleVectorOperations(N*T*M),
+					sysmlYPointer, cudnnYPointer, N, T, M, N*T*M);
+		}
+		gCtx.cudaFreeHelper(instName, cudnnYPointer, DMLScript.EAGER_CUDA_FREE);
+	}
+	
+	/**
+	 * Performs the forward BatchNormalization layer computation for training
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName name of the instruction
+	 * @param image input image
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param ret (output) normalized input
+	 * @param retRunningMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param retRunningVar (output) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param epsilon epsilon value used in the batch normalization formula
+	 * @param exponentialAverageFactor factor used in the moving average computation
+	 * @param resultSaveMean (output) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static void batchNormalizationForwardTraining(GPUContext gCtx, String instName, MatrixObject image,
+			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
+			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar, 
+			double epsilon, double exponentialAverageFactor,
+			MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationForwardTraining" + ", GPUContext=" + gCtx);
+		}
 
+		int N = toInt(image.getNumRows());
+		int C = toInt(scale.getNumRows());
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
+
+		// Allocate descriptors
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
+				new MatrixObject[] {image},  new MatrixObject[] {ret});
+		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(1, C, 1, 1);
+
+		// Get underlying dense pointer
+		Pointer imagePtr = getDensePointerForCuDNN(gCtx, image, instName);
+		Pointer retPtr = getDensePointerForCuDNN(gCtx, ret, instName);
+		Pointer biasPtr = getDensePointerForCuDNN(gCtx, bias, instName);
+		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
+		Pointer runningMeanPtr = getDensePointerForCuDNN(gCtx, runningMean, instName);
+		Pointer runningVarPtr = getDensePointerForCuDNN(gCtx, runningVar, instName);
+
+		// To allow for copy-on-write
+		Pointer retRunningMeanPtr = getDensePointerForCuDNN(gCtx, retRunningMean, instName);
+		Pointer retRunningVarPtr = getDensePointerForCuDNN(gCtx, retRunningVar, instName);
+		cudaMemcpy(retRunningMeanPtr, runningMeanPtr, C * sizeOfDataType, cudaMemcpyDeviceToDevice);
+		cudaMemcpy(retRunningVarPtr, runningVarPtr, C * sizeOfDataType, cudaMemcpyDeviceToDevice);
+
+		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
+		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
+		
+		checkStatus(cudnnBatchNormalizationForwardTraining(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL, one(), zero(),
+				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
+				scaleTensorDesc, scalePtr, biasPtr, exponentialAverageFactor,
+				retRunningMeanPtr, retRunningVarPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr));
+	}
+	
+	/**
+	 * Performs the forward BatchNormalization layer computation for inference
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName name of the instruction
+	 * @param image input image
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param bias bias (as per CuDNN) and beta as per original paper: shape [1, C, 1, 1]
+	 * @param runningMean running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param runningVar running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @param ret normalized input
+	 * @param epsilon epsilon value used in the batch normalization formula
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static void batchNormalizationForwardInference(GPUContext gCtx, String instName, MatrixObject image,
+			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
+			MatrixObject ret, double epsilon) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationForwardInference" + ", GPUContext=" + gCtx);
+		}
+
+		int N = toInt(image.getNumRows());
+		int C = toInt(scale.getNumRows());
+		long CHW = image.getNumColumns();
+		validateBatchNormalizationDimensions(scale, bias, runningMean, runningVar, C);
+
+		// Allocate descriptors
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
+				new MatrixObject[] {image},  new MatrixObject[] {ret});
+		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(1, C, 1, 1);
+
+		// Get underlying dense pointer
+		Pointer imagePtr = getDensePointerForCuDNN(gCtx, image, instName);
+		Pointer retPtr = getDensePointerForCuDNN(gCtx, ret, instName);
+		Pointer biasPtr = getDensePointerForCuDNN(gCtx, bias, instName);
+		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
+		Pointer runningMeanPtr = getDensePointerForCuDNN(gCtx, runningMean, instName);
+		Pointer runningVarPtr = getDensePointerForCuDNN(gCtx, runningVar, instName);
+
+		checkStatus(cudnnBatchNormalizationForwardInference(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL, one(), zero(),
+				nCHWDescriptor, imagePtr, nCHWDescriptor, retPtr,
+				scaleTensorDesc, scalePtr, biasPtr,
+				runningMeanPtr, runningVarPtr, epsilon));
+	}
+	
+	/**
+	 * This method computes the backpropagation errors for image, scale and bias of batch normalization layer
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName name of the instruction
+	 * @param image input image
+	 * @param dout input errors of shape C, H, W
+	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
+	 * @param dX (output) backpropagation errors for previous layer
+	 * @param dScale backpropagation error for scale
+	 * @param dBias backpropagation error for bias
+	 * @param epsilon epsilon value used in the batch normalization formula
+	 * @param resultSaveMean (input) running mean accumulated during training phase: shape [1, C, 1, 1]
+	 * @param resultSaveInvVariance (input) running variance accumulated during training phase: shape [1, C, 1, 1]
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	public static void batchNormalizationBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
+			MatrixObject scale, MatrixObject dX, MatrixObject dScale, MatrixObject dBias,
+			double epsilon, MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
+		}
+		
+		int N = toInt(image.getNumRows());
+		int C = toInt(scale.getNumRows());
+		long CHW = image.getNumColumns();
+
+		// Allocate descriptors
+		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
+				new MatrixObject[] {image, dout},  new MatrixObject[] {dX});
+		cudnnTensorDescriptor scaleTensorDesc = allocateTensorDescriptor(1, C, 1, 1);
+
+		// Get underlying dense pointer
+		Pointer imagePtr = getDensePointerForCuDNN(gCtx, image, instName);
+		Pointer doutPtr = getDensePointerForCuDNN(gCtx, dout, instName);
+		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
+		Pointer dXPtr = getDensePointerForCuDNN(gCtx, dX, instName);
+		Pointer dScalePtr = getDensePointerForCuDNN(gCtx, dScale, instName);
+		Pointer dBiasPtr = getDensePointerForCuDNN(gCtx, dBias, instName);
+		
+		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
+		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
+
+
+		// ignoring resultSaveMean and resultSaveVariance as it requires state management
+		checkStatus(cudnnBatchNormalizationBackward(getCudnnHandle(gCtx), 
+				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL,  one(), zero(), one(), zero(),
+				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, dXPtr,
+				scaleTensorDesc, scalePtr, dScalePtr, dBiasPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr));
+	}
+	
+	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {
+		if(scale.getNumRows() != C || scale.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for scale. Expected a column vector of size " + C + ", but found [" + scale.getNumRows() + ", " + scale.getNumColumns() + "]");
+		}
+		if(bias.getNumRows() != C || bias.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for bias. Expected a column vector of size " + C + ", but found [" + bias.getNumRows() + ", " + bias.getNumColumns() + "]");
+		}
+		if(runningMean.getNumRows() != C || runningMean.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for running mean. Expected a column vector of size " + C + ", but found [" + runningMean.getNumRows() + ", " + runningMean.getNumColumns() + "]");
+		}
+		if(runningVar.getNumRows() != C || runningVar.getNumColumns() != 1) {
+			throw new DMLRuntimeException("Incorrect dimensions for running variance. Expected a column vector of size " + C + ", but found [" + runningVar.getNumRows() + ", " + runningVar.getNumColumns() + "]");
+		}
+	}
+	
+	/**
+	 * Convenient utility for batch normalization that returns a NCHW descriptor
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param N number of images
+	 * @param C number of channels
+	 * @param CHW channels*height*width
+	 * @param input input matrix objects
+	 * @param output output matrix objects
+	 * @return one of the NCHW descriptor
+	 * @throws DMLRuntimeException if error occurs
+	 */
+	private static cudnnTensorDescriptor allocateNCHWDescriptors(GPUContext gCtx, int N, int C, long CHW, MatrixObject [] input, MatrixObject [] output) throws DMLRuntimeException {
+		cudnnTensorDescriptor ret  = null; // Return any one
+		if(CHW > ((long)Integer.MAX_VALUE)*C) {
+			throw new DMLRuntimeException("image size (height*width) should be less than " + Integer.MAX_VALUE);
+		}
+		int H = -1; int W = -1;
+		int HW = (int) (CHW / C);
+		H = HW; W = 1; // If not known
+		double potentialH = Math.sqrt(HW);
+		if(potentialH == ((int) potentialH)) {
+			H = (int) potentialH;
+			W = H;
+		}
+		// We are not sure about H and W, hence don't allocate them.
+		ret = new cudnnTensorDescriptor();
+		cudnnCreateTensorDescriptor(ret);
+		cudnnSetTensor4dDescriptor(ret, CUDNN_TENSOR_NCHW, CUDNN_DATA_TYPE, N, C, H, W);
+		return ret;
+	}
+	
 	/**
 	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
 	 * 
@@ -857,6 +1131,33 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
 		}
 		return getDensePointer(gCtx, image, instName);
+	}
+	
+	/**
+	 * Convenience method to get jcudaDenseMatrixPtr. This method explicitly converts sparse to dense format, so use it judiciously.
+	 * 
+	 * @param gCtx a valid {@link GPUContext}
+	 * @param image input matrix object
+	 * @param instName name of the instruction
+	 * @param numRows expected number of rows
+	 * @param numCols expected number of columns 
+	 * @return jcuda pointer
+	 * @throws DMLRuntimeException if error occurs while sparse to dense conversion
+	 */
+	public static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName, int numRows, int numCols) throws DMLRuntimeException {
+		long numElems = image.getNumRows()*image.getNumColumns();
+		if(image.getNumRows() != numRows || image.getNumColumns() != numCols) {
+			throw new DMLRuntimeException("Expected input of size:[" +  numRows + ", " + numCols + "], but found [" + image.getNumRows() + ", " + image.getNumColumns() + "]."); 
+		}
+		else if(numElems > maxNumElementsOfCuDNNTensor) {
+			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");
+		}
+		Pointer ptr = getDensePointer(gCtx, image, instName);
+		long sizeOfPtr = gCtx.getMemoryManager().getSizeAllocatedGPUPointer(ptr);
+		if(sizeOfPtr != numElems*sizeOfDataType) {
+			throw new DMLRuntimeException("Incorrect pointer: expected size:" +  (numElems*sizeOfDataType) + ", but found " + sizeOfPtr);
+		}
+		return ptr;
 	}
 
 	/**

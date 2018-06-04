@@ -138,12 +138,12 @@ public class ParamservFuncTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPEpochTest() {
-		runDMLTest(TEST_NAME14, true, DMLException.class, null);
+		runDMLTest(TEST_NAME14, false, null, null);
 	}
 
 	@Test
 	public void testParamservASPEpochTest() {
-		runDMLTest(TEST_NAME15, true, DMLException.class, null);
+		runDMLTest(TEST_NAME15, false, null, null);
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {

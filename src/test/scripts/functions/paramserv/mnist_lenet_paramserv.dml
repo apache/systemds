@@ -129,6 +129,8 @@ gradients = function(matrix[double] features,
                      list[unknown] model)
           return (list[unknown] gradients) {
 
+# PB: not be able to get scalar from list
+
   C = 1
   Hin = 28
   Win = 28
@@ -237,8 +239,8 @@ aggregation = function(list[unknown] model,
      vb2 = as.matrix(model["vb2"])
      vb3 = as.matrix(model["vb3"])
      vb4 = as.matrix(model["vb4"])
-     lr = as.scalar(hyperparams['lr']);
-     mu = as.scalar(hyperparams['mu']);
+     lr = 0.01
+     mu = 0.9
 
      # Optimize with SGD w/ Nesterov momentum
      [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)

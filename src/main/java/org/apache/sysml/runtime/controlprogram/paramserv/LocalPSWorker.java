@@ -42,53 +42,17 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	public Void call() throws Exception {
 		try {
 			long dataSize = _features.getNumRows();
-			for (int i = 0; i < _epochs; i++) {
-				int totalIter = (int) Math.ceil(dataSize / _batchSize);
-				for (int j = 0; j < totalIter; j++) {
-					// Pull the global parameters from ps
-					ListObject globalParams = (ListObject)_ps.pull(_workerID);
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format("Local worker_%d: Successfully pull the global parameters "
-							+ "[size:%d kb] from ps.", _workerID, globalParams.getDataSize() / 1024));
-					}
-					_ec.setVariable(Statement.PS_MODEL, globalParams);
+			int totalIter = (int) Math.ceil(dataSize / _batchSize);
 
-					long begin = j * _batchSize + 1;
-					long end = Math.min(begin + _batchSize, dataSize);
-
-					// Get batch features and labels
-					MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
-					MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
-					_ec.setVariable(Statement.PS_FEATURES, bFeatures);
-					_ec.setVariable(Statement.PS_LABELS, bLabels);
-
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. "
-							+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID, bFeatures.getDataSize()
-							/ 1024 + bLabels.getDataSize() / 1024, begin, end, i + 1, _epochs, j + 1, totalIter));
-					}
-
-					// Invoke the update function
-					_inst.processInstruction(_ec);
-
-					// Get the gradients
-					ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
-
-					// Push the gradients to ps
-					_ps.push(_workerID, gradients);
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format("Local worker_%d: Successfully push the gradients "
-							+ "[size:%d kb] to ps.", _workerID, gradients.getDataSize() / 1024));
-					}
-
-					ParamservUtils.cleanupListObject(_ec, globalParams);
-					ParamservUtils.cleanupData(bFeatures);
-					ParamservUtils.cleanupData(bLabels);
-				}
-				if (LOG.isDebugEnabled()) {
-					LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
-				}
+			switch (_freq) {
+				case BATCH:
+					batchCompute(dataSize, totalIter);
+					break;
+				case EPOCH:
+					epochCompute(dataSize, totalIter);
+					break;
 			}
+
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Local worker_%d: Job finished.", _workerID));
 			}
@@ -96,5 +60,101 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			throw new DMLRuntimeException(String.format("Local worker_%d failed", _workerID), e);
 		}
 		return null;
+	}
+
+	private void epochCompute(long dataSize, int totalIter) {
+		for (int i = 0; i < _epochs; i++) {
+			// Pull the global parameters from ps
+			ListObject globalParams = pullModel();
+
+			for (int j = 0; j < totalIter; j++) {
+				_ec.setVariable(Statement.PS_MODEL, globalParams);
+
+				ListObject gradients = computeGradients(dataSize, totalIter, i, j);
+
+				if (j == totalIter - 1) {
+					// Push the gradients to ps
+					pushGradients(gradients);
+					ParamservUtils.cleanupListObject(_ec, globalParams);
+				} else {
+					// Update the local model with gradients
+					globalParams = _ps.updateModel(gradients, globalParams);
+					if (LOG.isDebugEnabled()) {
+						LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated.",
+								_workerID, globalParams.getDataSize()));
+					}
+				}
+			}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
+			}
+		}
+
+	}
+
+	private void batchCompute(long dataSize, int totalIter) {
+		for (int i = 0; i < _epochs; i++) {
+			for (int j = 0; j < totalIter; j++) {
+				ListObject globalParams = pullModel();
+
+				_ec.setVariable(Statement.PS_MODEL, globalParams);
+
+				ListObject gradients = computeGradients(dataSize, totalIter, i, j);
+
+				// Push the gradients to ps
+				pushGradients(gradients);
+
+				ParamservUtils.cleanupListObject(_ec, globalParams);
+			}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
+			}
+		}
+	}
+
+	private ListObject pullModel() {
+		// Pull the global parameters from ps
+		ListObject globalParams = (ListObject)_ps.pull(_workerID);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("Local worker_%d: Successfully pull the global parameters "
+				+ "[size:%d kb] from ps.", _workerID, globalParams.getDataSize() / 1024));
+		}
+		return globalParams;
+	}
+
+	private void pushGradients(ListObject gradients) {
+		// Push the gradients to ps
+		_ps.push(_workerID, gradients);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("Local worker_%d: Successfully push the gradients "
+					+ "[size:%d kb] to ps.", _workerID, gradients.getDataSize() / 1024));
+		}
+	}
+
+	private ListObject computeGradients(long dataSize, int totalIter, int i, int j) {
+		long begin = j * _batchSize + 1;
+		long end = Math.min(begin + _batchSize, dataSize);
+
+		// Get batch features and labels
+		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
+		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
+		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
+		_ec.setVariable(Statement.PS_LABELS, bLabels);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. "
+				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID, bFeatures.getDataSize()
+				/ 1024 + bLabels.getDataSize() / 1024, begin, end, i + 1, _epochs, j + 1, totalIter));
+		}
+
+		// Invoke the update function
+		_inst.processInstruction(_ec);
+
+		// Get the gradients
+		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
+
+		ParamservUtils.cleanupData(bFeatures);
+		ParamservUtils.cleanupData(bLabels);
+		return gradients;
 	}
 }

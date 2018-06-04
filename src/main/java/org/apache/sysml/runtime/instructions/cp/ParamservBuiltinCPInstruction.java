@@ -51,6 +51,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.hops.Hop;
@@ -86,11 +88,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
+	protected static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
+
 
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
 			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
+			Logger.getLogger(ParamservBuiltinCPInstruction.class.getName()).setLevel(Level.DEBUG);
 		}
 	}
 
@@ -119,7 +124,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
@@ -128,6 +133,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Do data partition
 		doDataPartition(ec, workers);
+
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("\nConfiguration of paramserv func: \nmode: %s \nworkerNum: %d \nupdate frequency: %s \nstrategy: %s",
+					mode, workerNum, freq, updateType));
+		}
 
 		// Launch the worker threads and wait for completion
 		try {
@@ -294,10 +304,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} catch (IllegalArgumentException e) {
 			throw new DMLRuntimeException(String.format("Paramserv function: not support '%s' update frequency.", getParam(PS_FREQUENCY)));
 		}
-		switch (freq) {
-			case EPOCH:
-				throw new DMLRuntimeException("Not support epoch update frequency.");
-		}
 		return freq;
 	}
 
@@ -332,12 +338,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 *
 	 * @return parameter server
 	 */
-	private ParamServer createPS(PSModeType mode, String aggFunc, PSFrequency freq, PSUpdateType updateType,
-			int workerNum, ListObject model, ExecutionContext ec) {
+	private ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		ParamServer ps = null;
 		switch (mode) {
 			case LOCAL:
-				ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum);
+				ps = new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
 				break;
 			case REMOTE_SPARK:
 				throw new DMLRuntimeException("Do not support remote spark.");

@@ -77,7 +77,13 @@ public abstract class Statement implements ParseInfo
 	}
 	public static final String PS_UPDATE_TYPE = "utype";
 	public enum PSUpdateType {
-		BSP, ASP, SSP
+		BSP, ASP, SSP;
+		public boolean isBSP() {
+			return this == BSP;
+		}
+		public boolean isASP() {
+			return this == ASP;
+		}
 	}
 	public static final String PS_FREQUENCY = "freq";
 	public enum PSFrequency {

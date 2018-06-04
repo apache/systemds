@@ -204,7 +204,6 @@ gradients = function(matrix[double] features,
 
 }
 
-# how to handle the velocity?
 aggregation = function(list[unknown] model,
                        list[unknown] gradients,
                        list[unknown] hyperparams)

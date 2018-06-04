@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -49,8 +50,8 @@ public class ParamservUtils {
 		if (lo.getLength() == 0) {
 			return lo;
 		}
-		List<Data> newData = lo.getNames().stream().map(name -> {
-			Data oldData = lo.slice(name);
+		List<Data> newData = IntStream.range(0, lo.getLength()).mapToObj(i -> {
+			Data oldData = lo.slice(i);
 			if (oldData instanceof MatrixObject) {
 				MatrixObject mo = (MatrixObject) oldData;
 				return sliceMatrix(mo, 1, mo.getNumRows());
@@ -69,7 +70,7 @@ public class ParamservUtils {
 	}
 
 	public static void cleanupData(Data data) {
-		if( !(data instanceof CacheableData) )
+		if (!(data instanceof CacheableData))
 			return;
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
@@ -78,6 +79,7 @@ public class ParamservUtils {
 
 	/**
 	 * Slice the matrix
+	 *
 	 * @param mo input matrix
 	 * @param rl low boundary
 	 * @param rh high boundary
@@ -88,10 +90,10 @@ public class ParamservUtils {
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1),
 				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		MatrixBlock tmp = mo.acquireRead();
-		result.acquireModify(tmp.slice((int)rl-1, (int)rh-1, 0,
-			tmp.getNumColumns()-1, new MatrixBlock()));
+		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1, 0, tmp.getNumColumns() - 1, new MatrixBlock()));
 		mo.release();
 		result.release();
+		result.enableCleanup(false);
 		return result;
 	}
 }

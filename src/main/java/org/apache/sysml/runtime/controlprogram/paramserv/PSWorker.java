@@ -30,102 +30,99 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 @SuppressWarnings("unused")
 public abstract class PSWorker {
 
-	long _workerID = -1;
-	int _epochs;
-	long _batchSize;
-	MatrixObject _features;
-	MatrixObject _labels;
-	ExecutionContext _ec;
-	ParamServer _ps;
-	private String _updFunc;
-	private Statement.PSFrequency _freq;
+	protected final int _workerID;
+	protected final int _epochs;
+	protected final long _batchSize;
+	protected final ExecutionContext _ec;
+	protected final ParamServer _ps;
+	protected final DataIdentifier _output;
+	protected final FunctionCallCPInstruction _inst;
+	protected MatrixObject _features;
+	protected MatrixObject _labels;
+	
 	private MatrixObject _valFeatures;
 	private MatrixObject _valLabels;
-
-	ArrayList<DataIdentifier> _outputs;
-	FunctionCallCPInstruction _inst;
-
-	public PSWorker(long workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			ListObject hyperParams, ExecutionContext ec, ParamServer ps) {
-		this._workerID = workerID;
-		this._updFunc = updFunc;
-		this._freq = freq;
-		this._epochs = epochs;
-		this._batchSize = batchSize;
-		this._ec = ExecutionContextFactory.createContext(ec.getProgram());
-		if (hyperParams != null) {
-			this._ec.setVariable(Statement.PS_HYPER_PARAMS, hyperParams);
-		}
-		this._ps = ps;
+	private final String _updFunc;
+	private final Statement.PSFrequency _freq;
+	
+	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+		_workerID = workerID;
+		_updFunc = updFunc;
+		_freq = freq;
+		_epochs = epochs;
+		_batchSize = batchSize;
+		_ec = ec;
+		_ps = ps;
 
 		// Get the update function
 		String[] keys = DMLProgram.splitFunctionKey(updFunc);
-		String _funcName = keys[0];
-		String _funcNS = null;
+		String funcName = keys[0];
+		String funcNS = null;
 		if (keys.length == 2) {
-			_funcNS = keys[0];
-			_funcName = keys[1];
+			funcNS = keys[0];
+			funcName = keys[1];
 		}
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(_funcNS, _funcName);
-		ArrayList<DataIdentifier> _inputs = func.getInputParams();
-		_outputs = func.getOutputParams();
-		CPOperand[] _boundInputs = _inputs.stream()
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(funcNS, funcName);
+		ArrayList<DataIdentifier> inputs = func.getInputParams();
+		ArrayList<DataIdentifier> outputs = func.getOutputParams();
+		CPOperand[] boundInputs = inputs.stream()
 				.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
 				.toArray(CPOperand[]::new);
-		ArrayList<String> _inputNames = _inputs.stream().map(DataIdentifier::getName)
+		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-		ArrayList<String> _outputNames = _outputs.stream().map(DataIdentifier::getName)
+		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(_funcNS, _funcName, _boundInputs, _inputNames, _outputNames,
+		_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames,
 				"update function");
 
 		// Check the inputs of the update function
-		checkInput(_inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
-		checkInput(_inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
-		checkInput(_inputs, Expression.DataType.LIST, Statement.PS_MODEL);
-		if (hyperParams != null) {
-			checkInput(_inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
-		}
+		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
+		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
+		checkInput(false, inputs, Expression.DataType.LIST, Statement.PS_MODEL);
+		checkInput(true, inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
 
 		// Check the output of the update function
-		if (_outputs.size() != 1) {
-			throw new DMLRuntimeException(
-				String.format("The output of the '%s' function should provide one list containing the gradients.", updFunc));
+		if (outputs.size() != 1) {
+			throw new DMLRuntimeException(String.format("The output of the '%s' function "
+				+ "should provide one list containing the gradients.", updFunc));
 		}
-		if (_outputs.get(0).getDataType() != Expression.DataType.LIST) {
-			throw new DMLRuntimeException(
-					String.format("The output of the '%s' function should be type of list.", updFunc));
+		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
+			throw new DMLRuntimeException(String.format("The output of the '%s' function should be type of list.", updFunc));
 		}
+		_output = outputs.get(0);
 	}
 
-	private void checkInput(ArrayList<DataIdentifier> _inputs, Expression.DataType dt, String pname) {
-		if (_inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
-			throw new DMLRuntimeException(
-				String.format("The '%s' function should provide an input of '%s' type named '%s'.", _updFunc, dt, pname));
+	private void checkInput(boolean optional, ArrayList<DataIdentifier> inputs, Expression.DataType dt, String pname) {
+		if (optional && inputs.stream().noneMatch(input -> pname.equals(input.getName()))) {
+			// We do not need to check if the input is optional and is not provided
+			return;
+		}
+		if (inputs.stream().filter(input -> input.getDataType() == dt && pname.equals(input.getName())).count() != 1) {
+			throw new DMLRuntimeException(String.format("The '%s' function should provide "
+				+ "an input of '%s' type named '%s'.", _updFunc, dt, pname));
 		}
 	}
 
 	public void setFeatures(MatrixObject features) {
-		this._features = features;
+		_features = features;
 	}
 
 	public void setLabels(MatrixObject labels) {
-		this._labels = labels;
+		_labels = labels;
 	}
 
 	public void setValFeatures(MatrixObject valFeatures) {
-		this._valFeatures = valFeatures;
+		_valFeatures = valFeatures;
 	}
 
 	public void setValLabels(MatrixObject valLabels) {
-		this._valLabels = valLabels;
+		_valLabels = valLabels;
 	}
 }

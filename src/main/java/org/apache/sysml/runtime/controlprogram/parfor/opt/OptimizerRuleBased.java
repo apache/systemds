@@ -411,17 +411,13 @@ public class OptimizerRuleBased extends Optimizer
 			&& (_N >= PROB_SIZE_THRESHOLD_PARTITIONING || _Nmax >= PROB_SIZE_THRESHOLD_PARTITIONING) ) //only if beneficial wrt problem size
 		{
 			HashMap<String, PartitionFormat> cand2 = new HashMap<>();
-			for( String c : pfsb.getReadOnlyParentVars() )
-			{
+			for( String c : pfsb.getReadOnlyParentMatrixVars() ) {
 				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
-				
 				if( dpf != PartitionFormat.NONE 
-					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) 
-				{
+					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) {
 					cand2.put( c, dpf );
 				}
 			}
-			
 			apply = rFindDataPartitioningCandidates(n, cand2, vars, thetaM);
 			if( apply )
 				partitionedMatrices.putAll(cand2);
@@ -441,7 +437,7 @@ public class OptimizerRuleBased extends Optimizer
 	
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set data partitioner' - result="+pdp.toString()+
-				  " ("+ProgramConverter.serializeStringCollection(partitionedMatrices.keySet())+")" );
+			" ("+ProgramConverter.serializeStringCollection(partitionedMatrices.keySet())+")" );
 		
 		return blockwise;
 	}
@@ -1195,11 +1191,11 @@ public class OptimizerRuleBased extends Optimizer
 			double mem = (OptimizerUtils.isSparkExecutionMode() && !n.isCPOnly()) ? _lm/2 : _lm;
 			double sharedM = 0, nonSharedM = M;
 			if( computeMaxK(M, M, 0, mem) < kMax ) { //account for shared read if necessary
-				sharedM = pfsb.getReadOnlyParentVars().stream().map(s -> vars.get(s))
+				sharedM = pfsb.getReadOnlyParentMatrixVars().stream().map(s -> vars.get(s))
 					.filter(d -> d instanceof MatrixObject).mapToDouble(mo -> OptimizerUtils
 					.estimateSize(((MatrixObject)mo).getMatrixCharacteristics())).sum();
 				nonSharedM = cost.getEstimate(TestMeasure.MEMORY_USAGE, n, true,
-					pfsb.getReadOnlyParentVars(), ExcludeType.SHARED_READ);
+					pfsb.getReadOnlyParentMatrixVars(), ExcludeType.SHARED_READ);
 			}
 			
 			//ensure local memory constraint (for spark more conservative in order to 
@@ -1909,7 +1905,7 @@ public class OptimizerRuleBased extends Optimizer
 			rCollectZipmmPartitioningCandidates(n, cand);
 			
 			//prune updated candidates
-			HashSet<String> probe = new HashSet<>(pfsb.getReadOnlyParentVars());
+			HashSet<String> probe = new HashSet<>(pfsb.getReadOnlyParentMatrixVars());
 			for( String var : cand )
 				if( probe.contains( var ) )
 					ret.add( var );

@@ -279,15 +279,12 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    *      Note: This is used for performance during training.
    *  - cache_var: Cache of the batch variance, of shape (C, 1).
    *      Note: This is used for performance during training.
-   *  - cache_norm: Cache of the normalized inputs, of
-   *      shape (C, N*Hin*Win). Note: This is used for performance
-   *      during training.
    */
   def forward(dmlScript: StringBuilder, isPrediction: Boolean): Unit = {
     val mode = if (isPrediction) "\"test\"" else "\"train\""
     invokeForward(
       dmlScript,
-      List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var), withSuffix(cache_norm)),
+      List[String](out, withSuffix(ema_mean), withSuffix(ema_var), withSuffix(cache_mean), withSuffix(cache_var)),
       X,
       gamma,
       beta,
@@ -307,38 +304,18 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of shape (N, C*Hin*Win).
-   *  - out: Outputs from the forward pass, of shape (N, C*Hin*Win).
-   *  - ema_mean_upd: Updated exponential moving average of the mean
-   *      from the forward pass, of shape (C, 1).
-   *  - ema_var_upd: Updated exponential moving average of the variance
-   *      from the forward pass, of shape (C, 1).
    *  - cache_mean: Cache of the batch mean from the forward pass, of
    *      shape (C, 1).  Note: This is used for performance during
    *      training.
-   *  - cache_var: Cache of the batch variance from the forward pass,
+   *  - cache_inv_var: Cache of the inverse variance from the forward pass,
    *      of shape (C, 1).  Note: This is used for performance during
    *      training.
-   *  - cache_norm: Cache of the normalized inputs from the forward
-   *      pass, of shape (C, N*Hin*Win).  Note: This is used for
-   *      performance during training.
    *  - X: Input data matrix to the forward pass, of
    *      shape (N, C*Hin*Win).
    *  - gamma: Scale parameters, of shape (C, 1).
-   *  - beta: Shift parameters, of shape (C, 1).
    *  - C: Number of input channels (dimensionality of input depth).
    *  - Hin: Input height.
    *  - Win: Input width.
-   *  - mode: 'train' or 'test' to indicate if the model is currently
-   *      being trained or tested.  During training, the current batch
-   *      mean and variance will be used to normalize the inputs, while
-   *      during testing, the exponential average of the mean and
-   *      variance over all previous batches will be used.
-   *  - ema_mean: Exponential moving average of the mean, of
-   *      shape (C, 1).
-   *  - ema_var: Exponential moving average of the variance, of
-   *      shape (C, 1).
-   *  - mu: Momentum value for moving averages.
-   *      Typical values are in the range of [0.9, 0.999].
    *  - epsilon: Smoothing term to avoid divide by zero errors.
    *      Typical values are in the range of [1e-5, 1e-3].
    *
@@ -354,22 +331,13 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
       outSuffix,
       List[String]("dOut" + id, dgamma, dbeta),
       dout,
-      out,
-      ema_mean,
-      ema_var,
       cache_mean,
       cache_var,
-      cache_norm,
       X,
       gamma,
-      beta,
       numChannels,
       Hin,
       Win,
-      "\"train\"",
-      ema_mean,
-      ema_var,
-      ma_fraction,
       eps
     )
 
@@ -377,8 +345,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
   override def weightShape(): Array[Int]      = Array(numChannels.toInt, 1)
   override def biasShape(): Array[Int]        = Array(numChannels.toInt, 1)
   def cache_mean(): String                    = "cache_mean" + id
-  def cache_var(): String                     = "cache_mean" + id
-  def cache_norm(): String                    = "cache_norm" + id
+  def cache_var(): String                     = "cache_var" + id
   var scaleLayer: Scale                       = null
   def gamma(): String                         = { checkNextLayer(); scaleLayer.weight }
   def ma_fraction(): String                   = if (param.getBatchNormParam.hasMovingAverageFraction()) param.getBatchNormParam.getMovingAverageFraction.toString else "0.999"

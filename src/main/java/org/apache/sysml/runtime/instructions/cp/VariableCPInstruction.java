@@ -485,6 +485,8 @@ public class VariableCPInstruction extends CPInstruction {
 				mobj.setMetaData((MetaData)metadata.clone());
 				mobj.setFileFormatProperties(_formatProperties);
 				mobj.setUpdateType(_updateType);
+				mobj.enableCleanup(!getInput1().getName()
+					.startsWith(org.apache.sysml.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), mobj);
 				if(DMLScript.STATISTICS && _updateType.isInPlace())
 					Statistics.incrementTotalUIPVar();
@@ -496,6 +498,8 @@ public class VariableCPInstruction extends CPInstruction {
 				fobj.setFileFormatProperties(_formatProperties);
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
+				fobj.enableCleanup(!getInput1().getName()
+					.startsWith(org.apache.sysml.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), fobj);
 			}
 			else if ( getInput1().getDataType() == DataType.SCALAR ){
@@ -553,7 +557,7 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 			
 		case CastAsScalarVariable: //castAsScalarVariable
-			if( getInput1().getDataType()==DataType.FRAME ) {
+			if( getInput1().getDataType().isFrame() ) {
 				FrameBlock fBlock = ec.getFrameInput(getInput1().getName());
 				if( fBlock.getNumRows()!=1 || fBlock.getNumColumns()!=1 )
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+getInput1().getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
@@ -562,7 +566,7 @@ public class VariableCPInstruction extends CPInstruction {
 				ec.setScalarOutput(output.getName(), 
 						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
-			else { //assume DataType.MATRIX otherwise
+			else if( getInput1().getDataType().isMatrix() ) {
 				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
@@ -570,21 +574,30 @@ public class VariableCPInstruction extends CPInstruction {
 				ec.releaseMatrixInput(getInput1().getName(), getExtendedOpcode());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			}
+			else if( getInput1().getDataType().isList() ) {
+				//TODO handling of cleanup status, potentially new object
+				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
+				ec.setVariable(output.getName(), list.slice(0));
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported data type "
+					+ "in as.scalar(): "+getInput1().getDataType().name());
+			}
 			break;
 		case CastAsMatrixVariable:{
-			if( getInput1().getDataType()==DataType.FRAME ) {
+			if( getInput1().getDataType().isFrame() ) {
 				FrameBlock fin = ec.getFrameInput(getInput1().getName());
 				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
 				ec.releaseFrameInput(getInput1().getName());
 				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
-			else if( getInput1().getDataType()==DataType.SCALAR ) {
+			else if( getInput1().getDataType().isScalar() ) {
 				ScalarObject scalarInput = ec.getScalarInput(
 					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
 				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
 				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
-			else if( getInput1().getDataType()==DataType.LIST ) {
+			else if( getInput1().getDataType().isList() ) {
 				//TODO handling of cleanup status, potentially new object
 				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
 				ec.setVariable(output.getName(), list.slice(0));

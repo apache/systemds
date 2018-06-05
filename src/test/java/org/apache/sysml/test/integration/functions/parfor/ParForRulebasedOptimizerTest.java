@@ -36,7 +36,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRulebasedOptimizerTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-		
+	
 	private final static int rows1 = 1000; //small CP
 	private final static int rows2 = 10000; //large MR
 	
@@ -47,14 +47,10 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private final static int cols22 = 50; //large nested parfor
 	private final static int cols31 = 2;  //small nested parfor
 	private final static int cols32 = 8; //large nested parfor
-	
-	
 	private final static double sparsity = 0.7;
 	
-	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
 		addTestConfiguration(TEST_NAME2,
@@ -63,7 +59,6 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
 	}
 
-	
 	@Test
 	public void testParForRulebasedOptimizerCorrelationSmallSmall() {
 		runParForOptimizerTest(1, false, false, false);
@@ -188,31 +183,28 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private void runParForOptimizerTest( int scriptNum, boolean largeRows, boolean largeCols, boolean timebasedOpt )
 	{
 		//find right rows and cols configuration
-		int rows=-1, cols=-1;  
+		int rows=-1, cols=-1;
 		if( largeRows )
 			rows = rows2;
 		else
 			rows = rows1; 
 		if( largeCols ){
-			switch(scriptNum)
-			{
+			switch(scriptNum) {
 				case 1: cols=cols22; break;
 				case 2: cols=cols32; break;
-				case 3: cols=cols12; break;				
+				case 3: cols=cols12; break;
 			}
 		}
 		else{
-			switch(scriptNum)
-			{
+			switch(scriptNum) {
 				case 1: cols=cols21; break;
 				case 2: cols=cols31; break;
-				case 3: cols=cols11; break;				
+				case 3: cols=cols11; break;
 			}
 		}
 
 		//run actual test
-		switch( scriptNum )
-		{
+		switch( scriptNum ) {
 			case 1: 
 				runUnaryTest(scriptNum, timebasedOpt, rows, cols);
 				break;
@@ -221,7 +213,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 				break;
 			case 3: 
 				runUnaryTest(scriptNum, timebasedOpt, rows, cols);
-				break;	
+				break;
 		}
 	}
 	
@@ -229,14 +221,12 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	{
 		TestConfiguration config = null;
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		if( scriptNum==1 )
-		{
+		if( scriptNum==1 ) {
 			config=getTestConfiguration(TEST_NAME1);
 			String testname = TEST_NAME1 + (timebasedOpt ? "b" : "");
 			fullDMLScriptName = HOME + testname + ".dml";
 		}
-		else if( scriptNum==3 )
-		{
+		else if( scriptNum==3 ) {
 			config=getTestConfiguration(TEST_NAME3);
 			String testname = TEST_NAME3 + (timebasedOpt ? "b" : "");
 			fullDMLScriptName = HOME + testname + ".dml";
@@ -246,28 +236,24 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
-		if( scriptNum==1 )
-		{
-			programArgs = new String[]{ "-args", input("V"), 
-				Integer.toString(rows), Integer.toString(cols), 
+		if( scriptNum==1 ) {
+			programArgs = new String[]{ "-args", input("V"),
+				Integer.toString(rows), Integer.toString(cols),
 				output("R") };
-			
-			rCmd = "Rscript" + " " + HOME + TEST_NAME1 + ".R" + " " + 
+			rCmd = "Rscript" + " " + HOME + TEST_NAME1 + ".R" + " " +
 				inputDir() + " " + expectedDir();
-		}	
-		else if( scriptNum==3 )
-		{
-			programArgs = new String[]{ "-args", input("V"), 
-				Integer.toString(rows), Integer.toString(cols), 
+		}
+		else if( scriptNum==3 ) {
+			programArgs = new String[]{ "-args", input("V"),
+				Integer.toString(rows), Integer.toString(cols),
 				Integer.toString(cols/2), 
 				output("R") };
-			
-			rCmd = "Rscript" + " " + HOME + TEST_NAME3 + ".R" + " " + 
+			rCmd = "Rscript" + " " + HOME + TEST_NAME3 + ".R" + " " +
 				inputDir() + " " + expectedDir();
-		}	
+		}
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;
@@ -278,7 +264,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
-		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");		
+		TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 	}
 	
 	private void runNaryTest(int scriptNum, boolean timebasedOpt, int rows, int cols)
@@ -317,35 +303,32 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		}
 		writeInputMatrix("D", D, true);
 		
-		//generate attribute sets		
+		//generate attribute sets
 		double[][] S1 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1112);
 		double[][] S2 = getRandomMatrix(1, cols, 1, cols+1-eps, 1, 1113);
 		TestUtils.floor(S1);
 		TestUtils.floor(S2);
 		writeInputMatrix("S1", S1, true);
-		writeInputMatrix("S2", S2, true);	
+		writeInputMatrix("S2", S2, true);
 
 		//generate kind for attributes (1,2,3)
-        double[][] K1 = new double[1][cols];
-        double[][] K2 = new double[1][cols];
-        for( int i=0; i<cols; i++ )
-        {
-        	K1[0][i] = Dkind[(int)S1[0][i]-1];
-        	K2[0][i] = Dkind[(int)S2[0][i]-1];
-        }
-        writeInputMatrix("K1", K1, true);
+		double[][] K1 = new double[1][cols];
+		double[][] K2 = new double[1][cols];
+		for( int i=0; i<cols; i++ ) {
+			K1[0][i] = Dkind[(int)S1[0][i]-1];
+			K2[0][i] = Dkind[(int)S2[0][i]-1];
+		}
+		writeInputMatrix("K1", K1, true);
 		writeInputMatrix("K2", K2, true);
 		
 		boolean exceptionExpected = false;
 		runTest(true, exceptionExpected, null, -1);
 
-		runRScript(true); 
+		runRScript(true);
 		
 		//compare matrices 
-		for( String out : new String[]{"bivar.stats", "category.counts", "category.means",  "category.variances" } )
-		{
+		for( String out : new String[]{"bivar.stats", "category.counts", "category.means",  "category.variances" } ) {
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("bivarstats/"+out);
-			
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS(out);
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}

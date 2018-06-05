@@ -141,7 +141,6 @@ public class GMRCtableBuffer
 			}
 			else if ( _blockBuffer != null ) {
 				MatrixIndexes key=new MatrixIndexes(1,1);
-				//DataConverter.writeBinaryBlockMatrixToHDFS(path, job, mat, mc.get_rows(), mc.get_cols(), mc.get_rows_per_block(), mc.get_cols_per_block(), replication);
 				for(Entry<Byte, MatrixBlock> ctable: _blockBuffer.entrySet())
 				{
 					ArrayList<Integer> resultIDs=ReduceBase.getOutputIndexes(ctable.getKey(), _resultIndexes);

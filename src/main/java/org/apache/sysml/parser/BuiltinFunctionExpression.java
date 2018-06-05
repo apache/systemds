@@ -89,13 +89,25 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public Expression getThirdExpr() {
 		return (_args.length >= 3 ? _args[2] : null);
 	}
+	
+	public Expression getFourthExpr() {
+		return (_args.length >= 4 ? _args[3] : null);
+	}
+	
+	public Expression getFifthExpr() {
+		return (_args.length >= 5 ? _args[4] : null);
+	}
+	
+	public Expression getSixthExpr() {
+		return (_args.length >= 6 ? _args[5] : null);
+	}
 
 	public Expression[] getAllExpr(){
 		return _args;
 	}
 	
 	public Expression getExpr(int i) {
-		return (_args.length > i ? _args[i] : null);	
+		return (_args.length > i ? _args[i] : null);
 	}
 	
 	@Override
@@ -106,17 +118,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		
 		this.getFirstExpr().validateExpression(ids, constVars, conditional);
-		if (getSecondExpr() != null){
-			if (this.getSecondExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+		Expression [] expr = getAllExpr();
+		if(expr != null && expr.length > 1) {
+			for(int i = 1; i < expr.length; i++) {
+				if (expr[i] instanceof FunctionCallIdentifier){
+					raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
+				}
+				expr[i].validateExpression(ids, constVars, conditional);
 			}
-			getSecondExpr().validateExpression(ids, constVars, conditional);
-		}
-		if (getThirdExpr() != null) {
-			if (this.getThirdExpr() instanceof FunctionCallIdentifier){
-				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
-			}
-			getThirdExpr().validateExpression(ids, constVars, conditional);
 		}
 		_outputs = new Identifier[stmt.getTargetList().size()];
 		int count = 0;
@@ -189,6 +198,97 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			break;
 
+		case LSTM:
+		{
+			// X,  W, bias, out0, c0, return_sequences
+			checkNumParameters(6);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
+			
+			// setup output properties
+			if(getOutputs() == null || getOutputs().length != 3) {
+				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
+				raiseValidateError("The builtin function lstm has three outputs, but instead found: " + numOutputs, conditional);
+			}
+			DataIdentifier out = (DataIdentifier) getOutputs()[0];
+			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
+			DataIdentifier reserveSpace = (DataIdentifier) getOutputs()[2];
+			
+			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
+			out.setDataType(DataType.MATRIX);
+			out.setValueType(ValueType.DOUBLE);
+			out.setDimensions(-1, -1);
+			out.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			
+			// Output2 - Cell state for final timestep.
+			cy.setDataType(DataType.MATRIX);
+			cy.setValueType(ValueType.DOUBLE);
+			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
+			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
+			
+			// Output3 - reserve space.
+			reserveSpace.setDataType(DataType.MATRIX);
+			reserveSpace.setValueType(ValueType.DOUBLE);
+			reserveSpace.setDimensions(-1, -1);
+			reserveSpace.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			
+			break;
+		}
+		case BATCH_NORM2D:
+		{
+			// Input: image, scale, bias, runningMean, runningVar, mode, epsilon, exponentialAverageFactor
+			checkNumParameters(8);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
+			
+			// Output: ret, retRunningMean, retRunningVar, resultSaveMean, resultSaveInvVariance
+			// setup output properties
+			if(getOutputs().length != 5)
+				raiseValidateError("batch_norm2d has 5 outputs", false);
+			 
+			DataIdentifier ret = (DataIdentifier) getOutputs()[0];
+			DataIdentifier retRunningMean = (DataIdentifier) getOutputs()[1];
+			DataIdentifier retRunningVar = (DataIdentifier) getOutputs()[2];
+			DataIdentifier resultSaveMean = (DataIdentifier) getOutputs()[3];
+			DataIdentifier resultSaveInvVariance = (DataIdentifier) getOutputs()[4];
+			
+			setDimensions(ret, getFirstExpr());
+			setDimensions(retRunningMean, getFourthExpr());
+			setDimensions(retRunningVar, getFourthExpr());
+			setDimensions(resultSaveMean, getFourthExpr());
+			setDimensions(resultSaveInvVariance, getFourthExpr());
+			break;
+		}
+		case BATCH_NORM2D_BACKWARD:
+		{
+			// Input: image, dout, scale, epsilon, savedMean, savedInvVariance
+			checkNumParameters(6);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFifthExpr());
+			checkMatrixParam(getSixthExpr());
+			
+			// Output: dX, dScale, dBias 
+			// setup output properties
+			if(getOutputs().length != 3)
+				raiseValidateError("batch_norm2d_backward has 3 outputs", false);
+			
+			DataIdentifier dX = (DataIdentifier) getOutputs()[0];
+			DataIdentifier dScale = (DataIdentifier) getOutputs()[1];
+			DataIdentifier dBias = (DataIdentifier) getOutputs()[2];
+			
+			setDimensions(dX, getFirstExpr());
+			setDimensions(dScale, getThirdExpr());
+			setDimensions(dBias, getThirdExpr());
+			break;
+		}
 		case EIGEN:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
@@ -249,6 +349,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
+	}
+	
+	private static void setDimensions(DataIdentifier out, Expression exp) {
+		out.setDataType(DataType.MATRIX);
+		out.setValueType(ValueType.DOUBLE);
+		out.setDimensions(exp.getOutput().getDim1(), exp.getOutput().getDim2());
+		out.setBlockDimensions(exp.getOutput().getRowsInBlock(), exp.getOutput().getColumnsInBlock());
 	}
 	
 	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, int skip) {
@@ -355,11 +462,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public void validateExpression(HashMap<String, DataIdentifier> ids, HashMap<String, ConstIdentifier> constVars, boolean conditional) 
 	{
 		for(int i=0; i < _args.length; i++ ) {
-			
 			if (_args[i] instanceof FunctionCallIdentifier){
 				raiseValidateError("UDF function call not supported as parameter to built-in function call", false);
 			}
-			
 			_args[i].validateExpression(ids, constVars, conditional);
 		}
 		
@@ -496,18 +601,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(id.getValueType());
 			
 			break;
-			
 		case CAST_AS_SCALAR:
 			checkNumParameters(1);
-			checkMatrixFrameParam(getFirstExpr());
-			if (( getFirstExpr().getOutput().getDim1() != -1 && getFirstExpr().getOutput().getDim1() !=1) || ( getFirstExpr().getOutput().getDim2() != -1 && getFirstExpr().getOutput().getDim2() !=1)) {
-				raiseValidateError("dimension mismatch while casting matrix to scalar: dim1: " + getFirstExpr().getOutput().getDim1() +  " dim2 " + getFirstExpr().getOutput().getDim2(), 
-				          conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			checkDataTypeParam(getFirstExpr(),
+				DataType.MATRIX, DataType.FRAME, DataType.LIST);
+			if (( getFirstExpr().getOutput().getDim1() != -1 && getFirstExpr().getOutput().getDim1() !=1)
+				|| ( getFirstExpr().getOutput().getDim2() != -1 && getFirstExpr().getOutput().getDim2() !=1)) {
+				raiseValidateError("dimension mismatch while casting matrix to scalar: dim1: " + getFirstExpr().getOutput().getDim1() 
+					+  " dim2 " + getFirstExpr().getOutput().getDim2(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
-			output.setValueType(id.getValueType());
+			output.setValueType((id.getValueType()!=ValueType.UNKNOWN) ?
+				id.getValueType() : ValueType.DOUBLE);
 			break;
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
@@ -767,9 +874,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				}
 				else {
 					// constant propagation
-					if( getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+					if( getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) && !conditional )
 						_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
-					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) && !conditional )
 						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
 					
 					if ( getThirdExpr().getOutput() instanceof ConstIdentifier ) 
@@ -794,9 +901,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				}
 				else {
 					// constant propagation
-					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName()) )
+					if( _args[3] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[3]).getName())  && !conditional )
 						_args[3] = constVars.get(((DataIdentifier)_args[3]).getName());
-					if( _args[4] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[4]).getName()) )
+					if( _args[4] instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)_args[4]).getName())  && !conditional )
 						_args[4] = constVars.get(((DataIdentifier)_args[4]).getName());
 					
 					if ( _args[3].getOutput() instanceof ConstIdentifier ) 
@@ -1055,12 +1162,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkNumParameters(2);
 			
 			// constant propagation (from, to, incr)
-			if( getFirstExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getFirstExpr()).getName()) )
-				_args[0] = constVars.get(((DataIdentifier)getFirstExpr()).getName());
-			if( getSecondExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getSecondExpr()).getName()) )
-				_args[1] = constVars.get(((DataIdentifier)getSecondExpr()).getName());
-			if( getThirdExpr()!=null && getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
-				_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
+			if( !conditional ) {
+				if( getFirstExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getFirstExpr()).getName()) )
+					_args[0] = constVars.get(((DataIdentifier)getFirstExpr()).getName());
+				if( getSecondExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getSecondExpr()).getName()) )
+					_args[1] = constVars.get(((DataIdentifier)getSecondExpr()).getName());
+				if( getThirdExpr()!=null && getThirdExpr() instanceof DataIdentifier && constVars.containsKey(((DataIdentifier)getThirdExpr()).getName()) )
+					_args[2] = constVars.get(((DataIdentifier)getThirdExpr()).getName());
+			}
 			
 			// check if dimensions can be inferred
 			long dim1=-1, dim2=1;
@@ -1298,7 +1407,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			else {
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD)
+				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD 
+						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1360,6 +1470,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case QR:
 		case LU:
 		case EIGEN:
+		case LSTM:
+		case BATCH_NORM2D:
+		case BATCH_NORM2D_BACKWARD:
 		case SVD:
 			return true;
 		default:
@@ -1501,7 +1614,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	protected void checkMatrixParam(Expression e) {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
 			raiseValidateError(
-					"Expecting matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
+					"Expected " + e.getText() + " to be a matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
 					false);
 		}
 	}
@@ -1769,6 +1882,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.LU;
 		else if (functionName.equals("eigen"))
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
+		else if (functionName.equals("lstm"))
+			bifop = Expression.BuiltinFunctionOp.LSTM;
+		else if (functionName.equals("batch_norm2d"))
+			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
+		else if (functionName.equals("batch_norm2d_backward"))
+			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D_BACKWARD;
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))

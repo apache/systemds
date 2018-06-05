@@ -411,6 +411,7 @@ public class IndexingOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
+		Hop input1 = getInput().get(0); //matrix
 		Hop input2 = getInput().get(1); //inpRowL
 		Hop input3 = getInput().get(2); //inpRowU
 		Hop input4 = getInput().get(3); //inpColL
@@ -421,12 +422,8 @@ public class IndexingOp extends Hop
 		_colLowerEqualsUpper = (input4 == input5);
 		
 		//parse input information
-		boolean allRows = 
-			(    input2 instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)input2)==1 
-			  && input3 instanceof UnaryOp && ((UnaryOp)input3).getOp() == OpOp1.NROW  );
-		boolean allCols = 
-			(    input4 instanceof LiteralOp && HopRewriteUtils.getIntValueSafe((LiteralOp)input4)==1 
-			  && input5 instanceof UnaryOp && ((UnaryOp)input5).getOp() == OpOp1.NCOL );
+		boolean allRows = isAllRows();
+		boolean allCols = isAllCols();
 		boolean constRowRange = (input2 instanceof LiteralOp && input3 instanceof LiteralOp);
 		boolean constColRange = (input4 instanceof LiteralOp && input5 instanceof LiteralOp);
 		
@@ -434,8 +431,7 @@ public class IndexingOp extends Hop
 		if( _rowLowerEqualsUpper ) //ROWS
 			setDim1(1);
 		else if( allRows ) {
-			//input3 guaranteed to be a unaryop-nrow
-			setDim1(input3.getInput().get(0).getDim1());
+			setDim1(input1.getDim1());
 		}
 		else if( constRowRange ) {
 			setDim1( HopRewriteUtils.getIntValueSafe((LiteralOp)input3)
@@ -452,8 +448,7 @@ public class IndexingOp extends Hop
 		if( _colLowerEqualsUpper ) //COLS
 			setDim2(1);
 		else if( allCols ) {
-			//input5 guaranteed to be a unaryop-ncol
-			setDim2(input5.getInput().get(0).getDim2());
+			setDim2(input1.getDim2());
 		}
 		else if( constColRange ) {
 			setDim2( HopRewriteUtils.getIntValueSafe((LiteralOp)input5)
@@ -468,16 +463,30 @@ public class IndexingOp extends Hop
 		}
 	}
 	
+	public boolean isAllRows() {
+		Hop input1 = getInput().get(0);
+		Hop input2 = getInput().get(1);
+		Hop input3 = getInput().get(2);
+		return HopRewriteUtils.isLiteralOfValue(input2, 1)
+			&& ((HopRewriteUtils.isUnary(input3, OpOp1.NROW) && input3.getInput().get(0) == input1 )
+			|| HopRewriteUtils.isLiteralOfValue(input3, input1.getDim1()));
+	}
+	
+	public boolean isAllCols() {
+		Hop input1 = getInput().get(0);
+		Hop input4 = getInput().get(3);
+		Hop input5 = getInput().get(4);
+		return HopRewriteUtils.isLiteralOfValue(input4, 1)
+			&& ((HopRewriteUtils.isUnary(input5, OpOp1.NCOL) && input5.getInput().get(0) == input1 )
+			|| HopRewriteUtils.isLiteralOfValue(input5, input1.getDim2()));
+	}
+	
 	@Override
-	public Object clone() throws CloneNotSupportedException 
-	{
-		IndexingOp ret = new IndexingOp();	
-		
+	public Object clone() throws CloneNotSupportedException  {
+		IndexingOp ret = new IndexingOp();
 		//copy generic attributes
 		ret.clone(this, false);
-		
 		//copy specific attributes
-
 		return ret;
 	}
 	

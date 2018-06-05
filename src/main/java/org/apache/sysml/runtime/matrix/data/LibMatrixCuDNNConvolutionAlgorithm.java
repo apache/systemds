@@ -97,7 +97,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			cudnnDestroyConvolutionDescriptor(convDesc);
 		if(sizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, workSpace);
+				gCtx.cudaFreeHelper(instName, workSpace, DMLScript.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}
@@ -273,7 +273,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	private static cudnnConvolutionDescriptor allocateConvolutionDescriptor(int padding [], int strides []) {
 		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
 		cudnnCreateConvolutionDescriptor(convDesc);
-		cudnnSetConvolution2dDescriptor(convDesc, padding[0], padding[1], strides[0], strides[1], 1, 1, CUDNN_CROSS_CORRELATION);
+		cudnnSetConvolution2dDescriptor(convDesc, padding[0], padding[1], strides[0], strides[1], 1, 1, CUDNN_CROSS_CORRELATION, LibMatrixCUDA.CUDNN_DATA_TYPE);
 		return convDesc;
 	}
 }

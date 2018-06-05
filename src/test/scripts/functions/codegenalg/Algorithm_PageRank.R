@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-#
+# 
 #   http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,29 +19,20 @@
 #
 #-------------------------------------------------------------
 
-e1 = "element1"
-paramsList = list(e1)
-X = matrix(1, rows=2, cols=3)
-Y = matrix(2, rows=2, cols=3)
-X_val = matrix(3, rows=2, cols=3)
-Y_val = matrix(4, rows=2, cols=3)
+args <- commandArgs(TRUE)
+library("Matrix")
 
-gradients = function (matrix[double] input) return (matrix[double] output) {
-  output = input
+G = readMM(paste(args[1], "G.mtx", sep=""));
+p = as.matrix(readMM(paste(args[1], "p.mtx", sep="")));
+e = as.matrix(readMM(paste(args[1], "e.mtx", sep="")));
+u = as.matrix(readMM(paste(args[1], "u.mtx", sep="")));
+alpha = as.double(args[2]);
+max_iteration = as.integer(args[3]);
+i = 0;
+
+while( i < max_iteration ) {
+  p = alpha * (G %*% p) + (1 - alpha) * (e %*% (u %*% p));
+  i = i + 1;
 }
 
-aggregation = function (matrix[double] input) return (matrix[double] output) {
-  output = input
-}
-
-e2 = "element2"
-hps = list(e2)
-
-# Use paramserv function
-paramsList2 = list(1, 2, 3)
-
-if (length(paramsList2) == 3) {
-  paramsList2 = paramserv(model=paramsList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=hps, checkpointing="NONE")
-}
-
-print(length(paramsList2))
+writeMM(as(p,"CsparseMatrix"), paste(args[4], "p", sep=""));

@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 
 public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
@@ -105,6 +106,19 @@ public class ListObject extends Data {
 
 	public String getName(int ix) {
 		return (_names == null) ? null : _names.get(ix);
+	}
+
+	public boolean isNamedList() {
+		return _names != null;
+	}
+
+	public List<Data> getData() {
+		return _data;
+	}
+
+	public long getDataSize() {
+		return _data.stream().filter(data -> data instanceof CacheableData)
+			.mapToLong(data -> ((CacheableData<?>) data).getDataSize()).sum();
 	}
 
 	@Override

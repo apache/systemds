@@ -66,6 +66,10 @@ public abstract class ScalarObjectFactory
 		}
 	}
 	
+	public static ScalarObject createScalarObject(LiteralOp lit) {
+		return createScalarObject(lit.getValueType(), lit);
+	}
+	
 	public static ScalarObject createScalarObject(ValueType vt, LiteralOp lit) {
 		switch( vt ) {
 			case DOUBLE:  return new DoubleObject(lit.getDoubleValue());

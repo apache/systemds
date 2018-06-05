@@ -117,7 +117,7 @@ public class IndexedIdentifier extends DataIdentifier
 			String identifierName = ((DataIdentifier)_rowLowerBound).getName();
 			
 			// CASE: rowLowerBound is a constant DataIdentifier
-			if (currConstVars.containsKey(identifierName)){
+			if (currConstVars.containsKey(identifierName) && !conditional){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
@@ -200,7 +200,7 @@ public class IndexedIdentifier extends DataIdentifier
 		else if (_rowUpperBound != null && _rowUpperBound instanceof DataIdentifier && !(_rowUpperBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_rowUpperBound).getName();
 			
-			if (currConstVars.containsKey(identifierName)){
+			if (currConstVars.containsKey(identifierName) && !conditional){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
@@ -275,7 +275,7 @@ public class IndexedIdentifier extends DataIdentifier
 		// perform constant propogation for column lower bound
 		else if (_colLowerBound != null && _colLowerBound instanceof DataIdentifier && !(_colLowerBound instanceof IndexedIdentifier)) {
 			String identifierName = ((DataIdentifier)_colLowerBound).getName();
-			if (currConstVars.containsKey(identifierName)){
+			if (currConstVars.containsKey(identifierName) && !conditional){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))
@@ -362,7 +362,7 @@ public class IndexedIdentifier extends DataIdentifier
 			String identifierName = ((DataIdentifier)_colUpperBound).getName();
 			
 			
-			if (currConstVars.containsKey(identifierName)){
+			if (currConstVars.containsKey(identifierName) && !conditional){
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				
 				if (!(constValue instanceof IntIdentifier || constValue instanceof DoubleIdentifier ))

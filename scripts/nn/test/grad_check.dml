@@ -363,21 +363,16 @@ batch_norm2d = function() {
   #[dummy, dummy, ema_mean, ema_var] = batch_norm2d::init(C)
 
   # Check training & testing modes
-  for (i in 1:2) {
-    if (i == 1)
-      mode = 'train'
-    else
-      mode = 'test'
+  # for (i in 1:1) {
+    mode = 'train'
     print(" - Grad checking the '"+mode+"' mode.")
 
     # Compute analytical gradients of loss wrt parameters
-    [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+    [out, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
         batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
     dout = l2_loss::backward(out, y)
-    [dX, dgamma, dbeta] = batch_norm2d::backward(dout, out, ema_mean_upd, ema_var_upd,
-                                                 cache_mean, cache_var, cache_norm,
-                                                 X, gamma, beta, C, Hin, Win, mode,
-                                                 ema_mean, ema_var, mu, eps)
+    [dX, dgamma, dbeta] = batch_norm2d::backward(dout, cache_mean, cache_var, 
+                                                 X, gamma, C, Hin, Win, eps)
 
     # Grad check
     h = 1e-5
@@ -387,11 +382,11 @@ batch_norm2d = function() {
         # Compute numerical derivative
         old = as.scalar(X[i,j])
         X[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         X[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         X[i,j] = old  # reset
@@ -408,11 +403,11 @@ batch_norm2d = function() {
         # Compute numerical derivative
         old = as.scalar(gamma[i,j])
         gamma[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         gamma[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         gamma[i,j] = old  # reset
@@ -430,11 +425,11 @@ batch_norm2d = function() {
         # Compute numerical derivative
         old = as.scalar(beta[i,j])
         beta[i,j] = old - h
-        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outmh, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossmh = l2_loss::forward(outmh, y)
         beta[i,j] = old + h
-        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var, cache_norm] =
+        [outph, ema_mean_upd, ema_var_upd, cache_mean, cache_var] =
             batch_norm2d::forward(X, gamma, beta, C, Hin, Win, mode, ema_mean, ema_var, mu, eps)
         lossph = l2_loss::forward(outph, y)
         beta[i,j] = old  # reset
@@ -445,7 +440,7 @@ batch_norm2d = function() {
                                                     lossph, lossmh)
       }
     }
-  }
+  # }
 }
 
 conv2d = function() {
@@ -2497,4 +2492,3 @@ elu = function() {
      }
    }
 }
-

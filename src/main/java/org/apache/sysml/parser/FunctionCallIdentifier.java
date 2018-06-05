@@ -129,13 +129,15 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		
 		// Step 5: constant propagation into function call statement
-		for( ParameterExpression paramExpr : _paramExprs ) {
-			Expression expri = paramExpr.getExpr();
-			if( expri instanceof DataIdentifier && !(expri instanceof IndexedIdentifier)
-				&& constVars.containsKey(((DataIdentifier)expri).getName()) )
-			{
-				//replace varname with constant in function call expression
-				paramExpr.setExpr(constVars.get(((DataIdentifier)expri).getName()));
+		if( !conditional ) {
+			for( ParameterExpression paramExpr : _paramExprs ) {
+				Expression expri = paramExpr.getExpr();
+				if( expri instanceof DataIdentifier && !(expri instanceof IndexedIdentifier)
+					&& constVars.containsKey(((DataIdentifier)expri).getName()) )
+				{
+					//replace varname with constant in function call expression
+					paramExpr.setExpr(constVars.get(((DataIdentifier)expri).getName()));
+				}
 			}
 		}
 	

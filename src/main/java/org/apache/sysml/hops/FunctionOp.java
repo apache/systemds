@@ -21,6 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
@@ -168,6 +169,22 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
+			else if ( getFunctionName().equalsIgnoreCase("lstm") ) {
+				// TODO: To allow for initial version to always run on the GPU
+				return 0; 
+			}
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d") ) {
+				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(3).getDim1(), getOutputs().get(3).getDim2(), 1.0) + 
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(4).getDim1(), getOutputs().get(4).getDim2(), 1.0);
+			}
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ) {
+				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
+						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
+			}
 			else if ( getFunctionName().equalsIgnoreCase("svd") ) {
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputSigma = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
@@ -198,6 +215,13 @@ public class FunctionOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
+			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+				return 0; 
+			}
+			else if ( getFunctionName().equalsIgnoreCase("lstm") ) {
+				// TODO: To allow for initial version to always run on the GPU
+				return 0; 
+			}
 			else if ( getFunctionName().equalsIgnoreCase("svd")) {
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
 				return interOutput;
@@ -215,7 +239,10 @@ public class FunctionOp extends Hop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		return false;
+		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) 
+			return true;
+		else
+			return false;
 	}
 	
 	@Override
@@ -255,13 +282,20 @@ public class FunctionOp extends Hop
 		checkAndSetForcedPlatform();
 		
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
-			
 			// check if there is sufficient memory to execute this function
 			if( getFunctionName().equalsIgnoreCase("transformencode") ) {
 				_etype = ((_etypeForced==ExecType.SPARK 
 					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
-			}	
+			}
+			else if( getFunctionName().equalsIgnoreCase("lstm")) {
+				if(!DMLScript.USE_ACCELERATOR)
+					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
+				_etype = ExecType.GPU;
+			}
+			else if( getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
+			}
 			else {
 				// Since the memory estimate is only conservative, do not throw
 				// exception if the estimated memory is larger than the budget

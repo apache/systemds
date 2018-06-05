@@ -315,7 +315,7 @@ public class LibMatrixNative
 		return ret2;
 	}
 	
-	private static void fromFloatBuffer(FloatBuffer buff, double[] output) {
+	public static void fromFloatBuffer(FloatBuffer buff, double[] output) {
 		Arrays.parallelSetAll(output, i -> (double)buff.get(i) );
 	}
 }

@@ -20,21 +20,18 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.ConvolutionUtils;
 import org.apache.sysml.utils.NativeHelper;
 
@@ -44,6 +41,15 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	private final CPOperand _in2;
 	private final CPOperand _in3;
+	private final CPOperand _in4;
+	private final CPOperand _in5;
+	private final CPOperand _in6;
+	private final CPOperand _in7;
+	private final CPOperand _in8;
+	private final CPOperand _out2;
+	private final CPOperand _out3;
+	private final CPOperand _out4;
+	private final CPOperand _out5;
 	private final ArrayList<CPOperand> _input_shape;
 	private final ArrayList<CPOperand> _filter_shape;
 	private final ArrayList<CPOperand> _stride;
@@ -57,6 +63,8 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		super(CPType.Convolution, null, in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
+		_in4 = null; _in5 = null; _in6 = null; _in7 = null; _in8 = null;
+		_out2 = null; _out3 = null; _out4 = null; _out5 = null;
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
@@ -97,6 +105,30 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, in3, out, stride, padding, input_shape, filter_shape, numThreads, intermediateMemoryBudget, opcode, istr);
+	}
+	
+	public ConvolutionCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
+			CPOperand in6, CPOperand in7, CPOperand in8,
+			CPOperand out, CPOperand out2, CPOperand out3, CPOperand out4, CPOperand out5, String opcode, String istr, 
+			double intermediateMemoryBudget) throws DMLRuntimeException {
+		super(CPType.Convolution, null, in1, out, opcode, istr);
+		_in2 = in2;
+		_in3 = in3;
+		_in4 = in4;
+		_in5 = in5;
+		_in6 = in6;
+		_in7 = in7;
+		_in8 = in8;
+		_out2 = out2;
+		_out3 = out3;
+		_out4 = out4;
+		_out5 = out5;
+		_stride = null;
+		_padding = null;
+		_input_shape = null;
+		_filter_shape = null;
+		_numThreads = 0;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
 	public static ConvolutionCPInstruction parseInstruction(String str) {
@@ -214,6 +246,36 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			CPOperand out = new CPOperand(parts[4]);
 			return new ConvolutionCPInstruction(in, in2, in3, out, opcode, str, -1, 0);
 		}
+		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
+			InstructionUtils.checkNumFields(parts, 13);
+			CPOperand in1 = new CPOperand(parts[1]); // image
+			CPOperand in2 = new CPOperand(parts[2]); // scale
+			CPOperand in3 = new CPOperand(parts[3]); // bias
+			CPOperand in4 = new CPOperand(parts[4]); // runningMean
+			CPOperand in5 = new CPOperand(parts[5]); // runningVar
+			CPOperand in6 = new CPOperand(parts[6]); // mode
+			CPOperand in7 = new CPOperand(parts[7]); // epsilon
+			CPOperand in8 = new CPOperand(parts[8]); // exponentialAverageFactor
+			CPOperand out = new CPOperand(parts[9]);  // ret
+			CPOperand out2 = new CPOperand(parts[10]); // retRunningMean
+			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
+			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
+			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
+			return new ConvolutionCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
+		}
+		else if (opcode.equalsIgnoreCase("batch_norm2d_backward")) {
+			InstructionUtils.checkNumFields(parts, 9);
+			CPOperand in1 = new CPOperand(parts[1]); // image
+			CPOperand in2 = new CPOperand(parts[2]); // dout
+			CPOperand in3 = new CPOperand(parts[3]); // scale
+			CPOperand in4 = new CPOperand(parts[4]); // epsilon
+			CPOperand in5 = new CPOperand(parts[5]); // resultSaveMean
+			CPOperand in6 = new CPOperand(parts[6]); // resultSaveInvVariance
+			CPOperand out = new CPOperand(parts[7]);  // dX
+			CPOperand out2 = new CPOperand(parts[8]); // dScale
+			CPOperand out3 = new CPOperand(parts[9]); // dBias
+			return new ConvolutionCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);
 		}
@@ -309,51 +371,73 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else {
 			outputBlock = new MatrixBlock(C, 1, false).allocateBlock();
-			double [] output = outputBlock.getDenseBlockValues();
-			if(input.isInSparseFormat()) {
-				SparseBlock sblock = input.getSparseBlock();
-				for(int n = 0; n < input.getNumRows(); n++) {
-					if( sblock.isEmpty(n) )
-						continue;
-					int apos = sblock.pos(n);
-					int alen = sblock.size(n);
-					int[] aix = sblock.indexes(n);
-					double[] avals = sblock.values(n);
-					
-					// Iterate over the sparse block
-					for(int j=apos; j<apos+alen; j++) {
-						// Note: the input is of shape [N, CHW]
-						int chw = aix[j];
-						
-						// Get individual zero-based c,h,w indexes from zero-based 'chw'
-						int c = chw / HW;
-						output[c] += avals[j];
-					}
-				}
-			}
-			else {
-				double [] inArr = input.getDenseBlockValues();
-				if(inArr != null) {
-					KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
-					for(int c = 0; c < C; c++) {
-						KahanObject sum = new KahanObject(0.0, 0.0);
-						for(int n = 0; n < input.getNumRows(); n++) {
-							int index =  n*C*HW + c*HW;
-							for(int hw = 0; hw < HW; hw++, index++) {
-								kplus.execute2(sum, inArr[index]);
-							}
-						}
-						output[c] = sum._sum;
-					}
-				}
-			}
-			outputBlock.recomputeNonZeros();
+			LibMatrixDNN.channelSums(input, outputBlock, C, HW);
 		}
 		
 		// release inputs/outputs
 		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
+	
+	
+	
+	public void processBatchNorm2dInstruction(ExecutionContext ec) {
+		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock scale = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock bias = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
+		MatrixBlock runningMean = ec.getMatrixInput(_in4.getName(), getExtendedOpcode());
+		MatrixBlock runningVar = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
+		String phase = ec.getScalarInput(_in6.getName(), _in6.getValueType(), _in6.isLiteral()).getStringValue();
+		double epsilon = ec.getScalarInput(_in7.getName(), _in7.getValueType(), _in7.isLiteral()).getDoubleValue();
+		double mu = ec.getScalarInput(_in8.getName(), _in8.getValueType(), _in8.isLiteral()).getDoubleValue();
+		
+		MatrixBlock ret = new MatrixBlock(image.getNumRows(), image.getNumColumns(), false).allocateBlock();
+		MatrixBlock retRunningMean = new MatrixBlock(runningMean.getNumRows(), runningMean.getNumColumns(), false).allocateBlock();
+		MatrixBlock retRunningVar = new MatrixBlock(runningVar.getNumRows(), runningVar.getNumColumns(), false).allocateBlock();
+		MatrixBlock resultSaveMean = new MatrixBlock(runningMean.getNumRows(), runningMean.getNumColumns(), false).allocateBlock();
+		MatrixBlock resultSaveInvVariance = new MatrixBlock(runningVar.getNumRows(), runningVar.getNumColumns(), false).allocateBlock();
+		
+		LibMatrixDNN.batchNorm2D(image, scale, bias, runningMean, runningVar, phase, epsilon, mu, ret, 
+				retRunningMean, retRunningVar, resultSaveMean, resultSaveInvVariance);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in4.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
+		ec.setMatrixOutput(_out2.getName(), retRunningMean, getExtendedOpcode());
+		ec.setMatrixOutput(_out3.getName(), retRunningVar, getExtendedOpcode());
+		ec.setMatrixOutput(_out4.getName(), resultSaveMean, getExtendedOpcode());
+		ec.setMatrixOutput(_out5.getName(), resultSaveInvVariance, getExtendedOpcode());
+	}
+	
+	public void processBatchNorm2dBackwardInstruction(ExecutionContext ec) {
+		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock scale = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
+		double epsilon = ec.getScalarInput(_in4.getName(), _in4.getValueType(), _in4.isLiteral()).getDoubleValue();
+		MatrixBlock resultSaveMean = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
+		MatrixBlock resultSaveInvVariance = ec.getMatrixInput(_in6.getName(), getExtendedOpcode());
+		
+		MatrixBlock dX = new MatrixBlock(image.getNumRows(), image.getNumColumns(), false).allocateBlock();
+		MatrixBlock dScale = new MatrixBlock(scale.getNumRows(), scale.getNumColumns(), false).allocateBlock();
+		MatrixBlock dBias = new MatrixBlock(scale.getNumRows(), scale.getNumColumns(), false).allocateBlock();
+		
+		LibMatrixDNN.batchNorm2DBackward(image, dout, scale, epsilon, resultSaveMean, resultSaveInvVariance, dX, dScale, dBias);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in6.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), dX, getExtendedOpcode());
+		ec.setMatrixOutput(_out2.getName(), dScale, getExtendedOpcode());
+		ec.setMatrixOutput(_out3.getName(), dBias, getExtendedOpcode());
+	}
+	
 	
 	// Assumption: enableNative && NativeHelper.isNativeLibraryLoaded() is true
 	// This increases the number of native calls. For example:the cases where filter is sparse but input is dense
@@ -383,6 +467,14 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
 			processChannelSumsInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d")) {
+			processBatchNorm2dInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d_backward")) {
+			processBatchNorm2dBackwardInstruction(ec);
 			return;
 		}
 		

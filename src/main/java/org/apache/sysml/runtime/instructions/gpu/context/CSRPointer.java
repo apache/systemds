@@ -416,10 +416,6 @@ public class CSRPointer {
 		return getGPUContext().allocate(size);
 	}
 
-	private void cudaFreeHelper(Pointer toFree, boolean eager) {
-		getGPUContext().cudaFreeHelper(toFree, eager);
-	}
-
 	private GPUContext getGPUContext() {
 		return gpuContext;
 	}
@@ -494,13 +490,16 @@ public class CSRPointer {
 	 */
 	public void deallocate(boolean eager) {
 		if (nnz > 0) {
-			cudaFreeHelper(val, eager);
-			cudaFreeHelper(rowPtr, eager);
-			cudaFreeHelper(colInd, eager);
-			val = null;
-			rowPtr = null;
-			colInd = null;
+			if (val != null)
+				getGPUContext().cudaFreeHelper(null, val, eager);
+			if (rowPtr != null)
+				getGPUContext().cudaFreeHelper(null, rowPtr, eager);
+			if (colInd != null)
+				getGPUContext().cudaFreeHelper(null, colInd, eager);
 		}
+		val = null;
+		rowPtr = null;
+		colInd = null;
 	}
 
 	@Override

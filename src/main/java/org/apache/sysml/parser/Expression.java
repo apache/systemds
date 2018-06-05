@@ -92,6 +92,7 @@ public abstract class Expression implements ParseInfo
 		EXISTS,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA, BIAS_ADD, BIAS_MULTIPLY,
 		MAX_POOL, AVG_POOL, MAX_POOL_BACKWARD, AVG_POOL_BACKWARD,
+		LSTM, BATCH_NORM2D, BATCH_NORM2D_BACKWARD,
 		EXP,
 		FLOOR,
 		IFELSE,
@@ -194,7 +195,7 @@ public abstract class Expression implements ParseInfo
 		public boolean isScalar() {
 			return (this == SCALAR);
 		}
-		public boolean isComposite() {
+		public boolean isList() {
 			return (this == LIST);
 		}
 	}

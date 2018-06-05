@@ -71,12 +71,19 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_UPDATE_FUN = "upd";
 	public static final String PS_AGGREGATION_FUN = "agg";
 	public static final String PS_MODE = "mode";
+	public static final String PS_GRADIENTS = "gradients";
 	public enum PSModeType {
 		LOCAL, REMOTE_SPARK
 	}
 	public static final String PS_UPDATE_TYPE = "utype";
 	public enum PSUpdateType {
-		BSP, ASP, SSP
+		BSP, ASP, SSP;
+		public boolean isBSP() {
+			return this == BSP;
+		}
+		public boolean isASP() {
+			return this == ASP;
+		}
 	}
 	public static final String PS_FREQUENCY = "freq";
 	public enum PSFrequency {

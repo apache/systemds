@@ -162,11 +162,11 @@ public abstract class Lop
 	}
 
 	
-	public boolean[] get_reachable() {
+	public boolean[] getReachable() {
 		return reachable;
 	}
 
-	public boolean[] create_reachable(int size) {
+	public boolean[] createReachable(int size) {
 		reachable = new boolean[size];
 		return reachable;
 	}

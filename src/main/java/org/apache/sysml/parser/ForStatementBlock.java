@@ -68,7 +68,7 @@ public class ForStatementBlock extends StatementBlock
 			DataIdentifier copyId = new DataIdentifier(origId);
 			origVarsBeforeBody.addVariable(key, copyId);
 		}
-			
+		
 		//////////////////////////////////////////////////////////////////////////////
 		// FIRST PASS: process the predicate / statement blocks in the body of the for statement
 		///////////////////////////////////////////////////////////////////////////////
@@ -83,12 +83,12 @@ public class ForStatementBlock extends StatementBlock
 		
 		//perform constant propagation for ( from, to, incr )
 		//(e.g., useful for reducing false positives in parfor dependency analysis)
-		performConstantPropagation(constVars);
+		if( !conditional )
+			performConstantPropagation(constVars);
 		
 		//validate body
 		_dmlProg = dmlProg;
-		for(StatementBlock sb : body)
-		{
+		for(StatementBlock sb : body) {
 			ids = sb.validate(dmlProg, ids, constVars, true);
 			constVars = sb.getConstOut();
 		}
@@ -101,7 +101,7 @@ public class ForStatementBlock extends StatementBlock
 		// for each updated variable 
 		boolean revalidationRequired = false;
 		for (String key : _updated.getVariableNames())
-		{	
+		{
 			DataIdentifier startVersion = origVarsBeforeBody.getVariable(key);
 			DataIdentifier endVersion   = ids.getVariable(key);
 			
@@ -110,16 +110,14 @@ public class ForStatementBlock extends StatementBlock
 				//handle data type change (reject) 
 				if (!startVersion.getOutput().getDataType().equals(endVersion.getOutput().getDataType())){
 					raiseValidateError("ForStatementBlock has unsupported conditional data type change of variable '"+key+"' in loop body.", conditional);
-				}	
+				}
 				
 				//handle size change
-				long startVersionDim1 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
-				long endVersionDim1		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
-				long startVersionDim2 	= (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim2() : startVersion.getDim2(); 
-				long endVersionDim2		= (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim2() : endVersion.getDim2(); 
-				
-				boolean sizeUnchanged = ((startVersionDim1 == endVersionDim1) &&
-						                 (startVersionDim2 == endVersionDim2) );
+				long startVersionDim1 = (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim1() : startVersion.getDim1(); 
+				long endVersionDim1 = (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim1() : endVersion.getDim1(); 
+				long startVersionDim2 = (startVersion instanceof IndexedIdentifier)   ? ((IndexedIdentifier)startVersion).getOrigDim2() : startVersion.getDim2(); 
+				long endVersionDim2 = (endVersion instanceof IndexedIdentifier) ? ((IndexedIdentifier)endVersion).getOrigDim2() : endVersion.getDim2(); 
+				boolean sizeUnchanged = ((startVersionDim1 == endVersionDim1) && (startVersionDim2 == endVersionDim2) );
 				
 				//handle sparsity change
 				//NOTE: nnz not propagated via validate, and hence, we conservatively assume that nnz have been changed.
@@ -155,18 +153,18 @@ public class ForStatementBlock extends StatementBlock
 			for( String var : _updated.getVariableNames() )
 				if( constVars.containsKey( var ) )
 					constVars.remove( var );
-					
+			
 			//perform constant propagation for ( from, to, incr )
 			//(e.g., useful for reducing false positives in parfor dependency analysis)
-			performConstantPropagation(constVars);
+			if( !conditional )
+				performConstantPropagation(constVars);
 			
 			predicate.validateExpression(ids.getVariables(), constVars, conditional);
 			body = fs.getBody();
 			
 			//validate body
 			_dmlProg = dmlProg;
-			for(StatementBlock sb : body)
-			{
+			for(StatementBlock sb : body) {
 				ids = sb.validate(dmlProg, ids, constVars, true);
 				constVars = sb.getConstOut();
 			}

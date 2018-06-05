@@ -51,6 +51,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.hops.Hop;
@@ -86,11 +88,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
+	protected static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
+
 
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
 			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
+			Logger.getLogger(ParamservBuiltinCPInstruction.class.getName()).setLevel(Level.DEBUG);
 		}
 	}
 
@@ -100,7 +105,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		PSModeType mode = PSModeType.valueOf(getParam(PS_MODE));
+		PSModeType mode = getPSMode();
 		int workerNum = getWorkerNum(mode);
 		ExecutorService es = Executors.newFixedThreadPool(workerNum);
 		String updFunc = getParam(PS_UPDATE_FUN);
@@ -119,7 +124,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, freq, updateType, workerNum, model, aggServiceEC);
+		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
@@ -129,9 +134,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Do data partition
 		doDataPartition(ec, workers);
 
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("\nConfiguration of paramserv func: \nmode: %s \nworkerNum: %d \nupdate frequency: %s \nstrategy: %s",
+					mode, workerNum, freq, updateType));
+		}
+
 		// Launch the worker threads and wait for completion
 		try {
-			for( Future<Void> ret : es.invokeAll(workers) )
+			for (Future<Void> ret : es.invokeAll(workers))
 				ret.get(); //error handling
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
@@ -143,6 +153,20 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ListObject result;
 		result = ps.getResult();
 		ec.setVariable(output.getName(), result);
+	}
+
+	private PSModeType getPSMode() {
+		PSModeType mode;
+		try {
+			mode = PSModeType.valueOf(getParam(PS_MODE));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: not support ps execution mode '%s'", getParam(PS_MODE)));
+		}
+		switch (mode) {
+			case REMOTE_SPARK:
+				throw new DMLRuntimeException("Do not support remote spark.");
+		}
+		return mode;
 	}
 
 	private int getEpochs() {
@@ -224,7 +248,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			else if (pb instanceof IfProgramBlock) {
 				IfProgramBlock ipb = (IfProgramBlock) pb;
 				recompiled |= rAssignParallelism(ipb.getChildBlocksIfBody(), k, recompiled);
-				if( ipb.getChildBlocksElseBody() != null )
+				if (ipb.getChildBlocksElseBody() != null)
 					recompiled |= rAssignParallelism(ipb.getChildBlocksElseBody(), k, recompiled);
 			}
 			else {
@@ -259,9 +283,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSUpdateType getUpdateType() {
-		PSUpdateType updType = PSUpdateType.valueOf(getParam(PS_UPDATE_TYPE));
-		if( updType == PSUpdateType.SSP )
-			throw new DMLRuntimeException(String.format("Not support update type '%s'.", updType));
+		PSUpdateType updType;
+		try {
+			updType = PSUpdateType.valueOf(getParam(PS_UPDATE_TYPE));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: not support update type '%s'.", getParam(PS_UPDATE_TYPE)));
+		}
+		if (updType == PSUpdateType.SSP)
+			throw new DMLRuntimeException("Not support update type SSP.");
 		return updType;
 	}
 
@@ -269,9 +298,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if (!getParameterMap().containsKey(PS_FREQUENCY)) {
 			return DEFAULT_UPDATE_FREQUENCY;
 		}
-		PSFrequency freq = PSFrequency.valueOf(getParam(PS_FREQUENCY));
-		if( freq == PSFrequency.EPOCH )
-			throw new DMLRuntimeException("Not support epoch update frequency.");
+		PSFrequency freq;
+		try {
+			freq = PSFrequency.valueOf(getParam(PS_FREQUENCY));
+		} catch (IllegalArgumentException e) {
+			throw new DMLRuntimeException(String.format("Paramserv function: not support '%s' update frequency.", getParam(PS_FREQUENCY)));
+		}
 		return freq;
 	}
 
@@ -306,12 +338,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 *
 	 * @return parameter server
 	 */
-	private ParamServer createPS(PSModeType mode, String aggFunc, PSFrequency freq, PSUpdateType updateType,
-			int workerNum, ListObject model, ExecutionContext ec) {
+	private ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		ParamServer ps = null;
 		switch (mode) {
 			case LOCAL:
-				ps = new LocalParamServer(model, aggFunc, freq, updateType, ec, workerNum);
+				ps = new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
 				break;
 			case REMOTE_SPARK:
 				throw new DMLRuntimeException("Do not support remote spark.");
@@ -346,7 +377,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
 		PSScheme scheme = DEFAULT_SCHEME;
 		if (getParameterMap().containsKey(PS_SCHEME)) {
-			scheme = PSScheme.valueOf(getParam(PS_SCHEME));
+			try {
+				scheme = PSScheme.valueOf(getParam(PS_SCHEME));
+			} catch (IllegalArgumentException e) {
+				throw new DMLRuntimeException(String.format("Paramserv function: not support data partition scheme '%s'", getParam(PS_SCHEME)));
+			}
 		}
 		switch (scheme) {
 		case DISJOINT_CONTIGUOUS:

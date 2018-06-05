@@ -49,7 +49,7 @@ public abstract class PSWorker {
 	private MatrixObject _valFeatures;
 	private MatrixObject _valLabels;
 	private final String _updFunc;
-	private final Statement.PSFrequency _freq;
+	protected final Statement.PSFrequency _freq;
 	
 	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
 		int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {

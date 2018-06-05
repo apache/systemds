@@ -33,6 +33,7 @@ import org.junit.runners.Suite;
 	FunctionInExpressionTest.class,
 	FunctionInliningTest.class,
 	FunctionNamespaceTest.class,
+	FunctionNotFoundTest.class,
 	FunctionReturnTest.class,
 	IfTest.class,
 	InvalidBuiltinFunctionCallTest.class,

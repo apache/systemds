@@ -34,7 +34,9 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class ArimaTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/arima_box-jenkins/";
-	protected final static String TEST_NAME = "arima";
+	protected final static String TEST_NAME1 = "arima";
+	protected final static String TEST_NAME2 = "arima_old";
+	
 	protected String TEST_CLASS_DIR = TEST_DIR + ArimaTest.class.getSimpleName() + "/";
 	
 	protected int max_func_invoc, p, d, q, P, D, Q, s, include_mean, useJacobi;
@@ -64,11 +66,12 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME1);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME2);
 	}
 	
 	protected void testArima(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" +
+		System.out.println("------------ BEGIN " + TEST_NAME1 + " " + scriptType + " TEST WITH {" +
 			max_func_invoc + ", " + 
 			p + ", " + 
 			d + ", " + 
@@ -81,12 +84,16 @@ public abstract class ArimaTest extends AutomatedTestBase {
 			useJacobi+ "} ------------");
 		this.scriptType = scriptType;
 		
-		getAndLoadTestConfiguration(TEST_NAME);
-	
 		List<String> proArgs = new ArrayList<String>();
+		
 		if (scriptType == ScriptType.PYDML) {
 			proArgs.add("-python");
+			getAndLoadTestConfiguration(TEST_NAME1);
 		}
+		else {
+			getAndLoadTestConfiguration(TEST_NAME2);
+		}
+		
 		proArgs.add("-args");
 		proArgs.add(input("col.mtx"));
 		proArgs.add(Integer.toString(max_func_invoc));
@@ -100,8 +107,26 @@ public abstract class ArimaTest extends AutomatedTestBase {
 		proArgs.add(Integer.toString(include_mean));
 		proArgs.add(Integer.toString(useJacobi));
 		proArgs.add(output("learnt.model"));
-		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
+		
+		/* TODO use after R script is made consistent 
+			getAndLoadTestConfiguration(TEST_NAME2);
+			proArgs.add("-nvargs");
+			proArgs.add("X="+input("col.mtx"));
+			proArgs.add("max_func="+Integer.toString(max_func_invoc));
+			proArgs.add("p="+Integer.toString(p));
+			proArgs.add("d="+Integer.toString(d));
+			proArgs.add("q="+Integer.toString(q));
+			proArgs.add("P="+Integer.toString(P));
+			proArgs.add("D="+Integer.toString(D));
+			proArgs.add("Q="+Integer.toString(Q));
+			proArgs.add("s="+Integer.toString(s));
+			proArgs.add("include_mean="+Integer.toString(include_mean));
+			proArgs.add("solver="+(useJacobi==1?"jacobi":"cg_solver"));
+			proArgs.add("dest="+output("learnt.model"));
+		*/
+		
+		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 
 		rCmd = getRCmd(inputDir(), Integer.toString(max_func_invoc), Integer.toString(p), Integer.toString(d), Integer.toString(q), Integer.toString(P), 

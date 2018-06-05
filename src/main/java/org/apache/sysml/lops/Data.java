@@ -37,11 +37,11 @@ import org.apache.sysml.parser.Expression.ValueType;
  * variables, literals. Can be for both input and output. 
  */
 
-public class Data extends Lop  
+public class Data extends Lop
 {
-	
 	public enum OperationTypes {READ,WRITE}
-	
+	public static final String PREAD_PREFIX = "p"+OperationTypes.READ.name();
+
 	FileFormatTypes formatType = FileFormatTypes.BINARY;
 	OperationTypes operation;
 	boolean literal_var = false;

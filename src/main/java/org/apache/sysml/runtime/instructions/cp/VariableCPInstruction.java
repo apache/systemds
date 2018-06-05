@@ -485,6 +485,8 @@ public class VariableCPInstruction extends CPInstruction {
 				mobj.setMetaData((MetaData)metadata.clone());
 				mobj.setFileFormatProperties(_formatProperties);
 				mobj.setUpdateType(_updateType);
+				mobj.enableCleanup(!getInput1().getName()
+					.startsWith(org.apache.sysml.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), mobj);
 				if(DMLScript.STATISTICS && _updateType.isInPlace())
 					Statistics.incrementTotalUIPVar();
@@ -496,6 +498,8 @@ public class VariableCPInstruction extends CPInstruction {
 				fobj.setFileFormatProperties(_formatProperties);
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
+				fobj.enableCleanup(!getInput1().getName()
+					.startsWith(org.apache.sysml.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), fobj);
 			}
 			else if ( getInput1().getDataType() == DataType.SCALAR ){

@@ -56,8 +56,7 @@ public abstract class ParamServer {
 	private final ExecutorService _es;
 	private ListObject _model;
 
-	ParamServer(ListObject model, String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-			ExecutionContext ec, int workerNum) {
+	ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		_gradientsQueue = new LinkedBlockingDeque<>();
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
@@ -65,7 +64,7 @@ public abstract class ParamServer {
 			_modelMap.put(i, new ArrayBlockingQueue<>(1));
 		});
 		_model = model;
-		_aggService = new AggregationService(aggFunc, freq, updateType, ec, workerNum);
+		_aggService = new AggregationService(aggFunc, updateType, ec, workerNum);
 		try {
 			_aggService.broadcastModel();
 		}
@@ -91,6 +90,10 @@ public abstract class ParamServer {
 		return _model;
 	}
 
+	public ListObject updateModel(ListObject gradients, ListObject model) {
+		return _aggService.updateModel(gradients, model);
+	}
+
 	public static class Gradient {
 		final int _workerID;
 		final ListObject _gradients;
@@ -109,16 +112,13 @@ public abstract class ParamServer {
 		protected final Log LOG = LogFactory.getLog(AggregationService.class.getName());
 
 		protected ExecutionContext _ec;
-		//private Statement.PSFrequency _freq;
 		private Statement.PSUpdateType _updateType;
 		private FunctionCallCPInstruction _inst;
 		private DataIdentifier _output;
 		private boolean[] _finishedStates;  // Workers' finished states
 
-		AggregationService(String aggFunc, Statement.PSFrequency freq, Statement.PSUpdateType updateType,
-				ExecutionContext ec, int workerNum) {
+		AggregationService(String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 			_ec = ec;
-			//_freq = freq;
 			_updateType = updateType;
 			_finishedStates = new boolean[workerNum];
 
@@ -192,13 +192,13 @@ public abstract class ParamServer {
 				}
 
 				// Update and redistribute the model
-				updateModel(grad);
-				
+				_model = updateModel(grad._gradients, _model);
+
 				// Redistribute model according to update type
-				switch( _updateType ) {
+				switch(_updateType) {
 					case BSP: {
 						setFinishedState(grad._workerID);
-						if( allFinished() ) {
+						if (allFinished()) {
 							// Broadcast the updated model
 							resetFinishedStates();
 							broadcastModel();
@@ -212,7 +212,7 @@ public abstract class ParamServer {
 						break;
 					}
 					default:
-						throw new DMLRuntimeException("Unsupported update: "+_updateType.name());
+						throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
 				}
 			} 
 			catch (Exception e) {
@@ -221,10 +221,16 @@ public abstract class ParamServer {
 			return null;
 		}
 
-		private void updateModel(Gradient grad) throws InterruptedException {
+		/**
+		 * A synchronized service method for updating model with gradients
+		 *
+		 * @param gradients A list object of gradients
+		 * @return A updated list object of model
+		 */
+		private synchronized ListObject updateModel(ListObject gradients, ListObject model) {
 			// Populate the variables table with the gradients and model
-			_ec.setVariable(Statement.PS_GRADIENTS, grad._gradients);
-			_ec.setVariable(Statement.PS_MODEL, _model);
+			_ec.setVariable(Statement.PS_GRADIENTS, gradients);
+			_ec.setVariable(Statement.PS_MODEL, model);
 
 			// Invoke the aggregate function
 			_inst.processInstruction(_ec);
@@ -233,9 +239,9 @@ public abstract class ParamServer {
 			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
 
 			// Update the model with the new output
-			ParamservUtils.cleanupListObject(_ec, _model);
-			ParamservUtils.cleanupListObject(_ec, grad._gradients);
-			_model = newModel;
+			ParamservUtils.cleanupListObject(_ec, model);
+			ParamservUtils.cleanupListObject(_ec, gradients);
+			return newModel;
 		}
 	}
 }

@@ -477,7 +477,7 @@ public class MapReduceTool
 					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
 					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
 				}
-				mtd.put(DataExpression.READNUMNONZEROPARAM, mc.getNonZeros());
+				mtd.put(DataExpression.READNNZPARAM, mc.getNonZeros());
 			}
 		}
 			

@@ -128,7 +128,6 @@ readParamters = function (String default_solver, Integer default_max_func_invoc,
 
 	#length of the season
 	s = ifdef($s, default_s)
-	while(FALSE){} #TODO
 }
 
 [X, solver, max_func_invoc, include_mean, p, d, q, P, D, Q, s, dest, result_format] = readParamters ("jacobi", 1000, FALSE, 0,0,0,0,0,0,1, "arima-results.csv", "csv")

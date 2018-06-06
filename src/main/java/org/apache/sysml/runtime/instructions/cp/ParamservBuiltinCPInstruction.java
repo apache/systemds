@@ -72,10 +72,12 @@ import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDC;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDRR;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -132,11 +134,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			.collect(Collectors.toList());
 
 		// Do data partition
-		doDataPartition(ec, workers);
+		PSScheme scheme = getScheme();
+		doDataPartition(scheme, ec, workers);
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("\nConfiguration of paramserv func: \nmode: %s \nworkerNum: %d \nupdate frequency: %s \nstrategy: %s",
-					mode, workerNum, freq, updateType));
+			LOG.debug(String.format("\nConfiguration of paramserv func: "
+					+ "\nmode: %s \nworkerNum: %d \nupdate frequency: %s "
+					+ "\nstrategy: %s \ndata partitioner: %s",
+					mode, workerNum, freq, updateType, scheme));
 		}
 
 		// Launch the worker threads and wait for completion
@@ -368,11 +373,25 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return hyperparams;
 	}
 
-	private void doDataPartition(ExecutionContext ec, List<LocalPSWorker> workers) {
+	private void doDataPartition(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
 		MatrixObject valFeatures = ec.getMatrixObject(getParam(PS_VAL_FEATURES));
 		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
+		switch (scheme) {
+			case DISJOINT_CONTIGUOUS:
+				doDataPartition(new DataPartitionerDC(), features, labels, valFeatures, valLabels, workers);
+				break;
+			case DISJOINT_ROUND_ROBIN:
+				doDataPartition(new DataPartitionerDRR(), features, labels, valFeatures, valLabels, workers);
+				break;
+			case DISJOINT_RANDOM:
+			case OVERLAP_RESHUFFLE:
+				throw new DMLRuntimeException(String.format("Paramserv function: the scheme '%s' is not supported.", scheme));
+		}
+	}
+
+	private PSScheme getScheme() {
 		PSScheme scheme = DEFAULT_SCHEME;
 		if (getParameterMap().containsKey(PS_SCHEME)) {
 			try {
@@ -381,26 +400,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				throw new DMLRuntimeException(String.format("Paramserv function: not support data partition scheme '%s'", getParam(PS_SCHEME)));
 			}
 		}
-		switch (scheme) {
-		case DISJOINT_CONTIGUOUS:
-			disjointContiguous(features, labels, valFeatures, valLabels, workers);
-			break;
-		case DISJOINT_RANDOM:
-		case OVERLAP_RESHUFFLE:
-		case DISJOINT_ROUND_ROBIN:
-			throw new DMLRuntimeException(String.format("Paramserv function: the scheme '%s' is not supported.", scheme));
-		}
+		return scheme;
 	}
 
-	private void disjointContiguous(MatrixObject features, MatrixObject labels, MatrixObject valFeatures,
+	private void doDataPartition(DataPartitioner dp, MatrixObject features, MatrixObject labels, MatrixObject valFeatures,
 			MatrixObject valLabels, List<LocalPSWorker> workers) {
-		// training data
-		List<MatrixObject> pfs = disjointContiguous(workers.size(), features);
-		List<MatrixObject> pls = disjointContiguous(workers.size(), labels);
+		List<MatrixObject> pfs = dp.doPartition(workers.size(), features);
+		List<MatrixObject> pls = dp.doPartition(workers.size(), labels);
 		if (pfs.size() < workers.size()) {
 			if (LOG.isWarnEnabled()) {
 				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
-					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
+						+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
 			}
 			workers = workers.subList(0, pfs.size());
 		}
@@ -410,24 +420,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 
 		// validation data
-		List<MatrixObject> pvfs = disjointContiguous(workers.size(), valFeatures);
-		List<MatrixObject> pvls = disjointContiguous(workers.size(), valLabels);
+		List<MatrixObject> pvfs = dp.doPartition(workers.size(), valFeatures);
+		List<MatrixObject> pvls = dp.doPartition(workers.size(), valLabels);
 		for (int i = 0; i < workers.size(); i++) {
 			workers.get(i).setValFeatures(pvfs.get(i));
 			workers.get(i).setValLabels(pvls.get(i));
 		}
-	}
-
-	private List<MatrixObject> disjointContiguous(int workerNum, MatrixObject mo) {
-		List<MatrixObject> list = new ArrayList<>();
-		long stepSize = (long) Math.ceil(mo.getNumRows() / workerNum);
-		long begin = 1;
-		while (begin < mo.getNumRows()) {
-			long end = Math.min(begin + stepSize, mo.getNumRows());
-			MatrixObject pmo = ParamservUtils.sliceMatrix(mo, begin, end);
-			list.add(pmo);
-			begin = end + 1;
-		}
-		return list;
 	}
 }

@@ -178,7 +178,9 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		ec.unpinVariables(_boundInputNames, pinStatus);
 
 		// add the updated binding for each return variable to the variables in original symbol table
-		for (int i=0; i< fpb.getOutputParams().size(); i++){
+		// (with robustness for unbound outputs, i.e., function calls without assignment)
+		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
+		for (int i=0; i< numOutputs; i++) {
 			String boundVarName = _boundOutputNames.get(i);
 			Data boundValue = retVars.get(fpb.getOutputParams().get(i).getName());
 			if (boundValue == null)

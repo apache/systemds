@@ -581,8 +581,11 @@ public class InterProceduralAnalysis
 		
 		try
 		{
-			for( int i=0; i<foutputOps.size(); i++ )
-			{
+			for( int i=0; i<foutputOps.size(); i++ ) {
+				//robustness for unbound outputs
+				if( outputVars.length <= i )
+					break;
+				
 				DataIdentifier di = foutputOps.get(i);
 				String fvarname = di.getName(); //name in function signature
 				String pvarname = outputVars[i]; //name in calling program
@@ -600,38 +603,31 @@ public class InterProceduralAnalysis
 					}
 				}
 				// Update or add to the calling program's variable map.
-				if( di.getDataType()==DataType.MATRIX && tmpVars.keySet().contains(fvarname) )
-				{
+				if( di.getDataType()==DataType.MATRIX && tmpVars.keySet().contains(fvarname) ) {
 					MatrixObject moIn = (MatrixObject) tmpVars.get(fvarname);
-					
-					if( !callVars.keySet().contains(pvarname) || overwrite ) //not existing so far
-					{
-						MatrixObject moOut = createOutputMatrix(moIn.getNumRows(), moIn.getNumColumns(), moIn.getNnz());	
+					if( !callVars.keySet().contains(pvarname) || overwrite ) { //not existing so far
+						MatrixObject moOut = createOutputMatrix(moIn.getNumRows(), moIn.getNumColumns(), moIn.getNnz());
 						callVars.put(pvarname, moOut);
 					}
-					else //already existing: take largest   
-					{
+					else { //already existing: take largest
 						Data dat = callVars.get(pvarname);
-						if( dat instanceof MatrixObject )
+						if( !(dat instanceof MatrixObject) )
+							continue;
+						MatrixObject moOut = (MatrixObject)dat;
+						MatrixCharacteristics mc = moOut.getMatrixCharacteristics();
+						if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?
+							OptimizerUtils.getSparsity(mc):1.0) 
+							< OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
 						{
-							MatrixObject moOut = (MatrixObject)dat;
-							MatrixCharacteristics mc = moOut.getMatrixCharacteristics();
-							if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?
-								OptimizerUtils.getSparsity(mc):1.0) 
-								< OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
-							{
-								//update statistics if necessary
-								mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());
-								mc.setNonZeros(moIn.getNnz());
-							}
+							//update statistics if necessary
+							mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());
+							mc.setNonZeros(moIn.getNnz());
 						}
-						
 					}
 				}
 			}
 		}
-		catch( Exception ex )
-		{
+		catch( Exception ex ) {
 			throw new HopsException( "Failed to extract output statistics of function "+fkey+".", ex);
 		}
 	}

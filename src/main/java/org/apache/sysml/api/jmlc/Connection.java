@@ -367,10 +367,10 @@ public class Connection implements Closeable
 					jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
 			int bclen = jmtd.containsKey(DataExpression.COLUMNBLOCKCOUNTPARAM)?
 					jmtd.getInt(DataExpression.COLUMNBLOCKCOUNTPARAM) : -1;
-			long nnz = jmtd.containsKey(DataExpression.READNUMNONZEROPARAM)?
-					jmtd.getLong(DataExpression.READNUMNONZEROPARAM) : -1;
+			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
+					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
 			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
-			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);			
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
 		
 			//read matrix file
 			return readDoubleMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);

@@ -523,7 +523,7 @@ public class MLContext implements ConfigurableAPI
 					if (mo != null) {
 						exp.addVarParam(DataExpression.READROWPARAM, new IntIdentifier(mo.getNumRows(), source));
 						exp.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(mo.getNumColumns(), source));
-						exp.addVarParam(DataExpression.READNUMNONZEROPARAM, new IntIdentifier(mo.getNnz(), source));
+						exp.addVarParam(DataExpression.READNNZPARAM, new IntIdentifier(mo.getNnz(), source));
 						exp.addVarParam(DataExpression.DATATYPEPARAM, new StringIdentifier("matrix", source));
 						exp.addVarParam(DataExpression.VALUETYPEPARAM, new StringIdentifier("double", source));
 

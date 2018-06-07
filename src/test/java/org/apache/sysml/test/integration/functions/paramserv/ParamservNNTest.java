@@ -30,6 +30,7 @@ public class ParamservNNTest extends AutomatedTestBase {
 	private static final String TEST_NAME3 = "paramserv-nn-bsp-epoch";
 	private static final String TEST_NAME4 = "paramserv-nn-asp-epoch";
 	private static final String TEST_NAME5 = "paramserv-nn-bsp-batch-drr";
+	private static final String TEST_NAME6 = "paramserv-nn-bsp-batch-dr";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservNNTest.class.getSimpleName() + "/";
@@ -43,6 +44,7 @@ public class ParamservNNTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 	}
 
 	@Test
@@ -68,6 +70,11 @@ public class ParamservNNTest extends AutomatedTestBase {
 	@Test
 	public void testParamservBSPBatchDisjointRoundRobin() {
 		runDMLTest(TEST_NAME5);
+	}
+
+	@Test
+	public void testParamservBSPBatchDisjointRandom() {
+		runDMLTest(TEST_NAME6);
 	}
 
 	private void runDMLTest(String testname) {

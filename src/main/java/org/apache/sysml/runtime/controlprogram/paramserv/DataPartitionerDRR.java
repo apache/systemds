@@ -16,7 +16,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 
 /**
  * Disjoint_Round_Robin data partitioner:
- * <p>
  * for each worker, use a permutation multiply
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)

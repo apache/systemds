@@ -82,7 +82,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			probabilityDensityFunction, pdfParams, k, null, null, null, false, opcode, istr);
 	}
 
-	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
+	public DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
 			int rpb, int cpb, double maxValue, boolean replace, long seed, String opcode, String istr) {
 		this(op, mthd, in, out, rows, cols, rpb, cpb, 0, maxValue, 1.0, seed, 
 			null, null, 1, null, null, null, replace, opcode, istr);

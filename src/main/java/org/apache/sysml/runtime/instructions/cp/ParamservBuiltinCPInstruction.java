@@ -74,6 +74,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDC;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDR;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDRR;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
@@ -386,6 +387,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				doDataPartition(new DataPartitionerDRR(), features, labels, valFeatures, valLabels, workers);
 				break;
 			case DISJOINT_RANDOM:
+				doDataPartition(new DataPartitionerDR(), features, labels, valFeatures, valLabels, workers);
+				break;
 			case OVERLAP_RESHUFFLE:
 				throw new DMLRuntimeException(String.format("Paramserv function: the scheme '%s' is not supported.", scheme));
 		}

@@ -77,6 +77,12 @@ public class ParamservUtils {
 		cd.clearData();
 	}
 
+	public static MatrixObject newMatrixObject() {
+		return new MatrixObject(Expression.ValueType.DOUBLE, null,
+				new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo,
+						InputInfo.BinaryBlockInputInfo));
+	}
+
 	/**
 	 * Slice the matrix
 	 *
@@ -86,9 +92,7 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, null,
-			new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1),
-				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixObject result = newMatrixObject();
 		MatrixBlock tmp = mo.acquireRead();
 		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1, 0, tmp.getNumColumns() - 1, new MatrixBlock()));
 		mo.release();

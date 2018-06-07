@@ -40,6 +40,9 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "bar1.dml";
 	private final static String TEST_NAME3 = "bar2.dml";
 	
+	private final static String TEST_NAME4 = "foo2.dml";
+	private final static String TEST_NAME5 = "bar3.dml";
+	
 	private final static String TEST_DIR = "functions/jmlc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + NamespaceFunctionTest.class.getSimpleName() + "/";
 	
@@ -48,24 +51,34 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 	
-	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "F2" }) ); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "F2" }) );
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "F2" }) );
 	}
 	
 	@Test
-	public void testJMLCNamespaceDense() throws IOException {
-		runJMLCNamespaceTest(false);
+	public void testJMLCNamespaceAcyclicDense() throws IOException {
+		runJMLCNamespaceTest(false, false);
 	}
 	
 	@Test
-	public void testJMLCNamespaceSparse() throws IOException {
-		runJMLCNamespaceTest(true);
+	public void testJMLCNamespaceAcyclicSparse() throws IOException {
+		runJMLCNamespaceTest(true, false);
+	}
+	
+	@Test
+	public void testJMLCNamespaceCyclicDense() throws IOException {
+		runJMLCNamespaceTest(false, true);
+	}
+	
+	@Test
+	public void testJMLCNamespaceCyclicSparse() throws IOException {
+		runJMLCNamespaceTest(true, true);
 	}
 	
 
-	private void runJMLCNamespaceTest(boolean sparse) 
+	private void runJMLCNamespaceTest(boolean sparse, boolean cyclic) 
 		throws IOException
 	{
 		TestConfiguration config = getTestConfiguration(TEST_NAME1);
@@ -73,10 +86,18 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 		
 		//load scripts and create prepared script
 		Connection conn = new Connection();
-		String script1 = conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME1);
 		Map<String,String> nsscripts = new HashMap<>();
-		nsscripts.put(TEST_NAME2, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME2));
-		nsscripts.put(TEST_NAME3, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME3));
+		String script1 = null;
+		if( cyclic ) {
+			script1 = conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME4);
+			nsscripts.put(TEST_NAME4, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME4));
+			nsscripts.put(TEST_NAME5, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME5));
+		}
+		else {
+			script1 = conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME1);
+			nsscripts.put(TEST_NAME2, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME2));
+			nsscripts.put(TEST_NAME3, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME3));
+		}
 		PreparedScript pstmt = conn.prepareScript(script1,
 			nsscripts, Collections.emptyMap(), new String[]{"X"}, new String[]{"Z"}, false);
 		

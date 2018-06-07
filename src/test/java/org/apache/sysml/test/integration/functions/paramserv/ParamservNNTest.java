@@ -31,6 +31,7 @@ public class ParamservNNTest extends AutomatedTestBase {
 	private static final String TEST_NAME4 = "paramserv-nn-asp-epoch";
 	private static final String TEST_NAME5 = "paramserv-nn-bsp-batch-drr";
 	private static final String TEST_NAME6 = "paramserv-nn-bsp-batch-dr";
+	private static final String TEST_NAME7 = "paramserv-nn-bsp-batch-or";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservNNTest.class.getSimpleName() + "/";
@@ -45,6 +46,7 @@ public class ParamservNNTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
 	}
 
 	@Test
@@ -75,6 +77,11 @@ public class ParamservNNTest extends AutomatedTestBase {
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
 		runDMLTest(TEST_NAME6);
+	}
+
+	@Test
+	public void testParamservBSPBatchOverlapReshuffle() {
+		runDMLTest(TEST_NAME7);
 	}
 
 	private void runDMLTest(String testname) {

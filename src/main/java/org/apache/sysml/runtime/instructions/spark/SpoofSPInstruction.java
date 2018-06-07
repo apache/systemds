@@ -314,17 +314,15 @@ public class SpoofSPInstruction extends SPInstruction {
 	}
 	
 	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, SpoofOperator op) {
-		if(op instanceof SpoofCellwise)
-		{
+		if(op instanceof SpoofCellwise) {
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
 			if( ((SpoofCellwise)op).getCellType()==CellType.ROW_AGG )
 				mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( ((SpoofCellwise)op).getCellType()==CellType.NO_AGG )
-				mcOut.set(mcIn);
+				mcOut.set(mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 		}
-		else if(op instanceof SpoofOuterProduct)
-		{
+		else if(op instanceof SpoofOuterProduct) {
 			MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(_in[0].getName()); //X
 			MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(_in[1].getName()); //U
 			MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(_in[2].getName()); //V
@@ -333,8 +331,8 @@ public class SpoofSPInstruction extends SPInstruction {
 			
 			if( type == OutProdType.CELLWISE_OUTER_PRODUCT)
 				mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
-			else if( type == OutProdType.LEFT_OUTER_PRODUCT) 		
-				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());		
+			else if( type == OutProdType.LEFT_OUTER_PRODUCT)
+				mcOut.set(mcIn3.getRows(), mcIn3.getCols(), mcIn3.getRowsPerBlock(), mcIn3.getColsPerBlock());
 			else if( type == OutProdType.RIGHT_OUTER_PRODUCT )
 				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn2.getRowsPerBlock(), mcIn2.getColsPerBlock());
 		}

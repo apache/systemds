@@ -2408,10 +2408,15 @@ public class DMLTranslator
 
 		case MIN:
 		case MAX:
-			//construct AggUnary for min(X) but BinaryOp for min(X,Y)
-			currBuiltinOp = (expr2 == null) ? new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
-				AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr) : new BinaryOp(target.getName(),
-				target.getDataType(), target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			//construct AggUnary for min(X) but BinaryOp for min(X,Y) and NaryOp for min(X,Y,Z)
+			currBuiltinOp = (expr2 == null) ? 
+				new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+					AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr) : 
+				(source.getAllExpr().length == 2) ?
+				new BinaryOp(target.getName(), target.getDataType(), target.getValueType(),
+					OpOp2.valueOf(source.getOpCode().name()), expr, expr2) : 
+				new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
+					OpOpN.valueOf(source.getOpCode().name()), processAllExpressions(source.getAllExpr(), hops));
 			break;
 		
 		case PPRED:

@@ -20,6 +20,7 @@
 package org.apache.sysml.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -566,11 +567,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case BITWXOR:
 		case BITWSHIFTL:
 		case BITWSHIFTR:
+			checkNumParameters(2);
+			setBinaryOutputProperties(output);
+			break;
+		
 		case MIN:
 		case MAX:
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
-			
-			//unary aggregate
+			//unary
 			if (getSecondExpr() == null) {
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
@@ -579,12 +583,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setDimensions(0, 0);
 				output.setBlockDimensions (0, 0);
 			}
-			//binary operation
-			else {
-				checkNumParameters(2);
-				setBinaryOutputProperties(output);
-			}
 			
+			//nary operation
+			else {
+				for( Expression e : getAllExpr() )
+					checkMatrixScalarParam(e);
+				setNaryOutputProperties(output);
+			}
 			break;
 		
 		case CUMSUM:
@@ -1420,7 +1425,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		DataType dt1 = getFirstExpr().getOutput().getDataType();
 		DataType dt2 = getSecondExpr().getOutput().getDataType();
 		DataType dtOut = (dt1==DataType.MATRIX || dt2==DataType.MATRIX) ?
-			DataType.MATRIX : DataType.SCALAR;				
+			DataType.MATRIX : DataType.SCALAR;
 		if( dt1==DataType.MATRIX && dt2==DataType.MATRIX )
 			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
 		MatrixCharacteristics dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
@@ -1451,6 +1456,24 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(Math.max(dims1.getRows(), dims2.getRows()), Math.max(dims1.getCols(), dims2.getCols()));
 		output.setBlockDimensions(Math.max(dims1.getRowsPerBlock(), dims2.getRowsPerBlock()),
 			Math.max(dims1.getColsPerBlock(), dims2.getColsPerBlock()));
+	}
+	
+	private void setNaryOutputProperties(DataIdentifier output) {
+		DataType dt = Arrays.stream(getAllExpr()).allMatch(
+			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;
+		Expression firstM = dt.isMatrix() ? Arrays.stream(getAllExpr()).filter(
+			e -> e.getOutput().getDataType().isMatrix()).findFirst().get() : null;
+		ValueType vt = dt.isMatrix() ? ValueType.DOUBLE : ValueType.BOOLEAN;
+		for( Expression e : getAllExpr() ) {
+			vt = computeValueType(e, e.getOutput().getValueType(), vt, true);
+			if( e.getOutput().getDataType().isMatrix() )
+				checkMatchingDimensions(firstM, e, true);
+		}
+		output.setDataType(dt);
+		output.setValueType(vt);
+		output.setDimensions(firstM.getOutput().getDim1(), firstM.getOutput().getDim2());
+		output.setBlockDimensions (
+			firstM.getOutput().getRowsInBlock(), firstM.getOutput().getColumnsInBlock());
 	}
 	
 	private void expandArguments() {

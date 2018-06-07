@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.append;
+package org.apache.sysml.test.integration.functions.nary;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -26,11 +26,9 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	AppendChainTest.class,
-	AppendMatrixTest.class,
-	AppendVectorTest.class,
-	RBindCBindMatrixTest.class,
-	StringAppendTest.class,
+	NaryCBindTest.class,
+	NaryMinMaxTest.class,
+	NaryRBindTest.class,
 })
 
 

@@ -32,7 +32,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 public class Nary extends Lop {
 
 	public enum OperationType {
-		PRINTF, CBIND, RBIND, EVAL, LIST
+		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
 	}
 	
 	private OperationType operationType;
@@ -121,6 +121,10 @@ public class Nary extends Lop {
 			case EVAL:
 			case LIST:
 				return operationType.name().toLowerCase();
+			case MIN:
+			case MAX:
+				//need to differentiate from binary min/max operations
+				return "n"+operationType.name().toLowerCase();
 			default:
 				throw new UnsupportedOperationException(
 					"Nary operation type (" + operationType + ") is not defined.");

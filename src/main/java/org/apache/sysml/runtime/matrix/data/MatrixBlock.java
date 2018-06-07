@@ -44,6 +44,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.functionobjects.CM;
 import org.apache.sysml.runtime.functionobjects.CTable;
 import org.apache.sysml.runtime.functionobjects.DiagIndex;
@@ -83,6 +84,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -3456,6 +3458,104 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//update meta data
 		result.nonZeros = nnz;
 		return result;
+	}
+	
+	public static MatrixBlock naryOperations(Operator op, MatrixBlock[] matrices, ScalarObject[] scalars, MatrixBlock ret) {
+		//note: currently only min and max supported and hence specialized implementation
+		
+		//prepare operator
+		Builtin fn = (Builtin)((SimpleOperator)op).fn;
+		
+		//process all scalars
+		double init = (fn.getBuiltinCode() == BuiltinCode.MIN) ?
+			Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+		for( ScalarObject so : scalars )
+			init = fn.execute(init, so.getDoubleValue());
+
+		//compute output dimensions and estimate sparsity
+		final int m = matrices.length > 0 ? matrices[0].rlen : 1;
+		final int n = matrices.length > 0 ? matrices[0].clen : 1;
+		final long mn = (long) m * n;
+		final long nnz = (fn.getBuiltinCode()==BuiltinCode.MIN && init < 0)
+			|| (fn.getBuiltinCode()==BuiltinCode.MAX && init > 0) ? mn :
+			Math.min(Arrays.stream(matrices).mapToLong(mb -> mb.nonZeros).sum(), mn);
+		boolean sp = evalSparseFormatInMemory(m, n, nnz);
+		
+		//init result matrix 
+		if( ret == null )
+			ret = new MatrixBlock(m, n, sp, nnz);
+		else
+			ret.reset(m, n, sp, nnz);
+		
+		//main processing
+		if( matrices.length > 0 ) {
+			ret.allocateBlock();
+			int[] cnt = Arrays.stream(matrices).allMatch(mb -> 
+				mb.sparse || mb.isEmpty()) ? new int[n] : null;
+			if( ret.isInSparseFormat() ) {
+				double[] tmp = new double[n];
+				for(int i = 0; i < m; i++) {
+					//reset tmp and compute row output
+					Arrays.fill(tmp, 0);
+					processMinMaxRow(fn, matrices, init, tmp, 0, n, i, cnt);
+					//copy to sparse output
+					for(int j = 0; j < n; j++)
+						if( tmp[j] != 0 )
+							ret.appendValue(i, j, tmp[j]);
+				}
+			}
+			else {
+				DenseBlock c = ret.getDenseBlock();
+				for(int i = 0; i < m; i++) {
+					processMinMaxRow(fn, matrices, init,
+						c.values(i), c.pos(i), n, i, cnt);
+				}
+			}
+		}
+		else {
+			ret.quickSetValue(0, 0, init);
+		}
+		
+		return ret;
+	}
+	
+	private static void processMinMaxRow(Builtin fn, MatrixBlock[] inputs, double init, double[] c, int cix, int n, int i, int[] cnt) {
+		//always init entire output vector
+		Arrays.fill(c, cix, cix+n, init);
+		if( cnt != null )
+			Arrays.fill(cnt, 0);
+		
+		//sparse-safe update over all input matrices
+		for( MatrixBlock in : inputs ) {
+			if( in.isEmptyBlock(false) )
+				continue;
+			if( in.isInSparseFormat() ) {
+				SparseBlock a = in.sparseBlock;
+				int alen = a.size(i);
+				int apos = a.pos(i);
+				int[] aix = a.indexes(i);
+				double[] avals = a.values(i);
+				for( int k=apos; k<apos+alen; k++ ) {
+					c[aix[k]] = fn.execute(c[aix[k]], avals[k]);
+					if( cnt != null ) //maintain seen values
+						cnt[aix[k]]++;
+				}
+			}
+			else {
+				double[] avals = in.getDenseBlock().values(i);
+				int aix = in.getDenseBlock().pos(i);
+				for( int j=0; j<n; j++ )
+					c[cix+j] = fn.execute(c[cix+j], avals[aix+j]);
+			}
+		}
+		
+		//corrections for all sparse inputs
+		if( Arrays.stream(inputs).allMatch(m -> m.sparse || m.isEmpty()) ) {
+			for( int j=0; j<n; j++ ) {
+				if( cnt[j]!=inputs.length )
+					c[cix+j] = fn.execute(c[cix+j], 0);
+			}
+		}
 	}
 	
 	public MatrixBlock transposeSelfMatrixMultOperations( MatrixBlock out, MMTSJType tstype ) {

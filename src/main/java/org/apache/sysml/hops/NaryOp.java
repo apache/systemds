@@ -195,6 +195,11 @@ public class NaryOp extends Hop {
 				setDim1(HopRewriteUtils.getSumValidInputDims(this, true));
 				setDim2(HopRewriteUtils.getMaxInputDim(this, false));
 				break;
+			case MIN:
+			case MAX:
+				setDim1(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, true));
+				setDim2(getDataType().isScalar() ? 0 : HopRewriteUtils.getMaxInputDim(this, false));
+				break;
 			case LIST:
 				setDim1(getInput().size());
 				setDim2(1);

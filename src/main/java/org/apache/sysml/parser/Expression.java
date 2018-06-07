@@ -453,9 +453,10 @@ public abstract class Expression implements ParseInfo
 	 * @return The value type ({@link ValueType})
 	 */
 	public static ValueType computeValueType(Identifier identifier1, Identifier identifier2, boolean cast) {
-		ValueType v1 = identifier1.getValueType();
-		ValueType v2 = identifier2.getValueType();
-
+		return computeValueType(identifier1, identifier1.getValueType(), identifier2.getValueType(), cast);
+	}
+	
+	public static ValueType computeValueType(Expression expr1, ValueType v1, ValueType v2, boolean cast) {
 		if (v1 == v2)
 			return v1;
 
@@ -472,8 +473,8 @@ public abstract class Expression implements ParseInfo
 		}
 
 		//raise error with id1 location
-		identifier1.raiseValidateError("Invalid Valuetypes for operation "+v1+" "+v2, false, 
-				LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
+		expr1.raiseValidateError("Invalid Valuetypes for operation "+v1+" "+v2, false,
+			LanguageException.LanguageErrorCodes.INVALID_PARAMETERS);
 		return null; //never reached because unconditional
 	}
 

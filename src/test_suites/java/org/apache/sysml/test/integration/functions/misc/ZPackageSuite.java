@@ -61,6 +61,7 @@ import org.junit.runners.Suite;
 	RewriteCTableToRExpandTest.class,
 	RewriteElementwiseMultChainOptimizationTest.class,
 	RewriteEliminateAggregatesTest.class,
+	RewriteFoldMinMaxTest.class,
 	RewriteFoldRCBindTest.class,
 	RewriteFuseBinaryOpChainTest.class,
 	RewriteFusedRandTest.class,

@@ -78,6 +78,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME39 = TEST_NAME+"39"; //BitwAnd operation
 	private static final String TEST_NAME40 = TEST_NAME+"40"; //relu operation -> (X>0)* dout
 	private static final String TEST_NAME41 = TEST_NAME+"41"; //X*rowSums(X/seq(1,N)+t(seq(M,1)))
+	private static final String TEST_NAME42 = TEST_NAME+"42"; //X/rowSums(min(X, Y, Z))
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -89,7 +90,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=41; i++)
+		for(int i=1; i<=42; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -707,6 +708,21 @@ public class RowAggTmplTest extends AutomatedTestBase
 	public void testCodegenRowAgg41SP() {
 		testCodegenIntegration( TEST_NAME41, false, ExecType.SPARK );
 	}
+	
+	@Test
+	public void testCodegenRowAggRewrite42CP() {
+		testCodegenIntegration( TEST_NAME42, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg42CP() {
+		testCodegenIntegration( TEST_NAME42, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg42SP() {
+		testCodegenIntegration( TEST_NAME42, false, ExecType.SPARK );
+	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
@@ -766,6 +782,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
 			if( testname.equals(TEST_NAME41) )
 				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+			if( testname.equals(TEST_NAME42) )
+				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin") 
+					&& !heavyHittersContainsSubString("spoof", 2));
 		}
 		finally {
 			rtplatform = platformOld;

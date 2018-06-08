@@ -574,8 +574,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case MIN:
 		case MAX:
 			//min(X), min(X,s), min(s,X), min(s,r), min(X,Y)
-			//unary
-			if (getSecondExpr() == null) {
+			if (getSecondExpr() == null) { //unary
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
 				output.setDataType(DataType.SCALAR);
@@ -583,9 +582,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setDimensions(0, 0);
 				output.setBlockDimensions (0, 0);
 			}
-			
-			//nary operation
-			else {
+			else if( getAllExpr().length == 2 ) { //binary
+				checkNumParameters(2);
+				setBinaryOutputProperties(output);
+			}
+			else { //nary
 				for( Expression e : getAllExpr() )
 					checkMatrixScalarParam(e);
 				setNaryOutputProperties(output);
@@ -1463,7 +1464,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;
 		Expression firstM = dt.isMatrix() ? Arrays.stream(getAllExpr()).filter(
 			e -> e.getOutput().getDataType().isMatrix()).findFirst().get() : null;
-		ValueType vt = dt.isMatrix() ? ValueType.DOUBLE : ValueType.BOOLEAN;
+		ValueType vt = dt.isMatrix() ? ValueType.DOUBLE : ValueType.INT;
 		for( Expression e : getAllExpr() ) {
 			vt = computeValueType(e, e.getOutput().getValueType(), vt, true);
 			if( e.getOutput().getDataType().isMatrix() )
@@ -1471,9 +1472,10 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 		output.setDataType(dt);
 		output.setValueType(vt);
-		output.setDimensions(firstM.getOutput().getDim1(), firstM.getOutput().getDim2());
-		output.setBlockDimensions (
-			firstM.getOutput().getRowsInBlock(), firstM.getOutput().getColumnsInBlock());
+		output.setDimensions(dt.isMatrix() ? firstM.getOutput().getDim1() : 0,
+			dt.isMatrix() ? firstM.getOutput().getDim2() : 0);
+		output.setBlockDimensions (dt.isMatrix() ? firstM.getOutput().getRowsInBlock() : 0,
+			dt.isMatrix() ? firstM.getOutput().getColumnsInBlock() : 0);
 	}
 	
 	private void expandArguments() {

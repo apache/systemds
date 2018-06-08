@@ -20,7 +20,9 @@
 package org.apache.sysml.runtime.controlprogram.context;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -72,7 +74,7 @@ public class ExecutionContext {
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
-    protected List<GPUContext> _gpuContexts = new ArrayList<>();
+	protected List<GPUContext> _gpuContexts = new ArrayList<>();
 
 	protected ExecutionContext()
 	{
@@ -492,6 +494,21 @@ public class ExecutionContext {
 		fo.acquireModify(outputData);
 		fo.release();
 		setVariable(varName, fo);
+	}
+	
+	public List<MatrixBlock> getMatrixInputs(CPOperand[] inputs) {
+		return Arrays.stream(inputs).filter(in -> in.isMatrix())
+			.map(in -> getMatrixInput(in.getName())).collect(Collectors.toList());
+	}
+	
+	public List<ScalarObject> getScalarInputs(CPOperand[] inputs) {
+		return Arrays.stream(inputs).filter(in -> in.isScalar())
+			.map(in -> getScalarInput(in)).collect(Collectors.toList());
+	}
+	
+	public void releaseMatrixInputs(CPOperand[] inputs) {
+		Arrays.stream(inputs).filter(in -> in.isMatrix())
+			.forEach(in -> releaseMatrixInput(in.getName()));
 	}
 	
 	/**

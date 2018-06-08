@@ -71,6 +71,26 @@ public class NaryMinMaxTest extends AutomatedTestBase
 		runMinMaxTest(false, true, ExecType.CP);
 	}
 	
+	@Test
+	public void testNaryMinDenseSP() {
+		runMinMaxTest(true, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNaryMinSparseSP() {
+		runMinMaxTest(true, true, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNaryMaxDenseSP() {
+		runMinMaxTest(false, false, ExecType.SPARK);
+	}
+	
+	@Test
+	public void testNaryMaxSparseSP() {
+		runMinMaxTest(false, true, ExecType.SPARK);
+	}
+	
 	public void runMinMaxTest(boolean min, boolean sparse, ExecType et)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;

@@ -19,9 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -37,8 +35,8 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//separate scalars and matrices and pin all input matrices
-		List<MatrixBlock> matrices = getMatrices(ec);
-		List<ScalarObject> scalars = getScalars(ec);
+		List<MatrixBlock> matrices = ec.getMatrixInputs(inputs);
+		List<ScalarObject> scalars = ec.getScalarInputs(inputs);
 		
 		MatrixBlock outBlock = null;
 		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
@@ -56,7 +54,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		}
 		
 		//release inputs and set output matrix or scalar
-		releaseInputs(ec);
+		ec.releaseMatrixInputs(inputs);
 		if( output.getDataType().isMatrix() ) {
 			ec.setMatrixOutput(output.getName(), outBlock);
 		}
@@ -64,20 +62,5 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			ec.setVariable(output.getName(), ScalarObjectFactory.createScalarObject(
 				output.getValueType(), outBlock.quickGetValue(0, 0)));
 		}
-	}
-	
-	private List<MatrixBlock> getMatrices(ExecutionContext ec) {
-		return Arrays.stream(inputs).filter(in -> in.getDataType().isMatrix())
-			.map(in -> ec.getMatrixInput(in.getName())).collect(Collectors.toList());
-	}
-	
-	private List<ScalarObject> getScalars(ExecutionContext ec) {
-		return Arrays.stream(inputs).filter(in -> in.getDataType().isScalar())
-			.map(in -> ec.getScalarInput(in)).collect(Collectors.toList());
-	}
-	
-	private void releaseInputs(ExecutionContext ec) {
-		Arrays.stream(inputs).filter(in -> in.getDataType().isMatrix())
-			.forEach(in -> ec.releaseMatrixInput(in.getName()));
 	}
 }

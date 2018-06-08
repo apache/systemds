@@ -3531,6 +3531,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				continue;
 			if( in.isInSparseFormat() ) {
 				SparseBlock a = in.sparseBlock;
+				if( a.isEmpty(i) ) continue;
 				int alen = a.size(i);
 				int apos = a.pos(i);
 				int[] aix = a.indexes(i);

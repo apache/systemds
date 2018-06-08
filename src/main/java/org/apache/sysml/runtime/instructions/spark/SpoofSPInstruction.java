@@ -27,9 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -59,6 +57,8 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysml.runtime.instructions.spark.functions.MapInputSignature;
+import org.apache.sysml.runtime.instructions.spark.functions.MapJoinSignature;
 import org.apache.sysml.runtime.instructions.spark.functions.ReplicateBlockFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -349,26 +349,6 @@ public class SpoofSPInstruction extends SPInstruction {
 				mcOut.set(1, mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( type == RowType.COL_AGG_T )
 				mcOut.set(mcIn.getCols(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
-		}
-	}
-	
-	private static class MapInputSignature implements Function<MatrixBlock, MatrixBlock[]> 
-	{
-		private static final long serialVersionUID = -816443970067626102L;
-		
-		@Override
-		public MatrixBlock[] call(MatrixBlock v1) throws Exception {
-			return new MatrixBlock[]{ v1 };
-		}
-	}
-	
-	private static class MapJoinSignature implements Function<Tuple2<MatrixBlock[],MatrixBlock>, MatrixBlock[]> 
-	{
-		private static final long serialVersionUID = -704403012606821854L;
-
-		@Override
-		public MatrixBlock[] call(Tuple2<MatrixBlock[], MatrixBlock> v1) throws Exception {
-			return ArrayUtils.add(v1._1(), v1._2());
 		}
 	}
 	

@@ -51,6 +51,7 @@ import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -1117,6 +1118,10 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((TernaryOp)current).getOp());
 			}
+		}
+		else if( current instanceof NaryOp ) {
+			costs = HopRewriteUtils.isNary(current, OpOpN.MIN, OpOpN.MAX) ?
+				current.getInput().size() : 1;
 		}
 		else if( current instanceof ParameterizedBuiltinOp ) {
 			costs = 1;

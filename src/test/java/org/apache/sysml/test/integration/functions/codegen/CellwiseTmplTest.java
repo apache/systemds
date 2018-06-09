@@ -59,7 +59,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME21 = TEST_NAME+21; //relu operation, (X>0)*dout
 	private static final String TEST_NAME22 = TEST_NAME+22; //sum(X * seq(1,N) + t(seq(M,1)))
 	private static final String TEST_NAME23 = TEST_NAME+23; //sum(min(X,Y,Z))
-	
+	private static final String TEST_NAME24 = TEST_NAME+24; //min(X, Y, Z, 3, 7)
+
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF6 = "SystemML-config-codegen6.xml";
@@ -71,12 +72,12 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=23; i++ ) {
+		for( int i=1; i<=24; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
-					TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
+				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
 	}
-		
+	
 	@Test
 	public void testCodegenCellwiseRewrite1() {
 		testCodegenIntegration( TEST_NAME1, true, ExecType.CP );
@@ -398,6 +399,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite23_sp() {
 		testCodegenIntegration( TEST_NAME23, true, ExecType.SPARK );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite24() {
+		testCodegenIntegration( TEST_NAME24, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise24() {
+		testCodegenIntegration( TEST_NAME24, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite24_sp() {
+		testCodegenIntegration( TEST_NAME24, true, ExecType.SPARK );
+	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
@@ -467,7 +483,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
 			else if( testname.equals(TEST_NAME22) )
 				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
-			else if( testname.equals(TEST_NAME23) )
+			else if( testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24) )
 				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin"));
 		}
 		finally {

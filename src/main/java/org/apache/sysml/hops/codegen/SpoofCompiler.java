@@ -749,7 +749,7 @@ public class SpoofCompiler
 					|| ((CNodeRow)tpl).getRowType()==RowType.ROW_AGG )
 					&& TemplateUtils.hasSingleOperation(tpl))
 				|| TemplateUtils.hasNoOperation(tpl) ) 
-			{	
+			{
 				cplans2.remove(e.getKey());
 				if( LOG.isTraceEnabled() )
 					LOG.trace("Removed cplan with single operation.");

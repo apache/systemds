@@ -36,6 +36,8 @@ import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
+import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -341,6 +343,11 @@ public class TemplateUtils
 			|| output instanceof CNodeTernary 
 				&& ((CNodeTernary)output).getType() == TernaryType.IFELSE)
 			&& hasOnlyDataNodeOrLookupInputs(output);
+	}
+	
+	public static boolean isValidSingleOperation(Hop hop) {
+		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)
+			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG);
 	}
 	
 	public static boolean hasNoOperation(CNodeTpl tpl) {

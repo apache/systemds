@@ -21,8 +21,10 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1475,16 +1477,19 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			boolean desc = HopRewriteUtils.getBooleanValue((LiteralOp)hi.getInput().get(2));
 			
 			//find chain of order operations with same desc/ixret configuration and single consumers
+			Set<String> probe = new HashSet<>();
 			ArrayList<LiteralOp> byList = new ArrayList<LiteralOp>();
-			byList.add(by);
+			byList.add(by); probe.add(by.getStringValue());
 			Hop input = hi.getInput().get(0);
 			while( HopRewriteUtils.isReorg(input, ReOrgOp.SORT)
 				&& input.getInput().get(1) instanceof LiteralOp //scalar by
+				&& !probe.contains(input.getInput().get(1).getName())
 				&& HopRewriteUtils.isLiteralOfValue(input.getInput().get(2), desc)
 				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(3), false)
 				&& input.getParent().size() == 1 ) 
 			{
 				byList.add((LiteralOp)input.getInput().get(1));
+				probe.add(input.getInput().get(1).getName());
 				input = input.getInput().get(0);
 			}
 			

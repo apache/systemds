@@ -3779,6 +3779,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			(int)ixrange.colStart, (int)ixrange.colEnd, true, ret);
 	}
 	
+	public MatrixBlock slice(int rl, int ru) {
+		return slice(rl, ru, 0, clen-1, true, new MatrixBlock());
+	}
+	
 	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
 		return slice(rl, ru, cl, cu, true, ret);

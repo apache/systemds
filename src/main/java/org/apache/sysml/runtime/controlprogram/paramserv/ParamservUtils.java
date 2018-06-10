@@ -90,7 +90,7 @@ public class ParamservUtils {
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1),
 				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		MatrixBlock tmp = mo.acquireRead();
-		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1, 0, tmp.getNumColumns() - 1, new MatrixBlock()));
+		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
 		mo.release();
 		result.release();
 		result.enableCleanup(false);

@@ -343,10 +343,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	public synchronized GPUObject getGPUObject(GPUContext gCtx) {
+		if( _gpuObjects == null )
+			return null;
 		return _gpuObjects.get(gCtx);
 	}
 
 	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) {
+		if( _gpuObjects == null )
+			_gpuObjects = new HashMap<>();
 		GPUObject old = _gpuObjects.put(gCtx, gObj);
 		if (old != null)
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");

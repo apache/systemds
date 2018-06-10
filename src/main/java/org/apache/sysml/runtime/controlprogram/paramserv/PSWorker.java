@@ -119,4 +119,11 @@ public abstract class PSWorker {
 		_labels = labels;
 	}
 
+	public MatrixObject getFeatures() {
+		return _features;
+	}
+
+	public MatrixObject getLabels() {
+		return _labels;
+	}
 }

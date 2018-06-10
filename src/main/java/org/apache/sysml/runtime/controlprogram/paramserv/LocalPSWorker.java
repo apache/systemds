@@ -34,8 +34,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
 
 	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			ExecutionContext ec, ParamServer ps) {
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
+		super(workerID, updFunc, freq, epochs, batchSize, valFeatures, valLabels, ec, ps);
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					globalParams = _ps.updateModel(gradients, globalParams);
 					if (LOG.isDebugEnabled()) {
 						LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated.",
-								_workerID, globalParams.getDataSize()));
+							_workerID, globalParams.getDataSize()));
 					}
 				}
 			}
@@ -126,13 +126,13 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		_ps.push(_workerID, gradients);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("Local worker_%d: Successfully push the gradients "
-					+ "[size:%d kb] to ps.", _workerID, gradients.getDataSize() / 1024));
+				+ "[size:%d kb] to ps.", _workerID, gradients.getDataSize() / 1024));
 		}
 	}
 
 	private ListObject computeGradients(long dataSize, int totalIter, int i, int j) {
 		long begin = j * _batchSize + 1;
-		long end = Math.min(begin + _batchSize, dataSize);
+		long end = Math.min((j + 1) * _batchSize, dataSize);
 
 		// Get batch features and labels
 		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);

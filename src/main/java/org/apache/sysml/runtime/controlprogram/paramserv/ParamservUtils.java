@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -37,6 +39,7 @@ import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.util.DataConverter;
 
 public class ParamservUtils {
 
@@ -77,6 +80,10 @@ public class ParamservUtils {
 		cd.clearData();
 	}
 
+	public static MatrixObject newMatrixObject() {
+		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+	}
+
 	/**
 	 * Slice the matrix
 	 *
@@ -86,14 +93,26 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, null,
-			new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1),
-				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixObject result = newMatrixObject();
 		MatrixBlock tmp = mo.acquireRead();
 		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
 		mo.release();
 		result.release();
 		result.enableCleanup(false);
 		return result;
+	}
+
+	public static MatrixBlock generatePermutation(long range, int size) {
+		// Create the sequence
+		double[] data = LongStream.range(1, size + 1).mapToDouble(l -> l).toArray();
+		MatrixBlock seq = DataConverter.convertToMatrixBlock(data, true);
+
+		// Generate a sample
+		MatrixBlock sample = MatrixBlock.sampleOperations(range, size, false, -1);
+
+		// Combine the sequence and sample as a table
+		MatrixBlock permutation = new MatrixBlock(seq.getNumRows(), sample.getNumRows(), true);
+		seq.ctableOperations(null, sample, 1.0, permutation);
+		return permutation;
 	}
 }

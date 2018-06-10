@@ -136,8 +136,7 @@ public abstract class ParamServer {
 
 			// Check the output of the aggregation function
 			if (outputs.size() != 1) {
-				throw new DMLRuntimeException(String.format("The output of the '%s' function should provide one list containing the updated model.",
-						aggFunc));
+				throw new DMLRuntimeException(String.format("The output of the '%s' function should provide one list containing the updated model.", aggFunc));
 			}
 			if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
 				throw new DMLRuntimeException(String.format("The output of the '%s' function should be type of list.", aggFunc));
@@ -145,12 +144,12 @@ public abstract class ParamServer {
 			_output = outputs.get(0);
 
 			CPOperand[] boundInputs = inputs.stream()
-					.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
-					.toArray(CPOperand[]::new);
+				.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+				.toArray(CPOperand[]::new);
 			ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
-					.collect(Collectors.toCollection(ArrayList::new));
+				.collect(Collectors.toCollection(ArrayList::new));
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
-					.collect(Collectors.toCollection(ArrayList::new));
+				.collect(Collectors.toCollection(ArrayList::new));
 			_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames, "aggregate function");
 		}
 
@@ -188,7 +187,7 @@ public abstract class ParamServer {
 				}
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
-							grad._gradients.getDataSize() / 1024, grad._workerID));
+						grad._gradients.getDataSize() / 1024, grad._workerID));
 				}
 
 				// Update and redistribute the model

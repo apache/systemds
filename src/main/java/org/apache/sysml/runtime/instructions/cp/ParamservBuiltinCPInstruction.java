@@ -131,19 +131,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
+		MatrixObject valFeatures = ec.getMatrixObject(getParam(PS_VAL_FEATURES));
+		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, epochs, getBatchSize(), workerECs.get(i), ps))
+			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, epochs, getBatchSize(), valFeatures, valLabels, workerECs.get(i), ps))
 			.collect(Collectors.toList());
 
 		// Do data partition
 		PSScheme scheme = getScheme();
-		doDataPartition(scheme, ec, workers);
+		doDataPartitioning(scheme, ec, workers);
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("\nConfiguration of paramserv func: "
-					+ "\nmode: %s \nworkerNum: %d \nupdate frequency: %s "
-					+ "\nstrategy: %s \ndata partitioner: %s",
-					mode, workerNum, freq, updateType, scheme));
+				+ "\nmode: %s \nworkerNum: %d \nupdate frequency: %s "
+				+ "\nstrategy: %s \ndata partitioner: %s",
+				mode, workerNum, freq, updateType, scheme));
 		}
 
 		// Launch the worker threads and wait for completion
@@ -375,23 +377,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return hyperparams;
 	}
 
-	private void doDataPartition(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
+	private void doDataPartitioning(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		MatrixObject valFeatures = ec.getMatrixObject(getParam(PS_VAL_FEATURES));
-		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
 		switch (scheme) {
 			case DISJOINT_CONTIGUOUS:
-				doDataPartition(new DataPartitionerDC(), features, labels, valFeatures, valLabels, workers);
+				doDataPartitioning(new DataPartitionerDC(), features, labels, workers);
 				break;
 			case DISJOINT_ROUND_ROBIN:
-				doDataPartition(new DataPartitionerDRR(), features, labels, valFeatures, valLabels, workers);
+				doDataPartitioning(new DataPartitionerDRR(), features, labels, workers);
 				break;
 			case DISJOINT_RANDOM:
-				doDataPartition(new DataPartitionerDR(), features, labels, valFeatures, valLabels, workers);
+				doDataPartitioning(new DataPartitionerDR(), features, labels, workers);
 				break;
 			case OVERLAP_RESHUFFLE:
-				doDataPartition(new DataPartitionerOR(), features, labels, valFeatures, valLabels, workers);
+				doDataPartitioning(new DataPartitionerOR(), features, labels, workers);
 				break;
 		}
 	}
@@ -408,28 +408,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return scheme;
 	}
 
-	private void doDataPartition(DataPartitioner dp, MatrixObject features, MatrixObject labels, MatrixObject valFeatures,
-			MatrixObject valLabels, List<LocalPSWorker> workers) {
-		List<MatrixObject> pfs = dp.doPartition(workers.size(), features);
-		List<MatrixObject> pls = dp.doPartition(workers.size(), labels);
-		if (pfs.size() < workers.size()) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
-						+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
-			}
-			workers = workers.subList(0, pfs.size());
-		}
-		for (int i = 0; i < workers.size(); i++) {
-			workers.get(i).setFeatures(pfs.get(i));
-			workers.get(i).setLabels(pls.get(i));
-		}
-
-		// validation data
-		List<MatrixObject> pvfs = dp.doPartition(workers.size(), valFeatures);
-		List<MatrixObject> pvls = dp.doPartition(workers.size(), valLabels);
-		for (int i = 0; i < workers.size(); i++) {
-			workers.get(i).setValFeatures(pvfs.get(i));
-			workers.get(i).setValLabels(pvls.get(i));
-		}
+	private void doDataPartitioning(DataPartitioner dp, MatrixObject features, MatrixObject labels, List<LocalPSWorker> workers) {
+		dp.doPartitioning(workers, features, labels);
 	}
 }

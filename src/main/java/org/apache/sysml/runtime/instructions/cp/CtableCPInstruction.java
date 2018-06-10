@@ -40,7 +40,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
 
-	public CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	private CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
 			boolean ignoreZeros, String opcode, String istr) {
 		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);

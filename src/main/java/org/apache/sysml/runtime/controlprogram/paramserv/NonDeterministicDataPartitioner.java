@@ -19,38 +19,30 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-/**
- * Disjoint_Contiguous data partitioner:
- *
- * for each worker, use a right indexing
- * operation X[beg:end,] to obtain contiguous,
- * non-overlapping partitions of rows.
- */
-public class DataPartitionerDC extends DataPartitioner {
-
+public abstract class NonDeterministicDataPartitioner extends DataPartitioner {
 	@Override
 	public void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels) {
-		int workerNum = workers.size();
-		List<MatrixObject> pfs = doPartitioning(workerNum, features);
-		List<MatrixObject> pls = doPartitioning(workerNum, labels);
+		// Generate the permutation
+		long range = features.getNumRows();
+		int size = (int) range;
+		MatrixBlock permutation = ParamservUtils.generatePermutation(range, size);
+		List<MatrixObject> pfs = doPartitioning(workers.size(), features, permutation);
+		List<MatrixObject> pls = doPartitioning(workers.size(), labels, permutation);
 		setPartitionedData(workers, pfs, pls);
 	}
 
-	private List<MatrixObject> doPartitioning(int k, MatrixObject mo) {
-		List<MatrixObject> list = new ArrayList<>();
-		long stepSize = (long) Math.ceil(mo.getNumRows() / k);
-		long begin = 1;
-		while (begin < mo.getNumRows()) {
-			long end = Math.min(begin - 1 + stepSize, mo.getNumRows());
-			MatrixObject pmo = ParamservUtils.sliceMatrix(mo, begin, end);
-			list.add(pmo);
-			begin = end + 1;
-		}
-		return list;
-	}
+	/**
+	 * Do matrix partitioning in non deterministic manner
+	 * @param k           The size of workers
+	 * @param mo          Matrix
+	 * @param permutation Permutation matrix
+	 * @return List of partitioned matrix
+	 */
+	public abstract List<MatrixObject> doPartitioning(int k, MatrixObject mo, MatrixBlock permutation);
+
 }

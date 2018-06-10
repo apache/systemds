@@ -51,13 +51,15 @@ public abstract class PSWorker {
 	private final String _updFunc;
 	protected final Statement.PSFrequency _freq;
 	
-	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
-		int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
+		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
 		_workerID = workerID;
 		_updFunc = updFunc;
 		_freq = freq;
 		_epochs = epochs;
 		_batchSize = batchSize;
+		_valFeatures = valFeatures;
+		_valLabels = valLabels;
 		_ec = ec;
 		_ps = ps;
 
@@ -73,14 +75,13 @@ public abstract class PSWorker {
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 		CPOperand[] boundInputs = inputs.stream()
-				.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
-				.toArray(CPOperand[]::new);
+			.map(input -> new CPOperand(input.getName(), input.getValueType(), input.getDataType()))
+			.toArray(CPOperand[]::new);
 		ArrayList<String> inputNames = inputs.stream().map(DataIdentifier::getName)
-				.collect(Collectors.toCollection(ArrayList::new));
+			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
-				.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames,
-				"update function");
+			.collect(Collectors.toCollection(ArrayList::new));
+		_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
@@ -118,11 +119,4 @@ public abstract class PSWorker {
 		_labels = labels;
 	}
 
-	public void setValFeatures(MatrixObject valFeatures) {
-		_valFeatures = valFeatures;
-	}
-
-	public void setValLabels(MatrixObject valLabels) {
-		_valLabels = valLabels;
-	}
 }

@@ -34,8 +34,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 
 public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 
-	public AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
+	private AggregateBinaryCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
 	}
 

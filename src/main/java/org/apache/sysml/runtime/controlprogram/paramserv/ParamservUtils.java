@@ -25,17 +25,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
-import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
@@ -84,9 +81,7 @@ public class ParamservUtils {
 	}
 
 	public static MatrixObject newMatrixObject() {
-		return new MatrixObject(Expression.ValueType.DOUBLE, null,
-				new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo,
-						InputInfo.BinaryBlockInputInfo));
+		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 	}
 
 	/**
@@ -107,35 +102,17 @@ public class ParamservUtils {
 		return result;
 	}
 
-	public static MatrixObject generatePermutation(MatrixObject mo, ExecutionContext ec) {
+	public static MatrixBlock generatePermutation(long range, int size) {
 		// Create the sequence
-		double[] data = LongStream.range(1, mo.getNumRows() + 1).mapToDouble(l -> l).toArray();
-		MatrixBlock seqMB = DataConverter.convertToMatrixBlock(data, true);
-		MatrixObject seq = ParamservUtils.newMatrixObject();
-		seq.acquireModify(seqMB);
-		seq.release();
-		ec.setVariable("seq", seq);
+		double[] data = LongStream.range(1, size + 1).mapToDouble(l -> l).toArray();
+		MatrixBlock seq = DataConverter.convertToMatrixBlock(data, true);
 
 		// Generate a sample
-		DataGenCPInstruction sampleInst = new DataGenCPInstruction(null, Hop.DataGenMethod.SAMPLE, null,
-				new CPOperand("sample", Expression.ValueType.DOUBLE, Expression.DataType.MATRIX),
-				new CPOperand(String.valueOf(mo.getNumRows()), Expression.ValueType.INT, Expression.DataType.SCALAR,
-						true), new CPOperand("1", Expression.ValueType.INT, Expression.DataType.SCALAR, true),
-				(int) mo.getNumRowsPerBlock(), (int) mo.getNumColumnsPerBlock(), mo.getNumRows(), false, -1,
-				Hop.DataGenMethod.SAMPLE.name().toLowerCase(), "sample");
-		ec.setVariable("sample", ParamservUtils.newMatrixObject());
-		sampleInst.processInstruction(ec);
+		MatrixBlock sample = MatrixBlock.sampleOperations(range, size, false, -1);
 
 		// Combine the sequence and sample as a table
-		CtableCPInstruction tableInst = new CtableCPInstruction(
-				new CPOperand("seq", Expression.ValueType.DOUBLE, Expression.DataType.MATRIX),
-				new CPOperand("sample", Expression.ValueType.DOUBLE, Expression.DataType.MATRIX),
-				new CPOperand("1.0", Expression.ValueType.DOUBLE, Expression.DataType.SCALAR, true),
-				new CPOperand("permutation", Expression.ValueType.DOUBLE, Expression.DataType.MATRIX), "-1", true, "-1",
-				true, true, false, "ctableexpand", "table");
-		MatrixObject permutation = ParamservUtils.newMatrixObject();
-		ec.setVariable("permutation", permutation);
-		tableInst.processInstruction(ec);
+		MatrixBlock permutation = new MatrixBlock(seq.getNumRows(), sample.getNumRows(), true);
+		seq.ctableOperations(null, sample, 1.0, permutation);
 		return permutation;
 	}
 }

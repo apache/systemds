@@ -43,8 +43,7 @@ public class DataPartitionerDR extends NonDeterministicDataPartitioner {
 		List<MatrixObject> pMatrices = IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize + 1;
 			int end = (int) Math.min((i + 1) * batchSize, mo.getNumRows());
-			MatrixBlock slicedPerm = permutation
-					.slice(begin - 1, end - 1, 0, permutation.getNumColumns() - 1, new MatrixBlock());
+			MatrixBlock slicedPerm = permutation.slice(begin - 1, end - 1, 0, permutation.getNumColumns() - 1, new MatrixBlock());
 			AggregateBinaryOperator op = InstructionUtils.getMatMultOperator(k);
 			MatrixBlock output = slicedPerm.aggregateBinaryOperations(slicedPerm, data, new MatrixBlock(), op);
 			MatrixObject result = ParamservUtils.newMatrixObject();

@@ -152,22 +152,20 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				mode, workerNum, freq, updateType, scheme));
 		}
 
-		// Launch the worker threads and wait for completion
 		try {
+			// Launch the worker threads and wait for completion
 			for (Future<Void> ret : es.invokeAll(workers))
 				ret.get(); //error handling
+			// Fetch the final model from ps
+			ListObject result = ps.getResult();
+			ec.setVariable(output.getName(), result);
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {
 			es.shutdownNow();
+			// Should shutdown the thread pool in param server
+			ps.shutdown();
 		}
-
-		// Fetch the final model from ps
-		ListObject result = ps.getResult();
-		ec.setVariable(output.getName(), result);
-
-		// Should shutdown the thread pool in param server
-		ps.shutdown();
 	}
 
 	private PSModeType getPSMode() {

@@ -51,6 +51,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -111,7 +112,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	public void processInstruction(ExecutionContext ec) {
 		PSModeType mode = getPSMode();
 		int workerNum = getWorkerNum(mode);
-		ExecutorService es = Executors.newFixedThreadPool(workerNum);
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+			.namingPattern("workers-pool-thread-%d")
+			.build();
+		ExecutorService es = Executors.newFixedThreadPool(workerNum, factory);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
@@ -159,9 +163,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 
 		// Fetch the final model from ps
-		ListObject result;
-		result = ps.getResult();
+		ListObject result = ps.getResult();
 		ec.setVariable(output.getName(), result);
+
+		// Should shutdown the thread pool in param server
+		ps.shutdown();
 	}
 
 	private PSModeType getPSMode() {

@@ -26,7 +26,11 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-		ParamservFuncTest.class
+	DataPartitionerTest.class,
+	ParamservSyntaxTest.class,
+	ParamservRecompilationTest.class,
+	ParamservRuntimeNegativeTest.class,
+	ParamservNNTest.class
 })
 
 

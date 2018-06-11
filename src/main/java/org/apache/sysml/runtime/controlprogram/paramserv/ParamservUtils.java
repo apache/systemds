@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -77,6 +78,10 @@ public class ParamservUtils {
 		cd.clearData();
 	}
 
+	public static MatrixObject newMatrixObject() {
+		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+	}
+
 	/**
 	 * Slice the matrix
 	 *
@@ -86,14 +91,23 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, null,
-			new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1),
-				OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		MatrixObject result = newMatrixObject();
 		MatrixBlock tmp = mo.acquireRead();
 		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
 		mo.release();
 		result.release();
 		result.enableCleanup(false);
 		return result;
+	}
+
+	public static MatrixBlock generatePermutation(int numEntries) {
+		// Create a sequence and sample w/o replacement
+		MatrixBlock seq = MatrixBlock.seqOperations(1, numEntries, 1);
+		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, -1);
+
+		// Combine the sequence and sample as a table
+		MatrixBlock permutation = new MatrixBlock(numEntries, numEntries, true);
+		seq.ctableOperations(null, sample, 1.0, permutation);
+		return permutation;
 	}
 }

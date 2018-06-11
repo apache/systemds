@@ -32,17 +32,10 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
  * non-overlapping partitions of rows.
  */
 public class DataPartitionerDC extends DataPartitioner {
-	@Override
-	public void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels) {
-		int workerNum = workers.size();
-		List<MatrixObject> pfs = doPartitioning(workerNum, features);
-		List<MatrixObject> pls = doPartitioning(workerNum, labels);
-		setPartitionedData(workers, pfs, pls);
-	}
 
 	private List<MatrixObject> doPartitioning(int k, MatrixObject mo) {
 		List<MatrixObject> list = new ArrayList<>();
-		long stepSize = (long) Math.ceil(mo.getNumRows() / k);
+		long stepSize = (long) Math.ceil((double) mo.getNumRows() / k);
 		long begin = 1;
 		while (begin < mo.getNumRows()) {
 			long end = Math.min(begin - 1 + stepSize, mo.getNumRows());
@@ -51,5 +44,12 @@ public class DataPartitionerDC extends DataPartitioner {
 			begin = end + 1;
 		}
 		return list;
+	}
+
+	@Override
+	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+		List<MatrixObject> pfs = doPartitioning(workersNum, features);
+		List<MatrixObject> pls = doPartitioning(workersNum, labels);
+		return new Result(pfs, pls);
 	}
 }

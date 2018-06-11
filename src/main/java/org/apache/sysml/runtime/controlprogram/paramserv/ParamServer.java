@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.parser.DMLProgram;
@@ -71,7 +72,10 @@ public abstract class ParamServer {
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
 		}
-		_es = Executors.newSingleThreadExecutor();
+		BasicThreadFactory factory = new BasicThreadFactory.Builder()
+			.namingPattern("agg-service-pool-thread-%d")
+			.build();
+		_es = Executors.newSingleThreadExecutor(factory);
 	}
 
 	public abstract void push(int workerID, ListObject value);

@@ -22,6 +22,7 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,11 +38,13 @@ import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
 import org.apache.sysml.hops.Hop.OpOp4;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.QuaternaryOp;
@@ -182,7 +185,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				hi = simplifyWeightedUnaryMM(hop, hi, i);         //e.g., X*exp(U%*%t(V)) -> wumm(X, U, t(V), exp)
 				hi = simplifyDotProductSum(hop, hi, i);           //e.g., sum(v^2) -> t(v)%*%v if ncol(v)==1 
 				hi = fuseSumSquared(hop, hi, i);                  //e.g., sum(X^2) -> sumSq(X), if ncol(X)>1
-				hi = fuseAxpyBinaryOperationChain(hop, hi, i);    //e.g., (X+s*Y) -> (X+*s Y), (X-s*Y) -> (X-*s Y) 	
+				hi = fuseAxpyBinaryOperationChain(hop, hi, i);    //e.g., (X+s*Y) -> (X+*s Y), (X-s*Y) -> (X-*s Y)
 			}
 			hi = reorderMinusMatrixMult(hop, hi, i);          //e.g., (-t(X))%*%y->-(t(X)%*%y), TODO size
 			hi = simplifySumMatrixMult(hop, hi, i);           //e.g., sum(A%*%B) -> sum(t(colSums(A))*rowSums(B)), if not dot product / wsloss
@@ -191,6 +194,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
 			hi = simplifyNrowNcolComputation(hop, hi, i);     //e.g., nrow(X) -> literal(nrow(X)), if nrow known to remove data dependency
 			hi = simplifyTableSeqExpand(hop, hi, i);          //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
+			if( OptimizerUtils.ALLOW_OPERATOR_FUSION )
+				foldMultipleMinMaxOperations(hi);             //e.g., min(X,min(min(3,7),Y)) -> min(X,3,7,Y)
 			
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -2582,6 +2587,56 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 		}
 	
+		return hi;
+	}
+	
+	private static Hop foldMultipleMinMaxOperations(Hop hi) 
+	{
+		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX) 
+			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX))
+			&& !OptimizerUtils.isHadoopExecutionMode() )
+		{
+			OpOp2 bop = (hi instanceof BinaryOp) ? ((BinaryOp)hi).getOp() :
+				OpOp2.valueOf(((NaryOp)hi).getOp().name());
+			OpOpN nop = (hi instanceof NaryOp) ? ((NaryOp)hi).getOp() :
+				OpOpN.valueOf(((BinaryOp)hi).getOp().name());
+			
+			boolean converged = false;
+			while( !converged ) {
+				//get first matching min/max
+				Hop first = hi.getInput().stream()
+					.filter(h -> HopRewriteUtils.isBinary(h, bop) || HopRewriteUtils.isNary(h, nop))
+					.findFirst().orElse(null);
+				
+				//replace current op with new nary min/max
+				final Hop lhi = hi;
+				if( first != null && first.getParent().size()==1
+					&& first.getInput().stream().allMatch(c -> c.getDataType()==DataType.SCALAR 
+						|| HopRewriteUtils.isEqualSize(lhi, c))) {
+					//construct new list of inputs (in original order)
+					ArrayList<Hop> linputs = new ArrayList<>();
+					for(Hop in : hi.getInput())
+						if( in == first )
+							linputs.addAll(first.getInput());
+						else
+							linputs.add(in);
+					Hop hnew = HopRewriteUtils.createNary(nop, linputs.toArray(new Hop[0]));
+					//clear dangling references
+					HopRewriteUtils.removeAllChildReferences(hi);
+					HopRewriteUtils.removeAllChildReferences(first);
+					//rewire all parents (avoid anomalies with refs to hi)
+					List<Hop> parents = new ArrayList<>(hi.getParent());
+					for( Hop p : parents )
+						HopRewriteUtils.replaceChildReference(p, hi, hnew);
+					hi = hnew;
+					LOG.debug("Applied foldMultipleMinMaxOperations (line "+hi.getBeginLine()+").");
+				}
+				else {
+					converged = true;
+				}
+			}
+		}
+		
 		return hi;
 	}
 }

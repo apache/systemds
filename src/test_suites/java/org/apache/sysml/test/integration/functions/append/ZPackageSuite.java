@@ -29,8 +29,6 @@ import org.junit.runners.Suite;
 	AppendChainTest.class,
 	AppendMatrixTest.class,
 	AppendVectorTest.class,
-	NaryCBindTest.class,
-	NaryRBindTest.class,
 	RBindCBindMatrixTest.class,
 	StringAppendTest.class,
 })

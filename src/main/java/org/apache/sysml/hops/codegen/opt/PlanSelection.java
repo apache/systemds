@@ -70,7 +70,7 @@ public abstract class PlanSelection
 	}
 	
 	protected void rSelectPlansFuseAll(CPlanMemoTable memo, Hop current, TemplateType currentType, HashSet<Long> partition) 
-	{	
+	{
 		if( isVisited(current.getHopID(), currentType) 
 			|| (partition!=null && !partition.contains(current.getHopID())) )
 			return;

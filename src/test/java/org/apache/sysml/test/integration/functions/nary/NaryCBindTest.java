@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.append;
+package org.apache.sysml.test.integration.functions.nary;
 
 import java.util.HashMap;
 
@@ -32,18 +32,18 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 
-public class NaryRBindTest extends AutomatedTestBase
+public class NaryCBindTest extends AutomatedTestBase
 {	
-	private final static String TEST_NAME = "NaryRbind";
-	private final static String TEST_DIR = "functions/append/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + NaryRBindTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "NaryCbind";
+	private final static String TEST_DIR = "functions/nary/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + NaryCBindTest.class.getSimpleName() + "/";
 
 	private final static double epsilon=0.0000000001;
 	
-	private final static int cols = 101;
-	private final static int rows1 = 1101;
-	private final static int rows2 = 1179;
-	private final static int rows3 = 1123;
+	private final static int rows = 1101;
+	private final static int cols1 = 101;
+	private final static int cols2 = 79;
+	private final static int cols3 = 123;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.07;
@@ -55,87 +55,87 @@ public class NaryRBindTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testNaryRbindDenseDenseDenseCP() {
-		runRbindTest(false, false, false, ExecType.CP);
+	public void testNaryCbindDenseDenseDenseCP() {
+		runCbindTest(false, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindDenseDenseSparseCP() {
-		runRbindTest(false, false, true, ExecType.CP);
+	public void testNaryCbindDenseDenseSparseCP() {
+		runCbindTest(false, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindDenseSparseDenseCP() {
-		runRbindTest(false, true, false, ExecType.CP);
+	public void testNaryCbindDenseSparseDenseCP() {
+		runCbindTest(false, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindDenseSparseSparseCP() {
-		runRbindTest(false, true, true, ExecType.CP);
+	public void testNaryCbindDenseSparseSparseCP() {
+		runCbindTest(false, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindSparseDenseDenseCP() {
-		runRbindTest(true, false, false, ExecType.CP);
+	public void testNaryCbindSparseDenseDenseCP() {
+		runCbindTest(true, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindSparseDenseSparseCP() {
-		runRbindTest(true, false, true, ExecType.CP);
+	public void testNaryCbindSparseDenseSparseCP() {
+		runCbindTest(true, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindSparseSparseDenseCP() {
-		runRbindTest(true, true, false, ExecType.CP);
+	public void testNaryCbindSparseSparseDenseCP() {
+		runCbindTest(true, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindSparseSparseSparseCP() {
-		runRbindTest(true, true, true, ExecType.CP);
+	public void testNaryCbindSparseSparseSparseCP() {
+		runCbindTest(true, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testNaryRbindDenseDenseDenseSP() {
-		runRbindTest(false, false, false, ExecType.SPARK);
+	public void testNaryCbindDenseDenseDenseSP() {
+		runCbindTest(false, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindDenseDenseSparseSP() {
-		runRbindTest(false, false, true, ExecType.SPARK);
+	public void testNaryCbindDenseDenseSparseSP() {
+		runCbindTest(false, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindDenseSparseDenseSP() {
-		runRbindTest(false, true, false, ExecType.SPARK);
+	public void testNaryCbindDenseSparseDenseSP() {
+		runCbindTest(false, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindDenseSparseSparseSP() {
-		runRbindTest(false, true, true, ExecType.SPARK);
+	public void testNaryCbindDenseSparseSparseSP() {
+		runCbindTest(false, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindSparseDenseDenseSP() {
-		runRbindTest(true, false, false, ExecType.SPARK);
+	public void testNaryCbindSparseDenseDenseSP() {
+		runCbindTest(true, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindSparseDenseSparseSP() {
-		runRbindTest(true, false, true, ExecType.SPARK);
+	public void testNaryCbindSparseDenseSparseSP() {
+		runCbindTest(true, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindSparseSparseDenseSP() {
-		runRbindTest(true, true, false, ExecType.SPARK);
+	public void testNaryCbindSparseSparseDenseSP() {
+		runCbindTest(true, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testNaryRbindSparseSparseSparseSP() {
-		runRbindTest(true, true, true, ExecType.CP);
+	public void testNaryCbindSparseSparseSparseSP() {
+		runCbindTest(true, true, true, ExecType.CP);
 	}
 	
 	
-	public void runRbindTest(boolean sparse1, boolean sparse2, boolean sparse3, ExecType et)
+	public void runCbindTest(boolean sparse1, boolean sparse2, boolean sparse3, ExecType et)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ) {
@@ -155,19 +155,19 @@ public class NaryRBindTest extends AutomatedTestBase
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-stats", "-args", input("A"), 
+			programArgs = new String[]{"-stats", "-args", input("A"),
 				input("B"), input("C"), output("R") };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + 
+			rCmd = "Rscript" + " " + fullRScriptName + " " +
 				inputDir() + " "+ expectedDir();
 			
 			//generate input data
 			double sp1 = sparse1 ? sparsity2 : sparsity1; 
 			double sp2 = sparse2 ? sparsity2 : sparsity1; 
 			double sp3 = sparse3 ? sparsity2 : sparsity1; 
-			double[][] A = getRandomMatrix(rows1, cols, -1, 1, sp1, 711);
-			double[][] B = getRandomMatrix(rows2, cols, -1, 1, sp2, 722);
-			double[][] C = getRandomMatrix(rows3, cols, -1, 1, sp3, 733);
+			double[][] A = getRandomMatrix(rows, cols1, -1, 1, sp1, 711);
+			double[][] B = getRandomMatrix(rows, cols2, -1, 1, sp2, 722);
+			double[][] C = getRandomMatrix(rows, cols3, -1, 1, sp3, 733);
 			writeInputMatrixWithMTD("A", A, true);
 			writeInputMatrixWithMTD("B", B, true);
 			writeInputMatrixWithMTD("C", C, true);
@@ -182,7 +182,7 @@ public class NaryRBindTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, epsilon, "DML", "R");
 			
 			//check for spark instructions
-			Assert.assertTrue(heavyHittersContainsSubString("sp_rbind")==(et==ExecType.SPARK));
+			Assert.assertTrue(heavyHittersContainsSubString("sp_cbind")==(et==ExecType.SPARK));
 		}
 		finally {
 			rtplatform = platformOld;

@@ -30,6 +30,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "FunPotpourriNoReturn";
 	private final static String TEST_NAME2 = "FunPotpourriComments";
+	private final static String TEST_NAME3 = "FunPotpourriNoReturn2";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -39,6 +40,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 	}
 
 	@Test
@@ -49,6 +51,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionComments() {
 		runFunctionTest( TEST_NAME2, false );
+	}
+	
+	@Test
+	public void testFunctionNoReturnSpec() {
+		runFunctionTest( TEST_NAME3, false );
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {

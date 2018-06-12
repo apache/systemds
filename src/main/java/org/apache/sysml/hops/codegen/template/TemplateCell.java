@@ -37,9 +37,11 @@ import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.NaryOp;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.codegen.cplan.CNode;
@@ -82,7 +84,8 @@ public class TemplateCell extends TemplateBase
 			|| (hop instanceof IndexingOp && hop.getInput().get(0).getDim2() >= 0
 				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, DataGenMethod.SEQ)
-				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true));
+				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
 	}
 
 	@Override
@@ -93,7 +96,8 @@ public class TemplateCell extends TemplateBase
 				&& hop.getDim1()==1 && hop.getDim2()==1)
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 			|| (HopRewriteUtils.isTransposeOperation(hop) 
-				&& hop.getDim1()==1 && hop.getDim2()>1));
+				&& hop.getDim1()==1 && hop.getDim2()>1))
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
 	}
 
 	@Override
@@ -103,7 +107,8 @@ public class TemplateCell extends TemplateBase
 			|| (hop instanceof AggBinaryOp && hop.getInput().indexOf(input)==0 
 				&& HopRewriteUtils.isTransposeOperation(input))))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
-				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false));
+				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
 	}
 
 	@Override
@@ -220,6 +225,14 @@ public class TemplateCell extends TemplateBase
 			//construct ternary cnode, primitive operation derived from OpOp3
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 				TernaryType.valueOf(top.getOp().name()));
+		}
+		else if(HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)) {
+			String op = ((NaryOp)hop).getOp().name();
+			CNode[] inputs = hop.getInput().stream().map(c -> 
+				TemplateUtils.wrapLookupIfNecessary(tmp.get(c.getHopID()), c)).toArray(CNode[]::new);
+			out = new CNodeBinary(inputs[0], inputs[1], BinType.valueOf(op));
+			for( int i=2; i<hop.getInput().size(); i++ )
+				out = new CNodeBinary(out, inputs[i], BinType.valueOf(op));
 		}
 		else if( hop instanceof ParameterizedBuiltinOp ) {
 			CNode cdata1 = tmp.get(((ParameterizedBuiltinOp)hop).getTargetHop().getHopID());

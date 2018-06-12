@@ -387,41 +387,39 @@ public class LibMatrixDatagen
 	public static void generateSample(MatrixBlock out, long range, int size, boolean replace, long seed) {
 		//set meta data and allocate dense block
 		out.reset(size, 1, false);
-		out.allocateDenseBlock();
-		DenseBlock a = out.getDenseBlock();
+		double[] a = out.allocateBlock().getDenseBlockValues();
 		seed = (seed == -1 ? System.nanoTime() : seed);
 		
 		if ( !replace ) 
 		{
 			// reservoir sampling
-			for(int i=1; i <= size; i++) 
-				a.set(i-1, 0, i );
+			for(int i=0; i < size; i++) 
+				a[i] = i + 1;
 			
 			Random rand = new Random(seed);
 			for(int i=size+1; i <= range; i++) {
 				if(rand.nextInt(i) < size)
-					a.set( rand.nextInt(size), 0, i );
+					a[rand.nextInt(size)] = i;
 			}
 			
 			// randomize the sample (Algorithm P from Knuth's ACP)
-			// -- needed especially when the differnce between range and size is small)
-			double tmp;
-			int idx;
-			for(int i=size-1; i >= 1; i--) {
-				idx = rand.nextInt(i);
-				// swap i^th and idx^th entries
-				tmp = a.get(idx, 0);
-				a.set(idx, 0, a.get(i, 0));
-				a.set(i, 0, tmp);
+			// needed especially when the difference between range and size is small)
+			for( int i = 0; i < size-1; i++ ) {
+				//generate index in i <= j < size
+				int j = rand.nextInt(size - i) + i;
+				//swap i^th and j^th entry
+				double tmp = a[i];
+				a[i] = a[j];
+				a[j] = tmp;
 			}
 		}
 		else {
 			Random r = new Random(seed);
 			for(int i=0; i < size; i++) 
-				a.set(i, 0, 1+nextLong(r, range) );
+				a[i] = 1+nextLong(r, range);
 		}
 		
-		out.recomputeNonZeros();
+		out.setNonZeros(size);
 		out.examSparsity();
 	}
 

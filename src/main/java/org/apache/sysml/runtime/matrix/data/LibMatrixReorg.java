@@ -263,7 +263,7 @@ public class LibMatrixReorg
 			//slice first block
 			MatrixIndexes outix1 = new MatrixIndexes(blkix1, inix.getColumnIndex());
 			MatrixBlock outblk1 = new MatrixBlock(blklen1, inblk.getNumColumns(), inblk.isInSparseFormat());
-			MatrixBlock tmp1 = tmpblk.slice(0, iposCut, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+			MatrixBlock tmp1 = tmpblk.slice(0, iposCut);
 			outblk1.leftIndexingOperations(tmp1, ipos1, ipos1+tmp1.getNumRows()-1,
 				0, tmpblk.getNumColumns()-1, outblk1, UpdateType.INPLACE_PINNED);
 			out.add(new IndexedMatrixValue(outix1, outblk1));
@@ -272,7 +272,7 @@ public class LibMatrixReorg
 			if( blkix1 != blkix2 ) {
 				MatrixIndexes outix2 = new MatrixIndexes(blkix2, inix.getColumnIndex());
 				MatrixBlock outblk2 = new MatrixBlock(blklen2, inblk.getNumColumns(), inblk.isInSparseFormat());
-				MatrixBlock tmp2 = tmpblk.slice(iposCut+1, tmpblk.getNumRows()-1, 0, tmpblk.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmp2 = tmpblk.slice(iposCut+1, tmpblk.getNumRows()-1);
 				outblk2.leftIndexingOperations(tmp2, 0, tmp2.getNumRows()-1, 0, tmpblk.getNumColumns()-1, outblk2, UpdateType.INPLACE_PINNED);
 				out.add(new IndexedMatrixValue(outix2, outblk2));
 			}
@@ -670,8 +670,7 @@ public class LibMatrixReorg
 		{
 			for( int rl=0; rl<tmp.getNumRows(); rl+=brlen ) {
 				MatrixBlock mb = tmp.slice(
-						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1), 
-						0, tmp.getNumColumns()-1, new MatrixBlock());
+						rl, (int)(Math.min(rl+brlen, tmp.getNumRows())-1));
 				outList.add(new IndexedMatrixValue(
 						new MatrixIndexes(rl/brlen+1, ix.getRowIndex()), mb));
 			}

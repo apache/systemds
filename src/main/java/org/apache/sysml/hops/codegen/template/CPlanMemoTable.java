@@ -244,7 +244,7 @@ public class CPlanMemoTable
 		Iterator<Entry<Long, List<MemoTableEntry>>> iter = _plans.entrySet().iterator();
 		while( iter.hasNext() ) {
 			Entry<Long, List<MemoTableEntry>> e = iter.next();
-			if( !ix.contains(e.getKey()) ) {
+			if( !(ix.contains(e.getKey()) || TemplateUtils.isValidSingleOperation(_hopRefs.get(e.getKey()))) ) {
 				e.getValue().removeIf(p -> !p.hasPlanRef());
 				if( e.getValue().isEmpty() )
 					iter.remove();

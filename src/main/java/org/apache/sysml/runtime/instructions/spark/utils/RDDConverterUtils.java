@@ -952,7 +952,7 @@ public class RDDConverterUtils
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock blk = arg0._2();
 			for( int i=0; i<blk.getNumRows(); i++ ) {
-				MatrixBlock tmpBlk = blk.slice(i, i, 0, blk.getNumColumns()-1, new MatrixBlock());
+				MatrixBlock tmpBlk = blk.slice(i, i);
 				long rix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, i);
 				ret.add(new Tuple2<>(rix, new Tuple2<>(ix.getColumnIndex(),tmpBlk)));
 			}

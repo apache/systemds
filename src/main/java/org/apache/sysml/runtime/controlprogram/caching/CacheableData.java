@@ -207,7 +207,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_uniqueID = isCachingActive() ? _seq.getNextID() : -1;
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
-		_gpuObjects = new HashMap<>();
+		_gpuObjects = DMLScript.USE_ACCELERATOR ? new HashMap<>() : null;
 	}
 	
 	/**
@@ -343,10 +343,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 
 	public synchronized GPUObject getGPUObject(GPUContext gCtx) {
+		if( _gpuObjects == null )
+			return null;
 		return _gpuObjects.get(gCtx);
 	}
 
 	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) {
+		if( _gpuObjects == null )
+			_gpuObjects = new HashMap<>();
 		GPUObject old = _gpuObjects.put(gCtx, gObj);
 		if (old != null)
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");
@@ -671,16 +675,17 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
-		//TODO remove
-		boolean copiedFromGPU = false;
-		for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
-			GPUObject gObj = kv.getValue();
-			if (gObj != null && copiedFromGPU && gObj.isDirty()) {
-				throw new DMLRuntimeException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
-			} else if (gObj != null){
-				copiedFromGPU = gObj.acquireHostRead(null);
-				if( _data == null )
-					getCache();
+		if( DMLScript.USE_ACCELERATOR ) {
+			boolean copiedFromGPU = false;
+			for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
+				GPUObject gObj = kv.getValue();
+				if (gObj != null && copiedFromGPU && gObj.isDirty()) {
+					throw new DMLRuntimeException("Internal Error : Inconsistent internal state, A copy of this CacheableData was dirty on more than 1 GPU");
+				} else if (gObj != null){
+					copiedFromGPU = gObj.acquireHostRead(null);
+					if( _data == null )
+						getCache();
+				}
 			}
 		}
 		

@@ -1318,7 +1318,7 @@ public class LibMatrixAgg
 			case MAX_INDEX: {
 				double init = Double.NEGATIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					d_uarimxx(a, c, n, init, (Builtin)vFn, rl, ru);
+					d_uarimax(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX: {
@@ -1424,7 +1424,7 @@ public class LibMatrixAgg
 			case MAX_INDEX: {
 				double init = Double.NEGATIVE_INFINITY;
 				if( ixFn instanceof ReduceCol ) //ROWINDEXMAX
-					s_uarimxx(a, c, n, init, (Builtin)vFn, rl, ru);
+					s_uarimax(a, c, n, init, (Builtin)vFn, rl, ru);
 				break;
 			}
 			case MIN_INDEX: {
@@ -1899,7 +1899,9 @@ public class LibMatrixAgg
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
-	private static void d_uarimxx( DenseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+	private static void d_uarimax( DenseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+		if( n <= 0 )
+			throw new DMLRuntimeException("rowIndexMax undefined for ncol="+n);
 		for( int i=rl; i<ru; i++ ) {
 			int maxindex = indexmax(a.values(i), a.pos(i), init, n, builtin);
 			c.set(i, 0, (double)maxindex + 1);
@@ -1919,6 +1921,8 @@ public class LibMatrixAgg
 	 * @param ru row upper index
 	 */
 	private static void d_uarimin( DenseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+		if( n <= 0 )
+			throw new DMLRuntimeException("rowIndexMin undefined for ncol="+n);
 		for( int i=rl; i<ru; i++ ) {
 			int minindex = indexmin(a.values(i), a.pos(i), init, n, builtin);
 			c.set(i, 0, (double)minindex + 1);
@@ -2533,7 +2537,9 @@ public class LibMatrixAgg
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */
-	private static void s_uarimxx( SparseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+	private static void s_uarimax( SparseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+		if( n <= 0 )
+			throw new DMLRuntimeException("rowIndexMax is undefined for ncol="+n);
 		for( int i=rl; i<ru; i++ ) {
 			if( !a.isEmpty(i) ) {
 				int apos = a.pos(i);
@@ -2574,6 +2580,8 @@ public class LibMatrixAgg
 	 * @param ru row upper index
 	 */
 	private static void s_uarimin( SparseBlock a, DenseBlock c, int n, double init, Builtin builtin, int rl, int ru ) {
+		if( n <= 0 )
+			throw new DMLRuntimeException("rowIndexMin is undefined for ncol="+n);
 		for( int i=rl; i<ru; i++ ) {
 			if( !a.isEmpty(i) ) {
 				int apos = a.pos(i);
@@ -3085,7 +3093,8 @@ public class LibMatrixAgg
 			maxindex = (a[i]>=maxval) ? i-ai : maxindex;
 			maxval = (a[i]>=maxval) ? a[i] : maxval;
 		}
-		return maxindex;
+		//note: robustness for all-NaN rows
+		return Math.max(maxindex, 0);
 	}
 
 	private static int indexmin( double[] a, int ai, final double init, final int len, Builtin aggop ) {
@@ -3095,7 +3104,8 @@ public class LibMatrixAgg
 			minindex = (a[i]<=minval) ? i-ai : minindex;
 			minval = (a[i]<=minval) ? a[i] : minval;
 		}
-		return minindex;
+		//note: robustness for all-NaN rows
+		return Math.max(minindex, 0);
 	}
 
 	public static void countAgg( double[] a, int[] c, int[] aix, int ai, final int len ) {

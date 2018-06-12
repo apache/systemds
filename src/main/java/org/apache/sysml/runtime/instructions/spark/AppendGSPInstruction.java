@@ -219,7 +219,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				}
 				else {
 					// Since merge requires the dimensions matching, shifting = slicing + left indexing
-					MatrixBlock firstSlicedBlk = in.slice(0, cutAt-1, 0, in.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock firstSlicedBlk = in.slice(0, cutAt-1);
 					MatrixBlock firstBlk = new MatrixBlock(lblen1, in.getNumColumns(), true);
 					firstBlk = firstBlk.leftIndexingOperations(firstSlicedBlk, _shiftBy, _blen-1, 0, in.getNumColumns()-1, new MatrixBlock(), UpdateType.INPLACE_PINNED);
 					

@@ -1089,7 +1089,7 @@ public abstract class Hop implements ParseInfo
 	
 	// Operations that require a variable number of operands
 	public enum OpOpN {
-		PRINTF, CBIND, RBIND, EVAL, LIST
+		PRINTF, CBIND, RBIND, MIN, MAX, EVAL, LIST
 	}
 	
 	public enum AggOp {
@@ -1375,6 +1375,8 @@ public abstract class Hop implements ParseInfo
 		HopsOpOpNLops.put(OpOpN.PRINTF, Nary.OperationType.PRINTF);
 		HopsOpOpNLops.put(OpOpN.CBIND, Nary.OperationType.CBIND);
 		HopsOpOpNLops.put(OpOpN.RBIND, Nary.OperationType.RBIND);
+		HopsOpOpNLops.put(OpOpN.MIN, Nary.OperationType.MIN);
+		HopsOpOpNLops.put(OpOpN.MAX, Nary.OperationType.MAX);
 		HopsOpOpNLops.put(OpOpN.EVAL, Nary.OperationType.EVAL);
 		HopsOpOpNLops.put(OpOpN.LIST, Nary.OperationType.LIST);
 	}

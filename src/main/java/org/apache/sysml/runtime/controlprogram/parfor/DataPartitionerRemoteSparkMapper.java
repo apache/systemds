@@ -117,8 +117,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 					for( int i=0; i<rows; i+=_n ) {
 						PairWritableBlock tmp = new PairWritableBlock();
 						tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
-						tmp.block = value2.slice(i, Math.min(i+(int)_n-1, value2.getNumRows()-1), 
-								0, value2.getNumColumns()-1, new MatrixBlock());
+						tmp.block = value2.slice(i, Math.min(i+(int)_n-1, value2.getNumRows()-1));
 						ret.add(new Tuple2<Long,Writable>(new Long((row_offset+i)/_n+1),tmp));
 					}
 				}

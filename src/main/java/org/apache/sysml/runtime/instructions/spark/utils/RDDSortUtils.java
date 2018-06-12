@@ -291,7 +291,7 @@ public class RDDSortUtils
 			throws Exception {
 			ArrayList<MatrixBlock> rows = new ArrayList<>();
 			for(int i=0; i<arg0.getNumRows(); i++)
-				rows.add(arg0.slice(i, i, 0, arg0.getNumColumns()-1, new MatrixBlock()));
+				rows.add(arg0.slice(i, i));
 			return rows.iterator();
 		}
 	}
@@ -368,7 +368,7 @@ public class RDDSortUtils
 			long ixoffset = (ix.getRowIndex()-1)*_brlen;
 			for( int i=0; i<mb.getNumRows(); i++) {
 				double[] vals = DataConverter.convertToDoubleVector(
-					mb.slice(i, i, 0, mb.getNumColumns()-1, new MatrixBlock()));
+					mb.slice(i, i));
 				ret.add(new Tuple2<>(new ValuesIndexPair(vals,ixoffset+i+1), vals));
 			}
 			
@@ -773,9 +773,9 @@ public class RDDSortUtils
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
 					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
-					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
-					MatrixBlock tmp = data.slice(_currPos, _currPos, 0, data.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock tmp = data.slice(_currPos, _currPos);
 					_currPos++;
 					
 					//handle end of block situations
@@ -862,9 +862,9 @@ public class RDDSortUtils
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);
 					int pos = UtilFunctions.computeCellInBlock(valix, _brlen);
-					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);		
+					int len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					MatrixIndexes lix = new MatrixIndexes(rix,ixmap.getColumnIndex());
-					MatrixBlock tmp = data.slice(_currPos, _currPos, 0, data.getNumColumns()-1, new MatrixBlock());
+					MatrixBlock tmp = data.slice(_currPos, _currPos);
 					_currPos++;
 					
 					//handle end of block situations

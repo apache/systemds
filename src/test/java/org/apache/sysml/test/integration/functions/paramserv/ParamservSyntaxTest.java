@@ -24,7 +24,7 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
 
-public class ParamservFuncTest extends AutomatedTestBase {
+public class ParamservSyntaxTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-all-args";
 	private static final String TEST_NAME2 = "paramserv-without-optional-args";
@@ -32,18 +32,10 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	private static final String TEST_NAME4 = "paramserv-wrong-type-args";
 	private static final String TEST_NAME5 = "paramserv-wrong-args";
 	private static final String TEST_NAME6 = "paramserv-wrong-args2";
-	private static final String TEST_NAME7 = "paramserv-nn-bsp-batch";
-	private static final String TEST_NAME8 = "paramserv-minimum-version";
-	private static final String TEST_NAME9 = "paramserv-worker-failed";
-	private static final String TEST_NAME10 = "paramserv-agg-service-failed";
-	private static final String TEST_NAME11 = "paramserv-large-parallelism";
-	private static final String TEST_NAME12 = "paramserv-wrong-aggregate-func";
-	private static final String TEST_NAME13 = "paramserv-nn-asp-batch";
-	private static final String TEST_NAME14 = "paramserv-nn-bsp-epoch";
-	private static final String TEST_NAME15 = "paramserv-nn-asp-epoch";
+	private static final String TEST_NAME7 = "paramserv-minimum-version";
 
 	private static final String TEST_DIR = "functions/paramserv/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservFuncTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservSyntaxTest.class.getSimpleName() + "/";
 
 	private final String HOME = SCRIPT_DIR + TEST_DIR;
 
@@ -56,14 +48,6 @@ public class ParamservFuncTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {}));
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {}));
-		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {}));
-		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {}));
-		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] {}));
-		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13, new String[] {}));
-		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14, new String[] {}));
-		addTestConfiguration(TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15, new String[] {}));
 	}
 
 	@Test
@@ -101,49 +85,8 @@ public class ParamservFuncTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParamservNNBspBatchTest() {
+	public void testParamservMinimumVersion() {
 		runDMLTest(TEST_NAME7, false, null, null);
-	}
-
-	@Test
-	public void testParamservMinimumVersionTest() {
-		runDMLTest(TEST_NAME8, false, null, null);
-	}
-
-	@Test
-	public void testParamservWorkerFailedTest() {
-		runDMLTest(TEST_NAME9, true, DMLException.class, "Invalid lookup by name in unnamed list: worker_err.");
-	}
-
-	@Test
-	public void testParamservAggServiceFailedTest() {
-		runDMLTest(TEST_NAME10, true, DMLException.class, "Invalid lookup by name in unnamed list: agg_service_err");
-	}
-
-	@Test
-	public void testParamservLargeParallelismTest() {
-		runDMLTest(TEST_NAME11, false, null, null);
-	}
-
-	@Test
-	public void testParamservWrongAggregateFuncTest() {
-		runDMLTest(TEST_NAME12, true, DMLException.class,
-				"The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.");
-	}
-
-	@Test
-	public void testParamservASPTest() {
-		runDMLTest(TEST_NAME13, false, null, null);
-	}
-
-	@Test
-	public void testParamservBSPEpochTest() {
-		runDMLTest(TEST_NAME14, false, null, null);
-	}
-
-	@Test
-	public void testParamservASPEpochTest() {
-		runDMLTest(TEST_NAME15, false, null, null);
 	}
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {

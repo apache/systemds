@@ -391,8 +391,7 @@ public class OperationsOnMatrixValues
 				int row_offset = blockRow*brlen;
 
 				//copy submatrix to block
-				MatrixBlock tmp = out.slice( row_offset, row_offset+maxRow-1, 
-						             0, out.getNumColumns()-1, new MatrixBlock() );
+				MatrixBlock tmp = out.slice(row_offset, row_offset+maxRow-1);
 				
 				//append block to result cache
 				outlist.add(new IndexedMatrixValue(new MatrixIndexes(blockRow+1,ix.getColumnIndex()), tmp));

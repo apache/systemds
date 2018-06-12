@@ -96,8 +96,11 @@ public class IPAPassInlineFunctions extends IPAPass
 						outMap.put(fstmt.getOutputParams().get(j).getName(), opOutputs[j]);
 					for(int j=0; j<hops2.size(); j++) {
 						Hop out = hops2.get(j);
-						if( HopRewriteUtils.isData(out, DataOpTypes.TRANSIENTWRITE) )
+						if( HopRewriteUtils.isData(out, DataOpTypes.TRANSIENTWRITE) ) {
 							out.setName(outMap.get(out.getName()));
+							if( out.getName() == null )
+								hops2.remove(j);
+						}
 					}
 					fcallsSB.get(i).getHops().remove(op);
 					fcallsSB.get(i).getHops().addAll(hops2);

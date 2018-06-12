@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.List;
+
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -32,24 +34,33 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		//pin input matrix blocks
-		MatrixBlock in1 = ec.getMatrixInput(inputs[0].getName());
-		MatrixBlock[] in2 = new MatrixBlock[inputs.length-1];
-		for( int i=1; i<inputs.length; i++ )
-			in2[i-1] = ec.getMatrixInput(inputs[i].getName());
+		//separate scalars and matrices and pin all input matrices
+		List<MatrixBlock> matrices = ec.getMatrixInputs(inputs);
+		List<ScalarObject> scalars = ec.getScalarInputs(inputs);
 		
 		MatrixBlock outBlock = null;
 		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
 			boolean cbind = "cbind".equals(getOpcode());
-			outBlock = in1.append(in2, new MatrixBlock(), cbind);
+			outBlock = matrices.get(0).append(matrices.subList(1, matrices.size())
+				.toArray(new MatrixBlock[0]), new MatrixBlock(), cbind);
+		}
+		
+		else if( "nmin".equals(getOpcode()) || "nmax".equals(getOpcode()) ) {
+			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
+				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode: "+getOpcode());
 		}
 		
-		//release inputs and set output
-		for( int i=0; i<inputs.length; i++ )
-			ec.releaseMatrixInput(inputs[i].getName());
-		ec.setMatrixOutput(output.getName(), outBlock);
+		//release inputs and set output matrix or scalar
+		ec.releaseMatrixInputs(inputs);
+		if( output.getDataType().isMatrix() ) {
+			ec.setMatrixOutput(output.getName(), outBlock);
+		}
+		else {
+			ec.setVariable(output.getName(), ScalarObjectFactory.createScalarObject(
+				output.getValueType(), outBlock.quickGetValue(0, 0)));
+		}
 	}
 }

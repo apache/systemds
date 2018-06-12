@@ -262,8 +262,12 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "rappend", SPType.RAppend);
 		String2SPInstructionType.put( "gappend", SPType.GAppend);
 		String2SPInstructionType.put( "galignedappend", SPType.GAlignedAppend);
+		
 		String2SPInstructionType.put( "cbind", SPType.BuiltinNary);
 		String2SPInstructionType.put( "rbind", SPType.BuiltinNary);
+		String2SPInstructionType.put( "nmin",  SPType.BuiltinNary);
+		String2SPInstructionType.put( "nmax",  SPType.BuiltinNary);
+		
 		
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);

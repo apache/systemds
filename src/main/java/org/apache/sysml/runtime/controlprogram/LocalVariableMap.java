@@ -123,11 +123,26 @@ public class LocalVariableMap implements Cloneable
 	}
 
 	public double getPinnedDataSize() {
-		//note: this method returns the total size of pinned data objects
-		//that are not subject to automatic eviction.
+		//note: this method returns the total size of distinct pinned
+		//data objects that are not subject to automatic eviction 
+		//(in JMLC all matrices and frames are pinned)
+		
+		//compute map of distinct cachable data
+		Map<Integer, Data> dict = new HashMap<>();
+		for( Entry<String,Data> e : localMap.entrySet() ) {
+			int hash = System.identityHashCode(e.getValue());
+			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData )
+				dict.put(hash, e.getValue());
+		}
+		
+		//compute total in-memory size
+		return dict.values().stream().mapToDouble(
+			d -> ((CacheableData<?>)d).getDataSize()).sum();
+	}
+	
+	public long countPinnedData() {
 		return localMap.values().stream()
-			.filter(d -> (d instanceof CacheableData))
-			.mapToDouble(d -> ((CacheableData<?>)d).getDataSize()).sum();
+			.filter(d -> (d instanceof CacheableData)).count();
 	}
 	
 	public String serialize() {

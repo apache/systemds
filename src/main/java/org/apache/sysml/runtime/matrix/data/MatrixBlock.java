@@ -5573,6 +5573,39 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return !sparse || DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR; //only MCSR thread-safe	
 	} 
 	
+	/**
+	 * Checks for existing NaN values in the matrix block.
+	 * @throws DMLRuntimeException if the blocks contains at least one NaN.
+	 */
+	public void checkNaN() {
+		if( isEmptyBlock(false) )
+			return;
+		if( sparse ) {
+			SparseBlock sblock = sparseBlock;
+			for(int i=0; i<rlen; i++) {
+				if( sblock.isEmpty(i) ) continue;
+				int alen = sblock.size(i);
+				int apos = sblock.pos(i);
+				int[] aix = sblock.indexes(i);
+				double[] avals = sblock.values(i);
+				for(int k=apos; k<apos+alen; k++) {
+					if( Double.isNaN(avals[k]) )
+						throw new DMLRuntimeException("NaN encountered at position ["+i+","+aix[k]+"].");
+				}
+			}
+		}
+		else {
+			DenseBlock dblock = denseBlock;
+			for(int i=0; i<rlen; i++) {
+				int aix = dblock.pos(i);
+				double[] avals = dblock.values(i);
+				for(int j=0; j<clen; j++)
+					if( Double.isNaN(avals[aix+j]) )
+						throw new DMLRuntimeException("NaN encountered at position ["+i+","+j+"].");
+			}
+		}
+	}
+	
 	@Override
 	public int compareTo(Object arg0) {
 		throw new RuntimeException("CompareTo should never be called for matrix blocks.");

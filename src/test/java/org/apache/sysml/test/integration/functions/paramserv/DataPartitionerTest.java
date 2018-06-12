@@ -51,7 +51,8 @@ public class DataPartitionerTest {
 		labels.release();
 		DataPartitioner.Result result = dp.doPartitioning(3, features, labels);
 
-		Assert.assertEquals(result.pFeatures.size(), result.pLabels.size());
+		Assert.assertEquals(3, result.pFeatures.size());
+		Assert.assertEquals(3, result.pLabels.size());
 
 		double[] expected1 = new double[] { 1, 2, 3, 4 };
 		assertResult(result, 0, expected1);
@@ -87,7 +88,8 @@ public class DataPartitionerTest {
 
 		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
 
-		Assert.assertEquals(result.pFeatures.size(), result.pLabels.size());
+		Assert.assertEquals(4, result.pFeatures.size());
+		Assert.assertEquals(4, result.pLabels.size());
 
 		// Ensure that the index is accorded between features and labels
 		IntStream.range(0, result.pFeatures.size()).forEach(i -> {
@@ -132,7 +134,8 @@ public class DataPartitionerTest {
 		labels.release();
 		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
 
-		Assert.assertEquals(result.pFeatures.size(), result.pLabels.size());
+		Assert.assertEquals(4, result.pFeatures.size());
+		Assert.assertEquals(4, result.pLabels.size());
 
 		double[] expected1 = new double[] { 4, 8 };
 		assertResult(result, 0, expected1);
@@ -162,7 +165,8 @@ public class DataPartitionerTest {
 
 		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
 
-		Assert.assertEquals(result.pFeatures.size(), result.pLabels.size());
+		Assert.assertEquals(4, result.pFeatures.size());
+		Assert.assertEquals(4, result.pLabels.size());
 
 		assertPermutationOR(df, result.pFeatures);
 		assertPermutationOR(df, result.pLabels);

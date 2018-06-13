@@ -100,7 +100,9 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 		}
 
 		private void init(MatrixBlock in) {
-			if (in.isInSparseFormat() && in.isEmptyBlock(false)) {
+			if (in.isEmptyBlock(false))
+				return;
+			if (in.isInSparseFormat()) {
 				SparseBlock sblock = in.getSparseBlock();
 				for (int i = 0; i < in.getNumRows(); i++) {
 					if (sblock.isEmpty(i))

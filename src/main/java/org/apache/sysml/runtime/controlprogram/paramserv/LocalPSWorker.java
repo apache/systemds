@@ -42,7 +42,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	public Void call() throws Exception {
 		try {
 			long dataSize = _features.getNumRows();
-			int totalIter = (int) Math.ceil(dataSize / _batchSize);
+			int totalIter = (int) Math.ceil((double) dataSize / _batchSize);
 
 			switch (_freq) {
 				case BATCH:
@@ -141,9 +141,10 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		_ec.setVariable(Statement.PS_LABELS, bLabels);
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d. "
-				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID, bFeatures.getDataSize()
-				/ 1024 + bLabels.getDataSize() / 1024, begin, end, i + 1, _epochs, j + 1, totalIter));
+			LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
+				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID,
+				bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize, i + 1, _epochs,
+				j + 1, totalIter));
 		}
 
 		// Invoke the update function

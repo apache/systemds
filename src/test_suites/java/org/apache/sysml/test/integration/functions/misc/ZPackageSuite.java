@@ -41,6 +41,7 @@ import org.junit.runners.Suite;
 	InvalidFunctionAssignmentTest.class,
 	InvalidFunctionSignatureTest.class,
 	IPAConstantFoldingScalarVariablePropagationTest.class,
+	IPADeadCodeEliminationTest.class,
 	IPAFunctionInliningTest.class,
 	IPALiteralReplacementTest.class,
 	IPANnzPropagationTest.class,

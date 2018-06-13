@@ -33,20 +33,11 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
 public class DataPartitionerOR extends DataPartitioner {
-	@Override
-	public void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels) {
-		// Generate a different permutation matrix for each worker
-		List<MatrixBlock> permutation = IntStream.range(0, workers.size()).mapToObj(i -> 
-			ParamservUtils.generatePermutation((int)features.getNumRows())).collect(Collectors.toList());
-		List<MatrixObject> pfs = doPartitioning(workers.size(), features, permutation);
-		List<MatrixObject> pls = doPartitioning(workers.size(), labels, permutation);
-		setPartitionedData(workers, pfs, pls);
-	}
-	
-	private List<MatrixObject> doPartitioning(int k, MatrixObject mo, List<MatrixBlock> lpermutation) {
+
+	private List<MatrixObject> doPartitioning(int k, MatrixObject mo, List<MatrixBlock> permutations) {
 		MatrixBlock data = mo.acquireRead();
 		List<MatrixObject> pMatrices = IntStream.range(0, k).mapToObj(i -> {
-			MatrixBlock permutation = lpermutation.get(i);
+			MatrixBlock permutation = permutations.get(i);
 			MatrixBlock output = permutation.aggregateBinaryOperations(permutation,
 				data, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
 			MatrixObject result = ParamservUtils.newMatrixObject();
@@ -56,5 +47,16 @@ public class DataPartitionerOR extends DataPartitioner {
 		}).collect(Collectors.toList());
 		mo.release();
 		return pMatrices;
+	}
+
+	@Override
+	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+		// Generate a different permutation matrix for each worker
+		List<MatrixBlock> permutations = IntStream.range(0, workersNum)
+			.mapToObj(i -> ParamservUtils.generatePermutation((int)features.getNumRows()))
+	    	.collect(Collectors.toList());
+		List<MatrixObject> pfs = doPartitioning(workersNum, features, permutations);
+		List<MatrixObject> pls = doPartitioning(workersNum, labels, permutations);
+		return new Result(pfs, pls);
 	}
 }

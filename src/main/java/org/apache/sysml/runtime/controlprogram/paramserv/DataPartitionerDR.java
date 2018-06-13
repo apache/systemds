@@ -34,22 +34,14 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * i.e., sampling without replacement to ensure disjointness.
  */
 public class DataPartitionerDR extends DataPartitioner {
-	@Override
-	public void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels) {
-		// Generate a single permutation matrix (workers use slices)
-		MatrixBlock permutation = ParamservUtils.generatePermutation((int)features.getNumRows());
-		List<MatrixObject> pfs = doPartitioning(workers.size(), features, permutation);
-		List<MatrixObject> pls = doPartitioning(workers.size(), labels, permutation);
-		setPartitionedData(workers, pfs, pls);
-	}
-	
+
 	private List<MatrixObject> doPartitioning(int k, MatrixObject mo, MatrixBlock permutation) {
 		MatrixBlock data = mo.acquireRead();
-		int batchSize = (int) Math.ceil(mo.getNumRows() / k);
+		int batchSize = (int) Math.ceil((double) mo.getNumRows() / k);
 		List<MatrixObject> pMatrices = IntStream.range(0, k).mapToObj(i -> {
-			int begin = i * batchSize + 1;
+			int begin = i * batchSize;
 			int end = (int) Math.min((i + 1) * batchSize, mo.getNumRows());
-			MatrixBlock slicedPerm = permutation.slice(begin - 1, end - 1);
+			MatrixBlock slicedPerm = permutation.slice(begin, end - 1);
 			MatrixBlock output = slicedPerm.aggregateBinaryOperations(slicedPerm,
 				data, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
 			MatrixObject result = ParamservUtils.newMatrixObject();
@@ -59,5 +51,14 @@ public class DataPartitionerDR extends DataPartitioner {
 		}).collect(Collectors.toList());
 		mo.release();
 		return pMatrices;
+	}
+
+	@Override
+	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+		// Generate a single permutation matrix (workers use slices)
+		MatrixBlock permutation = ParamservUtils.generatePermutation((int)features.getNumRows());
+		List<MatrixObject> pfs = doPartitioning(workersNum, features, permutation);
+		List<MatrixObject> pls = doPartitioning(workersNum, labels, permutation);
+		return new Result(pfs, pls);
 	}
 }

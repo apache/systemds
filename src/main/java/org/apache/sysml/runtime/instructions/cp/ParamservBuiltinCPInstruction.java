@@ -413,6 +413,19 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void doDataPartitioning(DataPartitioner dp, MatrixObject features, MatrixObject labels, List<LocalPSWorker> workers) {
-		dp.doPartitioning(workers, features, labels);
+		DataPartitioner.Result result = dp.doPartitioning(workers.size(), features, labels);
+		List<MatrixObject> pfs = result.pFeatures;
+		List<MatrixObject> pls = result.pLabels;
+		if (pfs.size() < workers.size()) {
+			if (LOG.isWarnEnabled()) {
+				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
+					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
+			}
+			workers = workers.subList(0, pfs.size());
+		}
+		for (int i = 0; i < workers.size(); i++) {
+			workers.get(i).setFeatures(pfs.get(i));
+			workers.get(i).setLabels(pls.get(i));
+		}
 	}
 }

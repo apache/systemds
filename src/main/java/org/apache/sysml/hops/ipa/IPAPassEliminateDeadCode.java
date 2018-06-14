@@ -98,12 +98,15 @@ public class IPAPassEliminateDeadCode extends IPAPass
 	}
 	
 	private static void rRemoveOpFromDAG(Hop current) {
-		for( int i=0; i<current.getInput().size(); i++ ) {
-			Hop c = current.getInput().get(i);
-			HopRewriteUtils.removeChildReference(current, c);
-			if( c.getParent().isEmpty() )
-				rRemoveOpFromDAG(c);
+		// cleanup child to parent links and
+		// recurse on operators ready for cleanup
+		for( Hop input : current.getInput() ) {
+			input.getParent().remove(current);
+			if( input.getParent().isEmpty() )
+				rRemoveOpFromDAG(input);
 		}
+		//cleanup parent to child links
+		current.getInput().clear();
 	}
 	
 	private static Set<String> rCollectReadVariableNames(StatementBlock sb, Set<String> varNames) {
@@ -155,7 +158,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 			rCollectReadVariableNames(c, varNames);
 		if( HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) )
 			varNames.add(hop.getName());
-		hop.isVisited();
+		hop.setVisited();
 		return varNames;
 	}
 }

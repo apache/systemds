@@ -171,6 +171,21 @@ public class FunctionCallGraph
 	}
 	
 	/**
+	 * Removes a single function call identified by target function name,
+	 * and source function op and statement block.
+	 * 
+	 * @param srcFkey source function key
+	 * @param fkey function key of called function
+	 * @param fop source function call operator 
+	 * @param sb source statement block
+	 */
+	public void removeFunctionCall(String srcFkey, String fkey, FunctionOp fop, StatementBlock sb) {
+		_fGraph.get(srcFkey).remove(fkey);
+		_fCalls.get(fkey).remove(fop);
+		_fCallsSB.get(fkey).remove(sb);
+	}
+	
+	/**
 	 * Indicates if the given function is either directly or indirectly recursive.
 	 * An example of an indirect recursive function is foo2 in the following call
 	 * chain: foo1 -&gt; foo2 -&gt; foo1.
@@ -416,9 +431,8 @@ public class FunctionCallGraph
 	
 	private static boolean isSideEffectFree(FunctionStatementBlock fsb) {
 		//check for side-effect-free external functions (explicit annotation)
-		if( fsb.getStatement(0) instanceof ExternalFunctionStatement
-			&& !((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects() ) {
-			return true;
+		if( fsb.getStatement(0) instanceof ExternalFunctionStatement ) {
+			return !((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects();
 		}
 		//check regular dml-bodied function for prints, pwrite, and other functions
 		FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);

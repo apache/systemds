@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.BinaryOp;
@@ -115,35 +116,17 @@ public class RewriteConstantFolding extends HopRewriteRule
 		}
 		
 		//replace binary operator with folded constant
-		if( literal != null ) 
-		{
-			//reverse replacement in order to keep common subexpression elimination
-			int plen = root.getParent().size();
-			if( plen > 0 ) //broot is NOT a DAG root
-			{
-				for( int i=0; i<root.getParent().size(); i++ ) //for all parents
-				{
-					Hop parent = root.getParent().get(i);
-					for( int j=0; j<parent.getInput().size(); j++ )
-					{
-						Hop child = parent.getInput().get(j);
-						if( root == child )
-						{
-							//replace operator
-							//root to parent link cannot be removed within this loop, as loop iterates over list containing parents.
-							parent.getInput().remove(j);
-							HopRewriteUtils.addChildReference(parent, literal,j);
-						}
-					}
-				}
-				root.getParent().clear();
+		if( literal != null ) {
+			//bottom-up replacement to keep common subexpression elimination
+			if( !root.getParent().isEmpty() ) { //broot is NOT a DAG root
+				List<Hop> parents = new ArrayList<>(root.getParent());
+				for( Hop parent : parents )
+					HopRewriteUtils.replaceChildReference(parent, root, literal);
 			}
-			else //broot IS a DAG root
-			{
+			else { //broot IS a DAG root
 				root = literal;
 			}
 		}
-		
 		
 		//mark processed
 		root.setVisited();

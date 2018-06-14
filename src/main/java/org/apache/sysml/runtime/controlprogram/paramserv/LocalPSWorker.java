@@ -23,11 +23,14 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
@@ -40,6 +43,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
+		if (DMLScript.STATISTICS) {
+			Statistics.incWorkerNumber();
+		}
 		try {
 			long dataSize = _features.getNumRows();
 			int totalIter = (int) Math.ceil((double) dataSize / _batchSize);
@@ -135,8 +141,19 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		long end = Math.min((j + 1) * _batchSize, dataSize);
 
 		// Get batch features and labels
+		Timing tSlic = new Timing(true);
+
 		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
 		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
+
+		double lSlic = tSlic.stop();
+		if (LOG.isTraceEnabled()) {
+			LOG.trace(String.format("Local worker_%d: Batch slicing time: %.10f secs", _workerID, lSlic / 1000));
+		}
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSTotalBatchSlicingTime((long) lSlic);
+		}
+
 		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
 		_ec.setVariable(Statement.PS_LABELS, bLabels);
 
@@ -147,8 +164,18 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				j + 1, totalIter));
 		}
 
+		Timing tGrad = new Timing(true);
+
 		// Invoke the update function
 		_inst.processInstruction(_ec);
+
+		double lGrad = tGrad.stop();
+		if (LOG.isTraceEnabled()) {
+			LOG.trace(String.format("Local worker_%d: Gradients computing time: %.3f secs", _workerID, lGrad / 1000));
+		}
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSTotalGradientsComputeTime((long) lGrad);
+		}
 
 		// Get the gradients
 		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());

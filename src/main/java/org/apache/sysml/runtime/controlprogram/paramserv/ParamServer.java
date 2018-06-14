@@ -37,6 +37,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
@@ -44,13 +45,17 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.utils.Statistics;
 
 public abstract class ParamServer {
-	
+
+	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
+
 	final BlockingQueue<Gradient> _gradientsQueue;
 	final Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private final AggregationService _aggService;
@@ -67,7 +72,17 @@ public abstract class ParamServer {
 		_model = model;
 		_aggService = new AggregationService(aggFunc, updateType, ec, workerNum);
 		try {
+			Timing tBroad = new Timing(true);
+
 			_aggService.broadcastModel();
+
+			double lBroad = tBroad.stop();
+			if (LOG.isTraceEnabled()) {
+				LOG.trace(String.format("Agg service: Model broadcasting time: %.3f secs", lBroad / 1000));
+			}
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSModelBroadcastingTime((long) lBroad);
+			}
 		}
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
@@ -211,7 +226,17 @@ public abstract class ParamServer {
 						break;
 					}
 					case ASP: {
+						Timing tBroad = new Timing(true);
+
 						broadcastModel(grad._workerID);
+
+						double lBroad = tBroad.stop();
+						if (LOG.isTraceEnabled()) {
+							LOG.trace(String.format("Agg service: Model broadcasting time: %.3f secs", lBroad / 1000));
+						}
+						if (DMLScript.STATISTICS) {
+							Statistics.accPSModelBroadcastingTime((long) lBroad);
+						}
 						break;
 					}
 					default:
@@ -235,8 +260,18 @@ public abstract class ParamServer {
 			_ec.setVariable(Statement.PS_GRADIENTS, gradients);
 			_ec.setVariable(Statement.PS_MODEL, model);
 
+			Timing tAgg = new Timing(true);
+
 			// Invoke the aggregate function
 			_inst.processInstruction(_ec);
+
+			double lAgg = tAgg.stop();
+			if (LOG.isTraceEnabled()) {
+				LOG.trace(String.format("Agg service: Aggregation computing time: %.3f secs", lAgg / 1000));
+			}
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSTotalAggregationTime((long) lAgg);
+			}
 
 			// Get the output
 			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());

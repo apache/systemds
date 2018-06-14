@@ -107,6 +107,13 @@ public class Statistics
 	private static final LongAdder sparkBroadcast = new LongAdder();
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
 
+	// Paramserv function stats (time is in milli sec)
+	private static final LongAdder psNumWorkers = new LongAdder();
+	private static final LongAdder psTotalGradientsComputeTime = new LongAdder();
+	private static final LongAdder psTotalAggregationTime = new LongAdder();
+	private static final LongAdder psModelBroadcastingTime = new LongAdder();
+	private static final LongAdder psTotalBatchSlicingTime = new LongAdder();
+
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
 	private static long parforOptCount = 0; //count
@@ -516,7 +523,26 @@ public class Statistics
 	public static void incSparkBroadcastCount(long c) {
 		sparkBroadcastCount.add(c);
 	}
-	
+
+	public static void incWorkerNumber() {
+		psNumWorkers.increment();
+	}
+
+	public static void accPSTotalGradientsComputeTime(long t) {
+		psTotalGradientsComputeTime.add(t);
+	}
+
+	public static void accPSTotalAggregationTime(long t) {
+		psTotalAggregationTime.add(t);
+	}
+
+	public static void accPSModelBroadcastingTime(long t) {
+		psModelBroadcastingTime.add(t);
+	}
+
+	public static void accPSTotalBatchSlicingTime(long t) {
+		psTotalBatchSlicingTime.add(t);
+	}
 	
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
@@ -849,6 +875,13 @@ public class Statistics
 								 ((double)sparkParallelize.longValue())*1e-9,
 								 ((double)sparkBroadcast.longValue())*1e-9,
 								 ((double)sparkCollect.longValue())*1e-9));
+			}
+			if (psNumWorkers.intValue() > 0) {
+				sb.append(String.format("Paramserv func number of workers:\t%d.\n", psNumWorkers.intValue()));
+				sb.append(String.format("Paramserv func total gradients compute time:\t%.3f secs.\n", psTotalGradientsComputeTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv func total aggregation time:\t%.3f secs.\n", psTotalAggregationTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv func model broadcasting time:\t%.3f secs.\n", psModelBroadcastingTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv func total batch slicing time:\t%.10f secs.\n", psTotalBatchSlicingTime.doubleValue() / 1000));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

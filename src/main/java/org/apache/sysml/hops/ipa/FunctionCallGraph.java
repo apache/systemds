@@ -174,13 +174,11 @@ public class FunctionCallGraph
 	 * Removes a single function call identified by target function name,
 	 * and source function op and statement block.
 	 * 
-	 * @param srcFkey source function key
 	 * @param fkey function key of called function
 	 * @param fop source function call operator 
 	 * @param sb source statement block
 	 */
-	public void removeFunctionCall(String srcFkey, String fkey, FunctionOp fop, StatementBlock sb) {
-		_fGraph.get(srcFkey).remove(fkey);
+	public void removeFunctionCall(String fkey, FunctionOp fop, StatementBlock sb) {
 		_fCalls.get(fkey).remove(fop);
 		_fCallsSB.get(fkey).remove(sb);
 	}

@@ -75,8 +75,13 @@ public class IPAPassEliminateDeadCode extends IPAPass
 				List<Hop> roots = sbs.get(i).getHops();
 				for( int j=0; j<roots.size(); j++ ) {
 					Hop root = roots.get(j);
-					if( (HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE) && !usedVars.contains(root.getName()))
-						|| isFunctionCallWithUnusedOutputs(root, usedVars, fgraph) ) {
+					boolean isTWrite = HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE);
+					boolean isFCall = isFunctionCallWithUnusedOutputs(root, usedVars, fgraph);
+					if( (isTWrite && !usedVars.contains(root.getName())) || isFCall ) {
+						if( isFCall ) {
+							String fkey = ((FunctionOp) root).getFunctionKey();
+							fgraph.removeFunctionCall(fkey, (FunctionOp) root, sbs.get(i));
+						}
 						roots.remove(j); j--;
 						rRemoveOpFromDAG(root);
 					}

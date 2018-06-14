@@ -31,6 +31,8 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "IPADeadCodeRemoval_Main";
 	private final static String TEST_NAME2 = "IPADeadCodeRemoval_Fun";
+	private final static String TEST_NAME3 = "IPADeadCodeRemoval_Fun2";
+	private final static String TEST_NAME4 = "IPADeadCodeRemoval_Fun3"; //w/ print
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPADeadCodeEliminationTest.class.getSimpleName() + "/";
@@ -38,8 +40,10 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" })   );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" })   );
+		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 
 	@Test
@@ -61,6 +65,26 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 	public void testDeadCodeRemovalFunIPA() {
 		runIPALiteralReplacementTest( TEST_NAME2, true );
 	}
+	
+	@Test
+	public void testDeadCodeRemovalFun2NoIPA() {
+		runIPALiteralReplacementTest( TEST_NAME3, false );
+	}
+	
+	@Test
+	public void testDeadCodeRemovalFun2IPA() {
+		runIPALiteralReplacementTest( TEST_NAME3, true );
+	}
+	
+	@Test
+	public void testDeadCodeRemovalFun3NoIPA() {
+		runIPALiteralReplacementTest( TEST_NAME4, false );
+	}
+	
+	@Test
+	public void testDeadCodeRemovalFun3IPA() {
+		runIPALiteralReplacementTest( TEST_NAME4, true );
+	}
 
 	private void runIPALiteralReplacementTest( String testname, boolean IPA )
 	{
@@ -75,8 +99,10 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			runTest(true, false, null, -1);
 			
-			if( IPA ) //check for applied dead code removal
+			if( IPA && !testname.equals(TEST_NAME4) ) //check for applied dead code removal
 				Assert.assertTrue(!heavyHittersContainsString("uak+"));
+			if( testname.equals(TEST_NAME4) )
+				Assert.assertTrue(heavyHittersContainsString("uak+"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

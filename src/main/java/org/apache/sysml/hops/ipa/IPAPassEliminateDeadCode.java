@@ -19,10 +19,12 @@
 
 package org.apache.sysml.hops.ipa;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -52,7 +54,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		// step 1: backwards pass over main program to track used and remove unused vars
-		findAndRemoveDeadCode(prog.getStatementBlocks(), new HashSet<>());
+		findAndRemoveDeadCode(prog.getStatementBlocks(), new HashSet<>(), fgraph);
 		
 		// step 2: backwards pass over functions to track used and remove unused vars
 		for( FunctionStatementBlock fsb : prog.getFunctionStatementBlocks() ) {
@@ -62,19 +64,19 @@ public class IPAPassEliminateDeadCode extends IPAPass
 			fstmt.getOutputParams().stream().forEach(d -> usedVars.add(d.getName()));
 			
 			// backward pass over function to track used and remove unused vars
-			findAndRemoveDeadCode(fstmt.getBody(), usedVars);
+			findAndRemoveDeadCode(fstmt.getBody(), usedVars, fgraph);
 		}
 	}
 	
-	private void findAndRemoveDeadCode(List<StatementBlock> sbs, Set<String> usedVars) {
+	private static void findAndRemoveDeadCode(List<StatementBlock> sbs, Set<String> usedVars, FunctionCallGraph fgraph) {
 		for( int i=sbs.size()-1; i >= 0; i-- ) {
 			// remove unused assignments
 			if( HopRewriteUtils.isLastLevelStatementBlock(sbs.get(i)) ) {
 				List<Hop> roots = sbs.get(i).getHops();
 				for( int j=0; j<roots.size(); j++ ) {
 					Hop root = roots.get(j);
-					if( HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
-						&& !usedVars.contains(root.getName()) ) {
+					if( (HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE) && !usedVars.contains(root.getName()))
+						|| isFunctionCallWithUnusedOutputs(root, usedVars, fgraph) ) {
 						roots.remove(j); j--;
 						rRemoveOpFromDAG(root);
 					}
@@ -88,7 +90,14 @@ public class IPAPassEliminateDeadCode extends IPAPass
 		}
 	}
 	
-	private void rRemoveOpFromDAG(Hop current) {
+	private static boolean isFunctionCallWithUnusedOutputs(Hop hop, Set<String> varNames, FunctionCallGraph fgraph) {
+		return hop instanceof FunctionOp
+			&& fgraph.isSideEffectFreeFunction(((FunctionOp)hop).getFunctionKey())
+			&& Arrays.stream(((FunctionOp) hop).getOutputVariableNames())
+				.allMatch(var -> !varNames.contains(var));
+	}
+	
+	private static void rRemoveOpFromDAG(Hop current) {
 		for( int i=0; i<current.getInput().size(); i++ ) {
 			Hop c = current.getInput().get(i);
 			HopRewriteUtils.removeChildReference(current, c);
@@ -97,7 +106,7 @@ public class IPAPassEliminateDeadCode extends IPAPass
 		}
 	}
 	
-	private Set<String> rCollectReadVariableNames(StatementBlock sb, Set<String> varNames) {
+	private static Set<String> rCollectReadVariableNames(StatementBlock sb, Set<String> varNames) {
 		if( sb instanceof WhileStatementBlock ) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement) sb.getStatement(0);
@@ -132,14 +141,14 @@ public class IPAPassEliminateDeadCode extends IPAPass
 		return varNames;
 	}
 	
-	private Set<String> collectReadVariableNames(Hop hop, Set<String> varNames) {
+	private static Set<String> collectReadVariableNames(Hop hop, Set<String> varNames) {
 		if( hop == null )
 			return varNames;
 		hop.resetVisitStatus();
 		return rCollectReadVariableNames(hop, varNames);
 	}
 	
-	private Set<String> rCollectReadVariableNames(Hop hop, Set<String> varNames) {
+	private static Set<String> rCollectReadVariableNames(Hop hop, Set<String> varNames) {
 		if( hop.isVisited() )
 			return varNames;
 		for( Hop c : hop.getInput() )

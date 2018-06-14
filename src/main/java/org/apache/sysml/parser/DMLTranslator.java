@@ -1338,11 +1338,8 @@ public class DMLTranslator
 					FunctionOp fcall = (target == null) ?
 						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{}, false) :
 						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()}, false);
+					fcall.setParseInfo(fci);
 					output.add(fcall);
-					
-					//TODO function output dataops (phase 3)
-					//DataOp trFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), fcall, DataOpTypes.FUNCTIONOUTPUT, null);
-					//DataOp twFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), trFoutput, DataOpTypes.TRANSIENTWRITE, null);					
 				}
 			}
 
@@ -1370,23 +1367,18 @@ public class DMLTranslator
 						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
+					fcall.setParseInfo(fci);
 					output.add(fcall);
-					
-					//TODO function output dataops (phase 3)
-					/*for ( DataIdentifier paramName : mas.getTargetList() ){
-						DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
-						output.add(twFoutput);
-					}*/
 				}
 				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
 					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), ids);
-					output.add(fcall);					
+					output.add(fcall);
 				}
 				else if ( source instanceof ParameterizedBuiltinFunctionExpression && ((ParameterizedBuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
 					Hop fcall = processMultipleReturnParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, mas.getTargetList(), ids);
-					output.add(fcall);					
+					output.add(fcall);
 				}
 				else
 					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
@@ -2248,7 +2240,7 @@ public class DMLTranslator
 			// Create the hop for current function call
 			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
 			currBuiltinOp = fcall;
-						
+			
 			break;
 			
 		default:

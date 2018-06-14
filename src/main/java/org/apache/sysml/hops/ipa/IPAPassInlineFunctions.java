@@ -74,6 +74,8 @@ public class IPAPassInlineFunctions extends IPAPass
 				List<StatementBlock> fcallsSB = fgraph.getFunctionCallsSB(fkey);
 				for(int i=0; i<fcalls.size(); i++) {
 					FunctionOp op = fcalls.get(i);
+					if( LOG.isDebugEnabled() )
+						LOG.debug("-- inline '"+fkey+"' at line "+op.getBeginLine());
 					
 					//step 0: robustness for special cases
 					if( op.getInput().size() != fstmt.getInputParams().size()

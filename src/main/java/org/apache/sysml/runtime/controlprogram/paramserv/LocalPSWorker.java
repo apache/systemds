@@ -30,7 +30,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -82,7 +81,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				if (j == totalIter - 1) {
 					// Push the gradients to ps
 					pushGradients(gradients);
-					ParamservUtils.cleanupListObject(_ec, globalParams);
+					ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 				} else {
 					// Update the local model with gradients
 					globalParams = updateModel(globalParams, gradients, i, j, totalIter);
@@ -123,7 +122,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				// Push the gradients to ps
 				pushGradients(gradients);
 
-				ParamservUtils.cleanupListObject(_ec, globalParams);
+				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 			}
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));

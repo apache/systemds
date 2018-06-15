@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -65,8 +64,8 @@ public class ParamservUtils {
 		return new ListObject(newData, lo.getNames());
 	}
 
-	public static void cleanupListObject(ExecutionContext ec, ListObject lo) {
-		ec.getVariables().removeAllIn(new HashSet<>(lo.getNames()));
+	public static void cleanupListObject(ExecutionContext ec, String lName) {
+		ListObject lo = (ListObject) ec.removeVariable(lName);
 		lo.getData().forEach(ParamservUtils::cleanupData);
 	}
 

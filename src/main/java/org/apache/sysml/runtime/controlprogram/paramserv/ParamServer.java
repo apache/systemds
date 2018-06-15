@@ -266,8 +266,8 @@ public abstract class ParamServer {
 			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
 
 			// Update the model with the new output
-			ParamservUtils.cleanupListObject(_ec, model);
-			ParamservUtils.cleanupListObject(_ec, gradients);
+			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+			ParamservUtils.cleanupListObject(_ec, Statement.PS_GRADIENTS);
 			return newModel;
 		}
 	}

@@ -86,7 +86,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
@@ -346,7 +345,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				// default worker number: available cores - 1 (assign one process for agg service)
 				workerNum = getRemainingCores();
 				if (getParameterMap().containsKey(PS_PARALLELISM)) {
-					workerNum = Math.min(workerNum, Integer.valueOf(getParam(PS_PARALLELISM)));
+					workerNum = Integer.valueOf(getParam(PS_PARALLELISM));
 				}
 				break;
 			case REMOTE_SPARK:

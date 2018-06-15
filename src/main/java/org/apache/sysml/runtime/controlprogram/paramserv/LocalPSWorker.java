@@ -30,6 +30,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -84,11 +85,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					ParamservUtils.cleanupListObject(_ec, globalParams);
 				} else {
 					// Update the local model with gradients
-					globalParams = _ps.updateModel(gradients, globalParams);
-					if (LOG.isDebugEnabled()) {
-						LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated.",
-							_workerID, globalParams.getDataSize()));
-					}
+					globalParams = updateModel(globalParams, gradients, i, j, totalIter);
 				}
 			}
 			if (LOG.isDebugEnabled()) {
@@ -96,6 +93,23 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			}
 		}
 
+	}
+
+	private ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int totalIter) {
+		Timing tUpd = new Timing(true);
+
+		globalParams = _ps.updateModel(gradients, globalParams);
+
+		double dUpd = tUpd.stop();
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSLocalModelUpdateTime((long) dUpd);
+		}
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated. "
+							+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
+					_workerID, globalParams.getDataSize(), i + 1, _epochs, j + 1, totalIter));
+		}
+		return globalParams;
 	}
 
 	private void computeBatch(long dataSize, int totalIter) {
@@ -146,12 +160,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
 		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
 
-		double lSlic = tSlic.stop();
-		if (LOG.isTraceEnabled()) {
-			LOG.trace(String.format("Local worker_%d: Batch slicing time: %.10f secs", _workerID, lSlic / 1000));
-		}
+		double dSlic = tSlic.stop();
 		if (DMLScript.STATISTICS) {
-			Statistics.accPSTotalBatchSlicingTime((long) lSlic);
+			Statistics.accPSBatchIndexingTime((long) dSlic);
 		}
 
 		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
@@ -169,12 +180,10 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Invoke the update function
 		_inst.processInstruction(_ec);
 
-		double lGrad = tGrad.stop();
-		if (LOG.isTraceEnabled()) {
-			LOG.trace(String.format("Local worker_%d: Gradients computing time: %.3f secs", _workerID, lGrad / 1000));
-		}
+
+		double dGrad = tGrad.stop();
 		if (DMLScript.STATISTICS) {
-			Statistics.accPSTotalGradientsComputeTime((long) lGrad);
+			Statistics.accPSGradientComputeTime((long) dGrad);
 		}
 
 		// Get the gradients

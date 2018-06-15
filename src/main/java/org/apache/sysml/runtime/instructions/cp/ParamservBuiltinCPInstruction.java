@@ -56,6 +56,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
@@ -83,7 +84,10 @@ import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -110,6 +114,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		Timing tSetup = new Timing(true);
+
 		PSModeType mode = getPSMode();
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -144,6 +150,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Do data partition
 		PSScheme scheme = getScheme();
 		doDataPartitioning(scheme, ec, workers);
+
+		double dSetup = tSetup.stop();
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSSetupTime((long) dSetup);
+		}
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("\nConfiguration of paramserv func: "

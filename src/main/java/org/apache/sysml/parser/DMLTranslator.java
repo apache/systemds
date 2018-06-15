@@ -2225,6 +2225,7 @@ public class DMLTranslator
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case LSTM_BACKWARD:
 		case BATCH_NORM2D:
 		case BATCH_NORM2D_BACKWARD:
 		case SVD:

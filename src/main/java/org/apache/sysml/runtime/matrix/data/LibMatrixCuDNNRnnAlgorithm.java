@@ -49,27 +49,36 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	String instName;
 	cudnnDropoutDescriptor dropoutDesc;
 	cudnnRNNDescriptor rnnDesc;
-	cudnnTensorDescriptor[] xDesc, yDesc; // of length T
-	cudnnTensorDescriptor hxDesc, cxDesc, hyDesc, cyDesc; 
+	cudnnTensorDescriptor[] xDesc, dxDesc, yDesc, dyDesc; // of length T
+	cudnnTensorDescriptor hxDesc, cxDesc, hyDesc, cyDesc, dhxDesc, dcxDesc, dhyDesc, dcyDesc; 
 	cudnnFilterDescriptor wDesc;
+	cudnnFilterDescriptor dwDesc;
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; Pointer reserveSpace;
 	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
-			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w, String reserveSpaceName) throws DMLRuntimeException {
+			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
 		this.gCtx = gCtx;
 		this.instName = instName;
 		
 		// Allocate input/output descriptors
 		xDesc = new cudnnTensorDescriptor[T];
+		dxDesc = new cudnnTensorDescriptor[T];
 		yDesc = new cudnnTensorDescriptor[T];
+		dyDesc = new cudnnTensorDescriptor[T];
 		for(int t = 0; t < T; t++) {
 			xDesc[t] = allocateTensorDescriptorWithStride(N, D, 1);
+			dxDesc[t] = allocateTensorDescriptorWithStride(N, D, 1);
 			yDesc[t] = allocateTensorDescriptorWithStride(N, M, 1);
+			dyDesc[t] = allocateTensorDescriptorWithStride(N, M, 1);
 		}
 		hxDesc = allocateTensorDescriptorWithStride(1, N, M); 
+		dhxDesc = allocateTensorDescriptorWithStride(1, N, M);
 		cxDesc = allocateTensorDescriptorWithStride(1, N, M);
+		dcxDesc = allocateTensorDescriptorWithStride(1, N, M);
 		hyDesc = allocateTensorDescriptorWithStride(1, N, M);
+		dhyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		cyDesc = allocateTensorDescriptorWithStride(1, N, M);
+		dcyDesc = allocateTensorDescriptorWithStride(1, N, M);
 		
 		// Initial dropout descriptor
 		dropoutDesc = new cudnnDropoutDescriptor();
@@ -94,6 +103,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M+2)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
 		}
 		wDesc = allocateFilterDescriptor(expectedNumWeights);
+		dwDesc = allocateFilterDescriptor(expectedNumWeights);
 		
 		// Setup workspace
 		workSpace = new Pointer(); reserveSpace = new Pointer();
@@ -104,12 +114,11 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
 			if (reserveSpaceSizeInBytes != 0) {
-				int numCols =  (int) Math.ceil(((double)reserveSpaceSizeInBytes) / LibMatrixCUDA.sizeOfDataType);
-				reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, numCols);
+				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 			}
 		}
 		if (reserveSpaceSizeInBytes == 0) {
-			reserveSpace = LibMatrixCuDNN.getDenseOutputPointer(ec, gCtx, instName, reserveSpaceName, 1, 1);
+			reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
 		}
 		
 		/*
@@ -241,29 +250,56 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		if(hxDesc != null)
 			cudnnDestroyTensorDescriptor(hxDesc);
 		hxDesc = null;
+		if(dhxDesc != null)
+			cudnnDestroyTensorDescriptor(dhxDesc);
+		dhxDesc = null;
 		if(hyDesc != null)
 			cudnnDestroyTensorDescriptor(hyDesc);
 		hyDesc = null;
+		if(dhyDesc != null)
+			cudnnDestroyTensorDescriptor(dhyDesc);
+		dhyDesc = null;
 		if(cxDesc != null)
 			cudnnDestroyTensorDescriptor(cxDesc);
 		cxDesc = null;
+		if(dcxDesc != null)
+			cudnnDestroyTensorDescriptor(dcxDesc);
+		dcxDesc = null;
 		if(cyDesc != null)
 			cudnnDestroyTensorDescriptor(cyDesc);
 		cyDesc = null;
+		if(dcyDesc != null)
+			cudnnDestroyTensorDescriptor(dcyDesc);
+		dcyDesc = null;
 		if(wDesc != null)
 			cudnnDestroyFilterDescriptor(wDesc);
 		wDesc = null;
+		if(dwDesc != null)
+			cudnnDestroyFilterDescriptor(dwDesc);
+		dwDesc = null;
 		if(xDesc != null) {
 			for(cudnnTensorDescriptor dsc : xDesc) {
 				cudnnDestroyTensorDescriptor(dsc);
 			}
 			xDesc = null;
 		}
+		if(dxDesc != null) {
+			for(cudnnTensorDescriptor dsc : dxDesc) {
+				cudnnDestroyTensorDescriptor(dsc);
+			}
+			dxDesc = null;
+		}
 		if(yDesc != null) {
 			for(cudnnTensorDescriptor dsc : yDesc) {
 				cudnnDestroyTensorDescriptor(dsc);
 			}
 			yDesc = null;
+		}
+		if(dyDesc != null) {
+			for(cudnnTensorDescriptor dsc : dyDesc) {
+				cudnnDestroyTensorDescriptor(dsc);
+			}
+			dyDesc = null;
 		}
 		if(sizeInBytes != 0) {
 			try {

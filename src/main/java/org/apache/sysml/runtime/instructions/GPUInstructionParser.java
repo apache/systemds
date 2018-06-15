@@ -57,6 +57,7 @@ public class GPUInstructionParser  extends InstructionParser
 		String2GPUInstructionType.put( "bias_multiply",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "channel_sums",          GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "lstm",                 	GPUINSTRUCTION_TYPE.Convolution);
+		String2GPUInstructionType.put( "lstm_backward",         GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "batch_norm2d",           GPUINSTRUCTION_TYPE.Convolution);
 		String2GPUInstructionType.put( "batch_norm2d_backward",  GPUINSTRUCTION_TYPE.Convolution);
 		

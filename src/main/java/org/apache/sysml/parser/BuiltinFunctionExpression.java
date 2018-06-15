@@ -102,6 +102,15 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public Expression getSixthExpr() {
 		return (_args.length >= 6 ? _args[5] : null);
 	}
+	
+	public Expression getSeventhExpr() {
+		return (_args.length >= 7 ? _args[6] : null);
+	}
+
+	public Expression getEighthExpr() {
+		return (_args.length >= 8 ? _args[7] : null);
+	}
+
 
 	public Expression[] getAllExpr(){
 		return _args;
@@ -210,13 +219,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFifthExpr());
 			
 			// setup output properties
-			if(getOutputs() == null || getOutputs().length != 3) {
+			if(getOutputs() == null || getOutputs().length != 2) {
 				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
-				raiseValidateError("The builtin function lstm has three outputs, but instead found: " + numOutputs, conditional);
+				raiseValidateError("The builtin function lstm has two outputs, but instead found: " + numOutputs, conditional);
 			}
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
 			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
-			DataIdentifier reserveSpace = (DataIdentifier) getOutputs()[2];
 			
 			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
 			out.setDataType(DataType.MATRIX);
@@ -230,12 +238,36 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
 			
-			// Output3 - reserve space.
-			reserveSpace.setDataType(DataType.MATRIX);
-			reserveSpace.setValueType(ValueType.DOUBLE);
-			reserveSpace.setDimensions(-1, -1);
-			reserveSpace.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			break;
+		}
+		case LSTM_BACKWARD:
+		{
+			// Input: X, W, b, out0, c0, return_sequences, dout, cy
+			checkNumParameters(8);
+			checkMatrixParam(getFirstExpr());
+			checkMatrixParam(getSecondExpr());
+			checkMatrixParam(getThirdExpr());
+			checkMatrixParam(getFourthExpr());
+			checkMatrixParam(getFifthExpr());
+			checkMatrixParam(getSeventhExpr());
+			checkMatrixParam(getEighthExpr());
 			
+			// Output: dx, dw, db, dout0, dc0
+			// setup output properties
+			if(getOutputs().length != 5)
+				raiseValidateError("lstm_backward has 5 outputs", false);
+			 
+			DataIdentifier dx = (DataIdentifier) getOutputs()[0];
+			DataIdentifier dw = (DataIdentifier) getOutputs()[1];
+			DataIdentifier db = (DataIdentifier) getOutputs()[2];
+			DataIdentifier dout0 = (DataIdentifier) getOutputs()[3];
+			DataIdentifier dc0 = (DataIdentifier) getOutputs()[4];
+			
+			setDimensions(dx, getFirstExpr());
+			setDimensions(dw, getSecondExpr());
+			setDimensions(db, getThirdExpr());
+			setDimensions(dout0, getFourthExpr());
+			setDimensions(dc0, getFifthExpr());
 			break;
 		}
 		case BATCH_NORM2D:
@@ -1414,7 +1446,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				// always unconditional (because unsupported operation)
 				BuiltinFunctionOp op = getOpCode();
 				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD 
-						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
+						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.LSTM_BACKWARD
+						|| op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1496,6 +1529,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case LSTM_BACKWARD:
 		case BATCH_NORM2D:
 		case BATCH_NORM2D_BACKWARD:
 		case SVD:
@@ -1624,13 +1658,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-
+		
+		// Not sure the rationale for the first two if loops, but will keep them for backward compatibility
 		if (((count == 1) && (getSecondExpr() != null || getThirdExpr() != null))
 				|| ((count == 2) && (getThirdExpr() != null))) {
 			raiseValidateError("Invalid number of arguments for function " + this.getOpCode().toString().toLowerCase()
 					+ "(). This function only takes 1 or 2 arguments.", false);
 		} else if (((count == 2) && (getSecondExpr() == null))
 				|| ((count == 3) && (getSecondExpr() == null || getThirdExpr() == null))) {
+			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+		} else if(count > 0 && (_args == null || _args.length < count)) {
 			raiseValidateError("Missing argument for function " + this.getOpCode(), false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 		}
@@ -1909,6 +1947,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			bifop = Expression.BuiltinFunctionOp.EIGEN;
 		else if (functionName.equals("lstm"))
 			bifop = Expression.BuiltinFunctionOp.LSTM;
+		else if (functionName.equals("lstm_backward"))
+			bifop = Expression.BuiltinFunctionOp.LSTM_BACKWARD;
 		else if (functionName.equals("batch_norm2d"))
 			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
 		else if (functionName.equals("batch_norm2d_backward"))

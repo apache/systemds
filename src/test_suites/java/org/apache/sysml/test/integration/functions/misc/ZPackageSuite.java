@@ -75,6 +75,7 @@ import org.junit.runners.Suite;
 	RewritePushdownSumBinaryMult.class,
 	RewritePushdownSumOnBinaryTest.class,
 	RewritePushdownUaggTest.class,
+	RewriteRemoveComparisonChainsTest.class,
 	RewriteSimplifyRowColSumMVMultTest.class,
 	RewriteSlicedMatrixMultTest.class,
 	ScalarAssignmentTest.class,

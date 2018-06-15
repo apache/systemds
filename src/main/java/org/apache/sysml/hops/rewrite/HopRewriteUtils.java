@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,6 +162,10 @@ public class HopRewriteUtils
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
 		}
+	}
+	
+	public static boolean isLiteralOfValue( Hop hop, Double... val ) {
+		return Arrays.stream(val).anyMatch(d -> isLiteralOfValue(hop, d));
 	}
 	
 	public static boolean isLiteralOfValue( Hop hop, double val ) {
@@ -912,6 +917,10 @@ public class HopRewriteUtils
 	
 	public static boolean isBinary(Hop hop, OpOp2 type, int maxParents) {
 		return isBinary(hop, type) && hop.getParent().size() <= maxParents;
+	}
+	
+	public static boolean isBinaryPPred(Hop hop) {
+		return hop instanceof BinaryOp && ((BinaryOp) hop).isPPredOperation();
 	}
 	
 	public static boolean isBinarySparseSafe(Hop hop) {

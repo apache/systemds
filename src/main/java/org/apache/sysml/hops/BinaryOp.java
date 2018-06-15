@@ -1595,10 +1595,22 @@ public class BinaryOp extends Hop
 				||op==OpOp2.BITWSHIFTL ||op==OpOp2.BITWSHIFTR);
 	}
 	
-	public boolean isPPredOperation()
-	{
-		return (   op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-		         ||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+	public boolean isPPredOperation() {
+		return (op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
+			||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
+			||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+	}
+	
+	public OpOp2 getComplementPPredOperation() {
+		switch( op ) {
+			case LESS:         return OpOp2.GREATEREQUAL;
+			case LESSEQUAL:    return OpOp2.GREATER;
+			case GREATER:      return OpOp2.LESSEQUAL;
+			case GREATEREQUAL: return OpOp2.LESS;
+			case EQUAL:        return OpOp2.NOTEQUAL;
+			case NOTEQUAL:     return OpOp2.EQUAL;
+			default:
+				throw new HopsException("BinaryOp is not a ppred operation.");
+		}
 	}
 }

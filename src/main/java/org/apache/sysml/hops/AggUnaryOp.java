@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
@@ -41,24 +40,15 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
-/* Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
- * 		Properties: 
- * 			Symbol: +, min, max, ...
- * 			1 Operand
- * 	
- * 		Semantic: generate indices, align, aggregate
- */
+// Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
 
-public class AggUnaryOp extends Hop implements MultiThreadedHop
+public class AggUnaryOp extends MultiThreadedHop
 {
-	
 	private static final boolean ALLOW_UNARYAGG_WO_FINAL_AGG = true;
 	
 	private AggOp _op;
 	private Direction _direction;
 
-	private int _maxNumThreads = -1; //-1 for unlimited
-	
 	private AggUnaryOp() {
 		//default constructor for clone
 	}
@@ -97,15 +87,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		_direction = direction;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
 	
 	@Override
 	public boolean isGPUEnabled() {

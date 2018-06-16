@@ -38,13 +38,14 @@ import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ParameterizedBuiltinOp;
 import org.apache.sysml.hops.ReorgOp;
@@ -1316,7 +1317,8 @@ public class OptimizerRuleBased extends Optimizer
 							 && !((UnaryOp)h).isCumulativeUnaryOperation()
 							 && !((UnaryOp)h).isExpensiveUnaryOperation())
 						&& !( h instanceof ReorgOp //only reorgop-transpose
-							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANS ))
+							 && ((ReorgOp)h).getOp() != ReOrgOp.TRANS )
+						&& !( h instanceof BinaryOp && h.getDataType().isScalar() ) )
 					{
 						MultiThreadedHop mhop = (MultiThreadedHop) h;
 						mhop.setMaxNumThreads(opsK); //set max constraint in hop

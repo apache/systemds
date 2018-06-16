@@ -20,7 +20,6 @@
 package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.ConvolutionTransform;
 import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
@@ -34,8 +33,8 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
 import java.util.ArrayList;
 
-public class ConvolutionOp extends Hop  implements MultiThreadedHop
-{	
+public class ConvolutionOp extends MultiThreadedHop
+{
 	// -------------------------------------------------------------------------
 	// This flag allows us to compile plans with less unknowns and also serves as future tensorblock integration.
 	// By default, these flags are turned on.
@@ -49,7 +48,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	
 	// Specifies the type of this hop
 	private Hop.ConvOp op;
-	private int _maxNumThreads = -1; //-1 for unlimited
 
 	private ConvolutionOp() {
 		//default constructor for clone
@@ -282,13 +280,14 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		// ---------------------------------------------------------------
 		
-		// Contruct the lop
+		// Construct the lop
 		Lop optionalMaxPoolOutput = (et == ExecType.GPU) ? getMaxPoolOutputLop() : null;
 		Lop[] l2inputs = new Lop[inputsOfPotentiallyFusedOp.size()-1];
 		for( int i=1; i < inputsOfPotentiallyFusedOp.size(); i++ )
 			l2inputs[i-1] = inputsOfPotentiallyFusedOp.get(i).constructLops();
-		ConvolutionTransform convolutionLop = new ConvolutionTransform(lhsInputLop, lopOp,
-				getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
+		ConvolutionTransform convolutionLop = new ConvolutionTransform(
+			lhsInputLop, lopOp, getDataType(), getValueType(), et,
+			OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
 		setOutputDimensions(convolutionLop);
 		setLineNumbers(convolutionLop);
 		
@@ -800,17 +799,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		return ret;
 	}
-
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	
 	// ------------------------------------------------------------------------------------------------------
 	// Utility methods to get the dimensions taking into account unknown dimensions

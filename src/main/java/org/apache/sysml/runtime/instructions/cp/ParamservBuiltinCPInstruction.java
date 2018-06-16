@@ -57,6 +57,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
@@ -279,9 +280,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if (hop.isVisited()) {
 			return recompiled;
 		}
-		if (hop instanceof Hop.MultiThreadedHop) {
+		if (hop instanceof MultiThreadedHop) {
 			// Reassign the level of parallelism
-			Hop.MultiThreadedHop mhop = (Hop.MultiThreadedHop) hop;
+			MultiThreadedHop mhop = (MultiThreadedHop) hop;
 			mhop.setMaxNumThreads(k);
 			recompiled = true;
 		}

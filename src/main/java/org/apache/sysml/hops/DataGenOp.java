@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -42,13 +41,12 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * A DataGenOp can be rand (or matrix constructor), sequence, and sample -
  * these operators have different parameters and use a map of parameter type to hop position.
  */
-public class DataGenOp extends Hop implements MultiThreadedHop
+public class DataGenOp extends MultiThreadedHop
 {
 	public static final long UNSPECIFIED_SEED = -1;
 	
 	 // defines the specific data generation method
 	private DataGenMethod _op;
-	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
@@ -131,16 +129,6 @@ public class DataGenOp extends Hop implements MultiThreadedHop
 	
 	public DataGenMethod getOp() {
 		return _op;
-	}
-	
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
 	}
 	
 	@Override

@@ -22,7 +22,6 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
@@ -48,12 +47,9 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  * 		Semantic: given a value, perform the operation (independent of other values)
  */
 
-public class UnaryOp extends Hop implements MultiThreadedHop
+public class UnaryOp extends MultiThreadedHop
 {
 	private OpOp1 _op = null;
-	
-	private int _maxNumThreads = -1; //-1 for unlimited
-	
 	
 	private UnaryOp() {
 		//default constructor for clone
@@ -87,16 +83,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		return s;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	@Override
 	public boolean isGPUEnabled() {
 		if(!DMLScript.USE_ACCELERATOR)

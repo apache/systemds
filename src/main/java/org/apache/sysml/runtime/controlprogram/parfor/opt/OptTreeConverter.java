@@ -27,7 +27,7 @@ import java.util.Set;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.OptimizerUtils;

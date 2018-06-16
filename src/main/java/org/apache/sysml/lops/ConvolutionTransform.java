@@ -27,8 +27,6 @@ import org.apache.sysml.parser.Expression.ValueType;
 
 public class ConvolutionTransform extends Lop
 {
-
-	
 	public enum OperationTypes {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
@@ -36,9 +34,9 @@ public class ConvolutionTransform extends Lop
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS
 	}
 	
-	private OperationTypes operation = null;
-	private int numThreads = -1;
-	private double intermediateMemBudget = 0;
+	private OperationTypes operation;
+	private double intermediateMemBudget;
+	private final int numThreads;
 	
 	/**
 	 * Constructor when we have one input.
@@ -53,7 +51,7 @@ public class ConvolutionTransform extends Lop
 	 */
 	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input, op, dt, vt, et);
 		numThreads = k;
 		this.intermediateMemBudget = intermediateMemBudget;
@@ -61,7 +59,7 @@ public class ConvolutionTransform extends Lop
 	
 	public ConvolutionTransform(Lop input1, Lop input2, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
 		this.addInput(input2);
@@ -71,7 +69,7 @@ public class ConvolutionTransform extends Lop
 	
 	public ConvolutionTransform(Lop input1, Lop input2, Lop input3, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
 		this.addInput(input2);

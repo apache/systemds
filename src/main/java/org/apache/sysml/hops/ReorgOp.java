@@ -22,7 +22,6 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Group;
@@ -48,12 +47,11 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  *  and (2) most importantly semantic of reshape is exactly a reorg op. 
  */
 
-public class ReorgOp extends Hop implements MultiThreadedHop
+public class ReorgOp extends MultiThreadedHop
 {
 	public static boolean FORCE_DIST_SORT_INDEXES = false;
 	
 	private ReOrgOp op;
-	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	private ReorgOp() {
 		//default constructor for clone
@@ -103,16 +101,6 @@ public class ReorgOp extends Hop implements MultiThreadedHop
 		}
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	public ReOrgOp getOp()
 	{
 		return op;

@@ -64,14 +64,6 @@ public abstract class Hop implements ParseInfo
 	
 	public static final long CPThreshold = 2000;
 
-	/**
-	 * Optional hop interface, to be implemented by multi-threaded hops.
-	 */
-	public interface MultiThreadedHop {
-		public abstract void setMaxNumThreads( int k );
-		public abstract int getMaxNumThreads();
-	}
-
 	// static variable to assign an unique ID to every hop that is created
 	private static IDSequence _seqHopID = new IDSequence();
 	

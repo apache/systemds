@@ -453,6 +453,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasAddInstruction(ec);
 			return;

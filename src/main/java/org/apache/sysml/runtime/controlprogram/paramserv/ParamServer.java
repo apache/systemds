@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.AGG_FUNC_PREFIX;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,6 +39,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
@@ -44,13 +47,15 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.utils.Statistics;
 
 public abstract class ParamServer {
-	
+
 	final BlockingQueue<Gradient> _gradientsQueue;
 	final Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private final AggregationService _aggService;
@@ -134,7 +139,7 @@ public abstract class ParamServer {
 				funcNS = keys[0];
 				funcName = keys[1];
 			}
-			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, funcName);
+			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, AGG_FUNC_PREFIX + funcName);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -170,14 +175,28 @@ public abstract class ParamServer {
 		}
 
 		private void broadcastModel() throws InterruptedException {
+			Timing tBroad = new Timing(true);
+
 			//broadcast copy of the model to all workers, cleaned up by workers
 			for (BlockingQueue<ListObject> q : _modelMap.values())
 				q.put(ParamservUtils.copyList(_model));
+
+			double dBroad = tBroad.stop();
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSModelBroadcastTime((long) dBroad);
+			}
 		}
-		
+
 		private void broadcastModel(int workerID) throws InterruptedException {
+			Timing tBroad = new Timing(true);
+
 			//broadcast copy of model to specific worker, cleaned up by worker
 			_modelMap.get(workerID).put(ParamservUtils.copyList(_model));
+
+			double dBroad = tBroad.stop();
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSModelBroadcastTime((long) dBroad);
+			}
 		}
 
 		@Override
@@ -194,8 +213,15 @@ public abstract class ParamServer {
 						grad._gradients.getDataSize() / 1024, grad._workerID));
 				}
 
+				Timing tAgg = new Timing(true);
+
 				// Update and redistribute the model
 				_model = updateModel(grad._gradients, _model);
+
+				double lAgg = tAgg.stop();
+				if (DMLScript.STATISTICS) {
+					Statistics.accPSAggregationTime((long) lAgg);
+				}
 
 				// Redistribute model according to update type
 				switch(_updateType) {
@@ -242,8 +268,8 @@ public abstract class ParamServer {
 			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
 
 			// Update the model with the new output
-			ParamservUtils.cleanupListObject(_ec, model);
-			ParamservUtils.cleanupListObject(_ec, gradients);
+			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+			ParamservUtils.cleanupListObject(_ec, Statement.PS_GRADIENTS);
 			return newModel;
 		}
 	}

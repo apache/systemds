@@ -65,7 +65,8 @@ public class ListObject extends Data {
 	public ListObject slice(int ix1, int ix2) {
 		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
 			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
-		ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
+		if( _dataState != null )
+			ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
 		return ret;
 	}
 	

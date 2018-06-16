@@ -54,8 +54,6 @@ import org.apache.sysml.utils.Statistics;
 
 public abstract class ParamServer {
 
-	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
-
 	final BlockingQueue<Gradient> _gradientsQueue;
 	final Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private final AggregationService _aggService;
@@ -72,17 +70,7 @@ public abstract class ParamServer {
 		_model = model;
 		_aggService = new AggregationService(aggFunc, updateType, ec, workerNum);
 		try {
-			Timing tBroad = new Timing(true);
-
 			_aggService.broadcastModel();
-
-			double lBroad = tBroad.stop();
-			if (LOG.isTraceEnabled()) {
-				LOG.trace(String.format("Agg service: Model broadcasting time: %.3f secs", lBroad / 1000));
-			}
-			if (DMLScript.STATISTICS) {
-				Statistics.accPSModelBroadcastingTime((long) lBroad);
-			}
 		}
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
@@ -185,14 +173,28 @@ public abstract class ParamServer {
 		}
 
 		private void broadcastModel() throws InterruptedException {
+			Timing tBroad = new Timing(true);
+
 			//broadcast copy of the model to all workers, cleaned up by workers
 			for (BlockingQueue<ListObject> q : _modelMap.values())
 				q.put(ParamservUtils.copyList(_model));
+
+			double dBroad = tBroad.stop();
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSModelBroadcastTime((long) dBroad);
+			}
 		}
-		
+
 		private void broadcastModel(int workerID) throws InterruptedException {
+			Timing tBroad = new Timing(true);
+
 			//broadcast copy of model to specific worker, cleaned up by worker
 			_modelMap.get(workerID).put(ParamservUtils.copyList(_model));
+
+			double dBroad = tBroad.stop();
+			if (DMLScript.STATISTICS) {
+				Statistics.accPSModelBroadcastTime((long) dBroad);
+			}
 		}
 
 		@Override
@@ -209,8 +211,15 @@ public abstract class ParamServer {
 						grad._gradients.getDataSize() / 1024, grad._workerID));
 				}
 
+				Timing tAgg = new Timing(true);
+
 				// Update and redistribute the model
 				_model = updateModel(grad._gradients, _model);
+
+				double lAgg = tAgg.stop();
+				if (DMLScript.STATISTICS) {
+					Statistics.accPSAggregationTime((long) lAgg);
+				}
 
 				// Redistribute model according to update type
 				switch(_updateType) {
@@ -226,17 +235,7 @@ public abstract class ParamServer {
 						break;
 					}
 					case ASP: {
-						Timing tBroad = new Timing(true);
-
 						broadcastModel(grad._workerID);
-
-						double lBroad = tBroad.stop();
-						if (LOG.isTraceEnabled()) {
-							LOG.trace(String.format("Agg service: Model broadcasting time: %.3f secs", lBroad / 1000));
-						}
-						if (DMLScript.STATISTICS) {
-							Statistics.accPSModelBroadcastingTime((long) lBroad);
-						}
 						break;
 					}
 					default:
@@ -260,18 +259,8 @@ public abstract class ParamServer {
 			_ec.setVariable(Statement.PS_GRADIENTS, gradients);
 			_ec.setVariable(Statement.PS_MODEL, model);
 
-			Timing tAgg = new Timing(true);
-
 			// Invoke the aggregate function
 			_inst.processInstruction(_ec);
-
-			double lAgg = tAgg.stop();
-			if (LOG.isTraceEnabled()) {
-				LOG.trace(String.format("Agg service: Aggregation computing time: %.3f secs", lAgg / 1000));
-			}
-			if (DMLScript.STATISTICS) {
-				Statistics.accPSTotalAggregationTime((long) lAgg);
-			}
 
 			// Get the output
 			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());

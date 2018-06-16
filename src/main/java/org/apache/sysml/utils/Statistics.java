@@ -109,10 +109,12 @@ public class Statistics
 
 	// Paramserv function stats (time is in milli sec)
 	private static final LongAdder psNumWorkers = new LongAdder();
-	private static final LongAdder psTotalGradientsComputeTime = new LongAdder();
-	private static final LongAdder psTotalAggregationTime = new LongAdder();
-	private static final LongAdder psModelBroadcastingTime = new LongAdder();
-	private static final LongAdder psTotalBatchSlicingTime = new LongAdder();
+	private static final LongAdder psSetupTime = new LongAdder();
+	private static final LongAdder psGradientComputeTime = new LongAdder();
+	private static final LongAdder psAggregationTime = new LongAdder();
+	private static final LongAdder psLocalModelUpdateTime = new LongAdder();
+	private static final LongAdder psModelBroadcastTime = new LongAdder();
+	private static final LongAdder psBatchIndexTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
@@ -528,20 +530,28 @@ public class Statistics
 		psNumWorkers.increment();
 	}
 
-	public static void accPSTotalGradientsComputeTime(long t) {
-		psTotalGradientsComputeTime.add(t);
+	public static void accPSSetupTime(long t) {
+		psSetupTime.add(t);
 	}
 
-	public static void accPSTotalAggregationTime(long t) {
-		psTotalAggregationTime.add(t);
+	public static void accPSGradientComputeTime(long t) {
+		psGradientComputeTime.add(t);
 	}
 
-	public static void accPSModelBroadcastingTime(long t) {
-		psModelBroadcastingTime.add(t);
+	public static void accPSAggregationTime(long t) {
+		psAggregationTime.add(t);
 	}
 
-	public static void accPSTotalBatchSlicingTime(long t) {
-		psTotalBatchSlicingTime.add(t);
+	public static void accPSLocalModelUpdateTime(long t) {
+		psLocalModelUpdateTime.add(t);
+	}
+
+	public static void accPSModelBroadcastTime(long t) {
+		psModelBroadcastTime.add(t);
+	}
+
+	public static void accPSBatchIndexingTime(long t) {
+		psBatchIndexTime.add(t);
 	}
 	
 	public static String getCPHeavyHitterCode( Instruction inst )
@@ -877,11 +887,13 @@ public class Statistics
 								 ((double)sparkCollect.longValue())*1e-9));
 			}
 			if (psNumWorkers.intValue() > 0) {
-				sb.append(String.format("Paramserv func number of workers:\t%d.\n", psNumWorkers.intValue()));
-				sb.append(String.format("Paramserv func total gradients compute time:\t%.3f secs.\n", psTotalGradientsComputeTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv func total aggregation time:\t%.3f secs.\n", psTotalAggregationTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv func model broadcasting time:\t%.3f secs.\n", psModelBroadcastingTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv func total batch slicing time:\t%.10f secs.\n", psTotalBatchSlicingTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.intValue()));
+				sb.append(String.format("Paramserv setup time (prog, data):\t%.3f secs.\n", psSetupTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv gradient compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv local model updating time:\t%.3f secs.\n", psLocalModelUpdateTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv aggregation time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv batch indexing time:\t%.10f secs.\n", psBatchIndexTime.doubleValue() / 1000));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

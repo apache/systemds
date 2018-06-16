@@ -36,7 +36,7 @@ public abstract class SPInstruction extends Instruction {
 		CentralMoment, Covariance, QSort, QPick, 
 		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
 		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
-		Write, SpoofFused, Convolution
+		Write, SpoofFused, Dnn
 	}
 
 	protected final SPType _sptype;

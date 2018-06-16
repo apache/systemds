@@ -38,7 +38,7 @@ public abstract class GPUInstruction extends Instruction {
 		AggregateUnary,
 		AggregateBinary,
 		RelationalBinary,
-		Convolution,
+		Dnn,
 		MMTSJ,
 		Reorg,
 		Append,

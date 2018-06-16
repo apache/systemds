@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CompressionCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.ConvolutionCPInstruction;
+import org.apache.sysml.runtime.instructions.cp.DnnCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataPartitionCPInstruction;
@@ -235,22 +235,22 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "rsort"      , CPType.Reorg);
 
 		// Opcodes related to convolutions
-		String2CPInstructionType.put( "relu_backward"      , CPType.Convolution);
-		String2CPInstructionType.put( "relu_maxpooling"      , CPType.Convolution);
-		String2CPInstructionType.put( "relu_maxpooling_backward"      , CPType.Convolution);
-		String2CPInstructionType.put( "maxpooling"      , CPType.Convolution);
-		String2CPInstructionType.put( "maxpooling_backward"      , CPType.Convolution);
-		String2CPInstructionType.put( "avgpooling"      , CPType.Convolution);
-		String2CPInstructionType.put( "avgpooling_backward"      , CPType.Convolution);
-		String2CPInstructionType.put( "conv2d"      , CPType.Convolution);
-		String2CPInstructionType.put( "conv2d_bias_add"      , CPType.Convolution);
-		String2CPInstructionType.put( "conv2d_backward_filter"      , CPType.Convolution);
-		String2CPInstructionType.put( "conv2d_backward_data"      , CPType.Convolution);
-		String2CPInstructionType.put( "bias_add"      , CPType.Convolution);
-		String2CPInstructionType.put( "bias_multiply"      , CPType.Convolution);
-		String2CPInstructionType.put( "channel_sums"      , CPType.Convolution);
-		String2CPInstructionType.put( "batch_norm2d",           CPType.Convolution);
-		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Convolution);
+		String2CPInstructionType.put( "relu_backward"      , CPType.Dnn);
+		String2CPInstructionType.put( "relu_maxpooling"      , CPType.Dnn);
+		String2CPInstructionType.put( "relu_maxpooling_backward"      , CPType.Dnn);
+		String2CPInstructionType.put( "maxpooling"      , CPType.Dnn);
+		String2CPInstructionType.put( "maxpooling_backward"      , CPType.Dnn);
+		String2CPInstructionType.put( "avgpooling"      , CPType.Dnn);
+		String2CPInstructionType.put( "avgpooling_backward"      , CPType.Dnn);
+		String2CPInstructionType.put( "conv2d"      , CPType.Dnn);
+		String2CPInstructionType.put( "conv2d_bias_add"      , CPType.Dnn);
+		String2CPInstructionType.put( "conv2d_backward_filter"      , CPType.Dnn);
+		String2CPInstructionType.put( "conv2d_backward_data"      , CPType.Dnn);
+		String2CPInstructionType.put( "bias_add"      , CPType.Dnn);
+		String2CPInstructionType.put( "bias_multiply"      , CPType.Dnn);
+		String2CPInstructionType.put( "channel_sums"      , CPType.Dnn);
+		String2CPInstructionType.put( "batch_norm2d",           CPType.Dnn);
+		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Dnn);
 		
 		// Quaternary instruction opcodes
 		String2CPInstructionType.put( "wsloss"  , CPType.Quaternary);
@@ -344,8 +344,8 @@ public class CPInstructionParser extends InstructionParser
 			case Reorg:
 				return ReorgCPInstruction.parseInstruction(str);
 				
-			case Convolution:
-				 return ConvolutionCPInstruction.parseInstruction(str);
+			case Dnn:
+				 return DnnCPInstruction.parseInstruction(str);
 				
 			case UaggOuterChain:
 				return UaggOuterChainCPInstruction.parseInstruction(str);

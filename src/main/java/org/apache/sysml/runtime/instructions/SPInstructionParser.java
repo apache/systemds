@@ -51,7 +51,7 @@ import org.apache.sysml.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CompressionSPInstruction;
-import org.apache.sysml.runtime.instructions.spark.ConvolutionSPInstruction;
+import org.apache.sysml.runtime.instructions.spark.DnnSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CovarianceSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CumulativeAggregateSPInstruction;
@@ -138,10 +138,10 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "tack+*"     , SPType.AggregateTernary);
 
 		// Neural network operators
-		String2SPInstructionType.put( "conv2d",                 SPType.Convolution);
-		String2SPInstructionType.put( "conv2d_bias_add", SPType.Convolution);
-		String2SPInstructionType.put( "maxpooling",             SPType.Convolution);
-		String2SPInstructionType.put( "relu_maxpooling",          SPType.Convolution);
+		String2SPInstructionType.put( "conv2d",                 SPType.Dnn);
+		String2SPInstructionType.put( "conv2d_bias_add", SPType.Dnn);
+		String2SPInstructionType.put( "maxpooling",             SPType.Dnn);
+		String2SPInstructionType.put( "relu_maxpooling",          SPType.Dnn);
 		
 		String2SPInstructionType.put( RightIndex.OPCODE, SPType.MatrixIndexing);
 		String2SPInstructionType.put( LeftIndex.OPCODE, SPType.MatrixIndexing);
@@ -370,8 +370,8 @@ public class SPInstructionParser extends InstructionParser
 			case AggregateTernary:
 				return AggregateTernarySPInstruction.parseInstruction(str);
 				
-			case Convolution:
-				 return ConvolutionSPInstruction.parseInstruction(str);
+			case Dnn:
+				 return DnnSPInstruction.parseInstruction(str);
 
 			case MatrixIndexing:
 				return IndexingSPInstruction.parseInstruction(str);

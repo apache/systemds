@@ -29,7 +29,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
@@ -40,7 +40,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public BuiltinFunctionExpression(ParserRuleContext ctx, BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname) {
 		_opcode = bifop;
 		setCtxValuesAndFilename(ctx, fname);
-		args = expandConvolutionArguments(args);
+		args = expandDnnArguments(args);
 		_args = new Expression[args.size()];
 		for(int i=0; i < args.size(); i++) {
 			_args[i] = args.get(i).getExpr();
@@ -391,7 +391,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		out.setBlockDimensions(exp.getOutput().getRowsInBlock(), exp.getOutput().getColumnsInBlock());
 	}
 	
-	private static ArrayList<ParameterExpression> orderConvolutionParams(ArrayList<ParameterExpression> paramExpression, int skip) {
+	private static ArrayList<ParameterExpression> orderDnnParams(ArrayList<ParameterExpression> paramExpression, int skip) {
 		ArrayList<ParameterExpression> newParams = new ArrayList<>();
 
 		for(int i = 0; i < skip; i++)
@@ -458,14 +458,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return newParamExpressions;
 	}
 	
-	private ArrayList<ParameterExpression> expandConvolutionArguments(ArrayList<ParameterExpression> paramExpression) {
+	private ArrayList<ParameterExpression> expandDnnArguments(ArrayList<ParameterExpression> paramExpression) {
 		try {
 			if(_opcode == BuiltinFunctionOp.CONV2D || _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER 
 					|| _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
 				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
-				paramExpression = orderConvolutionParams(paramExpression, 2);
+				paramExpression = orderDnnParams(paramExpression, 2);
 			}
 			else if(_opcode == BuiltinFunctionOp.MAX_POOL || _opcode == BuiltinFunctionOp.AVG_POOL ||  
 					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
@@ -476,9 +476,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, this)));
 				paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", 3);
 				if(_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD)
-					paramExpression = orderConvolutionParams(paramExpression, 2);
+					paramExpression = orderDnnParams(paramExpression, 2);
 				else
-					paramExpression = orderConvolutionParams(paramExpression, 1);
+					paramExpression = orderDnnParams(paramExpression, 1);
 			}
 		}
 		catch(LanguageException e) {
@@ -1393,8 +1393,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 						output.setDimensions(N, C*H*W);
 					}
 					else if(H > 0 && W > 0 && stride_h > 0 && stride_w > 0 && pad_h >= 0 && pad_w >= 0 && R > 0 && S > 0) {
-						long P = ConvolutionUtils.getP(H, R, stride_h, pad_h);
-						long Q = ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+						long P = DnnUtils.getP(H, R, stride_h, pad_h);
+						long Q = DnnUtils.getQ(W, S, stride_w, pad_w);
 						
 						// Try to set both rows and columns
 						if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 

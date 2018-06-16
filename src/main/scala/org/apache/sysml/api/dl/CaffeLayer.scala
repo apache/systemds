@@ -24,7 +24,7 @@ import org.apache.sysml.parser.LanguageException
 import java.util.HashSet
 import java.io.File
 import org.apache.sysml.api.DMLScript
-import org.apache.sysml.runtime.util.ConvolutionUtils
+import org.apache.sysml.runtime.util.DnnUtils
 import caffe.Caffe.EltwiseParameter.EltwiseOp
 import org.apache.sysml.runtime.DMLRuntimeException;
 import java.util.ArrayList
@@ -1069,8 +1069,8 @@ class MaxPooling(val param: LayerParameter, val id: Int, val net: CaffeNetwork) 
   // -------------------------------------------------
   def Hin          = bottomLayerOutputShape._2
   def Win          = bottomLayerOutputShape._3
-  def Hout         = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h)
-  def Wout         = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
+  def Hout         = DnnUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h)
+  def Wout         = DnnUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   def poolingParam = param.getPoolingParam
   def numChannels  = bottomLayerOutputShape._1
   // kernel_size (or kernel_h and kernel_w): specifies height and width of each filter
@@ -1306,8 +1306,8 @@ class Convolution(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
   def numChannels = bottomLayerOutputShape._1
   def Hin         = bottomLayerOutputShape._2
   def Win         = bottomLayerOutputShape._3
-  def Hout        = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h)
-  def Wout        = ConvolutionUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
+  def Hout        = DnnUtils.getConv2dOutputMap(bottomLayerOutputShape._2, kernel_h, stride_h, pad_h)
+  def Wout        = DnnUtils.getConv2dOutputMap(bottomLayerOutputShape._3, kernel_w, stride_w, pad_w)
   // -------------------------------------------------
   def convParam = param.getConvolutionParam
   // if depthwise (C, M*Hf*Wf) else (F, C*Hf*Wf)

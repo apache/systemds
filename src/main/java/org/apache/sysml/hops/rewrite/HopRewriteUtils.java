@@ -34,6 +34,7 @@ import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
@@ -43,6 +44,7 @@ import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.Hop.ReOrgOp;
@@ -1039,6 +1041,15 @@ public class HopRewriteUtils
 	public static boolean isNary(Hop hop, OpOpN... types) {
 		return ( hop instanceof NaryOp 
 			&& ArrayUtils.contains(types, ((NaryOp) hop).getOp()));
+	}
+	
+	public static boolean isDnn(Hop hop, OpOpDnn type) {
+		return hop instanceof DnnOp && ((DnnOp)hop).getOp()==type;
+	}
+	
+	public static boolean isDnn(Hop hop, OpOpDnn... types) {
+		return ( hop instanceof DnnOp 
+			&& ArrayUtils.contains(types, ((DnnOp) hop).getOp()));
 	}
 	
 	public static boolean isNonZeroIndicator(Hop pred, Hop hop )

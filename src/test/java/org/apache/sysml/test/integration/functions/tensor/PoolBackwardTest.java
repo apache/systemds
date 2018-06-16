@@ -24,7 +24,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -152,7 +152,7 @@ public class PoolBackwardTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			long P = ConvolutionUtils.getP(imgSize, poolSize1, stride, pad);
+			long P = DnnUtils.getP(imgSize, poolSize1, stride, pad);
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";

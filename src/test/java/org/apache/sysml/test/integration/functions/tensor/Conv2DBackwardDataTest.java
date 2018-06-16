@@ -24,7 +24,7 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -157,7 +157,7 @@ public class Conv2DBackwardDataTest extends AutomatedTestBase
 			String sparseVal1 = (""+sparse1).toUpperCase();
 			String sparseVal2 = (""+sparse2).toUpperCase();
 			
-			long P = ConvolutionUtils.getP(imgSize, filterSize, stride, pad);
+			long P = DnnUtils.getP(imgSize, filterSize, stride, pad);
 			programArgs = new String[]{"-explain", "-args",  "" + imgSize, "" + numImg, 
 					"" + numChannels, "" + numFilters, 
 					"" + filterSize, "" + stride, "" + pad,

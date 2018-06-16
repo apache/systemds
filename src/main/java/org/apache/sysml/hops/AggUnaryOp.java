@@ -25,7 +25,7 @@ import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.Binary;
-import org.apache.sysml.lops.ConvolutionTransform;
+import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.PartialAggregate;
@@ -146,11 +146,11 @@ public class AggUnaryOp extends MultiThreadedHop
 					// Apply channel sums only if rewrite is applicable and if the dimension of C is known at compile time
 					// and if numChannels is less than 8 MB.
 					ReorgOp in = ((ReorgOp)getInput().get(0));
-					agg1 = new ConvolutionTransform(
+					agg1 = new DnnTransform(
 							in.getInput().get(0).getInput().get(0).constructLops(), 
 							in.getInput().get(1).constructLops(),
 							in.getInput().get(2).constructLops(),
-							ConvolutionTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
+							DnnTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
 					agg1.getOutputParameters().setDimensions(numChannels, 1, getRowsInBlock(), getColsInBlock(), -1);
 					setLineNumbers(agg1);
 					setLops(agg1);

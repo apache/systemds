@@ -141,7 +141,7 @@ public abstract class Hop implements ParseInfo
 	 * Check whether this Hop has a correct number of inputs.
 	 *
 	 * (Some Hops can have a variable number of inputs, such as DataOp, DataGenOp, ParameterizedBuiltinOp,
-	 * ReorgOp, TernaryOp, QuaternaryOp, MultipleOp, ConvolutionOp, and SpoofFusedOp.)
+	 * ReorgOp, TernaryOp, QuaternaryOp, MultipleOp, DnnOp, and SpoofFusedOp.)
 	 *
 	 * Parameterized Hops (such as DataOp) can check that the number of parameters matches the number of inputs.
 	 *
@@ -1096,7 +1096,7 @@ public abstract class Hop implements ParseInfo
 		//DIAG_V2M, DIAG_M2V, 
 	}
 	
-	public enum ConvOp {
+	public enum OpOpDnn {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, BIAS_MULTIPLY
@@ -1160,18 +1160,18 @@ public abstract class Hop implements ParseInfo
 
 	}
 	
-	protected static final HashMap<ConvOp, org.apache.sysml.lops.ConvolutionTransform.OperationTypes> HopsConv2Lops;
+	protected static final HashMap<OpOpDnn, org.apache.sysml.lops.DnnTransform.OperationTypes> HopsConv2Lops;
 	static {
 		HopsConv2Lops = new HashMap<>();
-		HopsConv2Lops.put(ConvOp.MAX_POOL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOL);
-		HopsConv2Lops.put(ConvOp.MAX_POOL_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.MAX_POOL_BACKWARD);
-		HopsConv2Lops.put(ConvOp.AVG_POOL, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOL);
-		HopsConv2Lops.put(ConvOp.AVG_POOL_BACKWARD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.AVG_POOL_BACKWARD);
-		HopsConv2Lops.put(ConvOp.CONV2D, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D);
-		HopsConv2Lops.put(ConvOp.BIAS_ADD, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_ADD);
-		HopsConv2Lops.put(ConvOp.BIAS_MULTIPLY, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.BIAS_MULTIPLY);
-		HopsConv2Lops.put(ConvOp.CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
-		HopsConv2Lops.put(ConvOp.CONV2D_BACKWARD_DATA, org.apache.sysml.lops.ConvolutionTransform.OperationTypes.CONV2D_BACKWARD_DATA);
+		HopsConv2Lops.put(OpOpDnn.MAX_POOL, org.apache.sysml.lops.DnnTransform.OperationTypes.MAX_POOL);
+		HopsConv2Lops.put(OpOpDnn.MAX_POOL_BACKWARD, org.apache.sysml.lops.DnnTransform.OperationTypes.MAX_POOL_BACKWARD);
+		HopsConv2Lops.put(OpOpDnn.AVG_POOL, org.apache.sysml.lops.DnnTransform.OperationTypes.AVG_POOL);
+		HopsConv2Lops.put(OpOpDnn.AVG_POOL_BACKWARD, org.apache.sysml.lops.DnnTransform.OperationTypes.AVG_POOL_BACKWARD);
+		HopsConv2Lops.put(OpOpDnn.CONV2D, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D);
+		HopsConv2Lops.put(OpOpDnn.BIAS_ADD, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_ADD);
+		HopsConv2Lops.put(OpOpDnn.BIAS_MULTIPLY, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_MULTIPLY);
+		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
+		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_DATA, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_DATA);
 	}
 
 	protected static final HashMap<Hop.Direction, org.apache.sysml.lops.PartialAggregate.DirectionTypes> HopsDirection2Lops;

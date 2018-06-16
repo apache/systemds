@@ -37,7 +37,7 @@ import org.apache.sysml.lops.CoVariance;
 import org.apache.sysml.lops.CombineBinary;
 import org.apache.sysml.lops.CombineBinary.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
-import org.apache.sysml.lops.ConvolutionTransform;
+import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
@@ -653,8 +653,8 @@ public class BinaryOp extends MultiThreadedHop
 				if(op == OpOp2.MULT && isLeftXGt0 && 
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()
 					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
-					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
-						getInput().get(1).constructLops(), ConvolutionTransform.OperationTypes.RELU_BACKWARD,
+					binary = new DnnTransform(getInput().get(0).getInput().get(0).constructLops(), 
+						getInput().get(1).constructLops(), DnnTransform.OperationTypes.RELU_BACKWARD,
 						getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				}
 				else

@@ -34,14 +34,14 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.ConvolutionOp;
+import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
-import org.apache.sysml.hops.Hop.ConvOp;
+import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
@@ -2689,30 +2689,30 @@ public class DMLTranslator
 			ArrayList<Hop> inHops1 = new ArrayList<>();
 			inHops1.add(expr);
 			inHops1.add(expr2);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), inHops1);
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), inHops1);
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL:
 		case MAX_POOL: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL_BACKWARD:
 		case MAX_POOL_BACKWARD: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case CONV2D:
 		case CONV2D_BACKWARD_FILTER:
 		case CONV2D_BACKWARD_DATA: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}

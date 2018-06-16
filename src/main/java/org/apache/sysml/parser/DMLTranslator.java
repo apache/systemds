@@ -2684,8 +2684,8 @@ public class DMLTranslator
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
 		
-		case BIAS_ADD:
-		case BIAS_MULTIPLY: {
+		case BIASADD:
+		case BIASMULT: {
 			ArrayList<Hop> inHops1 = new ArrayList<>();
 			inHops1.add(expr);
 			inHops1.add(expr2);

@@ -60,6 +60,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME22 = TEST_NAME+22; //sum(X * seq(1,N) + t(seq(M,1)))
 	private static final String TEST_NAME23 = TEST_NAME+23; //sum(min(X,Y,Z))
 	private static final String TEST_NAME24 = TEST_NAME+24; //min(X, Y, Z, 3, 7)
+	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
+	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -72,7 +74,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=24; i++ ) {
+		for( int i=1; i<=26; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -413,6 +415,36 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwiseRewrite24_sp() {
 		testCodegenIntegration( TEST_NAME24, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite25() {
+		testCodegenIntegration( TEST_NAME25, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise25() {
+		testCodegenIntegration( TEST_NAME25, false, ExecType.CP );
+	}
+
+	@Test //TODO handling of global col index
+	public void testCodegenCellwiseRewrite25_sp() {
+		testCodegenIntegration( TEST_NAME25, true, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite26() {
+		testCodegenIntegration( TEST_NAME26, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise26() {
+		testCodegenIntegration( TEST_NAME26, false, ExecType.CP );
+	}
+
+	@Test //TODO handling of global col index
+	public void testCodegenCellwiseRewrite26_sp() {
+		testCodegenIntegration( TEST_NAME26, true, ExecType.SPARK );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

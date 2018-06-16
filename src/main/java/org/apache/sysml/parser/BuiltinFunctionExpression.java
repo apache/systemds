@@ -1316,8 +1316,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			break;
 		
-		case BIAS_ADD:
-		case BIAS_MULTIPLY:
+		case BIASADD:
+		case BIASMULT:
 		{
 			Expression input = _args[0];
 			Expression bias = _args[1];
@@ -1956,9 +1956,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		else if (functionName.equals("conv2d"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D;
 		else if (functionName.equals("bias_add"))
-			 bifop = Expression.BuiltinFunctionOp.BIAS_ADD;
+			 bifop = Expression.BuiltinFunctionOp.BIASADD;
 		else if (functionName.equals("bias_multiply"))
-			 bifop = Expression.BuiltinFunctionOp.BIAS_MULTIPLY;
+			 bifop = Expression.BuiltinFunctionOp.BIASMULT;
 		else if (functionName.equals("conv2d_backward_filter"))
 			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
 		else if (functionName.equals("conv2d_backward_data"))

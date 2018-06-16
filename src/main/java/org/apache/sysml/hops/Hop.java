@@ -1099,7 +1099,7 @@ public abstract class Hop implements ParseInfo
 	public enum OpOpDnn {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
-		BIAS_ADD, BIAS_MULTIPLY
+		BIASADD, BIASMULT
 	}
 	
 	public enum DataGenMethod {
@@ -1168,8 +1168,8 @@ public abstract class Hop implements ParseInfo
 		HopsConv2Lops.put(OpOpDnn.AVG_POOL, org.apache.sysml.lops.DnnTransform.OperationTypes.AVG_POOL);
 		HopsConv2Lops.put(OpOpDnn.AVG_POOL_BACKWARD, org.apache.sysml.lops.DnnTransform.OperationTypes.AVG_POOL_BACKWARD);
 		HopsConv2Lops.put(OpOpDnn.CONV2D, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D);
-		HopsConv2Lops.put(OpOpDnn.BIAS_ADD, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_ADD);
-		HopsConv2Lops.put(OpOpDnn.BIAS_MULTIPLY, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_MULTIPLY);
+		HopsConv2Lops.put(OpOpDnn.BIASADD, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_ADD);
+		HopsConv2Lops.put(OpOpDnn.BIASMULT, org.apache.sysml.lops.DnnTransform.OperationTypes.BIAS_MULTIPLY);
 		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_FILTER, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_FILTER);
 		HopsConv2Lops.put(OpOpDnn.CONV2D_BACKWARD_DATA, org.apache.sysml.lops.DnnTransform.OperationTypes.CONV2D_BACKWARD_DATA);
 	}

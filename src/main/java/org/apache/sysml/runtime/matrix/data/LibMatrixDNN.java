@@ -315,19 +315,11 @@ public class LibMatrixDNN {
 		}
 		else {
 			// Handles both dense and sparse inputs and copies it to dense output
-			outputBlock.copy(input, false); 
-			int index = 0;
+			outputBlock.copy(input, false);
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array
 			double [] biasArr = bias.getDenseBlockValues();
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					double biasVal = biasArr[k];
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						outputArray[index] += biasVal;
-					}
-				}
-			}
+			addBias(outputArray, biasArr, 1, N, K, PQ);
 		}
 		
 		//post-processing: maintain nnz
@@ -548,8 +540,8 @@ public class LibMatrixDNN {
 		}
 		else {
 			addBias(retArr, resultSaveMeanArr, -1, N, K, PQ);
-			multiplyBias(retArr, resultSaveInvVarianceArr, N, K, PQ);
-			multiplyBias(retArr, scaleArr, N, K, PQ);
+			multBias(retArr, resultSaveInvVarianceArr, N, K, PQ);
+			multBias(retArr, scaleArr, N, K, PQ);
 			addBias(retArr, biasArr, 1, N, K, PQ);
 		}
 		ret.recomputeNonZeros();
@@ -585,32 +577,31 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void addBias(double [] arr, double [] bias, double biasMultiplier, int N, int K, int PQ) {
+	public static void addBias(double[] a, double[] bias, double biasMultiplier, int N, int K, int PQ) {
+		if( bias == null )
+			return;
 		int index = 0;
-		if(bias != null) {
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						arr[index] += biasMultiplier*bias[k];
-					}
-				}
+		for(int n = 0; n < N; n++) {
+			for(int k = 0; k < K; k++) {
+				double biasVal = biasMultiplier*bias[k];
+				for(int pq = 0; pq < PQ; pq++, index++)
+					a[index] += biasVal;
 			}
 		}
 	}
 	
-	private static void multiplyBias(double [] arr, double [] bias, int N, int K, int PQ) {
-		int index = 0;
-		if(bias != null) {
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						arr[index] *= bias[k];
-					}
-				}
-			}
+	public static void multBias(double[] a, double[] bias, int N, int K, int PQ) {
+		if( bias == null ) {
+			Arrays.fill(a, 0);
+			return;
 		}
-		else {
-			Arrays.fill(arr, 0);
+		int index = 0;
+		for(int n = 0; n < N; n++) {
+			for(int k = 0; k < K; k++) {
+				double biasVal = bias[k];
+				for(int pq = 0; pq < PQ; pq++, index++)
+					a[index] *= biasVal;
+			}
 		}
 	}
 	

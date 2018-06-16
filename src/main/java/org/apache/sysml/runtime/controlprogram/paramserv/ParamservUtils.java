@@ -19,17 +19,35 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysml.runtime.controlprogram.Program;
+import org.apache.sysml.runtime.controlprogram.ProgramBlock;
+import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -39,6 +57,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class ParamservUtils {
+
+	public static final String UPDATE_FUNC_PREFIX = "_worker_";
+	public static final String AGG_FUNC_PREFIX = "_agg_";
 
 	/**
 	 * Deep copy the list object
@@ -108,5 +129,113 @@ public class ParamservUtils {
 		MatrixBlock permutation = new MatrixBlock(numEntries, numEntries, true);
 		seq.ctableOperations(null, sample, 1.0, permutation);
 		return permutation;
+	}
+
+	public static ExecutionContext createExecutionContext(ExecutionContext ec, String updFunc, String aggFunc, int workerNum, int k) {
+		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
+		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
+
+		Program prog = ec.getProgram();
+
+		// 1. Recompile the internal program blocks
+		recompileProgramBlocks(k, prog.getProgramBlocks());
+		// 2. Recompile the imported function blocks
+		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
+
+		// Copy function for workers
+		IntStream.range(0, workerNum).forEach(i -> copyFunction(updFunc, updPB, prog, UPDATE_FUNC_PREFIX + i + "_"));
+
+		// Copy function for agg service
+		copyFunction(aggFunc, aggPB, prog, AGG_FUNC_PREFIX);
+
+		return ExecutionContextFactory.createContext(prog);
+	}
+
+	private static void copyFunction(String funcName, FunctionProgramBlock updPB, Program prog, String prefix) {
+		String[] keys = DMLProgram.splitFunctionKey(funcName);
+		String namespace = null;
+		String func = keys[0];
+		if (keys.length == 2) {
+			namespace = keys[0];
+			func = keys[1];
+		}
+		FunctionProgramBlock copiedFunc = ProgramConverter
+			.createDeepCopyFunctionProgramBlock(updPB, new HashSet<>(), new HashSet<>());
+		String fnameNew = prefix + func;
+		prog.addFunctionProgramBlock(namespace, fnameNew, copiedFunc);
+	}
+
+	private static void recompileProgramBlocks(int k, ArrayList<ProgramBlock> pbs) {
+		// Reset the visit status from root
+		for (ProgramBlock pb : pbs)
+			DMLTranslator.resetHopsDAGVisitStatus(pb.getStatementBlock());
+
+		// Should recursively assign the level of parallelism
+		// and recompile the program block
+		try {
+			rAssignParallelism(pbs, k, false);
+		} catch (IOException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private static boolean rAssignParallelism(ArrayList<ProgramBlock> pbs, int k, boolean recompiled) throws IOException {
+		for (ProgramBlock pb : pbs) {
+			if (pb instanceof ParForProgramBlock) {
+				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
+				pfpb.setDegreeOfParallelism(k);
+				recompiled |= rAssignParallelism(pfpb.getChildBlocks(), 1, recompiled);
+			} else if (pb instanceof ForProgramBlock) {
+				recompiled |= rAssignParallelism(((ForProgramBlock) pb).getChildBlocks(), k, recompiled);
+			} else if (pb instanceof WhileProgramBlock) {
+				recompiled |= rAssignParallelism(((WhileProgramBlock) pb).getChildBlocks(), k, recompiled);
+			} else if (pb instanceof FunctionProgramBlock) {
+				recompiled |= rAssignParallelism(((FunctionProgramBlock) pb).getChildBlocks(), k, recompiled);
+			} else if (pb instanceof IfProgramBlock) {
+				IfProgramBlock ipb = (IfProgramBlock) pb;
+				recompiled |= rAssignParallelism(ipb.getChildBlocksIfBody(), k, recompiled);
+				if (ipb.getChildBlocksElseBody() != null)
+					recompiled |= rAssignParallelism(ipb.getChildBlocksElseBody(), k, recompiled);
+			} else {
+				StatementBlock sb = pb.getStatementBlock();
+				for (Hop hop : sb.getHops())
+					recompiled |= rAssignParallelism(hop, k, recompiled);
+			}
+			// Recompile the program block
+			if (recompiled) {
+				Recompiler.recompileProgramBlockInstructions(pb);
+			}
+		}
+		return recompiled;
+	}
+
+	private static boolean rAssignParallelism(Hop hop, int k, boolean recompiled) {
+		if (hop.isVisited()) {
+			return recompiled;
+		}
+		if (hop instanceof MultiThreadedHop) {
+			// Reassign the level of parallelism
+			MultiThreadedHop mhop = (MultiThreadedHop) hop;
+			mhop.setMaxNumThreads(k);
+			recompiled = true;
+		}
+		ArrayList<Hop> inputs = hop.getInput();
+		for (Hop h : inputs) {
+			recompiled |= rAssignParallelism(h, k, recompiled);
+		}
+		hop.setVisited();
+		return recompiled;
+	}
+
+
+	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
+		String[] keys = DMLProgram.splitFunctionKey(funcName);
+		String namespace = null;
+		String func = keys[0];
+		if (keys.length == 2) {
+			namespace = keys[0];
+			func = keys[1];
+		}
+		return ec.getProgram().getFunctionProgramBlock(namespace, func);
 	}
 }

@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.AGG_FUNC_PREFIX;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -137,7 +139,7 @@ public abstract class ParamServer {
 				funcNS = keys[0];
 				funcName = keys[1];
 			}
-			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, funcName);
+			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, AGG_FUNC_PREFIX + funcName);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 

@@ -51,6 +51,7 @@ import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
@@ -310,6 +311,10 @@ public class Recompiler
 				rClearLops( hopRoot );
 		}
 		
+		// get max parallelism constraint, see below
+		Hop.resetVisitStatus(hops);
+		int maxK = rGetMaxParallelism(hops);
+		
 		// replace scalar reads with literals 
 		if( !inplace && replaceLit ) {
 			Hop.resetVisitStatus(hops);
@@ -365,6 +370,11 @@ public class Recompiler
 			hops = SpoofCompiler.optimize(hops,
 				(status==null || !status.isInitialCodegen()));
 		}
+		
+		// set max parallelism constraint to ensure compilation 
+		// incl rewrites does not lose these hop-lop constraints
+		Hop.resetVisitStatus(hops);
+		rSetMaxParallelism(hops, maxK);
 		
 		// construct lops
 		Dag<Lop> dag = new Dag<>();
@@ -1404,21 +1414,51 @@ public class Recompiler
 		LiteralReplacement.rReplaceLiterals(hop, vars, scalarsOnly);
 	}
 	
-	public static void rSetExecType( Hop hop, ExecType etype )
-	{
+	public static void rSetExecType( Hop hop, ExecType etype ) {
 		if( hop.isVisited() )
 			return;
-		
 		//update function names
 		hop.setForcedExecType(etype);
-		
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
 				rSetExecType(c, etype);
-		
 		hop.setVisited();
 	}
 	
+	public static int rGetMaxParallelism(List<Hop> hops) {
+		int ret = -1;
+		for( Hop c : hops )
+			ret = Math.max(ret, rGetMaxParallelism(c));
+		return ret;
+	}
+	
+	public static int rGetMaxParallelism(Hop hop) {
+		if( hop.isVisited() )
+			return -1;
+		//recursively process children and
+		int ret = rGetMaxParallelism(hop.getInput());
+		//obtain max num thread constraints
+		if( hop instanceof MultiThreadedHop )
+			ret = Math.max(ret, ((MultiThreadedHop)hop).getMaxNumThreads());
+		hop.setVisited();
+		return ret;
+	}
+	
+	public static void rSetMaxParallelism(List<Hop> hops, int k) {
+		for( Hop c : hops )
+			rSetMaxParallelism(c, k);
+	}
+	
+	public static void rSetMaxParallelism(Hop hop, int k) {
+		if( hop.isVisited() )
+			return;
+		//recursively process children
+		rSetMaxParallelism(hop.getInput(), k);
+		//set max num thread constraint
+		if( hop instanceof MultiThreadedHop )
+			((MultiThreadedHop)hop).setMaxNumThreads(k);
+		hop.setVisited();
+	}
 
 	/**
 	 * Returns true iff (1) all instruction are reblock instructions and (2) all

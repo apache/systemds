@@ -346,7 +346,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				// default worker number: available cores - 1 (assign one process for agg service)
 				workerNum = getRemainingCores();
 				if (getParameterMap().containsKey(PS_PARALLELISM)) {
-					workerNum = Math.min(workerNum, Integer.valueOf(getParam(PS_PARALLELISM)));
+					workerNum = Integer.valueOf(getParam(PS_PARALLELISM));
 				}
 				break;
 			case REMOTE_SPARK:

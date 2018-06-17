@@ -237,6 +237,7 @@ public class TemplateCell extends TemplateBase
 		}
 		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT) ) {
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			long c = hop.getInput().get(0).getDim2() / hop.getInput().get(1).getDim1();
 			CNode cdata3 = TemplateUtils.createCNodeData(new LiteralOp(c), true);

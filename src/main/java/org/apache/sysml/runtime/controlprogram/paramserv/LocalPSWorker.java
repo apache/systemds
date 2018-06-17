@@ -105,8 +105,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		}
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated. "
-							+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
-					_workerID, globalParams.getDataSize(), i + 1, _epochs, j + 1, totalIter));
+				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
+				_workerID, globalParams.getDataSize(), i + 1, _epochs, j + 1, totalIter));
 		}
 		return globalParams;
 	}

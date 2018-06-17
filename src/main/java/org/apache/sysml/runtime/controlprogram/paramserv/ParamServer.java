@@ -96,6 +96,8 @@ public abstract class ParamServer {
 	}
 
 	public ListObject getResult() {
+		// All the model updating work has terminated,
+		// so we could return directly the result model
 		return _model;
 	}
 

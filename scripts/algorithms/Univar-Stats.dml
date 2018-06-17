@@ -42,143 +42,100 @@
 
 consoleOutput = ifdef($CONSOLE_OUTPUT, FALSE);
 
-A = read($X); # data file
-K = read($TYPES); # attribute kind file
-
-# number of features/attributes
-n = ncol(A);
-
-# number of data records
-m = nrow(A);
-
-# number of statistics
-numBaseStats = 17; # (14 scale stats, 3 categorical stats)
-
+A = read($X);      # data file
+K = read($TYPES);  # attribute kind file
+n = ncol(A);       # number of features/attributes
+m = nrow(A);       # number of data records
+numBaseStats = 17; # number of statistics (14 scale, 3 categorical)
 max_kind = max(K);
 
 # matrices to store computed statistics
 baseStats = matrix(0, rows=numBaseStats, cols=n);
 
 # Compute max domain size among all categorical attributes
-maxs = colMaxs(A);
-maxDomainSize = max( (K > 1) * maxs );
-maxDomain = as.integer(maxDomainSize);
+maxDomain = as.integer(max((K > 1) * colMaxs(A)));
 
 parfor(i in 1:n, check=0) {
+  # project out the i^th column
+  F = A[,i];
 
-	# project out the i^th column
-	F = A[,i];
+  kind = as.scalar(K[1,i]);
+  minF = min(F);
+  maxF = max(F);
 
-	kind = as.scalar(K[1,i]);
+  if ( kind == 1 ) {
+    # compute SCALE statistics on the projected column
+    rng = maxF - minF;
 
-	if ( kind == 1 ) {
-		#print("[" + i + "] Scale");
-		# compute SCALE statistics on the projected column
-		minimum = min(F);
-		maximum = max(F);
-		rng = maximum - minimum;
+    mu = mean(F);
+    m2 = moment(F, 2);
+    m3 = moment(F, 3);
+    m4 = moment(F, 4);
 
-		mu = mean(F);
-		m2 = moment(F, 2);
-		m3 = moment(F, 3);
-		m4 = moment(F, 4);
+    var = m/(m-1.0)*m2;
+    std_dev = sqrt(var);
+    se = std_dev/sqrt(m);
+    cv = std_dev/mu;
 
-		var = m/(m-1.0)*m2;
-		std_dev = sqrt(var);
-		se = std_dev/sqrt(m);
-		cv = std_dev/mu;
+    g1 = m3/(std_dev^3);
+    g2 = m4/(std_dev^4) - 3;
+    se_g1=sqrt( (6/(m-2.0)) * (m/(m+1.0)) * ((m-1.0)/(m+3.0)) );
+    se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 );
 
-		g1 = m3/(std_dev^3);
-		g2 = m4/(std_dev^4) - 3;
-		#se_g1=sqrt( 6*m*(m-1.0) / ((m-2.0)*(m+1.0)*(m+3.0)) ); 
-		se_g1=sqrt( (6/(m-2.0)) * (m/(m+1.0)) * ((m-1.0)/(m+3.0)) ); 
+    md = median(F);
+    iqm = interQuartileMean(F);
 
-		#se_g2= sqrt( (4*(m^2-1)*se_g1^2)/((m+5.0)*(m-3.0)) );  
-		se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 ); 
+    baseStats[1:14,i] = as.matrix(list(minF, maxF, rng,
+    mu, var, std_dev, se, cv, g1, g2, se_g1, se_g2, md, iqm));
+  }
+  else {
+    if (kind == 2 | kind == 3) {
+      # check if the categorical column has valid values
+      if( minF <= 0 ) {
+        print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
+      }
+      else {
+        # compute CATEGORICAL statistics on the projected column
+        cat_counts = table(F,1, maxDomain, 1);  # counts for each category
+        mode = as.scalar(rowIndexMax(t(cat_counts)));
+        numModes = sum(cat_counts == max(cat_counts));
 
-		md = median(F); #quantile(F, 0.5);
-		iqm = interQuartileMean(F);
-
-		# place the computed statistics in output matrices
-		baseStats[1,i] = minimum;
-		baseStats[2,i] = maximum;
-		baseStats[3,i] = rng;
-
-		baseStats[4,i] = mu;
-		baseStats[5,i] = var;
-		baseStats[6,i] = std_dev;
-		baseStats[7,i] = se;
-		baseStats[8,i] = cv;
-
-		baseStats[9,i] = g1;
-		baseStats[10,i] = g2;
-		baseStats[11,i] = se_g1;
-		baseStats[12,i] = se_g2;
-
-		baseStats[13,i] = md;
-		baseStats[14,i] = iqm;
-	}
-	else {
-		if (kind == 2 | kind == 3) {
-			#print("[" + i + "] Categorical");
-			
-			# check if the categorical column has valid values
-			minF = min(F);
-			if (minF <=0) {
-				print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
-			}
-			else {
-				# compute CATEGORICAL statistics on the projected column
-				num_cat = max(F); # number of categories
-				cat_counts = table(F,1, maxDomain, 1);  # counts for each category
-
-				mode = rowIndexMax(t(cat_counts));
-				mx = max(cat_counts)
-				modeArr =  (cat_counts == mx)
-				numModes = sum(modeArr);
-
-				# place the computed statistics in output matrices
-				baseStats[15,i] = num_cat;
-				baseStats[16,i] = mode;
-				baseStats[17,i] = numModes;
-			}
-		}
-	}
+        baseStats[15:17,i] = as.matrix(list(maxF, mode, numModes));
+      }
+    }
+  }
 }
 
 if (consoleOutput == TRUE) {
-	for(i in 1:n) {
-		print("-------------------------------------------------");
-		kind = as.scalar(K[1,i]);
-		if (kind == 1) {
-			print("Feature [" + i + "]: Scale");
-			print(" (01) Minimum             | " + as.scalar(baseStats[1,i]));
-			print(" (02) Maximum             | " + as.scalar(baseStats[2,i]));
-			print(" (03) Range               | " + as.scalar(baseStats[3,i]));
-			print(" (04) Mean                | " + as.scalar(baseStats[4,i]));
-			print(" (05) Variance            | " + as.scalar(baseStats[5,i]));
-			print(" (06) Std deviation       | " + as.scalar(baseStats[6,i]));
-			print(" (07) Std err of mean     | " + as.scalar(baseStats[7,i]));
-			print(" (08) Coeff of variation  | " + as.scalar(baseStats[8,i]));
-			print(" (09) Skewness            | " + as.scalar(baseStats[9,i]));
-			print(" (10) Kurtosis            | " + as.scalar(baseStats[10,i]));
-			print(" (11) Std err of skewness | " + as.scalar(baseStats[11,i]));
-			print(" (12) Std err of kurtosis | " + as.scalar(baseStats[12,i]));
-			print(" (13) Median              | " + as.scalar(baseStats[13,i]));
-			print(" (14) Interquartile mean  | " + as.scalar(baseStats[14,i]));
-		} else {
-			if (kind == 2 | kind == 3) {
-				if (kind == 2) {
-					print("Feature [" + i + "]: Categorical (Nominal)");
-				} else {
-					print("Feature [" + i + "]: Categorical (Ordinal)");
-				}
-				print(" (15) Num of categories   | " + as.integer(as.scalar(baseStats[15,i])));
-				print(" (16) Mode                | " + as.integer(as.scalar(baseStats[16,i])));
-				print(" (17) Num of modes        | " + as.integer(as.scalar(baseStats[17,i])));
-			}
-		}
-	}
+  for(i in 1:n) {
+    print("-------------------------------------------------");
+    kind = as.scalar(K[1,i]);
+    if (kind == 1) {
+      print("Feature [" + i + "]: Scale");
+      print(" (01) Minimum             | " + as.scalar(baseStats[1,i]));
+      print(" (02) Maximum             | " + as.scalar(baseStats[2,i]));
+      print(" (03) Range               | " + as.scalar(baseStats[3,i]));
+      print(" (04) Mean                | " + as.scalar(baseStats[4,i]));
+      print(" (05) Variance            | " + as.scalar(baseStats[5,i]));
+      print(" (06) Std deviation       | " + as.scalar(baseStats[6,i]));
+      print(" (07) Std err of mean     | " + as.scalar(baseStats[7,i]));
+      print(" (08) Coeff of variation  | " + as.scalar(baseStats[8,i]));
+      print(" (09) Skewness            | " + as.scalar(baseStats[9,i]));
+      print(" (10) Kurtosis            | " + as.scalar(baseStats[10,i]));
+      print(" (11) Std err of skewness | " + as.scalar(baseStats[11,i]));
+      print(" (12) Std err of kurtosis | " + as.scalar(baseStats[12,i]));
+      print(" (13) Median              | " + as.scalar(baseStats[13,i]));
+      print(" (14) Interquartile mean  | " + as.scalar(baseStats[14,i]));
+    }
+    else if (kind == 2 | kind == 3) {
+      print(ifelse(kind == 2,
+        "Feature [" + i + "]: Categorical (Nominal)",
+        "Feature [" + i + "]: Categorical (Ordinal)"));
+      print(" (15) Num of categories   | " + as.integer(as.scalar(baseStats[15,i])));
+      print(" (16) Mode                | " + as.integer(as.scalar(baseStats[16,i])));
+      print(" (17) Num of modes        | " + as.integer(as.scalar(baseStats[17,i])));
+    }
+  }
 }
 
 write(baseStats, $STATS);

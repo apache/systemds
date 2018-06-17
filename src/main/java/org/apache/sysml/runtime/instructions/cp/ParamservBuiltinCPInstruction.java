@@ -39,9 +39,6 @@ import static org.apache.sysml.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -56,21 +53,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.MultiThreadedHop;
-import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
-import org.apache.sysml.parser.StatementBlock;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
-import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
-import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
-import org.apache.sysml.runtime.controlprogram.ProgramBlock;
-import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -82,9 +68,11 @@ import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerOR;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -111,6 +99,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		Timing tSetup = new Timing(true);
+
 		PSModeType mode = getPSMode();
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -120,12 +110,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
-		// Create the workers' execution context
 		int k = getParLevel(workerNum);
-		List<ExecutionContext> workerECs = createExecutionContext(ec, updFunc, workerNum, k);
+
+		// Get the compiled execution context
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, updFunc, aggFunc, workerNum, k);
+
+		// Create workers' execution context
+		List<ExecutionContext> workerECs = createExecutionContext(workerNum, ec, newEC.getProgram());
 
 		// Create the agg service's execution context
-		ExecutionContext aggServiceEC = createExecutionContext(ec, aggFunc, 1, 1).get(0);
+		ExecutionContext aggServiceEC = createExecutionContext(1, ec, newEC.getProgram()).get(0);
 
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
@@ -145,6 +139,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Do data partition
 		PSScheme scheme = getScheme();
 		doDataPartitioning(scheme, ec, workers);
+
+		double dSetup = tSetup.stop();
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSSetupTime((long) dSetup);
+		}
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("\nConfiguration of paramserv func: "
@@ -167,6 +166,18 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			// Should shutdown the thread pool in param server
 			ps.shutdown();
 		}
+	}
+
+	private List<ExecutionContext> createExecutionContext(int size, ExecutionContext ec, Program program) {
+		return IntStream.range(0, size).mapToObj(i -> {
+			// Put the hyperparam into the variables table
+			LocalVariableMap varsMap = new LocalVariableMap();
+			ListObject hyperParams = getHyperParams(ec);
+			if (hyperParams != null) {
+				varsMap.put(PS_HYPER_PARAMS, hyperParams);
+			}
+			return ExecutionContextFactory.createContext(varsMap, program);
+		}).collect(Collectors.toList());
 	}
 
 	private PSModeType getPSMode() {
@@ -192,106 +203,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private int getParLevel(int workerNum) {
 		return Math.max((int)Math.ceil((double)getRemainingCores()/workerNum), 1);
-	}
-
-	private List<ExecutionContext> createExecutionContext(ExecutionContext ec, String funcName, int workerNum, int k) {
-		// Fetch the target function
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
-		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
-		}
-		return createExecutionContext(ec, namespace, func, workerNum, k);
-	}
-
-	private List<ExecutionContext> createExecutionContext(ExecutionContext ec, String namespace, String func,
-			int workerNum, int k) {
-		FunctionProgramBlock targetFunc = ec.getProgram().getFunctionProgramBlock(namespace, func);
-		return IntStream.range(0, workerNum).mapToObj(i -> {
-			// Put the hyperparam into the variables table
-			LocalVariableMap varsMap = new LocalVariableMap();
-			ListObject hyperParams = getHyperParams(ec);
-			if (hyperParams != null) {
-				varsMap.put(PS_HYPER_PARAMS, hyperParams);
-			}
-
-			// Deep copy the target func
-			FunctionProgramBlock copiedFunc = ProgramConverter
-				.createDeepCopyFunctionProgramBlock(targetFunc, new HashSet<>(), new HashSet<>());
-
-			// Reset the visit status from root
-			for( ProgramBlock pb : copiedFunc.getChildBlocks() )
-				DMLTranslator.resetHopsDAGVisitStatus(pb.getStatementBlock());
-
-			// Should recursively assign the level of parallelism
-			// and recompile the program block
-			try {
-				rAssignParallelism(copiedFunc.getChildBlocks(), k, false);
-			} catch (IOException e) {
-				throw new DMLRuntimeException(e);
-			}
-
-			Program prog = new Program();
-			prog.addProgramBlock(copiedFunc);
-			prog.addFunctionProgramBlock(namespace, func, copiedFunc);
-			return ExecutionContextFactory.createContext(varsMap, prog);
-
-		}).collect(Collectors.toList());
-	}
-
-	private boolean rAssignParallelism(ArrayList<ProgramBlock> pbs, int k, boolean recompiled) throws IOException {
-		for (ProgramBlock pb : pbs) {
-			if (pb instanceof ParForProgramBlock) {
-				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
-				pfpb.setDegreeOfParallelism(k);
-				recompiled |= rAssignParallelism(pfpb.getChildBlocks(), 1, recompiled);
-			}
-			else if (pb instanceof ForProgramBlock) {
-				recompiled |= rAssignParallelism(((ForProgramBlock) pb).getChildBlocks(), k, recompiled);
-			}
-			else if (pb instanceof WhileProgramBlock) {
-				recompiled |= rAssignParallelism(((WhileProgramBlock) pb).getChildBlocks(), k, recompiled);
-			}
-			else if (pb instanceof FunctionProgramBlock) {
-				recompiled |= rAssignParallelism(((FunctionProgramBlock) pb).getChildBlocks(), k, recompiled);
-			}
-			else if (pb instanceof IfProgramBlock) {
-				IfProgramBlock ipb = (IfProgramBlock) pb;
-				recompiled |= rAssignParallelism(ipb.getChildBlocksIfBody(), k, recompiled);
-				if (ipb.getChildBlocksElseBody() != null)
-					recompiled |= rAssignParallelism(ipb.getChildBlocksElseBody(), k, recompiled);
-			}
-			else {
-				StatementBlock sb = pb.getStatementBlock();
-				for (Hop hop : sb.getHops())
-					recompiled |= rAssignParallelism(hop, k, recompiled);
-			}
-			// Recompile the program block
-			if (recompiled) {
-				Recompiler.recompileProgramBlockInstructions(pb);
-			}
-		}
-		return recompiled;
-	}
-
-	private boolean rAssignParallelism(Hop hop, int k, boolean recompiled) {
-		if (hop.isVisited()) {
-			return recompiled;
-		}
-		if (hop instanceof MultiThreadedHop) {
-			// Reassign the level of parallelism
-			MultiThreadedHop mhop = (MultiThreadedHop) hop;
-			mhop.setMaxNumThreads(k);
-			recompiled = true;
-		}
-		ArrayList<Hop> inputs = hop.getInput();
-		for (Hop h : inputs) {
-			recompiled |= rAssignParallelism(h, k, recompiled);
-		}
-		hop.setVisited();
-		return recompiled;
 	}
 
 	private PSUpdateType getUpdateType() {
@@ -336,7 +247,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				// default worker number: available cores - 1 (assign one process for agg service)
 				workerNum = getRemainingCores();
 				if (getParameterMap().containsKey(PS_PARALLELISM)) {
-					workerNum = Math.min(workerNum, Integer.valueOf(getParam(PS_PARALLELISM)));
+					workerNum = Integer.valueOf(getParam(PS_PARALLELISM));
 				}
 				break;
 			case REMOTE_SPARK:

@@ -83,15 +83,16 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 				ListObject newGradients = computeGradients(dataSize, totalIter, i, j);
 
-				// Update the local model with gradients
-				globalParams = updateModel(globalParams, newGradients, i, j, totalIter);
-
 				// Accumulate the intermediate gradients
 				if (gradients == null) {
 					gradients = ParamservUtils.copyList(newGradients);
 				} else {
 					gradients = accGradients(gradients, newGradients);
 				}
+
+				// Update the local model with gradients
+				globalParams = updateModel(globalParams, newGradients, i, j, totalIter);
+
 			}
 
 			// Push the gradients to ps

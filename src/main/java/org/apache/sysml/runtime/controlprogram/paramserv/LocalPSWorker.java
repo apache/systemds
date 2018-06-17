@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import java.util.concurrent.Callable;
+import java.util.stream.IntStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,7 +30,10 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -73,20 +77,27 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			// Pull the global parameters from ps
 			ListObject globalParams = pullModel();
 
+			ListObject gradients = null;
 			for (int j = 0; j < totalIter; j++) {
 				_ec.setVariable(Statement.PS_MODEL, globalParams);
 
-				ListObject gradients = computeGradients(dataSize, totalIter, i, j);
+				ListObject newGradients = computeGradients(dataSize, totalIter, i, j);
 
-				if (j == totalIter - 1) {
-					// Push the gradients to ps
-					pushGradients(gradients);
-					ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+				// Update the local model with gradients
+				globalParams = updateModel(globalParams, newGradients, i, j, totalIter);
+
+				// Accumulate the intermediate gradients
+				if (gradients == null) {
+					gradients = ParamservUtils.copyList(newGradients);
 				} else {
-					// Update the local model with gradients
-					globalParams = updateModel(globalParams, gradients, i, j, totalIter);
+					gradients = accGradients(gradients, newGradients);
 				}
 			}
+
+			// Push the gradients to ps
+			pushGradients(gradients);
+			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
 			}
@@ -191,5 +202,22 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		ParamservUtils.cleanupData(bFeatures);
 		ParamservUtils.cleanupData(bLabels);
 		return gradients;
+	}
+
+	private ListObject accGradients(ListObject result, ListObject that) {
+		IntStream.range(0, result.getLength()).forEach(i -> {
+			MatrixObject mo1 = (MatrixObject) result.getData().get(i);
+			MatrixObject mo2 = (MatrixObject) that.getData().get(i);
+			MatrixBlock mb1 = mo1.acquireRead();
+			MatrixBlock mb2 = mo2.acquireRead();
+			MatrixBlock mbResult = new MatrixBlock();
+			mb1.binaryOperations(new BinaryOperator(Plus.getPlusFnObject()), mb2, mbResult);
+			mo1.release();
+			ParamservUtils.cleanupData(mo1);
+			mo1.acquireModify(mbResult);
+			mo1.release();
+			mo2.release();
+		});
+		return result;
 	}
 }

@@ -121,6 +121,10 @@ public class ListObject extends Data {
 		return _data.stream().filter(data -> data instanceof CacheableData)
 			.mapToLong(data -> ((CacheableData<?>) data).getDataSize()).sum();
 	}
+	
+	public boolean checkAllDataTypes(DataType dt) {
+		return _data.stream().allMatch(d -> d.getDataType()==dt);
+	}
 
 	@Override
 	public String getDebugName() {

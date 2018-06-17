@@ -328,7 +328,7 @@ public class LiteralReplacement
 				long clval = getIntValueDataLiteral(cl, vars);
 				long cuval = getIntValueDataLiteral(cu, vars);
 
-				MatrixObject mo = (MatrixObject) vars.get(data.getName());	
+				MatrixObject mo = (MatrixObject) vars.get(data.getName());
 				
 				//get the dimension information from the matrix object because the hop
 				//dimensions might not have been updated during recompile
@@ -356,10 +356,12 @@ public class LiteralReplacement
 			if( in.getDataType() == DataType.LIST
 				&& HopRewriteUtils.isData(in, DataOpTypes.TRANSIENTREAD) ) {
 				ListObject list = (ListObject)vars.get(in.getName());
-				String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
-				MatrixObject mo = (MatrixObject) list.slice(0);
-				vars.put(varname, mo);
-				ret = HopRewriteUtils.createTransientRead(varname, c);
+				if( list.getLength() == 1 ) {
+					String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
+					MatrixObject mo = (MatrixObject) list.slice(0);
+					vars.put(varname, mo);
+					ret = HopRewriteUtils.createTransientRead(varname, c);
+				}
 			}
 		}
 		return ret;

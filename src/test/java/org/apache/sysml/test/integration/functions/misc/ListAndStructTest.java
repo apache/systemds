@@ -39,6 +39,7 @@ public class ListAndStructTest extends AutomatedTestBase
 	private static final String TEST_NAME4 = "ListNamedFun";
 	private static final String TEST_NAME5 = "ListUnnamedParfor";
 	private static final String TEST_NAME6 = "ListNamedParfor";
+	private static final String TEST_NAME7 = "ListAsMatrix";
 	
 	private static final String TEST_DIR = "functions/misc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ListAndStructTest.class.getSimpleName() + "/";
@@ -52,6 +53,7 @@ public class ListAndStructTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -112,6 +114,16 @@ public class ListAndStructTest extends AutomatedTestBase
 	@Test
 	public void testListNamedParForRewrites() {
 		runListStructTest(TEST_NAME6, true);
+	}
+	
+	@Test
+	public void testListAsMatrix() {
+		runListStructTest(TEST_NAME7, false);
+	}
+	
+	@Test
+	public void testListAsMatrixRewrites() {
+		runListStructTest(TEST_NAME7, true);
 	}
 	
 	private void runListStructTest(String testname, boolean rewrites)

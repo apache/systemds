@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
@@ -120,8 +118,6 @@ import org.apache.sysml.utils.JSONHelper;
  */
 public class Recompiler 
 {
-	private static final Log LOG = LogFactory.getLog(Recompiler.class.getName());
-	
 	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	//note that we scale this threshold up by the degree of available parallelism
@@ -401,20 +397,20 @@ public class Recompiler
 	
 	private static void logExplainDAG(StatementBlock sb, ArrayList<Hop> hops, ArrayList<Instruction> inst) {
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS ) {
-			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
-			Explain.explainHops(hops, 1));
+			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
+				Explain.explainHops(hops, 1));
 		}
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME ) {
-			LOG.info("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
-			Explain.explain(inst, 1));
+			System.out.println("EXPLAIN RECOMPILE \nGENERIC (lines "+sb.getBeginLine()+"-"+sb.getEndLine()+"):\n" +
+				Explain.explain(inst, 1));
 		}
 	}
 	
 	private static void logExplainPred(Hop hops, ArrayList<Instruction> inst) {
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_HOPS )
-			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
+			System.out.println("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(hops,1));
 		if( DMLScript.EXPLAIN == ExplainType.RECOMPILE_RUNTIME )
-			LOG.info("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
+			System.out.println("EXPLAIN RECOMPILE \nPRED (line "+hops.getBeginLine()+"):\n" + Explain.explain(inst,1));
 	}
 
 	public static void recompileProgramBlockHierarchy( ArrayList<ProgramBlock> pbs, LocalVariableMap vars, long tid, ResetType resetRecompile ) {

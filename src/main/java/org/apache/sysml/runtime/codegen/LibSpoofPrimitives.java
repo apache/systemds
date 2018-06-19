@@ -25,6 +25,7 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.BitwAnd;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 
 /**
@@ -2008,6 +2009,40 @@ public class LibSpoofPrimitives
 	//6. sparse vector vs. dense vector
 	public static double[] vectBitwandWrite(double[] a, double[] b, int ai, int[] aix, int bi, int alen, int len) {
 		return vectBitwandWrite(a, b, aix, ai, bi, alen, len);
+	}
+	
+	// bias add
+	
+	public static double[] vectBiasaddWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		System.arraycopy(a, ai, c, 0, len);
+		LibMatrixDNN.addBias(c, b, 1, 1, b.length, len/b.length);
+		return c;
+	}
+	
+	public static double[] vectBiasaddWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for(int k=ai; k<ai+alen; k++)
+			c[aix[k]] = a[k];
+		LibMatrixDNN.addBias(c, b, 1, 1, b.length, len/b.length);
+		return c;
+	}
+	
+	// bias mult
+	
+	public static double[] vectBiasmultWrite(double[] a, double[] b, int ai, int bi, int len) {
+		double[] c = allocVector(len, false);
+		System.arraycopy(a, ai, c, 0, len);
+		LibMatrixDNN.multBias(c, b, 1, b.length, len/b.length);
+		return c;
+	}
+	
+	public static double[] vectBiasmultWrite(double[] a, double[] b, int[] aix, int ai, int bi, int alen, int len) {
+		double[] c = allocVector(len, true);
+		for(int k=ai; k<ai+alen; k++)
+			c[aix[k]] = a[k];
+		LibMatrixDNN.multBias(c, b, 1, b.length, len/b.length);
+		return c;
 	}
 
 	//complex builtin functions that are not directly generated

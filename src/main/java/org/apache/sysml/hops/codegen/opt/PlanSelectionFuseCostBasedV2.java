@@ -42,6 +42,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
@@ -1131,6 +1132,16 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		else if( current instanceof ReorgOp ) {
 			costs = 1;
+		}
+		else if( current instanceof DnnOp ) {
+			switch( ((DnnOp)current).getOp() ) {
+				case BIASADD:
+				case BIASMULT:
+					costs = 2;
+				default:
+					LOG.warn("Cost model not "
+						+ "implemented yet for: "+((DnnOp)current).getOp());
+			}
 		}
 		else if( current instanceof AggBinaryOp ) {
 			//outer product template w/ matrix-matrix 

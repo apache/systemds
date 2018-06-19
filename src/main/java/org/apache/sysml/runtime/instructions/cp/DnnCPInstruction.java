@@ -27,16 +27,16 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+import org.apache.sysml.runtime.matrix.data.DnnParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.utils.NativeHelper;
 
-public class ConvolutionCPInstruction extends UnaryCPInstruction {
-	private static final Log LOG = LogFactory.getLog(ConvolutionCPInstruction.class.getName());
+public class DnnCPInstruction extends UnaryCPInstruction {
+	private static final Log LOG = LogFactory.getLog(DnnCPInstruction.class.getName());
 	private static boolean warnedUnderUtilitization = false;
 	
 	private final CPOperand _in2;
@@ -57,10 +57,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	private final int _numThreads;
 	private final double _intermediateMemoryBudget;
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, 
+	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, 
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget, String opcode, String istr) {
-		super(CPType.Convolution, null, in, out, opcode, istr);
+		super(CPType.Dnn, null, in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_in4 = null; _in5 = null; _in6 = null; _in7 = null; _in8 = null;
@@ -73,45 +73,45 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
+	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, null, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
 		if( !(opcode.equals("bias_add") || opcode.equals("relu_backward") || opcode.equals("bias_multiply") ) ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
 		}
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
+	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, in3, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
 		if( !opcode.equals("channel_sums") ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
 		}
 	}
 
-	private ConvolutionCPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
+	private DnnCPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
 		this(in, null, null, out, stride, padding, input_shape, filter_shape, numThreads, intermediateMemoryBudget, opcode, istr);
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
+	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, null, out, stride, padding, input_shape, filter_shape, numThreads, intermediateMemoryBudget, opcode, istr);
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, in3, out, stride, padding, input_shape, filter_shape, numThreads, intermediateMemoryBudget, opcode, istr);
 	}
 	
-	public ConvolutionCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
+	public DnnCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
 			CPOperand in6, CPOperand in7, CPOperand in8,
 			CPOperand out, CPOperand out2, CPOperand out3, CPOperand out4, CPOperand out5, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
-		super(CPType.Convolution, null, in1, out, opcode, istr);
+		super(CPType.Dnn, null, in1, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_in4 = in4;
@@ -131,7 +131,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
-	public static ConvolutionCPInstruction parseInstruction(String str) {
+	public static DnnCPInstruction parseInstruction(String str) {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -162,7 +162,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			filter_shape.add(new CPOperand(parts[13]));
 			int k = Integer.parseInt(parts[15]);
 
-			return new ConvolutionCPInstruction(in, out, opcode, str, stride,
+			return new DnnCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[16]));
 		} 
 		else if (opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("relu_maxpooling_backward")
@@ -196,7 +196,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			filter_shape.add(new CPOperand(parts[14]));
 			int k = Integer.parseInt(parts[16]);
 
-			return new ConvolutionCPInstruction(in, in2, out, opcode, str, stride,
+			return new DnnCPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[17]));
 		}
 		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
@@ -227,7 +227,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			filter_shape.add(new CPOperand(parts[15]));
 			int k = Integer.parseInt(parts[17]);
 
-			return new ConvolutionCPInstruction(in, in2, in3, out, opcode, str, stride,
+			return new DnnCPInstruction(in, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[18]));
 		}
 		else if (opcode.equalsIgnoreCase("bias_add") || opcode.equals("relu_backward") || opcode.equalsIgnoreCase("bias_multiply") ) {
@@ -236,7 +236,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
 			int k = Integer.parseInt(parts[4]);
-			return new ConvolutionCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
+			return new DnnCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
 		}
 		else if (opcode.equalsIgnoreCase("channel_sums")) {
 			InstructionUtils.checkNumFields(parts, 4);
@@ -244,7 +244,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
-			return new ConvolutionCPInstruction(in, in2, in3, out, opcode, str, -1, 0);
+			return new DnnCPInstruction(in, in2, in3, out, opcode, str, -1, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
 			InstructionUtils.checkNumFields(parts, 13);
@@ -261,7 +261,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
 			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
 			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
-			return new ConvolutionCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d_backward")) {
 			InstructionUtils.checkNumFields(parts, 9);
@@ -274,10 +274,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 			CPOperand out = new CPOperand(parts[7]);  // dX
 			CPOperand out2 = new CPOperand(parts[8]); // dScale
 			CPOperand out3 = new CPOperand(parts[9]); // dBias
-			return new ConvolutionCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
 		}
 		else {
-			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);
+			throw new DMLRuntimeException("Unknown opcode while parsing a DnnCPInstruction: " + str);
 		}
 	}
 
@@ -453,6 +453,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		
 		if (instOpcode.equalsIgnoreCase("bias_add")) {
 			processBiasAddInstruction(ec);
 			return;
@@ -495,10 +496,10 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 		
 		int R = getScalarInput(ec, _filter_shape, 2);
 		int S = getScalarInput(ec, _filter_shape, 3);
-		int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-		int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+		int P = (int) DnnUtils.getP(H, R, stride_h, pad_h);
+		int Q = (int) DnnUtils.getQ(W, S, stride_w, pad_w);
 		
-		ConvolutionParameters params = new ConvolutionParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
+		DnnParameters params = new DnnParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		params.enableNative = NativeHelper.isNativeLibraryLoaded();
 		if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling") ||
 			instOpcode.equalsIgnoreCase("avgpooling")) {
@@ -566,7 +567,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 				// bias_add(empty mb, bias)
 				outputBlock = new MatrixBlock(N, K*P*Q, false).allocateBlock();
 				for(int n = 0;  n < params.N; n++) 
-					ConvolutionUtils.fillBias(bias, outputBlock.getDenseBlockValues(),
+					DnnUtils.fillBias(bias, outputBlock.getDenseBlockValues(),
 						n, n+1, params.N, params.K, params.P*params.Q);
 			}
 			else {
@@ -629,7 +630,7 @@ public class ConvolutionCPInstruction extends UnaryCPInstruction {
 	 * @param numCols number of rows of intermediate matrix used per thread
 	 * @param sparsity sparsity of intermediate matrix used per thread
 	 */
-	private void resetNumThreads(ConvolutionParameters params, int numRows, int numCols, double sparsity) {
+	private void resetNumThreads(DnnParameters params, int numRows, int numCols, double sparsity) {
 		if(DMLScript.USE_ACCELERATOR) {
 			double memBudget1Thread = OptimizerUtils.estimateSizeExactSparsity(numRows, numCols, sparsity);
 			int limitedDegreeOfParallelism = (int) Math.floor(_intermediateMemoryBudget / memBudget1Thread);

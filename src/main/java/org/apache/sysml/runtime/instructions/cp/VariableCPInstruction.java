@@ -600,7 +600,25 @@ public class VariableCPInstruction extends CPInstruction {
 			else if( getInput1().getDataType().isList() ) {
 				//TODO handling of cleanup status, potentially new object
 				ListObject list = (ListObject)ec.getVariable(getInput1().getName());
-				ec.setVariable(output.getName(), list.slice(0));
+				if( list.getLength() > 1 ) {
+					if( !list.checkAllDataTypes(DataType.SCALAR) )
+						throw new DMLRuntimeException("as.matrix over multi-entry list only allows scalars.");
+					MatrixBlock out = new MatrixBlock(list.getLength(), 1, false);
+					for( int i=0; i<list.getLength(); i++ )
+						out.quickSetValue(i, 0, ((ScalarObject)list.slice(i)).getDoubleValue());
+					ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+				}
+				else {
+					//pass through matrix input or create 1x1 matrix for scalar
+					Data tmp = list.slice(0);
+					if( tmp instanceof ScalarObject && tmp.getValueType()!=ValueType.STRING ) {
+						MatrixBlock out = new MatrixBlock(((ScalarObject)tmp).getDoubleValue());
+						ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+					} 
+					else {
+						ec.setVariable(output.getName(), tmp);
+					}
+				}
 			}
 			else {
 				throw new DMLRuntimeException("Unsupported data type "

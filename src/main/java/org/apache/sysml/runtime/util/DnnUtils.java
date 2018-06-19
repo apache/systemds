@@ -24,7 +24,7 @@ import java.util.Arrays;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 
-public class ConvolutionUtils {
+public class DnnUtils {
 	
 	public static String getConv2dOutputMap(String H, String R, String verticalStride, String heightPadding) {
 		long padX2 = -1;

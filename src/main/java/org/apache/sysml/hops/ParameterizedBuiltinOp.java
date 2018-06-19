@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.AppendR;
@@ -51,15 +50,13 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * Defines the HOP for calling an internal function (with custom parameters) from a DML script. 
  * 
  */
-public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
+public class ParameterizedBuiltinOp extends MultiThreadedHop
 {
 	public static boolean FORCE_DIST_RM_EMPTY = false;
 
 	//operator type
 	private ParamBuiltinOp _op;
 
-	private int _maxNumThreads = -1; //-1 for unlimited
-	
 	//removeEmpty hints
 	private boolean _outputPermutationMatrix = false;
 	private boolean _bRmEmptyBC = false;
@@ -138,16 +135,6 @@ public class ParameterizedBuiltinOp extends Hop implements MultiThreadedHop
 	public Hop getParameterHop(String name) {
 		return _paramIndexMap.containsKey(name) ?
 			getInput().get(_paramIndexMap.get(name)) : null;
-	}
-	
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
 	}
 	
 	@Override

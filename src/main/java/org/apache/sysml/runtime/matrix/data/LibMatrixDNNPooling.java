@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
@@ -43,7 +44,7 @@ public class LibMatrixDNNPooling {
 	 * @param poolType type of pooling
 	 * @return list of callable tasks for performing pooling operation
 	 */
-	public static ArrayList<Callable<Long>> getPoolingWorkers(ConvolutionParameters params, PoolingType poolType) {
+	public static ArrayList<Callable<Long>> getPoolingWorkers(DnnParameters params, PoolingType poolType) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -65,7 +66,7 @@ public class LibMatrixDNNPooling {
 	 * @param poolType type of pooling operation to perform
 	 * @return list of callable tasks for performing maxpooling backward operation
 	 */
-	public static ArrayList<Callable<Long>> getPoolingBackwardWorkers(ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) {
+	public static ArrayList<Callable<Long>> getPoolingBackwardWorkers(DnnParameters params, boolean performReluBackward, PoolingType poolType) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create twice as many tasks as threads for improved load balance
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
@@ -96,15 +97,45 @@ public class LibMatrixDNNPooling {
 		return ret;
 	}
 	
+	public static void poolingDenseStride1Pad0(PoolingType pType, double minVal, double pFact,
+			double[] in, double[] out, int rl, int ru, int C, int P, int Q, int R, int S, int H, int W) {
+		boolean max = (pType == PoolingType.MAX);
+		int CHW = C * H * W;
+		
+		if( P == 1 && Q == 1 && W == 1 ) {
+			//quick-path w/o materialized index arrays and 
+			//simplified inner loops for P = 1, Q = 1, W = 1
+			int lenh = Math.min(R,H);
+			for(int i = rl, oix=rl*C; i < ru; i++, oix+=C)
+				for (int c = 0, off=i*CHW; c < C; c++, off+=H) {
+					out[oix+c] = max ? max(minVal, in, off, lenh) :
+						avg(minVal, in, off, lenh, pFact);
+				}
+		}
+		else {
+			int CPQ = C * P * Q, HW = H * W;
+			Arrays.fill(out, rl*CPQ, ru*CPQ, minVal);
+			//quick-path w/o materialized index arrays 
+			for(int i = rl; i < ru; i++)
+				for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+					for (int p = 0; p < P; p++, oix+=Q)
+						for (int h = p; h < Math.min(p+R,H); h++)
+							for (int q = 0, off2=off+h*W; q < Q; q++) {
+								out[oix+q] = max ? max(out[oix+q], in, off2+q, Math.min(S,W-q)) :
+									avg(out[oix+q], in, off2+q, Math.min(S,W-q), pFact);
+							}
+		}
+	}
+	
 	private static class DensePooling implements Callable<Long> 
 	{
 		private final int _rl, _ru; 
-		private final ConvolutionParameters _params;
+		private final DnnParameters _params;
 
 		private final PoolingType _poolingType;
 		private final double _poolingMultiplier;
 		
-		public DensePooling(int rl, int ru, ConvolutionParameters params, PoolingType poolingType) {
+		public DensePooling(int rl, int ru, DnnParameters params, PoolingType poolingType) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			_poolingType = poolingType;
@@ -122,65 +153,26 @@ public class LibMatrixDNNPooling {
 			double[] out = _params.output.getDenseBlockValues();
 			
 			double minValForMaxPoolOperations = _poolingType == PoolingType.AVG ? 0 : _params.minValForMaxPoolOperations;
+			boolean max = (_poolingType == PoolingType.MAX);
 			
-			//thread-local initialization of output block 
-			if( !(_params.isStride1Pad0() && _params.isAllOnes(P, Q, W)) )
-				Arrays.fill(out, _rl*CPQ, _ru*CPQ, minValForMaxPoolOperations);
-			
-			if( _params.isStride1Pad0() && _params.isAllOnes(P, Q, W) ) { 
-				//quick-path w/o materialized index arrays and 
-				//simplified inner loops for P = 1, Q = 1, W = 1
-				int lenh = Math.min(R,H);
-				if(_poolingType == PoolingType.AVG) {
-					for(int i = _rl, oix=_rl*C; i < _ru; i++, oix+=C)
-						for (int c = 0, off=i*CHW; c < C; c++, off+=H)
-							out[oix+c] = avg_pool(minValForMaxPoolOperations, in, off, lenh, _poolingMultiplier);
-				}
-				else {
-					for(int i = _rl, oix=_rl*C; i < _ru; i++, oix+=C)
-						for (int c = 0, off=i*CHW; c < C; c++, off+=H)
-							out[oix+c] = max(minValForMaxPoolOperations, in, off, lenh);
-				}
-			}
-			else if( _params.isStride1Pad0() ) {
-				if(_poolingType == PoolingType.AVG) {
-					//quick-path w/o materialized index arrays 
-					for(int i = _rl; i < _ru; i++)
-						for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
-							for (int p = 0; p < P; p++, oix+=Q)
-								for (int h = p; h < Math.min(p+R,H); h++)
-									for (int q = 0, off2=off+h*W; q < Q; q++)
-										out[oix+q] = avg_pool(out[oix+q], in, off2+q, Math.min(S,W-q), _poolingMultiplier);
-				}
-				else {
-					//quick-path w/o materialized index arrays 
-					for(int i = _rl; i < _ru; i++)
-						for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
-							for (int p = 0; p < P; p++, oix+=Q)
-								for (int h = p; h < Math.min(p+R,H); h++)
-									for (int q = 0, off2=off+h*W; q < Q; q++)
-										out[oix+q] = max(out[oix+q], in, off2+q, Math.min(S,W-q));
-				}
+			if( _params.isStride1Pad0() ) {
+				poolingDenseStride1Pad0(_poolingType, minValForMaxPoolOperations,
+					_poolingMultiplier, in, out, _rl, _ru, C, P, Q, R, S, H, W);
 			}
 			else { //general case
+				//thread-local initialization of output block 
+				Arrays.fill(out, _rl*CPQ, _ru*CPQ, minValForMaxPoolOperations);
+				
 				int[] hl = _params.start_indexes_h, hu = _params.end_indexes_h;
 				int[] wl = _params.start_indexes_w, wu = _params.end_indexes_w;
-				if(_poolingType == PoolingType.AVG) {
-					for(int i = _rl; i < _ru; i++)
-						for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
-							for (int p = 0; p < P; p++, oix+=Q)
-								for (int h = hl[p]; h < hu[p]; h++)
-									for (int q = 0, off2=off+h*W; q < Q; q++)
-										out[oix+q] = avg_pool(out[oix+q], in, off2+wl[q], wu[q]-wl[q], _poolingMultiplier);
-				}
-				else {
-					for(int i = _rl; i < _ru; i++)
-						for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
-							for (int p = 0; p < P; p++, oix+=Q)
-								for (int h = hl[p]; h < hu[p]; h++)
-									for (int q = 0, off2=off+h*W; q < Q; q++)
-										out[oix+q] = max(out[oix+q], in, off2+wl[q], wu[q]-wl[q]);
-				}
+				for(int i = _rl; i < _ru; i++)
+					for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+						for (int p = 0; p < P; p++, oix+=Q)
+							for (int h = hl[p]; h < hu[p]; h++)
+								for (int q = 0, off2=off+h*W; q < Q; q++) {
+									out[oix+q] = max ? max(out[oix+q], in, off2+wl[q], wu[q]-wl[q]) :
+										avg(out[oix+q], in, off2+wl[q], wu[q]-wl[q], _poolingMultiplier);
+								}
 			}
 			
 			//thread-local recomputation of non-zeros
@@ -191,13 +183,13 @@ public class LibMatrixDNNPooling {
 	private static class SparsePooling implements Callable<Long> 
 	{
 		private final int _rl, _ru; 
-		private final ConvolutionParameters _params;
+		private final DnnParameters _params;
 		private double [] outputArray;
 		private final int C, P, Q, W, H, CPQ, PQ;
 		private final PoolingType _poolingType;
 		private final double _poolingMultiplier;
 		
-		public SparsePooling(int rl, int ru, ConvolutionParameters params, PoolingType poolingType) {
+		public SparsePooling(int rl, int ru, DnnParameters params, PoolingType poolingType) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			outputArray = params.output.getDenseBlockValues();
@@ -285,12 +277,12 @@ public class LibMatrixDNNPooling {
 	private static class AvgPoolingBackwardDense implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		double [] doutArray;
 		MatrixBlock output;
 		final int C; final int CHW; final int P; final int Q; final int HW; final int CPQ; final int PQ;
 		final double _poolingMultiplier;
-		public AvgPoolingBackwardDense(int rl, int ru, ConvolutionParameters params) {
+		public AvgPoolingBackwardDense(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			doutArray = params.input2.getDenseBlockValues();
@@ -336,12 +328,12 @@ public class LibMatrixDNNPooling {
 	private static class PoolingBackwardDenseDense implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		boolean performReluBackward;
 		double [] inputArray, doutArray;
 		MatrixBlock output;
 		int C; int CHW; int P; int Q; int HW; int CPQ; int PQ;
-		public PoolingBackwardDenseDense(int rl, int ru, ConvolutionParameters params, boolean performReluBackward) {
+		public PoolingBackwardDenseDense(int rl, int ru, DnnParameters params, boolean performReluBackward) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			this.performReluBackward = performReluBackward;
@@ -382,12 +374,12 @@ public class LibMatrixDNNPooling {
 	private static class PoolingBackwardDenseSparse implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		MatrixBlock output; 
 		boolean performReluBackward;
 		double [] inputArray;  MatrixBlock dout;
 		int CHW; int P; int Q; int HW;
-		public PoolingBackwardDenseSparse(int rl, int ru, ConvolutionParameters params, boolean performReluBackward) {
+		public PoolingBackwardDenseSparse(int rl, int ru, DnnParameters params, boolean performReluBackward) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			this.performReluBackward = performReluBackward;
@@ -433,11 +425,11 @@ public class LibMatrixDNNPooling {
 	private static class AvgPoolingBackwardSparse implements Callable<Long> 
 	{
 		public int _rl; public int _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		MatrixBlock output; 
 		MatrixBlock dout;
 		int CHW; int P; int Q; int HW; final double _poolingMultiplier;
-		public AvgPoolingBackwardSparse(int rl, int ru, ConvolutionParameters params) {
+		public AvgPoolingBackwardSparse(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 			dout = params.input2;
@@ -488,11 +480,11 @@ public class LibMatrixDNNPooling {
 	private static class PoolingBackwardSparseDense implements Callable<Long> 
 	{
 		private final int _rl, _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		private final boolean reluBack;
 		protected final MatrixBlock doutput, output;
 		
-		protected PoolingBackwardSparseDense(int rl, int ru, ConvolutionParameters params, boolean relu, MatrixBlock dout, MatrixBlock out) {
+		protected PoolingBackwardSparseDense(int rl, int ru, DnnParameters params, boolean relu, MatrixBlock dout, MatrixBlock out) {
 			_rl = rl; _ru = ru; 
 			_params = params;
 			reluBack = relu;
@@ -500,7 +492,7 @@ public class LibMatrixDNNPooling {
 			output = out;
 		}
 		
-		public PoolingBackwardSparseDense(int rl, int ru, ConvolutionParameters params, boolean relu) {
+		public PoolingBackwardSparseDense(int rl, int ru, DnnParameters params, boolean relu) {
 			this(rl, ru, params, relu, params.input2, params.output);
 			if (doutput.getDenseBlock() == null || output.getDenseBlock() == null )
 				throw new RuntimeException("Incorrect usage: empty inputs");
@@ -623,7 +615,7 @@ public class LibMatrixDNNPooling {
 	 */
 	private static class PoolingBackwardSparseSparse extends PoolingBackwardSparseDense
 	{
-		public PoolingBackwardSparseSparse(int rl, int ru, ConvolutionParameters params, boolean relu) {
+		public PoolingBackwardSparseSparse(int rl, int ru, DnnParameters params, boolean relu) {
 			super(rl, ru, params, relu, params.input2, params.output);
 			if (output.getDenseBlock() == null )
 				throw new RuntimeException("Incorrect usage: empty outputs");
@@ -655,11 +647,8 @@ public class LibMatrixDNNPooling {
 		}
 	}
 	
-	private static double avg_pool(final double aval, double[] b, final int bi, final int len, final double poolingMultiplier) {
-		double ret = aval;
-		for( int i = bi; i < bi+len; i++ )
-			ret += poolingMultiplier*b[i];
-		return ret;
+	private static double avg(final double aval, double[] b, final int bi, final int len, final double poolingMultiplier) {
+		return LibSpoofPrimitives.vectSum(b, bi, len) * poolingMultiplier + aval;
 	}
 	
 	private static double max(final double aval, double[] b, final int bi, final int len) {
@@ -680,7 +669,7 @@ public class LibMatrixDNNPooling {
 	 * @param performReluBackward perform ReLU backward
 	 * @return index of cell with maximum value
 	 */
-	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, ConvolutionParameters params, boolean performReluBackward) {
+	private static int getMaxIndex(int p, int q, int inputOffset, double [] inputArray, DnnParameters params, boolean performReluBackward) {
 		int start_index_h = params.start_indexes_h[p];
 		int end_index_h = params.end_indexes_h[p];
 		int start_index_w = params.start_indexes_w[q];

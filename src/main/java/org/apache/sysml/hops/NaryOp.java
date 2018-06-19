@@ -25,6 +25,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.Nary;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 /**
  * The NaryOp Hop allows for a variable number of operands. Functionality
@@ -180,7 +181,26 @@ public class NaryOp extends Hop {
 	}
 
 	@Override
+	@SuppressWarnings("incomplete-switch")
 	protected long[] inferOutputCharacteristics(MemoTable memo) {
+		if( !getDataType().isScalar() ) {
+			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+			
+			switch( _op ) {
+				case CBIND: return new long[]{
+					HopRewriteUtils.getMaxInputDim(mc, true),
+					HopRewriteUtils.getSumValidInputDims(mc, false),
+					HopRewriteUtils.getSumValidInputNnz(mc, true)};
+				case RBIND: return new long[]{
+					HopRewriteUtils.getSumValidInputDims(mc, true),
+					HopRewriteUtils.getMaxInputDim(mc, false),
+					HopRewriteUtils.getSumValidInputNnz(mc, true)};
+				case MIN:
+				case MAX: return new long[]{
+					HopRewriteUtils.getMaxInputDim(this, true),
+					HopRewriteUtils.getMaxInputDim(this, false), -1};
+			}
+		}
 		return null; //do nothing
 	}
 	
@@ -190,10 +210,12 @@ public class NaryOp extends Hop {
 			case CBIND:
 				setDim1(HopRewriteUtils.getMaxInputDim(this, true));
 				setDim2(HopRewriteUtils.getSumValidInputDims(this, false));
+				setNnz(HopRewriteUtils.getSumValidInputNnz(this));
 				break;
 			case RBIND:
 				setDim1(HopRewriteUtils.getSumValidInputDims(this, true));
 				setDim2(HopRewriteUtils.getMaxInputDim(this, false));
+				setNnz(HopRewriteUtils.getSumValidInputNnz(this));
 				break;
 			case MIN:
 			case MAX:

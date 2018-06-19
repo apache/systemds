@@ -404,7 +404,10 @@ public class BuildLiteExecution
 		log.debug(displayMatrix(cgBetas));
 
 		String glmPredict = conn.readScript("scripts/algorithms/GLM-predict.dml");
-		PreparedScript glmPredictScript = conn.prepareScript(glmPredict, new String[] { "X", "Y", "B_full" },
+		HashMap<String,String> args = new HashMap<>();
+		args.put("$M", "/tmp/dummy"); //required due to conditional write
+		PreparedScript glmPredictScript = conn.prepareScript(
+			glmPredict, args, new String[] { "X", "Y", "B_full" },
 				new String[] { "means" }, false);
 		double[][] testData = new double[500][3];
 		for (int i = 0; i < 500; i++) {

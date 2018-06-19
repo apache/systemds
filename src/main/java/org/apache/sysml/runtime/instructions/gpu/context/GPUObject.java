@@ -739,9 +739,9 @@ public class GPUObject {
 		long rows = mat.getNumRows();
 		long cols = mat.getNumColumns();
 		if(rows <= 0)
-			throw new DMLRuntimeException("Internal error - invalid number of rows when allocating dense matrix");
+			throw new DMLRuntimeException("Internal error - invalid number of rows when allocating dense matrix:" + rows);
 		if(cols <= 0)
-			throw new DMLRuntimeException("Internal error - invalid number of columns when allocating dense matrix;");
+			throw new DMLRuntimeException("Internal error - invalid number of columns when allocating dense matrix:" + cols);
 		long size = getDatatypeSizeOf(rows * cols);
 		Pointer tmp = allocate(size);
 		setDensePointer(tmp);

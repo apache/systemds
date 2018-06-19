@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.AGG_FUNC_PREFIX;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,6 +39,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
@@ -44,13 +47,16 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.utils.Statistics;
 
 public abstract class ParamServer {
-	
+
 	final BlockingQueue<Gradient> _gradientsQueue;
 	final Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private final AggregationService _aggService;
@@ -73,8 +79,7 @@ public abstract class ParamServer {
 			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
 		}
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
-			.namingPattern("agg-service-pool-thread-%d")
-			.build();
+			.namingPattern("agg-service-pool-thread-%d").build();
 		_es = Executors.newSingleThreadExecutor(factory);
 	}
 
@@ -91,11 +96,17 @@ public abstract class ParamServer {
 	}
 
 	public ListObject getResult() {
+		// All the model updating work has terminated,
+		// so we could return directly the result model
 		return _model;
 	}
 
 	public ListObject updateModel(ListObject gradients, ListObject model) {
-		return _aggService.updateModel(gradients, model);
+		//note: we use a new execution context to allow for concurrent execution of ASP local updates; 
+		//otherwise synchronized on the aggService instance would serialize those
+		ExecutionContext ec = ExecutionContextFactory.createContext(_aggService._ec.getProgram());
+		ec.setVariable(Statement.PS_HYPER_PARAMS, _aggService._ec.getVariable(Statement.PS_HYPER_PARAMS));
+		return _aggService.updateModel(ec, gradients, model);
 	}
 
 	public static class Gradient {
@@ -115,11 +126,11 @@ public abstract class ParamServer {
 
 		protected final Log LOG = LogFactory.getLog(AggregationService.class.getName());
 
-		protected ExecutionContext _ec;
-		private Statement.PSUpdateType _updateType;
-		private FunctionCallCPInstruction _inst;
-		private DataIdentifier _output;
-		private boolean[] _finishedStates;  // Workers' finished states
+		protected final ExecutionContext _ec;
+		private final Statement.PSUpdateType _updateType;
+		private final FunctionCallCPInstruction _inst;
+		private final DataIdentifier _output;
+		private final boolean[] _finishedStates;  // Workers' finished states
 
 		AggregationService(String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 			_ec = ec;
@@ -134,7 +145,7 @@ public abstract class ParamServer {
 				funcNS = keys[0];
 				funcName = keys[1];
 			}
-			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, funcName);
+			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, AGG_FUNC_PREFIX + funcName);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -170,14 +181,24 @@ public abstract class ParamServer {
 		}
 
 		private void broadcastModel() throws InterruptedException {
+			Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
+
 			//broadcast copy of the model to all workers, cleaned up by workers
 			for (BlockingQueue<ListObject> q : _modelMap.values())
 				q.put(ParamservUtils.copyList(_model));
+
+			if (DMLScript.STATISTICS)
+				Statistics.accPSModelBroadcastTime((long) tBroad.stop());
 		}
-		
+
 		private void broadcastModel(int workerID) throws InterruptedException {
+			Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
+
 			//broadcast copy of model to specific worker, cleaned up by worker
 			_modelMap.get(workerID).put(ParamservUtils.copyList(_model));
+
+			if (DMLScript.STATISTICS)
+				Statistics.accPSModelBroadcastTime((long) tBroad.stop());
 		}
 
 		@Override
@@ -195,7 +216,10 @@ public abstract class ParamServer {
 				}
 
 				// Update and redistribute the model
+				Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 				_model = updateModel(grad._gradients, _model);
+				if (DMLScript.STATISTICS)
+					Statistics.accPSAggregationTime((long) tAgg.stop());
 
 				// Redistribute model according to update type
 				switch(_updateType) {
@@ -231,19 +255,23 @@ public abstract class ParamServer {
 		 * @return A updated list object of model
 		 */
 		private synchronized ListObject updateModel(ListObject gradients, ListObject model) {
+			return updateModel(_ec, gradients, model);
+		}
+		
+		private ListObject updateModel(ExecutionContext ec, ListObject gradients, ListObject model) {
 			// Populate the variables table with the gradients and model
-			_ec.setVariable(Statement.PS_GRADIENTS, gradients);
-			_ec.setVariable(Statement.PS_MODEL, model);
+			ec.setVariable(Statement.PS_GRADIENTS, gradients);
+			ec.setVariable(Statement.PS_MODEL, model);
 
 			// Invoke the aggregate function
-			_inst.processInstruction(_ec);
+			_inst.processInstruction(ec);
 
 			// Get the output
-			ListObject newModel = (ListObject) _ec.getVariable(_output.getName());
+			ListObject newModel = (ListObject) ec.getVariable(_output.getName());
 
 			// Update the model with the new output
-			ParamservUtils.cleanupListObject(_ec, model);
-			ParamservUtils.cleanupListObject(_ec, gradients);
+			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
+			ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 			return newModel;
 		}
 	}

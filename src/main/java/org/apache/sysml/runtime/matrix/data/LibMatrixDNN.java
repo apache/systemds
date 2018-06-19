@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.util.CommonThreadPool;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -144,7 +144,7 @@ public class LibMatrixDNN {
 	 * @param outputBlock output of convolution
 	 * @param params convolution parameters
 	 */
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, DnnParameters params) {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
 		if(params.bias != null && params.bias.isInSparseFormat())
 			params.bias.sparseToDense(); // Since bias is extremely small array
@@ -165,7 +165,7 @@ public class LibMatrixDNN {
 	 * @param params convolution parameters
 	 
 */
-	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		
 		long nnz = execute(LibMatrixDNNConv2d.getConv2dBackwardDataWorkers(params), params);
@@ -183,7 +183,7 @@ public class LibMatrixDNN {
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
 	 */
-	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		
 		execute(LibMatrixDNNConv2d.getConv2dBackwardFilterWorkers(params), params);
@@ -193,7 +193,7 @@ public class LibMatrixDNN {
 		outputBlock.examSparsity();
 	}
 	
-	public static void pooling(MatrixBlock input, MatrixBlock output, ConvolutionParameters params, PoolingType poolType) {
+	public static void pooling(MatrixBlock input, MatrixBlock output, DnnParameters params, PoolingType poolType) {
 		params.input1 = input;
 		params.output = output;
 		
@@ -225,7 +225,7 @@ public class LibMatrixDNN {
 	 * @param poolType type of pooling
 	 */
 	public static void poolingBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, 
-			ConvolutionParameters params, boolean performReluBackward, PoolingType poolType) {
+			DnnParameters params, boolean performReluBackward, PoolingType poolType) {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -272,7 +272,7 @@ public class LibMatrixDNN {
 	 */
 	public static void reluBackward(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, int numThreads) {
 		int N = input.getNumRows();
-		ConvolutionParameters params = new ConvolutionParameters(N, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, numThreads);
+		DnnParameters params = new DnnParameters(N, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, numThreads);
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -311,23 +311,15 @@ public class LibMatrixDNN {
 		double [] outputArray = outputBlock.getDenseBlockValues();
 		if(input.isEmptyBlock()) {
 			for(int n = 0;  n < N; n++) 
-				ConvolutionUtils.fillBias(bias, outputArray, n, n+1, N, K, PQ);
+				DnnUtils.fillBias(bias, outputArray, n, n+1, N, K, PQ);
 		}
 		else {
 			// Handles both dense and sparse inputs and copies it to dense output
-			outputBlock.copy(input, false); 
-			int index = 0;
+			outputBlock.copy(input, false);
 			if(bias.isInSparseFormat())
 				bias.sparseToDense(); // Since bias is extremely small array
 			double [] biasArr = bias.getDenseBlockValues();
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					double biasVal = biasArr[k];
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						outputArray[index] += biasVal;
-					}
-				}
-			}
+			addBias(outputArray, biasArr, 1, N, K, PQ);
 		}
 		
 		//post-processing: maintain nnz
@@ -548,8 +540,8 @@ public class LibMatrixDNN {
 		}
 		else {
 			addBias(retArr, resultSaveMeanArr, -1, N, K, PQ);
-			multiplyBias(retArr, resultSaveInvVarianceArr, N, K, PQ);
-			multiplyBias(retArr, scaleArr, N, K, PQ);
+			multBias(retArr, resultSaveInvVarianceArr, N, K, PQ);
+			multBias(retArr, scaleArr, N, K, PQ);
 			addBias(retArr, biasArr, 1, N, K, PQ);
 		}
 		ret.recomputeNonZeros();
@@ -585,32 +577,31 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	private static void addBias(double [] arr, double [] bias, double biasMultiplier, int N, int K, int PQ) {
+	public static void addBias(double[] a, double[] bias, double biasMultiplier, int N, int K, int PQ) {
+		if( bias == null )
+			return;
 		int index = 0;
-		if(bias != null) {
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						arr[index] += biasMultiplier*bias[k];
-					}
-				}
+		for(int n = 0; n < N; n++) {
+			for(int k = 0; k < K; k++) {
+				double biasVal = biasMultiplier*bias[k];
+				for(int pq = 0; pq < PQ; pq++, index++)
+					a[index] += biasVal;
 			}
 		}
 	}
 	
-	private static void multiplyBias(double [] arr, double [] bias, int N, int K, int PQ) {
-		int index = 0;
-		if(bias != null) {
-			for(int n = 0; n < N; n++) {
-				for(int k = 0; k < K; k++) {
-					for(int pq = 0; pq < PQ; pq++, index++) {
-						arr[index] *= bias[k];
-					}
-				}
-			}
+	public static void multBias(double[] a, double[] bias, int N, int K, int PQ) {
+		if( bias == null ) {
+			Arrays.fill(a, 0);
+			return;
 		}
-		else {
-			Arrays.fill(arr, 0);
+		int index = 0;
+		for(int n = 0; n < N; n++) {
+			for(int k = 0; k < K; k++) {
+				double biasVal = bias[k];
+				for(int pq = 0; pq < PQ; pq++, index++)
+					a[index] *= biasVal;
+			}
 		}
 	}
 	
@@ -671,7 +662,7 @@ public class LibMatrixDNN {
 		int K = bias.getNumRows();
 		int PQ = input.getNumColumns() / K;
 		
-		ConvolutionParameters params = new ConvolutionParameters(N, PQ, -1, -1, K, -1, -1, -1, -1, -1, -1, numThreads);
+		DnnParameters params = new DnnParameters(N, PQ, -1, -1, K, -1, -1, -1, -1, -1, -1, numThreads);
 		params.input1 = input;
 		params.input2 = bias;
 		params.output = outputBlock;
@@ -739,7 +730,7 @@ public class LibMatrixDNN {
 	 * @param tasks deep learning related tasks
 	 * @param params convolution parameters
 	 */
-	private static long execute(ArrayList<Callable<Long>> tasks, ConvolutionParameters params) {
+	private static long execute(ArrayList<Callable<Long>> tasks, DnnParameters params) {
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		long lnnz = 0;
 		try {
@@ -774,7 +765,7 @@ public class LibMatrixDNN {
 			throw new DMLRuntimeException(msg + ":" + lhs + " != (" + rhs1 + " * " + rhs2 + " * " + rhs3);
 	}
 	
-	static void checkInputsConv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	static void checkInputsConv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		params.input1 = filter;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -799,7 +790,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		params.input1 = input;
 		params.input2 = dout;
 		params.output = outputBlock;
@@ -824,7 +815,7 @@ public class LibMatrixDNN {
 		}
 	}
 	
-	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
+	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, DnnParameters params) {
 		params.input1 = input;
 		params.input2 = filter;
 		params.output = outputBlock;
@@ -856,7 +847,7 @@ public class LibMatrixDNN {
 	 * 
 	 * @param params parameters required for max_pool and max_pool_backward operations
 	 */
-	private static void fillIndexesArray(ConvolutionParameters params) {
+	private static void fillIndexesArray(DnnParameters params) {
 		params.start_indexes_h = new int[params.P];
 		params.end_indexes_h = new int[params.P];
 		params.start_indexes_w = new int[params.Q];

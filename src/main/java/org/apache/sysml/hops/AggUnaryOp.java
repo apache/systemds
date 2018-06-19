@@ -21,12 +21,11 @@ package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.Binary;
-import org.apache.sysml.lops.ConvolutionTransform;
+import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.PartialAggregate;
@@ -41,24 +40,15 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 
-/* Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
- * 		Properties: 
- * 			Symbol: +, min, max, ...
- * 			1 Operand
- * 	
- * 		Semantic: generate indices, align, aggregate
- */
+// Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
 
-public class AggUnaryOp extends Hop implements MultiThreadedHop
+public class AggUnaryOp extends MultiThreadedHop
 {
-	
 	private static final boolean ALLOW_UNARYAGG_WO_FINAL_AGG = true;
 	
 	private AggOp _op;
 	private Direction _direction;
 
-	private int _maxNumThreads = -1; //-1 for unlimited
-	
 	private AggUnaryOp() {
 		//default constructor for clone
 	}
@@ -97,15 +87,6 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 		_direction = direction;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
 	
 	@Override
 	public boolean isGPUEnabled() {
@@ -165,11 +146,11 @@ public class AggUnaryOp extends Hop implements MultiThreadedHop
 					// Apply channel sums only if rewrite is applicable and if the dimension of C is known at compile time
 					// and if numChannels is less than 8 MB.
 					ReorgOp in = ((ReorgOp)getInput().get(0));
-					agg1 = new ConvolutionTransform(
+					agg1 = new DnnTransform(
 							in.getInput().get(0).getInput().get(0).constructLops(), 
 							in.getInput().get(1).constructLops(),
 							in.getInput().get(2).constructLops(),
-							ConvolutionTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
+							DnnTransform.OperationTypes.CHANNEL_SUMS, getDataType(), getValueType(), et, -1);
 					agg1.getOutputParameters().setDimensions(numChannels, 1, getRowsInBlock(), getColsInBlock(), -1);
 					setLineNumbers(agg1);
 					setLops(agg1);

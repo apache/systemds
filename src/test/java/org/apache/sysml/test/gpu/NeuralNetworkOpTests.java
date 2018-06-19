@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -131,8 +131,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 										if (R > (H + padH) || S > (W + padW))
 											continue;
 
-										int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-										int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+										int P = (int) DnnUtils.getP(H, R, strideH, padH);
+										int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 										long doutSize = N * K * P * Q * 8l;
 										if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -218,8 +218,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 		if (R > (H + padH) || S > (W + padW))
 			Assert.fail();
 
-		int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-		int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+		int P = (int) DnnUtils.getP(H, R, strideH, padH);
+		int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 		long doutSize = N * K * P * Q * 8l;
 		if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -284,8 +284,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 										if (filterSize > MAX_OP_SIZE)  // filter size
 											continue;
 
-										int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-										int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+										int P = (int) DnnUtils.getP(H, R, strideH, padH);
+										int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 										long doutSize = N * K * P * Q * 8l;
 										if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -367,8 +367,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 										if (filterSize > MAX_OP_SIZE)  // filter size
 											continue;
 
-										int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-										int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+										int P = (int) DnnUtils.getP(H, R, strideH, padH);
+										int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 										long doutSize = N * K * P * Q * 8l;
 										if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -451,8 +451,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 									if (poolSize > MAX_OP_SIZE)  // filter size
 										continue;
 
-									int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-									int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+									int P = (int) DnnUtils.getP(H, R, strideH, padH);
+									int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 									long doutSize = N * C * P * Q * 8l;
 									if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -529,8 +529,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 									if (poolSize > MAX_OP_SIZE)  // filter size
 										continue;
 
-									int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-									int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+									int P = (int) DnnUtils.getP(H, R, strideH, padH);
+									int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 									long doutSize = N * C * P * Q * 8l;
 									if (doutSize > MAX_OP_SIZE) // dout/output size
@@ -611,8 +611,8 @@ public class NeuralNetworkOpTests extends GPUTests {
 									if (poolSize > MAX_OP_SIZE)  // filter size
 										continue;
 
-									int P = (int) ConvolutionUtils.getP(H, R, strideH, padH);
-									int Q = (int) ConvolutionUtils.getQ(W, S, strideW, padW);
+									int P = (int) DnnUtils.getP(H, R, strideH, padH);
+									int Q = (int) DnnUtils.getQ(W, S, strideW, padW);
 
 									long doutSize = N * C * P * Q * 8l;
 									if (doutSize > MAX_OP_SIZE) // dout/output size

@@ -37,6 +37,7 @@ import org.apache.sysml.hops.TernaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
+import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.UnaryOp;
@@ -347,7 +348,8 @@ public class TemplateUtils
 	
 	public static boolean isValidSingleOperation(Hop hop) {
 		return HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)
-			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG);
+			|| HopRewriteUtils.isUnary(hop, OpOp1.EXP, OpOp1.LOG)
+			|| HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT);
 	}
 	
 	public static boolean hasNoOperation(CNodeTpl tpl) {

@@ -209,7 +209,9 @@ public class FunctionCallSizeInfo
 		//step 1: determine function candidates by evaluating all function calls
 		for( String fkey : _fgraph.getReachableFunctions() ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
-		
+			if( flist.isEmpty() ) //robustness removed functions
+				continue;
+			
 			//condition 1: function called just once
 			if( flist.size() == 1 ) {
 				_fcand.add(fkey);
@@ -245,7 +247,10 @@ public class FunctionCallSizeInfo
 		//step 2: determine safe nnz propagation per input
 		//(considered for valid functions only)
 		for( String fkey : _fcand ) {
-			FunctionOp first = _fgraph.getFunctionCalls(fkey).get(0);
+			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
+			if( flist.isEmpty() ) //robustness removed functions
+				continue;
+			FunctionOp first = flist.get(0);
 			HashSet<Integer> tmp = new HashSet<>();
 			for( int j=0; j<first.getInput().size(); j++ ) {
 				//if nnz known it is safe to propagate those nnz because for multiple calls 
@@ -261,6 +266,8 @@ public class FunctionCallSizeInfo
 		//(considered for all functions)
 		for( String fkey : _fgraph.getReachableFunctions() ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
+			if( flist.isEmpty() ) //robustness removed functions
+				continue;
 			FunctionOp first = flist.get(0);
 			//initialize w/ all literals of first call
 			HashSet<Integer> tmp = new HashSet<>();

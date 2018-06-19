@@ -21,27 +21,20 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 
 public abstract class DataPartitioner {
 
-	protected static final Log LOG = LogFactory.getLog(DataPartitioner.class.getName());
+	public final class Result {
+		public final List<MatrixObject> pFeatures;
+		public final List<MatrixObject> pLabels;
 
-	public abstract void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels);
-
-	protected void setPartitionedData(List<LocalPSWorker> workers, List<MatrixObject> pfs, List<MatrixObject> pls) {
-		if (pfs.size() < workers.size()) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
-					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
-			}
-			workers = workers.subList(0, pfs.size());
-		}
-		for (int i = 0; i < workers.size(); i++) {
-			workers.get(i).setFeatures(pfs.get(i));
-			workers.get(i).setLabels(pls.get(i));
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
+			this.pFeatures = pFeatures;
+			this.pLabels = pLabels;
 		}
 	}
+
+	public abstract Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels);
+
 }

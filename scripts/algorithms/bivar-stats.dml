@@ -25,29 +25,26 @@
 #   Given, index1 = {A_11, A_12, ... A_1m} and index2 = {A_21, A_22, ... A_2n} 
 #          compute bivariate stats for m*n pairs (A_1i, A_2j), (1<= i <=m) and (1<= j <=n)
 #
-# Six inputs:  
-#    1) X  - input data
+# Six inputs:
+#    1) X      - input data
 #    2) index1 - First attribute set {A_11, A_12, ... A_1m}
 #    3) index2 - Second attribute set {A_21, A_22, ... A_2n}
 #    4) types1 - kind for attributes in S1 
 #    5) types2 - kind for attributes in S2
-#             kind=1 for scale, kind=2 for nominal, kind=3 for ordinal
+#       (kind=1 for scale, kind=2 for nominal, kind=3 for ordinal)
 # 
-# One output:    
+# One output:
 #    6) output directory in which following (maximum of) four statistics files are created
 #        + bivar.scale.scale.stats - matrix containing scale-scale correlations
-#        + bivar.nominal.nominal.stats - 
-#        + bivar.nominal.scale.stats - 
-#        + bivar.ordinal.ordinal.stats - 
+#        + bivar.nominal.nominal.stats -
+#        + bivar.nominal.scale.stats -
+#        + bivar.ordinal.ordinal.stats -
 #
-# hadoop jar SystemML.jar -f bivar-stats.dml -nvargs X=<Data>
-#                                                    index1=<Feature Index Set 1>
-#                                                    index2=<Feature Index Set 2>
-#                                                    types1=<Feature Types 1>
-#                                                    types2=<Feature Types 2>
-#                                                    OUTDIR=<Output Location>
+# hadoop jar SystemML.jar -f bivar-stats.dml -nvargs X=<Data> \
+#    index1=<Feature Index Set 1> index2=<Feature Index Set 2> \
+#    types1=<Feature Types 1> types2=<Feature Types 2> OUTDIR=<Output Location>
 
-D = read($X);  # input data set
+D = read($X);       # input data set
 S1 = read($index1); # attribute set 1
 S2 = read($index2); # attribute set 2
 K1 = read($types1); # kind for attributes in S1
@@ -67,38 +64,39 @@ num_nominal_scale_tests = 0
 
 pair2row = matrix(0, rows=numPairs, cols=2)
 for( i in 1:s1size, check=0) {
-    pre_a1 = as.scalar(S1[1,i]);
-    pre_k1 = as.scalar(K1[1,i]);
+  pre_a1 = as.scalar(S1[1,i]);
+  pre_k1 = as.scalar(K1[1,i]);
 
-    for( j in 1:s2size, check=0) {
-        pre_pairID = (i-1)*s2size+j; 
-        pre_a2 = as.scalar(S2[1,j]);
-        pre_k2 = as.scalar(K2[1,j]);
-	
-	if (pre_k1 == pre_k2) {
-            if (pre_k1 == 1) {
-	        	num_scale_scale_tests = num_scale_scale_tests + 1
-				pair2row[pre_pairID,1] = num_scale_scale_tests
-            } else {
-	      		num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-				pair2row[pre_pairID,1] = num_nominal_nominal_tests
-		
-                if ( pre_k1 == 3 ) {
-		    		num_ordinal_ordinal_tests = num_ordinal_ordinal_tests + 1
-		    		pair2row[pre_pairID, 2] = num_ordinal_ordinal_tests
-                }
-            }
+  for( j in 1:s2size, check=0) {
+    pre_pairID = (i-1)*s2size+j; 
+    pre_a2 = as.scalar(S2[1,j]);
+    pre_k2 = as.scalar(K2[1,j]);
+
+    if (pre_k1 == pre_k2) {
+      if (pre_k1 == 1) {
+        num_scale_scale_tests = num_scale_scale_tests + 1
+        pair2row[pre_pairID,1] = num_scale_scale_tests
+      } 
+      else {
+        num_nominal_nominal_tests = num_nominal_nominal_tests + 1
+        pair2row[pre_pairID,1] = num_nominal_nominal_tests
+        if ( pre_k1 == 3 ) {
+          num_ordinal_ordinal_tests = num_ordinal_ordinal_tests + 1
+          pair2row[pre_pairID, 2] = num_ordinal_ordinal_tests
         }
-        else {
-            if (pre_k1 == 1 | pre_k2 == 1) {
-	        	num_nominal_scale_tests = num_nominal_scale_tests + 1
-				pair2row[pre_pairID,1] = num_nominal_scale_tests
-            } else {
-	        	num_nominal_nominal_tests = num_nominal_nominal_tests + 1
-				pair2row[pre_pairID,1] = num_nominal_nominal_tests 
-            }
-		}
+      }
     }
+    else {
+      if (pre_k1 == 1 | pre_k2 == 1) {
+        num_nominal_scale_tests = num_nominal_scale_tests + 1
+        pair2row[pre_pairID,1] = num_nominal_scale_tests
+      }
+      else {
+        num_nominal_nominal_tests = num_nominal_nominal_tests + 1
+        pair2row[pre_pairID,1] = num_nominal_nominal_tests 
+      }
+    }
+  }
 }
 
 size_scale_scale_tests     = max(num_scale_scale_tests, 1);
@@ -117,7 +115,6 @@ basestats_nominal_scale   = matrix(0, rows=11, cols=size_nominal_scale_tests)
 # and check if these cols have been recoded
 
 debug_str = "Stopping execution of DML script due to invalid input";
-
 error_flag = FALSE;
 
 maxs = colMaxs(D);
@@ -125,152 +122,102 @@ mins = colMins(D)
 maxDomainSize = -1.0;
 for(k in 1:ncol(K1) ) {
   type = as.scalar(K1[1,k]);
-  
   if ( type > 1) {
     colID = as.scalar(S1[1,k]);
-    
     colMaximum = as.scalar(maxs[1,colID]);
     if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
-  
-  	colMinimum = as.scalar(mins[1,colID]);
-  	if(colMinimum < 1){
-  	  if(type == 2)
-  	    debug_str = append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum)
-  	  else
-  	    debug_str = append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum)
-  	  error_flag = TRUE;
-  	}
+    colMinimum = as.scalar(mins[1,colID]);
+    if(colMinimum < 1){
+      debug_str = ifelse(type == 2,
+        append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum),
+        append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum));
+      error_flag = TRUE;
+    }
   }
 }
 
 for(k in 1:ncol(K2) ) {
   type = as.scalar(K2[1,k]);
-  
   if ( type > 1) {
     colID = as.scalar(S2[1,k]);
-    
     colMaximum = as.scalar(maxs[1,colID]);
-    if(maxDomainSize < colMaximum) maxDomainSize = colMaximum;
-  
-  	colMinimum = as.scalar(mins[1,colID]);
-  	if(colMinimum < 1){
-  	  if(type == 2)
-  	    debug_str = append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum)
-  	  else 
-  	  	debug_str = append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum)
-  	  error_flag = TRUE;
-  	}
+    maxDomainSize = max(maxDomainSize, colMaximum);
+    colMinimum = as.scalar(mins[1,colID]);
+    if(colMinimum < 1){
+      debug_str = ifelse(type == 2,
+        append(debug_str, "Column " + colID + " was declared as nominal but its minimum value is " + colMinimum),
+        append(debug_str, "Column " + colID + " was declared as ordinal but its minimum value is " + colMinimum));
+      error_flag = TRUE;
+    }
   }
 }
 maxDomain = as.integer(maxDomainSize);
-
-if(error_flag) stop(debug_str);
+if(error_flag)
+  stop(debug_str);
 
 parfor( i in 1:s1size, check=0) {
-    a1 = as.scalar(S1[1,i]);
-    k1 = as.scalar(K1[1,i]);
-    A1 = D[,a1];
+  a1 = as.scalar(S1[1,i]);
+  k1 = as.scalar(K1[1,i]);
+  A1 = D[,a1];
+  parfor( j in 1:s2size, check=0) {
+    pairID = (i-1)*s2size+j; 
+    a2 = as.scalar(S2[1,j]);
+    k2 = as.scalar(K2[1,j]);
+    A2 = D[,a2];
+    rowid1 = as.scalar(pair2row[pairID, 1])
+    rowid2 = as.scalar(pair2row[pairID, 2])
 
-    parfor( j in 1:s2size, check=0) {
-        pairID = (i-1)*s2size+j; 
-        a2 = as.scalar(S2[1,j]);
-        k2 = as.scalar(K2[1,j]);
-        A2 = D[,a2];
-
-		rowid1 = as.scalar(pair2row[pairID, 1])
-    	rowid2 = as.scalar(pair2row[pairID, 2])
-
-        if (k1 == k2) {
-            if (k1 == 1) {
-                # scale-scale
-                print("[" + i + "," + j + "] scale-scale");
-                [r, cov, sigma1, sigma2] = bivar_ss(A1,A2);   
-		
-    			basestats_scale_scale[1,rowid1] = a1;
-				basestats_scale_scale[2,rowid1] = a2;	
-                basestats_scale_scale[3,rowid1] = r;
-                basestats_scale_scale[4,rowid1] = cov;
-                basestats_scale_scale[5,rowid1] = sigma1;
-                basestats_scale_scale[6,rowid1] = sigma2;
-            } else {
-                # nominal-nominal or ordinal-ordinal
-                print("[" + i + "," + j + "] categorical-categorical");
-                [chisq, df, pval, cramersv]  = bivar_cc(A1, A2, maxDomain);
-
-                basestats_nominal_nominal[1,rowid1] = a1;
-				basestats_nominal_nominal[2,rowid1] = a2;	
-                basestats_nominal_nominal[3,rowid1] = chisq;
-                basestats_nominal_nominal[4,rowid1] = df;
-                basestats_nominal_nominal[5,rowid1] = pval;
-                basestats_nominal_nominal[6,rowid1] = cramersv;
-
-                if ( k1 == 3 ) {
-                    # ordinal-ordinal
-                    print("[" + i + "," + j + "] ordinal-ordinal");
-                    sp = bivar_oo(A1, A2, maxDomain);
-
-                    basestats_ordinal_ordinal[1,rowid2] = a1;
-                    basestats_ordinal_ordinal[2,rowid2] = a2;
-                    basestats_ordinal_ordinal[3,rowid2] = sp;
-                }
-            }
-        } else {
-            if (k1 == 1 | k2 == 1) {
-                # Scale-nominal/ordinal     
-                print("[" + i + "," + j + "] scale-categorical");
-                
-               	if ( k1 == 1 ) {
-                	[eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A1, A2, maxDomain);
-                } else {
-                    [eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A2, A1, maxDomain);
-                }
-		
-                basestats_nominal_scale[1,rowid1] = a1;
-                basestats_nominal_scale[2,rowid1] = a2;
-                basestats_nominal_scale[3,rowid1] = eta;
-                basestats_nominal_scale[4,rowid1] = f;
-                basestats_nominal_scale[5,rowid1] = pval;
-                basestats_nominal_scale[6,rowid1] = bw_ss;
-                basestats_nominal_scale[7,rowid1] = within_ss;
-                basestats_nominal_scale[8,rowid1] = bw_df;
-                basestats_nominal_scale[9,rowid1] = within_df;
-                basestats_nominal_scale[10,rowid1] = bw_mean_square;
-                basestats_nominal_scale[11,rowid1] = within_mean_square;
-            } else {
-                # nominal-ordinal or ordinal-nominal
-                print("[" + i + "," + j + "] categorical-categorical");
-                [chisq, df, pval, cramersv]  = bivar_cc(A1, A2, maxDomain);
-
-				basestats_nominal_nominal[1,rowid1] = a1;
-				basestats_nominal_nominal[2,rowid1] = a2;
-                basestats_nominal_nominal[3,rowid1] = chisq;
-                basestats_nominal_nominal[4,rowid1] = df;
-                basestats_nominal_nominal[5,rowid1] = pval;
-                basestats_nominal_nominal[6,rowid1] = cramersv;
-            }
+    if (k1 == k2) {
+      if (k1 == 1) {
+        # scale-scale
+        print("[" + i + "," + j + "] scale-scale");
+        [r, cov, sigma1, sigma2] = bivar_ss(A1,A2);
+        basestats_scale_scale[1:6,rowid1] = as.matrix(list(a1,a2,r,cov,sigma1,sigma2));
+      }
+      else {
+        # nominal-nominal or ordinal-ordinal
+        print("[" + i + "," + j + "] categorical-categorical");
+        [chisq, df, pval, cramersv]  = bivar_cc(A1, A2, maxDomain);
+        basestats_nominal_nominal[1:6,rowid1] = as.matrix(list(a1,a2,chisq,df,pval,cramersv));
+        if ( k1 == 3 ) {
+          # ordinal-ordinal
+          print("[" + i + "," + j + "] ordinal-ordinal");
+          sp = bivar_oo(A1, A2, maxDomain);
+          basestats_ordinal_ordinal[1:3,rowid2] = as.matrix(list(a1,a2,sp));
         }
+      }
     }
+    else if (k1 == 1 | k2 == 1) {
+      # Scale-nominal/ordinal
+      print("[" + i + "," + j + "] scale-categorical");
+      if ( k1 == 1 )
+        [eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A1, A2, maxDomain);
+      else
+        [eta, f, pval, bw_ss, within_ss, bw_df, within_df, bw_mean_square, within_mean_square] = bivar_sc(A2, A1, maxDomain);
+      basestats_nominal_scale[1:11,rowid1] = as.matrix(list(a1,a2,eta,f,pval,bw_ss,within_ss,bw_df,within_df,bw_mean_square,within_mean_square));
+    }
+    else {
+      # nominal-ordinal or ordinal-nominal
+      print("[" + i + "," + j + "] categorical-categorical");
+      [chisq, df, pval, cramersv]  = bivar_cc(A1, A2, maxDomain);
+      basestats_nominal_nominal[1:6,rowid1] = as.matrix(list(a1,a2,chisq,df,pval,cramersv));
+    }
+  }
 }
 
-if(num_scale_scale_tests == size_scale_scale_tests){
+if(num_scale_scale_tests == size_scale_scale_tests)
   write(basestats_scale_scale, $OUTDIR + "/bivar.scale.scale.stats");
-}
-
-if(num_nominal_scale_tests == size_nominal_scale_tests){
+if(num_nominal_scale_tests == size_nominal_scale_tests)
   write(basestats_nominal_scale, $OUTDIR + "/bivar.nominal.scale.stats");
-}
-
-if(num_nominal_nominal_tests == size_nominal_nominal_tests){
+if(num_nominal_nominal_tests == size_nominal_nominal_tests)
   write(basestats_nominal_nominal, $OUTDIR + "/bivar.nominal.nominal.stats");
-}
-
-if(num_ordinal_ordinal_tests == size_ordinal_ordinal_tests){
+if(num_ordinal_ordinal_tests == size_ordinal_ordinal_tests)
   write(basestats_ordinal_ordinal, $OUTDIR + "/bivar.ordinal.ordinal.stats");
-}
 
 # -----------------------------------------------------------------------------------------------------------
 
-bivar_cc = function(Matrix[Double] A, Matrix[Double] B, Double maxDomain) return (Double chisq, Double df, Double pval, Double cramersv) {
+bivar_cc = function(Matrix[Double] A, Matrix[Double] B, Double maxDomain)
+  return (Double chisq, Double df, Double pval, Double cramersv) {
 
     # Contingency Table
     F = table(A, B, maxDomain, maxDomain);
@@ -324,7 +271,8 @@ bivar_ss = function(Matrix[Double] X, Matrix[Double] Y) return (Double R, Double
 # Y points to SCALE variable
 # A points to CATEGORICAL variable
 bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain) 
-		   return (Double Eta, Double AnovaF, Double pval, Double bw_ss, Double within_ss, Double bw_df, Double within_df, Double bw_mean_square, Double within_mean_square) {
+  return (Double Eta, Double AnovaF, Double pval, Double bw_ss, Double within_ss,
+  Double bw_df, Double within_df, Double bw_mean_square, Double within_mean_square) {
 
     # mean and variance in target variable
     W = nrow(A);
@@ -344,11 +292,11 @@ bivar_sc = function(Matrix[Double] Y, Matrix[Double] A, Double maxDomain)
     bw_ss = sum( (CFreqs*(CMeans-my)^2) );
     bw_df = as.double(R-1);
     bw_mean_square = bw_ss/bw_df;
-	
+
     within_ss = sum( (CFreqs-1)*CVars );
     within_df = as.double(W-R);
     within_mean_square = within_ss/within_df;
-	
+
     AnovaF = bw_mean_square/within_mean_square;
     
     pval = pf(target=AnovaF, df1=bw_df, df2=within_df, lower.tail=FALSE)

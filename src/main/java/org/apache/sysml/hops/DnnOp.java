@@ -20,10 +20,9 @@
 package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
-import org.apache.sysml.lops.ConvolutionTransform;
-import org.apache.sysml.lops.ConvolutionTransform.OperationTypes;
+import org.apache.sysml.lops.DnnTransform;
+import org.apache.sysml.lops.DnnTransform.OperationTypes;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
@@ -31,11 +30,11 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+import org.apache.sysml.runtime.matrix.data.DnnParameters;
 import java.util.ArrayList;
 
-public class ConvolutionOp extends Hop  implements MultiThreadedHop
-{	
+public class DnnOp extends MultiThreadedHop
+{
 	// -------------------------------------------------------------------------
 	// This flag allows us to compile plans with less unknowns and also serves as future tensorblock integration.
 	// By default, these flags are turned on.
@@ -48,10 +47,9 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// -------------------------------------------------------------------------
 	
 	// Specifies the type of this hop
-	private Hop.ConvOp op;
-	private int _maxNumThreads = -1; //-1 for unlimited
+	private Hop.OpOpDnn op;
 
-	private ConvolutionOp() {
+	private DnnOp() {
 		//default constructor for clone
 	}
 
@@ -64,7 +62,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @param o type of this hop
 	 * @param inp input hops
 	 */
-	public ConvolutionOp(String l, DataType dt, ValueType vt, ConvOp o, ArrayList<Hop> inp) 
+	public DnnOp(String l, DataType dt, ValueType vt, OpOpDnn o, ArrayList<Hop> inp) 
 	{
 		super(l, dt, vt);
 		op = o;
@@ -84,7 +82,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		HopsException.check(_input.size() >= 1, this, "should have at least one input but has %d inputs", _input.size());
 	}
 
-	public ConvOp getOp() {
+	public OpOpDnn getOp() {
 		return op;
 	}
 	
@@ -123,15 +121,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case CONV2D:
 			case CONV2D_BACKWARD_DATA:
 			case CONV2D_BACKWARD_FILTER:
-			case BIAS_ADD:
-			case BIAS_MULTIPLY:
+			case BIASADD:
+			case BIASMULT:
 			{	
 				if(et == ExecType.CP || et == ExecType.GPU) {
-					setLops(constructConvolutionLops(et, inputs));
+					setLops(constructDnnLops(et, inputs));
 					break;
 				}
 				else {
-					throw new HopsException("Unimplemented ConvolutionOp for execution type: " + et.name());
+					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
 				}
 				// break;
 			}
@@ -145,7 +143,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return getLops();
 	}
 	
-	public void setOp(ConvOp op) {
+	public void setOp(OpOpDnn op) {
 		this.op = op;
 	}
 	
@@ -157,8 +155,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			case CONV2D_BACKWARD_FILTER:
 			case CONV2D_BACKWARD_DATA:
 				return 14;
-			case BIAS_ADD:
-			case BIAS_MULTIPLY:
+			case BIASADD:
+			case BIASMULT:
 				return 2;
 			default:
 				return 13;
@@ -186,7 +184,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	private static boolean isInputConv2d(Hop input) {
-		return input instanceof ConvolutionOp && ((ConvolutionOp) input).getOp() == ConvOp.CONV2D;
+		return HopRewriteUtils.isDnn(input, OpOpDnn.CONV2D);
 	}
 	
 	/**
@@ -194,7 +192,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * 
 	 * @return true if the following parameters match: stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize, imgSize], pool_size=[poolSize1, poolSize2]
 	 */
-	private static boolean isPoolingParametersEqualAndKnown(ConvolutionParameters param1, ConvolutionParameters param2) {
+	private static boolean isPoolingParametersEqualAndKnown(DnnParameters param1, DnnParameters param2) {
 		return isEqualAndKnown(param1.stride_h, param2.stride_h) && isEqualAndKnown(param1.stride_w, param2.stride_w) && 
 			isEqualAndKnown(param1.pad_h, param2.pad_h) && isEqualAndKnown(param1.pad_w, param2.pad_w) &&
 			isEqualAndKnown(param1.R, param2.R) && isEqualAndKnown(param1.S, param2.S) &&
@@ -213,13 +211,13 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @return output lop of max_pool/avg_pool operation with same parameters as this hop
 	 */
 	private Lop getMaxPoolOutputLop() {
-		if(op == ConvOp.MAX_POOL_BACKWARD || op == ConvOp.AVG_POOL_BACKWARD) {
-			ConvOp opType = (op == ConvOp.MAX_POOL_BACKWARD) ? ConvOp.MAX_POOL : ConvOp.AVG_POOL;
+		if(op == OpOpDnn.MAX_POOL_BACKWARD || op == OpOpDnn.AVG_POOL_BACKWARD) {
+			OpOpDnn opType = (op == OpOpDnn.MAX_POOL_BACKWARD) ? OpOpDnn.MAX_POOL : OpOpDnn.AVG_POOL;
 			Hop inputImage = getInput().get(0);
 			for(Hop tmpParent : inputImage.getParent()) {
-				if(!(tmpParent instanceof ConvolutionOp))
+				if(!(tmpParent instanceof DnnOp))
 					continue;
-				ConvolutionOp parent = (ConvolutionOp) tmpParent;
+				DnnOp parent = (DnnOp) tmpParent;
 				if(parent.getOp() == opType && isPoolingParametersEqualAndKnown(parent._cachedParams, _cachedParams)) {
 					return parent.constructLops();
 				}
@@ -228,7 +226,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		return null;
 	}
 	
-	public Lop constructConvolutionLops(ExecType et, ArrayList<Hop> inputs) {
+	public Lop constructDnnLops(ExecType et, ArrayList<Hop> inputs) {
 		if(inputs.size() != getNumExpectedInputs()) 
 			throw new HopsException("Incorrect number of inputs for " + op.name());
 		
@@ -242,15 +240,15 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// by reducing unnecessary sparse-to-dense-to-sparse conversion.
 		// For other backends, this operators is not necessary as it reduces an additional relu operator.
 		Hop parentReLU = isInputReLU(inputs.get(0));
-		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOL && parentReLU != null) {
+		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == ConvOp.MAX_POOL_BACKWARD && parentReLU != null) {
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL_BACKWARD && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == ConvOp.BIAS_ADD && isInputConv2d(inputs.get(0))) {
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && op == OpOpDnn.BIASADD && isInputConv2d(inputs.get(0))) {
 			lopOp = OperationTypes.CONV2D_BIAS_ADD;
 			
 			// the first lop is image 
@@ -282,13 +280,14 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		// ---------------------------------------------------------------
 		
-		// Contruct the lop
+		// Construct the lop
 		Lop optionalMaxPoolOutput = (et == ExecType.GPU) ? getMaxPoolOutputLop() : null;
 		Lop[] l2inputs = new Lop[inputsOfPotentiallyFusedOp.size()-1];
 		for( int i=1; i < inputsOfPotentiallyFusedOp.size(); i++ )
 			l2inputs[i-1] = inputsOfPotentiallyFusedOp.get(i).constructLops();
-		ConvolutionTransform convolutionLop = new ConvolutionTransform(lhsInputLop, lopOp,
-				getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
+		DnnTransform convolutionLop = new DnnTransform(
+			lhsInputLop, lopOp, getDataType(), getValueType(), et,
+			OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), intermediateMemEstimate);
 		setOutputDimensions(convolutionLop);
 		setLineNumbers(convolutionLop);
 		
@@ -322,7 +321,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz )
 	{		
-		if(getOp() == ConvOp.BIAS_MULTIPLY) {
+		if(getOp() == OpOpDnn.BIASMULT) {
 			// in non-gpu mode, the worst case size of bias multiply operation is same as that of input.
 			if(DMLScript.USE_ACCELERATOR) 
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
@@ -339,17 +338,17 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	// Utility methods to guard the computation of memory estimates in presense of unknowns
 	private static class IntermediateDimensions {
 		int dim1; int dim2; double sp;
-		public IntermediateDimensions(ConvolutionOp h, String dim1Str, String dim2Str, double sp) {
+		public IntermediateDimensions(DnnOp h, String dim1Str, String dim2Str, double sp) {
 			dim1 = (int) h.getDim(dim1Str);
 			dim2 = (int) h.getDim(dim2Str);
 			this.sp = sp;
 		}
-		public IntermediateDimensions(ConvolutionOp h, String dim1Str, String dim2Str) {
+		public IntermediateDimensions(DnnOp h, String dim1Str, String dim2Str) {
 			dim1 = (int) h.getDim(dim1Str);
 			dim2 = (int) h.getDim(dim2Str);
 			sp = 1;
 		}
-		public IntermediateDimensions(ConvolutionOp h, int dim1, String dim2Str) {
+		public IntermediateDimensions(DnnOp h, int dim1, String dim2Str) {
 			this.dim1 = dim1;
 			dim2 = (int) h.getDim(dim2Str);
 			sp = 1;
@@ -436,7 +435,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	{	
 		ArrayList<IntermediateDimensions> gpuIntermediates = new ArrayList<>();
 		ArrayList<IntermediateDimensions> cpIntermediates = new ArrayList<>();
-		if(getOp() == ConvOp.CONV2D) {
+		if(getOp() == OpOpDnn.CONV2D) {
 			// Assumption: To compile a GPU conv2d operator, following should fit on the GPU:
 			// 1. output in dense format (i.e. computeOutputMemEstimate) 
 			// 2. input in any format
@@ -450,7 +449,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			// im2col operation preserves the worst-case sparsity of the input.
 			cpIntermediates.add(new IntermediateDimensions(this, "CRS", "PQ", getInput().get(0).getSparsity()));
 		}
-		else if(getOp() == ConvOp.CONV2D_BACKWARD_DATA) {
+		else if(getOp() == OpOpDnn.CONV2D_BACKWARD_DATA) {
 			// Assumption: To compile a GPU conv2d_backward_data operator, following should fit on the GPU:
 			// 1. output in dense format (i.e. computeOutputMemEstimate) 
 			// 2. dout in any format
@@ -467,7 +466,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			// Note: worst-case sparsity for the input of col2im (of size NPQ x CRS where N is determined by degree of parallelism)
 			cpIntermediates.add(new IntermediateDimensions(this, "PQ", "CRS"));
 		}
-		else if(getOp() == ConvOp.CONV2D_BACKWARD_FILTER) {
+		else if(getOp() == OpOpDnn.CONV2D_BACKWARD_FILTER) {
 			// Assumption: To compile a GPU conv2d_backward_filter operator, following should fit on the GPU:
 			// 1. output in dense format (i.e. computeOutputMemEstimate) 
 			// 2. dout in any format
@@ -483,12 +482,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 			// im2col operation preserves the worst-case sparsity of the input.
 			cpIntermediates.add(new IntermediateDimensions(this, "CRS", "PQ", getInput().get(0).getSparsity()));
 		}
-		else if(getOp() == ConvOp.MAX_POOL || getOp() == ConvOp.AVG_POOL) {
-			// Account for potential sparse-to-dense conversion of atleast 1 input row
+		else if(getOp() == OpOpDnn.MAX_POOL || getOp() == OpOpDnn.AVG_POOL) {
+			// Account for potential sparse-to-dense conversion of at least 1 input row
 			gpuIntermediates.add(new IntermediateDimensions(this, 1, "CHW"));
 		}
-		else if(getOp() == ConvOp.MAX_POOL_BACKWARD || getOp() == ConvOp.AVG_POOL_BACKWARD) {
-			// Account for potential sparse-to-dense conversion of atleast 1 input + dout row
+		else if(getOp() == OpOpDnn.MAX_POOL_BACKWARD || getOp() == OpOpDnn.AVG_POOL_BACKWARD) {
+			// Account for potential sparse-to-dense conversion of at least 1 input + dout row
 			gpuIntermediates.add(new IntermediateDimensions(this, 1, "CHW"));
 			gpuIntermediates.add(new IntermediateDimensions(this, 1, "CPQ"));
 		}
@@ -506,7 +505,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = new long[3];
 		
-		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
@@ -560,18 +559,18 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	}
 	
 	// Parameters recomputed in refreshSizeInformation and passed across many calls of getDim
-	private ConvolutionParameters _cachedParams = new ConvolutionParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
+	private DnnParameters _cachedParams = new DnnParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
 	
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4
-	ConvolutionParameters parseInput() {
+	DnnParameters parseInput() {
 		
 		Hop imageHeightHop = null; Hop filterHeightHop = null;
-		if(op == ConvOp.MAX_POOL_BACKWARD || op == ConvOp.AVG_POOL_BACKWARD 
-				|| op == ConvOp.CONV2D 
-				|| op == ConvOp.CONV2D_BACKWARD_FILTER
-				|| op == ConvOp.CONV2D_BACKWARD_DATA) {
+		if(op == OpOpDnn.MAX_POOL_BACKWARD || op == OpOpDnn.AVG_POOL_BACKWARD 
+				|| op == OpOpDnn.CONV2D 
+				|| op == OpOpDnn.CONV2D_BACKWARD_FILTER
+				|| op == OpOpDnn.CONV2D_BACKWARD_DATA) {
 			imageHeightHop = getInput().get(8);
 			filterHeightHop = getInput().get(12);
 			_cachedParams.setIfUnknown(
@@ -605,8 +604,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		
 		if(INFER_TENSOR_SHAPE_FROM_PARENT_CONV_OP) {
-			boolean isPool = (getOp() == ConvOp.MAX_POOL || getOp() == ConvOp.AVG_POOL);
-			boolean isConv = getOp() == ConvOp.CONV2D;
+			boolean isPool = (getOp() == OpOpDnn.MAX_POOL || getOp() == OpOpDnn.AVG_POOL);
+			boolean isConv = getOp() == OpOpDnn.CONV2D;
 			boolean unknownCHWPQ = _cachedParams.C < 0 || _cachedParams.H < 0 || _cachedParams.W < 0 || _cachedParams.P < 0 || _cachedParams.Q < 0;
 			if((isPool || isConv) && unknownCHWPQ) {
 				// Only infer input shape for convolution and maxpool
@@ -624,10 +623,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		// P = as.integer(floor((H + 2*pad_h - R)/stride_h + 1))
 		// Q = as.integer(floor((W + 2*pad_w - S)/stride_w + 1))
 		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
-			_cachedParams.P = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
+			_cachedParams.P = (int) org.apache.sysml.runtime.util.DnnUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h);
 		}
 		if(_cachedParams.Q < 0 && _cachedParams.W >= 0 && _cachedParams.S >= 0 && _cachedParams.stride_w >= 0 && _cachedParams.pad_w >= 0) {
-			_cachedParams.Q = (int) org.apache.sysml.runtime.util.ConvolutionUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w);
+			_cachedParams.Q = (int) org.apache.sysml.runtime.util.DnnUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w);
 		}
 		
 		return _cachedParams;
@@ -640,10 +639,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @return true if the given hop is BIAS_ADD
 	 */
 	private static boolean isInputBiasAdd(Hop hop) {
-		if(hop instanceof ConvolutionOp && ((ConvolutionOp) hop).getOp() == ConvOp.BIAS_ADD) {
-			return true;
-		}
-		return false;
+		return HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD);
 	}
 	
 	/**
@@ -671,12 +667,12 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		tmp =  (parentReLU != null) ? parentReLU : tmp;
 		
 		// Cast tmp as parent
-		ConvolutionOp parentOp = (tmp instanceof ConvolutionOp) ? ((ConvolutionOp) tmp) : null; 
+		DnnOp parentOp = (tmp instanceof DnnOp) ? ((DnnOp) tmp) : null; 
 		
 		if(parentOp == null)
 			return;
-		else if(parentOp.getOp() == ConvOp.MAX_POOL || parentOp.getOp() == ConvOp.AVG_POOL) {
-			ConvolutionParameters parentParam = parentOp.parseInput();
+		else if(parentOp.getOp() == OpOpDnn.MAX_POOL || parentOp.getOp() == OpOpDnn.AVG_POOL) {
+			DnnParameters parentParam = parentOp.parseInput();
 			int prevC = _cachedParams.C; int prevH = _cachedParams.H; int prevW = _cachedParams.W;
 			// [C, P, Q] from maxpool becomes [C, H, W] of next op
 			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.C : _cachedParams.C;
@@ -691,8 +687,8 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 				throwExceptionIfNotEqual(prevW, _cachedParams.W, "W");
 			}
 		}
-		else if(parentOp.getOp() == ConvOp.CONV2D) {
-			ConvolutionParameters parentParam = parentOp.parseInput();
+		else if(parentOp.getOp() == OpOpDnn.CONV2D) {
+			DnnParameters parentParam = parentOp.parseInput();
 			int prevC = _cachedParams.C; int prevH = _cachedParams.H; int prevW = _cachedParams.W;
 			// [K, P, Q] from convolution becomes [C, H, W] of next op
 			_cachedParams.C = (_cachedParams.C < 0) ? parentParam.K : _cachedParams.C;
@@ -712,7 +708,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
@@ -721,7 +717,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		
 		// Reset the _cachedParams to avoid incorrect sizes
-		_cachedParams = new ConvolutionParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
+		_cachedParams = new DnnParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
 		
 		switch(op) 
 		{
@@ -770,7 +766,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		ConvolutionOp ret = new ConvolutionOp();	
+		DnnOp ret = new DnnOp();	
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -784,10 +780,10 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	@Override
 	public boolean compare( Hop that )
 	{
-		if( !(that instanceof ConvolutionOp) )
+		if( !(that instanceof DnnOp) )
 			return false;
 		
-		ConvolutionOp that2 = (ConvolutionOp)that;
+		DnnOp that2 = (DnnOp)that;
 		
 		boolean ret =  (op == that2.op)
 				    && (getInput().size()==that.getInput().size())
@@ -800,17 +796,6 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		
 		return ret;
 	}
-
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	
 	// ------------------------------------------------------------------------------------------------------
 	// Utility methods to get the dimensions taking into account unknown dimensions
@@ -822,7 +807,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == ConvOp.BIAS_ADD || op == ConvOp.BIAS_MULTIPLY) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
 			throw new RuntimeException("getDim method should not be invoked for bias_add and bias_multiply");
 		}
 		try {
@@ -835,22 +820,22 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		Hop dout = null;	// shape: N x KPQ
 		Hop dout1 = null;	// shape: N x CPQ
 		
-		if(getOp() == ConvOp.CONV2D) {
+		if(getOp() == OpOpDnn.CONV2D) {
 			input  = getInput().get(0);
 			filter = getInput().get(1);
 		}
-		else if(getOp() == ConvOp.CONV2D_BACKWARD_DATA) {
+		else if(getOp() == OpOpDnn.CONV2D_BACKWARD_DATA) {
 			filter = getInput().get(0);
 			dout  = getInput().get(1);
 		}
-		else if(getOp() == ConvOp.CONV2D_BACKWARD_FILTER) {
+		else if(getOp() == OpOpDnn.CONV2D_BACKWARD_FILTER) {
 			input = getInput().get(0);
 			dout  = getInput().get(1);
 		}
-		else if(getOp() == ConvOp.MAX_POOL || getOp() == ConvOp.AVG_POOL) {
+		else if(getOp() == OpOpDnn.MAX_POOL || getOp() == OpOpDnn.AVG_POOL) {
 			input = getInput().get(0);
 		}
-		else if(getOp() == ConvOp.MAX_POOL_BACKWARD || getOp() == ConvOp.AVG_POOL_BACKWARD) {
+		else if(getOp() == OpOpDnn.MAX_POOL_BACKWARD || getOp() == OpOpDnn.AVG_POOL_BACKWARD) {
 			input = getInput().get(0);
 			dout1  = getInput().get(1);
 		}
@@ -906,7 +891,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 		}
 		
 		if(LOG.isDebugEnabled() && ret < 0) {
-			LOG.debug("Unknown dimension " + dimString + " for ConvolutionOp:" + op.name() + 
+			LOG.debug("Unknown dimension " + dimString + " for DnnOp:" + op.name() + 
 					" img_dim=[" + _cachedParams.N + " " + _cachedParams.C + " " + _cachedParams.H + " " + _cachedParams.W + "]" +
 					" filter_dim=[" + _cachedParams.K + " " + _cachedParams.C + " " + _cachedParams.R + " " + _cachedParams.S + "]" + 
 					" output_feature_map=[" + _cachedParams.P + " " + _cachedParams.Q + "] stride=[" + _cachedParams.stride_h + " " + _cachedParams.stride_w + "]" +
@@ -930,7 +915,7 @@ public class ConvolutionOp extends Hop  implements MultiThreadedHop
 	private static long getNonNegative(long val1, long val2) {
 		if(val1 >= 0 && val2 >= 0) {
 			if(val1 == val2) return val1;
-			else throw new RuntimeException("Incorrect dimensions in Convolution Hop: " + val1 + " != " + val2);
+			else throw new RuntimeException("Incorrect dimensions in DnnOp: " + val1 + " != " + val2);
 		}
 		else if(val1 >= 0) return val1;
 		else if(val2 >= 0) return val2;

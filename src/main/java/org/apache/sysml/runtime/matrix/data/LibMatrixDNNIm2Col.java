@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
  */
 public class LibMatrixDNNIm2Col 
 {
-	public static void im2col(MatrixBlock in, MatrixBlock out, int r, ConvolutionParameters params, boolean trans) {
+	public static void im2col(MatrixBlock in, MatrixBlock out, int r, DnnParameters params, boolean trans) {
 		im2col(in, out, r, params.C, params.R, params.S, params.H, params.W, params.P, params.Q,
 			params.stride_h, params.stride_w, params.pad_h, params.pad_w, trans);
 	}
@@ -193,7 +193,7 @@ public class LibMatrixDNNIm2Col
 	// Therefore, it is provided as utility function rather than an operator (like im2col or rotate180)
 	
 	//Converts input: PQ X CRS matrix and writes to 1 X CHW
-	public static void col2imOverSingleImage(int outputN, MatrixBlock input, ConvolutionParameters params) {
+	public static void col2imOverSingleImage(int outputN, MatrixBlock input, DnnParameters params) {
 		if(input.rlen != params.P*params.Q || input.clen != params.C*params.R*params.S) {
 			throw new DMLRuntimeException("Incorrect input dimensions");
 		}
@@ -242,7 +242,7 @@ public class LibMatrixDNNIm2Col
 	
 	// Converts input: PQ X CRS matrix and writes to 1 X CHW if inputN == 0
 	// Or converts input: NPQ X CRS matrix and writes to N X CHW 
-	private static void col2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, ConvolutionParameters params) {
+	private static void col2IMDenseInput(int inputN, int outputN, double [] inputArray, double [] outputArray, DnnParameters params) {
 		final int outputNOffset = outputN*params.C*params.H*params.W;
 		final int HW = params.H*params.W;
 		final int inputNPQ = inputN*params.P*params.Q;

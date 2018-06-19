@@ -31,12 +31,15 @@ import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
+import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.Hop.AggOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOp3;
+import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.ParamBuiltinOp;
 import org.apache.sysml.hops.IndexingOp;
@@ -85,7 +88,9 @@ public class TemplateCell extends TemplateBase
 				&& (((IndexingOp)hop).isColLowerEqualsUpper() || hop.getDim2()==1))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(hop, DataGenMethod.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(hop, true))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
 	@Override
@@ -97,7 +102,9 @@ public class TemplateCell extends TemplateBase
 				&& HopRewriteUtils.isTransposeOperation(hop.getInput().get(0))
 			|| (HopRewriteUtils.isTransposeOperation(hop) 
 				&& hop.getDim1()==1 && hop.getDim2()>1))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
 	@Override
@@ -108,7 +115,9 @@ public class TemplateCell extends TemplateBase
 				&& HopRewriteUtils.isTransposeOperation(input))))
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
-			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix());
+			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
+				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown());
 	}
 
 	@Override
@@ -226,7 +235,16 @@ public class TemplateCell extends TemplateBase
 			out = new CNodeTernary(cdata1, cdata2, cdata3, 
 				TernaryType.valueOf(top.getOp().name()));
 		}
-		else if(HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX)) {
+		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT) ) {
+			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
+			cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
+			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
+			long c = hop.getInput().get(0).getDim2() / hop.getInput().get(1).getDim1();
+			CNode cdata3 = TemplateUtils.createCNodeData(new LiteralOp(c), true);
+			out = new CNodeTernary(cdata1, cdata2, cdata3,
+				TernaryType.valueOf(((DnnOp)hop).getOp().name()));
+		}
+		else if( HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) ) {
 			String op = ((NaryOp)hop).getOp().name();
 			CNode[] inputs = hop.getInput().stream().map(c -> 
 				TemplateUtils.wrapLookupIfNecessary(tmp.get(c.getHopID()), c)).toArray(CNode[]::new);
@@ -298,6 +316,10 @@ public class TemplateCell extends TemplateBase
 				out = new CNodeBinary(cdata1, cdata2, BinType.MULT);
 			}
 		} 
+	
+		if( out == null ) {
+			throw new HopsException(hop.getHopID()+" "+hop.getOpString());
+		}
 		
 		tmp.put(hop.getHopID(), out);
 	}

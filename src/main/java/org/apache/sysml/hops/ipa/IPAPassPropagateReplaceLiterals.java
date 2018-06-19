@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.ipa;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
@@ -77,7 +78,10 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		
 		//step 2: propagate literals into functions
 		for( String fkey : fgraph.getReachableFunctions() ) {
-			FunctionOp first = fgraph.getFunctionCalls(fkey).get(0);
+			List<FunctionOp> flist = fgraph.getFunctionCalls(fkey);
+			if( flist.isEmpty() ) //robustness removed functions
+				continue;
+			FunctionOp first = flist.get(0);
 			
 			//propagate and replace amenable literals into function
 			if( fcallSizes.hasSafeLiterals(fkey) ) {

@@ -37,7 +37,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBina
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
-import org.apache.sysml.runtime.matrix.data.ConvolutionParameters;
+import org.apache.sysml.runtime.matrix.data.DnnParameters;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
@@ -46,12 +46,12 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.runtime.util.ConvolutionUtils;
+import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.utils.NativeHelper;
 
 import scala.Tuple2;
 
-public class ConvolutionSPInstruction extends UnarySPInstruction {
+public class DnnSPInstruction extends UnarySPInstruction {
 	private CPOperand _in2;
 	private CPOperand _in3;
 	private ArrayList<CPOperand> _input_shape;
@@ -59,20 +59,20 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 	private ArrayList<CPOperand> _stride = new ArrayList<>();
 	private ArrayList<CPOperand> _padding = new ArrayList<>();
 
-	private ConvolutionSPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
+	private DnnSPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Dnn, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_stride = stride;
 		_padding = padding;
 		_input_shape = input_shape;
 		_filter_shape = filter_shape;
 	}
 
-	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
+	private DnnSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Dnn, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_stride = stride;
 		_padding = padding;
@@ -80,10 +80,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_filter_shape = filter_shape;
 	}
 
-	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
+	private DnnSPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape) {
-		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+		super(SPType.Dnn, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
 		_stride = stride;
@@ -92,12 +92,12 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		_filter_shape = filter_shape;
 	}
 
-	private ConvolutionSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(SPType.Convolution, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
+	private DnnSPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(SPType.Dnn, new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, istr);
 		_in2 = in2;
 	}
 
-	public static ConvolutionSPInstruction parseInstruction( String str ) {
+	public static DnnSPInstruction parseInstruction( String str ) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
@@ -128,7 +128,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			filter_shape.add(new CPOperand(parts[12]));
 			filter_shape.add(new CPOperand(parts[13]));
 
-			return new ConvolutionSPInstruction(in, out, opcode, str, stride,
+			return new DnnSPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		} 
 		else if (opcode.equalsIgnoreCase("maxpooling_backward")
@@ -161,7 +161,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			filter_shape.add(new CPOperand(parts[13]));
 			filter_shape.add(new CPOperand(parts[14]));
 
-			return new ConvolutionSPInstruction(in, in2, out, opcode, str, stride,
+			return new DnnSPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
 		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
@@ -193,7 +193,7 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			filter_shape.add(new CPOperand(parts[14]));
 			filter_shape.add(new CPOperand(parts[15]));
 
-			return new ConvolutionSPInstruction(in, in2, in3, out, opcode, str, stride,
+			return new DnnSPInstruction(in, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
 		else if (opcode.equalsIgnoreCase("bias_add")) {
@@ -202,10 +202,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 			in2.split(parts[2]);
 			out.split(parts[3]);
-			return new ConvolutionSPInstruction(in, in2, out, opcode, str);
+			return new DnnSPInstruction(in, in2, out, opcode, str);
 		}
 		else {
-			throw new DMLRuntimeException("Unknown opcode while parsing a ConvolutionCPInstruction: " + str);
+			throw new DMLRuntimeException("Unknown opcode while parsing a DnnCPInstruction: " + str);
 		}
 	}
 	
@@ -266,10 +266,10 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 			int K = getScalarInput(ec, _filter_shape, 0);
 			int R = getScalarInput(ec, _filter_shape, 2);
 			int S = getScalarInput(ec, _filter_shape, 3);
-			int P = (int) ConvolutionUtils.getP(H, R, stride_h, pad_h);
-			int Q = (int) ConvolutionUtils.getQ(W, S, stride_w, pad_w);
+			int P = (int) DnnUtils.getP(H, R, stride_h, pad_h);
+			int Q = (int) DnnUtils.getQ(W, S, stride_w, pad_w);
 			
-			ConvolutionParameters params = new ConvolutionParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
+			DnnParameters params = new DnnParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
 			boolean enableNativeBLAS = NativeHelper.isNativeLibraryLoaded(); 
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = inputRDD.mapPartitionsToPair(new RDDConv2dMapMMFunction(filterBroadcast, params, instOpcode, biasBroadcast, mcRdd.getRows(), enableNativeBLAS), true);
 			
@@ -303,11 +303,11 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = -2106155380020232155L;
 		Broadcast<MatrixBlock> filterBroadcast = null;
 		Broadcast<MatrixBlock> biasBroadcast = null;
-		ConvolutionParameters params = null;
+		DnnParameters params = null;
 		String instOpcode = null; boolean enableNative;
 		long numRows = 0;
 		public RDDConv2dMapMMFunction(Broadcast<MatrixBlock> filterBroadcast, 
-				ConvolutionParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast, long numRows, boolean enableNativeBLAS) {
+				DnnParameters params, String instOpcode, Broadcast<MatrixBlock> biasBroadcast, long numRows, boolean enableNativeBLAS) {
 			this.filterBroadcast = filterBroadcast;
 			this.params = params;
 			this.instOpcode = instOpcode;
@@ -377,12 +377,12 @@ public class ConvolutionSPInstruction extends UnarySPInstruction {
 		public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(
 				Iterator<Tuple2<MatrixIndexes, MatrixBlock>> arg0)
 				throws Exception {
-			return new MapsideConvolutionPartitionIterator(arg0);
+			return new MapsideDnnPartitionIterator(arg0);
 		}
 		
 		// Avoid materialization of partitions
-		private class MapsideConvolutionPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> {
-			public MapsideConvolutionPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
+		private class MapsideDnnPartitionIterator extends LazyIterableIterator<Tuple2<MatrixIndexes, MatrixBlock>> {
+			public MapsideDnnPartitionIterator(Iterator<Tuple2<MatrixIndexes, MatrixBlock>> in) {
 				super(in);
 			}
 

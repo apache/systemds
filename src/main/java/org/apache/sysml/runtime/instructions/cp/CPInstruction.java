@@ -34,7 +34,7 @@ public abstract class CPInstruction extends Instruction
 		MultiReturnParameterizedBuiltin, ParameterizedBuiltin, MultiReturnBuiltin,
 		Builtin, Reorg, Variable, External, Append, Rand, QSort, QPick,
 		MatrixIndexing, MMTSJ, PMMJ, MMChain, MatrixReshape, Partition, Compression, SpoofFused,
-		StringInit, CentralMoment, Covariance, UaggOuterChain, Convolution }
+		StringInit, CentralMoment, Covariance, UaggOuterChain, Dnn }
 	
 	protected final CPType _cptype;
 	protected final Operator _optr;

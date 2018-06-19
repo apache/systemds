@@ -34,7 +34,7 @@ public class LibMatrixDNNRelu
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing relu backward operation
 	 */
-	public static ArrayList<Callable<Long>> getReluBackwardWorkers(ConvolutionParameters params) {
+	public static ArrayList<Callable<Long>> getReluBackwardWorkers(DnnParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		int k = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		int taskSize = (int)(Math.ceil((double)params.N / k));
@@ -49,8 +49,8 @@ public class LibMatrixDNNRelu
 	public static class ReluBackward implements Callable<Long>
 	{
 		public final int _rl, _ru; 
-		private final ConvolutionParameters _params;
-		public ReluBackward(int rl, int ru, ConvolutionParameters params) {
+		private final DnnParameters _params;
+		public ReluBackward(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}

@@ -28,7 +28,7 @@ public class LibMatrixDNNRotate180
 	public static interface Rotate180Worker {
 		public void execute(int inputN, int outputN);
 		public static Rotate180Worker getWorker(MatrixBlock in, MatrixBlock out,
-			ConvolutionParameters params, boolean zeroOutSparseOutput, boolean trans) {
+			DnnParameters params, boolean zeroOutSparseOutput, boolean trans) {
 			return in.isInSparseFormat() ?
 				new SparseRotate180Worker(in, out, params, trans) :
 				new DenseRotate180Worker(in, out, params);
@@ -40,8 +40,8 @@ public class LibMatrixDNNRotate180
 	 */
 	private static class DenseRotate180Worker implements Rotate180Worker {
 		private final DenseBlock in, out;
-		private final ConvolutionParameters params;
-		public DenseRotate180Worker(MatrixBlock input, MatrixBlock output, ConvolutionParameters params) {
+		private final DnnParameters params;
+		public DenseRotate180Worker(MatrixBlock input, MatrixBlock output, DnnParameters params) {
 			this.in = input.getDenseBlock();
 			this.out = output.getDenseBlock();
 			this.params = params;
@@ -68,11 +68,11 @@ public class LibMatrixDNNRotate180
 	 */
 	private static class SparseRotate180Worker implements Rotate180Worker {
 		private final MatrixBlock in, out;
-		private final ConvolutionParameters params;
+		private final DnnParameters params;
 		private final boolean trans;
 		
 		public SparseRotate180Worker(MatrixBlock input, MatrixBlock output,
-			ConvolutionParameters params, boolean trans) {
+			DnnParameters params, boolean trans) {
 			this.in = input;
 			this.out = output;
 			this.params = params;

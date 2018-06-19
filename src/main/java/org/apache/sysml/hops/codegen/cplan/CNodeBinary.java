@@ -48,7 +48,8 @@ public class CNodeBinary extends CNode
 		//vector-vector operations
 		VECT_MULT, VECT_DIV, VECT_MINUS, VECT_PLUS, VECT_MIN, VECT_MAX, VECT_EQUAL, 
 		VECT_NOTEQUAL, VECT_LESS, VECT_LESSEQUAL, VECT_GREATER, VECT_GREATEREQUAL,
-		VECT_XOR, VECT_BITWAND,
+		VECT_XOR, VECT_BITWAND, 
+		VECT_BIASADD, VECT_BIASMULT,
 		//scalar-scalar operations
 		MULT, DIV, PLUS, MINUS, MODULUS, INTDIV, 
 		LESS, LESSEQUAL, GREATER, GREATEREQUAL, EQUAL,NOTEQUAL,
@@ -153,6 +154,8 @@ public class CNodeBinary extends CNode
 				case VECT_PLUS:
 				case VECT_XOR:
 				case VECT_BITWAND:
+				case VECT_BIASADD:
+				case VECT_BIASMULT:
 				case VECT_MIN:
 				case VECT_MAX:
 				case VECT_EQUAL:
@@ -244,7 +247,8 @@ public class CNodeBinary extends CNode
 				|| this == VECT_EQUAL || this == VECT_NOTEQUAL
 				|| this == VECT_LESS || this == VECT_LESSEQUAL
 				|| this == VECT_GREATER || this == VECT_GREATEREQUAL
-				|| this == VECT_XOR || this == VECT_BITWAND;
+				|| this == VECT_XOR || this == VECT_BITWAND
+				|| this == VECT_BIASADD || this == VECT_BIASMULT;
 		}
 		public boolean isVectorMatrixPrimitive() {
 			return this == VECT_MATRIXMULT
@@ -394,6 +398,8 @@ public class CNodeBinary extends CNode
 			case VECT_GREATEREQUAL:        return "b(v2gte)";
 			case VECT_GREATER:             return "b(v2gt)";
 			case VECT_CBIND:               return "b(cbind)";
+			case VECT_BIASADD:             return "b(vbias+)";
+			case VECT_BIASMULT:            return "b(vbias*)";
 			case MULT:                     return "b(*)";
 			case DIV:                      return "b(/)";
 			case PLUS:                     return "b(+)";
@@ -486,6 +492,8 @@ public class CNodeBinary extends CNode
 			case VECT_LESSEQUAL:
 			case VECT_GREATER:
 			case VECT_GREATEREQUAL:
+			case VECT_BIASADD:
+			case VECT_BIASMULT:
 				boolean scalarVector = (_inputs.get(0).getDataType()==DataType.SCALAR);
 				_rows = _inputs.get(scalarVector ? 1 : 0)._rows;
 				_cols = _inputs.get(scalarVector ? 1 : 0)._cols;

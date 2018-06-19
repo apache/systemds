@@ -22,8 +22,8 @@ package org.apache.sysml.hops.codegen;
 import java.util.ArrayList;
 
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.MemoTable;
+import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -33,7 +33,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.codegen.SpoofRowwise;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
-public class SpoofFusedOp extends Hop implements MultiThreadedHop
+public class SpoofFusedOp extends MultiThreadedHop
 {
 	public enum SpoofOutputDimsType {
 		INPUT_DIMS,
@@ -52,7 +52,6 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 	
 	private Class<?> _class = null;
 	private boolean _distSupported = false;
-	private int _numThreads = -1;
 	private long _constDim2 = -1;
 	private SpoofOutputDimsType _dimsType;
 	
@@ -69,16 +68,6 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 
 	@Override
 	public void checkArity() {}
-
-	@Override
-	public void setMaxNumThreads(int k) {
-		_numThreads = k;
-	}
-
-	@Override
-	public int getMaxNumThreads() {
-		return _numThreads;
-	}
 
 	@Override
 	public boolean allowsAllExecTypes() {
@@ -113,7 +102,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		for( Hop c : getInput() )
 			inputs.add(c.constructLops());
 		
-		int k = OptimizerUtils.getConstrainedNumThreads(_numThreads);
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		SpoofFused lop = new SpoofFused(inputs, getDataType(), getValueType(), _class, k, et);
 		setOutputDimensions(lop);
 		setLineNumbers(lop);
@@ -127,7 +116,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		if( _etypeForced != null ) {		
+		if( _etypeForced != null ) {
 			_etype = _etypeForced;
 		}
 		else {
@@ -285,7 +274,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		//copy specific attributes
 		ret._class = _class;
 		ret._distSupported = _distSupported;
-		ret._numThreads = _numThreads;
+		ret._maxNumThreads = _maxNumThreads;
 		ret._constDim2 = _constDim2;
 		ret._dimsType = _dimsType;
 		return ret;
@@ -301,7 +290,7 @@ public class SpoofFusedOp extends Hop implements MultiThreadedHop
 		//note: class implies dims type as well
 		boolean ret = ( _class.equals(that2._class)
 				&& _distSupported == that2._distSupported
-				&& _numThreads == that2._numThreads
+				&& _maxNumThreads == that2._maxNumThreads
 				&& _constDim2 == that2._constDim2
 				&& getInput().size() == that2.getInput().size());
 		

@@ -35,19 +35,11 @@ import org.apache.sysml.runtime.util.DataConverter;
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
 public class DataPartitionerDRR extends DataPartitioner {
-	@Override
-	public void doPartitioning(List<LocalPSWorker> workers, MatrixObject features, MatrixObject labels) {
-		List<MatrixObject> pfs = IntStream.range(0, workers.size())
-			.mapToObj(i -> removeEmpty(features, workers.size(), i)).collect(Collectors.toList());
-		List<MatrixObject> pls = IntStream.range(0, workers.size())
-			.mapToObj(i -> removeEmpty(labels, workers.size(), i)).collect(Collectors.toList());
-		setPartitionedData(workers, pfs, pls);
-	}
 
 	private MatrixObject removeEmpty(MatrixObject mo, int k, int workerId) {
 		MatrixObject result = ParamservUtils.newMatrixObject();
 		MatrixBlock tmp = mo.acquireRead();
-		double[] data = LongStream.range(0, mo.getNumRows())
+		double[] data = LongStream.range(1, mo.getNumRows() + 1)
 			.mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
 		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
 		MatrixBlock resultMB = tmp.removeEmptyOperations(new MatrixBlock(), true, true, select);
@@ -56,5 +48,14 @@ public class DataPartitionerDRR extends DataPartitioner {
 		result.release();
 		result.enableCleanup(false);
 		return result;
+	}
+
+	@Override
+	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+		List<MatrixObject> pfs = IntStream.range(0, workersNum)
+	  		.mapToObj(i -> removeEmpty(features, workersNum, i)).collect(Collectors.toList());
+		List<MatrixObject> pls = IntStream.range(0, workersNum)
+		    .mapToObj(i -> removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
+		return new Result(pfs, pls);
 	}
 }

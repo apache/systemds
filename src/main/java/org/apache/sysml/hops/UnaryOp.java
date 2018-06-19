@@ -22,7 +22,6 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
@@ -48,12 +47,9 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
  * 		Semantic: given a value, perform the operation (independent of other values)
  */
 
-public class UnaryOp extends Hop implements MultiThreadedHop
+public class UnaryOp extends MultiThreadedHop
 {
 	private OpOp1 _op = null;
-	
-	private int _maxNumThreads = -1; //-1 for unlimited
-	
 	
 	private UnaryOp() {
 		//default constructor for clone
@@ -87,16 +83,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		return s;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	@Override
 	public boolean isGPUEnabled() {
 		if(!DMLScript.USE_ACCELERATOR)
@@ -698,16 +684,18 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
+		Hop input = getInput().get(0);
 		if ( getDataType() == DataType.SCALAR )  {
 			//do nothing always known
 		}
 		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME
-			|| _op == OpOp1.CAST_AS_SCALAR) && getInput().get(0).getDataType()==DataType.LIST ){
-			setDim1( -1 );
-			setDim2( -1 );
+			|| _op == OpOp1.CAST_AS_SCALAR) && input.getDataType()==DataType.LIST ){
+			//handle two cases of list of scalars or list of single matrix
+			setDim1( input.getLength() > 1 ? input.getLength() : -1 );
+			setDim2( input.getLength() > 1 ? 1 : -1 );
 		}
 		else if( (_op == OpOp1.CAST_AS_MATRIX || _op == OpOp1.CAST_AS_FRAME)
-			&& getInput().get(0).getDataType()==DataType.SCALAR )
+			&& input.getDataType()==DataType.SCALAR )
 		{
 			//prevent propagating 0 from scalar (which would be interpreted as unknown)
 			setDim1( 1 );
@@ -717,7 +705,6 @@ public class UnaryOp extends Hop implements MultiThreadedHop
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
 			// Dimensions of B are same as that of A, and sparsity may/maynot change
-			Hop input = getInput().get(0);
 			setDim1( input.getDim1() );
 			setDim2( input.getDim2() );
 			// cosh(0)=cos(0)=1, acos(0)=1.5707963267948966

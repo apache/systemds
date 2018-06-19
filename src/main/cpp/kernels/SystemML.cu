@@ -1987,11 +1987,7 @@ __device__ int swap_co(int offset) {
   return (offset < 2) ? offset : (offset == 2 ? 3 : 2);
 }
 
-template <typename T>
-__device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
-  int DM = D*M; int MM = M*M; int DM4 = DM*4; 
-  int M4 = M*4;
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
+__device__ void compute_lstm_weight_indexes(int index, int D, int M, int* ret) {
   // input: cbind(X_t, out_prev) => [N, D+M], weight: [D+M, 4M]
   // https://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnGetRNNLinLayerMatrixParams states that 
   // Elements in each weight matrix are arranged in the row-major order, but the column-major format works !!
@@ -1999,20 +1995,16 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
   // CuDNN weight order: w_i, w_f, w_c, w_o, r_i, r_f, r_c, r_o
   // SystemML weight order: i, f, o, c; TF weight order: i, c, f, o
   // SystemML performs (X_t %*% W + out_prev %*% R) => [N, 4*M]
-  
-  // bias layout: bi bf bc bo 0 0 0 0
-  // where W: [DxM], R: [MxM] and b: [1x1]
-  
-  // Maximum (D+M+2)*M4 threads
-  int srcIndex = -1; int destIndex;
+  int DM = D*M; int MM = M*M; int DM4 = DM*4; 
+  int M4 = M*4;
   if(index < DM4) {
     // Fill w_i, w_f, w_c and w_o
     int localIndex = index%DM;
     int smlRowIndex = localIndex/M; 
     int smlColIndex = swap_co(index/(DM))*M + localIndex%M;
     // Convert index to column-major where index = (index/(DM))*DM + (localIndex/M)*M + localIndex%M
-    destIndex = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
-    srcIndex = smlRowIndex*M4+smlColIndex;
+    ret[1] = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
+    ret[0] = smlRowIndex*M4+smlColIndex;
   }
   else if(index < (D+M)*M4) {
     // Fill r_i, r_f, r_c and r_o
@@ -2021,18 +2013,29 @@ __device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, in
     int smlRowIndex = D + (localIndex / M);
     int smlColIndex = swap_co(tmpIndex/(MM))*M + localIndex%M;
     // Convert index to column-major where index = DM4 + (tmpIndex/(MM))*MM + (localIndex/M)*M + localIndex%M
-    destIndex = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
-    srcIndex = smlRowIndex*M4+smlColIndex;
+    ret[1] = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
+    ret[0] = smlRowIndex*M4+smlColIndex;
+  }
+}
+
+template <typename T>
+__device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  // Maximum (D+M+2)*M4 threads
+  int M4 = M*4;
+  if(index < (D+M)*M4) {
+    int indexes[2];
+    compute_lstm_weight_indexes(index, D, M, indexes);
+    cudnnWeight[indexes[1]] = smlWeight[indexes[0]];
   }
   else if(index < (D+M+1)*M4) {
   	// Fill bias
+  	// bias layout: bi bf bc bo 0 0 0 0
+    // where W: [DxM], R: [MxM] and b: [1x1]
 	int tmpIndex = index - (D+M)*M4;
 	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
 	cudnnWeight[index] = smlBias[smlColIndex];
   }
-  // __syncthreads();
-  if(srcIndex != -1)
-  	cudnnWeight[destIndex] = smlWeight[srcIndex];
 }
 
 extern "C" __global__ void prepare_lstm_weight_d(double* smlWeight, double* smlBias, double* cudnnWeight, int D, int M) {
@@ -2162,3 +2165,85 @@ extern "C" __global__ void prepare_lstm_output_d(double* smlInput, double* cudnn
 extern "C" __global__ void prepare_lstm_output_f(float* smlInput, float* cudnnInput, int N, int T, int M, int size) {
   prepare_lstm_output(smlInput, cudnnInput, N, T, M, size);
 }
+
+template <typename T>
+__device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if(index < size && return_sequences != 0) {
+		// smlDout = [N, T, M]
+		int TM = T1*M;
+		int NT = T1*N;
+		int n = index / TM;
+		int tm = index % TM;
+		int t = tm / M;
+		int m = tm % M;
+		T val = smlDout[index];
+		cudnnDy[t*N*M + n*M + m] = val;
+	}
+	else if(index < size) {
+		// smlDout = [N, T, M]
+		int n = index / M;
+		int m = index % M;
+		T val = smlDout[index];
+		cudnnDy[(T1-1)*N*M + n*M + m] = val;
+	}
+}
+
+
+extern "C" __global__ void prepare_lstm_backward_gradients_d(double* smlInput, double* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
+}
+
+extern "C" __global__ void prepare_lstm_backward_gradients_f(float* smlInput, float* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
+}
+
+template <typename T>
+__device__ void prepare_lstm_dweight(T* smldWeight, T* smldBias, T* cudnndWeight, int D, int M) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  // Maximum (D+M+2)*M4 threads
+  int M4 = M*4;
+  if(index < (D+M)*M4) {
+    int indexes[2];
+    compute_lstm_weight_indexes(index, D, M, indexes);
+    smldWeight[indexes[0]] = cudnndWeight[indexes[1]];
+  }
+  else if(index < (D+M+1)*M4) {
+  	// Fill bias
+  	// bias layout: bi bf bc bo 0 0 0 0
+    // where W: [DxM], R: [MxM] and b: [1x1]
+	int tmpIndex = index - (D+M)*M4;
+	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
+	smldBias[smlColIndex] = cudnndWeight[index];
+  }
+}
+
+extern "C" __global__ void prepare_lstm_dweight_d(double* smldWeight, double* smldBias, double* cudnndWeight, int D, int M) {
+  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
+}
+
+extern "C" __global__ void prepare_lstm_dweight_f(float* smldWeight, float* smldBias, float* cudnndWeight, int D, int M) {
+  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
+}
+
+template <typename T>
+__device__ void prepare_lstm_dinput(T* smlInput, T* cudnnInput, int N, int D, int TD, int size) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if(index < size) {
+		int n = index / TD;
+		int td = index % TD;
+		int t = td / D;
+		int d = td % D;
+		smlInput[index] = cudnnInput[t*N*D + n*D + d];
+	}
+}
+
+
+extern "C" __global__ void prepare_lstm_dinput_d(double* smlInput, double* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+}
+
+extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+}
+

@@ -96,6 +96,7 @@ public class InterProceduralAnalysis
 	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
 	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
 	protected static final int     INLINING_MAX_NUM_OPS           = 10;    //inline single-statement functions w/ #ops <= threshold, other than dataops and literals
+	protected static final boolean ELIMINATE_DEAD_CODE            = true; //remove dead code (e.g., assigments) not used later on
 	
 	static {
 		// for internal debugging only
@@ -137,6 +138,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassApplyStaticHopRewrites());
 		_passes.add(new IPAPassInlineFunctions());
+		_passes.add(new IPAPassEliminateDeadCode());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {

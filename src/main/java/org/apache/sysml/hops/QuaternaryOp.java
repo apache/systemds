@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
@@ -57,13 +56,12 @@ import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
  * however, since there does not exist a real QuaternaryOp yet - we can leave it as is for now. 
  */
-public class QuaternaryOp extends Hop implements MultiThreadedHop
+public class QuaternaryOp extends MultiThreadedHop
 {
 	//config influencing mr operator selection (for testing purposes only) 
 	public static boolean FORCE_REPLICATION = false;
 	
 	private OpOp4 _op = null;
-	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	//wsloss-specific attributes
 	private boolean _postWeights = false;
@@ -177,16 +175,6 @@ public class QuaternaryOp extends Hop implements MultiThreadedHop
 		return _op;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	@Override
 	public boolean isGPUEnabled() {
 		return false;

@@ -21,7 +21,6 @@ package org.apache.sysml.hops;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.Hop.MultiThreadedHop;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Binary;
@@ -63,7 +62,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
 
-public class AggBinaryOp extends Hop implements MultiThreadedHop
+public class AggBinaryOp extends MultiThreadedHop
 {
 	public static final double MAPMULT_MEM_MULTIPLIER = 1.0;
 	public static MMultMethod FORCED_MMULT_METHOD = null;
@@ -95,7 +94,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	
 	//hints set by previous to operator selection
 	private boolean _hasLeftPMInput = false; //left input is permutation matrix
-	private int _maxNumThreads = -1; //-1 for unlimited
 	
 	private AggBinaryOp() {
 		//default constructor for clone
@@ -128,16 +126,6 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 		return _hasLeftPMInput;
 	}
 
-	@Override
-	public void setMaxNumThreads( int k ) {
-		_maxNumThreads = k;
-	}
-	
-	@Override
-	public int getMaxNumThreads() {
-		return _maxNumThreads;
-	}
-	
 	public MMultMethod getMMultMethod(){
 		return _method;
 	}
@@ -1819,14 +1807,14 @@ public class AggBinaryOp extends Hop implements MultiThreadedHop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		AggBinaryOp ret = new AggBinaryOp();	
+		AggBinaryOp ret = new AggBinaryOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
 		
 		//copy specific attributes
 		ret.innerOp = innerOp;
-		ret.outerOp = outerOp;		
+		ret.outerOp = outerOp;
 		ret._hasLeftPMInput = _hasLeftPMInput;
 		ret._maxNumThreads = _maxNumThreads;
 		

@@ -242,7 +242,8 @@ public class LibMatrixMult
 	 */
 	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct) {
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
+		if( mX.isEmptyBlock(false) || (mV.isEmptyBlock(false) && ct!=ChainType.XtXvy)
+			|| (mW !=null && mW.isEmptyBlock(false)) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
@@ -283,7 +284,8 @@ public class LibMatrixMult
 	 */
 	public static void matrixMultChain(MatrixBlock mX, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, ChainType ct, int k) {
 		//check inputs / outputs (after that mV and mW guaranteed to be dense)
-		if( mX.isEmptyBlock(false) || mV.isEmptyBlock(false) || (mW !=null && mW.isEmptyBlock(false)) ) {
+		if( mX.isEmptyBlock(false) || (mV.isEmptyBlock(false) && ct!=ChainType.XtXvy)
+			|| (mW !=null && mW.isEmptyBlock(false)) ) {
 			ret.examSparsity(); //turn empty dense into sparse
 			return;
 		}
@@ -1301,7 +1303,9 @@ public class LibMatrixMult
 			int k2 = (ru==cd) ? alen : a.posFIndexGTE(i, ru);
 			k2 = (k2>=0) ? apos+k2 : apos+alen;
 			
-			if( k1<apos+alen && b.isContiguous(aix[k1], aix[k2-1]) ) {
+			//note: guard k1 (and thus also k2) against overrun nnz, and guard
+			//contiguous check for k2-1 against underrun of start pos for k1==k2.
+			if( k1<apos+alen && (k1==k2 || b.isContiguous(aix[k1], aix[k2-1])) ) {
 				double[] bvals = b.values(aix[k1]);
 				int base = aix[k1]*n - b.pos(aix[k1]);
 				//rest not aligned to blocks of 4 rows
@@ -1612,7 +1616,8 @@ public class LibMatrixMult
 		for( int i=rl; i < rl+bn; i++ ) {
 			double[] avals = a.values(i);
 			int aix = a.pos(i);
-			double val = dotProduct(avals, b, aix, 0, cd);
+			double val = (b == null) ? 0 :
+				dotProduct(avals, b, aix, 0, cd);
 			val *= (weights) ? w[i] : 1;
 			val -= (weights2) ? w[i] : 0;
 			vectMultiplyAdd(val, avals, c, aix, 0, cd);
@@ -1623,10 +1628,12 @@ public class LibMatrixMult
 		{
 			//compute 1st matrix-vector for row block
 			Arrays.fill(tmp, 0);
-			for( int bj=0; bj<cd; bj+=blocksizeJ ) {
-				int bjmin = Math.min(cd-bj, blocksizeJ);
-				for( int i=0; i < blocksizeI; i++ )
-					tmp[i] += dotProduct(a.values(bi+i), b, a.pos(bi+i,bj), bj, bjmin);
+			if( b != null ) {
+				for( int bj=0; bj<cd; bj+=blocksizeJ ) {
+					int bjmin = Math.min(cd-bj, blocksizeJ);
+					for( int i=0; i < blocksizeI; i++ )
+						tmp[i] += dotProduct(a.values(bi+i), b, a.pos(bi+i,bj), bj, bjmin);
+				}
 			}
 			
 			//multiply/subtract weights (in-place), if required
@@ -1671,7 +1678,8 @@ public class LibMatrixMult
 			double[] avals = a.values(i);
 			
 			//compute 1st matrix-vector dot product
-			double val = dotProduct(avals, b, aix, apos, 0, alen);
+			double val = (b == null) ? 0 :
+				dotProduct(avals, b, aix, apos, 0, alen);
 			
 			//multiply/subtract weights, if required
 			val *= (weights) ? w[i] : 1;

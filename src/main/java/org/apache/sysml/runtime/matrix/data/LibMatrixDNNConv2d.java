@@ -40,7 +40,7 @@ public class LibMatrixDNNConv2d
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d
 	 */
-	public static ArrayList<Callable<Long>> getConv2dWorkers(ConvolutionParameters params) {
+	public static ArrayList<Callable<Long>> getConv2dWorkers(DnnParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create twice as many tasks as threads for improved load balance
@@ -85,7 +85,7 @@ public class LibMatrixDNNConv2d
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d backward filter
 	 */
-	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(ConvolutionParameters params) {
+	public static ArrayList<Callable<Long>> getConv2dBackwardFilterWorkers(DnnParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		// Try to create as many tasks as threads. 
 		// Creating more tasks will help in tail, but would have additional overhead of maintaining the intermediate
@@ -121,7 +121,7 @@ public class LibMatrixDNNConv2d
 	 * @param params convolution parameters
 	 * @return list of callable tasks for performing conv2d backward data
 	 */
-	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(ConvolutionParameters params) {
+	public static ArrayList<Callable<Long>> getConv2dBackwardDataWorkers(DnnParameters params) {
 		ArrayList<Callable<Long>> ret = new ArrayList<>();
 		
 		// Try to create as many tasks as threads. 
@@ -157,9 +157,9 @@ public class LibMatrixDNNConv2d
 	private static class LoopedIm2ColConv2dAllChan implements Callable<Long> 
 	{
 		protected final int _rl, _ru; 
-		protected final ConvolutionParameters _params;
+		protected final DnnParameters _params;
 		
-		public LoopedIm2ColConv2dAllChan(int rl, int ru, ConvolutionParameters params) {
+		public LoopedIm2ColConv2dAllChan(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -254,7 +254,7 @@ public class LibMatrixDNNConv2d
 	 */
 	private static class LoopedIm2ColConv2dTransAllChan extends LoopedIm2ColConv2dAllChan
 	{
-		public LoopedIm2ColConv2dTransAllChan(int rl, int ru, ConvolutionParameters params) {
+		public LoopedIm2ColConv2dTransAllChan(int rl, int ru, DnnParameters params) {
 			super(rl, ru, params);
 		}
 
@@ -327,8 +327,8 @@ public class LibMatrixDNNConv2d
 	private static class SparseNativeConv2d implements Callable<Long> 
 	{
 		public final int _rl, _ru; 
-		private final ConvolutionParameters _params;
-		public SparseNativeConv2d(int rl, int ru, ConvolutionParameters params) {
+		private final DnnParameters _params;
+		public SparseNativeConv2d(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -363,8 +363,8 @@ public class LibMatrixDNNConv2d
 	private static class SparseNativeConv2dBackwardDataDense implements Callable<Long> 
 	{
 		public final int _rl, _ru; 
-		private final ConvolutionParameters _params; 
-		public SparseNativeConv2dBackwardDataDense(int rl, int ru, ConvolutionParameters params) {
+		private final DnnParameters _params; 
+		public SparseNativeConv2dBackwardDataDense(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -395,8 +395,8 @@ public class LibMatrixDNNConv2d
 	private static class Conv2dBackwardData implements Callable<Long> {
 
 		public final int _rl, _ru; 
-		private final ConvolutionParameters _params; 
-		public Conv2dBackwardData(int rl, int ru, ConvolutionParameters params) {
+		private final DnnParameters _params; 
+		public Conv2dBackwardData(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -448,8 +448,8 @@ public class LibMatrixDNNConv2d
 	private static class SparseNativeConv2dBackwardFilterDense implements Callable<Long> 
 	{
 		public final int _rl, _ru;
-		private final ConvolutionParameters _params;
-		public SparseNativeConv2dBackwardFilterDense(int rl, int ru, ConvolutionParameters params) {
+		private final DnnParameters _params;
+		public SparseNativeConv2dBackwardFilterDense(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -487,9 +487,9 @@ public class LibMatrixDNNConv2d
 	 */
 	private static class Conv2dBackwardFilter implements Callable<Long> {
 		private final int _rl, _ru; 
-		private final ConvolutionParameters _params; 
+		private final DnnParameters _params; 
 		
-		public Conv2dBackwardFilter(int rl, int ru, ConvolutionParameters params) {
+		public Conv2dBackwardFilter(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -539,9 +539,9 @@ public class LibMatrixDNNConv2d
 	
 	private static class Conv2dBackwardFilterTrans implements Callable<Long> {
 		private final int _rl, _ru; 
-		private final ConvolutionParameters _params;
+		private final DnnParameters _params;
 		
-		public Conv2dBackwardFilterTrans(int rl, int ru, ConvolutionParameters params) {
+		public Conv2dBackwardFilterTrans(int rl, int ru, DnnParameters params) {
 			_rl = rl; _ru = ru;
 			_params = params;
 		}
@@ -590,13 +590,13 @@ public class LibMatrixDNNConv2d
 		}
 	}
 	
-	private static void inplaceAdd(double[] a, ConvolutionParameters params) {
+	private static void inplaceAdd(double[] a, DnnParameters params) {
 		synchronized (params.output.denseBlock) {
 			LibMatrixMult.vectAdd(a, params.output.getDenseBlockValues(), 0, 0, a.length);
 		}
 	}
 	
-	private static void inplaceTransAdd(double[] a, ConvolutionParameters params) {
+	private static void inplaceTransAdd(double[] a, DnnParameters params) {
 		synchronized (params.output.denseBlock) {
 			// Perform transposed addition: output of size [K, CRS] += input of size [CRS,K]
 			double [] c = params.output.getDenseBlockValues();
@@ -646,20 +646,20 @@ public class LibMatrixDNNConv2d
 	// ----------------------------------------------------------------------------------------------
 	// TODO: Support sparse native convolution operations without dense intermediates + dense matmult
 	// Currently, it will fall back to more optimized sparse Java-based operators.
-	private static boolean isEligibleForConv2dBackwardFilterSparseDense(ConvolutionParameters params) {
+	private static boolean isEligibleForConv2dBackwardFilterSparseDense(DnnParameters params) {
 		// NativeHelper.conv2dBackwardFilterSparseDense only if input is sparse. 
 		// dout converted to dense if sparse.
 		// return params.enableNative && params.input1.isInSparseFormat();
 		return false;
 	}
 	
-	private static boolean isEligibleForConv2dSparse(ConvolutionParameters params) {
+	private static boolean isEligibleForConv2dSparse(DnnParameters params) {
 		// NativeHelper.conv2dSparse only if filter is dense and input is sparse
 		// return params.enableNative && params.input1.isInSparseFormat() && !params.input2.isInSparseFormat();
 		return false;
 	}
 	
-	private static boolean isEligibleForConv2dBackwardDataDense(ConvolutionParameters params) {
+	private static boolean isEligibleForConv2dBackwardDataDense(DnnParameters params) {
 		// NativeHelper.conv2dBackwardDataDense only if filter is dense. 
 		// dout converted to dense if sparse.
 		// return params.enableNative && !params.input1.isInSparseFormat();

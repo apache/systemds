@@ -153,7 +153,7 @@ public class LibMatrixNative
 	 * @param outputBlock output of convolution
 	 * @param params convolution parameters
 	 */
-	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, DnnParameters params) {
 		LibMatrixDNN.checkInputsConv2d(input, filter, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !input.isInSparseFormat() && !filter.isInSparseFormat()) {
@@ -215,7 +215,7 @@ public class LibMatrixNative
 		LibMatrixDNN.conv2d(input, filter, outputBlock, params);
 	}
 	
-	private static void setNumThreads(ConvolutionParameters params) {
+	private static void setNumThreads(DnnParameters params) {
 		params.numThreads = OptimizerUtils.getConstrainedNumThreads(params.numThreads);
 		if (!(params.isOutputThreadSafe() && params.numThreads > 1))
 			params.numThreads = 1;
@@ -229,7 +229,7 @@ public class LibMatrixNative
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
 	 */
-	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardFilter(input, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !input.isInSparseFormat()) {
@@ -265,7 +265,7 @@ public class LibMatrixNative
 	 * @param outputBlock  output errors
 	 * @param params convolution parameters
 	 */
-	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, ConvolutionParameters params) {
+	public static void conv2dBackwardData(MatrixBlock filter, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
 		LibMatrixDNN.checkInputsConv2dBackwardData(filter, dout, outputBlock, params);
 		params.numThreads = params.numThreads <= 0 ? NativeHelper.getMaxNumThreads() : params.numThreads;
 		if(NativeHelper.isNativeLibraryLoaded() && !dout.isInSparseFormat() && !filter.isInSparseFormat()) {

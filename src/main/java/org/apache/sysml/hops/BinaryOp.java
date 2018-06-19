@@ -37,7 +37,7 @@ import org.apache.sysml.lops.CoVariance;
 import org.apache.sysml.lops.CombineBinary;
 import org.apache.sysml.lops.CombineBinary.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
-import org.apache.sysml.lops.ConvolutionTransform;
+import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.Data;
 import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
@@ -63,9 +63,8 @@ import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
  * 		Semantic: align indices (sort), then perform operation
  */
 
-public class BinaryOp extends Hop 
+public class BinaryOp extends MultiThreadedHop
 {
-	
 	//we use the full remote memory budget (but reduced by sort buffer), 
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 	
@@ -73,7 +72,6 @@ public class BinaryOp extends Hop
 	private boolean outer = false;
 	
 	public static AppendMethod FORCED_APPEND_METHOD = null;
-	
 	
 	public enum AppendMethod { 
 		CP_APPEND, //in-memory general case append (implicitly selected for CP)
@@ -650,14 +648,14 @@ public class BinaryOp extends Hop
 				Hop potentialZero = isLeftXGt ? ((BinaryOp) getInput().get(0)).getInput().get(1) : null;
 				
 				boolean isLeftXGt0 = isLeftXGt && potentialZero != null
-						&& potentialZero instanceof LiteralOp && ((LiteralOp) potentialZero).getDoubleValue() == 0;
-						
+					&& HopRewriteUtils.isLiteralOfValue(potentialZero, 0);
+				
 				if(op == OpOp2.MULT && isLeftXGt0 && 
 					!getInput().get(0).isVector() && !getInput().get(1).isVector()
 					&& getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) {
-					binary = new ConvolutionTransform(getInput().get(0).getInput().get(0).constructLops(), 
-									getInput().get(1).constructLops(),
-									ConvolutionTransform.OperationTypes.RELU_BACKWARD, getDataType(), getValueType(), et, -1);
+					binary = new DnnTransform(getInput().get(0).getInput().get(0).constructLops(), 
+						getInput().get(1).constructLops(), DnnTransform.OperationTypes.RELU_BACKWARD,
+						getDataType(), getValueType(), et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				}
 				else
 					binary = new Binary(getInput().get(0).constructLops(), getInput().get(1).constructLops(), HopsOpOp2LopsB.get(op),
@@ -1550,13 +1548,13 @@ public class BinaryOp extends Hop
 					setNnz( lnnz1 );
 				}
 			}
-		}	
+		}
 	}
 	
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		BinaryOp ret = new BinaryOp();	
+		BinaryOp ret = new BinaryOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -1564,6 +1562,7 @@ public class BinaryOp extends Hop
 		//copy specific attributes
 		ret.op = op;
 		ret.outer = outer;
+		ret._maxNumThreads = _maxNumThreads;
 		
 		return ret;
 	}
@@ -1577,6 +1576,7 @@ public class BinaryOp extends Hop
 		BinaryOp that2 = (BinaryOp)that;
 		return (   op == that2.op
 				&& outer == that2.outer
+				&& _maxNumThreads == that2._maxNumThreads
 				&& getInput().get(0) == that2.getInput().get(0)
 				&& getInput().get(1) == that2.getInput().get(1));
 	}
@@ -1595,10 +1595,22 @@ public class BinaryOp extends Hop
 				||op==OpOp2.BITWSHIFTL ||op==OpOp2.BITWSHIFTR);
 	}
 	
-	public boolean isPPredOperation()
-	{
-		return (   op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-		         ||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-		         ||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+	public boolean isPPredOperation() {
+		return (op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
+			||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
+			||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+	}
+	
+	public OpOp2 getComplementPPredOperation() {
+		switch( op ) {
+			case LESS:         return OpOp2.GREATEREQUAL;
+			case LESSEQUAL:    return OpOp2.GREATER;
+			case GREATER:      return OpOp2.LESSEQUAL;
+			case GREATEREQUAL: return OpOp2.LESS;
+			case EQUAL:        return OpOp2.NOTEQUAL;
+			case NOTEQUAL:     return OpOp2.EQUAL;
+			default:
+				throw new HopsException("BinaryOp is not a ppred operation.");
+		}
 	}
 }

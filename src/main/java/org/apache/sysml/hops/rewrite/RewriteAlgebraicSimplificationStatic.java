@@ -175,13 +175,15 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyTransposeAggBinBinaryChains(hop, hi, i);//e.g., t(t(A)%*%t(B)+C) -> B%*%A+t(C)
 			hi = simplifyReplaceZeroOperation(hop, hi, i);       //e.g., X + (X==0) * s -> replace(X, 0, s)
 			hi = removeUnnecessaryMinus(hop, hi, i);             //e.g., -(-X)->X; potentially introduced by simplify binary or dyn rewrites
-			hi = simplifyGroupedAggregate(hi);          	     //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
+			hi = simplifyGroupedAggregate(hi);                   //e.g., aggregate(target=X,groups=y,fn="count") -> aggregate(target=y,groups=y,fn="count")
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
 				hi = fuseMinusNzBinaryOperation(hop, hi, i);         //e.g., X-mean*ppred(X,0,!=) -> X -nz mean
 				hi = fuseLogNzUnaryOperation(hop, hi, i);            //e.g., ppred(X,0,"!=")*log(X) -> log_nz(X)
 				hi = fuseLogNzBinaryOperation(hop, hi, i);           //e.g., ppred(X,0,"!=")*log(X,0.5) -> log_nz(X,0.5)
 			}
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
+			hi = simplifyBinaryComparisonChain(hop, hi, i);      //e.g., outer(v1,v2,"==")==1 -> outer(v1,v2,"=="), outer(v1,v2,"==")==0 -> outer(v1,v2,"!="), 
+			
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -1781,7 +1783,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			{
 				//determine variable parameters for pattern a/b
 				boolean isPatternB = HopRewriteUtils.isBasic1NSequence(hi.getInput().get(0));
-				boolean isTransposeRight = HopRewriteUtils.isTransposeOperation(hi.getInput().get(1));				
+				boolean isTransposeRight = HopRewriteUtils.isTransposeOperation(hi.getInput().get(1));
 				Hop trgt = isPatternB ? (isTransposeRight ? 
 						hi.getInput().get(1).getInput().get(0) :                  //get v from t(v)
 						HopRewriteUtils.createTranspose(hi.getInput().get(1)) ) : //create v via t(v')
@@ -1810,6 +1812,35 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 		}
 	
+		return hi;
+	}
+	
+	private static Hop simplifyBinaryComparisonChain(Hop parent, Hop hi, int pos) {
+		if( HopRewriteUtils.isBinaryPPred(hi) 
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(1), 0d, 1d)
+			&& HopRewriteUtils.isBinaryPPred(hi.getInput().get(0)) ) {
+			BinaryOp bop = (BinaryOp) hi;
+			BinaryOp bop2 = (BinaryOp) hi.getInput().get(0);
+			
+			//pattern: outer(v1,v2,"!=") == 1 -> outer(v1,v2,"!=")
+			if( HopRewriteUtils.isLiteralOfValue(bop.getInput().get(1), 1) ) {
+				HopRewriteUtils.replaceChildReference(parent, bop, bop2, pos);
+				HopRewriteUtils.cleanupUnreferenced(bop);
+				hi = bop2;
+				LOG.debug("Applied simplifyBinaryComparisonChain1 (line "+hi.getBeginLine()+")");
+			}
+			//pattern: outer(v1,v2,"!=") == 0 -> outer(v1,v2,"==")
+			else {
+				OpOp2 optr = bop2.getComplementPPredOperation();
+				BinaryOp tmp = HopRewriteUtils.createBinary(bop2.getInput().get(0),
+					bop2.getInput().get(1), optr, bop2.isOuterVectorOperator());
+				HopRewriteUtils.replaceChildReference(parent, bop, tmp, pos);
+				HopRewriteUtils.cleanupUnreferenced(bop, bop2);
+				hi = tmp;
+				LOG.debug("Applied simplifyBinaryComparisonChain0 (line "+hi.getBeginLine()+")");
+			}
+		}
+		
 		return hi;
 	}
 	

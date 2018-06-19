@@ -25,10 +25,8 @@ import org.apache.sysml.lops.compile.JobType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-public class ConvolutionTransform extends Lop
+public class DnnTransform extends Lop
 {
-
-	
 	public enum OperationTypes {
 		MAX_POOL, MAX_POOL_BACKWARD, AVG_POOL, AVG_POOL_BACKWARD,
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
@@ -36,9 +34,9 @@ public class ConvolutionTransform extends Lop
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS
 	}
 	
-	private OperationTypes operation = null;
-	private int numThreads = -1;
-	private double intermediateMemBudget = 0;
+	private OperationTypes operation;
+	private double intermediateMemBudget;
+	private final int numThreads;
 	
 	/**
 	 * Constructor when we have one input.
@@ -51,17 +49,17 @@ public class ConvolutionTransform extends Lop
 	 * @param k number of threads
 	 * @param intermediateMemBudget intermediate memory budget
 	 */
-	public ConvolutionTransform(Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) 
+	public DnnTransform(Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k, double intermediateMemBudget) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input, op, dt, vt, et);
 		numThreads = k;
 		this.intermediateMemBudget = intermediateMemBudget;
 	}
 	
-	public ConvolutionTransform(Lop input1, Lop input2, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
+	public DnnTransform(Lop input1, Lop input2, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
 		this.addInput(input2);
@@ -69,9 +67,9 @@ public class ConvolutionTransform extends Lop
 		setLevel();
 	}
 	
-	public ConvolutionTransform(Lop input1, Lop input2, Lop input3, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
+	public DnnTransform(Lop input1, Lop input2, Lop input3, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et, int k) 
 	{
-		super(Lop.Type.Transform, dt, vt);		
+		super(Lop.Type.Transform, dt, vt);
 		init(input1, op, dt, vt, et);
 		numThreads = k;
 		this.addInput(input2);
@@ -81,7 +79,7 @@ public class ConvolutionTransform extends Lop
 		setLevel();
 	}
 
-	private void init (Lop input, ConvolutionTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
+	private void init (Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
 	{
 		operation = op;
  

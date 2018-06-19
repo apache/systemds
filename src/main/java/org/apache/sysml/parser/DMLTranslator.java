@@ -34,14 +34,14 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.ConvolutionOp;
+import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.AggOp;
-import org.apache.sysml.hops.Hop.ConvOp;
+import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.DataGenMethod;
 import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
@@ -1338,11 +1338,8 @@ public class DMLTranslator
 					FunctionOp fcall = (target == null) ?
 						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{}, false) :
 						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()}, false);
+					fcall.setParseInfo(fci);
 					output.add(fcall);
-					
-					//TODO function output dataops (phase 3)
-					//DataOp trFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), fcall, DataOpTypes.FUNCTIONOUTPUT, null);
-					//DataOp twFoutput = new DataOp(target.getName(), target.getDataType(), target.getValueType(), trFoutput, DataOpTypes.TRANSIENTWRITE, null);					
 				}
 			}
 
@@ -1370,23 +1367,18 @@ public class DMLTranslator
 						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
+					fcall.setParseInfo(fci);
 					output.add(fcall);
-					
-					//TODO function output dataops (phase 3)
-					/*for ( DataIdentifier paramName : mas.getTargetList() ){
-						DataOp twFoutput = new DataOp(paramName.getName(), paramName.getDataType(), paramName.getValueType(), fcall, DataOpTypes.TRANSIENTWRITE, null);
-						output.add(twFoutput);
-					}*/
 				}
 				else if ( source instanceof BuiltinFunctionExpression && ((BuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
 					Hop fcall = processMultipleReturnBuiltinFunctionExpression((BuiltinFunctionExpression)source, mas.getTargetList(), ids);
-					output.add(fcall);					
+					output.add(fcall);
 				}
 				else if ( source instanceof ParameterizedBuiltinFunctionExpression && ((ParameterizedBuiltinFunctionExpression)source).multipleReturns() ) {
 					// construct input hops
 					Hop fcall = processMultipleReturnParameterizedBuiltinFunctionExpression((ParameterizedBuiltinFunctionExpression)source, mas.getTargetList(), ids);
-					output.add(fcall);					
+					output.add(fcall);
 				}
 				else
 					throw new LanguageException("Class \"" + source.getClass() + "\" is not supported in Multiple Assignment statements");
@@ -2233,6 +2225,7 @@ public class DMLTranslator
 		case LU:
 		case EIGEN:
 		case LSTM:
+		case LSTM_BACKWARD:
 		case BATCH_NORM2D:
 		case BATCH_NORM2D_BACKWARD:
 		case SVD:
@@ -2248,7 +2241,7 @@ public class DMLTranslator
 			// Create the hop for current function call
 			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
 			currBuiltinOp = fcall;
-						
+			
 			break;
 			
 		default:
@@ -2691,35 +2684,35 @@ public class DMLTranslator
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
 		
-		case BIAS_ADD:
-		case BIAS_MULTIPLY: {
+		case BIASADD:
+		case BIASMULT: {
 			ArrayList<Hop> inHops1 = new ArrayList<>();
 			inHops1.add(expr);
 			inHops1.add(expr2);
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), inHops1);
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), inHops1);
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL:
 		case MAX_POOL: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL_BACKWARD:
 		case MAX_POOL_BACKWARD: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case CONV2D:
 		case CONV2D_BACKWARD_FILTER:
 		case CONV2D_BACKWARD_DATA: {
-			currBuiltinOp = new ConvolutionOp(target.getName(), target.getDataType(), target.getValueType(),
-				ConvOp.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
+			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}

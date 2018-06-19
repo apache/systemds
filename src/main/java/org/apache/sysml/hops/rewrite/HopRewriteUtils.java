@@ -73,6 +73,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -1357,19 +1358,57 @@ public class HopRewriteUtils
 	
 	public static long getMaxInputDim(Hop hop, boolean dim1) {
 		return hop.getInput().stream().mapToLong(
-			h -> (dim1?h.getDim1():h.getDim2())).max().orElse(-1);
+			h -> (dim1 ? h.getDim1() : h.getDim2())).max().orElse(-1);
 	}
 	
 	public static long getSumValidInputDims(Hop hop, boolean dim1) {
 		if( !hasValidInputDims(hop, dim1) )
 			return -1;
 		return hop.getInput().stream().mapToLong(
-			h -> (dim1?h.getDim1():h.getDim2())).sum();
+			h -> (dim1 ? h.getDim1() : h.getDim2())).sum();
 	}
 	
 	public static boolean hasValidInputDims(Hop hop, boolean dim1) {
 		return hop.getInput().stream().allMatch(
 			h -> dim1 ? h.rowsKnown() : h.colsKnown());
+	}
+	
+	public static long getSumValidInputNnz(Hop hop) {
+		if( !hasValidInputNnz(hop) )
+			return -1;
+		return hop.getInput().stream().mapToLong(h -> h.getNnz()).sum();
+	}
+	
+	public static boolean hasValidInputNnz(Hop hop) {
+		return hop.getInput().stream().allMatch(h -> h.getNnz() >= 0);
+	}
+	
+	public static long getMaxInputDim(MatrixCharacteristics[] mc, boolean dim1) {
+		return Arrays.stream(mc).mapToLong(
+			h -> (dim1 ? h.getRows() : h.getRows())).max().orElse(-1);
+	}
+	
+	public static long getSumValidInputDims(MatrixCharacteristics[] mc, boolean dim1) {
+		if( !hasValidInputDims(mc, dim1) )
+			return -1;
+		return Arrays.stream(mc).mapToLong(
+			h -> (dim1 ? h.getRows() : h.getCols())).sum();
+	}
+	
+	public static boolean hasValidInputDims(MatrixCharacteristics[] mc, boolean dim1) {
+		return Arrays.stream(mc).allMatch(
+			h -> dim1 ? h.rowsKnown() : h.colsKnown());
+	}
+	
+	public static long getSumValidInputNnz(MatrixCharacteristics[] mc, boolean worstcase) {
+		if( !hasValidInputNnz(mc, worstcase) )
+			return -1;
+		return Arrays.stream(mc).mapToLong(h -> h.nnzKnown() ?
+			h.getNonZeros() : h.getLength()).sum();
+	}
+	
+	public static boolean hasValidInputNnz(MatrixCharacteristics[] mc, boolean worstcase) {
+		return Arrays.stream(mc).allMatch(h -> h.nnzKnown() || (worstcase && h.dimsKnown()));
 	}
 	
 	public static boolean containsSecondOrderBuiltin(ArrayList<Hop> roots) {

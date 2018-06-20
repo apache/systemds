@@ -303,7 +303,7 @@ predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size,
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
   iters = ceil(N / batch_size)
-  for(i in 1:iters) {
+  parfor(i in 1:iters, check=0) {
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1
     end = min(N, beg + batch_size - 1)

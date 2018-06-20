@@ -249,7 +249,7 @@ aggregation = function(list[unknown] model,
      modelResult = list(W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3, W4=W4, b4=b4, vW1=vW1, vW2=vW2, vW3=vW3, vW4=vW4, vb1=vb1, vb2=vb2, vb3=vb3, vb4=vb4)
    }
 
-predict = function(matrix[double] X, int C, int Hin, int Win,
+predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size,
                    matrix[double] W1, matrix[double] b1,
                    matrix[double] W2, matrix[double] b2,
                    matrix[double] W3, matrix[double] b3,
@@ -295,7 +295,6 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
 
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
-  batch_size = 64
   iters = ceil(N / batch_size)
   for(i in 1:iters) {
     # Get next batch

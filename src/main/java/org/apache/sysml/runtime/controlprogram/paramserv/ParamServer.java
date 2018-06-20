@@ -40,7 +40,6 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Statement;
@@ -138,14 +137,10 @@ public abstract class ParamServer {
 			_finishedStates = new boolean[workerNum];
 
 			// Fetch the aggregation function
-			String[] keys = DMLProgram.splitFunctionKey(aggFunc);
-			String funcName = keys[0];
-			String funcNS = null;
-			if (keys.length == 2) {
-				funcNS = keys[0];
-				funcName = keys[1];
-			}
-			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, AGG_FUNC_PREFIX + funcName);
+			String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, AGG_FUNC_PREFIX);
+			String ns = cfn[0];
+			String fname = cfn[1];
+			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(ns, fname);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -165,7 +160,7 @@ public abstract class ParamServer {
 				.collect(Collectors.toCollection(ArrayList::new));
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-			_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames, "aggregate function");
+			_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "aggregate function");
 		}
 
 		private boolean allFinished() {

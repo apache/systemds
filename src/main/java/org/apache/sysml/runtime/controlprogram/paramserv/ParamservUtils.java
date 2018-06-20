@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -38,6 +39,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -131,7 +133,22 @@ public class ParamservUtils {
 		return permutation;
 	}
 
-	public static ExecutionContext createExecutionContext(ExecutionContext ec, String updFunc, String aggFunc, int workerNum, int k) {
+	public static String[] getCompleteFuncName(String funcName, String prefix) {
+		String[] keys = DMLProgram.splitFunctionKey(funcName);
+		String namespace = null;
+		String func = keys[0];
+		if (keys.length == 2) {
+			namespace = keys[0];
+			func = keys[1];
+		}
+		if (StringUtils.isEmpty(prefix)) {
+			return new String[] { namespace, func };
+		}
+		return new String[] { namespace, prefix + func };
+	}
+
+	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap newVarsMap,
+		String updFunc, String aggFunc, int workerNum, int k) {
 		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
 		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
 
@@ -143,26 +160,27 @@ public class ParamservUtils {
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
 		// Copy function for workers
-		IntStream.range(0, workerNum).forEach(i -> copyFunction(updFunc, updPB, prog, UPDATE_FUNC_PREFIX + i + "_"));
+		List<ExecutionContext> workerECs = IntStream.range(0, workerNum)
+			.mapToObj(i -> createExecutionContext(newVarsMap, updFunc, updPB, UPDATE_FUNC_PREFIX + i + "_"))
+			.collect(Collectors.toList());
 
 		// Copy function for agg service
-		copyFunction(aggFunc, aggPB, prog, AGG_FUNC_PREFIX);
-
-		return ExecutionContextFactory.createContext(prog);
+		ExecutionContext aggEC = createExecutionContext(newVarsMap, aggFunc, aggPB, AGG_FUNC_PREFIX);
+		List<ExecutionContext> result = new ArrayList<>(workerECs);
+		result.add(aggEC);
+		return result;
 	}
 
-	private static void copyFunction(String funcName, FunctionProgramBlock updPB, Program prog, String prefix) {
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
-		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
-		}
-		FunctionProgramBlock copiedFunc = ProgramConverter
-			.createDeepCopyFunctionProgramBlock(updPB, new HashSet<>(), new HashSet<>());
-		String fnameNew = prefix + func;
-		prog.addFunctionProgramBlock(namespace, fnameNew, copiedFunc);
+	private static ExecutionContext createExecutionContext(LocalVariableMap newVarsMap, String funcName,
+			FunctionProgramBlock fpb, String prefix) {
+		FunctionProgramBlock copiedFunc = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
+		String[] cfn = getCompleteFuncName(funcName, prefix);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		Program prog = new Program();
+		prog.addFunctionProgramBlock(ns, fname, copiedFunc);
+		prog.addProgramBlock(copiedFunc);
+		return ExecutionContextFactory.createContext(new LocalVariableMap(newVarsMap), prog);
 	}
 
 	private static void recompileProgramBlocks(int k, ArrayList<ProgramBlock> pbs) {
@@ -229,13 +247,9 @@ public class ParamservUtils {
 
 
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
-		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
-		}
-		return ec.getProgram().getFunctionProgramBlock(namespace, func);
+		String[] cfn = getCompleteFuncName(funcName, null);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		return ec.getProgram().getFunctionProgramBlock(ns, fname);
 	}
 }

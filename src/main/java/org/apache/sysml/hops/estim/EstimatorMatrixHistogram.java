@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops.estim;
 
+import java.util.stream.IntStream;
+
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
@@ -70,7 +72,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator {
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
 		MatrixHistogram h2 = new MatrixHistogram(m2, _useExcepts);
-		return Math.min(estimIntern(h1, h2), new EstimatorBasicWorst().estim(m1, m2));
+		if (h1.srNnz < 0 || h2.scNnz < 0)
+			return estimIntern(h1, h2);
+		else
+			return Math.min(estimIntern(h1, h2), h1.srNnz * h2.scNnz);
 	}
 
 	@Override
@@ -128,10 +133,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator {
 		private int rMaxNnz = 0;
 		private int cMaxNnz = 0;
 
+		private int srNnz = -1;
+		private int scNnz = -1;
+
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
 			// allocate basic synopsis
 			rNnz = new int[in.getNumRows()];
 			cNnz = new int[in.getNumColumns()];
+			srNnz = IntStream.of(rNnz).sum();
+			scNnz = IntStream.of(cNnz).sum();
 			if (in.isEmptyBlock(false))
 				return;
 

@@ -60,8 +60,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class ParamservUtils {
 
-	public static final String UPDATE_FUNC_PREFIX = "_worker_";
-	public static final String AGG_FUNC_PREFIX = "_agg_";
+	public static final String PS_FUNC_PREFIX = "_ps_";
 
 	/**
 	 * Deep copy the list object
@@ -135,20 +134,18 @@ public class ParamservUtils {
 
 	public static String[] getCompleteFuncName(String funcName, String prefix) {
 		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
+		String ns = null;
+		String name = keys[0];
 		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
+			ns = keys[0];
+			name = keys[1];
 		}
-		if (StringUtils.isEmpty(prefix)) {
-			return new String[] { namespace, func };
-		}
-		return new String[] { namespace, prefix + func };
+		return StringUtils.isEmpty(prefix) ? new String[] { ns, name } : new String[] { ns, prefix + name };
 	}
 
-	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap newVarsMap,
+	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap varsMap,
 		String updFunc, String aggFunc, int workerNum, int k) {
+
 		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
 		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
 
@@ -159,28 +156,40 @@ public class ParamservUtils {
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
-		// Copy function for workers
+		// 3. Copy function for workers
 		List<ExecutionContext> workerECs = IntStream.range(0, workerNum)
-			.mapToObj(i -> createExecutionContext(newVarsMap, updFunc, updPB, UPDATE_FUNC_PREFIX + i + "_"))
+			.mapToObj(i -> {
+				FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
+				FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
+				Program newProg = new Program();
+				putFunction(newProg, newUpdFunc);
+				putFunction(newProg, newAggFunc);
+				return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+			})
 			.collect(Collectors.toList());
 
-		// Copy function for agg service
-		ExecutionContext aggEC = createExecutionContext(newVarsMap, aggFunc, aggPB, AGG_FUNC_PREFIX);
+		// 4. Copy function for agg service
+		FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
+		Program newProg = new Program();
+		putFunction(newProg, newAggFunc);
+		ExecutionContext aggEC = ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+
 		List<ExecutionContext> result = new ArrayList<>(workerECs);
 		result.add(aggEC);
 		return result;
 	}
 
-	private static ExecutionContext createExecutionContext(LocalVariableMap newVarsMap, String funcName,
-			FunctionProgramBlock fpb, String prefix) {
+	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {
 		FunctionProgramBlock copiedFunc = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
-		String[] cfn = getCompleteFuncName(funcName, prefix);
-		String ns = cfn[0];
-		String fname = cfn[1];
-		Program prog = new Program();
-		prog.addFunctionProgramBlock(ns, fname, copiedFunc);
-		prog.addProgramBlock(copiedFunc);
-		return ExecutionContextFactory.createContext(new LocalVariableMap(newVarsMap), prog);
+		String[] cfn = getCompleteFuncName(funcName, ParamservUtils.PS_FUNC_PREFIX);
+		copiedFunc._namespace = cfn[0];
+		copiedFunc._functionName = cfn[1];
+		return copiedFunc;
+	}
+
+	private static void putFunction(Program prog, FunctionProgramBlock fpb) {
+		prog.addFunctionProgramBlock(fpb._namespace, fpb._functionName, fpb);
+		prog.addProgramBlock(fpb);
 	}
 
 	private static void recompileProgramBlocks(int k, ArrayList<ProgramBlock> pbs) {

@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.UPDATE_FUNC_PREFIX;
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -65,7 +65,7 @@ public abstract class PSWorker {
 		_ps = ps;
 
 		// Get the update function
-		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, UPDATE_FUNC_PREFIX + workerID + "_");
+		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];
 		String fname = cfn[1];
 		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);

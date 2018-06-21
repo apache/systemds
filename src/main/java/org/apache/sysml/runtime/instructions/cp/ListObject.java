@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,9 +31,9 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
 
-	private final List<String> _names;
 	private final List<Data> _data;
 	private boolean[] _dataState = null;
+	private List<String> _names = null;
 	
 	public ListObject(List<Data> data) {
 		super(DataType.LIST, ValueType.UNKNOWN);
@@ -58,49 +59,6 @@ public class ListObject extends Data {
 		return _data.size();
 	}
 	
-	public Data slice(int ix) {
-		return _data.get(ix);
-	}
-	
-	public ListObject slice(int ix1, int ix2) {
-		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
-			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
-		if( _dataState != null )
-			ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
-		return ret;
-	}
-	
-	public Data slice(String name) {
-		//check for existing named list
-		if (_names == null)
-			throw new DMLRuntimeException("Invalid lookup by name" + " in unnamed list: " + name + ".");
-
-		//find position and check for existing entry
-		int pos = _names.indexOf(name);
-		if (pos < 0 || pos >= _data.size())
-			throw new DMLRuntimeException("List lookup returned no entry for name='" + name + "'");
-
-		//return existing entry
-		return slice(pos);
-	}
-	
-	public ListObject slice(String name1, String name2) {
-		//check for existing named list
-		if (_names == null)
-			throw new DMLRuntimeException("Invalid lookup by name" + " in unnamed list: " + name1 + ", " + name2 + ".");
-
-		//find position and check for existing entry
-		int pos1 = _names.indexOf(name1);
-		int pos2 = _names.indexOf(name2);
-		if (pos1 < 0 || pos1 >= _data.size())
-			throw new DMLRuntimeException("List lookup returned no entry for name='" + name1 + "'");
-		if (pos2 < 0 || pos2 >= _data.size())
-			throw new DMLRuntimeException("List lookup returned no entry for name='" + name2 + "'");
-
-		//return list object
-		return slice(pos1, pos2);
-	}
-
 	public List<String> getNames() {
 		return _names;
 	}
@@ -124,6 +82,104 @@ public class ListObject extends Data {
 	
 	public boolean checkAllDataTypes(DataType dt) {
 		return _data.stream().allMatch(d -> d.getDataType()==dt);
+	}
+	
+	public Data slice(int ix) {
+		return _data.get(ix);
+	}
+	
+	public ListObject slice(int ix1, int ix2) {
+		ListObject ret = new ListObject(_data.subList(ix1, ix2 + 1),
+			(_names != null) ? _names.subList(ix1, ix2 + 1) : null);
+		if( _dataState != null )
+			ret.setStatus(Arrays.copyOfRange(_dataState, ix2, ix2 + 1));
+		return ret;
+	}
+	
+	public Data slice(String name) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		
+		//return existing entry
+		return slice(pos);
+	}
+	
+	public ListObject slice(String name1, String name2) {
+		//lookup positions by name, incl error handling
+		int pos1 = getPosForName(name1);
+		int pos2 = getPosForName(name2);
+		
+		//return list object
+		return slice(pos1, pos2);
+	}
+	
+	public ListObject copy() {
+		ListObject ret = isNamedList() ?
+			new ListObject(new ArrayList<>(getData()), new ArrayList<>(getNames())) :
+			new ListObject(new ArrayList<>(getData()));
+		ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
+		return ret;
+	}
+	
+	public ListObject set(int ix, Data data) {
+		_data.set(ix, data);
+		return this;
+	}
+	
+	public ListObject set(int ix1, int ix2, ListObject data) {
+		int range = ix2 - ix1 + 1;
+		if( range != data.getLength() || range > getLength() ) {
+			throw new DMLRuntimeException("List leftindexing size mismatch: length(lhs)="
+				+getLength()+", range=["+ix1+":"+ix2+"], legnth(rhs)="+data.getLength());
+		}
+		
+		//copy rhs list object including meta data
+		if( range == getLength() ) {
+			//overwrite all entries in left hand side
+			_data.clear(); _data.addAll(data.getData());
+			System.arraycopy(data.getStatus(), 0, _dataState, 0, range);
+			if( data.isNamedList() )
+				_names = new ArrayList<>(data.getNames());
+		}
+		else {
+			//overwrite entries of subrange in left hand side
+			for( int i=ix1; i<=ix2; i++ ) {
+				set(i, data.slice(i-ix1));
+				_dataState[i] = data._dataState[i-ix1];
+				if( isNamedList() && data.isNamedList() )
+					_names.set(i, data.getName(i-ix1));
+			}
+		}
+		return this;
+	}
+	
+	public Data set(String name, Data data) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		
+		//set entry into position
+		return set(pos, data);
+	}
+	
+	public ListObject set(String name1, String name2, ListObject data) {
+		//lookup positions by name, incl error handling
+		int pos1 = getPosForName(name1);
+		int pos2 = getPosForName(name2);
+		
+		//set list into position range
+		return set(pos1, pos2, data);
+	}
+	
+	private int getPosForName(String name) {
+		//check for existing named list
+		if (_names == null)
+			throw new DMLRuntimeException("Invalid indexing by name" + " in unnamed list: " + name + ".");
+		
+		//find position and check for existing entry
+		int pos = _names.indexOf(name);
+		if (pos < 0 || pos >= _data.size())
+			throw new DMLRuntimeException("List indexing returned no entry for name='" + name + "'");
+		return pos;
 	}
 
 	@Override

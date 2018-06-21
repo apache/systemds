@@ -388,6 +388,9 @@ public class LeftIndexingOp  extends Hop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 		
+		if( getInput().get(0).getDataType()==DataType.LIST )
+			_etype = ExecType.CP;
+		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

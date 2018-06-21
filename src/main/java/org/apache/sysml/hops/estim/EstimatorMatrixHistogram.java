@@ -19,6 +19,8 @@
 
 package org.apache.sysml.hops.estim;
 
+import java.util.Arrays;
+
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
@@ -118,57 +120,66 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			nnz = (long)(spOut * mnOut);
 		}
 		
+		//exploit upper bound on nnz based on non-empty rows/cols
+		nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
+			Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
+		
 		//compute final sparsity
 		return OptimizerUtils.getSparsity(
 			h1.getRows(), h2.getCols(), nnz);
 	}
 	
 	private static class MatrixHistogram {
-		private final int[] rNnz;    //row nnz counts
-		private int[] rNnz1e = null; //row nnz counts for cols w/ <= 1 non-zeros
-		private final int[] cNnz;    //column nnz counts
-		private int[] cNnz1e = null; //column nnz counts for rows w/ <= 1 non-zeros
-		private int rMaxNnz = 0;
-		private int cMaxNnz = 0;
+		private final int[] rNnz;    //nnz per row
+		private int[] rNnz1e = null; //nnz per row for cols w/ <= 1 non-zeros
+		private final int[] cNnz;    //nnz per col
+		private int[] cNnz1e = null; //nnz per col for rows w/ <= 1 non-zeros
+		private final int rMaxNnz;   //max nnz per row
+		private final int cMaxNnz;   //max nnz per col
+		private final int rNonEmpty; //number of non-empty rows (an empty row has nnz=0)
+		private final int cNonEmpty; //number of non-empty cols (an empty col has nnz=0)
 		
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
-			//allocate basic synopsis
+			// 1) allocate basic synopsis
 			rNnz = new int[in.getNumRows()];
 			cNnz = new int[in.getNumColumns()];
-			if( in.isEmptyBlock(false) )
-				return;
 			
-			//compute basic synopsis details
-			if( in.isInSparseFormat() ) {
-				SparseBlock sblock = in.getSparseBlock();
-				for( int i=0; i<in.getNumRows(); i++ ) {
-					if( sblock.isEmpty(i) ) continue;
-					int alen = sblock.size(i);
-					rNnz[i] = alen;
-					rMaxNnz = Math.max(rMaxNnz, alen);
-					LibMatrixAgg.countAgg(sblock.values(i),
-						cNnz, sblock.indexes(i), sblock.pos(i), alen);
-				}
-			}
-			else {
-				DenseBlock dblock = in.getDenseBlock();
-				for( int i=0; i<in.getNumRows(); i++ ) {
-					double[] avals = dblock.values(i);
-					int lnnz = 0, aix = dblock.pos(i);
-					for( int j=0; j<in.getNumColumns(); j++ ) {
-						if( avals[aix+j] != 0 ) {
-							cNnz[j] ++;
-							lnnz ++;
-						}
+			// 2) compute basic synopsis details
+			if( !in.isEmpty() ) {
+				if( in.isInSparseFormat() ) {
+					SparseBlock sblock = in.getSparseBlock();
+					for( int i=0; i<in.getNumRows(); i++ ) {
+						if( sblock.isEmpty(i) ) continue;
+						int alen = sblock.size(i);
+						rNnz[i] = alen;
+						LibMatrixAgg.countAgg(sblock.values(i),
+							cNnz, sblock.indexes(i), sblock.pos(i), alen);
 					}
-					rNnz[i] = lnnz;
-					rMaxNnz = Math.max(rMaxNnz, lnnz);
+				}
+				else {
+					DenseBlock dblock = in.getDenseBlock();
+					for( int i=0; i<in.getNumRows(); i++ ) {
+						double[] avals = dblock.values(i);
+						int lnnz = 0, aix = dblock.pos(i);
+						for( int j=0; j<in.getNumColumns(); j++ ) {
+							if( avals[aix+j] != 0 ) {
+								cNnz[j] ++;
+								lnnz ++;
+							}
+						}
+						rNnz[i] = lnnz;
+					}
 				}
 			}
-			cMaxNnz = max(cNnz, 0, in.getNumColumns());
 			
-			//compute exception details if necessary (optional)
-			if( useExcepts && (rMaxNnz > 1 || cMaxNnz > 1) ) {
+			// 3) compute meta data synopsis
+			rMaxNnz = Arrays.stream(rNnz).max().orElse(0);
+			cMaxNnz =  Arrays.stream(cNnz).max().orElse(0);
+			rNonEmpty = (int) Arrays.stream(rNnz).filter(v-> v!=0).count();
+			cNonEmpty = (int) Arrays.stream(cNnz).filter(v-> v!=0).count();
+			
+			// 4) compute exception details if necessary (optional)
+			if( useExcepts & !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) ) {
 				rNnz1e = new int[in.getNumRows()];
 				cNnz1e = new int[in.getNumColumns()];
 				
@@ -210,6 +221,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			cNnz1e = c1e;
 			rMaxNnz = rmax;
 			cMaxNnz = cmax;
+			rNonEmpty = cNonEmpty = -1;
 		}
 		
 		public int getRows() {
@@ -222,8 +234,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut) {
 			//get input/output nnz for scaling
-			long nnz1 = sum(h1.rNnz, 0, h1.getRows());
-			long nnz2 = sum(h2.cNnz, 0, h2.getCols());
+			long nnz1 = Arrays.stream(h1.rNnz).sum();
+			long nnz2 = Arrays.stream(h2.cNnz).sum();
 			double nnzOut = spOut * h1.getRows() * h2.getCols();
 			
 			//propagate h1.r and h2.c to output via simple scaling
@@ -242,20 +254,6 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			
 			//construct new histogram object
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
-		}
-		
-		private static int max(int[] a, int ai, int alen) {
-			int ret = Integer.MIN_VALUE;
-			for(int i=ai; i<ai+alen; i++)
-				ret = Math.max(ret, a[i]);
-			return ret;
-		}
-		
-		private static long sum(int[] a, int ai, int alen) {
-			int ret = 0;
-			for(int i=ai; i<ai+alen; i++)
-				ret += a[i];
-			return ret;
 		}
 	}
 }

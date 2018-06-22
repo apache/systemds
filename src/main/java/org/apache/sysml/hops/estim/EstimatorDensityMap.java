@@ -91,11 +91,22 @@ public class EstimatorDensityMap extends SparsityEstimator
 		int rlen = (int)Math.ceil((double)in.getNumRows()/_b);
 		int clen = (int)Math.ceil((double)in.getNumColumns()/_b);
 		MatrixBlock out = new MatrixBlock(rlen, clen, false);
+		
+		//fast-path empty input
 		if( in.isEmptyBlock(false) )
 			return out;
 		
-		//compute nnz histogram
+		//allocate dense output block
 		DenseBlock c = out.allocateBlock().getDenseBlock();
+		
+		//fast-path fully dense input
+		if( in.getLength() == in.getNonZeros() ) {
+			c.set(1); //set sparsity 1.0 into all cells
+			out.setNonZeros(in.getLength());
+			return out;
+		}
+		
+		//compute nnz histogram
 		if( in.isInSparseFormat() ) {
 			SparseBlock sblock = in.getSparseBlock();
 			for(int i=0; i<in.getNumRows(); i++) {
@@ -121,8 +132,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 		for(int i=0; i<rlen; i++){
 			int lrlen = UtilFunctions.computeBlockSize(in.getNumRows(), i+1, _b);
 			for(int j=0; j<clen; j++) {
+				double cval = c.get(i, j);
+				if( cval == 0 ) continue;
 				int lclen = UtilFunctions.computeBlockSize(in.getNumColumns(), j+1, _b);
-				c.set(i, j, c.get(i, j)/lrlen/lclen);
+				c.set(i, j, cval/lrlen/lclen);
 			}
 		}
 		out.recomputeNonZeros();
@@ -154,8 +167,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 			for(int k=0; k<cd; k++) {
 				int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
 				double sp1 = m1Map.quickGetValue(i, k);
+				if( sp1 == 0 ) continue;
 				for(int j=0; j<n; j++) {
 					double sp2 = m2Map.quickGetValue(k, j);
+					if( sp2 == 0 ) continue;
 					//custom multiply for scalar sparsity
 					double tmp1 = 1 - Math.pow(1-sp1*sp2, lbk);
 					//custom add for scalar sparsity

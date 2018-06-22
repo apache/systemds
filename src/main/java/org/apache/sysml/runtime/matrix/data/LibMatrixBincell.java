@@ -195,6 +195,9 @@ public class LibMatrixBincell
 	private static void safeBinary(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean skipEmpty = (op.fn instanceof Multiply 
 			|| isSparseSafeDivide(op, m2) );
+		boolean copyLeftRightEmpty = (op.fn instanceof Plus || op.fn instanceof Minus 
+			|| op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply);
+		boolean copyRightLeftEmpty = (op.fn instanceof Plus || op.fn instanceof PlusMultiply);
 		
 		//skip empty blocks (since sparse-safe)
 		if( m1.isEmptyBlock(false) && m2.isEmptyBlock(false) 
@@ -225,7 +228,15 @@ public class LibMatrixBincell
 		}
 		else //MATRIX - MATRIX
 		{
-			if(m1.sparse && m2.sparse) {
+			if( copyLeftRightEmpty && m2.isEmpty() ) {
+				//ret remains unchanged so a shallow copy is sufficient
+				ret.copyShallow(m1);
+			}
+			else if( copyRightLeftEmpty && m1.isEmpty() ) {
+				//ret remains unchanged so a shallow copy is sufficient
+				ret.copyShallow(m2);
+			}
+			else if(m1.sparse && m2.sparse) {
 				safeBinaryMMSparseSparse(m1, m2, ret, op);
 			}
 			else if( !ret.sparse && (m1.sparse || m2.sparse) &&

@@ -19,12 +19,11 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.UPDATE_FUNC_PREFIX;
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
-import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Statement;
@@ -66,14 +65,10 @@ public abstract class PSWorker {
 		_ps = ps;
 
 		// Get the update function
-		String[] keys = DMLProgram.splitFunctionKey(updFunc);
-		String funcName = keys[0];
-		String funcNS = null;
-		if (keys.length == 2) {
-			funcNS = keys[0];
-			funcName = keys[1];
-		}
-		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(funcNS, UPDATE_FUNC_PREFIX + _workerID + "_" + funcName);
+		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, PS_FUNC_PREFIX);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 		CPOperand[] boundInputs = inputs.stream()
@@ -83,7 +78,7 @@ public abstract class PSWorker {
 			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames, "update function");
+		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);

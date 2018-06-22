@@ -197,7 +197,7 @@ public class LibMatrixBincell
 			|| isSparseSafeDivide(op, m2) );
 		boolean copyLeftRightEmpty = (op.fn instanceof Plus || op.fn instanceof Minus 
 			|| op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply);
-		boolean copyRightLeftEmpty = (op.fn instanceof Plus || op.fn instanceof PlusMultiply);
+		boolean copyRightLeftEmpty = (op.fn instanceof Plus);
 		
 		//skip empty blocks (since sparse-safe)
 		if( m1.isEmptyBlock(false) && m2.isEmptyBlock(false) 

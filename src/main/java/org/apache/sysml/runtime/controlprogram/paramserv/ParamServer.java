@@ -27,16 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
@@ -55,14 +49,11 @@ import org.apache.sysml.utils.Statistics;
 
 public abstract class ParamServer {
 
-	final BlockingQueue<Gradient> _gradientsQueue;
 	final Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private final AggregationService _aggService;
-	private final ExecutorService _es;
 	private ListObject _model;
 
 	ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
-		_gradientsQueue = new LinkedBlockingDeque<>();
 		_modelMap = new HashMap<>(workerNum);
 		IntStream.range(0, workerNum).forEach(i -> {
 			// Create a single element blocking queue for workers to receive the broadcasted model
@@ -76,21 +67,14 @@ public abstract class ParamServer {
 		catch (InterruptedException e) {
 			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
 		}
-		BasicThreadFactory factory = new BasicThreadFactory.Builder()
-			.namingPattern("agg-service-pool-thread-%d").build();
-		_es = Executors.newSingleThreadExecutor(factory);
 	}
 
 	public abstract void push(int workerID, ListObject value);
 
 	public abstract Data pull(int workerID);
 
-	void launchService() throws ExecutionException, InterruptedException {
-		_es.submit(_aggService).get();
-	}
-
-	public void shutdown() {
-		_es.shutdownNow();
+	void launchService(Gradient gradient) {
+		_aggService.run(gradient);
 	}
 
 	public ListObject getResult() {
@@ -116,7 +100,7 @@ public abstract class ParamServer {
 	/**
 	 * Inner aggregation service which is for updating the model
 	 */
-	private class AggregationService implements Callable<Void> {
+	private class AggregationService {
 
 		protected final Log LOG = LogFactory.getLog(AggregationService.class.getName());
 
@@ -191,15 +175,8 @@ public abstract class ParamServer {
 				Statistics.accPSModelBroadcastTime((long) tBroad.stop());
 		}
 
-		@Override
-		public Void call() throws Exception {
+		public synchronized void run(Gradient grad) {
 			try {
-				Gradient grad;
-				try {
-					grad = _gradientsQueue.take();
-				} catch (InterruptedException e) {
-					throw new DMLRuntimeException("Aggregation service: error when waiting for the coming gradients.", e);
-				}
 				if (LOG.isDebugEnabled()) {
 					LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
 						grad._gradients.getDataSize() / 1024, grad._workerID));
@@ -235,7 +212,6 @@ public abstract class ParamServer {
 			catch (Exception e) {
 				throw new DMLRuntimeException("Aggregation service failed: ", e);
 			}
-			return null;
 		}
 
 		private ListObject updateModel(ListObject gradients, ListObject model) {
@@ -244,6 +220,11 @@ public abstract class ParamServer {
 
 		/**
 		 * A service method for updating model with gradients
+		 *
+		 * @param ec execution context
+		 * @param gradients list of gradients
+		 * @param model old model
+		 * @return new model
 		 */
 		private ListObject updateModel(ExecutionContext ec, ListObject gradients, ListObject model) {
 			// Populate the variables table with the gradients and model

@@ -107,7 +107,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int totalIter) {
 		Timing tUpd = DMLScript.STATISTICS ? new Timing(true) : null;
 
-		globalParams = _ps.updateModel(gradients, globalParams);
+		globalParams = _ps.updateModel(_ec, gradients, globalParams);
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSLocalModelUpdateTime((long) tUpd.stop());

@@ -36,7 +36,7 @@ source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 train = function(matrix[double] X, matrix[double] Y,
                  matrix[double] X_val, matrix[double] Y_val,
                  int C, int Hin, int Win, int epochs, int workers,
-                 string utype, string freq, string scheme)
+                 string utype, string freq, int batchsize, string scheme)
     return (matrix[double] W1, matrix[double] b1,
             matrix[double] W2, matrix[double] b2,
             matrix[double] W3, matrix[double] b3,
@@ -108,7 +108,7 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(lr=lr, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3)
 
   # Use paramserv function
-  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::aggregation", mode="LOCAL", utype=utype, freq=freq, epochs=epochs, batchsize=64, k=workers, scheme=scheme, hyperparams=params, checkpointing="NONE")
+  modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::gradients", agg="./src/test/scripts/functions/paramserv/mnist_lenet_paramserv.dml::aggregation", mode="LOCAL", utype=utype, freq=freq, epochs=epochs, batchsize=batchsize, k=workers, scheme=scheme, hyperparams=params, checkpointing="NONE")
 
   W1 = as.matrix(modelList2["W1"])
   b1 = as.matrix(modelList2["b1"])
@@ -256,7 +256,7 @@ aggregation = function(list[unknown] model,
      modelResult = list(W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3, W4=W4, b4=b4, vW1=vW1, vW2=vW2, vW3=vW3, vW4=vW4, vb1=vb1, vb2=vb2, vb3=vb3, vb4=vb4)
    }
 
-predict = function(matrix[double] X, int C, int Hin, int Win,
+predict = function(matrix[double] X, int C, int Hin, int Win, int batch_size,
                    matrix[double] W1, matrix[double] b1,
                    matrix[double] W2, matrix[double] b2,
                    matrix[double] W3, matrix[double] b3,
@@ -302,9 +302,8 @@ predict = function(matrix[double] X, int C, int Hin, int Win,
 
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
-  batch_size = 64
   iters = ceil(N / batch_size)
-  for(i in 1:iters) {
+  parfor(i in 1:iters, check=0) {
     # Get next batch
     beg = ((i-1) * batch_size) %% N + 1
     end = min(N, beg + batch_size - 1)

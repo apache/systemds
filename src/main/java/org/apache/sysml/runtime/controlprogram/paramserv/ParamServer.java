@@ -19,7 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.AGG_FUNC_PREFIX;
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,14 +40,12 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -101,11 +99,7 @@ public abstract class ParamServer {
 		return _model;
 	}
 
-	public ListObject updateModel(ListObject gradients, ListObject model) {
-		//note: we use a new execution context to allow for concurrent execution of ASP local updates; 
-		//otherwise synchronized on the aggService instance would serialize those
-		ExecutionContext ec = ExecutionContextFactory.createContext(_aggService._ec.getProgram());
-		ec.setVariable(Statement.PS_HYPER_PARAMS, _aggService._ec.getVariable(Statement.PS_HYPER_PARAMS));
+	public ListObject updateModel(ExecutionContext ec, ListObject gradients, ListObject model) {
 		return _aggService.updateModel(ec, gradients, model);
 	}
 
@@ -138,14 +132,10 @@ public abstract class ParamServer {
 			_finishedStates = new boolean[workerNum];
 
 			// Fetch the aggregation function
-			String[] keys = DMLProgram.splitFunctionKey(aggFunc);
-			String funcName = keys[0];
-			String funcNS = null;
-			if (keys.length == 2) {
-				funcNS = keys[0];
-				funcName = keys[1];
-			}
-			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(funcNS, AGG_FUNC_PREFIX + funcName);
+			String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, PS_FUNC_PREFIX);
+			String ns = cfn[0];
+			String fname = cfn[1];
+			FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(ns, fname);
 			ArrayList<DataIdentifier> inputs = func.getInputParams();
 			ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -165,7 +155,7 @@ public abstract class ParamServer {
 				.collect(Collectors.toCollection(ArrayList::new));
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-			_inst = new FunctionCallCPInstruction(funcNS, funcName, boundInputs, inputNames, outputNames, "aggregate function");
+			_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "aggregate function");
 		}
 
 		private boolean allFinished() {
@@ -248,16 +238,13 @@ public abstract class ParamServer {
 			return null;
 		}
 
-		/**
-		 * A synchronized service method for updating model with gradients
-		 *
-		 * @param gradients A list object of gradients
-		 * @return A updated list object of model
-		 */
-		private synchronized ListObject updateModel(ListObject gradients, ListObject model) {
+		private ListObject updateModel(ListObject gradients, ListObject model) {
 			return updateModel(_ec, gradients, model);
 		}
-		
+
+		/**
+		 * A service method for updating model with gradients
+		 */
 		private ListObject updateModel(ExecutionContext ec, ListObject gradients, ListObject model) {
 			// Populate the variables table with the gradients and model
 			ec.setVariable(Statement.PS_GRADIENTS, gradients);

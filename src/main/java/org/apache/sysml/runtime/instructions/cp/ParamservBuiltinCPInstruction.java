@@ -160,8 +160,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {
 			es.shutdownNow();
-			// Should shutdown the thread pool in param server
-			ps.shutdown();
 		}
 	}
 

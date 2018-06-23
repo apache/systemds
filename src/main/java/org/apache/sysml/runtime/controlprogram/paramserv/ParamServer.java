@@ -61,6 +61,7 @@ public abstract class ParamServer
 	private final FunctionCallCPInstruction _inst;
 	private final String _outputName;
 	private final boolean[] _finishedStates;  // Workers' finished states
+	private ListObject _accGradients = null;
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		// init worker queues and global model
@@ -126,17 +127,19 @@ public abstract class ParamServer
 					gradients.getDataSize() / 1024, workerID));
 			}
 
-			// Update and redistribute the model
-			Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
-			_model = updateLocalModel(_ec, gradients, _model);
-			if (DMLScript.STATISTICS)
-				Statistics.accPSAggregationTime((long) tAgg.stop());
-
-			// Redistribute model according to update type
 			switch(_updateType) {
 				case BSP: {
 					setFinishedState(workerID);
+
+					// Accumulate the intermediate gradients
+					_accGradients = ParamservUtils.accrueGradients(_accGradients, gradients);
+					ParamservUtils.cleanupListObject(gradients);
+
 					if (allFinished()) {
+						// Update the global model with accrued gradients
+						updateGlobalModel(_accGradients);
+						_accGradients = null;
+
 						// Broadcast the updated model
 						resetFinishedStates();
 						broadcastModel();
@@ -146,6 +149,7 @@ public abstract class ParamServer
 					break;
 				}
 				case ASP: {
+					updateGlobalModel(gradients);
 					broadcastModel(workerID);
 					break;
 				}
@@ -156,6 +160,13 @@ public abstract class ParamServer
 		catch (Exception e) {
 			throw new DMLRuntimeException("Aggregation service failed: ", e);
 		}
+	}
+
+	private void updateGlobalModel(ListObject gradients) {
+		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
+		_model = updateLocalModel(_ec, gradients, _model);
+		if (DMLScript.STATISTICS)
+			Statistics.accPSAggregationTime((long) tAgg.stop());
 	}
 
 	/**

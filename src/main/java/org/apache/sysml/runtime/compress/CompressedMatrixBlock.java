@@ -90,6 +90,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.IndexRange;
@@ -2258,6 +2259,15 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
 		left.ctableOperations(op, right1, right2, resultMap, resultBlock);
+	}
+	
+	@Override
+	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
+		printDecompressWarning("ternaryOperations");
+		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock right1 = getUncompressed(m2);
+		MatrixBlock right2 = getUncompressed(m3);
+		return left.ternaryOperations(op, right1, right2, ret);
 	}
 
 	@Override

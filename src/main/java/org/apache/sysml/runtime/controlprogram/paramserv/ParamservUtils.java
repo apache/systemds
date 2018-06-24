@@ -123,13 +123,13 @@ public class ParamservUtils {
 
 	public static MatrixBlock generatePermutation(int numEntries) {
 		// Create a sequence and sample w/o replacement
-		MatrixBlock seq = MatrixBlock.seqOperations(1, numEntries, 1);
+		// (no need to materialize the sequence because ctable only uses its meta data)
+		MatrixBlock seq = new MatrixBlock(numEntries, 1, false);
 		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, -1);
 
 		// Combine the sequence and sample as a table
-		MatrixBlock permutation = new MatrixBlock(numEntries, numEntries, true);
-		seq.ctableOperations(null, sample, 1.0, permutation);
-		return permutation;
+		return seq.ctableSeqOperations(sample, 1.0,
+			new MatrixBlock(numEntries, numEntries, true));
 	}
 
 	public static String[] getCompleteFuncName(String funcName, String prefix) {

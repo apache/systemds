@@ -115,6 +115,22 @@ public class RewriteGPUOperations extends HopRewriteRule {
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
 	}
 	
+	private static boolean fitsOnGPU(ArrayList<Hop> inputHops, boolean isFirstSameSizeAsOutput) {
+		double memEst = 0;
+		boolean isFirst = false;
+		for(Hop h : inputHops) {
+			double est = h.getMemEstimate();
+			if(est == OptimizerUtils.INVALID_SIZE)
+				return false;
+			else if(isFirstSameSizeAsOutput)
+				memEst += 2*est;
+			else
+				memEst += est;
+		}
+		return DMLScript.USE_ACCELERATOR && OptimizerUtils.isMemoryBasedOptLevel() &&
+				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
+	}
+	
 	private static Hop getFirstInput(Hop h) {
 		if(h == null || h.getInput() == null || h.getInput().size() < 1) {
 			throw new RuntimeException("No input available for " + h);
@@ -145,6 +161,7 @@ public class RewriteGPUOperations extends HopRewriteRule {
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
+		// 2x for input and output and 1x for overhead
 		if( isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) && fitsOnGPU(hi, 3) ) {	
 			Hop norm = getFirstInput(getFirstInput(hi));
 			if(isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
@@ -170,8 +187,14 @@ public class RewriteGPUOperations extends HopRewriteRule {
 				Hop gamma = getSecondInput(getFirstInput(hi));
 				Hop beta = getSecondInput(hi);
 				ArrayList<Hop> inHops = new ArrayList<Hop>();
-				
-				return new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+				inHops.add(X);
+				inHops.add(mean);
+				inHops.add(var);
+				inHops.add(gamma);
+				inHops.add(beta);
+				inHops.add(new LiteralOp(eps));
+				if(fitsOnGPU(inHops, true))
+					return new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
 						OpOpDnn.BATCH_NORM_TEST, inHops);
 			}			
 		}

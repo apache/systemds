@@ -133,6 +133,17 @@ public class DnnOp extends MultiThreadedHop
 				}
 				// break;
 			}
+			case BATCH_NORM_TEST:
+			{	
+				if(et == ExecType.GPU) {
+					setLops(constructDnnLops(et, inputs));
+					break;
+				}
+				else {
+					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
+				}
+				// break;
+			}
 			default: 
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 		}

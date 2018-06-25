@@ -28,12 +28,10 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpDnn;
-import org.apache.sysml.hops.IndexingOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.UnaryOp;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 
 public class RewriteGPUOperations extends HopRewriteRule {
@@ -117,15 +115,19 @@ public class RewriteGPUOperations extends HopRewriteRule {
 	
 	private static boolean fitsOnGPU(ArrayList<Hop> inputHops, boolean isFirstSameSizeAsOutput) {
 		double memEst = 0;
-		boolean isFirst = false;
+		boolean isFirst = true;
 		for(Hop h : inputHops) {
 			double est = h.getMemEstimate();
-			if(est == OptimizerUtils.INVALID_SIZE)
+			if(est == OptimizerUtils.INVALID_SIZE) {
 				return false;
-			else if(isFirstSameSizeAsOutput)
+			}
+			else if(isFirst && isFirstSameSizeAsOutput) {
+				isFirst = false;
 				memEst += 2*est;
-			else
+			}
+			else {
 				memEst += est;
+			}
 		}
 		return DMLScript.USE_ACCELERATOR && OptimizerUtils.isMemoryBasedOptLevel() &&
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();

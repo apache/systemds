@@ -107,8 +107,7 @@ public class IndexedIdentifier extends DataIdentifier
 			// valid lower row bound value
 			isConst_rowLowerBound = true;
 		}
-		
-		else if (_rowLowerBound instanceof ConstIdentifier) {
+		else if (_rowLowerBound instanceof ConstIdentifier && !getDataType().isList() ) {
 			raiseValidateError("assign lower-bound row index for Indexed Identifier " + this.toString() + " the non-numeric value " + _rowLowerBound.toString(), conditional);
 		}
 	
@@ -192,7 +191,7 @@ public class IndexedIdentifier extends DataIdentifier
 			}
 			isConst_rowUpperBound = true;
 		}	
-		else if (_rowUpperBound instanceof ConstIdentifier){
+		else if (_rowUpperBound instanceof ConstIdentifier && !getDataType().isList()){
 			raiseValidateError("assign upper-bound row index for " + this.toString() + " the non-numeric value " + _rowUpperBound.toString(), conditional);
 		}
 		
@@ -268,7 +267,7 @@ public class IndexedIdentifier extends DataIdentifier
 			isConst_colLowerBound = true;
 		}
 			
-		else if (_colLowerBound instanceof ConstIdentifier) {
+		else if (_colLowerBound instanceof ConstIdentifier && !getDataType().isList()) {
 			raiseValidateError("assign lower-bound column index for Indexed Identifier " + this.toString() + " the non-numeric value " + _colLowerBound.toString(), conditional);
 		}
 		
@@ -352,7 +351,7 @@ public class IndexedIdentifier extends DataIdentifier
 		    	
 			isConst_colUpperBound = true;
 		}	
-		else if (_colUpperBound instanceof ConstIdentifier){	
+		else if (_colUpperBound instanceof ConstIdentifier && !getDataType().isList()){	
 			raiseValidateError("assign upper-bound column index for " + this.toString() + " the non-numeric value " + _colUpperBound.toString(), conditional);
 		}
 		

@@ -110,7 +110,7 @@ public class FunctionProgramBlock extends ProgramBlock
 		}
 		
 		// for each program block
-		try {						
+		try {
 			for (int i=0 ; i < this._childBlocks.size() ; i++) {
 				ec.updateDebugState(i);
 				_childBlocks.get(i).execute(ec);

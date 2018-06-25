@@ -59,27 +59,27 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
-//			FrameBlock lin = ec.getFrameInput(input1.getName());
-//			FrameBlock out = null;
-//			
-//			if(input2.getDataType() == DataType.FRAME) { //FRAME<-FRAME
-//				FrameBlock rin = ec.getFrameInput(input2.getName());
-//				out = lin.leftIndexingOperations(rin, ixrange, new FrameBlock());
-//				ec.releaseFrameInput(input2.getName());
-//			}
-//			else { //FRAME<-SCALAR 
-//				if(!ixrange.isScalar())
-//					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
-//				ScalarObject scalar = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-//				out = new FrameBlock(lin);
-//				out.set((int)ixrange.rowStart, (int)ixrange.colStart, scalar.getStringValue());
-//			}
-//
-//			//unpin lhs input
-//			ec.releaseFrameInput(input1.getName());
-//			
-//			//unpin output
-//			ec.setFrameOutput(output.getName(), out);
+			ListObject lin = (ListObject) ec.getVariable(input1.getName());
+			
+			//execute right indexing operation and set output
+			if( input2.getDataType().isList() ) { //LIST <- LIST
+				ListObject rin = (ListObject) ec.getVariable(input2.getName());
+				if( rl.getValueType()==ValueType.STRING || ru.getValueType()==ValueType.STRING  )
+					ec.setVariable(output.getName(), lin.copy().set(rl.getStringValue(), ru.getStringValue(), rin));
+				else
+					ec.setVariable(output.getName(), lin.copy().set((int)rl.getLongValue()-1, (int)ru.getLongValue()-1, rin));
+			}
+			else if( input2.getDataType().isScalar() ) { //LIST <- SCALAR
+				ScalarObject scalar = ec.getScalarInput(input2);
+				if( rl.getValueType()==ValueType.STRING )
+					ec.setVariable(output.getName(), lin.copy().set(rl.getStringValue(), scalar));
+				else
+					ec.setVariable(output.getName(), lin.copy().set((int)rl.getLongValue()-1, scalar));
+			}
+			else {
+				throw new DMLRuntimeException("Unsupported list "
+					+ "left indexing rhs type: "+input2.getDataType().name());
+			}
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in ListIndexingCPInstruction.");

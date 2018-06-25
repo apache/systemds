@@ -44,12 +44,12 @@ public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservWorkerFailed() {
-		runDMLTest(TEST_NAME1, "Invalid lookup by name in unnamed list: worker_err.");
+		runDMLTest(TEST_NAME1, "Invalid indexing by name in unnamed list: worker_err.");
 	}
 
 	@Test
 	public void testParamservAggServiceFailed() {
-		runDMLTest(TEST_NAME2, "Invalid lookup by name in unnamed list: agg_service_err");
+		runDMLTest(TEST_NAME2, "Invalid indexing by name in unnamed list: agg_service_err");
 	}
 
 	@Test

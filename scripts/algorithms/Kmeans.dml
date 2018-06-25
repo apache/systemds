@@ -102,17 +102,13 @@ for (i in 1 : num_centroids)
     centroid_ids = t(colSums (cdf_min_distances < threshold_matrix)) + 1;
     
     # Place the selected centroids together, one per run, into a matrix:
-    centroid_placer = matrix (0, rows = num_runs, cols = (sample_block_size * num_runs));
-    centroid_placer_raw = 
-        table (seq (1, num_runs, 1), sample_block_size * seq (0, num_runs - 1, 1) + centroid_ids);
-    centroid_placer [, 1 : ncol (centroid_placer_raw)] = centroid_placer_raw;
+    centroid_placer = table (seq (1, num_runs), 
+        sample_block_size * seq (0, num_runs - 1) + centroid_ids, num_runs, sample_block_size * num_runs);
     centroids = centroid_placer %*% X_samples;
     
     # Place the selected centroids into their appropriate slots in All_Centroids:
-    centroid_placer = matrix (0, rows = nrow (All_Centroids), cols = num_runs);
-    centroid_placer_raw = 
-        table (seq (i, num_centroids * (num_runs - 1) + i, num_centroids), seq (1, num_runs, 1));
-    centroid_placer [1 : nrow (centroid_placer_raw), ] = centroid_placer_raw;
+    centroid_placer = table (seq (i, num_centroids * (num_runs - 1) + i, num_centroids), 
+        seq (1, num_runs, 1), nrow (All_Centroids), num_runs);
     All_Centroids = All_Centroids + centroid_placer %*% centroids;
     
     # Update min_distances to preserve the loop invariant:
@@ -250,14 +246,7 @@ get_sample_maps = function (int num_records, int num_samples, int approx_sample_
 
         # Use contingency table to create the "sample_maps" matrix that is a vertical concatenation
         # of 0-1-matrices, one per sample, each with 1s at (i, sample_record[i]) and 0s elsewhere:
-        sample_maps_raw = table (seq (1, num_rows), sample_rec_ids);
-        max_rec_id = ncol (sample_maps_raw);
-        if (max_rec_id >= num_records) {
-            sample_maps = sample_maps_raw [, 1 : num_records];
-        } else {
-            sample_maps = matrix (0, rows = num_rows, cols = num_records);        
-            sample_maps [, 1 : max_rec_id] = sample_maps_raw;
-        }
+        sample_maps = table (seq (1, num_rows), sample_rec_ids, num_rows, num_records);
         
         # Create a 0-1-matrix that maps each sample column ID into all row positions of the
         # corresponding sample; map out-of-sample-range positions to row id = num_rows + 1:

@@ -134,7 +134,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
 				cst1 = ec.getScalarInput(input3.getName(), input3.getValueType(), input3.isLiteral()).getDoubleValue();
 				// only resultBlock.rlen known, resultBlock.clen set in operation
-				matBlock1.ctableOperations((SimpleOperator)_optr, matBlock2, cst1, resultBlock);
+				matBlock1.ctableSeqOperations(matBlock2, cst1, resultBlock);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

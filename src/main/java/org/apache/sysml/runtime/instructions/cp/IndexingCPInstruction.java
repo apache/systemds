@@ -76,7 +76,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 				else if( in.getDataType() == DataType.LIST )
 					return new ListIndexingCPInstruction(in, rl, ru, cl, cu, out, opcode, str);
 				else 
-					throw new DMLRuntimeException("Can index only on Frames or Matrices");
+					throw new DMLRuntimeException("Can index only on matrices, frames, and lists.");
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
@@ -96,8 +96,10 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 					return new MatrixIndexingCPInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 				else if (lhsInput.getDataType() == DataType.FRAME)
 					return new FrameIndexingCPInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
+				else if( lhsInput.getDataType() == DataType.LIST )
+					return new ListIndexingCPInstruction(lhsInput, rhsInput, rl, ru, cl, cu, out, opcode, str);
 				else 
-					throw new DMLRuntimeException("Can index only on Frames or Matrices");
+					throw new DMLRuntimeException("Can index only on matrices, frames, and lists.");
 			}
 			else {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);

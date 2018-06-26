@@ -23,14 +23,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpDnn;
+import org.apache.sysml.hops.Hop.ReOrgOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ReorgOp;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 
@@ -40,6 +45,9 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
  * 1. batchNormTest:
  * norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
  * hi = bias_add(bias_multiply(norm, gamma), beta)
+ * 
+ * 2. channelSum:
+ * output = rowSums(matrix(colSums(x), rows=numChannels, cols=imgSize*imgSize))
  */
 public class RewriteGPUSpecificOps extends HopRewriteRule {
 
@@ -97,7 +105,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(hi, descendFirst); //see below
 			
-			hi = batchNormTest(hop, hi, i);  //e.g., X = bias_add(bias_multiply(bias_multiply(bias_add(X, -ema_mean), 1/sqrt(ema_var+eps)), gamma), beta)
+			hi = batchNormTest(hop, hi, i); 
+			hi = channelSums(hop, hi, i); 
 	
 			if( !descendFirst )
 				rule_GPUKernels(hi, descendFirst);
@@ -121,7 +130,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	
 	private static boolean fitsOnGPU(ArrayList<Hop> inputHops, boolean isFirstSameSizeAsOutput) {
-		double memEst = 0;
+		return fitsOnGPU(inputHops, isFirstSameSizeAsOutput, 0);
+	}
+	
+	private static boolean fitsOnGPU(ArrayList<Hop> inputHops, boolean isFirstSameSizeAsOutput, long additionalBytes) {
+		double memEst = additionalBytes;
 		boolean isFirst = true;
 		for(Hop h : inputHops) {
 			double est = h.getMemEstimate();
@@ -164,6 +177,33 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& h.getInput().get(1) instanceof UnaryOp
 				&& ((UnaryOp)h.getInput().get(1)).getOp() == OpOp1.SQRT
 				&& Hop.computeSizeInformation(h.getInput().get(0)) == 1;
+	}
+	
+	private static Hop channelSums(Hop parent, Hop hi, int pos) 
+	{
+		if(hi instanceof AggUnaryOp) {
+			AggUnaryOp hop = (AggUnaryOp) hi;
+			// output = rowSums(matrix(colSums(x), rows=numChannels, cols=imgSize*imgSize))
+			if(hop.getOp() == AggOp.SUM && hop.getDirection() == Direction.Row
+				&& hop.getInput().get(0) instanceof ReorgOp && ((ReorgOp)hop.getInput().get(0)).getOp() == ReOrgOp.RESHAPE) {
+				Hop colSumsInput = hop.getInput().get(0).getInput().get(0);
+				if(colSumsInput instanceof AggUnaryOp && ((AggUnaryOp)colSumsInput).getOp() == AggOp.SUM && ((AggUnaryOp)colSumsInput).getDirection() == Direction.Col) {
+					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					inHops.add(colSumsInput.getInput().get(0));
+					long numChannels = Hop.computeSizeInformation(hop.getInput().get(0).getInput().get(1));
+					long HW = Hop.computeSizeInformation(hop.getInput().get(0).getInput().get(2));
+					if(numChannels > 0 && HW > 0 && fitsOnGPU(inHops, false, numChannels*8)) {
+						inHops.add(new LiteralOp(numChannels));
+						inHops.add(new LiteralOp(HW));
+						LOG.debug("Applied channelSums rewrite.");
+						Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+								OpOpDnn.CHANNEL_SUMS, inHops);
+						return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+					}
+				}
+			}
+		}
+		return hi;
 	}
 	
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) 

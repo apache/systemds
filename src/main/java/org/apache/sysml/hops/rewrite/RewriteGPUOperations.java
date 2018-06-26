@@ -90,7 +90,7 @@ public class RewriteGPUOperations extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(hi, descendFirst); //see below
 			
-			hi = applyBatchNormTest(hop, hi, i);  //e.g., X = bias_add(bias_multiply(bias_multiply(bias_add(X, -ema_mean), 1/sqrt(ema_var+eps)), gamma), beta)
+			hi = batchNormTest(hop, hi, i);  //e.g., X = bias_add(bias_multiply(bias_multiply(bias_add(X, -ema_mean), 1/sqrt(ema_var+eps)), gamma), beta)
 	
 			if( !descendFirst )
 				rule_GPUKernels(hi, descendFirst);
@@ -159,7 +159,7 @@ public class RewriteGPUOperations extends HopRewriteRule {
 				&& Hop.computeSizeInformation(h.getInput().get(0)) == 1;
 	}
 	
-	private static Hop applyBatchNormTest(Hop parent, Hop hi, int pos) 
+	private static Hop batchNormTest(Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
@@ -195,9 +195,12 @@ public class RewriteGPUOperations extends HopRewriteRule {
 				inHops.add(gamma);
 				inHops.add(beta);
 				inHops.add(new LiteralOp(eps));
-				if(fitsOnGPU(inHops, true))
-					return new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-						OpOpDnn.BATCH_NORM_TEST, inHops);
+				if(fitsOnGPU(inHops, true)) {
+					LOG.debug("Applied batchNormTest rewrite.");
+					Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+							OpOpDnn.BATCH_NORM_TEST, inHops);
+					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+				}
 			}			
 		}
 		

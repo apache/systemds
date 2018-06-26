@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
  * norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
  * hi = bias_add(bias_multiply(norm, gamma), beta)
  */
-public class RewriteGPUOperations extends HopRewriteRule {
+public class RewriteGPUSpecificOps extends HopRewriteRule {
 
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {

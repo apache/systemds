@@ -123,7 +123,7 @@ public class ProgramRewriter
 		if( dynamicRewrites )
 		{
 			if ( DMLScript.USE_ACCELERATOR ){
-				_dagRuleSet.add( new RewriteGPUOperations() );	// gpu-specific rewrites
+				_dagRuleSet.add( new RewriteGPUSpecificOps() );	// gpu-specific rewrites
 			}
 			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES) {
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimization()         ); //dependency: cse

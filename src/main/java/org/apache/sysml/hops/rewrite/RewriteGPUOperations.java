@@ -34,6 +34,13 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 
+/*
+ * This class contains GPU-specific rewrites for following patterns:
+ * 
+ * 1. batchNormTest:
+ * norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
+ * hi = bias_add(bias_multiply(norm, gamma), beta)
+ */
 public class RewriteGPUOperations extends HopRewriteRule {
 
 	@Override

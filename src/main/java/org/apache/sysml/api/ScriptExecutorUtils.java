@@ -71,7 +71,7 @@ public class ScriptExecutorUtils {
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
 	 * @param outputVariables
-	 *            output variables
+	 *            output variables that were registered as part of MLContext
 	 */
 	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		// Whether extra statistics useful for developers and others interested
@@ -109,6 +109,11 @@ public class ScriptExecutorUtils {
 			throw e;
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
+				// -----------------------------------------------------------------
+				// The below code pulls the output variables on the GPU to the host. This is required especially when:
+				// The output variable was generated as part of a MLContext session with GPU enabled
+				// and was passed to another MLContext with GPU disabled
+				// The above scenario occurs in our gpu test suite (eg: BatchNormTest).
 				if(outputVariables != null) {
 					for(String outVar : outputVariables) {
 						Data data = ec.getVariable(outVar);
@@ -122,6 +127,7 @@ public class ScriptExecutorUtils {
 						}
 					}
 				}
+				// -----------------------------------------------------------------
 				for(GPUContext gCtx : ec.getGPUContexts()) {
 					gCtx.clearTemporaryMemory();
 				}

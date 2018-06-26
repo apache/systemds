@@ -55,14 +55,14 @@ public class BatchNormTest extends GPUTests {
 		int imgSize = 32; 
 		int numChannels = 3;
 		double sparsity = 0.9;
-		String scriptStr = "source(\"nn/layers/batch_norm2d_old.dml\") as batch_norm2d_old;\n"
+		String scriptStr = "source(\"nn/layers/batch_norm2d_old.dml\") as batch_norm2d_old;\n "
 				+ "[output, ema_mean_upd, ema_var_upd, cache_mean, cache_var] = batch_norm2d_old::forward(x, gamma, beta, " + numChannels + ", " + imgSize + ", " + imgSize + ", \"" + mode + "\", ema_mean, ema_var, 0.9, 1e-3)";
 		HashMap<String, Object> inputs = new HashMap<>();
-		inputs.put("x", generateInputMatrix(spark, 32, numChannels*imgSize*imgSize, sparsity, seed));
-		inputs.put("gamma", generateInputMatrix(spark, numChannels, 1, sparsity, seed));
-		inputs.put("beta", generateInputMatrix(spark, numChannels, 1, sparsity, seed));
-		inputs.put("ema_mean", generateInputMatrix(spark, numChannels, 1, sparsity, seed));
-		inputs.put("ema_var", generateInputMatrix(spark, numChannels, 1, sparsity, seed));
+		inputs.put("x", generateInputMatrix(spark, 32, numChannels*imgSize*imgSize, 0, 100, sparsity, seed));
+		inputs.put("gamma", generateInputMatrix(spark, numChannels, 1, 0, 10, sparsity, seed));
+		inputs.put("beta", generateInputMatrix(spark, numChannels, 1, 0, 10, sparsity, seed));
+		inputs.put("ema_mean", generateInputMatrix(spark, numChannels, 1, 40, 60, sparsity, seed));
+		inputs.put("ema_var", generateInputMatrix(spark, numChannels, 1, 5, 15, sparsity, seed));
 		List<String> outputs = Arrays.asList("output", "ema_mean_upd", "ema_var_upd", "cache_mean", "cache_var");
 		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, outputs);
 		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, outputs);

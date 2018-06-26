@@ -20,6 +20,7 @@
 package org.apache.sysml.api;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.sysml.api.mlcontext.ScriptExecutor;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -28,9 +29,12 @@ import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Statistics;
 
@@ -50,7 +54,7 @@ public class ScriptExecutorUtils {
 		Program prog = se.getRuntimeProgram();
 		ExecutionContext ec = se.getExecutionContext();
 		DMLConfig config = se.getConfig();
-		executeRuntimeProgram(prog, ec, config, statisticsMaxHeavyHitters);
+		executeRuntimeProgram(prog, ec, config, statisticsMaxHeavyHitters, se.getScript().getOutputVariables());
 	}
 
 	/**
@@ -66,8 +70,10 @@ public class ScriptExecutorUtils {
 	 *            dml configuration
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
+	 * @param outputVariables
+	 *            output variables
 	 */
-	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters) {
+	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
 		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
@@ -103,6 +109,19 @@ public class ScriptExecutorUtils {
 			throw e;
 		} finally { // ensure cleanup/shutdown
 			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
+				if(outputVariables != null) {
+					for(String outVar : outputVariables) {
+						Data data = ec.getVariable(outVar);
+						if(data != null && data instanceof MatrixObject) {
+							for(GPUContext gCtx : ec.getGPUContexts()) {
+								GPUObject gpuObj = ((MatrixObject)data).getGPUObject(gCtx);
+								if(gpuObj != null && gpuObj.isDirty()) {
+									gpuObj.acquireHostRead(null);
+								}
+							}
+						}
+					}
+				}
 				for(GPUContext gCtx : ec.getGPUContexts()) {
 					gCtx.clearTemporaryMemory();
 				}

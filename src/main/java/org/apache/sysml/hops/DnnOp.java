@@ -133,7 +133,7 @@ public class DnnOp extends MultiThreadedHop
 				}
 				// break;
 			}
-			case BATCH_NORM_TEST:
+			case BATCH_NORM2D_TEST:
 			{	
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
@@ -169,7 +169,7 @@ public class DnnOp extends MultiThreadedHop
 			case BIASADD:
 			case BIASMULT:
 				return 2;
-			case BATCH_NORM_TEST:
+			case BATCH_NORM2D_TEST:
 				return 6;
 			default:
 				return 13;
@@ -518,7 +518,7 @@ public class DnnOp extends MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = new long[3];
 		
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM_TEST) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
@@ -721,7 +721,7 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM_TEST) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
@@ -820,7 +820,7 @@ public class DnnOp extends MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM_TEST) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
 			throw new RuntimeException("getDim method should not be invoked for batch_norm_test, bias_add and bias_multiply");
 		}
 		try {

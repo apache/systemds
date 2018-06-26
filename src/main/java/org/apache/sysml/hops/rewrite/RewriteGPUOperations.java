@@ -190,15 +190,15 @@ public class RewriteGPUOperations extends HopRewriteRule {
 				Hop beta = getSecondInput(hi);
 				ArrayList<Hop> inHops = new ArrayList<Hop>();
 				inHops.add(X);
-				inHops.add(mean);
-				inHops.add(var);
 				inHops.add(gamma);
 				inHops.add(beta);
+				inHops.add(mean);
+				inHops.add(var);
 				inHops.add(new LiteralOp(eps));
 				if(fitsOnGPU(inHops, true)) {
 					LOG.debug("Applied batchNormTest rewrite.");
 					Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-							OpOpDnn.BATCH_NORM_TEST, inHops);
+							OpOpDnn.BATCH_NORM2D_TEST, inHops);
 					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
 				}
 			}			

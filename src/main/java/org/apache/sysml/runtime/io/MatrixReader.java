@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -47,6 +49,8 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  */
 public abstract class MatrixReader 
 {
+	protected static final Log LOG = LogFactory.getLog(MatrixReader.class.getName());
+	
 	//internal configuration
 	protected static final boolean AGGREGATE_BLOCK_NNZ = true;
 	protected static final boolean RETURN_EMPTY_NNZ0 = true;

@@ -44,14 +44,7 @@ arima_residuals = function(Matrix[Double] weights, Matrix[Double] X, Integer p, 
 	#Combining weights because of the definition of seasonal AR in R
 	#https://stats.stackexchange.com/questions/112927/seasonal-vs-non-seasonal-coefficients-in-r-arima
 	if (p>0 & P>0){
-		non_seasonal_ar_weights = weights[1:p,]
-		seasonal_ar_weights = weights[p+1:p+P,]
-		
-		outerProd = outer(non_seasonal_ar_weights, t(seasonal_ar_weights), "*")
-		combined_weights = weights
-		for (i in seq(1, ncol(outerProd), 1)){
-			combined_weights = rbind(combined_weights, outerProd[,i])
-		}
+		combined_weights = rbind(weights, matrix(weights[1:p,] %*% t(weights[p+1:p+P,]), rows=p*P, cols=1))
 	}
 	else{
 		combined_weights = weights
@@ -240,29 +233,33 @@ L2norm = function (Matrix[Double] fx)return(Double norm){
 
 #Bactracking paramters
 #https://en.wikipedia.org/wiki/Backtracking_line_search
-linesearch = function (Matrix[Double] searchDirection, Double fx,  Matrix[Double] x, Matrix[Double] M, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] xnew, Double fxnew){
+linesearch = function (Matrix[Double] searchDirection, Double fx,  Matrix[Double] x, Matrix[Double] M, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] xnew, Double fxnew, Double ak){
 	#TODO: What are the best starting paramters?
 	alpha = 0.0001
 	r = 0.9
-	aj = 1
 	
-	xnew = x + aj*searchDirection
+	#stepsize
+	ak = 1
+	
+	xnew = x + ak*searchDirection
 	fxnew = arima_css(xnew, M, p, P, q, Q, s, solver)
 	
 	#TODO: check if Armijo–Goldstein condition tests is used properly
-	while(fxnew > fx + alpha*aj*as.scalar(t(searchDirection)%*%searchDirection)){ 
-		aj = r*aj
-		xnew = x + aj*searchDirection
+	while(fxnew > fx + alpha*ak*as.scalar(t(searchDirection)%*%searchDirection)){ 
+		ak = r*ak
+		xnew = x + ak*searchDirection
 		fxnew = arima_css(xnew, M, p, P, q, Q, s, solver)
 	}
 }
 
+#Quasi Newton Optimizer: Broyden–Fletcher–Goldfarb–Shanno Algorithm
+#https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
 bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] x){
 	#TODO: Refactor this
 	
 	nParam = p+P+q+Q
 	
-	#'first guess' x should not be intitialized with 0, otherwise the norm of gx will equal 0 as well
+	#'first guess' x should not be intitialized with 0, otherwise the norm of gx will equal 0 and the loop will not run
 	x = matrix(0.5, nParam, 1)
 	fx = arima_css(x, M, p, P, q, Q, s, solver)
 	gx = gradArimaCSS(x, M, p, P, q, Q, s, solver)
@@ -280,12 +277,18 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 	while(norm_gx > tol & iter < max_iterations & diff > tol){
 		debug("bfgs_optimizer iterations " + iter)
 		
-		[xnew, fxnew] = linesearch ((-B%*%gx), fx, x, M, p, P, q, Q, s, solver)
+		#1. + 2. step
+		[xnew, fxnew, stepsize] = linesearch ((-B%*%gx), fx, x, M, p, P, q, Q, s, solver)
 		gxnew = gradArimaCSS(xnew, M, p, P, q, Q, s, solver)
 		
-		ss = xnew - x
+		#3. step
+		ss = xnew - x # = stepsize * searchDirection
+		x = xnew
+		
+		#4. step
 		yk = gxnew - gx
 		
+		#5. step
 		# inverse B for next step
 		FT = as.scalar(t(ss)%*%yk + t(yk)%*%B%*%yk)*ss%*%t(ss)/as.scalar(t(ss)%*%yk)^2
 		ST = (B%*%(yk%*%t(ss)) + (ss%*%t(yk))%*%B)/as.scalar(t(ss)%*%yk)
@@ -295,7 +298,6 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 		debug("next diff is " + diff)
 		debug("arima css = " + fxnew + " with weights:\n" +toString(xnew, decimal=17))
 		
-		x = xnew
 		fx = fxnew
 		gx = gxnew
 		norm_gx = L2norm(gx)
@@ -303,7 +305,6 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 	}
 	debug("global best " + fx)
 }
-
 
 readParamters = function (String default_solver, String default_optim_method, Integer default_max_func_invoc, Integer default_include_mean, Integer default_p, Integer default_d, Integer default_q, Integer default_P, Integer default_D, Integer default_Q, Integer default_s , String default_dest, String default_result_format, Integer default_verbose)return (Matrix[Double] X, String solver, String optim_method, Integer max_func_invoc, Integer include_mean, Integer p, Integer d, Integer q, Integer P, Integer D, Integer Q, Integer s, String dest, String result_format){
 	#input col of time series data
@@ -425,10 +426,11 @@ for	(k in seq(1, p, 1)){
 if (p>0&P>0) Z[,p+P+q+Q+2:ncol(Z)] = -Z[,p+P+q+Q+2:ncol(Z)]
 
 #TODO: remove debug output
-debug("\n" + toString(Z))
+debug("\n" + toString( cbind (seq(1,nrow(Z)) + max_timesteps_back, Z)))
 
 
 #TODO: More expressive Var name
+#stop("here")
 best_point = eval(optim_method + "_optimizer", Z, max_func_invoc, p, P, q, Q, s, solver)
 
 if(include_mean){

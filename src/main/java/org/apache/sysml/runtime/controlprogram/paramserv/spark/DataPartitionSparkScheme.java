@@ -17,24 +17,23 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public abstract class DataPartitioner {
+public interface DataPartitionSparkScheme {
 
-	public final class Result {
-		public final List<MatrixObject> pFeatures;
-		public final List<MatrixObject> pLabels;
+	final class Result {
+		public final List<MatrixBlock> pFeatures;
+		public final List<MatrixBlock> pLabels;
 
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
+		public Result(List<MatrixBlock> pFeatures, List<MatrixBlock> pLabels) {
 			this.pFeatures = pFeatures;
 			this.pLabels = pLabels;
 		}
 	}
 
-	public abstract Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels);
-
+	Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
 }

@@ -24,13 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDC;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDR;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDRR;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerOR;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerLocal;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,17 +36,10 @@ public class DataPartitionerTest {
 
 	@Test
 	public void testDataPartitionerDC() {
-		DataPartitioner dp = new DataPartitionerDC();
+		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_CONTIGUOUS);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixObject features = ParamservUtils.newMatrixObject();
-		features.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		features.refreshMetaData();
-		features.release();
-		MatrixObject labels = ParamservUtils.newMatrixObject();
-		labels.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		labels.refreshMetaData();
-		labels.release();
-		DataPartitioner.Result result = dp.doPartitioning(3, features, labels);
+		DataPartitionLocalScheme.Result result = dp.doPartitioning(3, DataConverter.convertToMatrixBlock(df, true),
+			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(3, result.pFeatures.size());
 		Assert.assertEquals(3, result.pLabels.size());
@@ -64,7 +54,7 @@ public class DataPartitionerTest {
 		assertResult(result, 2, expected3);
 	}
 
-	private void assertResult(DataPartitioner.Result result, int index, double[] expected) {
+	private void assertResult(DataPartitionLocalScheme.Result result, int index, double[] expected) {
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		double[] realValue1 = pfs.get(index).acquireRead().getDenseBlockValues();
@@ -75,18 +65,10 @@ public class DataPartitionerTest {
 
 	@Test
 	public void testDataPartitionerDR() {
-		DataPartitioner dp = new DataPartitionerDR();
+		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_RANDOM);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixObject features = ParamservUtils.newMatrixObject();
-		features.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		features.refreshMetaData();
-		features.release();
-		MatrixObject labels = ParamservUtils.newMatrixObject();
-		labels.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		labels.refreshMetaData();
-		labels.release();
-
-		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
+		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
 		Assert.assertEquals(4, result.pLabels.size());
@@ -114,7 +96,7 @@ public class DataPartitionerTest {
 			}
 		});
 
-		// check if all the occurence is equivalent to one
+		// check if all the occurrences are equivalent to one
 		for (Map.Entry<Double, Integer> e : dict.entrySet()) {
 			Assert.assertEquals(1, (int) e.getValue());
 		}
@@ -122,17 +104,10 @@ public class DataPartitionerTest {
 
 	@Test
 	public void testDataPartitionerDRR() {
-		DataPartitioner dp = new DataPartitionerDRR();
+		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixObject features = ParamservUtils.newMatrixObject();
-		features.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		features.refreshMetaData();
-		features.release();
-		MatrixObject labels = ParamservUtils.newMatrixObject();
-		labels.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		labels.refreshMetaData();
-		labels.release();
-		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
+		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
 		Assert.assertEquals(4, result.pLabels.size());
@@ -152,18 +127,10 @@ public class DataPartitionerTest {
 
 	@Test
 	public void testDataPartitionerOR() {
-		DataPartitioner dp = new DataPartitionerOR();
+		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.OVERLAP_RESHUFFLE);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixObject features = ParamservUtils.newMatrixObject();
-		features.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		features.refreshMetaData();
-		features.release();
-		MatrixObject labels = ParamservUtils.newMatrixObject();
-		labels.acquireModify(DataConverter.convertToMatrixBlock(df, true));
-		labels.refreshMetaData();
-		labels.release();
-
-		DataPartitioner.Result result = dp.doPartitioning(4, features, labels);
+		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
 		Assert.assertEquals(4, result.pLabels.size());
@@ -183,7 +150,7 @@ public class DataPartitionerTest {
 				dict.compute(d, (k, v) -> v + 1);
 			}
 			Assert.assertEquals(10, dict.size());
-			// check if all the occurence is equivalent to one
+			// check if all the occurrences are equivalent to one
 			for (Map.Entry<Double, Integer> e : dict.entrySet()) {
 				Assert.assertEquals(1, (int) e.getValue());
 			}

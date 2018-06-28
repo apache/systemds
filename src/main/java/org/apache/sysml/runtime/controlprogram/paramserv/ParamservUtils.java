@@ -99,8 +99,11 @@ public class ParamservUtils {
 		cd.clearData();
 	}
 
-	public static MatrixObject newMatrixObject() {
-		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+	public static MatrixObject newMatrixObject(MatrixBlock mb) {
+		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		result.acquireModify(mb);
+		result.release();
+		return result;
 	}
 
 	/**
@@ -112,13 +115,38 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = newMatrixObject();
 		MatrixBlock tmp = mo.acquireRead();
-		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
+		MatrixObject result = newMatrixObject(tmp.slice((int) rl - 1, (int) rh - 1));
 		mo.release();
-		result.release();
 		result.enableCleanup(false);
 		return result;
+	}
+
+	/**
+	 * Slice the matrix
+	 *
+	 * @param mb input matrix
+	 * @param rl low boundary
+	 * @param rh high boundary
+	 * @return new sliced matrix
+	 */
+	public static MatrixObject sliceMatrix(MatrixBlock mb, long rl, long rh) {
+		MatrixObject result = newMatrixObject(mb.slice((int) rl - 1, (int) rh - 1));
+		result.enableCleanup(false);
+		return result;
+	}
+
+	/**
+	 * Slice the matrix block and return a matrix block
+	 * (used in spark)
+	 *
+	 * @param mb input matrix
+	 * @param rl low boundary
+	 * @param rh high boundary
+	 * @return new sliced matrix block
+	 */
+	public static MatrixBlock sliceMatrixBlock(MatrixBlock mb, long rl, long rh) {
+		return mb.slice((int) rl - 1, (int) rh - 1);
 	}
 
 	public static MatrixBlock generatePermutation(int numEntries) {
@@ -257,5 +285,9 @@ public class ParamservUtils {
 		String ns = cfn[0];
 		String fname = cfn[1];
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);
+	}
+
+	public static MatrixBlock rbindMatrix(MatrixBlock mb1, MatrixBlock mb2) {
+		return mb1.append(mb2, new MatrixBlock(), false);
 	}
 }

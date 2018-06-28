@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Disjoint_Contiguous data partitioner:
@@ -31,15 +32,15 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
  * operation X[beg:end,] to obtain contiguous,
  * non-overlapping partitions of rows.
  */
-public class DataPartitionerDC extends DataPartitioner {
+public class DCLocalScheme implements DataPartitionLocalScheme {
 
-	private List<MatrixObject> doPartitioning(int k, MatrixObject mo) {
+	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb) {
 		List<MatrixObject> list = new ArrayList<>();
-		long stepSize = (long) Math.ceil((double) mo.getNumRows() / k);
+		long stepSize = (long) Math.ceil((double) mb.getNumRows() / k);
 		long begin = 1;
-		while (begin < mo.getNumRows()) {
-			long end = Math.min(begin - 1 + stepSize, mo.getNumRows());
-			MatrixObject pmo = ParamservUtils.sliceMatrix(mo, begin, end);
+		while (begin < mb.getNumRows()) {
+			long end = Math.min(begin - 1 + stepSize, mb.getNumRows());
+			MatrixObject pmo = ParamservUtils.sliceMatrix(mb, begin, end);
 			list.add(pmo);
 			begin = end + 1;
 		}
@@ -47,7 +48,7 @@ public class DataPartitionerDC extends DataPartitioner {
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		List<MatrixObject> pfs = doPartitioning(workersNum, features);
 		List<MatrixObject> pls = doPartitioning(workersNum, labels);
 		return new Result(pfs, pls);

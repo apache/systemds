@@ -32,25 +32,19 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * for each worker, use a new permutation multiply P %*% X,
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
-public class DataPartitionerOR extends DataPartitioner {
+public class ORLocalScheme implements DataPartitionLocalScheme {
 
-	private List<MatrixObject> doPartitioning(int k, MatrixObject mo, List<MatrixBlock> permutations) {
-		MatrixBlock data = mo.acquireRead();
-		List<MatrixObject> pMatrices = IntStream.range(0, k).mapToObj(i -> {
+	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
+		return IntStream.range(0, k).mapToObj(i -> {
 			MatrixBlock permutation = permutations.get(i);
 			MatrixBlock output = permutation.aggregateBinaryOperations(permutation,
-				data, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
-			MatrixObject result = ParamservUtils.newMatrixObject();
-			result.acquireModify(output);
-			result.release();
-			return result;
+				mb, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
+			return ParamservUtils.newMatrixObject(output);
 		}).collect(Collectors.toList());
-		mo.release();
-		return pMatrices;
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a different permutation matrix for each worker
 		List<MatrixBlock> permutations = IntStream.range(0, workersNum)
 			.mapToObj(i -> ParamservUtils.generatePermutation((int)features.getNumRows()))

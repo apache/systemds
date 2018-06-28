@@ -34,24 +34,20 @@ import org.apache.sysml.runtime.util.DataConverter;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DataPartitionerDRR extends DataPartitioner {
+public class DRRLocalScheme implements DataPartitionLocalScheme {
 
-	private MatrixObject removeEmpty(MatrixObject mo, int k, int workerId) {
-		MatrixObject result = ParamservUtils.newMatrixObject();
-		MatrixBlock tmp = mo.acquireRead();
-		double[] data = LongStream.range(1, mo.getNumRows() + 1)
+	private MatrixObject removeEmpty(MatrixBlock mb, int k, int workerId) {
+		double[] data = LongStream.range(1, mb.getNumRows() + 1)
 			.mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
 		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
-		MatrixBlock resultMB = tmp.removeEmptyOperations(new MatrixBlock(), true, true, select);
-		mo.release();
-		result.acquireModify(resultMB);
-		result.release();
+		MatrixBlock resultMB = mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
+		MatrixObject result = ParamservUtils.newMatrixObject(resultMB);
 		result.enableCleanup(false);
 		return result;
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		List<MatrixObject> pfs = IntStream.range(0, workersNum)
 	  		.mapToObj(i -> removeEmpty(features, workersNum, i)).collect(Collectors.toList());
 		List<MatrixObject> pls = IntStream.range(0, workersNum)

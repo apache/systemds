@@ -17,13 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -33,32 +34,29 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X)),sample(nrow(X), nrow(X))),
  * i.e., sampling without replacement to ensure disjointness.
  */
-public class DataPartitionerDR extends DataPartitioner {
+public class DRSparkScheme implements DataPartitionSparkScheme, Serializable {
 
-	private List<MatrixObject> doPartitioning(int k, MatrixObject mo, MatrixBlock permutation) {
-		MatrixBlock data = mo.acquireRead();
-		int batchSize = (int) Math.ceil((double) mo.getNumRows() / k);
-		List<MatrixObject> pMatrices = IntStream.range(0, k).mapToObj(i -> {
+	protected DRSparkScheme() {
+		// No-args constructor used for deserialization
+	}
+
+	private List<MatrixBlock> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
+		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
+		return IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize;
-			int end = (int) Math.min((i + 1) * batchSize, mo.getNumRows());
+			int end = Math.min((i + 1) * batchSize, mb.getNumRows());
 			MatrixBlock slicedPerm = permutation.slice(begin, end - 1);
-			MatrixBlock output = slicedPerm.aggregateBinaryOperations(slicedPerm,
-				data, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
-			MatrixObject result = ParamservUtils.newMatrixObject();
-			result.acquireModify(output);
-			result.release();
-			return result;
+			return slicedPerm.aggregateBinaryOperations(slicedPerm, mb, new MatrixBlock(),
+					InstructionUtils.getMatMultOperator(k));
 		}).collect(Collectors.toList());
-		mo.release();
-		return pMatrices;
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
+	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a single permutation matrix (workers use slices)
-		MatrixBlock permutation = ParamservUtils.generatePermutation((int)features.getNumRows());
-		List<MatrixObject> pfs = doPartitioning(workersNum, features, permutation);
-		List<MatrixObject> pls = doPartitioning(workersNum, labels, permutation);
+		MatrixBlock permutation = ParamservUtils.generatePermutation((int) features.getNumRows());
+		List<MatrixBlock> pfs = internalDoPartitioning(workersNum, features, permutation);
+		List<MatrixBlock> pls = internalDoPartitioning(workersNum, labels, permutation);
 		return new Result(pfs, pls);
 	}
 }

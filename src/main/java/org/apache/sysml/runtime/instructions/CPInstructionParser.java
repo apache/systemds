@@ -248,7 +248,6 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "conv2d_backward_data"      , CPType.Dnn);
 		String2CPInstructionType.put( "bias_add"      , CPType.Dnn);
 		String2CPInstructionType.put( "bias_multiply"      , CPType.Dnn);
-		String2CPInstructionType.put( "channel_sums"      , CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d",           CPType.Dnn);
 		String2CPInstructionType.put( "batch_norm2d_backward",  CPType.Dnn);
 		

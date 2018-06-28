@@ -32,7 +32,7 @@ import org.junit.Test;
  */
 public class AppendTest extends GPUTests {
 
-	private final static String TEST_NAME = "BinaryOpTests";
+	private final static String TEST_NAME = "AppendTests";
 	private final int seed = 42;
 
 	private final int[] rowSizes = new int[] { 1, 64, 2049 };

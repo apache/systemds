@@ -26,7 +26,8 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	DataPartitionerTest.class,
+	LocalDataPartitionerTest.class,
+	SparkDataPartitionerTest.class,
 	ParamservSyntaxTest.class,
 	ParamservRecompilationTest.class,
 	ParamservRuntimeNegativeTest.class,

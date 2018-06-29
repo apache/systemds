@@ -19,11 +19,12 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public interface DataPartitionSparkScheme {
+public abstract class DataPartitionSparkScheme implements Serializable {
 
 	final class Result {
 		public final List<MatrixBlock> pFeatures;
@@ -35,5 +36,5 @@ public interface DataPartitionSparkScheme {
 		}
 	}
 
-	Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
+	protected abstract Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
 }

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -33,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * for each worker, use a new permutation multiply P %*% X,
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
-public class ORSparkScheme implements DataPartitionSparkScheme, Serializable {
+public class ORSparkScheme extends DataPartitionSparkScheme {
 
 	protected ORSparkScheme() {
 		// No-args constructor used for deserialization

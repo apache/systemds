@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -34,7 +33,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X)),sample(nrow(X), nrow(X))),
  * i.e., sampling without replacement to ensure disjointness.
  */
-public class DRSparkScheme implements DataPartitionSparkScheme, Serializable {
+public class DRSparkScheme extends DataPartitionSparkScheme {
 
 	protected DRSparkScheme() {
 		// No-args constructor used for deserialization

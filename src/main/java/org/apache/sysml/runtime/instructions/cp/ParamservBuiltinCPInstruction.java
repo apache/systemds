@@ -135,7 +135,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			.reduceByKey(reducer)		// Group partition and put them on each worker
 			.foreach(worker);			// Run remote workers
 
-		System.out.println(workerNum);
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {

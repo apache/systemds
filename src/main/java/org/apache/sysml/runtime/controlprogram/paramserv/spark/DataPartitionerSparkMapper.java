@@ -37,6 +37,7 @@ public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Ma
 
 	private DataPartitionSparkScheme _scheme;
 
+	@SuppressWarnings("unused")
 	protected DataPartitionerSparkMapper() {
 		// No-args constructor used for deserialization
 	}

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -34,7 +33,7 @@ import org.apache.sysml.runtime.util.DataConverter;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DRRSparkScheme implements DataPartitionSparkScheme, Serializable {
+public class DRRSparkScheme extends DataPartitionSparkScheme {
 
 	protected DRRSparkScheme() {
 		// No-args constructor used for deserialization

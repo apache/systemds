@@ -115,8 +115,8 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixBlock tmp = mo.acquireRead();
-		MatrixObject result = newMatrixObject(tmp.slice((int) rl - 1, (int) rh - 1));
+		MatrixBlock mb = mo.acquireRead();
+		MatrixObject result = sliceMatrix(mb, rl, rh);
 		mo.release();
 		result.enableCleanup(false);
 		return result;
@@ -131,7 +131,7 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixBlock mb, long rl, long rh) {
-		MatrixObject result = newMatrixObject(mb.slice((int) rl - 1, (int) rh - 1));
+		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
 		result.enableCleanup(false);
 		return result;
 	}

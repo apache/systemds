@@ -19,11 +19,9 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -34,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * operation X[beg:end,] to obtain contiguous,
  * non-overlapping partitions of rows.
  */
-public class DCSparkScheme implements DataPartitionSparkScheme, Serializable {
+public class DCSparkScheme extends DataPartitionSparkScheme {
 
 	protected DCSparkScheme() {
 		// No-args constructor used for deserialization

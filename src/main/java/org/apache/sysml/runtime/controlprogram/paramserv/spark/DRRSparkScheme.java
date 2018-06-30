@@ -35,6 +35,8 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class DRRSparkScheme extends DataPartitionSparkScheme {
 
+	private static final long serialVersionUID = -3130831851505549672L;
+
 	protected DRRSparkScheme() {
 		// No-args constructor used for deserialization
 	}

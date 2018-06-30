@@ -26,6 +26,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class DataPartitionSparkScheme implements Serializable {
 
+	private static final long serialVersionUID = 6302587386967681329L;
+
 	final class Result {
 		public final List<MatrixBlock> pFeatures;
 		public final List<MatrixBlock> pLabels;

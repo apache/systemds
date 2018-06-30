@@ -34,6 +34,8 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class ORSparkScheme extends DataPartitionSparkScheme {
 
+	private static final long serialVersionUID = 6867567406403580311L;
+
 	protected ORSparkScheme() {
 		// No-args constructor used for deserialization
 	}

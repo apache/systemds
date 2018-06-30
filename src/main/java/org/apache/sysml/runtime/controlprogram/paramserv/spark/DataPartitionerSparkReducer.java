@@ -30,6 +30,8 @@ import scala.Tuple2;
  */
 public class DataPartitionerSparkReducer implements Function2<Tuple2<MatrixBlock, MatrixBlock>, Tuple2<MatrixBlock, MatrixBlock>, Tuple2<MatrixBlock, MatrixBlock>> {
 
+	private static final long serialVersionUID = -6581711018365107364L;
+
 	@Override
 	public Tuple2<MatrixBlock, MatrixBlock> call(Tuple2<MatrixBlock, MatrixBlock> input1, Tuple2<MatrixBlock, MatrixBlock> input2) throws Exception {
 		MatrixBlock features = ParamservUtils.rbindMatrix(input1._1, input2._1);

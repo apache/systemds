@@ -33,6 +33,7 @@ import scala.Tuple2;
 
 public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
 
+	private static final long serialVersionUID = 1710721606050403296L;
 	private int _workersNum;
 
 	private DataPartitionSparkScheme _scheme;

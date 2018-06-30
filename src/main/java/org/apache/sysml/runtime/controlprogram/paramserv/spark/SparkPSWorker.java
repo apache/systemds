@@ -33,6 +33,8 @@ import scala.Tuple2;
 public class SparkPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>,
 		Serializable {
 
+	private static final long serialVersionUID = -8674739573419648732L;
+
 	public SparkPSWorker() {
 		// No-args constructor used for deserialization
 	}

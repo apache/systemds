@@ -447,7 +447,7 @@
 
 					<includes>
 						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
-						<!-- <include>**/integration/applications/**/*Suite.java</include> -->
+						<include>**/integration/applications/**/*Suite.java</include>
 						<!-- <include>**/integration/conversion/*Suite.java</include> -->
 						<!-- <include>**/integration/functions/data/*Suite.java</include> -->
 						<include>**/integration/functions/estim/*Suite.java</include>

@@ -81,13 +81,13 @@ public class LocalDataPartitionerTest {
 
 		Assert.assertEquals(4, result.pFeatures.size());
 		Assert.assertEquals(4, result.pLabels.size());
-		double[] expected1 = new double[] { 4, 8 };
+		double[] expected1 = new double[] { 1, 5, 9 };
 		assertResult(result, 0, expected1);
-		double[] expected2 = new double[] { 1, 5, 9 };
+		double[] expected2 = new double[] { 2, 6, 10 };
 		assertResult(result, 1, expected2);
-		double[] expected3 = new double[] { 2, 6, 10 };
+		double[] expected3 = new double[] { 3, 7 };
 		assertResult(result, 2, expected3);
-		double[] expected4 = new double[] { 3, 7 };
+		double[] expected4 = new double[] { 4, 8 };
 		assertResult(result, 3, expected4);
 	}
 

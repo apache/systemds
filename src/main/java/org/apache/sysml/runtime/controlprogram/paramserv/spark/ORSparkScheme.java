@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.sysml.runtime.controlprogram.paramserv.ORLocalScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -40,21 +40,13 @@ public class ORSparkScheme extends DataPartitionSparkScheme {
 		// No-args constructor used for deserialization
 	}
 
-	private List<MatrixBlock> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
-		return IntStream.range(0, k).mapToObj(i -> {
-			MatrixBlock permutation = permutations.get(i);
-			return permutation.aggregateBinaryOperations(permutation, mb, new MatrixBlock(),
-					InstructionUtils.getMatMultOperator(k));
-		}).collect(Collectors.toList());
-	}
-
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a different permutation matrix for each worker
 		List<MatrixBlock> permutations = IntStream.range(0, workersNum).mapToObj(
 				i -> ParamservUtils.generatePermutation((int) features.getNumRows())).collect(Collectors.toList());
-		List<MatrixBlock> pfs = doPartitioning(workersNum, features, permutations);
-		List<MatrixBlock> pls = doPartitioning(workersNum, labels, permutations);
+		List<MatrixBlock> pfs = ORLocalScheme.partition(workersNum, features, permutations);
+		List<MatrixBlock> pls = ORLocalScheme.partition(workersNum, labels, permutations);
 		return new Result(pfs, pls);
 	}
 }

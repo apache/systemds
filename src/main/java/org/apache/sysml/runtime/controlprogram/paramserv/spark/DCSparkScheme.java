@@ -19,10 +19,9 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.DCLocalScheme;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -40,23 +39,10 @@ public class DCSparkScheme extends DataPartitionSparkScheme {
 		// No-args constructor used for deserialization
 	}
 
-	private List<MatrixBlock> doPartitioning(int k, MatrixBlock mb) {
-		List<MatrixBlock> list = new ArrayList<>();
-		long stepSize = (long) Math.ceil((double) mb.getNumRows() / k);
-		long begin = 1;
-		while (begin < mb.getNumRows()) {
-			long end = Math.min(begin - 1 + stepSize, mb.getNumRows());
-			MatrixBlock pmo = ParamservUtils.sliceMatrixBlock(mb, begin, end);
-			list.add(pmo);
-			begin = end + 1;
-		}
-		return list;
-	}
-
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = doPartitioning(workersNum, features);
-		List<MatrixBlock> pls = doPartitioning(workersNum, labels);
+		List<MatrixBlock> pfs = DCLocalScheme.partition(workersNum, features);
+		List<MatrixBlock> pls = DCLocalScheme.partition(workersNum, labels);
 		return new Result(pfs, pls);
 	}
 }

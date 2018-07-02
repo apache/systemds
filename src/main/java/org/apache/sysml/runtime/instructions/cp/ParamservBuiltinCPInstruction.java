@@ -130,10 +130,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		DataPartitionerSparkReducer reducer = new DataPartitionerSparkReducer();
 		//SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), null, null, sec, null);
 		SparkPSWorker worker = new SparkPSWorker();
-		featuresRDD.cogroup(labelsRDD)	// Combine RDDs of features and labels into a pair
-			.flatMapToPair(mapper)		// Do the data partitioning on spark
-			.reduceByKey(reducer)		// Group partition and put them on each worker
-			.foreach(worker);			// Run remote workers
+		ParamservUtils.assembleTrainingData(featuresRDD, labelsRDD)    // Combine RDDs of features and labels into a pair
+					  .flatMapToPair(mapper)        // Do the data partitioning on spark
+					  .reduceByKey(reducer)        // Group partition and put them on each worker
+					  .foreach(worker);			// Run remote workers
 
 	}
 

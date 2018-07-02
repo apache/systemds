@@ -35,22 +35,24 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class DRLocalScheme implements DataPartitionLocalScheme {
 
-	private List<MatrixObject> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
+	public static List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
 		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
 		return IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize;
-			int end = (int) Math.min((i + 1) * batchSize, mb.getNumRows());
+			int end = Math.min((i + 1) * batchSize, mb.getNumRows());
 			MatrixBlock slicedPerm = permutation.slice(begin, end - 1);
-			MatrixBlock output = slicedPerm.aggregateBinaryOperations(slicedPerm,
-				mb, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
-			return ParamservUtils.newMatrixObject(output);
+			return slicedPerm.aggregateBinaryOperations(slicedPerm, mb, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
 		}).collect(Collectors.toList());
+	}
+
+	private List<MatrixObject> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
+		return partition(k, mb, permutation).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
 	}
 
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a single permutation matrix (workers use slices)
-		MatrixBlock permutation = ParamservUtils.generatePermutation((int)features.getNumRows());
+		MatrixBlock permutation = ParamservUtils.generatePermutation(features.getNumRows());
 		List<MatrixObject> pfs = internalDoPartitioning(workersNum, features, permutation);
 		List<MatrixObject> pls = internalDoPartitioning(workersNum, labels, permutation);
 		return new Result(pfs, pls);

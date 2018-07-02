@@ -20,11 +20,9 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import org.apache.sysml.runtime.controlprogram.paramserv.DRLocalScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -41,23 +39,12 @@ public class DRSparkScheme extends DataPartitionSparkScheme {
 		// No-args constructor used for deserialization
 	}
 
-	private List<MatrixBlock> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
-		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
-		return IntStream.range(0, k).mapToObj(i -> {
-			int begin = i * batchSize;
-			int end = Math.min((i + 1) * batchSize, mb.getNumRows());
-			MatrixBlock slicedPerm = permutation.slice(begin, end - 1);
-			return slicedPerm.aggregateBinaryOperations(slicedPerm, mb, new MatrixBlock(),
-					InstructionUtils.getMatMultOperator(k));
-		}).collect(Collectors.toList());
-	}
-
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a single permutation matrix (workers use slices)
 		MatrixBlock permutation = ParamservUtils.generatePermutation((int) features.getNumRows());
-		List<MatrixBlock> pfs = internalDoPartitioning(workersNum, features, permutation);
-		List<MatrixBlock> pls = internalDoPartitioning(workersNum, labels, permutation);
+		List<MatrixBlock> pfs = DRLocalScheme.partition(workersNum, features, permutation);
+		List<MatrixBlock> pls = DRLocalScheme.partition(workersNum, labels, permutation);
 		return new Result(pfs, pls);
 	}
 }

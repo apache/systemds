@@ -34,13 +34,16 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class ORLocalScheme implements DataPartitionLocalScheme {
 
-	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
+	public static List<MatrixBlock> partition(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
 		return IntStream.range(0, k).mapToObj(i -> {
 			MatrixBlock permutation = permutations.get(i);
-			MatrixBlock output = permutation.aggregateBinaryOperations(permutation,
-				mb, new MatrixBlock(), InstructionUtils.getMatMultOperator(k));
-			return ParamservUtils.newMatrixObject(output);
+			return permutation.aggregateBinaryOperations(permutation, mb, new MatrixBlock(),
+					InstructionUtils.getMatMultOperator(k));
 		}).collect(Collectors.toList());
+	}
+
+	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
+		return partition(k, mb, permutations).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
 	}
 
 	@Override

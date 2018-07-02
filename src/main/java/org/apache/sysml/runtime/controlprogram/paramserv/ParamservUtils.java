@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -56,7 +59,10 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+
+import scala.Tuple2;
 
 public class ParamservUtils {
 
@@ -116,22 +122,9 @@ public class ParamservUtils {
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
 		MatrixBlock mb = mo.acquireRead();
-		MatrixObject result = sliceMatrix(mb, rl, rh);
-		mo.release();
-		result.enableCleanup(false);
-		return result;
-	}
-
-	/**
-	 * Slice the matrix
-	 *
-	 * @param mb input matrix
-	 * @param rl low boundary
-	 * @param rh high boundary
-	 * @return new sliced matrix
-	 */
-	public static MatrixObject sliceMatrix(MatrixBlock mb, long rl, long rh) {
 		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
+		result.enableCleanup(false);
+		mo.release();
 		result.enableCleanup(false);
 		return result;
 	}
@@ -289,5 +282,17 @@ public class ParamservUtils {
 
 	public static MatrixBlock rbindMatrix(MatrixBlock mb1, MatrixBlock mb2) {
 		return mb1.append(mb2, new MatrixBlock(), false);
+	}
+
+	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
+		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(featuresRDD);
+		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(labelsRDD);
+		return fRDD.join(lRDD);
+	}
+
+	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+		return rdd
+			.mapToPair((PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, MatrixBlock>) input -> new Tuple2<>(input._1.getRowIndex(), input._2))
+		    .reduceByKey((Function2<MatrixBlock, MatrixBlock, MatrixBlock>) (mb1, mb2) -> mb1.append(mb2, new MatrixBlock(), true));
 	}
 }

@@ -36,22 +36,22 @@ import org.apache.sysml.runtime.util.DataConverter;
  */
 public class DRRLocalScheme implements DataPartitionLocalScheme {
 
-	private MatrixObject removeEmpty(MatrixBlock mb, int k, int workerId) {
-		double[] data = LongStream.range(1, mb.getNumRows() + 1)
-			.mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
+	public static MatrixBlock removeEmpty(MatrixBlock mb, int k, int workerId) {
+		double[] data = LongStream.range(0, mb.getNumRows()).mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
 		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
-		MatrixBlock resultMB = mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
-		MatrixObject result = ParamservUtils.newMatrixObject(resultMB);
+		return mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
+	}
+
+	private MatrixObject internalRemoveEmpty(MatrixBlock mb, int k, int workerId) {
+		MatrixObject result = ParamservUtils.newMatrixObject(removeEmpty(mb, k, workerId));
 		result.enableCleanup(false);
 		return result;
 	}
 
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixObject> pfs = IntStream.range(0, workersNum)
-	  		.mapToObj(i -> removeEmpty(features, workersNum, i)).collect(Collectors.toList());
-		List<MatrixObject> pls = IntStream.range(0, workersNum)
-		    .mapToObj(i -> removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
+		List<MatrixObject> pfs = IntStream.range(0, workersNum).mapToObj(i -> internalRemoveEmpty(features, workersNum, i)).collect(Collectors.toList());
+		List<MatrixObject> pls = IntStream.range(0, workersNum).mapToObj(i -> internalRemoveEmpty(labels, workersNum, i)).collect(Collectors.toList());
 		return new Result(pfs, pls);
 	}
 }

@@ -34,6 +34,7 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkReducer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -49,100 +50,109 @@ public class SparkDataPartitionerTest {
 	@Test
 	public void testSparkDataPartitionerDC() {
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(Statement.PSScheme.DISJOINT_CONTIGUOUS, 3);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(df, true);
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper);
 
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper, mb);
 		Assert.assertEquals(3, result.size());
-		double[] expected1 = new double[] { 1, 2, 3, 4 };
-		assertResult(result, 0, expected1);
-		double[] expected2 = new double[] { 5, 6, 7, 8 };
-		assertResult(result, 1, expected2);
-		double[] expected3 = new double[] { 9, 10 };
-		assertResult(result, 2, expected3);
+		result.values().forEach(v -> {
+			Assert.assertEquals(v._1.getNumRows(), v._2.getNumRows());
+			double[] features = v._1.getDenseBlockValues();
+			double[] labels = v._2.getDenseBlockValues();
+			for (int i = 0; i < v._1.getNumRows(); i++) {
+				for (int j = 0; j < v._1.getNumColumns(); j++) {
+					Assert.assertEquals((int)labels[i], (int)features[i * v._1.getNumColumns() + j] / v._1.getNumColumns());
+				}
+			}
+		});
 	}
 
 	@Test
 	public void testSparkDataPartitionerDR() {
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(Statement.PSScheme.DISJOINT_RANDOM, 4);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(df, true);
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper, mb);
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper);
 
 		List<MatrixBlock> pfs = result.values().stream().map(r -> r._1).collect(Collectors.toList());
 		List<MatrixBlock> pls = result.values().stream().map(r -> r._2).collect(Collectors.toList());
-		assertPermutationDR(df, pfs);
-		assertPermutationDR(df, pls);
+		assertPermutationDR(4000 * 2000, pfs);
+		assertPermutationDR(4000, pls);
 	}
 
 	@Test
 	public void testSparkDataPartitionerDRR() {
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(Statement.PSScheme.DISJOINT_ROUND_ROBIN, 4);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(df, true);
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper, mb);
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper);
 
 		Assert.assertEquals(4, result.size());
-		double[] expected1 = new double[] { 4, 8 };
-		assertResult(result, 0, expected1);
-		double[] expected2 = new double[] { 1, 5, 9 };
-		assertResult(result, 1, expected2);
-		double[] expected3 = new double[] { 2, 6, 10 };
-		assertResult(result, 2, expected3);
-		double[] expected4 = new double[] { 3, 7 };
-		assertResult(result, 3, expected4);
+		result.forEach((key, value) -> {
+			int workerID = key;
+			MatrixBlock features = value._1;
+			MatrixBlock labels = value._2;
+			Assert.assertEquals(features.getNumRows(), labels.getNumRows());
+			double[] fd = features.getDenseBlockValues();
+			double[] ld = labels.getDenseBlockValues();
+			for (int i = 0; i < features.getNumRows(); i++) {
+				Assert.assertEquals(workerID, ((int) ld[i]) % result.size());
+				for (int j = 0; j < labels.getNumColumns(); j++) {
+					Assert.assertEquals((int) ld[i],
+							(int) fd[i * features.getNumColumns() + j] / features.getNumColumns());
+				}
+			}
+		});
 	}
+
 
 	@Test
 	public void testSparkDataPartitionerOR() {
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(Statement.PSScheme.OVERLAP_RESHUFFLE, 4);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		MatrixBlock mb = DataConverter.convertToMatrixBlock(df, true);
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper, mb);
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(mapper);
 
 		Assert.assertEquals(4, result.size());
 		List<MatrixBlock> pfs = result.values().stream().map(r -> r._1).collect(Collectors.toList());
 		List<MatrixBlock> pls = result.values().stream().map(r -> r._2).collect(Collectors.toList());
-		assertPermutationOR(df, pfs);
-		assertPermutationOR(df, pls);
+		assertPermutationOR(4000 * 2000, pfs);
+		assertPermutationOR(4000, pls);
 	}
 
-	private void assertResult(Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result, int index, double[] expected) {
-		double[] realValue1 = result.get(index)._1.getDenseBlockValues();
-		double[] realValue2 = result.get(index)._2.getDenseBlockValues();
-		Assert.assertArrayEquals(expected, realValue1, 0);
-		Assert.assertArrayEquals(expected, realValue2, 0);
-	}
+	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(DataPartitionerSparkMapper mapper) {
+		double[][] df = new double[4000][2000];
+		for (int i = 0; i < 4000; i++) {
+			for (int j = 0; j < 2000; j++) {
+				df[i][j] = i * 2000 + j;
+			}
+		}
+		double[] dl = new double[4000];
+		for (int i = 0; i < 4000; i++) {
+			dl[i] = i;
+		}
+		MatrixBlock fmb = DataConverter.convertToMatrixBlock(df);
+		MatrixBlock lmb = DataConverter.convertToMatrixBlock(dl, true);
 
-	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(DataPartitionerSparkMapper mapper, MatrixBlock mb) {
 		DataPartitionerSparkReducer reducer = new DataPartitionerSparkReducer();
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		JavaSparkContext jsc = SparkExecutionContext.getSparkContextStatic();
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = SparkExecutionContext
-			.toMatrixJavaPairRDD(jsc, mb, DEFAULT_BLOCKSIZE, DEFAULT_BLOCKSIZE);
+			.toMatrixJavaPairRDD(jsc, fmb, DEFAULT_BLOCKSIZE, DEFAULT_BLOCKSIZE);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = SparkExecutionContext
-			.toMatrixJavaPairRDD(jsc, mb, DEFAULT_BLOCKSIZE, DEFAULT_BLOCKSIZE);
-		Object ro = featuresRDD
-			.cogroup(labelsRDD)      // Combine RDDs of features and labels into a pair
+			.toMatrixJavaPairRDD(jsc, lmb, DEFAULT_BLOCKSIZE, DEFAULT_BLOCKSIZE);
+
+		return ParamservUtils.assembleTrainingData(featuresRDD, labelsRDD)
 		    .flatMapToPair(mapper)   // Do the data partitioning on spark
 		    .reduceByKey(reducer)    // Group partition and put them on each worker
-		    .map((Function<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>, Object>) input -> {
+		    .map((Function<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>>) input -> {
 			   Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> tmp = new HashMap<>();
 			   tmp.put(input._1, input._2);
 			   return tmp;
-		    }).reduce((Function2<Object, Object, Object>) (o, o2) -> {
-				Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> map1 = (Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>) o;
-				Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> map2 = (Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>) o2;
-				map1.putAll(map2);
-				return map1;
+		    })
+		    .reduce((Function2<Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>>)
+				(o, o2) -> {
+					o.putAll(o2);
+					return o;
 		    });
-		return (Map<Integer, Tuple2<MatrixBlock, MatrixBlock>>) ro;
 	}
 
-	private void assertPermutationDR(double[] df, List<MatrixBlock> list) {
+	private void assertPermutationDR(int size, List<MatrixBlock> list) {
 		Map<Double, Integer> dict = new HashMap<>();
-		for (double d : df) {
-			dict.put(d, 0);
+		for (int i = 0; i < size; i++) {
+			dict.put((double) i, 0);
 		}
 		IntStream.range(0, list.size()).forEach(i -> {
 			double[] f = list.get(i).getDenseBlockValues();
@@ -150,24 +160,22 @@ public class SparkDataPartitionerTest {
 				dict.compute(d, (k, v) -> v + 1);
 			}
 		});
-
 		// check if all the occurrences are equivalent to one
 		for (Map.Entry<Double, Integer> e : dict.entrySet()) {
 			Assert.assertEquals(1, (int) e.getValue());
 		}
 	}
 
-	private void assertPermutationOR(double[] df, List<MatrixBlock> list) {
+	private void assertPermutationOR(int size, List<MatrixBlock> list) {
 		for (MatrixBlock mb : list) {
 			Map<Double, Integer> dict = new HashMap<>();
-			for (double d : df) {
-				dict.put(d, 0);
+			for (int i = 0; i < size; i++) {
+				dict.put((double) i, 0);
 			}
 			double[] f = mb.getDenseBlockValues();
 			for (double d : f) {
 				dict.compute(d, (k, v) -> v + 1);
 			}
-			Assert.assertEquals(10, dict.size());
 			// check if all the occurrences are equivalent to one
 			for (Map.Entry<Double, Integer> e : dict.entrySet()) {
 				Assert.assertEquals(1, (int) e.getValue());

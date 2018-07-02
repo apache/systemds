@@ -27,11 +27,10 @@ import java.util.List;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 
 import scala.Tuple2;
 
-public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,Iterable<MatrixBlock>>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
+public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
 
 	private static final long serialVersionUID = 1710721606050403296L;
 	private int _workersNum;
@@ -64,16 +63,16 @@ public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Ma
 
 	/**
 	 *
-	 * @param input Tuple of "workerID -> (features, labels)"
-	 * @return List of tuple "workerID -> (features, labels)"
-	 * @throws Exception Some exceptions
+	 * @param input Row Block ID -> "features, labels"
+	 * @return WorkerID -> partitioned "features, labels"
+	 * @throws Exception Some exception
 	 */
 	@Override
-	public Iterator<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> call(Tuple2<MatrixIndexes, Tuple2<Iterable<MatrixBlock>, Iterable<MatrixBlock>>> input)
-		throws Exception {
+	public Iterator<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> call(Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>> input)
+			throws Exception {
 		List<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> partitions = new LinkedList<>();
-		MatrixBlock features = input._2._1.iterator().next();
-		MatrixBlock labels = input._2._2.iterator().next();
+		MatrixBlock features = input._2._1;
+		MatrixBlock labels = input._2._2;
 		DataPartitionSparkScheme.Result result = _scheme.doPartitioning(_workersNum, features, labels);
 		for (int id = 0; id < _workersNum; id++) {
 			partitions.add(new Tuple2<>(id, new Tuple2<>(result.pFeatures.get(id), result.pLabels.get(id))));

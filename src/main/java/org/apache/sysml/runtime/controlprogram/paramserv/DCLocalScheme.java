@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -34,17 +35,21 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class DCLocalScheme implements DataPartitionLocalScheme {
 
-	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb) {
-		List<MatrixObject> list = new ArrayList<>();
+	public static List<MatrixBlock> partition(int k, MatrixBlock mb) {
+		List<MatrixBlock> list = new ArrayList<>();
 		long stepSize = (long) Math.ceil((double) mb.getNumRows() / k);
 		long begin = 1;
 		while (begin < mb.getNumRows()) {
 			long end = Math.min(begin - 1 + stepSize, mb.getNumRows());
-			MatrixObject pmo = ParamservUtils.sliceMatrix(mb, begin, end);
+			MatrixBlock pmo = ParamservUtils.sliceMatrixBlock(mb, begin, end);
 			list.add(pmo);
 			begin = end + 1;
 		}
 		return list;
+	}
+
+	private List<MatrixObject> doPartitioning(int k, MatrixBlock mb) {
+		return partition(k, mb).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
 	}
 
 	@Override

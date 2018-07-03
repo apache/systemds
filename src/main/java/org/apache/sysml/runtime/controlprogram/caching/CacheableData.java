@@ -55,6 +55,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.utils.Statistics;
 
 
 /**
@@ -503,6 +504,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		setDirty(true);
 		_isAcquireFromEmpty = false;
+
+		if (DMLScript.JMLC_MEMORY_STATISTICS)
+			Statistics.addCPMemObject(newData);
 		
 		//set references to new data
 		if (newData == null)
@@ -569,6 +573,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 				_requiresLocalWrite = false;
 			}
+
+			if ((DMLScript.JMLC_MEMORY_STATISTICS) && (this._data != null)) {
+				int hash = System.identityHashCode(this._data);
+				Statistics.removeCPMemObject(hash);
+			}
 			
 			//create cache
 			createCache();
@@ -597,8 +606,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		// clear existing WB / FS representation (but prevent unnecessary probes)
 		if( !(isEmpty(true)||(_data!=null && isBelowCachingThreshold()) 
 			  ||(_data!=null && !isCachingActive()) )) //additional condition for JMLC
-			freeEvictedBlob();	
-		
+			freeEvictedBlob();
+
+		if ((DMLScript.JMLC_MEMORY_STATISTICS) && (this._data != null)) {
+			int hash = System.identityHashCode(this._data);
+			Statistics.removeCPMemObject(hash);
+		}
 		// clear the in-memory data
 		_data = null;
 		clearCache();

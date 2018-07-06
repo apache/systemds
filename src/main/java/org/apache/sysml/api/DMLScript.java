@@ -167,6 +167,7 @@ public class DMLScript
 	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
 	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
 	public static boolean           FINEGRAINED_STATISTICS  = false;   						     // whether to print fine-grained statistics
+	public static boolean			JMLC_MEMORY_STATISTICS = false; 							 // whether to gather memory use stats in JMLC
 	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode

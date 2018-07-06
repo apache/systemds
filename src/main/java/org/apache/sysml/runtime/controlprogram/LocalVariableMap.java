@@ -26,10 +26,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * Replaces <code>HashMap&lang;String, Data&rang;</code> as the table of
@@ -123,21 +125,26 @@ public class LocalVariableMap implements Cloneable
 	}
 
 	public double getPinnedDataSize() {
-		//note: this method returns the total size of distinct pinned
-		//data objects that are not subject to automatic eviction 
-		//(in JMLC all matrices and frames are pinned)
-		
+		// note: this method returns the total size of distinct pinned
+		// data objects that are not subject to automatic eviction
+		// (in JMLC all matrices and frames are pinned)
+
 		//compute map of distinct cachable data
 		Map<Integer, Data> dict = new HashMap<>();
+		double total = 0.0;
 		for( Entry<String,Data> e : localMap.entrySet() ) {
 			int hash = System.identityHashCode(e.getValue());
-			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData )
+			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData ) {
 				dict.put(hash, e.getValue());
+				double size = ((CacheableData) e.getValue()).getDataSize();
+				if ((DMLScript.JMLC_MEMORY_STATISTICS) && (DMLScript.FINEGRAINED_STATISTICS))
+					Statistics.maintainCPHeavyHittersMem(e.getKey(), size);
+				total += size;
+			}
 		}
-		
+
 		//compute total in-memory size
-		return dict.values().stream().mapToDouble(
-			d -> ((CacheableData<?>)d).getDataSize()).sum();
+		return total;
 	}
 	
 	public long countPinnedData() {

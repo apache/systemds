@@ -189,8 +189,8 @@ public class Connection implements Closeable
 
 	/**
 	 * Sets a boolean flag indicating if memory profiling statistics should be
-	 * gathered.
-	 * @param stats
+	 * gathered. The option is false by default.
+	 * @param stats boolean value with true indicating memory statistics should be gathered
 	 */
 	public void gatherMemStats(boolean stats) {
 		DMLScript.STATISTICS = stats || DMLScript.STATISTICS;

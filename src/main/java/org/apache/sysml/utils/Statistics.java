@@ -80,6 +80,11 @@ public class Statistics
 	// Maps to keep track of CP memory objects for JMLC (e.g. in memory matrices and frames)
 	private static final ConcurrentHashMap<String,Double> _cpMemObjs = new ConcurrentHashMap<>();
 	private static final ConcurrentHashMap<Integer,Double> _currCPMemObjs = new ConcurrentHashMap<>();
+
+	// this hash map maintains soft references to the cache blocks in memory. It is periodically scanned to check for
+	// objects which have been garbage collected. This enables more accurate memory statistics. Relying on rmvar
+	// instructions to determine when an object has been de-allocated results in a substantial underestimate to memory
+	// use by the program since garbage collection will not occur immediately.
 	private static final ConcurrentHashMap<Integer,SoftReference<CacheBlock>> _liveObjects = new ConcurrentHashMap<>();
 
 	//JVM stats (low frequency updates)

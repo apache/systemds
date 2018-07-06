@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
@@ -49,6 +50,11 @@ import jcuda.Pointer;
  */
 public class GPUMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMemoryManager.class.getName());
+	
+	// Developer flag: Use this flag to check for GPU memory leak in SystemML.  
+	// This has an additional overhead of maintaining stack trace of all the allocated GPU pointers via PointerInfo class.
+	private static final boolean DEBUG_MEMORY_LEAK = false;
+	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10}; // Avoids printing too much text while debuggin
 	
 	/*****************************************************************************************/
 	// GPU Memory is divided into three major sections:
@@ -109,7 +115,7 @@ public class GPUMemoryManager {
 		private long sizeInBytes;
 		private StackTraceElement[] stackTraceElements;
 		public PointerInfo(long sizeInBytes) {
-			if(DMLScript.PRINT_GPU_MEMORY_INFO) {
+			if(DEBUG_MEMORY_LEAK) {
 				this.stackTraceElements = Thread.currentThread().getStackTrace();
 			}
 			this.sizeInBytes = sizeInBytes;
@@ -196,6 +202,7 @@ public class GPUMemoryManager {
 	    }
 	}
 	
+	
 	/**
 	 * Allocate pointer of the given size in bytes.
 	 * 
@@ -207,6 +214,10 @@ public class GPUMemoryManager {
 		if(size < 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + byteCountToDisplaySize(size));
 		}
+		if(DEBUG_MEMORY_LEAK) {
+			LOG.info("GPU Memory info during malloc:" + toString());
+		}
+		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		long mallocStart = 0;
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
@@ -395,25 +406,23 @@ public class GPUMemoryManager {
 	}
 	
 	// --------------- Developer Utilities to debug potential memory leaks ------------------------
-	@SuppressWarnings("unused")
-	private void printPointers(List<PointerInfo> pointers) {
-		for(PointerInfo ptrInfo : pointers) {
-			System.out.println(">>" + 
-					// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
-					getCallerInfo(ptrInfo.stackTraceElements, 8) + getCallerInfo(ptrInfo.stackTraceElements, 9) + getCallerInfo(ptrInfo.stackTraceElements, 10));
-		}
-	}
-	
-	@SuppressWarnings("unused")
 	private void printPointers(Set<Pointer> pointers, StringBuilder sb) {
+		HashMap<String, Integer> frequency = new HashMap<>();
 		for(Pointer ptr : pointers) {
 			PointerInfo ptrInfo = allPointers.get(ptr);
-			sb.append(">>");
-			// getCallerInfo(ptrInfo.stackTraceElements, 5) + getCallerInfo(ptrInfo.stackTraceElements, 6) + getCallerInfo(ptrInfo.stackTraceElements, 7) +
-			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 8));
-			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 9));
-			sb.append(getCallerInfo(ptrInfo.stackTraceElements, 10));
-			sb.append("\n");
+			String key = "";
+			for(int index : DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH) {
+				key += getCallerInfo(ptrInfo.stackTraceElements, index);
+			}
+			if(frequency.containsKey(key)) {
+				frequency.put(key, frequency.get(key)+1);
+			}
+			else {
+				frequency.put(key, 1);
+			}
+		}
+		for(Entry<String, Integer> kv : frequency.entrySet()) {
+			sb.append(">>" + kv.getKey() + " => " + kv.getValue() + "\n");
 		}
 	}
 	// --------------------------------------------------------------------------------------------
@@ -566,6 +575,7 @@ public class GPUMemoryManager {
 	/**
 	 * Print debugging information
 	 */
+	@SuppressWarnings("unused")
 	public String toString() {
 		long sizeOfLockedGPUObjects = 0; int numLockedGPUObjects = 0; int numLockedPointers = 0;
 		long sizeOfUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyPointers = 0;
@@ -605,12 +615,10 @@ public class GPUMemoryManager {
 			totalSizePotentiallyLeakyPointers += size;
 		}
 		StringBuilder ret = new StringBuilder();
-		//if(DMLScript.PRINT_GPU_MEMORY_INFO) {
-		//	if(potentiallyLeakyPointers.size() > 0) {
-		//		ret.append("Non-matrix pointers were allocated by:\n");
-		//		printPointers(potentiallyLeakyPointers, ret);
-		//	}
-		//}
+		if(DEBUG_MEMORY_LEAK && potentiallyLeakyPointers.size() > 0) {
+			ret.append("Non-matrix pointers were allocated by:\n");
+			printPointers(potentiallyLeakyPointers, ret);
+		}
 		ret.append("\n====================================================\n");
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "", 
 				"Num Objects", "Num Pointers", "Size"));

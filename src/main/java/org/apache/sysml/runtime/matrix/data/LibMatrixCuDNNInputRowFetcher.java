@@ -49,7 +49,7 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 		numColumns = LibMatrixCUDA.toInt(image.getNumColumns());
 		isInputInSparseFormat = LibMatrixCUDA.isInSparseFormat(gCtx, image);
 		inPointer = isInputInSparseFormat ? LibMatrixCUDA.getSparsePointer(gCtx, image, instName) : LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
-		outPointer = gCtx.allocate(numColumns*sizeOfDataType);
+		outPointer = gCtx.allocate(instName, numColumns*sizeOfDataType);
 	}
 	/**
 	 * Copy the nth row and return the dense pointer

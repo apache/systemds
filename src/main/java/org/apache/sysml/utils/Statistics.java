@@ -791,6 +791,7 @@ public class Statistics
 		return sb.toString();
 	}
 
+	@SuppressWarnings("unchecked")
 	public static String getCPHeavyHittersMem(int num) {
 		int n = _cpMemObjs.size();
 		if ((n <= 0) || (num <= 0))
@@ -815,7 +816,6 @@ public class Statistics
 		res.append(String.format("  %-" + numPadLen + "s" + "  %-" + maxNameLength + "s" + "  %s\n",
 				"#", "Object", "Memory"));
 
-		// lots of futzing around to format strings...
 		for (int ix = 1; ix <= numHittersToDisplay; ix++) {
 			String objName = entries[ix-1].getKey();
 			String objSize = byteCountToDisplaySize(entries[ix-1].getValue());

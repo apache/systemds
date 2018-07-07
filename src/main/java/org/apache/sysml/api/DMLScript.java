@@ -166,16 +166,16 @@ public class DMLScript
 
 	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
 	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
-	public static boolean           FINEGRAINED_STATISTICS  = false;   						     // whether to print fine-grained statistics
-	public static boolean			JMLC_MEMORY_STATISTICS = false; 							 // whether to gather memory use stats in JMLC
+	public static boolean           FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
+	public static boolean           JMLC_MEMORY_STATISTICS = false;                              // whether to gather memory use stats in JMLC
 	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
-	public static String            FLOATING_POINT_PRECISION = "double"; 							// data type to use internally
-	public static EvictionPolicy	GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;				// currently employed GPU eviction policy
-	public static boolean 			PRINT_GPU_MEMORY_INFO = false;									// whether to print GPU memory-related information
+	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
+	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;           // currently employed GPU eviction policy
+	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
 
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used

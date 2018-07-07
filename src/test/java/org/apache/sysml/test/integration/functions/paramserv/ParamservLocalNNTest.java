@@ -23,7 +23,7 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
 
-public class ParamservNNTest extends AutomatedTestBase {
+public class ParamservLocalNNTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-nn-bsp-batch-dc";
 	private static final String TEST_NAME2 = "paramserv-nn-asp-batch";
@@ -34,7 +34,7 @@ public class ParamservNNTest extends AutomatedTestBase {
 	private static final String TEST_NAME7 = "paramserv-nn-bsp-batch-or";
 
 	private static final String TEST_DIR = "functions/paramserv/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservNNTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservLocalNNTest.class.getSimpleName() + "/";
 
 	private final String HOME = SCRIPT_DIR + TEST_DIR;
 

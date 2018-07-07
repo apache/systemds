@@ -17,26 +17,30 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	LocalDataPartitionerTest.class,
-	SparkDataPartitionerTest.class,
-	ParamservSyntaxTest.class,
-	SerializationTest.class,
-	ParamservRecompilationTest.class,
-	ParamservRuntimeNegativeTest.class,
-	ParamservLocalNNTest.class
-})
+/**
+ * Wrapper class containing all needed for launching spark remote worker
+ */
+public class SparkPSBody {
 
+	private ExecutionContext _ec;
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
+	public SparkPSBody() {
 
+	}
+
+	public SparkPSBody(ExecutionContext ec) {
+		this._ec = ec;
+	}
+
+	public ExecutionContext getEc() {
+		return _ec;
+	}
+
+	public void setEc(ExecutionContext ec) {
+		this._ec = ec;
+	}
 }

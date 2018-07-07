@@ -65,7 +65,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.DataPartitionerRemoteSpark
 import org.apache.sysml.runtime.controlprogram.parfor.LocalParWorker;
 import org.apache.sysml.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysml.runtime.controlprogram.parfor.ParForBody;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteDPParForMR;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteDPParForSpark;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForJobReturn;

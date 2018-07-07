@@ -20,29 +20,52 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
+import org.apache.sysml.runtime.codegen.CodegenUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.PSWorker;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 
-public class SparkPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
+public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
 
 	private static final long serialVersionUID = -8674739573419648732L;
 
-	public SparkPSWorker() {
+	private String _program;
+	private HashMap<String, byte[]> _clsMap;
+
+	protected SparkPSWorker() {
 		// No-args constructor used for deserialization
 	}
 
-	public SparkPSWorker(String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-			MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
+	public SparkPSWorker(String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap) {
+		_updFunc = updFunc;
+		_freq = freq;
+		_epochs = epochs;
+		_batchSize = batchSize;
+		_program = program;
+		_clsMap = clsMap;
 	}
 
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
+		configureWorker(input);
+	}
+
+	private void configureWorker(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) {
+		_workerID = input._1;
+
+		//initialize codegen class cache (before program parsing)
+		for (Map.Entry<String, byte[]> e : _clsMap.entrySet()) {
+			CodegenUtils.getClassSync(e.getKey(), e.getValue());
+		}
+
+		SparkPSBody body = ProgramConverter.parseSparkPSBody(_program, _workerID);
+		_ec = body.getEc();
 	}
 }

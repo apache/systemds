@@ -72,6 +72,7 @@ public class IPAPassInlineFunctions extends IPAPass
 				ArrayList<Hop> hops = fstmt.getBody().get(0).getHops();
 				List<FunctionOp> fcalls = fgraph.getFunctionCalls(fkey);
 				List<StatementBlock> fcallsSB = fgraph.getFunctionCallsSB(fkey);
+				boolean removedAll = true;
 				for(int i=0; i<fcalls.size(); i++) {
 					FunctionOp op = fcalls.get(i);
 					if( LOG.isDebugEnabled() )
@@ -79,8 +80,10 @@ public class IPAPassInlineFunctions extends IPAPass
 					
 					//step 0: robustness for special cases
 					if( op.getInput().size() != fstmt.getInputParams().size()
-						|| op.getOutputVariableNames().length != fstmt.getOutputParams().size() )
+						|| op.getOutputVariableNames().length != fstmt.getOutputParams().size() ) {
+						removedAll = false;
 						continue;
+					}
 					
 					//step 1: deep copy hop dag
 					ArrayList<Hop> hops2 = Recompiler.deepCopyHopsDag(hops);
@@ -110,7 +113,8 @@ public class IPAPassInlineFunctions extends IPAPass
 				
 				//update the function call graph to avoid repeated inlining
 				//(and thus op replication) on repeated IPA calls
-				fgraph.removeFunctionCalls(fkey);
+				if( removedAll )
+					fgraph.removeFunctionCalls(fkey);
 			}
 		}
 	}

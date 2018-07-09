@@ -50,6 +50,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -57,6 +58,7 @@ import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public class ParamservUtils {
 
@@ -88,6 +90,10 @@ public class ParamservUtils {
 
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
+		cleanupListObject(lo);
+	}
+
+	public static void cleanupListObject(ListObject lo) {
 		lo.getData().forEach(ParamservUtils::cleanupData);
 	}
 
@@ -257,5 +263,23 @@ public class ParamservUtils {
 		String ns = cfn[0];
 		String fname = cfn[1];
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);
+	}
+	
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
+		return accrueGradients(accGradients, gradients, false);
+	}
+	
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par) {
+		if (accGradients == null)
+			return ParamservUtils.copyList(gradients);
+		IntStream range = IntStream.range(0, accGradients.getLength());
+		(par ? range.parallel() : range).forEach(i -> {
+			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireRead();
+			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireRead();
+			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
+			((MatrixObject) accGradients.getData().get(i)).release();
+			((MatrixObject) gradients.getData().get(i)).release();
+		});
+		return accGradients;
 	}
 }

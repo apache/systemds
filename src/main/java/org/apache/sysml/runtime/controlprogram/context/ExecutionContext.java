@@ -53,7 +53,9 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
+import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.GPUStatistics;
@@ -462,6 +464,7 @@ public class ExecutionContext {
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
+		setMetaData(varName, new MetaDataFormat(mo.getMatrixCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	

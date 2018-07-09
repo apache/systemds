@@ -80,13 +80,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 	}
 	
-	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
-		this(in, in2, in3, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
-		if( !opcode.equals("channel_sums") ) {
-			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be channel_sums, but found " + opcode);
-		}
-	}
-
 	private DnnCPInstruction(CPOperand in, CPOperand out, String opcode, String istr,
 			ArrayList<CPOperand> stride, ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
 			ArrayList<CPOperand> filter_shape, int numThreads, double intermediateMemoryBudget) {
@@ -238,14 +231,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			int k = Integer.parseInt(parts[4]);
 			return new DnnCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
 		}
-		else if (opcode.equalsIgnoreCase("channel_sums")) {
-			InstructionUtils.checkNumFields(parts, 4);
-			CPOperand in = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand out = new CPOperand(parts[4]);
-			return new DnnCPInstruction(in, in2, in3, out, opcode, str, -1, 0);
-		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d")) {
 			InstructionUtils.checkNumFields(parts, 13);
 			CPOperand in1 = new CPOperand(parts[1]); // image
@@ -358,29 +343,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
 	}
 	
-	public void processChannelSumsInstruction(ExecutionContext ec) {
-		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		int C = (int) ec.getScalarInput(_in2.getName(), _in2.getValueType(), _in2.isLiteral()).getLongValue();
-		int HW = (int) ec.getScalarInput(_in3.getName(), _in3.getValueType(), _in3.isLiteral()).getLongValue();
-		if(C*HW != input.getNumColumns()) {
-			throw new DMLRuntimeException("Expected rows*cols" + C + "*" + HW + " to be equal to number of columns of input " + input.getNumColumns());
-		}
-		MatrixBlock outputBlock = null;
-		if(input.isEmpty()) {
-			outputBlock = new MatrixBlock(C, 1, true);
-		}
-		else {
-			outputBlock = new MatrixBlock(C, 1, false).allocateBlock();
-			LibMatrixDNN.channelSums(input, outputBlock, C, HW);
-		}
-		
-		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
-	}
-	
-	
-	
 	public void processBatchNorm2dInstruction(ExecutionContext ec) {
 		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock scale = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
@@ -464,10 +426,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("relu_backward")) {
 			processReluBackwardInstruction(ec);
-			return;
-		}
-		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
-			processChannelSumsInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("batch_norm2d")) {

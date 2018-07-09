@@ -1077,7 +1077,7 @@ public class LibMatrixMult
 							int bkpos = b.pos(bk, bj);
 							
 							//determine nnz of a (for sparsity-aware skipping of rows)
-							int knnz = copyNonZeroElements(avals, aixi, bkpos, bj, n, ta, tbi, bklen);
+							int knnz = copyNonZeroElements(avals, aixi, bkpos, n, ta, tbi, bklen);
 							
 							//rest not aligned to blocks of 4 rows
 							final int bn = knnz % 4;
@@ -1743,9 +1743,10 @@ public class LibMatrixMult
 									if( a.isContiguous(bk, bkmin-1) ) {
 										double[] avals = a.values(bk);
 										int aixi = a.pos(bk, i);
+										int bkpos = a.pos(bk, bj);
 										
 										//determine nnz of a (for sparsity-aware skipping of rows)
-										int knnz = copyNonZeroElements(avals, aixi, bk, bj, n, nx, ta, tbi, bklen);
+										int knnz = copyNonZeroElements(avals, aixi, bkpos, n, nx, ta, tbi, bklen);
 										
 										//rest not aligned to blocks of 4 rows
 										final int bn = knnz % 4;
@@ -3797,8 +3798,8 @@ public class LibMatrixMult
 		return ret;
 	}
 
-	private static int copyNonZeroElements( double[] a, final int aixi, final int bixk, final int bj, final int n, double[] tmpa, int[] tmpbi, final int bklen )
-	{
+	//cp non-zeros for dense-dense mm
+	private static int copyNonZeroElements( double[] a, final int aixi, final int bixk, final int n, double[] tmpa, int[] tmpbi, final int bklen ) {
 		int knnz = 0;
 		for( int k = 0; k < bklen; k++ )
 			if( a[ aixi+k ] != 0 ) {
@@ -3806,20 +3807,18 @@ public class LibMatrixMult
 				tmpbi[ knnz ] = bixk + k*n;
 				knnz ++;
 			}
-		
 		return knnz;
 	}
 
-	private static int copyNonZeroElements( double[] a, int aixi, final int bk, final int bj, final int n, final int nx, double[] tmpa, int[] tmpbi, final int bklen )
-	{
+	//cp non-zeros for dense tsmm
+	private static int copyNonZeroElements( double[] a, int aixi, int bixk, final int n, final int nx, double[] tmpa, int[] tmpbi, final int bklen ) {
 		int knnz = 0;
-		for( int k = 0; k < bklen; k++, aixi+=n )
+		for( int k = 0; k < bklen; k++, aixi+=n, bixk+=nx )
 			if( a[ aixi ] != 0 ) {
 				tmpa[ knnz ] = a[ aixi ];
-				tmpbi[ knnz ] = (bk+k) * nx + bj; //scan index on b
+				tmpbi[ knnz ] = bixk;
 				knnz ++;
 			}
-		
 		return knnz;
 	}
 	

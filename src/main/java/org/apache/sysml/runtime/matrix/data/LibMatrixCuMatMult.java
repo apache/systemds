@@ -269,7 +269,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 		// t(C) = t(B) %*% t(A)
 		Pointer output = null;
 		if (outRLen != 1 && outCLen != 1) {
-			output = gCtx.allocate(outRLen * outCLen * sizeOfDataType);
+			output = gCtx.allocate(instName, outRLen * outCLen * sizeOfDataType);
 		} else {
 			// no transpose required for vector output
 			output = C;

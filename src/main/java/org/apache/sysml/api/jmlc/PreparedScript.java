@@ -60,6 +60,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.Statistics;
 
 /**
  * Representation of a prepared (precompiled) DML/PyDML script.
@@ -446,7 +447,7 @@ public class PreparedScript implements ConfigurableAPI
 		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
-		
+
 		return rvars;
 	}
 	
@@ -458,6 +459,13 @@ public class PreparedScript implements ConfigurableAPI
 	public String explain() {
 		return Explain.explain(_prog);
 	}
+
+	/**
+	 * Return a string containing runtime statistics. Note: these are not thread local
+	 * and will reflect execution in all threads
+	 * @return string containing statistics
+	 */
+	public String statistics() { return Statistics.display(); }
 	
 	/**
 	 * Enables function recompilation, selectively for the given functions. 

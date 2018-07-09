@@ -59,6 +59,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.GPUStatistics;
+import org.apache.sysml.utils.Statistics;
 
 
 public class ExecutionContext {
@@ -600,6 +601,9 @@ public class ExecutionContext {
 	}
 	
 	public void cleanupCacheableData(CacheableData<?> mo) {
+		if (DMLScript.JMLC_MEMORY_STATISTICS)
+			Statistics.removeCPMemObject(System.identityHashCode(mo));
+
 		//early abort w/o scan of symbol table if no cleanup required
 		boolean fileExists = (mo.isHDFSFileExists() && mo.getFileName() != null);
 		if( !CacheableData.isCachingActive() && !fileExists )

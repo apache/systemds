@@ -30,8 +30,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 
-public class SparkPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>,
-		Serializable {
+public class SparkPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
 
 	private static final long serialVersionUID = -8674739573419648732L;
 
@@ -45,6 +44,5 @@ public class SparkPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<Matrix
 
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
-		int workerID = input._1;
 	}
 }

@@ -33,7 +33,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * operation X[beg:end,] to obtain contiguous,
  * non-overlapping partitions of rows.
  */
-public class DCLocalScheme implements DataPartitionLocalScheme {
+public class DCScheme extends DataPartitionScheme {
+
+	private static final long serialVersionUID = -2819203532351362434L;
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb) {
 		List<MatrixBlock> list = new ArrayList<>();

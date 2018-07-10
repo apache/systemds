@@ -34,7 +34,9 @@ import org.apache.sysml.runtime.util.DataConverter;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DRRLocalScheme implements DataPartitionLocalScheme {
+public class DRRScheme extends DataPartitionScheme {
+
+	private static final long serialVersionUID = -2143692099741603644L;
 
 	public static MatrixBlock removeEmpty(MatrixBlock mb, int k, int workerId) {
 		double[] data = LongStream.range(0, mb.getNumRows()).mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();

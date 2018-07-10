@@ -26,56 +26,43 @@ import java.util.List;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 
-public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
+public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>, Integer, Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
 
 	private static final long serialVersionUID = 1710721606050403296L;
 	private int _workersNum;
 
-	private DataPartitionSparkScheme _scheme;
+	private SparkDataPartitioner _dp;
 
-	@SuppressWarnings("unused")
 	protected DataPartitionerSparkMapper() {
 		// No-args constructor used for deserialization
 	}
 
-	public DataPartitionerSparkMapper(Statement.PSScheme scheme, int workersNum) {
+	public DataPartitionerSparkMapper(Statement.PSScheme scheme, int workersNum, SparkExecutionContext sec, int numEntries) {
 		_workersNum = workersNum;
-		switch (scheme) {
-			case DISJOINT_CONTIGUOUS:
-				_scheme = new DCSparkScheme();
-				break;
-			case DISJOINT_ROUND_ROBIN:
-				_scheme = new DRRSparkScheme();
-				break;
-			case DISJOINT_RANDOM:
-				_scheme = new DRSparkScheme();
-				break;
-			case OVERLAP_RESHUFFLE:
-				_scheme = new ORSparkScheme();
-				break;
-		}
-
+		_dp = new SparkDataPartitioner(scheme, sec, numEntries, workersNum);
 	}
 
 	/**
-	 *
-	 * @param input Row Block ID -> "features, labels"
-	 * @return WorkerID -> partitioned "features, labels"
+	 * Do data partitioning
+	 * @param input RowBlockID -> (features, labels)
+	 * @return WorkerID -> (RowBlockID, (partitioned features, partitioned labels))
 	 * @throws Exception Some exception
 	 */
 	@Override
-	public Iterator<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> call(Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>> input)
+	public Iterator<Tuple2<Integer, Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>> call(Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>> input)
 			throws Exception {
-		List<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> partitions = new LinkedList<>();
+		List<Tuple2<Integer, Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>>> partitions = new LinkedList<>();
 		MatrixBlock features = input._2._1;
 		MatrixBlock labels = input._2._2;
-		DataPartitionSparkScheme.Result result = _scheme.doPartitioning(_workersNum, features, labels);
+		DataPartitionScheme.Result result = _dp.doPartitioning(_workersNum, features, labels, input._1);
 		for (int id = 0; id < _workersNum; id++) {
-			partitions.add(new Tuple2<>(id, new Tuple2<>(result.pFeatures.get(id), result.pLabels.get(id))));
+			partitions.add(new Tuple2<>(id, new Tuple2<>(input._1, new Tuple2<>(result.pFeatures.get(id).acquireRead(), result.pLabels.get(id).acquireRead()))));
 		}
 		return partitions.iterator();
 	}

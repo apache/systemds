@@ -33,7 +33,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X)),sample(nrow(X), nrow(X))),
  * i.e., sampling without replacement to ensure disjointness.
  */
-public class DRLocalScheme implements DataPartitionLocalScheme {
+public class DRScheme extends DataPartitionScheme {
+
+	private static final long serialVersionUID = -2196291191608440535L;
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
 		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
@@ -52,7 +54,7 @@ public class DRLocalScheme implements DataPartitionLocalScheme {
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a single permutation matrix (workers use slices)
-		MatrixBlock permutation = ParamservUtils.generatePermutation(features.getNumRows());
+		MatrixBlock permutation = ParamservUtils.generatePermutation(features.getNumRows(), SEED);
 		List<MatrixObject> pfs = internalDoPartitioning(workersNum, features, permutation);
 		List<MatrixObject> pls = internalDoPartitioning(workersNum, labels, permutation);
 		return new Result(pfs, pls);

@@ -19,14 +19,16 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public interface DataPartitionLocalScheme {
+public abstract class DataPartitionScheme implements Serializable {
 
-	final class Result {
+	public final class Result {
 		public final List<MatrixObject> pFeatures;
 		public final List<MatrixObject> pLabels;
 
@@ -36,5 +38,19 @@ public interface DataPartitionLocalScheme {
 		}
 	}
 
-	Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
+	private static final long serialVersionUID = -3462829818083371171L;
+	public static long SEED = -1; // Used for generating permutation
+
+	protected List<PartitionedBroadcast<MatrixBlock>> _globalPerms; // a list of global permutations
+	protected int _rblkID; // Current row block id
+
+	public void setGlobalPermutation(List<PartitionedBroadcast<MatrixBlock>> gps) {
+		_globalPerms = gps;
+	}
+
+	public void setRowID(int rowID) {
+		_rblkID = rowID;
+	}
+
+	public abstract Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
 }

@@ -19,19 +19,28 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DRLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 
 /**
- * Data partitioner Disjoint_Random:
- * for each worker, use a permutation multiply P[beg:end,] %*% X,
- * where P is constructed for example with P=table(seq(1,nrow(X)),sample(nrow(X), nrow(X))),
- * i.e., sampling without replacement to ensure disjointness.
+ * Spark data partitioner Disjoint_Random:
+ *
+ * For each worker, use a partial permutation P which aims to shift the current block to target block,
+ * because according to the global permutation, the current row block will shifted to other row block,
+ * where P is fetched from global permutation with (cblkID, current rblkID),
+ * and then reshuffle the current row block to generate a complete matrix (i.e., same row size with complete one).
+ * Finally, slice the reshuffled complete matrix in disjoint way.
  */
-public class DRSparkScheme extends DataPartitionSparkScheme {
+public class DRSparkScheme extends DataPartitionScheme {
 
 	private static final long serialVersionUID = -7655310624144544544L;
 
@@ -41,10 +50,47 @@ public class DRSparkScheme extends DataPartitionSparkScheme {
 
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		// Generate a single permutation matrix (workers use slices)
-		MatrixBlock permutation = ParamservUtils.generatePermutation((int) features.getNumRows());
-		List<MatrixBlock> pfs = DRLocalScheme.partition(workersNum, features, permutation);
-		List<MatrixBlock> pls = DRLocalScheme.partition(workersNum, labels, permutation);
-		return new Result(pfs, pls);
+		List<MatrixBlock> pfs = partition(workersNum, features);
+		List<MatrixBlock> pls = partition(workersNum, labels);
+		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
 	}
+
+	private List<MatrixBlock> partition(int k, MatrixBlock mb) {
+		MatrixBlock newMB = null;
+		PartitionedBroadcast<MatrixBlock> globalPerm = _globalPerms.get(0);
+
+		// For each column, calculate the shifted place to this row block
+		for (int i = 1; i < globalPerm.getNumRowBlocks() + 1; i++) {
+			MatrixBlock partialPerm = globalPerm.getBlock(i, _rblkID);
+			MatrixBlock reshuffledMB = doShuffling(mb, partialPerm);
+
+			if (newMB == null) {
+				newMB = reshuffledMB;
+			} else {
+				newMB = ParamservUtils.rbindMatrix(newMB, reshuffledMB);
+				reshuffledMB.cleanupBlock(true, false);
+			}
+		}
+
+		// Do data partition
+		int batchSize = (int) Math.ceil((double) newMB.getNumRows() / k);
+		MatrixBlock rowPerm = newMB;
+
+		return IntStream.range(0, k).mapToObj(i -> {
+			int begin = i * batchSize;
+			int end = Math.min((i + 1) * batchSize, rowPerm.getNumRows());
+			return rowPerm.slice(begin, end - 1);
+		}).collect(Collectors.toList());
+	}
+
+	protected static MatrixBlock doShuffling(MatrixBlock mb, MatrixBlock perm) {
+		double[] data = new double[mb.getNumRows()];
+		Iterator<IJV> iter = perm.getSparseBlockIterator();
+		while (iter.hasNext()) {
+			data[iter.next().getJ()] = 1.0;
+		}
+		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
+		return mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
+	}
+
 }

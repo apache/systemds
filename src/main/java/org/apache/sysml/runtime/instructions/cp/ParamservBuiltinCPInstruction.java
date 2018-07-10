@@ -53,27 +53,21 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionLocalScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerLocal;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkReducer;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSWorker;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
@@ -113,27 +107,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
 		PSScheme scheme = getScheme();
 		int workerNum = getWorkerNum(mode);
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
-		// Get input RDD
-		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-			sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
-		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-			sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
 
-		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum);
-		DataPartitionerSparkReducer reducer = new DataPartitionerSparkReducer();
-		//SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), null, null, sec, null);
 		SparkPSWorker worker = new SparkPSWorker();
-		ParamservUtils.assembleTrainingData(featuresRDD, labelsRDD)    // Combine RDDs of features and labels into a pair
-					  .flatMapToPair(mapper)        // Do the data partitioning on spark
-					  .reduceByKey(reducer)        // Group partition and put them on each worker
-					  .foreach(worker);			// Run remote workers
+		ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
+				.foreach(worker);   // Run remote workers
 
 	}
 
@@ -320,7 +303,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void partitionLocally(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		DataPartitionLocalScheme.Result result = new DataPartitionerLocal(scheme).doPartitioning(workers.size(), features.acquireRead(), labels.acquireRead());
+		DataPartitionScheme.Result result = new DataPartitioner(scheme).doPartitioning(workers.size(), features.acquireRead(), labels.acquireRead());
 		features.release();
 		labels.release();
 		List<MatrixObject> pfs = result.pFeatures;

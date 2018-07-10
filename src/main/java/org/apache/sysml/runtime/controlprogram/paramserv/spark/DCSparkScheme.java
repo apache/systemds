@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DCLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DCScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -31,7 +33,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * operation X[beg:end,] to obtain contiguous,
  * non-overlapping partitions of rows.
  */
-public class DCSparkScheme extends DataPartitionSparkScheme {
+public class DCSparkScheme extends DataPartitionScheme {
 
 	private static final long serialVersionUID = -2786906947020788787L;
 
@@ -41,8 +43,8 @@ public class DCSparkScheme extends DataPartitionSparkScheme {
 
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = DCLocalScheme.partition(workersNum, features);
-		List<MatrixBlock> pls = DCLocalScheme.partition(workersNum, labels);
-		return new Result(pfs, pls);
+		List<MatrixBlock> pfs = DCScheme.partition(workersNum, features);
+		List<MatrixBlock> pls = DCScheme.partition(workersNum, labels);
+		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
 	}
 }

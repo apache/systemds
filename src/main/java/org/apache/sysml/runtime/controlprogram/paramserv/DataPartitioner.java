@@ -17,26 +17,34 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import org.apache.spark.api.java.function.Function2;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-import scala.Tuple2;
+public class DataPartitioner {
 
-/**
- * Reducer allowing to append the matrices of features and labels
- */
-public class DataPartitionerSparkReducer implements Function2<Tuple2<MatrixBlock, MatrixBlock>, Tuple2<MatrixBlock, MatrixBlock>, Tuple2<MatrixBlock, MatrixBlock>> {
+	private DataPartitionScheme _scheme;
 
-	private static final long serialVersionUID = -6581711018365107364L;
+	public DataPartitioner(Statement.PSScheme scheme) {
+		switch (scheme) {
+			case DISJOINT_CONTIGUOUS:
+				_scheme = new DCScheme();
+				break;
+			case DISJOINT_ROUND_ROBIN:
+				_scheme = new DRRScheme();
+				break;
+			case DISJOINT_RANDOM:
+				_scheme = new DRScheme();
+				break;
+			case OVERLAP_RESHUFFLE:
+				_scheme = new ORScheme();
+				break;
+		}
+	}
 
-	@Override
-	public Tuple2<MatrixBlock, MatrixBlock> call(Tuple2<MatrixBlock, MatrixBlock> input1, Tuple2<MatrixBlock, MatrixBlock> input2) throws Exception {
-		MatrixBlock features = ParamservUtils.rbindMatrix(input1._1, input2._1);
-		MatrixBlock labels = ParamservUtils.rbindMatrix(input1._2, input2._2);
-		return new Tuple2<>(features, labels);
+	public DataPartitionScheme.Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
+		return _scheme.doPartitioning(workersNum, features, labels);
 	}
 
 }

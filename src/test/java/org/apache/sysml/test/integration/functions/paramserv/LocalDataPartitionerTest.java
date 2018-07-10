@@ -26,8 +26,8 @@ import java.util.stream.IntStream;
 
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionLocalScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerLocal;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,9 +36,9 @@ public class LocalDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDC() {
-		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_CONTIGUOUS);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionLocalScheme.Result result = dp.doPartitioning(3, DataConverter.convertToMatrixBlock(df, true),
+		DataPartitionScheme.Result result = dp.doPartitioning(3, DataConverter.convertToMatrixBlock(df, true),
 			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(3, result.pFeatures.size());
@@ -53,9 +53,9 @@ public class LocalDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDR() {
-		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_RANDOM);
+		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_RANDOM);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
 			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
@@ -74,9 +74,9 @@ public class LocalDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDRR() {
-		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
 			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
@@ -93,9 +93,9 @@ public class LocalDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerOR() {
-		DataPartitionerLocal dp = new DataPartitionerLocal(Statement.PSScheme.OVERLAP_RESHUFFLE);
+		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.OVERLAP_RESHUFFLE);
 		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionLocalScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
+		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
 			DataConverter.convertToMatrixBlock(df, true));
 
 		Assert.assertEquals(4, result.pFeatures.size());
@@ -105,7 +105,7 @@ public class LocalDataPartitionerTest {
 		assertPermutationOR(df, result.pLabels);
 	}
 
-	private void assertResult(DataPartitionLocalScheme.Result result, int index, double[] expected) {
+	private void assertResult(DataPartitionScheme.Result result, int index, double[] expected) {
 		List<MatrixObject> pfs = result.pFeatures;
 		List<MatrixObject> pls = result.pLabels;
 		double[] realValue1 = pfs.get(index).acquireRead().getDenseBlockValues();

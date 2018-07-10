@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DRRLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DRRScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -32,7 +34,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DRRSparkScheme extends DataPartitionSparkScheme {
+public class DRRSparkScheme extends DataPartitionScheme {
 
 	private static final long serialVersionUID = -3130831851505549672L;
 
@@ -42,8 +44,8 @@ public class DRRSparkScheme extends DataPartitionSparkScheme {
 
 	@Override
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = IntStream.range(0, workersNum).mapToObj(i -> DRRLocalScheme.removeEmpty(features, workersNum, i)).collect(Collectors.toList());
-		List<MatrixBlock> pls = IntStream.range(0, workersNum).mapToObj(i -> DRRLocalScheme.removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
-		return new Result(pfs, pls);
+		List<MatrixBlock> pfs = IntStream.range(0, workersNum).mapToObj(i -> DRRScheme.removeEmpty(features, workersNum, i)).collect(Collectors.toList());
+		List<MatrixBlock> pls = IntStream.range(0, workersNum).mapToObj(i -> DRRScheme.removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
+		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
 	}
 }

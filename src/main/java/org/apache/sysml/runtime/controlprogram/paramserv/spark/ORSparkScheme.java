@@ -23,16 +23,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.ORLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
- * Data partitioner Overlap_Reshuffle:
- * for each worker, use a new permutation multiply P %*% X,
- * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
+ * Spark data partitioner Overlap_Reshuffle:
+ * for each worker, reshuffle the row block using the according partial permutations,
+ * and then return the a list of reshuffled block of worker size
  */
-public class ORSparkScheme extends DataPartitionSparkScheme {
+public class ORSparkScheme extends DataPartitionScheme {
 
 	private static final long serialVersionUID = 6867567406403580311L;
 
@@ -41,12 +42,29 @@ public class ORSparkScheme extends DataPartitionSparkScheme {
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		// Generate a different permutation matrix for each worker
-		List<MatrixBlock> permutations = IntStream.range(0, workersNum).mapToObj(
-				i -> ParamservUtils.generatePermutation((int) features.getNumRows())).collect(Collectors.toList());
-		List<MatrixBlock> pfs = ORLocalScheme.partition(workersNum, features, permutations);
-		List<MatrixBlock> pls = ORLocalScheme.partition(workersNum, labels, permutations);
-		return new Result(pfs, pls);
+	public Result doPartitioning(int numWorkers, MatrixBlock features, MatrixBlock labels) {
+		List<MatrixBlock> pfs = partition(numWorkers, features);
+		List<MatrixBlock> pls = partition(numWorkers, labels);
+		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
+	}
+
+	private List<MatrixBlock> partition(int numWorkers, MatrixBlock mb) {
+		return IntStream.range(0, numWorkers).mapToObj(w -> {
+			MatrixBlock newMB = null;
+			PartitionedBroadcast<MatrixBlock> globalPerm = _globalPerms.get(w);
+
+			// For each column, calculate the shifted place to this row block
+			for (int i = 1; i < globalPerm.getNumRowBlocks() + 1; i++) {
+				MatrixBlock partialPerm = globalPerm.getBlock(i, _rblkID);
+				MatrixBlock reshuffledMB = DRSparkScheme.doShuffling(mb, partialPerm);
+				if (newMB == null) {
+					newMB = reshuffledMB;
+				} else {
+					newMB = ParamservUtils.rbindMatrix(newMB, reshuffledMB);
+					reshuffledMB.cleanupBlock(true, false);
+				}
+			}
+			return newMB;
+		}).collect(Collectors.toList());
 	}
 }

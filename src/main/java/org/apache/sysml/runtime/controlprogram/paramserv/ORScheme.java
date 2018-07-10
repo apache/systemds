@@ -32,7 +32,9 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * for each worker, use a new permutation multiply P %*% X,
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
-public class ORLocalScheme implements DataPartitionLocalScheme {
+public class ORScheme extends DataPartitionScheme {
+
+	private static final long serialVersionUID = -2096935107226862868L;
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
 		return IntStream.range(0, k).mapToObj(i -> {

@@ -92,11 +92,11 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 					veclist.add(ret);
 				}
 			}
-			return selfWrittenMinFunctionCauseJavaIsToDumb(veclist, numr);
+			return minfunction(veclist, numr);
 		}		
 	}
 	
-	private double[] selfWrittenMinFunctionCauseJavaIsToDumb(List<double[]> inputVectors, int vectorSize) {
+	private double[] minfunction(List<double[]> inputVectors, int vectorSize) {
 		if(inputVectors.size()>0) {
 			double[] minOfColumns =  new double[vectorSize];
 			Arrays.fill(minOfColumns, Double.MAX_VALUE);

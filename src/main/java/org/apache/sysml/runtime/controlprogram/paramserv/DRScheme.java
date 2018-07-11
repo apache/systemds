@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,9 +37,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class DRScheme extends DataPartitionScheme {
 
-	private static final long serialVersionUID = -2196291191608440535L;
-
-	public static List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
+	private List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
 		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);
 		return IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize;

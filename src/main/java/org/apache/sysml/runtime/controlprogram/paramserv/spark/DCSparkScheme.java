@@ -20,20 +20,21 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DCScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
+import scala.Tuple2;
+
 /**
- * Disjoint_Contiguous data partitioner:
+ * Spark Disjoint_Contiguous data partitioner:
  * <p>
- * for each worker, use a right indexing
- * operation X[beg:end,] to obtain contiguous,
- * non-overlapping partitions of rows.
+ * For each row, find out the shifted place according to the workerID indicator
  */
-public class DCSparkScheme extends DataPartitionScheme {
+public class DCSparkScheme extends DataPartitionSparkScheme {
 
 	private static final long serialVersionUID = -2786906947020788787L;
 
@@ -42,9 +43,19 @@ public class DCSparkScheme extends DataPartitionScheme {
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = DCScheme.partition(workersNum, features);
-		List<MatrixBlock> pls = DCScheme.partition(workersNum, labels);
-		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = partition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = partition(rblkID, labels);
+		return new Result(pfs, pls);
+	}
+
+	private List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> partition(int rblkID, MatrixBlock mb) {
+		MatrixBlock indicator = _workerIndicator.getBlock(rblkID, 1);
+		return LongStream.range(0, mb.getNumRows()).mapToObj(r -> {
+			int workerID = (int) indicator.getValue((int) r, 0);
+			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
+			long shiftedPosition = r + (rblkID - 1) * OptimizerUtils.DEFAULT_BLOCKSIZE;
+			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
+		}).collect(Collectors.toList());
 	}
 }

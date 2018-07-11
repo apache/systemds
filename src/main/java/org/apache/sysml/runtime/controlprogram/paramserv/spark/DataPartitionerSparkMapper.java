@@ -27,7 +27,6 @@ import java.util.List;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
@@ -50,8 +49,8 @@ public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Lo
 
 	/**
 	 * Do data partitioning
-	 * @param input RowBlockID -> (features, labels)
-	 * @return WorkerID -> (RowBlockID, (partitioned features, partitioned labels))
+	 * @param input RowBlockID => (features, labels)
+	 * @return WorkerID => (rowBlockID, (single row features, single row labels))
 	 * @throws Exception Some exception
 	 */
 	@Override
@@ -60,9 +59,11 @@ public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Lo
 		List<Tuple2<Integer, Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>>> partitions = new LinkedList<>();
 		MatrixBlock features = input._2._1;
 		MatrixBlock labels = input._2._2;
-		DataPartitionScheme.Result result = _dp.doPartitioning(_workersNum, features, labels, input._1);
-		for (int id = 0; id < _workersNum; id++) {
-			partitions.add(new Tuple2<>(id, new Tuple2<>(input._1, new Tuple2<>(result.pFeatures.get(id).acquireRead(), result.pLabels.get(id).acquireRead()))));
+		DataPartitionSparkScheme.Result result = _dp.doPartitioning(_workersNum, features, labels, input._1);
+		for (int i = 0; i < result.pFeatures.size(); i++) {
+			Tuple2<Integer, Tuple2<Long, MatrixBlock>> ft = result.pFeatures.get(i);
+			Tuple2<Integer, Tuple2<Long, MatrixBlock>> lt = result.pLabels.get(i);
+			partitions.add(new Tuple2<>(ft._1, new Tuple2<>(ft._2._1, new Tuple2<>(ft._2._2, lt._2._2))));
 		}
 		return partitions.iterator();
 	}

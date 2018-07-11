@@ -19,37 +19,46 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import static org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme.SEED;
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.DataConverter;
 
 public class SparkDataPartitioner implements Serializable {
 
 	private static final long serialVersionUID = 6841548626711057448L;
-	private DataPartitionScheme _scheme;
+	private DataPartitionSparkScheme _scheme;
 
 	protected SparkDataPartitioner(Statement.PSScheme scheme, SparkExecutionContext sec, int numEntries, int numWorkers) {
 		switch (scheme) {
 			case DISJOINT_CONTIGUOUS:
 				_scheme = new DCSparkScheme();
+				// Create the worker id indicator
+				createDCIndicator(sec, numWorkers, numEntries);
 				break;
 			case DISJOINT_ROUND_ROBIN:
 				_scheme = new DRRSparkScheme();
+				// Create the worker id indicator
+				createDRIndicator(sec, numWorkers, numEntries);
 				break;
 			case DISJOINT_RANDOM:
 				_scheme = new DRSparkScheme();
 				// Create the global permutation
 				createGlobalPermutations(sec, numEntries, 1);
+				// Create the worker id indicator
+				createDCIndicator(sec, numWorkers, numEntries);
 				break;
 			case OVERLAP_RESHUFFLE:
 				_scheme = new ORSparkScheme();
@@ -59,17 +68,43 @@ public class SparkDataPartitioner implements Serializable {
 		}
 	}
 
+	private void createDRIndicator(SparkExecutionContext sec, int numWorkers, int numEntries) {
+		double[] vector = IntStream.range(0, numEntries).mapToDouble(n -> n % numWorkers).toArray();
+		MatrixBlock vectorMB = DataConverter.convertToMatrixBlock(vector, true);
+		_scheme.setWorkerIndicator(sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(vectorMB)));
+	}
+
+	private void createDCIndicator(SparkExecutionContext sec, int numWorkers, int numEntries) {
+		double[] vector = new double[numEntries];
+		int batchSize = (int) Math.ceil((double) numEntries / numWorkers);
+		for (int i = 1; i < numWorkers; i++) {
+			int begin = batchSize * i;
+			int end = Math.min(begin + batchSize, numEntries);
+			Arrays.fill(vector, begin, end, i);
+		}
+		MatrixBlock vectorMB = DataConverter.convertToMatrixBlock(vector, true);
+		_scheme.setWorkerIndicator(sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(vectorMB)));
+	}
+
 	private void createGlobalPermutations(SparkExecutionContext sec, int numEntries, int numPerm) {
 		List<PartitionedBroadcast<MatrixBlock>> perms = IntStream.range(0, numPerm).mapToObj(i -> {
 			MatrixBlock perm = ParamservUtils.generatePermutation(numEntries, SEED);
-			return sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(perm));
+			double[] vector = new double[numEntries];
+			Iterator<IJV> iter = perm.getSparseBlockIterator();
+			while (iter.hasNext()) {
+				IJV ijv = iter.next();
+				// "from rowID" => "to rowID"
+				vector[ijv.getJ()] = ijv.getI();
+			}
+			MatrixBlock vectorMB = DataConverter.convertToMatrixBlock(vector, true);
+			return sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(vectorMB));
 		}).collect(Collectors.toList());
 		_scheme.setGlobalPermutation(perms);
 	}
 
-	public DataPartitionScheme.Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels, long rowID) {
+	public DataPartitionSparkScheme.Result doPartitioning(int numWorkers, MatrixBlock features, MatrixBlock labels,
+			long rowID) {
 		// Set the rowID in order to get the according permutation
-		_scheme.setRowID((int) rowID);
-		return _scheme.doPartitioning(workersNum, features, labels);
+		return _scheme.doPartitioning(numWorkers, (int) rowID, features, labels);
 	}
 }

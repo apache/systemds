@@ -19,134 +19,117 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class LocalDataPartitionerTest {
+import scala.Tuple2;
+
+public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDC() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_CONTIGUOUS);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionScheme.Result result = dp.doPartitioning(3, DataConverter.convertToMatrixBlock(df, true),
-			DataConverter.convertToMatrixBlock(df, true));
+		DataPartitionScheme.Result result = launchLocalDataPartitionerDC();
 
-		Assert.assertEquals(3, result.pFeatures.size());
-		Assert.assertEquals(3, result.pLabels.size());
-		double[] expected1 = new double[] { 1, 2, 3, 4 };
-		assertResult(result, 0, expected1);
-		double[] expected2 = new double[] { 5, 6, 7, 8 };
-		assertResult(result, 1, expected2);
-		double[] expected3 = new double[] { 9, 10 };
-		assertResult(result, 2, expected3);
+		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
+		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		for (int i = 0; i < WORKER_NUM; i++) {
+			assertDCResult(result, i);
+		}
+	}
+
+	private void assertDCResult(DataPartitionScheme.Result result, int workerID) {
+		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM) * COL_SIZE, (workerID + 1) * (ROW_SIZE / WORKER_NUM) * COL_SIZE), result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM), (workerID + 1) * (ROW_SIZE / WORKER_NUM)), result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
 	}
 
 	@Test
 	public void testLocalDataPartitionerDR() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_RANDOM);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
-			DataConverter.convertToMatrixBlock(df, true));
+		MatrixBlock[] mbs = generateData();
+		DataPartitionScheme.Result result = launchLocalDataPartitionerDR(mbs);
 
-		Assert.assertEquals(4, result.pFeatures.size());
-		Assert.assertEquals(4, result.pLabels.size());
+		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
+		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
 
-		// Ensure that the index is accorded between features and labels
-		IntStream.range(0, result.pFeatures.size()).forEach(i -> {
-			double[] f = result.pFeatures.get(i).acquireRead().getDenseBlockValues();
-			double[] l = result.pLabels.get(i).acquireRead().getDenseBlockValues();
-			Assert.assertArrayEquals(f, l, 0);
-		});
+		// Generate the expected data
+		MatrixBlock perm = ParamservUtils.generatePermutation(ROW_SIZE, ParamservUtils.SEED);
+		List<MatrixBlock> efs = generateExpectedDataDR(mbs[0], perm);
+		List<MatrixBlock> els = generateExpectedDataDR(mbs[1], perm);
 
-		assertPermutationDR(df, result.pFeatures);
-		assertPermutationDR(df, result.pLabels);
+		for (int i = 0; i < WORKER_NUM; i++) {
+			Assert.assertArrayEquals(efs.get(i).getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
+			Assert.assertArrayEquals(els.get(i).getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
+		}
+	}
+
+	private List<MatrixBlock> generateExpectedDataDR(MatrixBlock mb, MatrixBlock perm) {
+		int batchSize = (int) Math.ceil((double) ROW_SIZE / WORKER_NUM);
+		return IntStream.range(0, WORKER_NUM).mapToObj(i -> {
+			int begin = i * batchSize;
+			int end = Math.min((i + 1) * batchSize, mb.getNumRows());
+			MatrixBlock slicedPerm = perm.slice(begin, end - 1);
+			return slicedPerm.aggregateBinaryOperations(slicedPerm, mb, new MatrixBlock(),
+					InstructionUtils.getMatMultOperator(WORKER_NUM));
+		}).collect(Collectors.toList());
 	}
 
 	@Test
 	public void testLocalDataPartitionerDRR() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
-			DataConverter.convertToMatrixBlock(df, true));
+		DataPartitionScheme.Result result = launchLocalDataPartitionerDRR();
 
-		Assert.assertEquals(4, result.pFeatures.size());
-		Assert.assertEquals(4, result.pLabels.size());
-		double[] expected1 = new double[] { 1, 5, 9 };
-		assertResult(result, 0, expected1);
-		double[] expected2 = new double[] { 2, 6, 10 };
-		assertResult(result, 1, expected2);
-		double[] expected3 = new double[] { 3, 7 };
-		assertResult(result, 2, expected3);
-		double[] expected4 = new double[] { 4, 8 };
-		assertResult(result, 3, expected4);
+		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
+		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		for (int i = 0; i < WORKER_NUM; i++) {
+			assertDRRResult(result, i);
+		}
+	}
+
+	private void assertDRRResult(DataPartitionScheme.Result result, int workerID) {
+		Tuple2<double[], double[]> expected = generateExpectedData(workerID, WORKER_NUM, ROW_SIZE / WORKER_NUM);
+		Assert.assertArrayEquals(expected._1, result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		Assert.assertArrayEquals(expected._2, result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
+	}
+
+	private Tuple2<double[], double[]> generateExpectedData(int start, int step, int rowSize) {
+		double[] features = new double[rowSize * COL_SIZE];
+		int fIndex = 0;
+		double[] labels = new double[rowSize];
+		for (int i = 0; i < rowSize; i++) {
+			int rowID = start + i * step;
+			labels[i] = rowID;
+			for (int j = rowID * COL_SIZE; j < (rowID + 1) * COL_SIZE; j++) {
+				features[fIndex++] = j;
+			}
+		}
+		return new Tuple2<>(features, labels);
 	}
 
 	@Test
 	public void testLocalDataPartitionerOR() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.OVERLAP_RESHUFFLE);
-		double[] df = new double[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		DataPartitionScheme.Result result = dp.doPartitioning(4, DataConverter.convertToMatrixBlock(df, true),
-			DataConverter.convertToMatrixBlock(df, true));
+		ParamservUtils.SEED = System.nanoTime();
+		DataPartitionScheme.Result result = launchLocalDataPartitionerOR();
 
-		Assert.assertEquals(4, result.pFeatures.size());
-		Assert.assertEquals(4, result.pLabels.size());
-
-		assertPermutationOR(df, result.pFeatures);
-		assertPermutationOR(df, result.pLabels);
-	}
-
-	private void assertResult(DataPartitionScheme.Result result, int index, double[] expected) {
-		List<MatrixObject> pfs = result.pFeatures;
-		List<MatrixObject> pls = result.pLabels;
-		double[] realValue1 = pfs.get(index).acquireRead().getDenseBlockValues();
-		double[] realValue2 = pls.get(index).acquireRead().getDenseBlockValues();
-		Assert.assertArrayEquals(expected, realValue1, 0);
-		Assert.assertArrayEquals(expected, realValue2, 0);
-	}
-
-	private void assertPermutationDR(double[] df, List<MatrixObject> list) {
-		Map<Double, Integer> dict = new HashMap<>();
-		for (double d : df) {
-			dict.put(d, 0);
-		}
-		IntStream.range(0, list.size()).forEach(i -> {
-			double[] f = list.get(i).acquireRead().getDenseBlockValues();
-			for (double d : f) {
-				dict.compute(d, (k, v) -> v + 1);
-			}
-		});
-
-		// check if all the occurrences are equivalent to one
-		for (Map.Entry<Double, Integer> e : dict.entrySet()) {
-			Assert.assertEquals(1, (int) e.getValue());
+		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
+		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		Tuple2<MatrixBlock, MatrixBlock> expected = generateExpectedDataOR();
+		for (int i = 0; i < WORKER_NUM; i++) {
+			Assert.assertArrayEquals(expected._1.getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
+			Assert.assertArrayEquals(expected._2.getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
 		}
 	}
 
-	private void assertPermutationOR(double[] df, List<MatrixObject> list) {
-		for (MatrixObject mo : list) {
-			Map<Double, Integer> dict = new HashMap<>();
-			for (double d : df) {
-				dict.put(d, 0);
-			}
-			double[] f = mo.acquireRead().getDenseBlockValues();
-			for (double d : f) {
-				dict.compute(d, (k, v) -> v + 1);
-			}
-			Assert.assertEquals(10, dict.size());
-			// check if all the occurrences are equivalent to one
-			for (Map.Entry<Double, Integer> e : dict.entrySet()) {
-				Assert.assertEquals(1, (int) e.getValue());
-			}
-		}
+	private Tuple2<MatrixBlock, MatrixBlock> generateExpectedDataOR() {
+		MatrixBlock[] mbs = generateData();
+		MatrixBlock perm = ParamservUtils.generatePermutation(ROW_SIZE, ParamservUtils.SEED);
+		return new Tuple2<>(perm.aggregateBinaryOperations(perm, mbs[0], new MatrixBlock(), InstructionUtils.getMatMultOperator(WORKER_NUM)),
+			perm.aggregateBinaryOperations(perm, mbs[1], new MatrixBlock(), InstructionUtils.getMatMultOperator(WORKER_NUM)));
 	}
+
 }

@@ -38,7 +38,7 @@ public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integ
 
 	/**
 	 * Row-wise combine the matrix
-	 * @param input workerID => [(rowBlockID, (features, labels))]
+	 * @param input workerID => ordered list [(rowBlockID, (features, labels))]
 	 * @return workerID => [(features, labels)]
 	 * @throws Exception Some exception
 	 */

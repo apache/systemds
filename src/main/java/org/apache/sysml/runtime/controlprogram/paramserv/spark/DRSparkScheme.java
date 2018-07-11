@@ -19,28 +19,22 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
+
+import scala.Tuple2;
 
 /**
  * Spark data partitioner Disjoint_Random:
  *
- * For each worker, use a partial permutation P which aims to shift the current block to target block,
- * because according to the global permutation, the current row block will shifted to other row block,
- * where P is fetched from global permutation with (cblkID, current rblkID),
- * and then reshuffle the current row block to generate a complete matrix (i.e., same row size with complete one).
- * Finally, slice the reshuffled complete matrix in disjoint way.
+ * For the current row block, find all the shifted place for each row (WorkerID => (row block ID, matrix)
  */
-public class DRSparkScheme extends DataPartitionScheme {
+public class DRSparkScheme extends DataPartitionSparkScheme {
 
 	private static final long serialVersionUID = -7655310624144544544L;
 
@@ -49,48 +43,27 @@ public class DRSparkScheme extends DataPartitionScheme {
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = partition(workersNum, features);
-		List<MatrixBlock> pls = partition(workersNum, labels);
-		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = partition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = partition(rblkID, labels);
+		return new Result(pfs, pls);
 	}
 
-	private List<MatrixBlock> partition(int k, MatrixBlock mb) {
-		MatrixBlock newMB = null;
-		PartitionedBroadcast<MatrixBlock> globalPerm = _globalPerms.get(0);
+	private List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> partition(int rblkID, MatrixBlock mb) {
+		MatrixBlock partialPerm = _globalPerms.get(0).getBlock(rblkID, 1);
 
-		// For each column, calculate the shifted place to this row block
-		for (int i = 1; i < globalPerm.getNumRowBlocks() + 1; i++) {
-			MatrixBlock partialPerm = globalPerm.getBlock(i, _rblkID);
-			MatrixBlock reshuffledMB = doShuffling(mb, partialPerm);
+		// For each row, find out the shifted place
+		return IntStream.range(0, mb.getNumRows()).mapToObj(r -> {
+			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
+			long shiftedPosition = (long) partialPerm.getValue(r, 0);
 
-			if (newMB == null) {
-				newMB = reshuffledMB;
-			} else {
-				newMB = ParamservUtils.rbindMatrix(newMB, reshuffledMB);
-				reshuffledMB.cleanupBlock(true, false);
-			}
-		}
+			// Get the shifted block and position
+			int shiftedBlkID = (int) (shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE + 1);
 
-		// Do data partition
-		int batchSize = (int) Math.ceil((double) newMB.getNumRows() / k);
-		MatrixBlock rowPerm = newMB;
-
-		return IntStream.range(0, k).mapToObj(i -> {
-			int begin = i * batchSize;
-			int end = Math.min((i + 1) * batchSize, rowPerm.getNumRows());
-			return rowPerm.slice(begin, end - 1);
+			MatrixBlock indicator = _workerIndicator.getBlock(shiftedBlkID, 1);
+			int workerID = (int) indicator.getValue((int) shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE, 0);
+			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
 		}).collect(Collectors.toList());
-	}
-
-	protected static MatrixBlock doShuffling(MatrixBlock mb, MatrixBlock perm) {
-		double[] data = new double[mb.getNumRows()];
-		Iterator<IJV> iter = perm.getSparseBlockIterator();
-		while (iter.hasNext()) {
-			data[iter.next().getJ()] = 1.0;
-		}
-		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
-		return mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
 	}
 
 }

@@ -35,8 +35,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class DCScheme extends DataPartitionScheme {
 
-	private static final long serialVersionUID = -2819203532351362434L;
-
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb) {
 		List<MatrixBlock> list = new ArrayList<>();
 		long stepSize = (long) Math.ceil((double) mb.getNumRows() / k);

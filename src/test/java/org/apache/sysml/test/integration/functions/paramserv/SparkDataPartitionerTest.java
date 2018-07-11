@@ -19,16 +19,14 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.junit.Assert;
@@ -36,9 +34,8 @@ import org.junit.Test;
 
 import scala.Tuple2;
 
-public class SparkDataPartitionerTest extends BaseDataPartitionerTest implements Serializable {
+public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
-	private static final long serialVersionUID = 3124325166708845429L;
 	private static SparkExecutionContext _sec;
 
 	static {
@@ -47,96 +44,54 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest implements
 		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
 	}
 
+	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(Statement.PSScheme scheme) {
+		MatrixBlock[] mbs = generateData();
+		return ParamservUtils.doPartitionOnSpark(_sec, ParamservUtils.newMatrixObject(mbs[0]), ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM).collectAsMap();
+	}
+
 	@Test
 	public void testSparkDataPartitionerDC() {
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(Statement.PSScheme.DISJOINT_CONTIGUOUS);
-		Assert.assertEquals(WORKER_NUM, result.size());
-		assertResult(result);
+		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDC();
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_CONTIGUOUS);
+
+		// Compare the both
+		assertResult(localResult, sparkResult);
 	}
 
-	@Test
-	public void testSparkDataPartitionerDR() {
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(Statement.PSScheme.DISJOINT_RANDOM);
-		Assert.assertEquals(WORKER_NUM, result.size());
-		assertResult(result);
-	}
-
-	@Test
-	public void testSparkDataPartitionerDRR() {
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
-
-		Assert.assertEquals(WORKER_NUM, result.size());
-		result.forEach((key, value) -> {
-			int workerID = key;
-			MatrixBlock features = value._1;
-			MatrixBlock labels = value._2;
-			Assert.assertEquals(features.getNumRows(), labels.getNumRows());
-			double[] fd = features.getDenseBlockValues();
-			double[] ld = labels.getDenseBlockValues();
-			for (int i = 0; i < features.getNumRows(); i++) {
-				Assert.assertEquals(workerID, ((int) ld[i]) % result.size());
-				for (int j = 0; j < labels.getNumColumns(); j++) {
-					Assert.assertEquals((int) ld[i], (int) fd[i * features.getNumColumns() + j] / features.getNumColumns());
-				}
-			}
+	private void assertResult(DataPartitionScheme.Result local, Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> spark) {
+		IntStream.range(0, WORKER_NUM).forEach(w -> {
+			Assert.assertArrayEquals(local.pFeatures.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._1.getDenseBlockValues(), 0);
+			Assert.assertArrayEquals(local.pLabels.get(w).acquireRead().getDenseBlockValues(), spark.get(w)._2.getDenseBlockValues(), 0);
 		});
 	}
 
 	@Test
-	public void testSparkDataPartitionerOR() {
-		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = doPartitioning(Statement.PSScheme.OVERLAP_RESHUFFLE);
-
-		Assert.assertEquals(WORKER_NUM, result.size());
-		List<MatrixBlock> pfs = result.values().stream().map(r -> r._1).collect(Collectors.toList());
-		List<MatrixBlock> pls = result.values().stream().map(r -> r._2).collect(Collectors.toList());
-		assertPermutationOR(ROW_SIZE * COL_SIZE, pfs);
-		assertPermutationOR(ROW_SIZE, pls);
-	}
-
-	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(Statement.PSScheme scheme) {
+	public void testSparkDataPartitionerDR() {
+		ParamservUtils.SEED = System.nanoTime();
 		MatrixBlock[] mbs = generateData();
-		return ParamservUtils.doPartitionOnSpark(_sec, ParamservUtils.newMatrixObject(mbs[0]), ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM)
-				  .collectAsMap();
+		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDR(mbs);
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_RANDOM);
+
+		// Compare the both
+		assertResult(localResult, sparkResult);
 	}
 
-	private void assertResult(List<MatrixBlock> list) {
-		Map<Double, Integer> dict = new HashMap<>();
-		for (MatrixBlock mb : list) {
-			double[] dArray = mb.getDenseBlockValues();
-			for (double d : dArray) {
-				if (dict.containsKey(d)) {
-					dict.compute(d, (aDouble, occ) -> occ + 1);
-				} else {
-					dict.put(d, 1);
-				}
-			}
-		}
-		for (int i = 1; i < ROW_SIZE; i++) {
-			Assert.assertEquals(1, dict.get((double) i), 0);
-		}
+	@Test
+	public void testSparkDataPartitionerDRR() {
+		DataPartitionScheme.Result localResult = launchLocalDataPartitionerDRR();
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+
+		// Compare the both
+		assertResult(localResult, sparkResult);
 	}
 
-	private void assertResult(Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> result) {
-		List<MatrixBlock> pfs = result.values().stream().map(r -> r._1).collect(Collectors.toList());
-		List<MatrixBlock> pls = result.values().stream().map(r -> r._2).collect(Collectors.toList());
-		assertResult(pfs);
-		assertResult(pls);
-	}
+	@Test
+	public void testSparkDataPartitionerOR() {
+		ParamservUtils.SEED = System.nanoTime();
+		DataPartitionScheme.Result localResult = launchLocalDataPartitionerOR();
+		Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> sparkResult = doPartitioning(Statement.PSScheme.OVERLAP_RESHUFFLE);
 
-	private void assertPermutationOR(int size, List<MatrixBlock> list) {
-		for (MatrixBlock mb : list) {
-			Map<Double, Integer> dict = new HashMap<>();
-			for (int i = 0; i < size; i++) {
-				dict.put((double) i, 0);
-			}
-			double[] f = mb.getDenseBlockValues();
-			for (double d : f) {
-				dict.compute(d, (k, v) -> v + 1);
-			}
-			// check if all the occurrences are equivalent to one
-			for (Map.Entry<Double, Integer> e : dict.entrySet()) {
-				Assert.assertEquals(1, (int) e.getValue());
-			}
-		}
+		// Compare the both
+		assertResult(localResult, sparkResult);
 	}
 }

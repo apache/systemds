@@ -19,6 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
+import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -33,8 +35,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
 public class ORScheme extends DataPartitionScheme {
-
-	private static final long serialVersionUID = -2096935107226862868L;
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
 		return IntStream.range(0, k).mapToObj(i -> {
@@ -52,7 +52,7 @@ public class ORScheme extends DataPartitionScheme {
 	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
 		// Generate a different permutation matrix for each worker
 		List<MatrixBlock> permutations = IntStream.range(0, workersNum)
-			.mapToObj(i -> ParamservUtils.generatePermutation((int)features.getNumRows()))
+			.mapToObj(i -> ParamservUtils.generatePermutation(features.getNumRows(), SEED))
 	    	.collect(Collectors.toList());
 		List<MatrixObject> pfs = doPartitioning(workersNum, features, permutations);
 		List<MatrixObject> pls = doPartitioning(workersNum, labels, permutations);

@@ -21,20 +21,18 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DRRScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
+import scala.Tuple2;
+
 /**
- * Disjoint_Round_Robin data partitioner:
- * for each worker, use a permutation multiply
- * or simpler a removeEmpty such as removeEmpty
- * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
+ * Spark Disjoint_Round_Robin data partitioner:
  */
-public class DRRSparkScheme extends DataPartitionScheme {
+public class DRRSparkScheme extends DataPartitionSparkScheme {
 
 	private static final long serialVersionUID = -3130831851505549672L;
 
@@ -43,9 +41,19 @@ public class DRRSparkScheme extends DataPartitionScheme {
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		List<MatrixBlock> pfs = IntStream.range(0, workersNum).mapToObj(i -> DRRScheme.removeEmpty(features, workersNum, i)).collect(Collectors.toList());
-		List<MatrixBlock> pls = IntStream.range(0, workersNum).mapToObj(i -> DRRScheme.removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
-		return new Result(ParamservUtils.convertToMatrixObject(pfs), ParamservUtils.convertToMatrixObject(pls));
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = partition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = partition(rblkID, labels);
+		return new Result(pfs, pls);
+	}
+
+	private List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> partition(int rblkID, MatrixBlock mb) {
+		MatrixBlock indicator = _workerIndicator.getBlock(rblkID, 1);
+		return LongStream.range(0, mb.getNumRows()).mapToObj(r -> {
+			int workerID = (int) indicator.getValue((int) r, 0);
+			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
+			long shiftedPosition = r + (rblkID - 1) * OptimizerUtils.DEFAULT_BLOCKSIZE;
+			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
+		}).collect(Collectors.toList());
 	}
 }

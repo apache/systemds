@@ -287,10 +287,6 @@ public class ParamservUtils {
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);
 	}
 
-	public static MatrixBlock rbindMatrix(MatrixBlock left, MatrixBlock right) {
-		return left.append(right, new MatrixBlock(), false);
-	}
-
 	public static MatrixBlock cbindMatrix(MatrixBlock left, MatrixBlock right) {
 		return left.append(right, new MatrixBlock());
 	}
@@ -378,7 +374,7 @@ public class ParamservUtils {
 										 l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
 										 return l1;
 									 })
-							 .mapToPair(new DataPartitionerSparkAggregator()); //Row-wise bind the features and labels (workerID => (features, labels))
+							 .mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns())); //Row-wise bind the features and labels (workerID => (features, labels))
 	}
 
 }

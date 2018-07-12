@@ -20,11 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
@@ -44,18 +40,8 @@ public class DCSparkScheme extends DataPartitionSparkScheme {
 
 	@Override
 	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = partition(rblkID, features);
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = partition(rblkID, labels);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
 		return new Result(pfs, pls);
-	}
-
-	private List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> partition(int rblkID, MatrixBlock mb) {
-		MatrixBlock indicator = _workerIndicator.getBlock(rblkID, 1);
-		return LongStream.range(0, mb.getNumRows()).mapToObj(r -> {
-			int workerID = (int) indicator.getValue((int) r, 0);
-			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
-			long shiftedPosition = r + (rblkID - 1) * OptimizerUtils.DEFAULT_BLOCKSIZE;
-			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
-		}).collect(Collectors.toList());
 	}
 }

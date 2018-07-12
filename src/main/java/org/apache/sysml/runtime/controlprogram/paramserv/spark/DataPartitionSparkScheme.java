@@ -21,7 +21,11 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
+import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -29,11 +33,11 @@ import scala.Tuple2;
 
 public abstract class DataPartitionSparkScheme implements Serializable {
 
-	public final class Result {
-		public final List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pFeatures; // WorkerID => (rowID, matrix)
-		public final List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pLabels;
+	protected final class Result {
+		protected final List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pFeatures; // WorkerID => (rowID, matrix)
+		protected final List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pLabels;
 
-		public Result(List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pFeatures, List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pLabels) {
+		protected Result(List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pFeatures, List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pLabels) {
 			this.pFeatures = pFeatures;
 			this.pLabels = pLabels;
 		}
@@ -42,14 +46,30 @@ public abstract class DataPartitionSparkScheme implements Serializable {
 	private static final long serialVersionUID = -3462829818083371171L;
 
 	protected List<PartitionedBroadcast<MatrixBlock>> _globalPerms; // a list of global permutations
-	protected PartitionedBroadcast<MatrixBlock> _workerIndicator; // a matrix indicating to which worker the given row is belong
+	protected PartitionedBroadcast<MatrixBlock> _workerIndicator; // a matrix indicating to which worker the given row belongs
 
-	public void setGlobalPermutation(List<PartitionedBroadcast<MatrixBlock>> gps) {
+	protected void setGlobalPermutation(List<PartitionedBroadcast<MatrixBlock>> gps) {
 		_globalPerms = gps;
 	}
 
-	public void setWorkerIndicator(PartitionedBroadcast<MatrixBlock> wi) {
+	protected void setWorkerIndicator(PartitionedBroadcast<MatrixBlock> wi) {
 		_workerIndicator = wi;
+	}
+
+	/**
+	 * Do non-reshuffled data partitioning according to worker indicator
+	 * @param rblkID row block ID
+	 * @param mb Matrix
+	 * @return list of tuple (workerID, (row block ID, matrix row))
+	 */
+	protected List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> nonShuffledPartition(int rblkID, MatrixBlock mb) {
+		MatrixBlock indicator = _workerIndicator.getBlock(rblkID, 1);
+		return LongStream.range(0, mb.getNumRows()).mapToObj(r -> {
+			int workerID = (int) indicator.getValue((int) r, 0);
+			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
+			long shiftedPosition = r + (rblkID - 1) * OptimizerUtils.DEFAULT_BLOCKSIZE;
+			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
+		}).collect(Collectors.toList());
 	}
 
 	public abstract Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels);

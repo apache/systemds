@@ -23,7 +23,6 @@ import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.S
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,7 +31,6 @@ import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
-import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 
@@ -88,13 +86,11 @@ public class SparkDataPartitioner implements Serializable {
 
 	private void createGlobalPermutations(SparkExecutionContext sec, int numEntries, int numPerm) {
 		List<PartitionedBroadcast<MatrixBlock>> perms = IntStream.range(0, numPerm).mapToObj(i -> {
-			MatrixBlock perm = ParamservUtils.generatePermutation(numEntries, SEED);
+			MatrixBlock perm = MatrixBlock.sampleOperations(numEntries, numEntries, false, SEED);
+			// Create the source-target id vector from the permutation ranging from 1 to number of entries
 			double[] vector = new double[numEntries];
-			Iterator<IJV> iter = perm.getSparseBlockIterator();
-			while (iter.hasNext()) {
-				IJV ijv = iter.next();
-				// "from rowID" => "to rowID"
-				vector[ijv.getJ()] = ijv.getI();
+			for (int j = 0; j < perm.getDenseBlockValues().length; j++) {
+				vector[(int) perm.getDenseBlockValues()[j] - 1] = j;
 			}
 			MatrixBlock vectorMB = DataConverter.convertToMatrixBlock(vector, true);
 			return sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(vectorMB));

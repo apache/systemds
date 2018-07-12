@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
@@ -31,9 +31,16 @@ import scala.Tuple2;
 public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integer,LinkedList<Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
 
 	private static final long serialVersionUID = -1245300852709085117L;
+	private long _fcol;
+	private long _lcol;
 
 	public DataPartitionerSparkAggregator() {
 
+	}
+
+	public DataPartitionerSparkAggregator(long fcol, long lcol) {
+		_fcol = fcol;
+		_lcol = lcol;
 	}
 
 	/**
@@ -44,20 +51,15 @@ public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integ
 	 */
 	@Override
 	public Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> call(Tuple2<Integer, LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>> input) throws Exception {
-		MatrixBlock fmb = null;
-		MatrixBlock lmb = null;
+		MatrixBlock fmb = new MatrixBlock(input._2.size(), (int) _fcol, false);
+		MatrixBlock lmb = new MatrixBlock(input._2.size(), (int) _lcol, false);
 
-		for (Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>> t : input._2) {
-			MatrixBlock tmpFMB = t._2._1;
-			MatrixBlock tmpLMB = t._2._2;
-			if (fmb == null && lmb == null) {
-				fmb = tmpFMB;
-				lmb = tmpLMB;
-				continue;
-			}
+		for (int i = 0; i < input._2.size(); i++) {
+			MatrixBlock tmpFMB = input._2.get(i)._2._1;
+			MatrixBlock tmpLMB = input._2.get(i)._2._2;
 			// Row-wise aggregation
-			fmb = ParamservUtils.rbindMatrix(fmb, tmpFMB);
-			lmb = ParamservUtils.rbindMatrix(lmb, tmpLMB);
+			fmb = fmb.leftIndexingOperations(tmpFMB, i, i, 0, (int) _fcol - 1, fmb, MatrixObject.UpdateType.INPLACE_PINNED);
+			lmb = lmb.leftIndexingOperations(tmpLMB, i, i, 0, (int) _lcol - 1, lmb, MatrixObject.UpdateType.INPLACE_PINNED);
 		}
 		return new Tuple2<>(input._1, new Tuple2<>(fmb, lmb));
 	}

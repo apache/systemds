@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import java.util.concurrent.Callable;
-import java.util.stream.IntStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,10 +29,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -84,13 +80,12 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				ListObject gradients = computeGradients(dataSize, totalIter, i, j);
 
 				// Accumulate the intermediate gradients
-				accGradients = (accGradients==null) ?
-					ParamservUtils.copyList(gradients) :
-					accrueGradients(accGradients, gradients);
+				accGradients = ParamservUtils.accrueGradients(accGradients, gradients);
 
 				// Update the local model with gradients
 				if( j < totalIter - 1 )
 					params = updateModel(params, gradients, i, j, totalIter);
+				ParamservUtils.cleanupListObject(gradients);
 			}
 
 			// Push the gradients to ps
@@ -193,14 +188,4 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		return gradients;
 	}
 
-	private ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
-		IntStream.range(0, accGradients.getLength()).forEach(i -> {
-			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireRead();
-			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireRead();
-			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
-			((MatrixObject) accGradients.getData().get(i)).release();
-			((MatrixObject) gradients.getData().get(i)).release();
-		});
-		return accGradients;
-	}
 }

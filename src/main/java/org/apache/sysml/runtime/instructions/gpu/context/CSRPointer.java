@@ -299,7 +299,7 @@ public class CSRPointer {
 		cusparseSetPointerMode(handle, cusparsePointerMode.CUSPARSE_POINTER_MODE_HOST);
 		//cudaDeviceSynchronize;
 		// Do not increment the cudaCount of allocations on GPU
-		C.rowPtr = gCtx.allocate(getIntSizeOf((long) rowsC + 1));
+		C.rowPtr = gCtx.allocate(null, getIntSizeOf((long) rowsC + 1));
 	}
 
 	/**
@@ -413,7 +413,7 @@ public class CSRPointer {
 	}
 
 	private Pointer allocate(long size) {
-		return getGPUContext().allocate(size);
+		return getGPUContext().allocate(null, size);
 	}
 
 	private GPUContext getGPUContext() {

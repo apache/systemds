@@ -1085,10 +1085,12 @@ public class OptimizerUtils
 				case MIN:
 				case MAX:
 				case OR:
-					ret = Math.min(1, sp1 + sp2); break;
+					ret = worstcase ? Math.min(1, sp1 + sp2) :
+						sp1 + sp2 - sp1 * sp2; break;
 				case MULT:
 				case AND:
-					ret = Math.min(sp1, sp2); break;
+					ret = worstcase ? Math.min(sp1, sp2) :
+						sp1 * sp2; break;
 				case DIV:
 					ret = Math.min(1, sp1 + (1-sp2)); break;
 				case MODULUS:

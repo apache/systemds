@@ -436,7 +436,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					try(LibMatrixCuDNNInputRowFetcher imgFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, image);
 						LibMatrixCuDNNInputRowFetcher doutFetcher = new LibMatrixCuDNNInputRowFetcher(gCtx, instName, dout)) {
 						// Perform one-input conv2dBackwardFilter
-						Pointer tempdwPointer = gCtx.allocate(KCRS*sizeOfDataType);
+						Pointer tempdwPointer = gCtx.allocate(instName, KCRS*sizeOfDataType);
 						for(int n = 0; n < N; n++) {
 							long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 							cudaMemset(tempdwPointer, 0, KCRS*sizeOfDataType);
@@ -754,7 +754,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			if(!isMaxPoolOutputProvided) {
 				if (DMLScript.FINEGRAINED_STATISTICS) t1 = System.nanoTime();
 				long numBytes = N*C*P*Q*sizeOfDataType;
-				y = gCtx.allocate(numBytes);
+				y = gCtx.allocate(instName, numBytes);
 				if (DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_CUDNN_INIT, System.nanoTime() - t1);
 				if (DMLScript.FINEGRAINED_STATISTICS) t2 = System.nanoTime();
 				status = cudnnPoolingForward(getCudnnHandle(gCtx), desc.poolingDesc, one(), desc.xDesc, x, zero(), desc.yDesc, y);
@@ -976,6 +976,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 					ExecutionConfig.getConfigForSimpleVectorOperations(N*T*D),
 					smlDx, cudnnDx, N, D, T*D, N*T*D);
 			ec.releaseMatrixOutputForGPUInstruction(dxName);
+			gCtx.cudaFreeHelper(instName, cudnnDx, DMLScript.EAGER_CUDA_FREE);
 			
 			// -------------------------------------------------------------------------------------------
 			Pointer cudnnDwPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);

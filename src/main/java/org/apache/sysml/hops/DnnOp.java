@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DnnParameters;
+
 import java.util.ArrayList;
 
 public class DnnOp extends MultiThreadedHop
@@ -133,6 +134,18 @@ public class DnnOp extends MultiThreadedHop
 				}
 				// break;
 			}
+			case BATCH_NORM2D_TEST:
+			case CHANNEL_SUMS:
+			{	
+				if(et == ExecType.GPU) {
+					setLops(constructDnnLops(et, inputs));
+					break;
+				}
+				else {
+					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
+				}
+				// break;
+			}
 			default: 
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
 		}
@@ -158,6 +171,10 @@ public class DnnOp extends MultiThreadedHop
 			case BIASADD:
 			case BIASMULT:
 				return 2;
+			case BATCH_NORM2D_TEST:
+				return 6;
+			case CHANNEL_SUMS:
+				return 3;
 			default:
 				return 13;
 		}
@@ -505,12 +522,19 @@ public class DnnOp extends MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = new long[3];
 		
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
 			ret[2] = -1;
 			return (ret[0]>=0 && ret[1]>=0) ? ret : null;
+		}
+		else if(op == OpOpDnn.CHANNEL_SUMS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			ret[0] = numChannels;
+			ret[1] = 1;
+			ret[2] = -1;
+			return ret;
 		}
 		
 		refreshSizeInformation();
@@ -708,10 +732,17 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
+			_nnz = -1; // cannot infer stats
+			return;
+		}
+		else if(op == OpOpDnn.CHANNEL_SUMS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			setDim1(numChannels);
+			setDim2(1);
 			_nnz = -1; // cannot infer stats
 			return;
 		}
@@ -807,8 +838,8 @@ public class DnnOp extends MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT) {
-			throw new RuntimeException("getDim method should not be invoked for bias_add and bias_multiply");
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS) {
+			throw new RuntimeException("getDim method should not be invoked for batch_norm_test, channel_sums, bias_add and bias_multiply");
 		}
 		try {
 			parseInput();

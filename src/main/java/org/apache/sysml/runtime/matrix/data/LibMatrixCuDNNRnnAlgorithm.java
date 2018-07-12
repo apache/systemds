@@ -55,6 +55,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	cudnnFilterDescriptor dwDesc;
 	long sizeInBytes; Pointer workSpace;
 	long reserveSpaceSizeInBytes; Pointer reserveSpace;
+	long dropOutSizeInBytes; Pointer dropOutStateSpace;
 	public LibMatrixCuDNNRnnAlgorithm(ExecutionContext ec, GPUContext gCtx, String instName, 
 			String rnnMode, int N, int T, int M, int D, boolean isTraining, Pointer w) throws DMLRuntimeException {
 		this.gCtx = gCtx;
@@ -83,12 +84,13 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		// Initial dropout descriptor
 		dropoutDesc = new cudnnDropoutDescriptor();
 		JCudnn.cudnnCreateDropoutDescriptor(dropoutDesc);
-		long [] dropOutSizeInBytes = {-1};
-		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), dropOutSizeInBytes);
-		Pointer dropOutStateSpace = new Pointer();
-		if (dropOutSizeInBytes[0] != 0)
-			dropOutStateSpace = gCtx.allocate(dropOutSizeInBytes[0]);
-		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes[0], 12345);
+		long [] _dropOutSizeInBytes = {-1};
+		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), _dropOutSizeInBytes);
+		dropOutSizeInBytes = _dropOutSizeInBytes[0];
+		dropOutStateSpace = new Pointer();
+		if (dropOutSizeInBytes != 0)
+			dropOutStateSpace = gCtx.allocate(instName, dropOutSizeInBytes);
+		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes, 12345);
 		
 		// Initialize RNN descriptor
 		rnnDesc = new cudnnRNNDescriptor();
@@ -109,18 +111,14 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		workSpace = new Pointer(); reserveSpace = new Pointer();
 		sizeInBytes = getWorkspaceSize(T);
 		if(sizeInBytes != 0)
-			workSpace = gCtx.allocate(sizeInBytes);
+			workSpace = gCtx.allocate(instName, sizeInBytes);
 		reserveSpaceSizeInBytes = 0;
 		if(isTraining) {
 			reserveSpaceSizeInBytes = getReservespaceSize(T);
 			if (reserveSpaceSizeInBytes != 0) {
-				reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
+				reserveSpace = gCtx.allocate(instName, reserveSpaceSizeInBytes);
 			}
 		}
-		if (reserveSpaceSizeInBytes == 0) {
-			reserveSpace = gCtx.allocate(reserveSpaceSizeInBytes);
-		}
-		
 		/*
 		int numLinearLayers = getNumLinearLayers(rnnMode); 
 		for(int i = 0; i < numLinearLayers; i++) {
@@ -308,6 +306,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 				throw new RuntimeException(e);
 			}
 		}
+		workSpace = null;
 		if(reserveSpaceSizeInBytes != 0) {
 			try {
 				gCtx.cudaFreeHelper(instName, reserveSpace, DMLScript.EAGER_CUDA_FREE);
@@ -315,5 +314,13 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 				throw new RuntimeException(e);
 			}
 		}	
+		reserveSpace = null;
+		if(dropOutSizeInBytes != 0) {
+			try {
+				gCtx.cudaFreeHelper(instName, dropOutStateSpace, DMLScript.EAGER_CUDA_FREE);
+			} catch (DMLRuntimeException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 }

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -38,6 +39,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
@@ -48,6 +50,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -55,11 +58,11 @@ import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 
 public class ParamservUtils {
 
-	public static final String UPDATE_FUNC_PREFIX = "_worker_";
-	public static final String AGG_FUNC_PREFIX = "_agg_";
+	public static final String PS_FUNC_PREFIX = "_ps_";
 
 	/**
 	 * Deep copy the list object
@@ -87,6 +90,10 @@ public class ParamservUtils {
 
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
+		cleanupListObject(lo);
+	}
+
+	public static void cleanupListObject(ListObject lo) {
 		lo.getData().forEach(ParamservUtils::cleanupData);
 	}
 
@@ -122,16 +129,26 @@ public class ParamservUtils {
 
 	public static MatrixBlock generatePermutation(int numEntries) {
 		// Create a sequence and sample w/o replacement
-		MatrixBlock seq = MatrixBlock.seqOperations(1, numEntries, 1);
+		// (no need to materialize the sequence because ctable only uses its meta data)
+		MatrixBlock seq = new MatrixBlock(numEntries, 1, false);
 		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, -1);
 
 		// Combine the sequence and sample as a table
-		MatrixBlock permutation = new MatrixBlock(numEntries, numEntries, true);
-		seq.ctableOperations(null, sample, 1.0, permutation);
-		return permutation;
+		return seq.ctableSeqOperations(sample, 1.0,
+			new MatrixBlock(numEntries, numEntries, true));
 	}
 
-	public static ExecutionContext createExecutionContext(ExecutionContext ec, String updFunc, String aggFunc, int workerNum, int k) {
+	public static String[] getCompleteFuncName(String funcName, String prefix) {
+		String[] keys = DMLProgram.splitFunctionKey(funcName);
+		String ns = (keys.length==2) ? keys[0] : null;
+		String name = (keys.length==2) ? keys[1] : keys[0];
+		return StringUtils.isEmpty(prefix) ? 
+			new String[]{ns, name} : new String[]{ns, name};
+	}
+
+	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap varsMap,
+		String updFunc, String aggFunc, int workerNum, int k) {
+
 		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
 		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
 
@@ -142,27 +159,40 @@ public class ParamservUtils {
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
-		// Copy function for workers
-		IntStream.range(0, workerNum).forEach(i -> copyFunction(updFunc, updPB, prog, UPDATE_FUNC_PREFIX + i + "_"));
+		// 3. Copy function for workers
+		List<ExecutionContext> workerECs = IntStream.range(0, workerNum)
+			.mapToObj(i -> {
+				FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
+				FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
+				Program newProg = new Program();
+				putFunction(newProg, newUpdFunc);
+				putFunction(newProg, newAggFunc);
+				return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+			})
+			.collect(Collectors.toList());
 
-		// Copy function for agg service
-		copyFunction(aggFunc, aggPB, prog, AGG_FUNC_PREFIX);
+		// 4. Copy function for agg service
+		FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
+		Program newProg = new Program();
+		putFunction(newProg, newAggFunc);
+		ExecutionContext aggEC = ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
 
-		return ExecutionContextFactory.createContext(prog);
+		List<ExecutionContext> result = new ArrayList<>(workerECs);
+		result.add(aggEC);
+		return result;
 	}
 
-	private static void copyFunction(String funcName, FunctionProgramBlock updPB, Program prog, String prefix) {
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
-		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
-		}
-		FunctionProgramBlock copiedFunc = ProgramConverter
-			.createDeepCopyFunctionProgramBlock(updPB, new HashSet<>(), new HashSet<>());
-		String fnameNew = prefix + func;
-		prog.addFunctionProgramBlock(namespace, fnameNew, copiedFunc);
+	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {
+		FunctionProgramBlock copiedFunc = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
+		String[] cfn = getCompleteFuncName(funcName, ParamservUtils.PS_FUNC_PREFIX);
+		copiedFunc._namespace = cfn[0];
+		copiedFunc._functionName = cfn[1];
+		return copiedFunc;
+	}
+
+	private static void putFunction(Program prog, FunctionProgramBlock fpb) {
+		prog.addFunctionProgramBlock(fpb._namespace, fpb._functionName, fpb);
+		prog.addProgramBlock(fpb);
 	}
 
 	private static void recompileProgramBlocks(int k, ArrayList<ProgramBlock> pbs) {
@@ -229,13 +259,27 @@ public class ParamservUtils {
 
 
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
-		String[] keys = DMLProgram.splitFunctionKey(funcName);
-		String namespace = null;
-		String func = keys[0];
-		if (keys.length == 2) {
-			namespace = keys[0];
-			func = keys[1];
-		}
-		return ec.getProgram().getFunctionProgramBlock(namespace, func);
+		String[] cfn = getCompleteFuncName(funcName, null);
+		String ns = cfn[0];
+		String fname = cfn[1];
+		return ec.getProgram().getFunctionProgramBlock(ns, fname);
+	}
+	
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
+		return accrueGradients(accGradients, gradients, false);
+	}
+	
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par) {
+		if (accGradients == null)
+			return ParamservUtils.copyList(gradients);
+		IntStream range = IntStream.range(0, accGradients.getLength());
+		(par ? range.parallel() : range).forEach(i -> {
+			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireRead();
+			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireRead();
+			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
+			((MatrixObject) accGradients.getData().get(i)).release();
+			((MatrixObject) gradients.getData().get(i)).release();
+		});
+		return accGradients;
 	}
 }

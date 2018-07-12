@@ -5236,12 +5236,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 * 
-	 * @param op operator
 	 * @param thatMatrix matrix value
 	 * @param thatScalar scalar double
 	 * @param resultBlock result matrix block
+	 * @return resultBlock
 	 */
-	public void ctableOperations(Operator op, MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock) {
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock resultBlock) {
 		MatrixBlock that = checkType(thatMatrix);
 		CTable ctable = CTable.getCTableFnObject();
 		double w = thatScalar;
@@ -5259,6 +5259,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//update meta data (initially unknown number of columns)
 		//note: nnz maintained in ctable (via quickset)
 		resultBlock.clen = maxCol;
+		return resultBlock;
 	}
 	
 	/**

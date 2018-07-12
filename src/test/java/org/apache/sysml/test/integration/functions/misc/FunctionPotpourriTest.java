@@ -32,6 +32,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME2 = "FunPotpourriComments";
 	private final static String TEST_NAME3 = "FunPotpourriNoReturn2";
 	private final static String TEST_NAME4 = "FunPotpourriEval";
+	private final static String TEST_NAME5 = "FunPotpourriSubsetReturn";
+	private final static String TEST_NAME6 = "FunPotpourriSubsetReturnDead";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -43,6 +45,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
 	}
 
 	@Test
@@ -63,6 +67,16 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionEval() {
 		runFunctionTest( TEST_NAME4, false );
+	}
+	
+	@Test
+	public void testFunctionSubsetReturn() {
+		runFunctionTest( TEST_NAME5, false );
+	}
+	
+	@Test
+	public void testFunctionSubsetReturnDead() {
+		runFunctionTest( TEST_NAME6, false );
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {

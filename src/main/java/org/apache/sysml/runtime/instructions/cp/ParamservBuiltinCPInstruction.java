@@ -56,10 +56,8 @@ import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDC;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDR;
@@ -112,13 +110,15 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int k = getParLevel(workerNum);
 
 		// Get the compiled execution context
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, updFunc, aggFunc, workerNum, k);
+		// Create workers' execution context
+		LocalVariableMap newVarsMap = createVarsMap(ec);
+		List<ExecutionContext> newECs = ParamservUtils.createExecutionContexts(ec, newVarsMap, updFunc, aggFunc, workerNum, k);
 
 		// Create workers' execution context
-		List<ExecutionContext> workerECs = createExecutionContext(workerNum, ec, newEC.getProgram());
+		List<ExecutionContext> workerECs = newECs.subList(0, newECs.size() - 1);
 
 		// Create the agg service's execution context
-		ExecutionContext aggServiceEC = createExecutionContext(1, ec, newEC.getProgram()).get(0);
+		ExecutionContext aggServiceEC = newECs.get(newECs.size() - 1);
 
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
@@ -160,21 +160,17 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {
 			es.shutdownNow();
-			// Should shutdown the thread pool in param server
-			ps.shutdown();
 		}
 	}
 
-	private List<ExecutionContext> createExecutionContext(int size, ExecutionContext ec, Program program) {
-		return IntStream.range(0, size).mapToObj(i -> {
-			// Put the hyperparam into the variables table
-			LocalVariableMap varsMap = new LocalVariableMap();
-			ListObject hyperParams = getHyperParams(ec);
-			if (hyperParams != null) {
-				varsMap.put(PS_HYPER_PARAMS, hyperParams);
-			}
-			return ExecutionContextFactory.createContext(varsMap, program);
-		}).collect(Collectors.toList());
+	private LocalVariableMap createVarsMap(ExecutionContext ec) {
+		// Put the hyperparam into the variables table
+		LocalVariableMap varsMap = new LocalVariableMap();
+		ListObject hyperParams = getHyperParams(ec);
+		if (hyperParams != null) {
+			varsMap.put(PS_HYPER_PARAMS, hyperParams);
+		}
+		return varsMap;
 	}
 
 	private PSModeType getPSMode() {

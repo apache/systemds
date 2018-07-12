@@ -101,7 +101,7 @@ public class InterProceduralAnalysis
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.hops.ipa.InterProceduralAnalysis")
+			Logger.getLogger("org.apache.sysml.hops.ipa")
 				.setLevel((Level) Level.DEBUG);
 		}
 	}
@@ -634,28 +634,21 @@ public class InterProceduralAnalysis
 		}
 	}
 	
-	private static void extractFunctionCallUnknownReturnStatistics( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
-	{
+	private static void extractFunctionCallUnknownReturnStatistics(FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars) {
 		ArrayList<DataIdentifier> foutputOps = fstmt.getOutputParams();
 		String[] outputVars = fop.getOutputVariableNames();
 		String fkey = fop.getFunctionKey();
-		
-		try
-		{
-			for( int i=0; i<foutputOps.size(); i++ )
-			{
+		try {
+			//robustness for subset of bound output variables
+			int olen = Math.min(foutputOps.size(), outputVars.length);
+			for( int i=0; i<olen; i++ ) {
 				DataIdentifier di = foutputOps.get(i);
 				String pvarname = outputVars[i]; //name in calling program
-				
 				if( di.getDataType()==DataType.MATRIX )
-				{
-					MatrixObject moOut = createOutputMatrix(-1, -1, -1);
-					callVars.put(pvarname, moOut);
-				}
+					callVars.put(pvarname, createOutputMatrix(-1, -1, -1));
 			}
 		}
-		catch( Exception ex )
-		{
+		catch( Exception ex ) {
 			throw new HopsException( "Failed to extract output statistics of function "+fkey+".", ex);
 		}
 	}

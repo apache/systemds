@@ -178,6 +178,24 @@ public class Connection implements Closeable
 		
 		setLocalConfigs();
 	}
+
+	/**
+	 * Sets a boolean flag indicating if runtime statistics should be gathered
+	 * Same behavior as in "MLContext.setStatistics()"
+	 *
+	 * @param stats boolean value with true indicating statistics should be gathered
+	 */
+	public void setStatistics(boolean stats) { DMLScript.STATISTICS = stats; }
+
+	/**
+	 * Sets a boolean flag indicating if memory profiling statistics should be
+	 * gathered. The option is false by default.
+	 * @param stats boolean value with true indicating memory statistics should be gathered
+	 */
+	public void gatherMemStats(boolean stats) {
+		DMLScript.STATISTICS = stats || DMLScript.STATISTICS;
+		DMLScript.JMLC_MEMORY_STATISTICS = stats;
+	}
 	
 	/**
 	 * Prepares (precompiles) a script and registers input and output variables.

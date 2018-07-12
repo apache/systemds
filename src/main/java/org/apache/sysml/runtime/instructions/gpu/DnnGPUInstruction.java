@@ -151,6 +151,23 @@ public class DnnGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
+	public DnnGPUInstruction(CPOperand in, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5, CPOperand in6,
+			CPOperand out, String opcode, String istr, double intermediateMemoryBudget) {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		if( !opcode.equals("batch_norm2d_test") ) {
+			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be batch_norm2d_test, but found " + opcode);
+		}
+		_input1 = in;
+		_input2 = in2;
+		_input3 = in3;
+		_input4 = in4;
+		_input5 = in5;
+		_input6 = in6;
+		_gputype = GPUINSTRUCTION_TYPE.Dnn;
+		_output = out;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
 	public static DnnGPUInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
@@ -323,6 +340,17 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out3 = new CPOperand(parts[9]); // dBias
 			return new DnnGPUInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
 		}
+		else if (opcode.equalsIgnoreCase("batch_norm2d_test")) {
+			InstructionUtils.checkNumFields(parts, 7);
+			CPOperand in = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand in5 = new CPOperand(parts[5]);
+			CPOperand in6 = new CPOperand(parts[6]);
+			CPOperand out = new CPOperand(parts[7]);
+			return new DnnGPUInstruction(in, in2, in3, in4, in5, in6, out, opcode, str, 0);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnGPUInstruction: " + str);	
 		}
@@ -382,6 +410,28 @@ public class DnnGPUInstruction extends GPUInstruction {
 		else {
 			throw new DMLRuntimeException("Incorrect mode: Expected either train or test, but found " + phase);
 		}
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
+	public void processBatchNorm2dTestInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject scale = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
+		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
+		double epsilon = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getDoubleValue();
+		
+		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
+		LibMatrixCuDNN.batchNormalizationForwardInference(ec.getGPUContext(0), getExtendedOpcode(), 
+				image, scale, bias, runningMean, runningVar, ret, epsilon);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
@@ -611,6 +661,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("batch_norm2d_backward")) {
 			processBatchNorm2dBackwardInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d_test")) {
+			processBatchNorm2dTestInstruction(ec);
 			return;
 		}
 		

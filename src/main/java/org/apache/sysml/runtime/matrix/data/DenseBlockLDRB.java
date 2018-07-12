@@ -159,7 +159,8 @@ public class DenseBlockLDRB extends DenseBlock
 		final int biu = index(ru-1);
 		for(int bi=bil; bi<=biu; bi++) {
 			int lpos = (bi==bil) ? pos(rl) : 0;
-			int len = (bi==biu) ? pos(ru-1)-lpos+clen : blockSize(bi)*clen;
+			int len = ((bi==biu) ? pos(ru-1)+clen :
+				blockSize(bi)*clen) - lpos;
 			if( rowBlock )
 				nnz += UtilFunctions.computeNnz(data[bi], lpos, len);
 			else

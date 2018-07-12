@@ -90,6 +90,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.IndexRange;
@@ -2200,7 +2201,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void ctableOperations(Operator op, double scalar,
 			MatrixValue that, CTableMap resultMap, MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
 		left.ctableOperations(op, scalar, right, resultMap, resultBlock);
@@ -2209,7 +2210,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void ctableOperations(Operator op, double scalar,
 			double scalar2, CTableMap resultMap, MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		tmp.ctableOperations(op, scalar, scalar2, resultMap, resultBlock);
 	}
@@ -2218,7 +2219,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public void ctableOperations(Operator op, MatrixIndexes ix1,
 			double scalar, boolean left, int brlen, CTableMap resultMap,
 			MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock tmp = isCompressed() ? decompress() : this;
 		tmp.ctableOperations(op, ix1, scalar, left, brlen, resultMap, resultBlock);
 	}
@@ -2227,24 +2228,23 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	public void ctableOperations(Operator op, MatrixValue that,
 			double scalar, boolean ignoreZeros, CTableMap resultMap,
 			MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right = getUncompressed(that);
 		left.ctableOperations(op, right, scalar, ignoreZeros, resultMap, resultBlock);
 	}
 
 	@Override
-	public void ctableOperations(Operator op, MatrixValue that, double scalar, MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
-		MatrixBlock left = isCompressed() ? decompress() : this;
+	public MatrixBlock ctableSeqOperations(MatrixValue that, double scalar, MatrixBlock resultBlock) {
+		printDecompressWarning("ctableOperations");
 		MatrixBlock right = getUncompressed(that);
-		left.ctableOperations(op, right, scalar, resultBlock);
+		return this.ctableSeqOperations(right, scalar, resultBlock);
 	}
 
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
@@ -2254,11 +2254,20 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 	@Override
 	public void ctableOperations(Operator op, MatrixValue that,
 			MatrixValue that2, CTableMap resultMap, MatrixBlock resultBlock) {
-		printDecompressWarning("ternaryOperations");
+		printDecompressWarning("ctableOperations");
 		MatrixBlock left = isCompressed() ? decompress() : this;
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(that2);
 		left.ctableOperations(op, right1, right2, resultMap, resultBlock);
+	}
+	
+	@Override
+	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
+		printDecompressWarning("ternaryOperations");
+		MatrixBlock left = isCompressed() ? decompress() : this;
+		MatrixBlock right1 = getUncompressed(m2);
+		MatrixBlock right2 = getUncompressed(m3);
+		return left.ternaryOperations(op, right1, right2, ret);
 	}
 
 	@Override

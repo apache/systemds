@@ -19,8 +19,6 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.concurrent.ExecutionException;
-
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -35,16 +33,7 @@ public class LocalParamServer extends ParamServer {
 
 	@Override
 	public void push(int workerID, ListObject gradients) {
-		try {
-			_gradientsQueue.put(new Gradient(workerID, gradients));
-		} catch (InterruptedException e) {
-			throw new DMLRuntimeException(e);
-		}
-		try {
-			launchService();
-		} catch (ExecutionException | InterruptedException e) {
-			throw new DMLRuntimeException("Aggregate service: some error occurred: ", e);
-		}
+		updateGlobalModel(workerID, gradients);
 	}
 
 	@Override

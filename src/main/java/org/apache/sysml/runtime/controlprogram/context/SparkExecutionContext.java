@@ -1097,6 +1097,9 @@ public class SparkExecutionContext extends ExecutionContext
 		//and hence is transparently used by rmvar instructions and other users. The
 		//core difference is the lineage-based cleanup of RDD and broadcast variables.
 
+		if (DMLScript.JMLC_MEMORY_STATISTICS)
+			Statistics.removeCPMemObject(System.identityHashCode(mo));
+
 		if( !mo.isCleanupEnabled() )
 			return;
 		

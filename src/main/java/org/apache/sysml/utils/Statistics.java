@@ -22,7 +22,6 @@ package org.apache.sysml.utils;
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.lang.ref.SoftReference;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.LongAdder;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -80,12 +78,6 @@ public class Statistics
 	// Maps to keep track of CP memory objects for JMLC (e.g. in memory matrices and frames)
 	private static final ConcurrentHashMap<String,Double> _cpMemObjs = new ConcurrentHashMap<>();
 	private static final ConcurrentHashMap<Integer,Double> _currCPMemObjs = new ConcurrentHashMap<>();
-
-	// this hash map maintains soft references to the cache blocks in memory. It is periodically scanned to check for
-	// objects which have been garbage collected. This enables more accurate memory statistics. Relying on rmvar
-	// instructions to determine when an object has been de-allocated results in a substantial underestimate to memory
-	// use by the program since garbage collection will not occur immediately.
-	private static final ConcurrentHashMap<Integer,SoftReference<CacheBlock>> _liveObjects = new ConcurrentHashMap<>();
 
 	//JVM stats (low frequency updates)
 	private static long jitCompileTime = 0; //in milli sec
@@ -601,33 +593,11 @@ public class Statistics
 		return opcode;
 	}
 
-	public static void addCPMemObject(CacheBlock data) {
-		int hash = System.identityHashCode(data);
-		double sizeof = data.getInMemorySize();
-
+	public static void addCPMemObject(int hash, double sizeof) {
 		double sizePrev = _currCPMemObjs.getOrDefault(hash, 0.0);
 		_currCPMemObjs.put(hash, sizeof);
 		sizeofPinnedObjects.add(sizeof - sizePrev);
-		if (DMLScript.FINEGRAINED_STATISTICS)
-			_liveObjects.putIfAbsent(hash, new SoftReference<>(data));
 		maintainMemMaxStats();
-		checkForDeadBlocks();
-	}
-
-	/**
-	 * If finegrained statistics are enabled searches through a map of soft references to find objects
-	 * which have been garbage collected. This results in more accurate statistics on memory use but
-	 * introduces overhead so is only enabled with finegrained stats and when running in JMLC
-	 */
-	public static void checkForDeadBlocks() {
-		if (!DMLScript.FINEGRAINED_STATISTICS)
-			return;
-		for (Entry<Integer,SoftReference<CacheBlock>> e : _liveObjects.entrySet()) {
-			if (e.getValue().get() == null) {
-				removeCPMemObject(e.getKey());
-				_liveObjects.remove(e.getKey());
-			}
-		}
 	}
 
 	/**

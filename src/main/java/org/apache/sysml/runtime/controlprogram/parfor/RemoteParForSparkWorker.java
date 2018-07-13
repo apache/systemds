@@ -37,8 +37,6 @@ import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -129,14 +127,9 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 			.map(v -> v._name).collect(Collectors.toList()), _ec.getVarListPartitioned());
 		reuseVars.reuseVariables(_jobid, _ec.getVariables(), blacklist, _brInputs, _cleanCache);
 		
-		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
-		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
-		//the initialization and immediately register the created directory for cleanup
-		//on process exit, i.e., executor exit, including any files created in the future.
-		synchronized( CacheableData.class ) {
-			RemoteParForUtils.setupBufferPool(_workerID);
-		}
-		
+		//setup the buffer pool
+		RemoteParForUtils.setupBufferPool(_workerID);
+
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		

@@ -246,15 +246,20 @@ public class RemoteParForUtils
 	 * @throws IOException exception
 	 */
 	public static void setupBufferPool(long workerID) throws IOException {
-		if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) {
-			//create id, executor working dir, and cache dir
-			String uuid = IDHandler.createDistributedUniqueID();
-			LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
-			CacheableData.initCaching( uuid ); //incl activation and cache dir creation
-			CacheableData.cacheEvictionLocalFilePrefix =
-					CacheableData.cacheEvictionLocalFilePrefix +"_" + workerID;
-			//register entire working dir for delete on shutdown
-			RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+		//init and register-cleanup of buffer pool (in spark, multiple tasks might
+		//share the process-local, i.e., per executor, buffer pool; hence we synchronize
+		//the initialization and immediately register the created directory for cleanup
+		//on process exit, i.e., executor exit, including any files created in the future.
+		synchronized(CacheableData.class) {
+			if (!CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode()) {
+				//create id, executor working dir, and cache dir
+				String uuid = IDHandler.createDistributedUniqueID();
+				LocalFileUtils.createWorkingDirectoryWithUUID(uuid);
+				CacheableData.initCaching(uuid); //incl activation and cache dir creation
+				CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix + "_" + workerID;
+				//register entire working dir for delete on shutdown
+				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+			}
 		}
 	}
 	

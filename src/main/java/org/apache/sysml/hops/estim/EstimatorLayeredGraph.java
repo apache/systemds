@@ -27,6 +27,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * This estimator implements an approach based on a so-called layered graph,
+ * introduced in
+ * Edith Cohen. Structure prediction and computation of sparse matrix
+ * products. J. Comb. Optim., 2(4):307–332, 1998.
+ * 
+ */
 public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	private static final int ROUNDS = 128;

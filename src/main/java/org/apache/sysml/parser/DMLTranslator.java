@@ -2001,10 +2001,7 @@ public class DMLTranslator
 				String[] outputNames = new String[targetList.size()]; 
 				outputNames[0] = ((DataIdentifier)targetList.get(0)).getName();
 				outputNames[1] = ((DataIdentifier)targetList.get(1)).getName();
-				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
-				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
-				
-				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, false);
 				break;
 				
 			default:
@@ -2214,10 +2211,6 @@ public class DMLTranslator
 		FunctionType ftype = FunctionType.MULTIRETURN_BUILTIN;
 		String nameSpace = DMLProgram.INTERNAL_NAMESPACE;
 		
-		// Create an array list to hold the outputs of this lop.
-		// Exact list of outputs are added based on opcode.
-		ArrayList<Hop> outputs = new ArrayList<>();
-		
 		// Construct Hop for current builtin function expression based on its type
 		Hop currBuiltinOp = null;
 		switch (source.getOpCode()) {
@@ -2234,12 +2227,10 @@ public class DMLTranslator
 			String[] outputNames = new String[targetList.size()]; 
 			for ( int i=0; i < targetList.size(); i++ ) {
 				outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
-				Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
-				outputs.add(output);
 			}
 			
 			// Create the hop for current function call
-			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
+			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, false);
 			currBuiltinOp = fcall;
 			
 			break;
@@ -2248,11 +2239,6 @@ public class DMLTranslator
 			throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
 		}
 
-		// set properties for created hops based on outputs of source expression
-		for ( int i=0; i < source.getOutputs().length; i++ ) {
-			setIdentifierParams( outputs.get(i), source.getOutputs()[i]);
-			outputs.get(i).setParseInfo(source);
-		}
 		currBuiltinOp.setParseInfo(source);
 
 		return currBuiltinOp;

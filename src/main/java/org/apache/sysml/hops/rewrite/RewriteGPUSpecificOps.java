@@ -110,8 +110,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(hi, descendFirst); //see below
 			
-			// Commenting batchnorm train for now
-			// hi = batchNormTrain(hop, hi, i); 
+			hi = batchNormTrain(hop, hi, i); 
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 	
@@ -480,7 +479,6 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				isBinarySMDiv(denom.getParent().get(0).getParent().get(0), 1);
 	}
 	
-	@SuppressWarnings("unused")
 	private static Hop batchNormTrain(Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
@@ -573,27 +571,30 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		for(Hop inHop : inputOps) {
 			if(inHop instanceof LiteralOp)
 				continue;
-			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD)))
+			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD))) {
+				//System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(inHop));
 				return false;
+			}
 		}
 		for(Hop outHop : outputHops) {
-			if(!HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE))
+			if(!(HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE))) {
+				// System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(outHop));
 				return false;
+			}
 		}
-		
 		return true;
 	}
 	
 	private static String [] getNamesAndClearDataOp(Hop [] oldHops) {
 		String [] outputNames = new String[oldHops.length];
 		for(int i = 0; i < oldHops.length; i++) {
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE)) {
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
 				outputNames[i] = ((DataOp)oldHops[i]).getName();
 				oldHops[i].getParent().clear();
 				oldHops[i].getInput().clear();
 			}
 			else {
-				throw new RuntimeException("Expected transient write");
+				throw new RuntimeException("Expected transient or persistent write");
 			}
 				
 		}

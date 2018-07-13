@@ -1118,7 +1118,7 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public enum DataOpTypes {
-		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE, FUNCTIONOUTPUT
+		PERSISTENTREAD, PERSISTENTWRITE, TRANSIENTREAD, TRANSIENTWRITE
 	}
 
 	public enum Direction {
@@ -1537,7 +1537,6 @@ public abstract class Hop implements ParseInfo
 		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
-		HopsData2String.put(DataOpTypes.FUNCTIONOUTPUT, "FunOut");
 	}
 
 	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 

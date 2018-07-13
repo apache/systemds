@@ -60,12 +60,7 @@ public class FunctionOp extends Hop
 	private FunctionOp() {
 		//default constructor for clone
 	}
-
-	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, ArrayList<Hop> outputHops) {
-		this(type, fnamespace, fname, finputs, outputs, false);
-		_outputHops = outputHops;
-	}
-
+	
 	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, boolean singleOut) 
 	{
 		super(fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );

@@ -55,12 +55,8 @@ JMLC can be configured to gather runtime statistics, as in the MLContext API, by
 method with a value of `true`. JMLC can also be configured to gather statistics on the memory used by matrices and
 frames in the DML script. To enable collection of memory statistics, call Connection's `gatherMemStats()` method
 with a value of `true`. When finegrained statistics are enabled in `SystemML.conf`, JMLC will also report the variables
-in the DML script which used the most memory. By default, the memory use reported will be an overestimte of the actual
-memory required to run the program. When finegrained statistics are enabled, JMLC will gather more accurate statistics
-by keeping track of garbage collection events and reducing the memory estimate accordingly. The most accurate way to
-determine the memory required by a script is to run the script in a single thread and enable finegrained statistics.
-
-An example showing how to enable statistics in JMLC is presented in the section below.
+in the DML script which used the most memory. An example showing how to enable statistics in JMLC is presented in the
+section below.
 
 ---
 

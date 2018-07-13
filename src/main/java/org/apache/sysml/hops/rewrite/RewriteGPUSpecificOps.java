@@ -110,8 +110,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(hi, descendFirst); //see below
 			
-			// Commenting batchnorm train for now
-			// hi = batchNormTrain(hop, hi, i); 
+			hi = batchNormTrain(hop, hi, i); 
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 	
@@ -555,11 +554,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						inHops.add(new LiteralOp(mu));
 						Hop [] oldHops = {hi, ema_mean_upd, ema_var_upd, cache_mean, cache_var};
 						
-						if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
+						// if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
 							LOG.debug("Applied batchNormTrain rewrite.");
 							return new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
-									inHops, getNamesAndClearDataOp(oldHops), false);
-						}
+									inHops, getNamesAndAddTransientReadWrite(oldHops), false);
+						// }
 					}
 					
 				}
@@ -567,6 +566,28 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		}
 		
 		return hi;
+	}
+	
+	private static int _seq = 1;
+	private static String [] getNamesAndAddTransientReadWrite(Hop [] oldHops) {
+		String [] outputNames = new String[oldHops.length];
+		for(int i = 0; i < oldHops.length; i++) {
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
+				outputNames[i] = ((DataOp)oldHops[i]).getName();
+			}
+			else {
+				outputNames[i] = "_genGPU" + (_seq++);
+				DataOp tRead = HopRewriteUtils.createTransientRead(outputNames[i], oldHops[i]);
+				for(Hop p : oldHops[i].getParent()) {
+					p.getInput().add(p.getInput().indexOf(oldHops[i]), tRead);
+					tRead.getParent().add(p);
+				}
+			}
+			oldHops[i].getParent().clear();
+			oldHops[i].getInput().clear();
+				
+		}
+		return outputNames;
 	}
 	
 	private static boolean isEligibleForMultiOutputFunctionOp(ArrayList<Hop> inputOps, Hop [] outputHops) {

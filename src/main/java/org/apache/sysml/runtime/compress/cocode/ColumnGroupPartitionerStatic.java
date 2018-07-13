@@ -34,19 +34,16 @@ public class ColumnGroupPartitionerStatic extends ColumnGroupPartitioner
 	private static final int MAX_COL_PER_GROUP = 20;
 
 	@Override
-	public List<List<Integer>> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo) 
-	{
-		List<List<Integer>> ret = new ArrayList<>();
+	public List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo) {
+		List<int[]> ret = new ArrayList<>();
 		int numParts = (int)Math.ceil((double)groupCols.size()/MAX_COL_PER_GROUP);
 		int partSize = (int)Math.ceil((double)groupCols.size()/numParts);
-		
 		for( int i=0, pos=0; i<numParts; i++, pos+=partSize ) {
-			List<Integer> tmp = new ArrayList<>();
+			int[] tmp = new int[Math.min(partSize, groupCols.size()-pos)];
 			for( int j=0; j<partSize && pos+j<groupCols.size(); j++ )
-				tmp.add(groupCols.get(pos+j));
+				tmp[j] = groupCols.get(pos+j);
 			ret.add(tmp);
 		}
-		
 		return ret;
 	}
 }

@@ -39,6 +39,11 @@ public class IntArrayList
 		_data = null;
 		_size = 0;
 	}
+	
+	public IntArrayList(int value) {
+		this();
+		appendValue(value);
+	}
 
 	public int size() {
 		return _size;

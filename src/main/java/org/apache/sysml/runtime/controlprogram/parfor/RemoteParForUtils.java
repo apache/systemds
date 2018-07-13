@@ -45,6 +45,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.ProgramConverter;
@@ -237,6 +238,24 @@ public class RemoteParForUtils
 		
 		//create return array
 		return tmp.values().toArray(new LocalVariableMap[0]);	
+	}
+
+	/**
+	 * Init and register-cleanup of buffer pool
+	 * @param workerID worker id
+	 * @throws IOException exception
+	 */
+	public static void setupBufferPool(long workerID) throws IOException {
+		if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) {
+			//create id, executor working dir, and cache dir
+			String uuid = IDHandler.createDistributedUniqueID();
+			LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
+			CacheableData.initCaching( uuid ); //incl activation and cache dir creation
+			CacheableData.cacheEvictionLocalFilePrefix =
+					CacheableData.cacheEvictionLocalFilePrefix +"_" + workerID;
+			//register entire working dir for delete on shutdown
+			RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+		}
 	}
 	
 	/**

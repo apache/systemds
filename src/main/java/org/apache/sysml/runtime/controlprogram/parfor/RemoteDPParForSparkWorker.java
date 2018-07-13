@@ -157,16 +157,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		//the initialization and immediately register the created directory for cleanup
 		//on process exit, i.e., executor exit, including any files created in the future.
 		synchronized( CacheableData.class ) {
-			if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) { 
-				//create id, executor working dir, and cache dir
-				String uuid = IDHandler.createDistributedUniqueID();
-				LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
-				CacheableData.initCaching( uuid ); //incl activation and cache dir creation
-				CacheableData.cacheEvictionLocalFilePrefix = 
-						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
-				//register entire working dir for delete on shutdown
-				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
-			}
+			RemoteParForUtils.setupBufferPool(_workerID);
 		}
 		
 		//ensure that resultvar files are not removed

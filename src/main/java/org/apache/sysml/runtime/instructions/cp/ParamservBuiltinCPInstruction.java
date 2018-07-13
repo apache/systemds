@@ -125,7 +125,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
-		// Force all the instruction to CP
+		// Force all the instructions to CP type
 		ParamservUtils.recompileToCP(newEC.getProgram());
 
 		// Serialize all the needed params for remote workers
@@ -135,7 +135,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap);
 		ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
-				.foreach(worker);   // Run remote workers
+			.foreach(worker);   // Run remote workers
 
 	}
 

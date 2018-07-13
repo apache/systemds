@@ -36,8 +36,6 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservLocalNNTest.class.getSimpleName() + "/";
 
-	private final String HOME = SCRIPT_DIR + TEST_DIR;
-
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
@@ -88,6 +86,7 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-explain" };
+		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, false, null, null, -1);
 	}

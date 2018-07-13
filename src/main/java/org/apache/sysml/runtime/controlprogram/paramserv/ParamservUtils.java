@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
@@ -397,6 +398,9 @@ public class ParamservUtils {
 	}
 
 	public static void recompileToCP(Program program) {
+		DMLScript.RUNTIME_PLATFORM oldRtPlatform = DMLScript.rtplatform;
+		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
 		Recompiler.recompileProgramBlockHierarchy2Forced(program.getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
+		DMLScript.rtplatform = oldRtPlatform;
 	}
 }

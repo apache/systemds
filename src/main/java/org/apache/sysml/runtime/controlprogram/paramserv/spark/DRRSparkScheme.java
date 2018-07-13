@@ -17,25 +17,29 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.util.List;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	LocalDataPartitionerTest.class,
-	SparkDataPartitionerTest.class,
-	ParamservSyntaxTest.class,
-	ParamservRecompilationTest.class,
-	ParamservRuntimeNegativeTest.class,
-	ParamservNNTest.class
-})
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
+import scala.Tuple2;
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
+/**
+ * Spark Disjoint_Round_Robin data partitioner:
+ */
+public class DRRSparkScheme extends DataPartitionSparkScheme {
 
+	private static final long serialVersionUID = -3130831851505549672L;
+
+	protected DRRSparkScheme() {
+		// No-args constructor used for deserialization
+	}
+
+	@Override
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
+		return new Result(pfs, pls);
+	}
 }

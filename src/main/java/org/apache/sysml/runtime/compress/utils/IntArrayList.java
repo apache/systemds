@@ -85,6 +85,12 @@ public class IntArrayList
 		else
 			return _data;
 	}
+	
+	public int[] extractValues(boolean trim) {
+		int[] ret = extractValues();
+		return (trim && _size < ret.length) ?
+			Arrays.copyOfRange(ret, 0, _size) : ret;
+	}
 
 	private void resize() {
 		// check for integer overflow on resize

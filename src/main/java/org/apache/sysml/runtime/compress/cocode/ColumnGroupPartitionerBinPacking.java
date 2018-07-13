@@ -77,7 +77,7 @@ public class ColumnGroupPartitionerBinPacking extends ColumnGroupPartitioner
 		}
 		
 		//extract native int arrays for individual bins 
-		return bins.stream().map(b -> b.extractValues())
+		return bins.stream().map(b -> b.extractValues(true))
 			.collect(Collectors.toList());
 	}
 

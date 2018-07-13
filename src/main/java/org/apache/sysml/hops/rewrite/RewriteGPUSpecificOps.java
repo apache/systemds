@@ -24,16 +24,25 @@ import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggUnaryOp;
+import org.apache.sysml.hops.BinaryOp;
+import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.FunctionOp.FunctionType;
 import org.apache.sysml.hops.Hop.AggOp;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.Direction;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.Hop.OpOp2;
 import org.apache.sysml.hops.Hop.OpOpDnn;
 import org.apache.sysml.hops.Hop.ReOrgOp;
+import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.LiteralOp;
 import org.apache.sysml.hops.DnnOp;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.ReorgOp;
+import org.apache.sysml.hops.UnaryOp;
+import org.apache.sysml.parser.DMLProgram;
+import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 
 /*
@@ -101,6 +110,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			if( descendFirst )
 				rule_GPUKernels(hi, descendFirst); //see below
 			
+			// Commenting batchnorm train for now
+			// hi = batchNormTrain(hop, hi, i); 
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 	
@@ -158,9 +169,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	private static Hop getSecondInput(Hop h) {
 		if(h == null || h.getInput() == null || h.getInput().size() < 2) {
-			throw new RuntimeException("No input available for " + h);
+			throw new RuntimeException("Expected atleast two inputs for " + h);
 		}
 		return h.getInput().get(1);
+	}
+	
+	private static Hop getThirdInput(Hop h) {
+		if(h == null || h.getInput() == null || h.getInput().size() < 3) {
+			throw new RuntimeException("Expected atleast three inputs for " + h);
+		}
+		return h.getInput().get(2);
 	}
 	
 	private static boolean isUnaryMinus(Hop h) {
@@ -200,6 +218,388 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return hi;
 	}
 	
+	private static boolean isRowMeans(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row; 
+	}
+	
+	private static boolean isRowVars(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Row; 
+	}
+	
+	private static boolean isRowVars(Hop h, Hop childHop) {
+		return isRowVars(h) && getFirstInput(h) == childHop; 
+	}
+	
+	private static boolean isColMeans(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Col; 
+	}
+	
+	private static boolean isColVars(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Col; 
+	}
+	
+	private static boolean isReshape(Hop h) {
+		return h instanceof ReorgOp && ((ReorgOp)h).getOp() == ReOrgOp.RESHAPE;
+	}
+	
+	private static boolean isReshape(Hop h, long expectedRows, long expectedCols) {
+		return h instanceof ReorgOp && ((ReorgOp)h).getOp() == ReOrgOp.RESHAPE &&
+				Hop.computeSizeInformation(getSecondInput(h)) == expectedRows && 
+				Hop.computeSizeInformation(getThirdInput(h)) == expectedCols;
+	}
+	
+	private static boolean isBinaryAdd(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS;
+	}
+	
+	private static boolean isBinaryMSAdd(Hop h, double expectedValue) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR
+				&& OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(h), new HashMap<>()) == expectedValue;
+	}
+	
+	private static boolean isBinaryMMAdd(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
+	}
+	
+	private static boolean isBinaryMSMult(Hop h, double expectedValue) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR
+				&& OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(h), new HashMap<>()) == expectedValue;
+	}
+	
+	private static boolean isBinarySSMinus(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MINUS 
+				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBinarySSDiv(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
+				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBinarySMDiv(Hop h, double expectedValue) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
+				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.MATRIX 
+				&& OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(h), new HashMap<>()) == expectedValue;
+	}
+	
+	private static boolean isAnyBinaryAdd(ArrayList<Hop> hops) {
+		if(hops != null) {
+			for(Hop h : hops) {
+				if(h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.PLUS)
+					return true;
+			}
+		}
+		return false;
+	}
+	
+	private static boolean isBinaryMSMult(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBinarySMMult(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
+				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBatchNormTrainMean(Hop mean, Hop X) {
+		// subgrp_means = matrix(colMeans(X), rows=C, cols=Hin*Win)
+		// mean = rowMeans(subgrp_means)
+		return isRowMeans(mean) && isReshape(getFirstInput(mean)) && isColMeans(getFirstInput(getFirstInput(mean)))
+				&& getFirstInput(getFirstInput(getFirstInput(mean))) == X;
+	}
+	
+	private static boolean isNrowOfX(Hop expr, Hop X) {
+		return expr instanceof UnaryOp && ((UnaryOp)expr).getOp() == OpOp1.NROW && getFirstInput(expr) == X;
+	}
+	
+	private static boolean isCorrectedColVars(Hop expr, Hop X, boolean ignoreCorrectionTerm) {
+		// colVars(X) * ((N-1)/N)
+		if(isColVars(expr) && getFirstInput(expr) == X) {
+			// Support no correction as well in this rewrite
+			return true;
+		}
+		else if(X.rowsKnown()) {
+			return isBinaryMSMult(expr, ((double)X.getDim1()-1)/X.getDim1()) && 
+					isColVars(getFirstInput(expr)) && getFirstInput(getFirstInput(expr)) == X;
+		}
+		else if(isBinaryMSMult(expr) && 
+				isColVars(getFirstInput(expr)) && getFirstInput(getFirstInput(expr)) == X) {
+			if(ignoreCorrectionTerm) {
+				return true;
+			}
+			Hop tmp = getSecondInput(expr);
+			// ((N-1)/N)
+			boolean isNMinus1Pattern = isBinarySSDiv(tmp) && isBinarySSMinus(getFirstInput(tmp)) &&
+					getFirstInput(getFirstInput(tmp)) == getSecondInput(tmp) && 
+					OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(getFirstInput(tmp)), new HashMap<>()) == 1;
+			boolean ret = isNMinus1Pattern && isNrowOfX(getSecondInput(tmp), X);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug("Is the corrected column variance pattern for batch_norm_train rewrite when number of rows of X unknown matched:" + ret);
+			}
+			return ret;
+		}
+		return false;
+	}
+	
+	private static boolean isBatchNormTrainVar(Hop mean, Hop var, Hop  X, Hop subgrpMeans, boolean ignoreCorrectionTerm) {
+		long numChannels = Hop.computeSizeInformation(getSecondInput(getFirstInput(mean)));
+		long HW = Hop.computeSizeInformation(getThirdInput(getFirstInput(mean)));
+		// subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
+		// var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
+		return numChannels > 0 && HW > 0 && isBinaryMMAdd(var) && isRowMeans(getFirstInput(var)) &&  
+				// matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)
+				isReshape(getFirstInput(getFirstInput(var)), numChannels, HW) &&
+				isCorrectedColVars(getFirstInput(getFirstInput(getFirstInput(var))), X, ignoreCorrectionTerm) &&
+				// rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))
+				isBinaryMSMult(getSecondInput(var), ((((double)HW)-1)/HW)) && 
+				isRowVars(getFirstInput(getSecondInput(var)), subgrpMeans);
+	}
+	
+	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	// Returns [ema_mean_upd, ema_mean] if expression matched, else null
+	private static Hop [] getUpdatedMovingAverageExpressions(Hop rhsTimesOp, double mu) {
+		if(rhsTimesOp == null || rhsTimesOp.getParent() == null || rhsTimesOp.getParent().size() != 1 || 
+				!isBinarySMMult(rhsTimesOp) || !isBinaryAdd(rhsTimesOp.getParent().get(0)))
+			return null;
+		
+		// Check (1-mu)*mean
+		double expectedOneMinusMu = OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(rhsTimesOp), new HashMap<>());
+		Hop plusOp = rhsTimesOp.getParent().get(0); 
+		Hop lhsTimesOp = null;
+		if(plusOp.getInput().get(0) == rhsTimesOp) {
+			lhsTimesOp = plusOp.getInput().get(1); 
+		}
+		else {
+			lhsTimesOp = plusOp.getInput().get(0);
+		}
+		
+		if(expectedOneMinusMu == (1-mu) && plusOp.getParent() != null && plusOp.getParent().size() == 1 &&  
+			isBinarySMMult(lhsTimesOp) && OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(lhsTimesOp), new HashMap<>()) == mu) {
+			return new Hop[] {
+				plusOp.getParent().get(0),
+				getSecondInput(lhsTimesOp), 
+				getSecondInput(rhsTimesOp)
+			};
+		}
+		return null;
+	}
+	
+	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	// Returns [ema_mean_upd, ema_mean] if expression matched, else null
+	private static Hop [] getUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps, double mu) {
+		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
+			return null;
+		
+		Hop [] ret = null;
+		for(Hop h : rhsTimesOps) {
+			boolean matched = isUpdatedMovingAverageExpression(h, mu);
+			if(matched && ret != null) {
+				return null; // Multiple matches, cannot decide which one to fuse
+			}
+			else if(matched) {
+				ret = getUpdatedMovingAverageExpressions(h, mu);
+			}
+		}
+		
+		return ret;
+	}
+	
+	private static Double getMuFromUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps) {
+		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
+			return null;
+		
+		Double ret = null; 
+		for(Hop h : rhsTimesOps) {
+			boolean matched = isUpdatedMovingAverageExpression(h);
+			if(matched && ret != null) {
+				return null; // Multiple matches, cannot decide which one to fuse
+			}
+			else if(matched) {
+				ret = -(OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(h), new HashMap<>())-1);
+			}
+		}
+		return ret;
+	}
+	
+	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	// Returns true if expression matched, else false
+	private static boolean isUpdatedMovingAverageExpression(Hop rhsTimesOp) {
+		if(rhsTimesOp == null || rhsTimesOp.getParent() == null || rhsTimesOp.getParent().size() != 1 || 
+				!isBinarySMMult(rhsTimesOp) || !isBinaryAdd(rhsTimesOp.getParent().get(0)))
+			return false;
+		
+		// Check (1-mu)*mean
+		Hop plusOp = rhsTimesOp.getParent().get(0); 
+		Hop lhsTimesOp = null;
+		if(plusOp.getInput().get(0) == rhsTimesOp) {
+			lhsTimesOp = plusOp.getInput().get(1); 
+		}
+		else {
+			lhsTimesOp = plusOp.getInput().get(0);
+		}
+		
+		if(plusOp.getParent() != null && plusOp.getParent().size() == 1 && isBinarySMMult(lhsTimesOp)) {
+			return true;
+		}
+		return false;
+	}
+	
+	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	// Returns true if expression matched, else false
+	private static boolean isUpdatedMovingAverageExpression(Hop rhsTimesOp, double mu) {
+		if(rhsTimesOp == null || rhsTimesOp.getParent() == null || rhsTimesOp.getParent().size() != 1 || 
+				!isBinarySMMult(rhsTimesOp) || !isBinaryAdd(rhsTimesOp.getParent().get(0)))
+			return false;
+		
+		// Check (1-mu)*mean
+		double expectedOneMinusMu = OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(rhsTimesOp), new HashMap<>());
+		Hop plusOp = rhsTimesOp.getParent().get(0); 
+		Hop lhsTimesOp = null;
+		if(plusOp.getInput().get(0) == rhsTimesOp) {
+			lhsTimesOp = plusOp.getInput().get(1); 
+		}
+		else {
+			lhsTimesOp = plusOp.getInput().get(0);
+		}
+		
+		if(expectedOneMinusMu == (1-mu) && plusOp.getParent() != null && plusOp.getParent().size() == 1 &&  
+			isBinarySMMult(lhsTimesOp) && OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(lhsTimesOp), new HashMap<>()) == mu) {
+			return true;
+		}
+		return false;
+	}
+	
+	private static boolean isOneBySqrt(Hop denom) {
+		return denom.getParent() != null && denom.getParent().get(0) instanceof UnaryOp &&
+				((UnaryOp)denom.getParent().get(0)).getOp() == OpOp1.SQRT &&
+				denom.getParent().get(0).getParent() != null && denom.getParent().get(0).getParent().size() == 1 &&
+				isBinarySMDiv(denom.getParent().get(0).getParent().get(0), 1);
+	}
+	
+	@SuppressWarnings("unused")
+	private static Hop batchNormTrain(Hop parent, Hop hi, int pos) 
+	{		
+		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
+		// hi = bias_add(bias_multiply(norm, gamma), beta)
+		// 2x for input and output and 1x for overhead
+		// fitsOnGPU(hi, 3)
+		if( isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) ) {	
+			Hop norm = getFirstInput(getFirstInput(hi));
+			if(isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
+					&& isUnaryMinus(getSecondInput(getFirstInput(norm)))
+					&& isOneDivideBySqrt(getSecondInput(norm))) {
+				double eps = 0;
+				Hop var = getFirstInput(getSecondInput(getSecondInput(norm)));
+				if(isBinaryAdd(var) && (getFirstInput(var) instanceof LiteralOp || getSecondInput(var) instanceof LiteralOp)) {
+					// eps + ema_var
+					if(getFirstInput(var) instanceof LiteralOp) {
+						eps = OptimizerUtils.rEvalSimpleDoubleExpression(getFirstInput(var), new HashMap<>());
+						var = getSecondInput(var);
+					}
+					else {
+						eps = OptimizerUtils.rEvalSimpleDoubleExpression(getSecondInput(var), new HashMap<>());
+						var = getFirstInput(var);
+					}
+				}
+				// Generate batch norm test op
+				Hop X = getFirstInput(getFirstInput(norm));
+				Hop mean = getSecondInput(getSecondInput(getFirstInput(norm)));
+				
+				if(isBatchNormTrainMean(mean , X) && isBatchNormTrainVar(mean, var, X, getFirstInput(mean), false) &&
+					mean.getParent() != null && mean.getParent().size() >= 2 && 
+					var.getParent() != null && var.getParent().size() == 2) {
+					Hop gamma = getSecondInput(getFirstInput(hi));
+					Hop beta = getSecondInput(hi);
+					
+					// Always get mu from variance as it will have exactly one match of fusion pattern
+					Double potentialMu = getMuFromUpdatedMovingAverageExpressions(var.getParent());
+					if(potentialMu == null)
+						return hi;
+					double mu = potentialMu;
+					
+					Hop [] means = getUpdatedMovingAverageExpressions(mean.getParent(), mu);
+					Hop [] vars = getUpdatedMovingAverageExpressions(var.getParent(), mu);
+					if(means == null || vars == null)
+						return hi;
+					
+					Hop varPlusEps = null;
+					boolean isFirstBinaryAddOp = isAnyBinaryAdd(var.getParent().get(0).getParent());
+                    boolean isSecondBinaryAddOp = isAnyBinaryAdd(var.getParent().get(1).getParent());
+                    if(isFirstBinaryAddOp && !isSecondBinaryAddOp) {
+                            varPlusEps = var.getParent().get(1);
+                    }
+                    else if(!isFirstBinaryAddOp && isSecondBinaryAddOp) {
+                            varPlusEps = var.getParent().get(0);
+                    }
+					if(varPlusEps != null && isBinaryMSAdd(varPlusEps, eps) && isOneBySqrt(varPlusEps)) {
+						
+						Hop cache_var = varPlusEps.getParent().get(0).getParent().get(0);
+						Hop ema_mean_upd = means[0];
+						Hop ema_var_upd = vars[0];
+						Hop ema_mean = means[1];
+						Hop ema_var = vars[1];
+						Hop cache_mean = means[2];
+						
+						
+						ArrayList<Hop> inHops = new ArrayList<Hop>();
+						inHops.add(X);
+						inHops.add(gamma);
+						inHops.add(beta);
+						inHops.add(ema_mean);
+						inHops.add(ema_var);
+						inHops.add(new LiteralOp(eps));
+						inHops.add(new LiteralOp(mu));
+						Hop [] oldHops = {hi, ema_mean_upd, ema_var_upd, cache_mean, cache_var};
+						
+						if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
+							LOG.debug("Applied batchNormTrain rewrite.");
+							return new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
+									inHops, getNamesAndClearDataOp(oldHops), false);
+						}
+					}
+					
+				}
+			}			
+		}
+		
+		return hi;
+	}
+	
+	private static boolean isEligibleForMultiOutputFunctionOp(ArrayList<Hop> inputOps, Hop [] outputHops) {
+		for(Hop inHop : inputOps) {
+			if(inHop instanceof LiteralOp)
+				continue;
+			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD)))
+				return false;
+		}
+		for(Hop outHop : outputHops) {
+			if(!HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE))
+				return false;
+		}
+		
+		return true;
+	}
+	
+	private static String [] getNamesAndClearDataOp(Hop [] oldHops) {
+		String [] outputNames = new String[oldHops.length];
+		for(int i = 0; i < oldHops.length; i++) {
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE)) {
+				outputNames[i] = ((DataOp)oldHops[i]).getName();
+				oldHops[i].getParent().clear();
+				oldHops[i].getInput().clear();
+			}
+			else {
+				throw new RuntimeException("Expected transient write");
+			}
+				
+		}
+		return outputNames;
+	}
+	
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
@@ -226,20 +626,28 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				// Generate batch norm test op
 				Hop X = getFirstInput(getFirstInput(norm));
 				Hop mean = getSecondInput(getSecondInput(getFirstInput(norm)));
-				Hop gamma = getSecondInput(getFirstInput(hi));
-				Hop beta = getSecondInput(hi);
-				ArrayList<Hop> inHops = new ArrayList<Hop>();
-				inHops.add(X);
-				inHops.add(gamma);
-				inHops.add(beta);
-				inHops.add(mean);
-				inHops.add(var);
-				inHops.add(new LiteralOp(eps));
-				if(fitsOnGPU(inHops, true)) {
-					LOG.debug("Applied batchNormTest rewrite.");
-					Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
-							OpOpDnn.BATCH_NORM2D_TEST, inHops);
-					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+				
+				// This guard disallows eager fusion of train batch normalization into test batch normalization
+				boolean potentialForBatchNormTrain = !X.rowsKnown() && isBatchNormTrainMean(mean , X) && isBatchNormTrainVar(mean, var, X, getFirstInput(mean), true);
+				if(!potentialForBatchNormTrain) {
+					Hop gamma = getSecondInput(getFirstInput(hi));
+					Hop beta = getSecondInput(hi);
+					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					inHops.add(X);
+					inHops.add(gamma);
+					inHops.add(beta);
+					inHops.add(mean);
+					inHops.add(var);
+					inHops.add(new LiteralOp(eps));
+					if(fitsOnGPU(inHops, true)) {
+						LOG.debug("Applied batchNormTest rewrite.");
+						Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+								OpOpDnn.BATCH_NORM2D_TEST, inHops);
+						return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+					}
+				}
+				else {
+					LOG.debug("Skipping batchNormTest rewrite as there is potential for batch normalization train rewrite after recompilation.");
 				}
 			}
 		}

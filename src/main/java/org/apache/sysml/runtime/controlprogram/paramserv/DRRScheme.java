@@ -34,28 +34,24 @@ import org.apache.sysml.runtime.util.DataConverter;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DataPartitionerDRR extends DataPartitioner {
+public class DRRScheme extends DataPartitionScheme {
 
-	private MatrixObject removeEmpty(MatrixObject mo, int k, int workerId) {
-		MatrixObject result = ParamservUtils.newMatrixObject();
-		MatrixBlock tmp = mo.acquireRead();
-		double[] data = LongStream.range(1, mo.getNumRows() + 1)
-			.mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
+	public static MatrixBlock removeEmpty(MatrixBlock mb, int k, int workerId) {
+		double[] data = LongStream.range(0, mb.getNumRows()).mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();
 		MatrixBlock select = DataConverter.convertToMatrixBlock(data, true);
-		MatrixBlock resultMB = tmp.removeEmptyOperations(new MatrixBlock(), true, true, select);
-		mo.release();
-		result.acquireModify(resultMB);
-		result.release();
+		return mb.removeEmptyOperations(new MatrixBlock(), true, true, select);
+	}
+
+	private MatrixObject internalRemoveEmpty(MatrixBlock mb, int k, int workerId) {
+		MatrixObject result = ParamservUtils.newMatrixObject(removeEmpty(mb, k, workerId));
 		result.enableCleanup(false);
 		return result;
 	}
 
 	@Override
-	public Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels) {
-		List<MatrixObject> pfs = IntStream.range(0, workersNum)
-	  		.mapToObj(i -> removeEmpty(features, workersNum, i)).collect(Collectors.toList());
-		List<MatrixObject> pls = IntStream.range(0, workersNum)
-		    .mapToObj(i -> removeEmpty(labels, workersNum, i)).collect(Collectors.toList());
+	public Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
+		List<MatrixObject> pfs = IntStream.range(0, workersNum).mapToObj(i -> internalRemoveEmpty(features, workersNum, i)).collect(Collectors.toList());
+		List<MatrixObject> pls = IntStream.range(0, workersNum).mapToObj(i -> internalRemoveEmpty(labels, workersNum, i)).collect(Collectors.toList());
 		return new Result(pfs, pls);
 	}
 }

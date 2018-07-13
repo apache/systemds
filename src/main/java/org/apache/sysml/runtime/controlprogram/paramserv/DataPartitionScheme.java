@@ -17,25 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysml.test.integration.functions.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.util.List;
 
-/** Group together the tests in this package into a single suite so that the Maven build
- *  won't run two of them at once. */
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-	LocalDataPartitionerTest.class,
-	SparkDataPartitionerTest.class,
-	ParamservSyntaxTest.class,
-	ParamservRecompilationTest.class,
-	ParamservRuntimeNegativeTest.class,
-	ParamservNNTest.class
-})
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
+public abstract class DataPartitionScheme {
 
-/** This class is just a holder for the above JUnit annotations. */
-public class ZPackageSuite {
+	public final class Result {
+		public final List<MatrixObject> pFeatures;
+		public final List<MatrixObject> pLabels;
 
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
+			this.pFeatures = pFeatures;
+			this.pLabels = pLabels;
+		}
+	}
+
+	public abstract Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
 }

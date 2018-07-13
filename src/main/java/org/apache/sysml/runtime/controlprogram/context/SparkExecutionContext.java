@@ -546,7 +546,7 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	@SuppressWarnings("unchecked")
-	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable(String varname) {
+	public PartitionedBroadcast<MatrixBlock> getBroadcastForMatrixObject(MatrixObject mo) {
 		//NOTE: The memory consumption of this method is the in-memory size of the 
 		//matrix object plus the partitioned size in 1k-1k blocks. Since the call
 		//to broadcast happens after the matrix object has been released, the memory
@@ -556,8 +556,6 @@ public class SparkExecutionContext extends ExecutionContext
 		//unnecessary memory requirements during the lifetime of this broadcast handle.
 		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-
-		MatrixObject mo = getMatrixObject(varname);
 
 		PartitionedBroadcast<MatrixBlock> bret = null;
 
@@ -611,6 +609,11 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 
 		return bret;
+	}
+
+	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable(String varname) {
+		MatrixObject mo = getMatrixObject(varname);
+		return getBroadcastForMatrixObject(mo);
 	}
 
 	@SuppressWarnings("unchecked")

@@ -187,5 +187,4 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		ParamservUtils.cleanupData(bLabels);
 		return gradients;
 	}
-
 }

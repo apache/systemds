@@ -22,11 +22,15 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.spark.Partitioner;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -34,6 +38,7 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -49,6 +54,9 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
 import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -57,12 +65,17 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+
+import scala.Tuple2;
 
 public class ParamservUtils {
 
 	public static final String PS_FUNC_PREFIX = "_ps_";
+
+	public static long SEED = -1; // Used for generating permutation
 
 	/**
 	 * Deep copy the list object
@@ -105,8 +118,13 @@ public class ParamservUtils {
 		cd.clearData();
 	}
 
-	public static MatrixObject newMatrixObject() {
-		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+	public static MatrixObject newMatrixObject(MatrixBlock mb) {
+		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
+			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		result.acquireModify(mb);
+		result.release();
+		return result;
 	}
 
 	/**
@@ -118,20 +136,31 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = newMatrixObject();
-		MatrixBlock tmp = mo.acquireRead();
-		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
-		mo.release();
-		result.release();
+		MatrixBlock mb = mo.acquireRead();
+		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
 		result.enableCleanup(false);
+		mo.release();
 		return result;
 	}
 
-	public static MatrixBlock generatePermutation(int numEntries) {
+	/**
+	 * Slice the matrix block and return a matrix block
+	 * (used in spark)
+	 *
+	 * @param mb input matrix
+	 * @param rl low boundary
+	 * @param rh high boundary
+	 * @return new sliced matrix block
+	 */
+	public static MatrixBlock sliceMatrixBlock(MatrixBlock mb, long rl, long rh) {
+		return mb.slice((int) rl - 1, (int) rh - 1);
+	}
+
+	public static MatrixBlock generatePermutation(int numEntries, long seed) {
 		// Create a sequence and sample w/o replacement
 		// (no need to materialize the sequence because ctable only uses its meta data)
 		MatrixBlock seq = new MatrixBlock(numEntries, 1, false);
-		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, -1);
+		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, seed);
 
 		// Combine the sequence and sample as a table
 		return seq.ctableSeqOperations(sample, 1.0,
@@ -257,14 +286,104 @@ public class ParamservUtils {
 		return recompiled;
 	}
 
-
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
 		String[] cfn = getCompleteFuncName(funcName, null);
 		String ns = cfn[0];
 		String fname = cfn[1];
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);
 	}
-	
+
+	public static MatrixBlock cbindMatrix(MatrixBlock left, MatrixBlock right) {
+		return left.append(right, new MatrixBlock());
+	}
+
+	/**
+	 * Assemble the matrix of features and labels according to the rowID
+	 *
+	 * @param numRows row size of the data
+	 * @param featuresRDD indexed features matrix block
+	 * @param labelsRDD indexed labels matrix block
+	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID -> features, labels)
+	 */
+	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
+		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(numRows, featuresRDD);
+		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(numRows, labelsRDD);
+		//TODO Add an additional physical operator which broadcasts the labels directly (broadcast join with features) if certain memory budgets are satisfied
+		return fRDD.join(lRDD);
+	}
+
+	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+		//TODO could use join and aggregation to avoid unnecessary shuffle introduced by reduceByKey
+		return rdd.mapToPair(input -> new Tuple2<>(input._1.getRowIndex(), new Tuple2<>(input._1.getColumnIndex(), input._2)))
+			.aggregateByKey(new LinkedList<Tuple2<Long, MatrixBlock>>(),
+				new Partitioner() {
+					private static final long serialVersionUID = -7032660778344579236L;
+					@Override
+					public int getPartition(Object rblkID) {
+						return Math.toIntExact((Long) rblkID);
+					}
+					@Override
+					public int numPartitions() {
+						return Math.toIntExact(numRows);
+					}
+				},
+				(list, input) -> {
+					list.add(input); 
+					return list;
+				}, 
+				(l1, l2) -> {
+					l1.addAll(l2);
+					l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
+					return l1;
+				})
+			.mapToPair(input -> {
+				LinkedList<Tuple2<Long, MatrixBlock>> list = input._2;
+				MatrixBlock result = list.get(0)._2;
+				for (int i = 1; i < list.size(); i++) {
+					result = ParamservUtils.cbindMatrix(result, list.get(i)._2);
+				}
+				return new Tuple2<>(input._1, result);
+			});
+	}
+
+	@SuppressWarnings("unchecked")
+	public static JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitionOnSpark(SparkExecutionContext sec, MatrixObject features, MatrixObject labels, Statement.PSScheme scheme, int workerNum) {
+		// Get input RDD
+		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
+				sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
+				sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
+
+		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
+		return ParamservUtils.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
+			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))
+			// Aggregate the partitioned matrix according to rowID for each worker
+			// i.e. (workerID => ordered list[(rowBlockID, (single row features, single row labels)]
+			.aggregateByKey(new LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>(),
+				new Partitioner() {
+					private static final long serialVersionUID = -7937781374718031224L;
+					@Override
+					public int getPartition(Object workerID) {
+						return (int) workerID;
+					}
+					@Override
+					public int numPartitions() {
+						return workerNum;
+					}
+				}, 
+				(list, input) -> {
+					list.add(input);
+					return list;
+				},
+				(l1, l2) -> {
+					l1.addAll(l2);
+					l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
+					return l1;
+				})
+			.mapToPair(new DataPartitionerSparkAggregator(
+				features.getNumColumns(), labels.getNumColumns()));
+	}
+
 	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
 		return accrueGradients(accGradients, gradients, false);
 	}

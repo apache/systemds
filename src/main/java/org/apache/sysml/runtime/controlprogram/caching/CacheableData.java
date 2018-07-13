@@ -487,6 +487,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireMTime(t1-t0);
+			if (DMLScript.JMLC_MEM_STATISTICS)
+				Statistics.addCPMemObject(System.identityHashCode(this), getDataSize());
 		}
 		
 		return ret;
@@ -504,9 +506,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		setDirty(true);
 		_isAcquireFromEmpty = false;
-
-		if (DMLScript.JMLC_MEMORY_STATISTICS)
-			Statistics.addCPMemObject(newData);
 		
 		//set references to new data
 		if (newData == null)
@@ -573,11 +572,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				}
 				_requiresLocalWrite = false;
 			}
-
-			if ((DMLScript.JMLC_MEMORY_STATISTICS) && (this._data != null)) {
-				int hash = System.identityHashCode(this._data);
-				Statistics.removeCPMemObject(hash);
-			}
 			
 			//create cache
 			createCache();
@@ -608,10 +602,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			  ||(_data!=null && !isCachingActive()) )) //additional condition for JMLC
 			freeEvictedBlob();
 
-		if ((DMLScript.JMLC_MEMORY_STATISTICS) && (this._data != null)) {
-			int hash = System.identityHashCode(this._data);
-			Statistics.removeCPMemObject(hash);
-		}
 		// clear the in-memory data
 		_data = null;
 		clearCache();

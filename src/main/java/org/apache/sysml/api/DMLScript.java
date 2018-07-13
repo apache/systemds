@@ -97,11 +97,11 @@ import org.apache.sysml.yarn.DMLYarnClientProxy;
 public class DMLScript 
 {	
 	public enum RUNTIME_PLATFORM { 
-		HADOOP, 	    // execute all matrix operations in MR
+		HADOOP,         // execute all matrix operations in MR
 		SINGLE_NODE,    // execute all matrix operations in CP
 		HYBRID,         // execute matrix operations in CP or MR
 		HYBRID_SPARK,   // execute matrix operations in CP or Spark
-		SPARK			// execute matrix operations in Spark
+		SPARK           // execute matrix operations in Spark
 	}
 	
 	/**
@@ -130,7 +130,8 @@ public class DMLScript
 		public String               configFile    = null;             // Path to config file if default config and default config is to be overriden
 		public boolean              clean         = false;            // Whether to clean up all SystemML working directories (FS, DFS)
 		public boolean              stats         = false;            // Whether to record and print the statistics
-		public int                  statsCount    = 10;	              // Default statistics count
+		public int                  statsCount    = 10;               // Default statistics count
+		public boolean              memStats      = false;            // max memory statistics
 		public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
 		public DMLScript.RUNTIME_PLATFORM execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
 		public boolean              gpu           = false;            // Whether to use the GPU
@@ -146,28 +147,29 @@ public class DMLScript
 		@Override
 		public String toString() {
 			return "DMLOptions{" +
-							"argVals=" + argVals +
-							", configFile='" + configFile + '\'' +
-							", clean=" + clean +
-							", stats=" + stats +
-							", statsCount=" + statsCount +
-							", explainType=" + explainType +
-							", execMode=" + execMode +
-							", gpu=" + gpu +
-							", forceGPU=" + forceGPU +
-							", debug=" + debug +
-							", scriptType=" + scriptType +
-							", filePath='" + filePath + '\'' +
-							", script='" + script + '\'' +
-							", help=" + help +
-							'}';
+				"argVals=" + argVals +
+				", configFile='" + configFile + '\'' +
+				", clean=" + clean +
+				", stats=" + stats +
+				", statsCount=" + statsCount +
+				", memStats=" + memStats +
+				", explainType=" + explainType +
+				", execMode=" + execMode +
+				", gpu=" + gpu +
+				", forceGPU=" + forceGPU +
+				", debug=" + debug +
+				", scriptType=" + scriptType +
+				", filePath='" + filePath + '\'' +
+				", script='" + script + '\'' +
+				", help=" + help +
+				'}';
 		}
 	}
 
 	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
 	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
 	public static boolean           FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
-	public static boolean           JMLC_MEMORY_STATISTICS = false;                              // whether to gather memory use stats in JMLC
+	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
 	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
@@ -315,6 +317,7 @@ public class DMLScript
 				}
 			}
 		}
+		dmlOptions.memStats = line.hasOption("mem");
 
 		dmlOptions.clean = line.hasOption("clean");
 
@@ -390,9 +393,11 @@ public class DMLScript
 		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemML working directories (FS, DFS); all other flags are ignored in this mode. \n")
 						.create("clean");
 		Option statsOpt = OptionBuilder.withArgName("count")
-						.withDescription("monitors and reports caching/recompilation statistics; heavy hitter <count> is 10 unless overridden; default off")
+						.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 						.hasOptionalArg()
 						.create("stats");
+		Option memOpt = OptionBuilder.withDescription("monitors and reports max memory consumption in CP; default off")
+						.create("mem");
 		Option explainOpt = OptionBuilder.withArgName("level")
 						.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime'")
 						.hasOptionalArg()
@@ -436,6 +441,7 @@ public class DMLScript
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
+		options.addOption(memOpt);
 		options.addOption(explainOpt);
 		options.addOption(execOpt);
 		options.addOption(gpuOpt);
@@ -465,17 +471,15 @@ public class DMLScript
 		{
 			DMLOptions dmlOptions = parseCLArguments(args, options);
 
-			// String[] scriptArgs = null; //optional script arguments
-			// boolean namedScriptArgs = false;
-
-			STATISTICS        = dmlOptions.stats;
-			STATISTICS_COUNT  = dmlOptions.statsCount;
-			USE_ACCELERATOR   = dmlOptions.gpu;
-			FORCE_ACCELERATOR = dmlOptions.forceGPU;
-			EXPLAIN           = dmlOptions.explainType;
-			ENABLE_DEBUG_MODE = dmlOptions.debug;
-			SCRIPT_TYPE       = dmlOptions.scriptType;
-			rtplatform        = dmlOptions.execMode;
+			STATISTICS          = dmlOptions.stats;
+			STATISTICS_COUNT    = dmlOptions.statsCount;
+			JMLC_MEM_STATISTICS = dmlOptions.memStats;
+			USE_ACCELERATOR     = dmlOptions.gpu;
+			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
+			EXPLAIN             = dmlOptions.explainType;
+			ENABLE_DEBUG_MODE   = dmlOptions.debug;
+			SCRIPT_TYPE         = dmlOptions.scriptType;
+			rtplatform          = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -517,35 +521,26 @@ public class DMLScript
 			else {
 				execute(dmlScriptStr, fnameOptConfig, argVals, args, SCRIPT_TYPE);
 			}
-
 		}
-		catch(AlreadySelectedException e)
-		{
+		catch(AlreadySelectedException e) {
 			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp( "systemml", options );
 			return false;
 		}
-		catch(org.apache.commons.cli.ParseException e)
-		{
+		catch(org.apache.commons.cli.ParseException e) {
 			System.err.println(e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp( "systemml", options );
 		}
-		catch (ParseException pe) {
-			throw pe;
-		}
-		catch (DMLScriptException e) {
-			//rethrow DMLScriptException to propagate stop call
+		catch (ParseException | DMLScriptException e) {
 			throw e;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to execute DML script.", ex);
 			throw new DMLException(ex);
 		}
-		finally
-		{
+		finally {
 			//reset runtime platform and visualize flag
 			rtplatform = oldrtplatform;
 			EXPLAIN = oldexplain;
@@ -626,20 +621,15 @@ public class DMLScript
 	}
 
 	
-	private static void setLoggingProperties( Configuration conf )
-	{
+	private static void setLoggingProperties( Configuration conf ) {
 		String debug = conf.get("systemml.logging");
-		
 		if (debug == null)
 			debug = System.getProperty("systemml.logging");
-		
 		if (debug != null){
-			if (debug.equalsIgnoreCase("debug")){
+			if (debug.equalsIgnoreCase("debug"))
 				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.DEBUG);
-			}
-			else if (debug.equalsIgnoreCase("trace")){
+			else if (debug.equalsIgnoreCase("trace"))
 				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.TRACE);
-			}
 		}
 	}
 	
@@ -825,7 +815,7 @@ public class DMLScript
 		//init caching (incl set active)
 		LocalFileUtils.createWorkingDirectory();
 		CacheableData.initCaching();
-						
+		
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.resetNoOfExecutedJobs();
 		if( STATISTICS )
@@ -871,9 +861,8 @@ public class DMLScript
 				+ MRConfigurationNames.DFS_PERMISSIONS_ENABLED + " = " + perm );
 
 		//print warning if permission issues possible
-		if( flagDiffUser && ( flagLocalFS || flagSecurity ) )
-		{
-			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'."); 		 
+		if( flagDiffUser && ( flagLocalFS || flagSecurity ) ) {
+			LOG.warn("Cannot run map/reduce tasks as user '"+userName+"'. Using tasktracker group '"+ttGroupName+"'.");
 		}
 	}
 	
@@ -895,25 +884,19 @@ public class DMLScript
 		//this implementation does not create job specific sub directories)
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		if( InfrastructureAnalyzer.isLocalMode(job) ) {
-			try 
-			{
-				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + //staging dir (for local mode only) 
-					                                   dirSuffix  );	
-				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix(job) + //local dir
-		                                               dirSuffix );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + //system dir
-													   dirSuffix  );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + //staging dir
-								                       dirSuffix  );
+			try {
+				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + dirSuffix );
+				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix(job) + dirSuffix );
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + dirSuffix );
+				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + dirSuffix );
 			}
-			catch(Exception ex)
-			{
+			catch(Exception ex) {
 				//we give only a warning because those directories are written by the mapred deamon 
 				//and hence, execution can still succeed
 				LOG.warn("Unable to cleanup hadoop working dirs: "+ex.getMessage());
 			}
-		}			
-			
+		}
+		
 		//3) cleanup systemml-internal working dirs
 		CacheableData.cleanupCacheDir(); //might be local/hdfs
 		LocalFileUtils.cleanupWorkingDirectory();
@@ -924,12 +907,10 @@ public class DMLScript
 	// private internal helper functionalities
 	////////
 
-	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals)
-	{		
+	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals) {
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-	                + "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
-	                + "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
-
+			+ "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+			+ "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
 			for (int i=1; i<= argVals.size(); i++)
@@ -937,27 +918,23 @@ public class DMLScript
 		}
 	}
 	
-	private static void printStartExecInfo(String dmlScriptString)
-	{
+	private static void printStartExecInfo(String dmlScriptString) {
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + dmlScriptString);
-		
 		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID) {
 			String hadoop_home = System.getenv("HADOOP_HOME");
 			LOG.info("HADOOP_HOME: " + hadoop_home);
 		}
 	}
 	
-	private static String getDateTime() 
-	{
+	private static String getDateTime() {
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		Date date = new Date();
 		return dateFormat.format(date);
 	}
 
 	private static void cleanSystemMLWorkspace() {
-		try
-		{
+		try {
 			//read the default config
 			DMLConfig conf = DMLConfig.readConfigurationFile(null);
 			
@@ -974,9 +951,8 @@ public class DMLScript
 			if( localtmp != null )
 				LocalFileUtils.cleanupRcWorkingDirectory(localtmp);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
 	}
-}  
+}

@@ -137,7 +137,7 @@ public class LocalVariableMap implements Cloneable
 			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData ) {
 				dict.put(hash, e.getValue());
 				double size = ((CacheableData<?>) e.getValue()).getDataSize();
-				if ((DMLScript.JMLC_MEMORY_STATISTICS) && (DMLScript.FINEGRAINED_STATISTICS))
+				if (DMLScript.JMLC_MEM_STATISTICS && DMLScript.FINEGRAINED_STATISTICS)
 					Statistics.maintainCPHeavyHittersMem(e.getKey(), size);
 				total += size;
 			}

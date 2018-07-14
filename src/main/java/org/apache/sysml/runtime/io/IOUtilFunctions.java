@@ -19,10 +19,12 @@
 
 package org.apache.sysml.runtime.io;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +49,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -111,9 +114,9 @@ public class IOUtilFunctions
 		try {
 			if( io != null )
 				io.close();
-        } 
+		}
 		catch (Exception ex) {
-           LOG.error("Failed to close IO resource.", ex);
+			LOG.error("Failed to close IO resource.", ex);
 		}
 	}
 
@@ -122,9 +125,9 @@ public class IOUtilFunctions
 		try {
 			if( rr != null )
 				rr.close();
-        } 
+		}
 		catch (Exception ex) {
-           LOG.error("Failed to close record reader.", ex);
+			LOG.error("Failed to close record reader.", ex);
 		}
 	}
 
@@ -328,6 +331,47 @@ public class IOUtilFunctions
 		
 		// return number of tokens
 		return numTokens;
+	}
+	
+	public static FileFormatPropertiesMM readAndParseMatrixMarketHeader(String filename) throws DMLRuntimeException {
+		String[] header = readMatrixMarketHeader(filename);
+		return FileFormatPropertiesMM.parse(header[0]);
+	}
+	
+	public static String[] readMatrixMarketHeader(String filename) throws DMLRuntimeException {
+		String[] retVal = new String[2];
+		retVal[0] = new String("");
+		retVal[1] = new String("");
+		boolean exists = false;
+		
+		try {
+			Path path = new Path(filename);
+			FileSystem fs = IOUtilFunctions.getFileSystem(path);
+			exists = fs.exists(path);
+			boolean getFileStatusIsDir = fs.getFileStatus(path).isDirectory();
+			if (exists && getFileStatusIsDir) {
+				throw new DMLRuntimeException("MatrixMarket files as directories not supported");
+			}
+			else if (exists) {
+				try( BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(path))) ) {
+					retVal[0] = in.readLine();
+					// skip all commented lines
+					do {
+						retVal[1] = in.readLine();
+					} while ( retVal[1].charAt(0) == '%' );
+					if ( !retVal[0].startsWith("%%") ) {
+						throw new DMLRuntimeException("MatrixMarket files must begin with a header line.");
+					}
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Could not find the file: " + filename);
+			}
+		}
+		catch (IOException e){
+			throw new DMLRuntimeException(e);
+		}
+		return retVal;
 	}
 	
 	/**

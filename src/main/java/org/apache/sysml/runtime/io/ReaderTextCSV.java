@@ -37,16 +37,15 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class ReaderTextCSV extends MatrixReader
 {
-	private CSVFileFormatProperties _props = null;
+	private FileFormatPropertiesCSV _props = null;
 	
-	public ReaderTextCSV(CSVFileFormatProperties props) {
+	public ReaderTextCSV(FileFormatPropertiesCSV props) {
 		_props = props;
 	}
 	

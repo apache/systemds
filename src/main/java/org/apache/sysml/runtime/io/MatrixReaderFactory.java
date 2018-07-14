@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.io;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -44,9 +43,9 @@ public class MatrixReaderFactory
 		else if( iinfo == InputInfo.CSVInputInfo )
 		{
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCSVParallel(new CSVFileFormatProperties());
+				reader = new ReaderTextCSVParallel(new FileFormatPropertiesCSV());
 			else
-				reader = new ReaderTextCSV(new CSVFileFormatProperties());
+				reader = new ReaderTextCSV(new FileFormatPropertiesCSV());
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
@@ -81,9 +80,9 @@ public class MatrixReaderFactory
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
-				reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
+				reader = new ReaderTextCSVParallel( props.formatProperties!=null ? (FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
 			else
-				reader = new ReaderTextCSV( props.formatProperties!=null ? (CSVFileFormatProperties)props.formatProperties : new CSVFileFormatProperties());
+				reader = new ReaderTextCSV( props.formatProperties!=null ? (FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
 		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();

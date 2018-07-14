@@ -47,10 +47,10 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -741,7 +741,7 @@ public abstract class AutomatedTestBase
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
-		CSVFileFormatProperties fprop = new CSVFileFormatProperties();
+		FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
 		fprop.setHeader(true);
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo, fprop);
 

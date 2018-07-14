@@ -45,10 +45,16 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class ReaderTextCell extends MatrixReader
 {
-	private boolean _isMMFile = false;
+	protected final boolean _allowRawRead; 
+	protected final boolean _isMMFile;
+	protected FileFormatProperties _mmProps = null;
 	
-	public ReaderTextCell(InputInfo info)
-	{
+	public ReaderTextCell(InputInfo info) {
+		this(info, true);
+	}
+	
+	public ReaderTextCell(InputInfo info, boolean allowRaw) {
+		_allowRawRead = allowRaw;
 		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
 	}
 	
@@ -61,22 +67,26 @@ public class ReaderTextCell extends MatrixReader
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
+		//check existence and non-empty file
+		checkValidInputFile(fs, path); 
+		
+		//read matrix market header
+		if( _isMMFile )
+			_mmProps = IOUtilFunctions.readAndParseMatrixMarketHeader(fname);
+		
 		//allocate output matrix block
 		if( estnnz < 0 )
 			estnnz = MapReduceTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
-		//check existence and non-empty file
-		checkValidInputFile(fs, path); 
-	
 		//core read 
-		if( fs.isDirectory(path) )
+		if( fs.isDirectory(path) || !_allowRawRead )
 			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen);
 		else
 			readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, brlen, bclen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
-		if( !ret.isInSparseFormat() )
+		if( !AGGREGATE_BLOCK_NNZ )
 			ret.recomputeNonZeros();
 		ret.examSparsity();
 		
@@ -94,14 +104,14 @@ public class ReaderTextCell extends MatrixReader
 		readRawTextCellMatrixFromInputStream(is, ret, rlen, clen, brlen, bclen, _isMMFile);
 		
 		//finally check if change of sparse/dense block representation required
-		if( !ret.isInSparseFormat() )
+		if( !AGGREGATE_BLOCK_NNZ )
 			ret.recomputeNonZeros();
 		ret.examSparsity();
 		
 		return ret;
 	}
 
-	private static void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
+	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		boolean sparse = dest.isInSparseFormat();
@@ -112,19 +122,16 @@ public class ReaderTextCell extends MatrixReader
 		
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		int row = -1;
-		int col = -1;
+		int row = -1, col = -1;
+		long nnz = 0;
 		
 		try
 		{
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			
-			for(InputSplit split: splits)
-			{
+			for(InputSplit split: splits) {
 				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
-			
-				try
-				{
+				try {
 					if( sparse ) //SPARSE<-value
 					{
 						while( reader.next(key, value) ) {
@@ -148,6 +155,7 @@ public class ReaderTextCell extends MatrixReader
 							if(row == -1 || col == -1) continue;
 							double lvalue = st.nextDouble();
 							a.set( row, col, lvalue );
+							nnz += (lvalue != 0) ? 1 : 0;
 						}
 					}
 				}
@@ -155,6 +163,9 @@ public class ReaderTextCell extends MatrixReader
 					IOUtilFunctions.closeSilently(reader);
 				}
 			}
+			
+			if( !dest.isInSparseFormat() )
+				dest.setNonZeros(nnz);
 		}
 		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
@@ -180,11 +191,13 @@ public class ReaderTextCell extends MatrixReader
 			throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));
+		@SuppressWarnings("unused")
+		FileFormatPropertiesMM mmProps = null;
 		
 		boolean sparse = dest.isInSparseFormat();
 		String value = null;
-		int row = -1;
-		int col = -1;
+		int row = -1, col = -1;
+		long nnz = 0;
 		
 		// Read the header lines, if reading from a matrixMarket file
 		if ( matrixMarket ) {
@@ -192,6 +205,7 @@ public class ReaderTextCell extends MatrixReader
 			if ( value==null || !value.startsWith("%%") ) {
 				throw new IOException("Error while reading file in MatrixMarket format. Expecting a header line, but encountered, \"" + value +"\".");
 			}
+			mmProps = FileFormatPropertiesMM.parse(value);
 			
 			// skip until end-of-comments
 			while( (value = br.readLine())!=null && value.charAt(0) == '%' ) {
@@ -209,7 +223,7 @@ public class ReaderTextCell extends MatrixReader
 		}
 		
 		try
-		{			
+		{
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			
 			if( sparse ) //SPARSE<-value
@@ -236,7 +250,9 @@ public class ReaderTextCell extends MatrixReader
 					if(row == -1 || col == -1) continue;
 					double lvalue = st.nextDouble();
 					a.set( row, col, lvalue );
+					nnz += (lvalue != 0) ? 1 : 0;
 				}
+				dest.setNonZeros(nnz);
 			}
 		}
 		catch(Exception ex) {

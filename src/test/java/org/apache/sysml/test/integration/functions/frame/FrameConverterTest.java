@@ -42,6 +42,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.CopyFrameBlockPairF
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongWritableFrameToLongFrameFunction;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
@@ -51,7 +52,6 @@ import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.io.MatrixWriter;
 import org.apache.sysml.runtime.io.MatrixWriterFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -441,7 +441,7 @@ public class FrameConverterTest extends AutomatedTestBase
 				InputInfo iinfo = InputInfo.BinaryBlockInputInfo;
 				JavaPairRDD<LongWritable, FrameBlock> rddIn = sc.hadoopFile(fnameIn, iinfo.inputFormatClass, LongWritable.class, FrameBlock.class);
 				JavaPairRDD<Long, FrameBlock> rddIn2 = rddIn.mapToPair(new CopyFrameBlockPairFunction(false));
-				CSVFileFormatProperties fprop = new CSVFileFormatProperties();
+				FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();
 				JavaRDD<String> rddOut = FrameRDDConverterUtils.binaryBlockToCsv(rddIn2, mc, fprop, true);
 				rddOut.saveAsTextFile(fnameOut);
 				break;

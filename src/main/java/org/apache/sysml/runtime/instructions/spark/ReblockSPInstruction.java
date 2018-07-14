@@ -36,9 +36,11 @@ import org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBina
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -116,13 +118,17 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
 		if(iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
+			//get matrix market file properties if necessary
+			FileFormatPropertiesMM mmProps = (iinfo == InputInfo.MatrixMarketInputInfo) ?
+				IOUtilFunctions.readAndParseMatrixMarketHeader(mo.getFileName()) : null;
+			
 			//get the input textcell rdd
 			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
 				sec.getRDDHandleForMatrixObject(mo, iinfo);
 			
 			//convert textcell to binary block
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out =
-				RDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, outputEmptyBlocks);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.textCellToBinaryBlock(
+				sec.getSparkContext(), lines, mcOut, outputEmptyBlocks, mmProps);
 			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
@@ -136,10 +142,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
-			if(mo.getFileFormatProperties() instanceof CSVFileFormatProperties 
+			if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV 
 			   && mo.getFileFormatProperties() != null ) 
 			{
-				CSVFileFormatProperties props = (CSVFileFormatProperties) mo.getFileFormatProperties();
+				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) mo.getFileFormatProperties();
 				hasHeader = props.hasHeader();
 				delim = props.getDelim();
 				fill = props.isFill();
@@ -210,10 +216,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
-			if(fo.getFileFormatProperties() instanceof CSVFileFormatProperties
+			if(fo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
 				&& fo.getFileFormatProperties() != null ) 
 			{
-				CSVFileFormatProperties props = (CSVFileFormatProperties) fo.getFileFormatProperties();
+				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) fo.getFileFormatProperties();
 				hasHeader = props.hasHeader();
 				delim = props.getDelim();
 				fill = props.isFill();

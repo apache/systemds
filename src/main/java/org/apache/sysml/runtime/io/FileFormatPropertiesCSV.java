@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.matrix.data;
+package org.apache.sysml.runtime.io;
 
 import java.io.Serializable;
 
 import org.apache.sysml.parser.DataExpression;
 
-public class CSVFileFormatProperties extends FileFormatProperties implements Serializable
+public class FileFormatPropertiesCSV extends FileFormatProperties implements Serializable
 {
 	private static final long serialVersionUID = -2870393360885401604L;
 	
@@ -35,9 +35,7 @@ public class CSVFileFormatProperties extends FileFormatProperties implements Ser
 	
 	private boolean sparse;
 	
-	public CSVFileFormatProperties() {
-		super(FileFormat.CSV);
-		
+	public FileFormatPropertiesCSV() {
 		// get the default values for CSV properties from the language layer
 		this.header = DataExpression.DEFAULT_DELIM_HAS_HEADER_ROW;
 		this.delim = DataExpression.DEFAULT_DELIM_DELIMITER;
@@ -47,9 +45,7 @@ public class CSVFileFormatProperties extends FileFormatProperties implements Ser
 		this.naStrings = null;
 	}
 	
-	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
-		super(FileFormat.CSV);
-		
+	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean fill, double fillValue, String naStrings) {
 		this.header = hasHeader;
 		this.delim = delim;
 		this.fill = fill;
@@ -57,9 +53,7 @@ public class CSVFileFormatProperties extends FileFormatProperties implements Ser
 		this.naStrings = naStrings;
 	}
 
-	public CSVFileFormatProperties(boolean hasHeader, String delim, boolean sparse) {
-		super(FileFormat.CSV);
-		
+	public FileFormatPropertiesCSV(boolean hasHeader, String delim, boolean sparse) {
 		this.header = hasHeader;
 		this.delim = delim;
 		this.sparse = sparse;
@@ -108,5 +102,4 @@ public class CSVFileFormatProperties extends FileFormatProperties implements Ser
 	public void setSparse(boolean sparse) {
 		this.sparse = sparse;
 	}
-	
 }

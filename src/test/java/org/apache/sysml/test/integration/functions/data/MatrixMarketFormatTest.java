@@ -32,6 +32,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMField;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMFormat;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMSymmetry;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -47,24 +50,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	
 	private final static int dim = 1200;
 	private final static double sparsity = 0.1;
-	
-	private enum MMFormat {
-		COORDINATE,
-		ARRAY,
-	}
-	
-	private enum MMField {
-		REAL,
-		INTEGER,
-		COMPLEX,
-		PATTERN,
-	}
-	
-	private enum MMSymmetry {
-		GENERAL,
-		SYMMETRIC,
-		SKEW_SYMMETRIC, //- instead _
-	}
 	
 	@Override
 	public void setUp() {
@@ -337,10 +322,8 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		MatrixBlock tmp = MatrixBlock.randOperations(
 			rows, cols, sparsity, -10, 10, "uniform", 7);
 		
-		String header = "%%MatrixMarket matrix "
-			+ fmt.name().toLowerCase() + " "
-			+ field.name().toLowerCase() + " " 
-			+ symmetry.name().toLowerCase().replace("_", "-") + "\n";
+		String header = "%%MatrixMarket matrix " + fmt.toString() + " " 
+			+ field.toString() + " " + symmetry.toString() + "\n";
 		String meta = rows + " " + cols + ((fmt == MMFormat.COORDINATE) ?
 			" " + tmp.getNonZeros() : "") + "\n";
 		

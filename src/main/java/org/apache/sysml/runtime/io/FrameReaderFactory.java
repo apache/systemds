@@ -22,8 +22,6 @@ package org.apache.sysml.runtime.io;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 public class FrameReaderFactory 
@@ -31,7 +29,7 @@ public class FrameReaderFactory
 
 	public static FrameReader createFrameReader( InputInfo iinfo ) {
 		FileFormatProperties props = (iinfo==InputInfo.CSVInputInfo) ?
-			new CSVFileFormatProperties() : null;
+			new FileFormatPropertiesCSV() : null;
 		return createFrameReader(iinfo, props);
 	}
 
@@ -45,12 +43,12 @@ public class FrameReaderFactory
 				reader = new FrameReaderTextCell();
 		}
 		else if( iinfo == InputInfo.CSVInputInfo ) {
-			if( props!=null && !(props instanceof CSVFileFormatProperties) )
+			if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) )
-				reader = new FrameReaderTextCSVParallel( (CSVFileFormatProperties)props );
+				reader = new FrameReaderTextCSVParallel( (FileFormatPropertiesCSV)props );
 			else
-				reader = new FrameReaderTextCSV( (CSVFileFormatProperties)props );
+				reader = new FrameReaderTextCSV( (FileFormatPropertiesCSV)props );
 		}
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_BINARYFORMATS) )

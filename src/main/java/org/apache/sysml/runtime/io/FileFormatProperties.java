@@ -17,30 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.matrix.data;
+package org.apache.sysml.runtime.io;
 
 public class FileFormatProperties 
 {
 	private String description;
 	
-	public enum FileFormat { CSV, NATIVE }
-	
-	FileFormat fmt;
-	
 	public FileFormatProperties() {
-		fmt = FileFormat.NATIVE;
-	}
 	
-	public FileFormatProperties(FileFormat fmt) {
-		this.fmt = fmt;
-	}
-	
-	public void setFileFormat(FileFormat fmt) {
-		this.fmt = fmt;
-	}
-	
-	public FileFormat getFileFormat() {
-		return fmt;
 	}
 
 	public String getDescription() {
@@ -50,5 +34,4 @@ public class FileFormatProperties
 	public void setDescription(String description) {
 		this.description = description;
 	}
-
 }

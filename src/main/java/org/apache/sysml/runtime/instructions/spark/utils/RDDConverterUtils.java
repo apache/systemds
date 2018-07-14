@@ -58,9 +58,10 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -78,10 +79,10 @@ public class RDDConverterUtils
 	public static final String DF_ID_COLUMN = "__INDEX";
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) {
- 		//convert textcell rdd to binary block rdd (w/ partial blocks)
+			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks, FileFormatPropertiesMM mmProps) {
+		//convert textcell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.values()
-				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut));
+				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut, mmProps));
 
 		//inject empty blocks (if necessary) 
 		if( outputEmptyBlocks && mcOut.mightHaveEmptyBlocks() ) {
@@ -135,7 +136,7 @@ public class RDDConverterUtils
 				mc.getRowsPerBlock(), mc.getColsPerBlock()));
 	}
 
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, FileFormatPropertiesCSV props, boolean strict)
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
 		
@@ -499,8 +500,12 @@ public class RDDConverterUtils
 	{
 		private static final long serialVersionUID = 4907483236186747224L;
 
-		protected TextToBinaryBlockFunction(MatrixCharacteristics mc) {
+		@SuppressWarnings("unused")
+		private final FileFormatPropertiesMM _mmProps;
+		
+		protected TextToBinaryBlockFunction(MatrixCharacteristics mc, FileFormatPropertiesMM mmProps) {
 			super(mc);
+			_mmProps = mmProps;
 		}
 
 		@Override
@@ -897,9 +902,9 @@ public class RDDConverterUtils
 	{
 		private static final long serialVersionUID = 1891768410987528573L;
 
-		private CSVFileFormatProperties _props = null;
+		private FileFormatPropertiesCSV _props = null;
 		
-		public BinaryBlockToCSVFunction(CSVFileFormatProperties props) {
+		public BinaryBlockToCSVFunction(FileFormatPropertiesCSV props) {
 			_props = props;
 		}
 

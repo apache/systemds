@@ -20,14 +20,12 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -37,9 +35,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -65,57 +61,19 @@ import org.apache.sysml.runtime.util.MapReduceTool;
  *    in order the issue described in (2).
  * 
  */
-public class ReaderTextCellParallel extends MatrixReader
+public class ReaderTextCellParallel extends ReaderTextCell
 {
 	private static final long MIN_FILESIZE_MM = 8L * 1024; //8KB
 	
-	private boolean _isMMFile = false;
 	private int _numThreads = 1;
 	
-	public ReaderTextCellParallel(InputInfo info)
-	{
-		_isMMFile = (info == InputInfo.MatrixMarketInputInfo);
+	public ReaderTextCellParallel(InputInfo info) {
+		super(info, false);
 		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 	}
-	
-	@Override
-	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int brlen, int bclen, long estnnz) 
-		throws IOException, DMLRuntimeException 
-	{
-		//prepare file access
-		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
-		Path path = new Path( fname );
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
-		//check existence and non-empty file
-		checkValidInputFile(fs, path);
-		
-		//allocate output matrix block
-		if( estnnz < 0 )
-			estnnz = MapReduceTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
-		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
-	
-		//core read 
-		readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, brlen, bclen, _isMMFile);
-
-		//finally check if change of sparse/dense block representation required
-		if( !AGGREGATE_BLOCK_NNZ )
-			ret.recomputeNonZeros();
-		ret.examSparsity();
-
-		return ret;
-	}
 
 	@Override
-	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int brlen, int bclen, long estnnz) 
-		throws IOException, DMLRuntimeException 
-	{
-		//not implemented yet, fallback to sequential reader
-		return new ReaderTextCell(_isMMFile ? InputInfo.MatrixMarketInputInfo : InputInfo.TextCellInputInfo)
-			.readMatrixFromInputStream(is, rlen, clen, brlen, bclen, estnnz);
-	}
-	
-	private void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
+	protected void readTextCellMatrixFromHDFS( Path path, JobConf job, MatrixBlock dest, long rlen, long clen, int brlen, int bclen )
 		throws IOException
 	{
 		int par = _numThreads;
@@ -128,7 +86,7 @@ public class ReaderTextCellParallel extends MatrixReader
 		if( _isMMFile ){
 			long len = MapReduceTool.getFilesizeOnHDFS(path);
 			par = ( len < MIN_FILESIZE_MM ) ? 1: par; 
-		}	
+		}
 		
 		try 
 		{
@@ -137,12 +95,12 @@ public class ReaderTextCellParallel extends MatrixReader
 			InputSplit[] splits = informat.getSplits(job, par);
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits ){
-				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, matrixMarket);
+				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, _isMMFile);
 				tasks.add(t);
 			}
 			
 			//wait until all tasks have been executed
-			List<Future<Long>> rt = pool.invokeAll(tasks);	
+			List<Future<Long>> rt = pool.invokeAll(tasks);
 			
 			//check for exceptions and aggregate nnz
 			long lnnz = 0;

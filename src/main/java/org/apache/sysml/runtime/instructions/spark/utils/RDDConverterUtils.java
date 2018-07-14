@@ -510,13 +510,20 @@ public class RDDConverterUtils
 			ArrayList<Tuple2<MatrixIndexes,MatrixBlock>> ret = new ArrayList<>();
 			ReblockBuffer rbuff = new ReblockBuffer(_bufflen, _rlen, _clen, _brlen, _bclen);
 			FastStringTokenizer st = new FastStringTokenizer(' ');
+			boolean first = false;
 			
-			while( arg0.hasNext() )
-			{
-				//get input string (ignore matrix market comments)
+			while( arg0.hasNext() ) {
+				//get input string (ignore matrix market comments as well as
+				//first row which indicates meta data, i.e., <nrow> <ncol> <nnz>)
 				String strVal = arg0.next().toString();
-				if( strVal.startsWith("%") ) 
+				if( strVal.startsWith("%") ) {
+					first = true;
 					continue;
+				}
+				else if (first) {
+					first = false;
+					continue;
+				}
 				
 				//parse input ijv triple
 				st.reset( strVal );

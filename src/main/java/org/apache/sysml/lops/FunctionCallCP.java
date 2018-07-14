@@ -42,8 +42,15 @@ public class FunctionCallCP extends Lop
 		this(inputs, fnamespace, fname, outputs, et);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<>();
-			for(Hop h : outputHops)
-				_outputLops.add( h.constructLops() );
+			setLevel();
+			for(Hop h : outputHops) {
+				Lop outputLop = h.constructLops();
+				_outputLops.add( outputLop );
+				// Update the output level if necessary for correct instruction ordering
+				if(outputLop.getLevel() <= getLevel()) {
+					outputLop.updateLevel(getLevel()+1);
+				}
+			}
 		}
 	}
 	

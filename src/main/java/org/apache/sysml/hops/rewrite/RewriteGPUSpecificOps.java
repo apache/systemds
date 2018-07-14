@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
@@ -44,6 +45,7 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysml.utils.Explain;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:
@@ -63,13 +65,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			return roots;
 
 		//one pass rewrite-descend (rewrite created pattern)
-		for( Hop h : roots )
-			rule_GPUKernels( h, false );
+		for( int i = 0; i < roots.size(); i++ )
+			rule_GPUKernels(roots, roots.get(i), false );
 		Hop.resetVisitStatus(roots, true);
 
 		//one pass descend-rewrite (for rollup) 
-		for( Hop h : roots )
-			rule_GPUKernels( h, true );
+		for( int i = 0; i < roots.size(); i++ )
+			rule_GPUKernels(roots, roots.get(i), true );
 		Hop.resetVisitStatus(roots, true);
 		
 		return roots;
@@ -81,12 +83,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			return root;
 		
 		//one pass rewrite-descend (rewrite created pattern)
-		rule_GPUKernels( root, false );
+		rule_GPUKernels(null, root, false );
 		
 		root.resetVisitStatus();
 		
 		//one pass descend-rewrite (for rollup) 
-		rule_GPUKernels( root, true );
+		rule_GPUKernels(null, root, true );
 		
 		return root;
 	}
@@ -94,10 +96,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	/**
 	 * Fuse the kernel
 	 * 
+	 * @param roots root operators
 	 * @param hop high-level operator
 	 * @param descendFirst true if recursively process children first
 	 */
-	private void rule_GPUKernels(Hop hop, boolean descendFirst) 
+	private void rule_GPUKernels(ArrayList<Hop> roots, Hop hop, boolean descendFirst) 
 	{
 		if(hop.isVisited())
 			return;
@@ -108,14 +111,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			
 			//process childs recursively first (to allow roll-up)
 			if( descendFirst )
-				rule_GPUKernels(hi, descendFirst); //see below
+				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
-			hi = batchNormTrain(hop, hi, i); 
+			if(roots != null) {
+				hi = batchNormTrain(roots, hop, hi, i);
+			}
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
 	
 			if( !descendFirst )
-				rule_GPUKernels(hi, descendFirst);
+				rule_GPUKernels(roots, hi, descendFirst);
 		}
 
 		hop.setVisited();
@@ -159,6 +164,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
 	}
 	
+	private static boolean hasFirstInput(Hop h) {
+		return !(h == null || h.getInput() == null || h.getInput().size() < 1);
+	}
+	
 	private static Hop getFirstInput(Hop h) {
 		if(h == null || h.getInput() == null || h.getInput().size() < 1) {
 			throw new RuntimeException("No input available for " + h);
@@ -166,11 +175,19 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return h.getInput().get(0);
 	}
 	
+	private static boolean hasSecondInput(Hop h) {
+		return !(h == null || h.getInput() == null || h.getInput().size() < 2);
+	}
+	
 	private static Hop getSecondInput(Hop h) {
 		if(h == null || h.getInput() == null || h.getInput().size() < 2) {
 			throw new RuntimeException("Expected atleast two inputs for " + h);
 		}
 		return h.getInput().get(1);
+	}
+	
+	private static boolean hasThirdInput(Hop h) {
+		return !(h == null || h.getInput() == null || h.getInput().size() < 3);
 	}
 	
 	private static Hop getThirdInput(Hop h) {
@@ -479,17 +496,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				isBinarySMDiv(denom.getParent().get(0).getParent().get(0), 1);
 	}
 	
-	@SuppressWarnings("unused")
-	private static Hop batchNormTrain(Hop parent, Hop hi, int pos) 
+	private static Hop batchNormTrain(ArrayList<Hop> roots, Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
 		// 2x for input and output and 1x for overhead
 		// fitsOnGPU(hi, 3)
-		if( isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) ) {	
+		if( hasFirstInput(hi) && isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) ) {	
 			Hop norm = getFirstInput(getFirstInput(hi));
-			if(isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
-					&& isUnaryMinus(getSecondInput(getFirstInput(norm)))
+			if(hasSecondInput(norm) && isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
+					&& hasSecondInput(getFirstInput(norm)) && isUnaryMinus(getSecondInput(getFirstInput(norm)))
 					&& isOneDivideBySqrt(getSecondInput(norm))) {
 				double eps = 0;
 				Hop var = getFirstInput(getSecondInput(getSecondInput(norm)));
@@ -508,7 +524,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				Hop X = getFirstInput(getFirstInput(norm));
 				Hop mean = getSecondInput(getSecondInput(getFirstInput(norm)));
 				
-				if(isBatchNormTrainMean(mean , X) && isBatchNormTrainVar(mean, var, X, getFirstInput(mean), false) &&
+				if(hasFirstInput(mean) && isBatchNormTrainMean(mean , X) && isBatchNormTrainVar(mean, var, X, getFirstInput(mean), false) &&
 					mean.getParent() != null && mean.getParent().size() >= 2 && 
 					var.getParent() != null && var.getParent().size() == 2) {
 					Hop gamma = getSecondInput(getFirstInput(hi));
@@ -556,8 +572,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						
 						// if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
 							LOG.debug("Applied batchNormTrain rewrite.");
-							return new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
-									inHops, getNamesAndAddTransientReadWrite(oldHops), false);
+							ArrayList<Hop> outputs = getMultiOutputHops(roots, oldHops);
+							FunctionOp ret = new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
+									inHops, outputs.stream().map(h -> h.getName()).toArray(String[]::new), outputs);
+							Collections.reverse(roots);
+							roots.add(ret);
+							Collections.reverse(roots);
+							return ret;
 						// }
 					}
 					
@@ -568,66 +589,63 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return hi;
 	}
 	
-	private static int _seq = 1;
-	private static String [] getNamesAndAddTransientReadWrite(Hop [] oldHops) {
-		String [] outputNames = new String[oldHops.length];
-		for(int i = 0; i < oldHops.length; i++) {
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
-				outputNames[i] = ((DataOp)oldHops[i]).getName();
-			}
-			else {
-				outputNames[i] = "_genGPU" + (_seq++);
-				DataOp tRead = HopRewriteUtils.createTransientRead(outputNames[i], oldHops[i]);
-				for(Hop p : oldHops[i].getParent()) {
-					p.getInput().add(p.getInput().indexOf(oldHops[i]), tRead);
-					tRead.getParent().add(p);
-				}
-			}
-			oldHops[i].getParent().clear();
-			oldHops[i].getInput().clear();
-				
-		}
-		return outputNames;
-	}
-	
 	private static boolean isEligibleForMultiOutputFunctionOp(ArrayList<Hop> inputOps, Hop [] outputHops) {
 		for(Hop inHop : inputOps) {
 			if(inHop instanceof LiteralOp)
 				continue;
-			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD)))
+			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD))) {
+				//System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(inHop));
 				return false;
+			}
 		}
 		for(Hop outHop : outputHops) {
-			if(!HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE))
+			if(!(HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE))) {
+				// System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(outHop));
 				return false;
+			}
 		}
-		
 		return true;
 	}
 	
 	private static String [] getNamesAndClearDataOp(Hop [] oldHops) {
 		String [] outputNames = new String[oldHops.length];
 		for(int i = 0; i < oldHops.length; i++) {
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE)) {
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
 				outputNames[i] = ((DataOp)oldHops[i]).getName();
 				oldHops[i].getParent().clear();
 				oldHops[i].getInput().clear();
 			}
 			else {
-				throw new RuntimeException("Expected transient write");
+				throw new RuntimeException("Expected transient or persistent write");
 			}
 				
 		}
 		return outputNames;
 	}
 	
+	private static int _seq = 1;
+	private static ArrayList<Hop> getMultiOutputHops(ArrayList<Hop> roots, Hop [] oldHops) {
+		ArrayList<Hop> ret = new ArrayList<>();
+		for(int i = 0; i < oldHops.length; i++) {
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
+				ret.add(oldHops[i]);
+			}
+			else {
+				DataOp tRead = HopRewriteUtils.createTransientRead("_genGPU" + (_seq++), oldHops[i]);
+				HopRewriteUtils.rewireAllParentChildReferences(oldHops[i], tRead);
+				ret.add(tRead);
+			}
+		}
+		return ret;
+	}
+	
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
 		// 2x for input and output and 1x for overhead
-		if( isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) && fitsOnGPU(hi, 3) ) {
+		if(hasFirstInput(hi) && isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) && fitsOnGPU(hi, 3) ) {
 			Hop norm = getFirstInput(getFirstInput(hi));
-			if(isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
+			if(hasSecondInput(norm) && isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
 					&& isUnaryMinus(getSecondInput(getFirstInput(norm)))
 					&& isOneDivideBySqrt(getSecondInput(norm))) {
 				double eps = 0;

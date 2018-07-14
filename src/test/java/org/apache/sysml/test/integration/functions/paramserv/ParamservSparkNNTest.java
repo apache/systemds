@@ -1,5 +1,6 @@
 package org.apache.sysml.test.integration.functions.paramserv;
 
+import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -34,7 +35,8 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 			programArgs = new String[] { "-explain" };
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			runTest(true, false, null, null, -1);
+			// The test is not already finished, so it is normal to have the NPE
+			runTest(true, true, DMLException.class, null, -1);
 		} finally {
 			AutomatedTestBase.rtplatform = oldRtplatform;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseLocalSparkConfig;

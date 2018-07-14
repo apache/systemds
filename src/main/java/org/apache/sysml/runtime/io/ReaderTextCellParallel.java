@@ -171,11 +171,8 @@ public class ReaderTextCellParallel extends ReaderTextCell
 					//process current value (otherwise ignore following meta data)
 					if( !foundComment ) {
 						cell = parseCell(value.toString(), st, cell, _mmProps);
-						if( cell.getV() != 0 ) {
-							synchronized( _dest ){ //sparse requires lock
-								_dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
-								lnnz++;
-							}
+						synchronized( _dest ){ //sparse requires lock
+							lnnz += appendCell(cell, _dest, _mmProps);
 						}
 					}
 				}
@@ -183,7 +180,10 @@ public class ReaderTextCellParallel extends ReaderTextCell
 				if( _sparse ) { //SPARSE<-value
 					CellBuffer buff = new CellBuffer();
 					while( reader.next(key, value) ) {
-						buff.addCell(parseCell(value.toString(), st, cell, _mmProps));
+						cell = parseCell(value.toString(), st, cell, _mmProps);
+						buff.addCell(cell.getI(), cell.getJ(), cell.getV());
+						if( _mmProps != null && _mmProps.isSymmetric() && !cell.onDiag() )
+							buff.addCell(cell.getJ(), cell.getI(), cell.getV());
 						if( buff.size()>=CellBuffer.CAPACITY ) 
 							synchronized( _dest ){ //sparse requires lock
 								lnnz += buff.size();
@@ -200,10 +200,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 					DenseBlock a = _dest.getDenseBlock();
 					while( reader.next(key, value) ) {
 						cell = parseCell(value.toString(), st, cell, _mmProps);
-						if( cell.getV() != 0 ) {
-							a.set( cell.getI(), cell.getJ(), cell.getV() );
-							lnnz ++;
-						}
+						lnnz += appendCell(cell, a, _mmProps);
 					}
 				}
 			}
@@ -242,10 +239,6 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			_clen = new int[CAPACITY];
 			_vals = new double[CAPACITY];
 			_pos = -1;
-		}
-		
-		public void addCell(IJV cell) {
-			addCell(cell.getI(), cell.getJ(), cell.getV());
 		}
 		
 		public void addCell(int rlen, int clen, double val) {

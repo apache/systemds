@@ -52,6 +52,10 @@ public class IJV
 		return _v;
 	}
 	
+	public boolean onDiag() {
+		return _i == _j;
+	}
+	
 	@Override
 	public String toString() {
 		return "("+_i+", "+_j+"): "+_v;

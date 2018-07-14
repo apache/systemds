@@ -48,31 +48,31 @@ import org.apache.wink.json4j.JSONObject;
 
 public class DataExpression extends DataIdentifier 
 {
-	public static final String RAND_ROWS 	=  "rows";	 
-	public static final String RAND_COLS 	=  "cols";
-	public static final String RAND_MIN  	=  "min";
-	public static final String RAND_MAX  	=  "max";
-	public static final String RAND_SPARSITY = "sparsity"; 
-	public static final String RAND_SEED    =  "seed";
-	public static final String RAND_PDF		=  "pdf";
-	public static final String RAND_LAMBDA	=  "lambda";
+	public static final String RAND_ROWS = "rows";
+	public static final String RAND_COLS = "cols";
+	public static final String RAND_MIN = "min";
+	public static final String RAND_MAX = "max";
+	public static final String RAND_SPARSITY = "sparsity";
+	public static final String RAND_SEED = "seed";
+	public static final String RAND_PDF = "pdf";
+	public static final String RAND_LAMBDA = "lambda";
 	
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	
-	public static final String RAND_BY_ROW 	 =  "byrow";	 
-	public static final String RAND_DIMNAMES =  "dimnames";
-	public static final String RAND_DATA 	 =  "data";
+	public static final String RAND_BY_ROW = "byrow";
+	public static final String RAND_DIMNAMES = "dimnames";
+	public static final String RAND_DATA = "data";
 	
 	public static final String IO_FILENAME = "iofilename";
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNNZPARAM = "nnz";
 	
-	public static final String FORMAT_TYPE 						= "format";
-	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
-	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
-	public static final String FORMAT_TYPE_VALUE_CSV			= "csv";
-	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
+	public static final String FORMAT_TYPE = "format";
+	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
+	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
+	public static final String FORMAT_TYPE_VALUE_CSV = "csv";
+	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET = "mm";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -663,7 +663,6 @@ public class DataExpression extends DataIdentifier
 					// process 1st line of MatrixMarket format to check for support types
 					
 					String firstLine = headerLines[0].trim();
-					@SuppressWarnings("unused")
 					FileFormatPropertiesMM props = FileFormatPropertiesMM.parse(firstLine);
 					
 					// process 2nd line of MatrixMarket format -- must have size information
@@ -672,7 +671,7 @@ public class DataExpression extends DataIdentifier
 					String[] sizeInfo = secondLine.trim().split("\\s+");
 					if (sizeInfo.length != 3){
 						raiseValidateError("Unsupported size line in MatrixMarket file: " +
-								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
+							headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
 					}
 				
 					long rowsCount = Long.parseLong(sizeInfo[0]);
@@ -696,7 +695,7 @@ public class DataExpression extends DataIdentifier
 					}
 					addVarParam(READCOLPARAM, new IntIdentifier(colsCount, this));
 					
-					long nnzCount = Long.parseLong(sizeInfo[2]);
+					long nnzCount = Long.parseLong(sizeInfo[2]) * (props.isSymmetric() ? 2 : 1);
 					if (nnzCount < 0)
 						raiseValidateError("MM file: invalid number of non-zeros: "+nnzCount);
 					else if( getVarParam(READNNZPARAM) != null ) {

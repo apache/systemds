@@ -83,15 +83,15 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.SPARK);
 	}
 
-	@Test
-	public void testMMCooRealSkewSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMCooRealSkewSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
+//	@Test
+//	public void testMMCooRealSkewSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMCooRealSkewSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
+//	}
 	
 	@Test
 	public void testMMCooIntegerGeneralCP() {
@@ -118,15 +118,15 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.SPARK);
 	}
 
-	@Test
-	public void testMMCooIntegerSkewSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMCooIntegerSkewSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
+//	@Test
+//	public void testMMCooIntegerSkewSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMCooIntegerSkewSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
+//	}
 	
 	@Test
 	public void testMMCooPatternGeneralCP() {
@@ -148,65 +148,65 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.PATTERN, MMSymmetry.SYMMETRIC, ExecType.SPARK);
 	}
 
-	@Test
-	public void testMMArrRealGeneralCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrRealGeneralSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testMMArrRealSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrRealSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testMMArrRealSkewSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrRealSkewSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testMMArrIntegerGeneralCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrIntegerGeneralSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testMMArrIntegerSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrIntegerSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testMMArrIntegerSkewSymmetricCP() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
-	}
-	
-	@Test
-	public void testMMArrIntegerSkewSymmetricSp() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
+//	@Test
+//	public void testMMArrRealGeneralCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrRealGeneralSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testMMArrRealSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrRealSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testMMArrRealSkewSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrRealSkewSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerGeneralCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerGeneralSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.SPARK);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerSkewSymmetricCP() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
+//	}
+//	
+//	@Test
+//	public void testMMArrIntegerSkewSymmetricSp() {
+//		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
+//	}
 
 	private void runMatrixMarketFormatTest(MMFormat fmt, MMField field, MMSymmetry symmetry, ExecType et)
 	{

@@ -542,6 +542,8 @@ public class RDDConverterUtils
 				
 				//add value to reblock buffer
 				rbuff.appendCell(row, col, val);
+				if( _mmProps != null && _mmProps.isSymmetric() && row!=col )
+					rbuff.appendCell(col, row, val);
 			}
 			
 			//final flush buffer

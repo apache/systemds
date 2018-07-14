@@ -95,6 +95,11 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 	public boolean isPatternField() {
 		return _field == MMField.PATTERN;
 	}
+	
+	public boolean isSymmetric() {
+		return _symmetry == MMSymmetry.SYMMETRIC
+			|| _symmetry == MMSymmetry.SKEW_SYMMETRIC;
+	}
 
 	public static FileFormatPropertiesMM parse(String header) {
 		//example: %%MatrixMarket matrix coordinate real general
@@ -121,7 +126,7 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 			//case "array": fmt = MMFormat.ARRAY; break;
 			case "coordinate": fmt = MMFormat.COORDINATE; break;
 			default: throw new DMLRuntimeException("MatrixMarket: "
-				+ "Incorrect format: "+format+" (expected array | coordinate).");
+				+ "Incorrect format: "+format+" (expected coordinate).");
 		}
 		String field = st.nextToken();
 		MMField f = null;
@@ -137,11 +142,11 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 		MMSymmetry s = null;
 		switch( symmetry ) {
 			case "general": s = MMSymmetry.GENERAL; break;
-			//case "symmetric": s = MMSymmetry.SYMMETRIC; break;
-			//case "skew-symmetric": s = MMSymmetry.SKEW_SYMMETRIC; break;
+			case "symmetric": s = MMSymmetry.SYMMETRIC; break;
+			//case "skew-symmetric": s = MMSymmetry.SKEW_SYMMETRIC; break; //not support in R
 			//note: Hermitian not supported
 			default: throw new DMLRuntimeException("MatrixMarket: "
-				+ "Incorrect symmetry: "+symmetry+" (expected general | symmetric | skew-symmetric).");
+				+ "Incorrect symmetry: "+symmetry+" (expected general | symmetric).");
 		}
 		
 		//construct file properties and check valid combination

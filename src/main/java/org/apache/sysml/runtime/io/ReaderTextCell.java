@@ -136,8 +136,7 @@ public class ReaderTextCell extends MatrixReader
 					if( sparse ) { //SPARSE<-value
 						while( reader.next(key, value) ) {
 							cell = parseCell(value.toString(), st, cell, _mmProps);
-							if( cell.getV() != 0 )
-								dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
+							appendCell(cell, dest, _mmProps);
 						}
 						dest.sortSparseRows();
 					} 
@@ -145,10 +144,7 @@ public class ReaderTextCell extends MatrixReader
 						DenseBlock a = dest.getDenseBlock();
 						while( reader.next(key, value) ) {
 							cell = parseCell(value.toString(), st, cell, _mmProps);
-							if( cell.getV() != 0 ) {
-								a.set( cell.getI(), cell.getJ(), cell.getV() );
-								nnz ++;
-							}
+							nnz += appendCell(cell, a, _mmProps);
 						}
 					}
 				}
@@ -177,6 +173,26 @@ public class ReaderTextCell extends MatrixReader
 		double value = (mmProps == null) ? st.nextDouble() : 
 			mmProps.isPatternField() ? 1 : mmProps.isIntField() ? st.nextLong() : st.nextDouble();
 		return cell.set(row, col, value);
+	}
+	
+	protected static int appendCell(IJV cell, MatrixBlock dest, FileFormatPropertiesMM mmProps) {
+		if( cell.getV() == 0 ) return 0;
+		dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
+		if( mmProps != null && mmProps.isSymmetric() && !cell.onDiag() ) {
+			dest.appendValue(cell.getJ(), cell.getI(), cell.getV());
+			return 2;
+		}
+		return 1;
+	}
+	
+	protected static int appendCell(IJV cell, DenseBlock dest, FileFormatPropertiesMM mmProps) {
+		if( cell.getV() == 0 ) return 0;
+		dest.set(cell.getI(), cell.getJ(), cell.getV());
+		if( mmProps != null && mmProps.isSymmetric() && ! cell.onDiag() ) {
+			dest.set(cell.getJ(), cell.getI(), cell.getV());
+			return 2;
+		}
+		return 1;
 	}
 
 	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
@@ -230,8 +246,7 @@ public class ReaderTextCell extends MatrixReader
 			if( sparse ) { //SPARSE<-value
 				while( (value=br.readLine())!=null ) {
 					cell = parseCell(value.toString(), st, cell, mmProps);
-					if( cell.getV() != 0 )
-						dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
+					appendCell(cell, dest, mmProps);
 				}
 				dest.sortSparseRows();
 			} 
@@ -239,10 +254,7 @@ public class ReaderTextCell extends MatrixReader
 				DenseBlock a = dest.getDenseBlock();
 				while( (value=br.readLine())!=null ) {
 					cell = parseCell(value.toString(), st, cell, mmProps);
-					if( cell.getV() != 0 ) {
-						a.set( cell.getI(), cell.getJ(), cell.getV() );
-						nnz ++;
-					}
+					nnz += appendCell(cell, a, mmProps);
 				}
 				dest.setNonZeros(nnz);
 			}

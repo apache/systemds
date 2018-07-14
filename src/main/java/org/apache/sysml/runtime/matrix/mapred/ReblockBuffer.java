@@ -71,8 +71,7 @@ public class ReblockBuffer
 		_bclen = bclen;
 	}
 
-	public void appendCell( long r, long c, double v )
-	{
+	public void appendCell( long r, long c, double v ) {
 		long tmp = Double.doubleToRawLongBits(v);
 		_buff[_count][0] = r;
 		_buff[_count][1] = c;

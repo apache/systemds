@@ -84,11 +84,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testMMCooRealSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.MR);
-	}
-	
-	@Test
 	public void testMMCooRealSkewSymmetricCP() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
 	}
@@ -96,11 +91,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMCooRealSkewSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMCooRealSkewSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.MR);
 	}
 	
 	@Test
@@ -129,11 +119,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testMMCooIntegerSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.MR);
-	}
-	
-	@Test
 	public void testMMCooIntegerSkewSymmetricCP() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.CP);
 	}
@@ -141,11 +126,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMCooIntegerSkewSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMCooIntegerSkewSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.MR);
 	}
 	
 	@Test
@@ -156,11 +136,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMCooPatternGeneralSp() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.PATTERN, MMSymmetry.GENERAL, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMCooPatternGeneralMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.PATTERN, MMSymmetry.GENERAL, ExecType.MR);
 	}
 	
 	@Test
@@ -174,11 +149,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testMMCooPatternSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.PATTERN, MMSymmetry.SYMMETRIC, ExecType.MR);
-	}
-
-	@Test
 	public void testMMArrRealGeneralCP() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.CP);
 	}
@@ -186,11 +156,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMArrRealGeneralSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMArrRealGeneralMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.GENERAL, ExecType.MR);
 	}
 	
 	@Test
@@ -202,11 +167,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	public void testMMArrRealSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.SPARK);
 	}
-
-	@Test
-	public void testMMArrRealSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SYMMETRIC, ExecType.MR);
-	}
 	
 	@Test
 	public void testMMArrRealSkewSymmetricCP() {
@@ -216,11 +176,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMArrRealSkewSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMArrRealSkewSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.REAL, MMSymmetry.SKEW_SYMMETRIC, ExecType.MR);
 	}
 	
 	@Test
@@ -232,11 +187,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	public void testMMArrIntegerGeneralSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.SPARK);
 	}
-
-	@Test
-	public void testMMArrIntegerGeneralMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.MR);
-	}
 	
 	@Test
 	public void testMMArrIntegerSymmetricCP() {
@@ -247,11 +197,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	public void testMMArrIntegerSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.SPARK);
 	}
-
-	@Test
-	public void testMMArrIntegerSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SYMMETRIC, ExecType.MR);
-	}
 	
 	@Test
 	public void testMMArrIntegerSkewSymmetricCP() {
@@ -261,11 +206,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMArrIntegerSkewSymmetricSp() {
 		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMArrIntegerSkewSymmetricMR() {
-		runMatrixMarketFormatTest(MMFormat.ARRAY, MMField.INTEGER, MMSymmetry.SKEW_SYMMETRIC, ExecType.MR);
 	}
 
 	private void runMatrixMarketFormatTest(MMFormat fmt, MMField field, MMSymmetry symmetry, ExecType et)
@@ -360,8 +300,8 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 						sb.append(cell.getJ()+1);
 						if( field != MMField.PATTERN ) {
 							sb.append(' ');
-							sb.append(String.valueOf((field == MMField.INTEGER) ?
-								(int) cell.getV() : cell.getV()));
+							sb.append((field == MMField.INTEGER) ? 
+								String.valueOf((int) cell.getV()) : String.valueOf(cell.getV()));
 						}
 						sb.append('\n');
 						br.write( sb.toString() ); //same as append

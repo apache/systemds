@@ -131,8 +131,7 @@ public class IOUtilFunctions
 		}
 	}
 
-	public static double parseDoubleParallel( String str ) 
-	{
+	public static double parseDoubleParallel( String str ) {
 		//return FloatingDecimal.parseDouble(str);
 		return Double.parseDouble(str);
 	}

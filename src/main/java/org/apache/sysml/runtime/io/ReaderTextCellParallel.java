@@ -37,6 +37,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.CommonThreadPool;
@@ -95,7 +96,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			InputSplit[] splits = informat.getSplits(job, par);
 			ArrayList<ReadTask> tasks = new ArrayList<>();
 			for( InputSplit split : splits ){
-				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, _isMMFile);
+				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, _isMMFile, _mmProps);
 				tasks.add(t);
 			}
 			
@@ -106,7 +107,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			long lnnz = 0;
 			for( Future<Long> task : rt )
 				lnnz += task.get();
-				
+			
 			//post-processing
 			dest.setNonZeros( lnnz );
 			if( dest.isInSparseFormat() ) 
@@ -121,17 +122,17 @@ public class ReaderTextCellParallel extends ReaderTextCell
 
 	public static class ReadTask implements Callable<Long> 
 	{
-		private InputSplit _split = null;
-		private boolean _sparse = false;
-		private TextInputFormat _informat = null;
-		private JobConf _job = null;
-		private MatrixBlock _dest = null;
-		private long _rlen = -1;
-		private long _clen = -1;
-		private boolean _matrixMarket = false;
+		private final InputSplit _split;
+		private final boolean _sparse;
+		private final TextInputFormat _informat;
+		private final JobConf _job;
+		private final MatrixBlock _dest;
+		private final long _rlen;
+		private final long _clen;
+		private final boolean _matrixMarket;
+		private final FileFormatPropertiesMM _mmProps;
 		
-		public ReadTask( InputSplit split, TextInputFormat informat, JobConf job, MatrixBlock dest, long rlen, long clen, boolean matrixMarket )
-		{
+		public ReadTask( InputSplit split, TextInputFormat informat, JobConf job, MatrixBlock dest, long rlen, long clen, boolean mm, FileFormatPropertiesMM mmProps ) {
 			_split = split;
 			_sparse = dest.isInSparseFormat();
 			_informat = informat;
@@ -139,7 +140,8 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			_dest = dest;
 			_rlen = rlen;
 			_clen = clen;
-			_matrixMarket = matrixMarket;
+			_matrixMarket = mm;
+			_mmProps = mmProps;
 		}
 
 		@Override
@@ -150,10 +152,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			//writables for reuse during read
 			LongWritable key = new LongWritable();
 			Text value = new Text();
-			
-			//required for error handling
-			int row = -1; 
-			int col = -1; 
+			IJV cell = new IJV();
 			
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
@@ -171,63 +170,47 @@ public class ReaderTextCellParallel extends ReaderTextCell
 					
 					//process current value (otherwise ignore following meta data)
 					if( !foundComment ) {
-						st.reset( value.toString() ); //reinit tokenizer
-						row = st.nextInt()-1;
-						col = st.nextInt()-1;
-						if(row != -1 || col != -1) {
-							double lvalue = st.nextDoubleForParallel();
+						cell = parseCell(value.toString(), st, cell, _mmProps);
+						if( cell.getV() != 0 ) {
 							synchronized( _dest ){ //sparse requires lock
-								_dest.appendValue(row, col, lvalue);
+								_dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
 								lnnz++;
 							}
 						}
 					}
 				}
 
-				if( _sparse ) //SPARSE<-value
-				{
+				if( _sparse ) { //SPARSE<-value
 					CellBuffer buff = new CellBuffer();
-					
 					while( reader.next(key, value) ) {
-						st.reset( value.toString() ); //reinit tokenizer
-						row = st.nextInt() - 1;
-						col = st.nextInt() - 1;
-						if(row == -1 || col == -1) continue;
-						double lvalue = st.nextDoubleForParallel();
-						
-						buff.addCell(row, col, lvalue);
-						//capacity buffer flush on demand
+						buff.addCell(parseCell(value.toString(), st, cell, _mmProps));
 						if( buff.size()>=CellBuffer.CAPACITY ) 
 							synchronized( _dest ){ //sparse requires lock
 								lnnz += buff.size();
 								buff.flushCellBufferToMatrixBlock(_dest);
 							}
 					}
-					
 					//final buffer flush 
 					synchronized( _dest ){ //sparse requires lock
 						lnnz += buff.size();
 						buff.flushCellBufferToMatrixBlock(_dest);
 					}
 				} 
-				else //DENSE<-value
-				{
+				else { //DENSE<-value
 					DenseBlock a = _dest.getDenseBlock();
 					while( reader.next(key, value) ) {
-						st.reset( value.toString() ); //reinit tokenizer
-						row = st.nextInt()-1;
-						col = st.nextInt()-1;
-						if(row == -1 || col == -1) continue;
-						double lvalue = st.nextDoubleForParallel();
-						a.set( row, col, lvalue );
-						lnnz += (lvalue!=0) ? 1 : 0;
+						cell = parseCell(value.toString(), st, cell, _mmProps);
+						if( cell.getV() != 0 ) {
+							a.set( cell.getI(), cell.getJ(), cell.getV() );
+							lnnz ++;
+						}
 					}
 				}
 			}
 			catch(Exception ex) {
 				//post-mortem error handling and bounds checking
-				if( row < 0 || row + 1 > _rlen || col < 0 || col + 1 > _clen )
-					throw new RuntimeException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
+				if( cell.getI() < 0 || cell.getI() + 1 > _rlen || cell.getJ() < 0 || cell.getJ() + 1 > _clen )
+					throw new RuntimeException("Matrix cell ["+(cell.getI()+1)+","+(cell.getJ()+1)+"] " +
 						"out of overall matrix range [1:"+_rlen+",1:"+_clen+"]. ", ex);
 				else
 					throw new RuntimeException("Unable to read matrix in text cell format. ", ex);
@@ -259,6 +242,10 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			_clen = new int[CAPACITY];
 			_vals = new double[CAPACITY];
 			_pos = -1;
+		}
+		
+		public void addCell(IJV cell) {
+			addCell(cell.getI(), cell.getJ(), cell.getV());
 		}
 		
 		public void addCell(int rlen, int clen, double val) {

@@ -87,6 +87,14 @@ public class FileFormatPropertiesMM extends FileFormatProperties implements Seri
 	public MMSymmetry getSymmetry() {
 		return _symmetry;
 	}
+	
+	public boolean isIntField() {
+		return _field == MMField.INTEGER;
+	}
+	
+	public boolean isPatternField() {
+		return _field == MMField.PATTERN;
+	}
 
 	public static FileFormatPropertiesMM parse(String header) {
 		//example: %%MatrixMarket matrix coordinate real general

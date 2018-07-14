@@ -33,10 +33,11 @@ public class IJV
 		//do nothing
 	}
 
-	public void set(int i, int j, double v) {
+	public IJV set(int i, int j, double v) {
 		_i = i;
 		_j = j;
 		_v = v;
+		return this;
 	}
 	
 	public int getI() {

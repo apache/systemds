@@ -500,7 +500,6 @@ public class RDDConverterUtils
 	{
 		private static final long serialVersionUID = 4907483236186747224L;
 
-		@SuppressWarnings("unused")
 		private final FileFormatPropertiesMM _mmProps;
 		
 		protected TextToBinaryBlockFunction(MatrixCharacteristics mc, FileFormatPropertiesMM mmProps) {
@@ -531,11 +530,11 @@ public class RDDConverterUtils
 				}
 				
 				//parse input ijv triple
-				st.reset( strVal );
+				st.reset( strVal.toString() ); //reinit tokenizer
 				long row = st.nextLong();
 				long col = st.nextLong();
-				if( row == 0 || col == 0 ) continue;
-				double val = st.nextDouble();
+				double val = (_mmProps == null) ? st.nextDouble() : 
+					_mmProps.isPatternField() ? 1 : _mmProps.isIntField() ? st.nextLong() : st.nextDouble();
 				
 				//flush buffer if necessary
 				if( rbuff.getSize() >= rbuff.getCapacity() )

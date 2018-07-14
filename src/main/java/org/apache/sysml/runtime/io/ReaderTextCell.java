@@ -38,6 +38,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
+import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
@@ -47,7 +48,7 @@ public class ReaderTextCell extends MatrixReader
 {
 	protected final boolean _allowRawRead; 
 	protected final boolean _isMMFile;
-	protected FileFormatProperties _mmProps = null;
+	protected FileFormatPropertiesMM _mmProps = null;
 	
 	public ReaderTextCell(InputInfo info) {
 		this(info, true);
@@ -122,7 +123,7 @@ public class ReaderTextCell extends MatrixReader
 		
 		LongWritable key = new LongWritable();
 		Text value = new Text();
-		int row = -1, col = -1;
+		IJV cell = new IJV();
 		long nnz = 0;
 		
 		try
@@ -132,30 +133,22 @@ public class ReaderTextCell extends MatrixReader
 			for(InputSplit split: splits) {
 				RecordReader<LongWritable,Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
 				try {
-					if( sparse ) //SPARSE<-value
-					{
+					if( sparse ) { //SPARSE<-value
 						while( reader.next(key, value) ) {
-							st.reset( value.toString() ); //reinit tokenizer
-							row = st.nextInt() - 1;
-							col = st.nextInt() - 1;
-							if(row == -1 || col == -1) continue;
-							double lvalue = st.nextDouble();
-							dest.appendValue(row, col, lvalue);
+							cell = parseCell(value.toString(), st, cell, _mmProps);
+							if( cell.getV() != 0 )
+								dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
 						}
-						
 						dest.sortSparseRows();
 					} 
-					else //DENSE<-value
-					{
+					else { //DENSE<-value
 						DenseBlock a = dest.getDenseBlock();
 						while( reader.next(key, value) ) {
-							st.reset( value.toString() ); //reinit tokenizer
-							row = st.nextInt()-1;
-							col = st.nextInt()-1;
-							if(row == -1 || col == -1) continue;
-							double lvalue = st.nextDouble();
-							a.set( row, col, lvalue );
-							nnz += (lvalue != 0) ? 1 : 0;
+							cell = parseCell(value.toString(), st, cell, _mmProps);
+							if( cell.getV() != 0 ) {
+								a.set( cell.getI(), cell.getJ(), cell.getV() );
+								nnz ++;
+							}
 						}
 					}
 				}
@@ -169,12 +162,21 @@ public class ReaderTextCell extends MatrixReader
 		}
 		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
-			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen )
-				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
-									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
+			if( cell.getI() < 0 || cell.getI() + 1 > rlen || cell.getJ() < 0 || cell.getJ() + 1 > clen )
+				throw new IOException("Matrix cell ["+(cell.getI()+1)+","+(cell.getJ()+1)+"] "
+					+ "out of overall matrix range [1:"+rlen+",1:"+clen+"].");
 			else
 				throw new IOException( "Unable to read matrix in text cell format.", ex );
 		}
+	}
+	
+	protected static IJV parseCell(String line, FastStringTokenizer st, IJV cell, FileFormatPropertiesMM mmProps) {
+		st.reset( line.toString() ); //reinit tokenizer
+		int row = st.nextInt() - 1;
+		int col = st.nextInt() - 1;
+		double value = (mmProps == null) ? st.nextDouble() : 
+			mmProps.isPatternField() ? 1 : mmProps.isIntField() ? st.nextLong() : st.nextDouble();
+		return cell.set(row, col, value);
 	}
 
 	private static void readRawTextCellMatrixFromHDFS( Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen, long clen, int brlen, int bclen, boolean matrixMarket )
@@ -191,12 +193,11 @@ public class ReaderTextCell extends MatrixReader
 			throws IOException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader( is ));
-		@SuppressWarnings("unused")
 		FileFormatPropertiesMM mmProps = null;
 		
 		boolean sparse = dest.isInSparseFormat();
 		String value = null;
-		int row = -1, col = -1;
+		IJV cell = new IJV();
 		long nnz = 0;
 		
 		// Read the header lines, if reading from a matrixMarket file
@@ -226,40 +227,31 @@ public class ReaderTextCell extends MatrixReader
 		{
 			FastStringTokenizer st = new FastStringTokenizer(' ');
 			
-			if( sparse ) //SPARSE<-value
-			{
-				while( (value=br.readLine())!=null )
-				{
-					st.reset( value ); //reinit tokenizer
-					row = st.nextInt()-1;
-					col = st.nextInt()-1;
-					if(row == -1 || col == -1) continue;
-					double lvalue = st.nextDouble();
-					dest.appendValue(row, col, lvalue);
+			if( sparse ) { //SPARSE<-value
+				while( (value=br.readLine())!=null ) {
+					cell = parseCell(value.toString(), st, cell, mmProps);
+					if( cell.getV() != 0 )
+						dest.appendValue(cell.getI(), cell.getJ(), cell.getV());
 				}
-				
 				dest.sortSparseRows();
 			} 
-			else //DENSE<-value
-			{
+			else { //DENSE<-value
 				DenseBlock a = dest.getDenseBlock();
 				while( (value=br.readLine())!=null ) {
-					st.reset( value ); //reinit tokenizer
-					row = st.nextInt()-1;
-					col = st.nextInt()-1;
-					if(row == -1 || col == -1) continue;
-					double lvalue = st.nextDouble();
-					a.set( row, col, lvalue );
-					nnz += (lvalue != 0) ? 1 : 0;
+					cell = parseCell(value.toString(), st, cell, mmProps);
+					if( cell.getV() != 0 ) {
+						a.set( cell.getI(), cell.getJ(), cell.getV() );
+						nnz ++;
+					}
 				}
 				dest.setNonZeros(nnz);
 			}
 		}
 		catch(Exception ex) {
 			//post-mortem error handling and bounds checking
-			if( row < 0 || row + 1 > rlen || col < 0 || col + 1 > clen ) 
-				throw new IOException("Matrix cell ["+(row+1)+","+(col+1)+"] " +
-									  "out of overall matrix range [1:"+rlen+",1:"+clen+"].", ex);
+			if( cell.getI() < 0 || cell.getI() + 1 > rlen || cell.getJ() < 0 || cell.getJ() + 1 > clen ) 
+				throw new IOException("Matrix cell ["+(cell.getI()+1)+","+(cell.getJ()+1)+"] "
+					+ "out of overall matrix range [1:"+rlen+",1:"+clen+"].", ex);
 			else
 				throw new IOException( "Unable to read matrix in raw text cell format.", ex );
 		}

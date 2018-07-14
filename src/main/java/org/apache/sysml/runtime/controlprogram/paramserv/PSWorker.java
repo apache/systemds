@@ -37,20 +37,24 @@ import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 @SuppressWarnings("unused")
 public abstract class PSWorker {
 
-	protected final int _workerID;
-	protected final int _epochs;
-	protected final long _batchSize;
-	protected final ExecutionContext _ec;
-	protected final ParamServer _ps;
-	protected final DataIdentifier _output;
-	protected final FunctionCallCPInstruction _inst;
+	protected int _workerID;
+	protected int _epochs;
+	protected long _batchSize;
+	protected ExecutionContext _ec;
+	protected ParamServer _ps;
+	protected DataIdentifier _output;
+	protected FunctionCallCPInstruction _inst;
 	protected MatrixObject _features;
 	protected MatrixObject _labels;
-	
-	private MatrixObject _valFeatures;
-	private MatrixObject _valLabels;
-	private final String _updFunc;
-	protected final Statement.PSFrequency _freq;
+
+	protected MatrixObject _valFeatures;
+	protected MatrixObject _valLabels;
+	protected String _updFunc;
+	protected Statement.PSFrequency _freq;
+
+	protected PSWorker() {
+
+	}
 	
 	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
 		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {

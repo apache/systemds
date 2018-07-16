@@ -45,7 +45,6 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysml.utils.Explain;
 
 /*
  * This class contains GPU-specific rewrites for following patterns:
@@ -184,10 +183,6 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			throw new RuntimeException("Expected atleast two inputs for " + h);
 		}
 		return h.getInput().get(1);
-	}
-	
-	private static boolean hasThirdInput(Hop h) {
-		return !(h == null || h.getInput() == null || h.getInput().size() < 3);
 	}
 	
 	private static Hop getThirdInput(Hop h) {
@@ -570,7 +565,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						inHops.add(new LiteralOp(mu));
 						Hop [] oldHops = {hi, ema_mean_upd, ema_var_upd, cache_mean, cache_var};
 						
-						// if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
+						if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
 							LOG.debug("Applied batchNormTrain rewrite.");
 							ArrayList<Hop> outputs = getMultiOutputHops(roots, oldHops);
 							FunctionOp ret = new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
@@ -579,7 +574,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 							roots.add(ret);
 							Collections.reverse(roots);
 							return ret;
-						// }
+						}
 					}
 					
 				}
@@ -589,55 +584,37 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return hi;
 	}
 	
+	// ------------------------------------------------------------
+	// Since FunctionOp adds transientwrite explicitly, persistent writes are not supported
 	private static boolean isEligibleForMultiOutputFunctionOp(ArrayList<Hop> inputOps, Hop [] outputHops) {
-		for(Hop inHop : inputOps) {
-			if(inHop instanceof LiteralOp)
-				continue;
-			else if(!(HopRewriteUtils.isData(inHop, DataOpTypes.TRANSIENTREAD) || HopRewriteUtils.isData(inHop, DataOpTypes.PERSISTENTREAD))) {
-				//System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(inHop));
-				return false;
-			}
-		}
 		for(Hop outHop : outputHops) {
-			if(!(HopRewriteUtils.isData(outHop, DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE))) {
-				// System.out.println("Input not eligible:" + org.apache.sysml.utils.Explain.explain(outHop));
+			if(HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE)) {
 				return false;
 			}
 		}
 		return true;
 	}
 	
-	private static String [] getNamesAndClearDataOp(Hop [] oldHops) {
-		String [] outputNames = new String[oldHops.length];
-		for(int i = 0; i < oldHops.length; i++) {
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
-				outputNames[i] = ((DataOp)oldHops[i]).getName();
-				oldHops[i].getParent().clear();
-				oldHops[i].getInput().clear();
-			}
-			else {
-				throw new RuntimeException("Expected transient or persistent write");
-			}
-				
-		}
-		return outputNames;
-	}
-	
 	private static int _seq = 1;
 	private static ArrayList<Hop> getMultiOutputHops(ArrayList<Hop> roots, Hop [] oldHops) {
 		ArrayList<Hop> ret = new ArrayList<>();
 		for(int i = 0; i < oldHops.length; i++) {
-			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) || HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE)) {
-				ret.add(oldHops[i]);
-			}
-			else {
-				DataOp tRead = HopRewriteUtils.createTransientRead("_genGPU" + (_seq++), oldHops[i]);
-				HopRewriteUtils.rewireAllParentChildReferences(oldHops[i], tRead);
-				ret.add(tRead);
+			// Create a transient read as FunctionOp will add a transient write.
+			if(HopRewriteUtils.isData(oldHops[i], DataOpTypes.PERSISTENTWRITE))
+				throw new RuntimeException("Persistent write is not supported as output for the given rewrite." + oldHops[i]);
+			// Generate a new name if the old output was not transient write.
+			String name = HopRewriteUtils.isData(oldHops[i], DataOpTypes.TRANSIENTWRITE) ? oldHops[i].getName() : "_genGPU" + (_seq++);
+			DataOp tRead = HopRewriteUtils.createTransientRead(name, oldHops[i]);
+			HopRewriteUtils.rewireAllParentChildReferences(oldHops[i], tRead);
+			ret.add(tRead);
+			// Remove old output from roots to avoid unnecessary computation.
+			if(roots.contains(oldHops[i])) {
+				roots.remove(oldHops[i]);
 			}
 		}
 		return ret;
 	}
+	// ------------------------------------------------------------
 	
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))

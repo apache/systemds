@@ -49,15 +49,22 @@ import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 /*
  * This class contains GPU-specific rewrites for following patterns:
  * 
- * 1. batchNormTest:
+ * 1. batchNormTest: applied when mode="test" in batch normalization nn layer.
  * norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
  * hi = bias_add(bias_multiply(norm, gamma), beta)
  * 
  * 2. channelSum:
  * output = rowSums(matrix(colSums(x), rows=numChannels, cols=imgSize*imgSize))
+ * 
+ * 3. batchNormTrain: applied when mode="train" in batch normalization nn layer.
+ * This rewrite is only enabled if none of the outputs are persistent writes as it assumes that 
+ * FunctionOp will introduce a transient writes. This rewrite replaces the existing outputs of the matched pattern with transient reads.
+ * 
  */
 public class RewriteGPUSpecificOps extends HopRewriteRule {
 
+	private static int _seq = 1;
+	
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
@@ -316,6 +323,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR;
 	}
 	
+	/**
+	 * Checks if the "mean" hop is a moving average of mean in batch normalization layer.
+	 *  
+	 * @param mean hop to check against
+	 * @param X input data
+	 * @return true if the "mean" hop is a moving average of mean in batch normalization layer.
+	 */
 	private static boolean isBatchNormTrainMean(Hop mean, Hop X) {
 		// subgrp_means = matrix(colMeans(X), rows=C, cols=Hin*Win)
 		// mean = rowMeans(subgrp_means)
@@ -323,10 +337,25 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& getFirstInput(getFirstInput(getFirstInput(mean))) == X;
 	}
 	
+	/**
+	 * Checks for nrow(X) pattern
+	 * 
+	 * @param expr hop to be matched
+	 * @param X input X
+	 * @return true if expr is nrow(X) else false
+	 */
 	private static boolean isNrowOfX(Hop expr, Hop X) {
 		return expr instanceof UnaryOp && ((UnaryOp)expr).getOp() == OpOp1.NROW && getFirstInput(expr) == X;
 	}
 	
+	/**
+	 * Checks for the colVars(X) * ((N-1)/N) pattern
+	 * 
+	 * @param expr hop to be matched
+	 * @param X input X
+	 * @param ignoreCorrectionTerm whether to ignore the correction term ((N-1)/N).
+	 * @return true if expr is colVars(X) * ((N-1)/N) else false
+	 */
 	private static boolean isCorrectedColVars(Hop expr, Hop X, boolean ignoreCorrectionTerm) {
 		// colVars(X) * ((N-1)/N)
 		if(isColVars(expr) && getFirstInput(expr) == X) {
@@ -356,6 +385,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return false;
 	}
 	
+	/**
+	 * Checks if the "var" hop is a moving average of variance in batch normalization layer.
+	 *  
+	 * @param mean previously matched mean hop
+	 * @param var the hop to check against
+	 * @param X input data hop
+	 * @param subgrpMeans mean for subgroup mean
+	 * @param ignoreCorrectionTerm whether to incore the correct term  (see isCorrectedColVars method in this class)
+	 * @return true if the "var" hop is a moving average of variance in batch normalization layer.
+	 */
 	private static boolean isBatchNormTrainVar(Hop mean, Hop var, Hop  X, Hop subgrpMeans, boolean ignoreCorrectionTerm) {
 		long numChannels = Hop.computeSizeInformation(getSecondInput(getFirstInput(mean)));
 		long HW = Hop.computeSizeInformation(getThirdInput(getFirstInput(mean)));
@@ -370,8 +409,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				isRowVars(getFirstInput(getSecondInput(var)), subgrpMeans);
 	}
 	
-	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
-	// Returns [ema_mean_upd, ema_mean] if expression matched, else null
+	/**
+	 * Checks and returns the matched hops for expression ema_mean_upd = mu*ema_mean + (1-mu)*mean  
+	 * 
+	 * @param rhsTimesOps hop representing BinaryOp of expression (1-mu)*mean 
+	 * @param mu value of mu
+	 * @return an array [ema_mean_upd, ema_mean] if expression matched, else null
+	 */
 	private static Hop [] getUpdatedMovingAverageExpressions(Hop rhsTimesOp, double mu) {
 		if(rhsTimesOp == null || rhsTimesOp.getParent() == null || rhsTimesOp.getParent().size() != 1 || 
 				!isBinarySMMult(rhsTimesOp) || !isBinaryAdd(rhsTimesOp.getParent().get(0)))
@@ -399,8 +443,13 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return null;
 	}
 	
-	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
-	// Returns [ema_mean_upd, ema_mean] if expression matched, else null
+	/**
+	 * Checks (if exactly one of rhsTimesOps) and returns the matched hops for expression ema_mean_upd = mu*ema_mean + (1-mu)*mean  
+	 * 
+	 * @param rhsTimesOps array list of hop representing BinaryOp of expression (1-mu)*mean 
+	 * @param mu value of mu
+	 * @return an array [ema_mean_upd, ema_mean] if any of the expression matched, else null
+	 */
 	private static Hop [] getUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps, double mu) {
 		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
 			return null;
@@ -419,6 +468,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return ret;
 	}
 	
+	/**
+	 * Checks and returns the mu in the expression ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	 * 
+	 * @param rhsTimesOps hop representing BinaryOp of expression (1-mu)*mean
+	 * @return value of mu if the expression matched else null 
+	 */
 	private static Double getMuFromUpdatedMovingAverageExpressions(ArrayList<Hop> rhsTimesOps) {
 		if(rhsTimesOps == null || rhsTimesOps.size() == 0)
 			return null;
@@ -436,8 +491,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return ret;
 	}
 	
-	// ema_mean_upd = mu*ema_mean + (1-mu)*mean
-	// Returns true if expression matched, else false
+	/**
+	 * Checks for the expression ema_mean_upd = mu*ema_mean + (1-mu)*mean
+	 * 
+	 * @param rhsTimesOps hop representing BinaryOp of expression (1-mu)*mean
+	 * @return true if expression matched
+	 */
 	private static boolean isUpdatedMovingAverageExpression(Hop rhsTimesOp) {
 		if(rhsTimesOp == null || rhsTimesOp.getParent() == null || rhsTimesOp.getParent().size() != 1 || 
 				!isBinarySMMult(rhsTimesOp) || !isBinaryAdd(rhsTimesOp.getParent().get(0)))
@@ -484,6 +543,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return false;
 	}
 	
+	/**
+	 * Checks for the expression 1/sqrt(denom)
+	 * 
+	 * @param denom denominator of the expression to be matched
+	 * @return true if the expression 1/sqrt(denom) matched else false
+	 */
 	private static boolean isOneBySqrt(Hop denom) {
 		return denom.getParent() != null && denom.getParent().get(0) instanceof UnaryOp &&
 				((UnaryOp)denom.getParent().get(0)).getOp() == OpOp1.SQRT &&
@@ -491,6 +556,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				isBinarySMDiv(denom.getParent().get(0).getParent().get(0), 1);
 	}
 	
+	/**
+	 * Checks for the batch norm (mode="train") pattern using the helper isBatchNormTrainMean and isBatchNormTrainVar
+	 * and returns a new FunctionOp if matched
+	 * 
+	 * @param roots root hops of the given statement block
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new FunctionOp or hi
+	 */
 	private static Hop batchNormTrain(ArrayList<Hop> roots, Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
@@ -565,7 +640,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 						inHops.add(new LiteralOp(mu));
 						Hop [] oldHops = {hi, ema_mean_upd, ema_var_upd, cache_mean, cache_var};
 						
-						if(isEligibleForMultiOutputFunctionOp(inHops, oldHops)) {
+						// Since FunctionOp adds transientwrite explicitly, persistent writes are not supported
+						if(!isAnyPersistentWrite(oldHops)) {
 							LOG.debug("Applied batchNormTrain rewrite.");
 							ArrayList<Hop> outputs = getMultiOutputHops(roots, oldHops);
 							FunctionOp ret = new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
@@ -585,17 +661,27 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	
 	// ------------------------------------------------------------
-	// Since FunctionOp adds transientwrite explicitly, persistent writes are not supported
-	private static boolean isEligibleForMultiOutputFunctionOp(ArrayList<Hop> inputOps, Hop [] outputHops) {
+	/**
+	 * Checks if any of the given output hop is a persistent write.
+	 * 
+	 * @param outputHops output hops to check
+	 * @return true if any of the hop is a persistent write else false.
+	 */
+	private static boolean isAnyPersistentWrite(Hop [] outputHops) {
 		for(Hop outHop : outputHops) {
-			if(HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE)) {
-				return false;
-			}
+			if(HopRewriteUtils.isData(outHop, DataOpTypes.PERSISTENTWRITE))
+				return true;
 		}
-		return true;
+		return false;
 	}
 	
-	private static int _seq = 1;
+	/**
+	 * Returns output hop for a multi-output FunctionOp to be created by rewrite.
+	 * 
+	 * @param roots root hops of statement block
+	 * @param oldHops old output hops of the pattern
+	 * @return new output hops that should be passed to FunctionOp
+	 */
 	private static ArrayList<Hop> getMultiOutputHops(ArrayList<Hop> roots, Hop [] oldHops) {
 		ArrayList<Hop> ret = new ArrayList<>();
 		for(int i = 0; i < oldHops.length; i++) {
@@ -616,6 +702,15 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	// ------------------------------------------------------------
 	
+	/**
+	 * Checks for the batch norm (mode="test") pattern using the helper isBatchNormTrainMean and isBatchNormTrainVar
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
 	private static Hop batchNormTest(Hop parent, Hop hi, int pos) {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)

@@ -143,7 +143,7 @@ public class DataOp extends Hop
 		in.getParent().add(this);
 		_fileName = fname;
 
-		if (dop == DataOpTypes.TRANSIENTWRITE || dop == DataOpTypes.FUNCTIONOUTPUT )
+		if (dop == DataOpTypes.TRANSIENTWRITE)
 			setInputFormatType(FileFormatTypes.BINARY);
 	}
 	
@@ -200,7 +200,6 @@ public class DataOp extends Hop
 			break;
 		case PERSISTENTWRITE:
 		case TRANSIENTWRITE:
-		case FUNCTIONOUTPUT:
 			HopsException.check(sz == pz + 1, this,
 					"in %s operator type has %d inputs and %d parameters (expect 1 more input for write operator type)",
 					_dataop.name(), sz, pz);
@@ -287,13 +286,6 @@ public class DataOp extends Hop
 			case TRANSIENTWRITE:
 				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null,
 						getDataType(), getValueType(), true, getInputFormatType());
-				setOutputDimensions(l);
-				break;
-				
-			case FUNCTIONOUTPUT:
-				l = new Data(HopsData2Lops.get(_dataop), getInput().get(0).constructLops(), inputLops, getName(), null, 
-						getDataType(), getValueType(), true, getInputFormatType());
-				((Data)l).setExecType(et);
 				setOutputDimensions(l);
 				break;
 			

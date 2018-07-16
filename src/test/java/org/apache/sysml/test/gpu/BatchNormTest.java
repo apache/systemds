@@ -46,10 +46,10 @@ public class BatchNormTest extends GPUTests {
 		testBatchNormForward("test");
 	}
 	
-//	@Test
-//	public void testBatchNormForwardTrain() {
-//		testBatchNormForward("train");
-//	}
+	@Test
+	public void testBatchNormForwardTrain() {
+		testBatchNormForward("train");
+	}
 	
 	private void testBatchNormForward(String mode) {
 		int imgSize = 32; 

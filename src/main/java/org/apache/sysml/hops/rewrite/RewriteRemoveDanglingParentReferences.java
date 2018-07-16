@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.FunctionOp;
 import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOpN;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.NaryOp;
@@ -103,7 +102,6 @@ public class RewriteRemoveDanglingParentReferences extends HopRewriteRule
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.PRINT)
 			|| (hop instanceof UnaryOp && ((UnaryOp)hop).getOp()==OpOp1.ASSERT)
 			|| (hop instanceof NaryOp && ((NaryOp)hop).getOp()==OpOpN.PRINTF)
-			|| (hop instanceof FunctionOp)
-			|| (hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.FUNCTIONOUTPUT);
+			|| (hop instanceof FunctionOp);
 	}
 }

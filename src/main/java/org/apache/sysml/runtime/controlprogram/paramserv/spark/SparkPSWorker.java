@@ -28,6 +28,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.PSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.ProgramConverter;
@@ -40,6 +41,7 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
+	private SparkPSProxy _proxy;
 
 	protected SparkPSWorker() {
 		// No-args constructor used for deserialization
@@ -73,5 +75,8 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 
 		// Initialize the buffer pool and register it in the jvm shutdown hook in order to be cleanuped at the end
 		RemoteParForUtils.setupBufferPool(_workerID);
+
+		// Create the ps proxy
+		_proxy = PSRpcFactory.createSparkPSProxy(body.getHost());
 	}
 }

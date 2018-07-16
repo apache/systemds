@@ -136,7 +136,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	private ListObject pullModel() {
 		// Pull the global parameters from ps
-		ListObject globalParams = (ListObject)_ps.pull(_workerID);
+		ListObject globalParams = _ps.pull(_workerID);
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("Local worker_%d: Successfully pull the global parameters "
 				+ "[size:%d kb] from ps.", _workerID, globalParams.getDataSize() / 1024));

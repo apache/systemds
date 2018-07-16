@@ -40,7 +40,6 @@ import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -55,9 +54,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.spark.network.server.TransportServer;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -71,6 +69,7 @@ import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSBody;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -129,18 +128,32 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
 		// Force all the instructions to CP type
-		Recompiler.recompileProgramBlockHierarchy2Forced(
-			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
-		
+		ParamservUtils.recompileToCP(newEC.getProgram());
+
 		// Serialize all the needed params for remote workers
-		SparkPSBody body = new SparkPSBody(newEC);
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+		SparkPSBody body = new SparkPSBody(newEC, host);
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
 
+		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap);
+
+		// Create the agg service's execution context
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
+
+		// Create the parameter server
+		ListObject model = sec.getListObject(getParam(PS_MODEL));
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+
+		// Create the netty server for ps
+		TransportServer server = PSRpcFactory.createServer((LocalParamServer) ps, host);	// Start the server
+
 		ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
 			.foreach(worker);   // Run remote workers
 
+		// Stop the netty server
+		server.close();
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {
@@ -296,6 +309,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		switch (mode) {
 			case LOCAL:
+			case REMOTE_SPARK:
 				return new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());

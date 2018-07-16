@@ -143,7 +143,9 @@ public class ProgramConverter
 	public static final String PB_IF = " IF" + LEVELIN;
 	public static final String PB_FC = " FC" + LEVELIN;
 	public static final String PB_EFC = " EFC" + LEVELIN;
-	
+	public static final String DRIVER_HOST_BEGIN = " HOST: ";
+	public static final String DRIVER_HOST_END = "";
+
 	public static final String CONF_STATS = "stats";
 
 	// Used for parfor
@@ -716,6 +718,15 @@ public class ProgramConverter
 		builder.append(rSerializeProgramBlocks(ec.getProgram().getProgramBlocks(), clsMap));
 		builder.append(PBS_END);
 		builder.append(NEWLINE);
+		builder.append(COMPONENTS_DELIM);
+		builder.append(NEWLINE);
+
+		// Handle driver host
+		builder.append(DRIVER_HOST_BEGIN);
+		builder.append(NEWLINE);
+		builder.append(body.getHost());
+		builder.append(DRIVER_HOST_END);
+		builder.append(NEWLINE);
 
 		builder.append(PSBODY_END);
 
@@ -1270,7 +1281,15 @@ public class ProgramConverter
 		prog.getProgramBlocks().addAll(pbs);
 
 		body.setEc(ec);
+
+		// Handle driver host
+		body.setHost(parseDriverHost(st.nextToken()));
+
 		return body;
+	}
+
+	private static String parseDriverHost(String in) {
+		return in.substring(DRIVER_HOST_BEGIN.length(), in.length() - DRIVER_HOST_END.length()).trim();
 	}
 
 	public static ParForBody parseParForBody( String in, int id ) {

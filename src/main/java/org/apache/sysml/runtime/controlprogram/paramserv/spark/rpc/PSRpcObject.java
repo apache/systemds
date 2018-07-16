@@ -17,38 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import java.nio.ByteBuffer;
 
-/**
- * Wrapper class containing all needed for launching spark remote worker
- */
-public class SparkPSBody {
+public abstract class PSRpcObject {
 
-	private ExecutionContext _ec;
-	private String _driverHost;	// spark driver host ip (used for rpc)
+	public static final String PUSH = "push";
+	public static final String PULL = "pull";
+	public static final String DATA_KEY = "data";
 
-	public SparkPSBody() {}
-
-	public SparkPSBody(ExecutionContext ec, String host) {
-		_ec = ec;
-		_driverHost = host;
-	}
-
-	public ExecutionContext getEc() {
-		return _ec;
-	}
-
-	public void setEc(ExecutionContext ec) {
-		this._ec = ec;
-	}
-
-	public String getHost() {
-		return _driverHost;
-	}
-
-	public void setHost(String host) {
-		_driverHost = host;
-	}
+	public abstract void deserialize(ByteBuffer buffer);
+	public abstract ByteBuffer serialize();
 }

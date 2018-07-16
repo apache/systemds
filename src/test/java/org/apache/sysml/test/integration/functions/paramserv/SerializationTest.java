@@ -68,7 +68,7 @@ public class SerializationTest {
 		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());
 	}
 
-	private MatrixObject generateDummyMatrix(int size) {
+	public static MatrixObject generateDummyMatrix(int size) {
 		double[] dl = new double[size];
 		for (int i = 0; i < size; i++) {
 			dl[i] = i;

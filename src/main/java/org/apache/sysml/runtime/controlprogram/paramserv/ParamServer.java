@@ -42,7 +42,6 @@ import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.utils.Statistics;
@@ -53,16 +52,18 @@ public abstract class ParamServer
 	protected static final boolean ACCRUE_BSP_GRADIENTS = true;
 	
 	// worker input queues and global model
-	protected final Map<Integer, BlockingQueue<ListObject>> _modelMap;
+	protected Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
 
 	//aggregation service
-	protected final ExecutionContext _ec;
-	private final Statement.PSUpdateType _updateType;
-	private final FunctionCallCPInstruction _inst;
-	private final String _outputName;
-	private final boolean[] _finishedStates;  // Workers' finished states
+	protected ExecutionContext _ec;
+	private Statement.PSUpdateType _updateType;
+	private FunctionCallCPInstruction _inst;
+	private String _outputName;
+	private boolean[] _finishedStates;  // Workers' finished states
 	private ListObject _accGradients = null;
+
+	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		// init worker queues and global model
@@ -113,7 +114,7 @@ public abstract class ParamServer
 
 	public abstract void push(int workerID, ListObject value);
 
-	public abstract Data pull(int workerID);
+	public abstract ListObject pull(int workerID);
 
 	public ListObject getResult() {
 		// All the model updating work has terminated,

@@ -345,6 +345,19 @@ public abstract class Lop
 		lps.setLevel(inputs);
 	}
 	
+	protected void updateLevel(int newLevel) {
+		if(newLevel < getLevel()) {
+			throw new RuntimeException("Decrement the levels not supported.");
+		}
+		else if(newLevel > getLevel()) {
+			lps.setLevel(newLevel);
+			for(Lop out : outputs) {
+				if(out.getLevel() < newLevel+1)
+					out.updateLevel(newLevel+1);
+			}
+		}
+	}
+	
 	/**
 	 * Method to get the location property of LOP
 	 * 

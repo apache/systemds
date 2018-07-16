@@ -351,12 +351,28 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand out = new CPOperand(parts[7]);
 			return new DnnGPUInstruction(in, in2, in3, in4, in5, in6, out, opcode, str, 0);
 		}
+		else if (opcode.equalsIgnoreCase("batch_norm2d_train")) {
+			InstructionUtils.checkNumFields(parts, 12);
+			CPOperand in1 = new CPOperand(parts[1]); // image
+			CPOperand in2 = new CPOperand(parts[2]); // gamma
+			CPOperand in3 = new CPOperand(parts[3]); // beta
+			CPOperand in4 = new CPOperand(parts[4]); // ema_mean
+			CPOperand in5 = new CPOperand(parts[5]); // ema_var
+			CPOperand in6 = new CPOperand(parts[6]); // eps
+			CPOperand in7 = new CPOperand(parts[7]); // mu
+			CPOperand out = new CPOperand(parts[8]);  // out
+			CPOperand out2 = new CPOperand(parts[9]); // ema_mean_upd
+			CPOperand out3 = new CPOperand(parts[10]); // ema_var_upd
+			CPOperand out4 = new CPOperand(parts[11]); // cache_mean
+			CPOperand out5 = new CPOperand(parts[12]); // cache_inv_var
+			return new DnnGPUInstruction(in1, in2, in3, in4, in5, in6, in7, null, out, out2, out3, out4, out5, opcode, str, 0);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnGPUInstruction: " + str);	
 		}
 	}
 
-	public void processBiasInstruction(String instOpcode, ExecutionContext ec) {
+	private void processBiasInstruction(String instOpcode, ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -372,7 +388,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	public void processBatchNorm2dInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private void processBatchNorm2dInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject scale = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -420,7 +436,41 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	public void processBatchNorm2dTestInstruction(ExecutionContext ec) throws DMLRuntimeException {
+	private void processBatchNorm2dTrainInstruction(ExecutionContext ec) throws DMLRuntimeException {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
+		MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject scale = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
+		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
+		
+		double epsilon = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getDoubleValue();
+		double exponentialAverageFactor = 1-ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
+		
+		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
+		MatrixObject retRunningMean = getDenseMatrixOutputForGPUInstruction(ec, _output2.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+		MatrixObject retRunningVar = getDenseMatrixOutputForGPUInstruction(ec, _output3.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
+		MatrixObject resultSaveMean = getDenseMatrixOutputForGPUInstruction(ec, _output4.getName(), runningMean.getNumRows(), runningMean.getNumColumns());
+		MatrixObject resultSaveInvVariance = getDenseMatrixOutputForGPUInstruction(ec, _output5.getName(), runningVar.getNumRows(), runningVar.getNumColumns());
+		
+		LibMatrixCuDNN.batchNormalizationForwardTraining(ec.getGPUContext(0), getExtendedOpcode(), 
+			image, scale, bias, runningMean, runningVar, ret, 
+			retRunningMean, retRunningVar, epsilon, exponentialAverageFactor, resultSaveMean, resultSaveInvVariance);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input5.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output2.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output3.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output4.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output5.getName());
+	}
+	
+	private void processBatchNorm2dTestInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject scale = getMatrixInputForGPUInstruction(ec, _input2.getName());
@@ -485,7 +535,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
-	public void processChannelSumsInstruction(ExecutionContext ec) {
+	private void processChannelSumsInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		int C = (int) ec.getScalarInput(_input2.getName(), _input2.getValueType(), _input2.isLiteral()).getLongValue();
@@ -665,6 +715,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("batch_norm2d_test")) {
 			processBatchNorm2dTestInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d_train")) {
+			processBatchNorm2dTrainInstruction(ec);
 			return;
 		}
 		

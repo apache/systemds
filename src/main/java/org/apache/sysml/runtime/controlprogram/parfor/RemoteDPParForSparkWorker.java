@@ -37,14 +37,13 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.Task.TaskType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.apache.sysml.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 
@@ -151,23 +150,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_numTasks    = 0;
 		_numIters    = 0;
 
-		//init and register-cleanup of buffer pool (in parfor spark, multiple tasks might 
-		//share the process-local, i.e., per executor, buffer pool; hence we synchronize 
-		//the initialization and immediately register the created directory for cleanup
-		//on process exit, i.e., executor exit, including any files created in the future.
-		synchronized( CacheableData.class ) {
-			if( !CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode() ) { 
-				//create id, executor working dir, and cache dir
-				String uuid = IDHandler.createDistributedUniqueID();
-				LocalFileUtils.createWorkingDirectoryWithUUID( uuid );
-				CacheableData.initCaching( uuid ); //incl activation and cache dir creation
-				CacheableData.cacheEvictionLocalFilePrefix = 
-						CacheableData.cacheEvictionLocalFilePrefix +"_" + _workerID; 
-				//register entire working dir for delete on shutdown
-				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
-			}
-		}
-		
+		//setup the buffer pool
+		RemoteParForUtils.setupBufferPool(_workerID);
+
 		//ensure that resultvar files are not removed
 		super.pinResultVariables();
 		

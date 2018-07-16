@@ -57,7 +57,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
@@ -68,6 +67,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 
@@ -175,9 +175,8 @@ public class ParamservUtils {
 			new String[]{ns, name} : new String[]{ns, name};
 	}
 
-	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap varsMap,
-		String updFunc, String aggFunc, int workerNum, int k) {
-
+	public static ExecutionContext createExecutionContext(ExecutionContext ec, LocalVariableMap varsMap, String updFunc,
+		String aggFunc, int k) {
 		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
 		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
 
@@ -188,27 +187,21 @@ public class ParamservUtils {
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
-		// 3. Copy function for workers
-		List<ExecutionContext> workerECs = IntStream.range(0, workerNum)
-			.mapToObj(i -> {
-				FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
-				FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
-				Program newProg = new Program();
-				putFunction(newProg, newUpdFunc);
-				putFunction(newProg, newAggFunc);
-				return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
-			})
-			.collect(Collectors.toList());
-
-		// 4. Copy function for agg service
+		// 3. Copy function
+		FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
 		FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
 		Program newProg = new Program();
+		putFunction(newProg, newUpdFunc);
 		putFunction(newProg, newAggFunc);
-		ExecutionContext aggEC = ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+		return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+	}
 
-		List<ExecutionContext> result = new ArrayList<>(workerECs);
-		result.add(aggEC);
-		return result;
+	public static List<ExecutionContext> copyExecutionContext(ExecutionContext ec, int num) {
+		return IntStream.range(0, num).mapToObj(i -> {
+			Program newProg = new Program();
+			ec.getProgram().getFunctionProgramBlocks().forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
+			return ExecutionContextFactory.createContext(new LocalVariableMap(ec.getVariables()), newProg);
+		}).collect(Collectors.toList());
 	}
 
 	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {

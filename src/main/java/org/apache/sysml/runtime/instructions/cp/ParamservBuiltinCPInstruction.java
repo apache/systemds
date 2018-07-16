@@ -39,6 +39,8 @@ import static org.apache.sysml.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -54,6 +56,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -65,10 +69,12 @@ import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSBody;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSWorker;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
@@ -110,13 +116,30 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
 		PSScheme scheme = getScheme();
 		int workerNum = getWorkerNum(mode);
+		String updFunc = getParam(PS_UPDATE_FUN);
+		String aggFunc = getParam(PS_AGGREGATION_FUN);
+
+		int k = getParLevel(workerNum);
+
+		// Get the compiled execution context
+		LocalVariableMap newVarsMap = createVarsMap(sec);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, k);
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
-		SparkPSWorker worker = new SparkPSWorker();
+		// Force all the instructions to CP type
+		Recompiler.recompileProgramBlockHierarchy2Forced(
+			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
+		
+		// Serialize all the needed params for remote workers
+		SparkPSBody body = new SparkPSBody(newEC);
+		HashMap<String, byte[]> clsMap = new HashMap<>();
+		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
+
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap);
 		ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
-				.foreach(worker);   // Run remote workers
+			.foreach(worker);   // Run remote workers
 
 	}
 
@@ -132,15 +155,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int k = getParLevel(workerNum);
 
 		// Get the compiled execution context
-		// Create workers' execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		List<ExecutionContext> newECs = ParamservUtils.createExecutionContexts(ec, newVarsMap, updFunc, aggFunc, workerNum, k);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, k);
 
 		// Create workers' execution context
-		List<ExecutionContext> workerECs = newECs.subList(0, newECs.size() - 1);
+		List<ExecutionContext> workerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
 
 		// Create the agg service's execution context
-		ExecutionContext aggServiceEC = newECs.get(newECs.size() - 1);
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();

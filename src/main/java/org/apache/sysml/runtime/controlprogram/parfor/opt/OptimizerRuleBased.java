@@ -81,7 +81,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.ExcludeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
@@ -438,7 +438,7 @@ public class OptimizerRuleBased extends Optimizer
 	
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set data partitioner' - result="+pdp.toString()+
-			" ("+ProgramConverter.serializeStringCollection(partitionedMatrices.keySet())+")" );
+			" ("+Arrays.toString(partitionedMatrices.keySet().toArray())+")" );
 		
 		return blockwise;
 	}
@@ -1809,8 +1809,8 @@ public class OptimizerRuleBased extends Optimizer
 			pfpb.setRuntimePiggybacking(apply);
 		
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="+apply+
-				" ("+ProgramConverter.serializeStringCollection(sharedVars)+")" );
+		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="
+			+apply+" ("+Arrays.toString(sharedVars.toArray())+")" );
 	}
 
 	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
@@ -1931,8 +1931,8 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark input repartition' - result="+ret.size()+
-				" ("+ProgramConverter.serializeStringCollection(ret)+")" );
+		LOG.debug(getOptMode()+" OPT: rewrite 'inject spark input repartition' - result="
+			+ret.size()+" ("+Arrays.toString(ret.toArray())+")" );
 	}
 
 	private void rCollectZipmmPartitioningCandidates( OptNode n, HashSet<String> cand )
@@ -2008,8 +2008,8 @@ public class OptimizerRuleBased extends Optimizer
 		}
 		
 		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'set spark eager rdd caching' - result="+ret.size()+
-				" ("+ProgramConverter.serializeStringCollection(ret)+")" );
+		LOG.debug(getOptMode()+" OPT: rewrite 'set spark eager rdd caching' - result="
+			+ret.size()+" ("+Arrays.toString(ret.toArray())+")" );
 	}
 	
 	///////

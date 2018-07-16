@@ -77,6 +77,8 @@ public abstract class Lop
 	
 	public static final String FILE_SEPARATOR = "/";
 	public static final String PROCESS_PREFIX = "_p";
+	public static final String CP_ROOT_THREAD_ID = "_t0";
+	public static final String CP_CHILD_THREAD = "_t";
 	
 	//special delimiters w/ extended ASCII characters to avoid collisions 
 	public static final String INSTRUCTION_DELIMITOR = "\u2021";

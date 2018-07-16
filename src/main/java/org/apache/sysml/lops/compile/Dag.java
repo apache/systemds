@@ -69,7 +69,6 @@ import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -198,7 +197,7 @@ public class Dag<N extends Lop>
 			scratchFilePath = scratch + Lop.FILE_SEPARATOR
 				+ Lop.PROCESS_PREFIX + DMLScript.getUUID()
 				+ Lop.FILE_SEPARATOR + Lop.FILE_SEPARATOR
-				+ ProgramConverter.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
+				+ Lop.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
 		}
 		return scratchFilePath;
 	}

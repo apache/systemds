@@ -88,7 +88,6 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.ProgramBlock;
 import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
 import org.apache.sysml.runtime.instructions.Instruction;
 
 
@@ -613,7 +612,7 @@ public class DMLTranslator
 				buff.append(Lop.PROCESS_PREFIX);
 				buff.append(DMLScript.getUUID());
 				buff.append(Lop.FILE_SEPARATOR);
-				buff.append(ProgramConverter.CP_ROOT_THREAD_ID);
+				buff.append(Lop.CP_ROOT_THREAD_ID);
 				buff.append(Lop.FILE_SEPARATOR);
 				buff.append("PackageSupport");
 				buff.append(Lop.FILE_SEPARATOR);

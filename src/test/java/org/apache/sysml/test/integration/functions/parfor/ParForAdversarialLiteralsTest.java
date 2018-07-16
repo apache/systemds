@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -123,7 +123,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		// This is for running the junit test the new way, i.e., construct the arguments directly 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		String IN = "A";
-		String OUT = (testName.equals(TEST_NAME1a)||testName.equals(TEST_NAME1b))?ProgramConverter.CP_ROOT_THREAD_ID:"B";
+		String OUT = (testName.equals(TEST_NAME1a)||testName.equals(TEST_NAME1b))?Lop.CP_ROOT_THREAD_ID:"B";
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args", input(IN),
@@ -132,7 +132,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 		
-        double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
+		double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 		writeInputMatrix("A", A, false);
 
 		boolean exceptionExpected = false;
@@ -141,8 +141,7 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 		//compare matrices
 		HashMap<CellIndex, Double> dmlin = TestUtils.readDMLMatrixFromHDFS(input(IN));
 		HashMap<CellIndex, Double> dmlout = readDMLMatrixFromHDFS(OUT); 
-				
-		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");			
+		
+		TestUtils.compareMatrices(dmlin, dmlout, eps, "DMLin", "DMLout");
 	}
-	
 }

@@ -42,18 +42,20 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
 	private SparkPSProxy _proxy;
+	private String _host;  // Driver host ip
 
 	protected SparkPSWorker() {
 		// No-args constructor used for deserialization
 	}
 
-	public SparkPSWorker(String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap) {
+	public SparkPSWorker(String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host) {
 		_updFunc = updFunc;
 		_freq = freq;
 		_epochs = epochs;
 		_batchSize = batchSize;
 		_program = program;
 		_clsMap = clsMap;
+		_host = host;
 	}
 
 	@Override
@@ -77,6 +79,6 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 		RemoteParForUtils.setupBufferPool(_workerID);
 
 		// Create the ps proxy
-		_proxy = PSRpcFactory.createSparkPSProxy(body.getHost());
+		_proxy = PSRpcFactory.createSparkPSProxy(_host);
 	}
 }

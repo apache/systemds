@@ -131,13 +131,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ParamservUtils.recompileToCP(newEC.getProgram());
 
 		// Serialize all the needed params for remote workers
-		String host = sec.getSparkContext().getConf().get("spark.driver.host");
-		SparkPSBody body = new SparkPSBody(newEC, host);
+		SparkPSBody body = new SparkPSBody(newEC);
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
 
 		// Create remote workers
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap);
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap, host);
 
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);

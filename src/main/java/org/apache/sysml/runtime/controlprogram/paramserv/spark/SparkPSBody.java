@@ -27,13 +27,11 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 public class SparkPSBody {
 
 	private ExecutionContext _ec;
-	private String _driverHost;	// spark driver host ip (used for rpc)
 
 	public SparkPSBody() {}
 
-	public SparkPSBody(ExecutionContext ec, String host) {
+	public SparkPSBody(ExecutionContext ec) {
 		_ec = ec;
-		_driverHost = host;
 	}
 
 	public ExecutionContext getEc() {
@@ -42,13 +40,5 @@ public class SparkPSBody {
 
 	public void setEc(ExecutionContext ec) {
 		this._ec = ec;
-	}
-
-	public String getHost() {
-		return _driverHost;
-	}
-
-	public void setHost(String host) {
-		_driverHost = host;
 	}
 }

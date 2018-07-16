@@ -46,6 +46,7 @@ public class FunctionCallCP extends Lop
 			for(Hop h : outputHops) {
 				Lop outputLop = h.constructLops();
 				_outputLops.add( outputLop );
+				addOutput(outputLop);
 				// Update the output level if necessary for correct instruction ordering
 				if(outputLop.getLevel() <= getLevel()) {
 					outputLop.updateLevel(getLevel()+1);

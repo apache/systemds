@@ -79,7 +79,6 @@ public class BatchNormTest extends GPUTests {
 			// Handle loss of precision in CuDNN kernel 
 			threshold[2] = 1e-3;
 			for(int i = 0; i < outputs.size()-1; i++) {
-				System.out.println(">>> " + i);
 				assertEqualObjects(outCPU.get(i), outGPU.get(i), threshold[i]);
 			}
 		}

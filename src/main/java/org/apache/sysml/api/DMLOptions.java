@@ -87,12 +87,10 @@ public class DMLOptions {
 			'}';
 	}
 	
-	
 	/**
 	 * Parses command line arguments to create a {@link DMLOptions} instance with the correct options
-	 * @param args	arguments from the command line
-	 * @param options	an {@link Options} instance containing the options that need to be parsed
-	 * @return an instance of {@link Options} that contain the correct {@link Option}s.
+	 * @param args arguments from the command line
+	 * @return an instance of {@link DMLOptions} that contain the correct {@link Option}s.
 	 * @throws org.apache.commons.cli.ParseException if there is an incorrect option specified in the CLI
 	 */
 	public static DMLOptions parseCLArguments(String[] args)
@@ -198,14 +196,6 @@ public class DMLOptions {
 		return dmlOptions;
 	}
 	
-	/**
-	 * Creates an {@link Options} instance for the command line parameters
-	 *  As of SystemML 0.13, Apache Commons CLI 1.2 is transitively in the classpath
-	 *  However the most recent version of Apache Commons CLI is 1.4
-	 *  Creating CLI options is done using Static methods. Instead of {@link OptionBuilder},
-	 *  CLI 1.4 uses Option.Builder which has non-static methods.
-	 * @return an appropriate instance of {@link Options}
-	 */
 	@SuppressWarnings("static-access")
 	private static Options createCLIOptions() {
 		Options options = new Options();

@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.PSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -35,13 +35,12 @@ import org.apache.sysml.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 
-public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
+public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
 
 	private static final long serialVersionUID = -8674739573419648732L;
 
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
-	private SparkPSProxy _proxy;
 	private String _host;  // Driver host ip
 
 	protected SparkPSWorker() {
@@ -61,6 +60,8 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
 		configureWorker(input);
+		// Launch the worker
+		call();
 	}
 
 	private void configureWorker(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws IOException {
@@ -79,6 +80,6 @@ public class SparkPSWorker extends PSWorker implements VoidFunction<Tuple2<Integ
 		RemoteParForUtils.setupBufferPool(_workerID);
 
 		// Create the ps proxy
-		_proxy = PSRpcFactory.createSparkPSProxy(_host);
+		_ps = PSRpcFactory.createSparkPSProxy(_host);
 	}
 }

@@ -38,7 +38,7 @@ public final class PSRpcHandler extends RpcHandler {
 
 	private LocalParamServer _server;
 
-	public PSRpcHandler(LocalParamServer server) {
+	protected PSRpcHandler(LocalParamServer server) {
 		_server = server;
 	}
 

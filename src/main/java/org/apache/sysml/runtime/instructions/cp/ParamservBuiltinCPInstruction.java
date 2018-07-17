@@ -83,7 +83,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 
 	//internal local debug level
-	private static final boolean LDEBUG = false;
+	private static final boolean LDEBUG = true;
 	protected static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
 
 

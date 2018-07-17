@@ -22,8 +22,6 @@ package org.apache.sysml.runtime.io;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class MatrixWriterFactory 
@@ -53,12 +51,12 @@ public class MatrixWriterFactory
 			writer = new WriterMatrixMarket();
 		}
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
-			if( props!=null && !(props instanceof CSVFileFormatProperties) )
+			if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-				writer = new WriterTextCSVParallel((CSVFileFormatProperties)props);
+				writer = new WriterTextCSVParallel((FileFormatPropertiesCSV)props);
 			else
-				writer = new WriterTextCSV((CSVFileFormatProperties)props);
+				writer = new WriterTextCSV((FileFormatPropertiesCSV)props);
 		}
 		else if( oinfo == OutputInfo.BinaryCellOutputInfo ) {
 			writer = new WriterBinaryCell();

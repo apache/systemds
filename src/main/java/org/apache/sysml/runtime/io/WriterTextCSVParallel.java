@@ -33,7 +33,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.CommonThreadPool;
@@ -41,12 +40,12 @@ import org.apache.sysml.runtime.util.MapReduceTool;
 
 public class WriterTextCSVParallel extends WriterTextCSV
 {
-	public WriterTextCSVParallel( CSVFileFormatProperties props ) {
+	public WriterTextCSVParallel( FileFormatPropertiesCSV props ) {
 		super( props );
 	}
 
 	@Override
-	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops)
+	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, FileFormatPropertiesCSV csvprops)
 		throws IOException 
 	{
 		//estimate output size and number of output blocks (min 1)
@@ -106,9 +105,9 @@ public class WriterTextCSVParallel extends WriterTextCSV
 		private final MatrixBlock _src;
 		private final Path _path;
 		private final int _rl, _ru;
-		private final CSVFileFormatProperties _props;
+		private final FileFormatPropertiesCSV _props;
 		
-		public WriteCSVTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props) {
+		public WriteCSVTask(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, FileFormatPropertiesCSV props) {
 			_path = path;
 			_job = job;
 			_fs = fs;

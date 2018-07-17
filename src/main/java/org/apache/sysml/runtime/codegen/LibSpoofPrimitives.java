@@ -340,6 +340,14 @@ public class LibSpoofPrimitives
 		return alen;
 	}
 	
+	public static double vectMean(double[] a, int ai, int len) {
+		return vectSum(a, ai, len) / len;
+	} 
+	
+	public static double vectMean(double[] avals, int[] aix, int ai, int alen, int len) {
+		return vectSum(avals, aix, ai, alen, len) / len;
+	}
+	
 	//custom vector div
 	
 	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {

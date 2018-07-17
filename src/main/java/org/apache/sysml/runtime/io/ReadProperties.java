@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.io;
 
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 
 public class ReadProperties 

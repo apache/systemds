@@ -22,8 +22,6 @@ package org.apache.sysml.runtime.io;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 
 public class FrameWriterFactory 
@@ -43,12 +41,12 @@ public class FrameWriterFactory
 				writer = new FrameWriterTextCell();
 		}
 		else if( oinfo == OutputInfo.CSVOutputInfo ) {
-			if( props!=null && !(props instanceof CSVFileFormatProperties) )
+			if( props!=null && !(props instanceof FileFormatPropertiesCSV) )
 				throw new DMLRuntimeException("Wrong type of file format properties for CSV writer.");
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
-				writer = new FrameWriterTextCSVParallel((CSVFileFormatProperties)props);
+				writer = new FrameWriterTextCSVParallel((FileFormatPropertiesCSV)props);
 			else
-				writer = new FrameWriterTextCSV((CSVFileFormatProperties)props);	
+				writer = new FrameWriterTextCSV((FileFormatPropertiesCSV)props);	
 		}
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo ) {
 			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )

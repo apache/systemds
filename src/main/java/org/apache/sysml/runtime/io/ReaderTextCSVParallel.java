@@ -40,7 +40,6 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.CommonThreadPool;
@@ -58,12 +57,12 @@ import org.apache.sysml.runtime.util.CommonThreadPool;
  */
 public class ReaderTextCSVParallel extends MatrixReader 
 {
-	private CSVFileFormatProperties _props = null;
+	private FileFormatPropertiesCSV _props = null;
 	private int _numThreads = 1;
 
 	private SplitOffsetInfos _offsets = null;
 
-	public ReaderTextCSVParallel(CSVFileFormatProperties props) {
+	public ReaderTextCSVParallel(FileFormatPropertiesCSV props) {
 		_numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		_props = props;
 	}

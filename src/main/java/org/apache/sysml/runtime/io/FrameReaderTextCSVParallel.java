@@ -37,7 +37,6 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
@@ -49,7 +48,7 @@ import org.apache.sysml.runtime.util.CommonThreadPool;
  */
 public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 {
-	public FrameReaderTextCSVParallel(CSVFileFormatProperties props) {
+	public FrameReaderTextCSVParallel(FileFormatPropertiesCSV props) {
 		super(props);
 	}
 

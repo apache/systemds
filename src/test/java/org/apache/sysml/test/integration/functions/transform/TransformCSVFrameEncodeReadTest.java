@@ -22,10 +22,10 @@ package org.apache.sysml.test.integration.functions.transform;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderTextCSV;
 import org.apache.sysml.runtime.io.FrameReaderTextCSVParallel;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -142,8 +142,8 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			
 			//read input/output and compare
 			FrameReader reader2 = parRead ? 
-				new FrameReaderTextCSVParallel( new CSVFileFormatProperties() ) : 
-				new FrameReaderTextCSV( new CSVFileFormatProperties()  );
+				new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) : 
+				new FrameReaderTextCSV( new FileFormatPropertiesCSV()  );
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);
 			System.out.println(DataConverter.toString(fb2));
 		}

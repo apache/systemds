@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,38 +17,29 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.matrix.data;
+package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
-public class FileFormatProperties 
-{
-	private String description;
-	
-	public enum FileFormat { CSV, NATIVE }
-	
-	FileFormat fmt;
-	
-	public FileFormatProperties() {
-		fmt = FileFormat.NATIVE;
-	}
-	
-	public FileFormatProperties(FileFormat fmt) {
-		this.fmt = fmt;
-	}
-	
-	public void setFileFormat(FileFormat fmt) {
-		this.fmt = fmt;
-	}
-	
-	public FileFormat getFileFormat() {
-		return fmt;
+import java.util.List;
+
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+
+import scala.Tuple2;
+
+/**
+ * Spark Disjoint_Round_Robin data partitioner:
+ */
+public class DRRSparkScheme extends DataPartitionSparkScheme {
+
+	private static final long serialVersionUID = -3130831851505549672L;
+
+	protected DRRSparkScheme() {
+		// No-args constructor used for deserialization
 	}
 
-	public String getDescription() {
-		return description;
+	@Override
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
+		return new Result(pfs, pls);
 	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
 }

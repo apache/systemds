@@ -121,7 +121,7 @@ public class CompressedMatrixBlock extends MatrixBlock implements Externalizable
 		if( LDEBUG ) {
 			Logger.getLogger("org.apache.sysml.runtime.compress")
 				.setLevel((Level) LDEBUG_LEVEL);
-		}	
+		}
 	}
 	
 	protected ArrayList<ColGroup> _colGroups = null;

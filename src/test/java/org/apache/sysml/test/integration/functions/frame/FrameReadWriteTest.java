@@ -24,11 +24,11 @@ import java.io.IOException;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.FrameWriter;
 import org.apache.sysml.runtime.io.FrameWriterFactory;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -179,7 +179,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			initFrameData(frame2, B, schema2);
 			
 			//Write frame data to disk
-			CSVFileFormatProperties fprop = new CSVFileFormatProperties();			
+			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();			
 			fprop.setDelim(DELIMITER);
 			fprop.setHeader(HEADER);
 			
@@ -218,7 +218,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 			}
 	}
 	
-	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, CSVFileFormatProperties fprop)
+	void writeAndVerifyData(OutputInfo oinfo, FrameBlock frame1, FrameBlock frame2, FileFormatPropertiesCSV fprop)
 		throws IOException
 	{
 		String fname1 = SCRIPT_DIR + TEST_DIR + "/frameData1";

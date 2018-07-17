@@ -22,9 +22,9 @@ package org.apache.sysml.test.integration.functions.transform;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -96,7 +96,7 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 			
 			//read input/output and compare
 			FrameReader reader1 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo, 
-					new CSVFileFormatProperties(false, ",", false));
+					new FileFormatPropertiesCSV(false, ",", false));
 			FrameBlock fb1 = reader1.readFrameFromHDFS(HOME + "input/" + DATASET, -1L, -1L);
 			FrameReader reader2 = FrameReaderFactory.createFrameReader(InputInfo.CSVInputInfo);
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("R"), -1L, -1L);

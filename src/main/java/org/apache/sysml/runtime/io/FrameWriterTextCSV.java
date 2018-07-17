@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -44,9 +43,9 @@ public class FrameWriterTextCSV extends FrameWriter
 	//(can be set to very large value to disable blocking)
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 	
-	protected CSVFileFormatProperties _props = null;
+	protected FileFormatPropertiesCSV _props = null;
 	
-	public FrameWriterTextCSV( CSVFileFormatProperties props ) {
+	public FrameWriterTextCSV( FileFormatPropertiesCSV props ) {
 		_props = props;
 	}
 
@@ -71,7 +70,7 @@ public class FrameWriterTextCSV extends FrameWriter
 		writeCSVFrameToHDFS(path, job, src, rlen, clen, _props);
 	}
 
-	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, CSVFileFormatProperties csvprops ) 
+	protected void writeCSVFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen, FileFormatPropertiesCSV csvprops ) 
 		throws IOException
 	{
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
@@ -81,7 +80,7 @@ public class FrameWriterTextCSV extends FrameWriter
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	protected static void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, CSVFileFormatProperties props )
+	protected static void writeCSVFrameToFile( Path path, JobConf job, FileSystem fs, FrameBlock src, int rl, int ru, FileFormatPropertiesCSV props )
 		throws IOException
 	{
     	//create buffered writer
@@ -93,7 +92,7 @@ public class FrameWriterTextCSV extends FrameWriter
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
-			props = (props==null)? new CSVFileFormatProperties() : props;
+			props = (props==null)? new FileFormatPropertiesCSV() : props;
 			String delim = props.getDelim();
 			
 			// Write header line, if needed

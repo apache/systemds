@@ -38,10 +38,10 @@ import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysml.runtime.io.FileFormatProperties;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -89,7 +89,7 @@ public class WriteSPInstruction extends SPInstruction {
 			boolean hasHeader = Boolean.parseBoolean(parts[4]);
 			String delim = parts[5];
 			boolean sparse = Boolean.parseBoolean(parts[6]);
-			FileFormatProperties formatProperties = new CSVFileFormatProperties(hasHeader, delim, sparse);
+			FileFormatProperties formatProperties = new FileFormatPropertiesCSV(hasHeader, delim, sparse);
 			inst.setFormatProperties(formatProperties);
 			CPOperand in4 = new CPOperand(parts[8]);
 			inst.input4 = in4;
@@ -198,7 +198,7 @@ public class WriteSPInstruction extends SPInstruction {
 			}	
 			
 			JavaRDD<String> out = RDDConverterUtils.binaryBlockToCsv(
-				in1, mc, (CSVFileFormatProperties) formatProperties, true);
+				in1, mc, (FileFormatPropertiesCSV) formatProperties, true);
 
 			customSaveTextFile(out, fname, false);
 			
@@ -241,7 +241,7 @@ public class WriteSPInstruction extends SPInstruction {
 			customSaveTextFile(out, fname, false);
 		}
 		else if( oi == OutputInfo.CSVOutputInfo ) {
-			CSVFileFormatProperties props = (formatProperties!=null) ?(CSVFileFormatProperties) formatProperties : null;
+			FileFormatPropertiesCSV props = (formatProperties!=null) ?(FileFormatPropertiesCSV) formatProperties : null;
 			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToCsv(in1, mc, props, true);
 			customSaveTextFile(out, fname, false);
 		}

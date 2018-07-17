@@ -194,7 +194,7 @@ public class Connection implements Closeable
 	 */
 	public void gatherMemStats(boolean stats) {
 		DMLScript.STATISTICS = stats || DMLScript.STATISTICS;
-		DMLScript.JMLC_MEMORY_STATISTICS = stats;
+		DMLScript.JMLC_MEM_STATISTICS = stats;
 	}
 	
 	/**

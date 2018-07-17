@@ -28,9 +28,14 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 /**
- * This estimator implements naive but rather common approach of boolean matrix
+ * This estimator implements a naive but rather common approach of boolean matrix
  * multiplies which allows to infer the exact non-zero structure and thus is
  * also useful for sparse result preallocation.
+ * 
+ * For example, the following paper indicates that this approach is used for sparse
+ * spGEMM in NVIDIA cuSPARSE and Intel MKL:
+ * Weifeng Liu and Brian Vinter. An Efficient GPU General Sparse Matrix-Matrix
+ * Multiplication for Irregular Data. In IPDPS, pages 370–381, 2014.
  * 
  */
 public class EstimatorBitsetMM extends SparsityEstimator {

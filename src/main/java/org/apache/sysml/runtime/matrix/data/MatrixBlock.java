@@ -64,6 +64,7 @@ import org.apache.sysml.runtime.functionobjects.RevIndex;
 import org.apache.sysml.runtime.functionobjects.SortIndex;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
@@ -793,17 +794,26 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
+	 * Wrapper method for reduceall-mean of a matrix.
+	 * 
+	 * @return ?
+	 */
+	public double mean() {
+		MatrixBlock out = new MatrixBlock(1, 3, false);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out,
+			InstructionUtils.parseBasicAggregateUnaryOperator("uamean", 1));
+		return out.quickGetValue(0, 0);
+	}
+	
+	/**
 	 * Wrapper method for reduceall-min of a matrix.
 	 * 
 	 * @return ?
 	 */
 	public double min() {
-		//construct operator
-		AggregateOperator aop = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
-		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
-		//execute operation
 		MatrixBlock out = new MatrixBlock(1, 1, false);
-		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out,
+			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", 1));
 		return out.quickGetValue(0, 0);
 	}
 	
@@ -813,12 +823,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @return ?
 	 */
 	public double max() {
-		//construct operator
-		AggregateOperator aop = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
-		AggregateUnaryOperator auop = new AggregateUnaryOperator( aop, ReduceAll.getReduceAllFnObject());
-		//execute operation
 		MatrixBlock out = new MatrixBlock(1, 1, false);
-		LibMatrixAgg.aggregateUnaryMatrix(this, out, auop);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out,
+			InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1));
 		return out.quickGetValue(0, 0);
 	}
 	

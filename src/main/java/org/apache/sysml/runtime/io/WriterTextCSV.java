@@ -36,7 +36,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.CSVReblockMR;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -47,9 +46,9 @@ public class WriterTextCSV extends MatrixWriter
 	//(can be set to very large value to disable blocking)
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 	
-	protected CSVFileFormatProperties _props = null;
+	protected FileFormatPropertiesCSV _props = null;
 	
-	public WriterTextCSV( CSVFileFormatProperties props ) {
+	public WriterTextCSV( FileFormatPropertiesCSV props ) {
 		_props = props;
 	}
 	
@@ -91,14 +90,14 @@ public class WriterTextCSV extends MatrixWriter
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, CSVFileFormatProperties csvprops) 
+	protected void writeCSVMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src, FileFormatPropertiesCSV csvprops) 
 		throws IOException 
 	{
 		//sequential write csv file
 		writeCSVMatrixToFile(path, job, fs, src, 0, (int)src.getNumRows(), csvprops);
 	}
 
-	protected static void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, CSVFileFormatProperties props )
+	protected static void writeCSVMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int ru, FileFormatPropertiesCSV props )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
@@ -112,7 +111,7 @@ public class WriterTextCSV extends MatrixWriter
 			//for obj reuse and preventing repeated buffer re-allocations
 			StringBuilder sb = new StringBuilder();
 			
-			props = (props==null)? new CSVFileFormatProperties() : props;
+			props = (props==null)? new FileFormatPropertiesCSV() : props;
 			String delim = props.getDelim();
 			boolean csvsparse = props.isSparse();
 			

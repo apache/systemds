@@ -20,7 +20,6 @@
 package org.apache.sysml.parser;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +35,9 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.parser.LanguageException.LanguageErrorCodes;
 import org.apache.sysml.parser.common.CustomErrorListener;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -47,31 +48,31 @@ import org.apache.wink.json4j.JSONObject;
 
 public class DataExpression extends DataIdentifier 
 {
-	public static final String RAND_ROWS 	=  "rows";	 
-	public static final String RAND_COLS 	=  "cols";
-	public static final String RAND_MIN  	=  "min";
-	public static final String RAND_MAX  	=  "max";
-	public static final String RAND_SPARSITY = "sparsity"; 
-	public static final String RAND_SEED    =  "seed";
-	public static final String RAND_PDF		=  "pdf";
-	public static final String RAND_LAMBDA	=  "lambda";
+	public static final String RAND_ROWS = "rows";
+	public static final String RAND_COLS = "cols";
+	public static final String RAND_MIN = "min";
+	public static final String RAND_MAX = "max";
+	public static final String RAND_SPARSITY = "sparsity";
+	public static final String RAND_SEED = "seed";
+	public static final String RAND_PDF = "pdf";
+	public static final String RAND_LAMBDA = "lambda";
 	
 	public static final String RAND_PDF_UNIFORM = "uniform";
 	
-	public static final String RAND_BY_ROW 	 =  "byrow";	 
-	public static final String RAND_DIMNAMES =  "dimnames";
-	public static final String RAND_DATA 	 =  "data";
+	public static final String RAND_BY_ROW = "byrow";
+	public static final String RAND_DIMNAMES = "dimnames";
+	public static final String RAND_DATA = "data";
 	
 	public static final String IO_FILENAME = "iofilename";
 	public static final String READROWPARAM = "rows";
 	public static final String READCOLPARAM = "cols";
 	public static final String READNNZPARAM = "nnz";
 	
-	public static final String FORMAT_TYPE 						= "format";
-	public static final String FORMAT_TYPE_VALUE_TEXT 			= "text";
-	public static final String FORMAT_TYPE_VALUE_BINARY 		= "binary";
-	public static final String FORMAT_TYPE_VALUE_CSV			= "csv";
-	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET	= "mm";
+	public static final String FORMAT_TYPE = "format";
+	public static final String FORMAT_TYPE_VALUE_TEXT = "text";
+	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
+	public static final String FORMAT_TYPE_VALUE_CSV = "csv";
+	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET = "mm";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -641,35 +642,36 @@ public class DataExpression extends DataIdentifier
 				 * 1) only allow IO_FILENAME as ONLY valid parameter
 				 * 
 				 * 2) open the file
-				 * 		A) verify header line (1st line) equals 
-				 * 		B) read and discard comment lines
-				 * 		C) get size information from sizing info line --- M N L
+				 *  A) verify header line (1st line) equals 
+				 *  B) read and discard comment lines
+				 *  C) get size information from sizing info line --- M N L
 				 */
 				
 				// should NOT attempt to read MTD file for MatrixMarket format
 				shouldReadMTD = false;
 				
 				// get metadata from MatrixMarket format file
-				String[] headerLines = readMatrixMarketFile(inputFileName, conditional);
-				
-				// process 1st line of MatrixMarket format -- must be identical to legal header
-				String legalHeaderMM = "%%MatrixMarket matrix coordinate real general";
+				String[] headerLines = null;
+				try {
+					headerLines = IOUtilFunctions.readMatrixMarketHeader(inputFileName);
+				}
+				catch(DMLRuntimeException ex) {
+					raiseValidateError(ex.getMessage(), conditional);
+				}
 				
 				if (headerLines != null && headerLines.length >= 2){
+					// process 1st line of MatrixMarket format to check for support types
+					
 					String firstLine = headerLines[0].trim();
-					if (!firstLine.equals(legalHeaderMM)){
-						raiseValidateError("Unsupported format in MatrixMarket file: " +
-							headerLines[0] + ". Only supported format in MatrixMarket file has header line " + legalHeaderMM, 
-							conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-						}
-				
+					FileFormatPropertiesMM props = FileFormatPropertiesMM.parse(firstLine);
+					
 					// process 2nd line of MatrixMarket format -- must have size information
 				
 					String secondLine = headerLines[1];
 					String[] sizeInfo = secondLine.trim().split("\\s+");
 					if (sizeInfo.length != 3){
 						raiseValidateError("Unsupported size line in MatrixMarket file: " +
-								headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
+							headerLines[1] + ". Only supported format in MatrixMarket file has size line: <NUM ROWS> <NUM COLS> <NUM NON-ZEROS>, where each value is an integer.", conditional);
 					}
 				
 					long rowsCount = Long.parseLong(sizeInfo[0]);
@@ -693,7 +695,7 @@ public class DataExpression extends DataIdentifier
 					}
 					addVarParam(READCOLPARAM, new IntIdentifier(colsCount, this));
 					
-					long nnzCount = Long.parseLong(sizeInfo[2]);
+					long nnzCount = Long.parseLong(sizeInfo[2]) * (props.isSymmetric() ? 2 : 1);
 					if (nnzCount < 0)
 						raiseValidateError("MM file: invalid number of non-zeros: "+nnzCount);
 					else if( getVarParam(READNNZPARAM) != null ) {
@@ -1813,59 +1815,12 @@ public class DataExpression extends DataIdentifier
 			
 		return retVal;
 	}
-
-	public String[] readMatrixMarketFile(String filename, boolean conditional) 
-	{
-		String[] retVal = new String[2];
-		retVal[0] = new String("");
-		retVal[1] = new String("");
-		boolean exists = false;
-		
-		try 
-		{
-			Path path = new Path(filename);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path);
-			exists = fs.exists(path);
-			boolean getFileStatusIsDir = fs.getFileStatus(path).isDirectory();
-			
-			if (exists && getFileStatusIsDir){
-				raiseValidateError("MatrixMarket files as directories not supported", conditional);
-			}
-			else if (exists) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(fs.open(path)));
-				try
-				{
-					retVal[0] = in.readLine();
-					// skip all commented lines
-					do {
-						retVal[1] = in.readLine();
-					} while ( retVal[1].charAt(0) == '%' );
-					
-					if ( !retVal[0].startsWith("%%") ) {
-						raiseValidateError("MatrixMarket files must begin with a header line.", conditional);
-					}
-				}
-				finally {
-					IOUtilFunctions.closeSilently(in);
-				}
-			}
-			else {
-				raiseValidateError("Could not find the file: " + filename, conditional);
-			}
-			
-		} catch (IOException e){
-			//throw new LanguageException(this.printErrorLocation() + "Error reading MatrixMarket file: " + filename );
-			throw new LanguageException(e);
-		}
-
-		return retVal;
-	}
 	
 	public boolean checkHasMatrixMarketFormat(String inputFileName, String mtdFileName, boolean conditional) 
 	{
 		// Check the MTD file exists. if there is an MTD file, return false.
 		JSONObject mtdObject = readMetadataFile(mtdFileName, conditional);
-	    if (mtdObject != null)
+		if (mtdObject != null)
 			return false;
 		
 		if( MapReduceTool.existsFileOnHDFS(inputFileName) 
@@ -1876,13 +1831,13 @@ public class DataExpression extends DataIdentifier
 				Path path = new Path(inputFileName);
 				FileSystem fs = IOUtilFunctions.getFileSystem(path);
 				in = new BufferedReader(new InputStreamReader(fs.open(path)));
-				String headerLine = new String("");			
+				String headerLine = new String("");
 				if (in.ready())
 					headerLine = in.readLine();
 				return (headerLine !=null && headerLine.startsWith("%%"));
 			}
 			catch(Exception ex) {
-				throw new LanguageException("Failed to read mtd file.", ex);
+				throw new LanguageException("Failed to read matrix market header.", ex);
 			}
 			finally {
 				IOUtilFunctions.closeSilently(in);

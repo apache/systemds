@@ -36,7 +36,6 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.transform.TfUtils;
@@ -49,9 +48,9 @@ import org.apache.sysml.runtime.util.UtilFunctions;
  */
 public class FrameReaderTextCSV extends FrameReader
 {
-	protected CSVFileFormatProperties _props = null;
+	protected FileFormatPropertiesCSV _props = null;
 	
-	public FrameReaderTextCSV(CSVFileFormatProperties props) {
+	public FrameReaderTextCSV(FileFormatPropertiesCSV props) {
 		_props = props;
 	}
 

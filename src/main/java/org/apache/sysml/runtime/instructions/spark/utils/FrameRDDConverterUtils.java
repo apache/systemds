@@ -55,9 +55,9 @@ import org.apache.sysml.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysml.runtime.instructions.spark.data.SerText;
 import org.apache.sysml.runtime.instructions.spark.functions.ConvertFrameBlockToIJVLines;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -122,7 +122,7 @@ public class FrameRDDConverterUtils
 	}
 
 	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<Long,FrameBlock> in, 
-			MatrixCharacteristics mcIn, CSVFileFormatProperties props, boolean strict)
+			MatrixCharacteristics mcIn, FileFormatPropertiesCSV props, boolean strict)
 	{
 		JavaPairRDD<Long,FrameBlock> input = in;
 		
@@ -637,9 +637,9 @@ public class FrameRDDConverterUtils
 	{
 		private static final long serialVersionUID = 8020608184930291069L;
 
-		private CSVFileFormatProperties _props = null;
+		private FileFormatPropertiesCSV _props = null;
 		
-		public BinaryBlockToCSVFunction(CSVFileFormatProperties props) {
+		public BinaryBlockToCSVFunction(FileFormatPropertiesCSV props) {
 			_props = props;
 		}
 

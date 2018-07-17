@@ -50,8 +50,7 @@ public class SparkPSProxy extends ParamServer {
 
 	@Override
 	public ListObject pull(int workerID) {
-		PSRpcResponse response = new PSRpcResponse(
-			_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), RPC_TIME_OUT));
+		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), RPC_TIME_OUT));
 		if (!response.isSuccessful()) {
 			throw new DMLRuntimeException(String.format(
 				"SparkPSProxy: remote worker%d failed to pull models. \n%s", workerID, response.getErrorMessage()));

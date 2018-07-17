@@ -21,7 +21,9 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall.PULL;
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall.PUSH;
+import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject.EMPTY_DATA;
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse.ERROR;
+import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse.SUCCESS;
 
 import java.nio.ByteBuffer;
 
@@ -50,7 +52,7 @@ public final class PSRpcHandler extends RpcHandler {
 			case PUSH:
 				try {
 					_server.push(call.getWorkerID(), call.getData());
-					response = new PSRpcResponse(PSRpcResponse.SUCCESS, "");
+					response = new PSRpcResponse(SUCCESS, EMPTY_DATA);
 				} catch (DMLRuntimeException exception) {
 					response = new PSRpcResponse(ERROR, exception);
 				} finally {
@@ -61,7 +63,7 @@ public final class PSRpcHandler extends RpcHandler {
 				ListObject data;
 				try {
 					data = _server.pull(call.getWorkerID());
-					response = new PSRpcResponse(PSRpcResponse.SUCCESS, data);
+					response = new PSRpcResponse(SUCCESS, data);
 				} catch (DMLRuntimeException exception) {
 					response = new PSRpcResponse(ERROR, exception);
 				} finally {

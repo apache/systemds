@@ -105,19 +105,14 @@ public class ParamservUtils {
 
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
-		cleanupListObject(lo);
+		cleanupListObject(ec, lo);
 	}
 
-	public static void cleanupListObject(ListObject lo) {
-		lo.getData().forEach(ParamservUtils::cleanupData);
-	}
-
-	public static void cleanupData(Data data) {
-		if (!(data instanceof CacheableData))
-			return;
-		CacheableData<?> cd = (CacheableData<?>) data;
-		cd.enableCleanup(true);
-		cd.clearData();
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo) {
+		lo.getData().stream().filter(d -> d instanceof CacheableData).forEach(d -> {
+			((CacheableData) d).enableCleanup(true);
+			ec.cleanupCacheableData((CacheableData<?>) d);
+		});
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {

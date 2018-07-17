@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,10 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 
-public abstract class PSWorker {
+public abstract class PSWorker implements Serializable {
+
+	private static final long serialVersionUID = -3510485051178200118L;
+
 	protected int _workerID;
 	protected int _epochs;
 	protected long _batchSize;
@@ -50,10 +54,8 @@ public abstract class PSWorker {
 	protected String _updFunc;
 	protected Statement.PSFrequency _freq;
 
-	protected PSWorker() {
+	protected PSWorker() {}
 
-	}
-	
 	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
 		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
 		_workerID = workerID;
@@ -65,7 +67,10 @@ public abstract class PSWorker {
 		_valLabels = valLabels;
 		_ec = ec;
 		_ps = ps;
+		setupUpdateFunction(updFunc, ec);
+	}
 
+	protected void setupUpdateFunction(String updFunc, ExecutionContext ec) {
 		// Get the update function
 		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];

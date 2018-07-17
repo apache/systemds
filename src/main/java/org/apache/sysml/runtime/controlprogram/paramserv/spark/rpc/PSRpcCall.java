@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_BEGIN;
 import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_END;
 import static org.apache.sysml.runtime.util.ProgramConverter.COMPONENTS_DELIM;
+import static org.apache.sysml.runtime.util.ProgramConverter.EMPTY;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELIN;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELOUT;
 import static org.apache.sysml.runtime.util.ProgramConverter.NEWLINE;
@@ -52,7 +53,7 @@ public class PSRpcCall extends PSRpcObject {
 	}
 
 	public void deserialize(ByteBuffer buffer) {
-		String input = new String(buffer.array());
+		String input = bufferToString(buffer);
 		//header elimination
 		String tmpin = input.replaceAll(NEWLINE, ""); //normalization
 		tmpin = tmpin.substring(PS_RPC_CALL_BEGIN.length(), tmpin.length() - PS_RPC_CALL_END.length()); //remove start/end
@@ -60,7 +61,12 @@ public class PSRpcCall extends PSRpcObject {
 
 		_method = st.nextToken();
 		_workerID = Integer.valueOf(st.nextToken());
-		_data = (ListObject) ProgramConverter.parseDataObject(st.nextToken())[1];
+		String dataStr = st.nextToken();
+		if (dataStr.equals(EMPTY)) {
+			_data = null;
+		} else {
+			_data = (ListObject) ProgramConverter.parseDataObject(dataStr)[1];
+		}
 	}
 
 	public ByteBuffer serialize() {
@@ -75,7 +81,12 @@ public class PSRpcCall extends PSRpcObject {
 		sb.append(NEWLINE);
 		sb.append(COMPONENTS_DELIM);
 		sb.append(NEWLINE);
-		sb.append(ProgramConverter.serializeDataObject(DATA_KEY, _data));
+		if (_data == null) {
+			sb.append(EMPTY);
+		} else {
+			flushListObject(_data);
+			sb.append(ProgramConverter.serializeDataObject(DATA_KEY, _data));
+		}
 		sb.append(NEWLINE);
 		sb.append(PS_RPC_CALL_END);
 		return ByteBuffer.wrap(sb.toString().getBytes());

@@ -22,6 +22,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_BEGIN;
 import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_END;
 import static org.apache.sysml.runtime.util.ProgramConverter.COMPONENTS_DELIM;
+import static org.apache.sysml.runtime.util.ProgramConverter.EMPTY;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELIN;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELOUT;
 import static org.apache.sysml.runtime.util.ProgramConverter.NEWLINE;
@@ -29,7 +30,6 @@ import static org.apache.sysml.runtime.util.ProgramConverter.NEWLINE;
 import java.nio.ByteBuffer;
 import java.util.StringTokenizer;
 
-import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.util.ProgramConverter;
 
@@ -67,7 +67,7 @@ public class PSRpcResponse extends PSRpcObject {
 
 	@Override
 	public void deserialize(ByteBuffer buffer) {
-		String input = new String(buffer.array());
+		String input = bufferToString(buffer);
 		//header elimination
 		String tmpin = input.replaceAll(NEWLINE, ""); //normalization
 		tmpin = tmpin.substring(PS_RPC_RESPONSE_BEGIN.length(), tmpin.length() - PS_RPC_RESPONSE_END.length()); //remove start/end
@@ -77,7 +77,11 @@ public class PSRpcResponse extends PSRpcObject {
 		String data = st.nextToken();
 		switch (_status) {
 			case SUCCESS:
-				_data = ProgramConverter.parseDataObject(data)[1];
+				if (data.equals(EMPTY)) {
+					_data = null;
+				} else {
+					_data = ProgramConverter.parseDataObject(data)[1];
+				}
 				break;
 			case ERROR:
 				_data = data;
@@ -96,7 +100,12 @@ public class PSRpcResponse extends PSRpcObject {
 		sb.append(NEWLINE);
 		switch (_status) {
 			case SUCCESS:
-				sb.append(ProgramConverter.serializeDataObject(DATA_KEY, (Data) _data));
+				if (_data.equals(EMPTY_DATA)) {
+					sb.append(EMPTY);
+				} else {
+					flushListObject((ListObject) _data);
+					sb.append(ProgramConverter.serializeDataObject(DATA_KEY, (ListObject) _data));
+				}
 				break;
 			case ERROR:
 				sb.append(_data.toString());

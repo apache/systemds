@@ -20,7 +20,6 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -35,17 +35,13 @@ import org.apache.sysml.runtime.util.ProgramConverter;
 
 import scala.Tuple2;
 
-public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
+public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>>> {
 
 	private static final long serialVersionUID = -8674739573419648732L;
 
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
 	private String _host;  // Driver host ip
-
-	protected SparkPSWorker() {
-		// No-args constructor used for deserialization
-	}
 
 	public SparkPSWorker(String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host) {
 		_updFunc = updFunc;
@@ -81,5 +77,12 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 
 		// Create the ps proxy
 		_ps = PSRpcFactory.createSparkPSProxy(_host);
+
+		// Initiate the update function
+		setupUpdateFunction(_updFunc, _ec);
+
+		// Lazy initialize the matrix of features and labels
+		setFeatures(ParamservUtils.newMatrixObject(input._2._1));
+		setLabels(ParamservUtils.newMatrixObject(input._2._2));
 	}
 }

@@ -21,12 +21,38 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
 import java.nio.ByteBuffer;
 
+import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
+
 public abstract class PSRpcObject {
 
 	public static final String PUSH = "push";
 	public static final String PULL = "pull";
 	public static final String DATA_KEY = "data";
+	public static final String EMPTY_DATA = "";
 
 	public abstract void deserialize(ByteBuffer buffer);
+
 	public abstract ByteBuffer serialize();
+
+	/**
+	 * Convert direct byte buffer to string
+	 * @param buffer direct byte buffer
+	 * @return string
+	 */
+	protected String bufferToString(ByteBuffer buffer) {
+		byte[] result = new byte[buffer.limit()];
+		buffer.get(result, 0, buffer.limit());
+		return new String(result);
+	}
+
+	/**
+	 * Flush the data into HDFS
+	 * @param data list object
+	 */
+	protected void flushListObject(ListObject data) {
+		data.getData().stream().filter(d -> d instanceof CacheableData).forEach(d -> {
+			((CacheableData) d).exportData();
+		});
+	}
 }

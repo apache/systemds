@@ -35,6 +35,7 @@ import org.apache.sysml.utils.Statistics;
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
+	private static final long serialVersionUID = 5195390748495357295L;
 
 	protected LocalPSWorker() {}
 
@@ -87,7 +88,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				// Update the local model with gradients
 				if( j < totalIter - 1 )
 					params = updateModel(params, gradients, i, j, totalIter);
-				ParamservUtils.cleanupListObject(gradients);
+				ParamservUtils.cleanupListObject(_ec, gradients);
 			}
 
 			// Push the gradients to ps
@@ -185,8 +186,10 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Get the gradients
 		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
 
-		ParamservUtils.cleanupData(bFeatures);
-		ParamservUtils.cleanupData(bLabels);
+		_ec.cleanupCacheableData(bFeatures);
+		_ec.cleanupCacheableData(bLabels);
+		//ParamservUtils.cleanupData(bFeatures);
+		//ParamservUtils.cleanupData(bLabels);
 		return gradients;
 	}
 }

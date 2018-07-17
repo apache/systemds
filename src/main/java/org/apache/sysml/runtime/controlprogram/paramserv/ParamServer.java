@@ -192,11 +192,11 @@ public abstract class ParamServer
 		// Invoke the aggregate function
 		_inst.processInstruction(ec);
 
-		// Get the output
+		// Get the new model
 		ListObject newModel = (ListObject) ec.getVariable(_outputName);
 
-		// Update the model with the new output
-		ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
+		// Clean up the list according to the data referencing status
+		ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL, newModel.getStatus());
 		ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 		return newModel;
 	}

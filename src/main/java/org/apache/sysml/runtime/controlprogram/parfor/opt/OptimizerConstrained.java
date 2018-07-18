@@ -106,7 +106,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 		// rewrite 1: data partitioning (incl. log. recompile RIX)
 		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<>();
-		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
+		rewriteSetDataPartitioner(pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget(), true);
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 
 		// rewrite 2: remove unnecessary compare matrix
@@ -132,8 +132,8 @@ public class OptimizerConstrained extends OptimizerRuleBased
 		{
 			if( M1 > _rm && M3 <= _rm  ) {
 				// rewrite 1: data partitioning (apply conditional partitioning)
-				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3 );
-				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3, true );
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 
 			}
 			
 			if( flagRecompMR ){
@@ -225,11 +225,11 @@ public class OptimizerConstrained extends OptimizerRuleBased
 	///
 
 	@Override
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PartitionFormat> partitionedMatrices, double thetaM)
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String,PartitionFormat> partitionedMatrices, double thetaM, boolean constrained)
 	{
 		//call rewrite first to obtain partitioning information
 		String initPlan = n.getParam(ParamType.DATA_PARTITIONER);
-		boolean blockwise = super.rewriteSetDataPartitioner(n, vars, partitionedMatrices, thetaM);
+		boolean blockwise = super.rewriteSetDataPartitioner(n, vars, partitionedMatrices, thetaM, constrained);
 		
 		// constraint awareness
 		if( !initPlan.equals(PDataPartitioner.UNSPECIFIED.name()) ) {

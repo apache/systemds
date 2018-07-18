@@ -25,13 +25,14 @@ import org.junit.runners.Suite;
 /** Group together the tests in this package into a single suite so that the Maven build
  *  won't run two of them at once. */
 @RunWith(Suite.class)
-@Suite.SuiteClasses({	
+@Suite.SuiteClasses({
 	FullMatrixMatrixCellwiseOperationTest.class,
 	FullMatrixVectorColCellwiseOperationTest.class,
 	FullMatrixVectorRowCellwiseOperationTest.class,
-	FullVectorVectorCellwiseOperationTest.class,
-	FullVectorVectorCellwiseCompareOperationTest.class,
 	FullMinus1MultTest.class,
+	FullSortedOuterCompareTest.class,
+	FullVectorVectorCellwiseCompareOperationTest.class,
+	FullVectorVectorCellwiseOperationTest.class,
 })
 
 

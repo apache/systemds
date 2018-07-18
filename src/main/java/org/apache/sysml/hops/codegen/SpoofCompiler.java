@@ -102,7 +102,7 @@ public class SpoofCompiler
 	private static final Log LOG = LogFactory.getLog(SpoofCompiler.class.getName());
 	
 	//internal configuration flags
-	public static final boolean LDEBUG                 = true;
+	public static final boolean LDEBUG                 = false;
 	public static CompilerType JAVA_COMPILER           = CompilerType.JANINO; 
 	public static PlanSelector PLAN_SEL_POLICY         = PlanSelector.FUSE_COST_BASED_V2; 
 	public static final IntegrationType INTEGRATION    = IntegrationType.RUNTIME;

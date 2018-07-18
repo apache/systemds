@@ -28,18 +28,17 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  */
 public class SortUtils 
 {
-
 	public static boolean isSorted(int start, int end, int[] indexes) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-			ret &= (indexes[i]<indexes[i-1]);
+			ret &= (indexes[i-1]<indexes[i]);
 		return ret;
 	}
 
 	public static boolean isSorted(int start, int end, double[] values) {
 		boolean ret = true;
 		for( int i=start+1; i<end && ret; i++ )
-			ret &= (values[i]<values[i-1]);
+			ret &= (values[i-1]<values[i]);
 		return ret;
 	}
 	

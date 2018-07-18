@@ -437,8 +437,11 @@ public class TestUtils
 					if ( matrixType == 2 )
 						expectedValues.put(new CellIndex(j, i), v);
 				}
-				else
+				else { //pattern
 					expectedValues.put(new CellIndex(i, j), 1.0);
+					if ( matrixType == 2 )
+						expectedValues.put(new CellIndex(j, i), 1.0);
+				}
 			}
 		} 
 		catch (IOException e) {

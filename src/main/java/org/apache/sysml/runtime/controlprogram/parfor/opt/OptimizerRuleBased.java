@@ -111,9 +111,9 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * - 3) rewrite result partitioning (incl. recompile LIX)
  * - 4) rewrite set execution strategy
  * - 5) rewrite set operations exec type (incl. recompile)
- * - 6) rewrite use data colocation		 
+ * - 6) rewrite use data colocation
  * - 7) rewrite set partition replication factor
- * - 8) rewrite set export replication factor 
+ * - 8) rewrite set export replication factor
  * - 9) rewrite use nested parallelism 
  * - 10) rewrite set degree of parallelism
  * - 11) rewrite set task partitioner
@@ -125,10 +125,10 @@ import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
  * - 17) rewrite inject spark loop checkpointing 
  * - 18) rewrite inject spark repartition (for zipmm)
  * - 19) rewrite set spark eager rdd caching 
- * - 20) rewrite set result merge 		 		 
+ * - 20) rewrite set result merge
  * - 21) rewrite set recompile memory budget
- * - 22) rewrite remove recursive parfor	
- * - 23) rewrite remove unnecessary parfor		
+ * - 22) rewrite remove recursive parfor
+ * - 23) rewrite remove unnecessary parfor
  * 	 
  * TODO fuse also result merge into fused data partitioning and execute
  *      (for writing the result directly from execute we need to partition
@@ -228,7 +228,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX and flag opt nodes)
 		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<>();
-		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget(), false );
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: remove unnecessary compare matrix (before result partitioning)
@@ -254,8 +254,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			if( M1 > _rm && M3 <= _rm  ) {
 				// rewrite 1: data partitioning (apply conditional partitioning)
-				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3 );
-				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3, false );
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 			}
 			
 			if( flagRecompMR ){
@@ -393,7 +393,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set data partitioner
 	///
 
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM ) 
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM, boolean constrained ) 
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
 			LOG.warn(getOptMode()+" OPT: Data partitioner can only be set for a ParFor node.");
@@ -414,8 +414,10 @@ public class OptimizerRuleBased extends Optimizer
 			HashMap<String, PartitionFormat> cand2 = new HashMap<>();
 			for( String c : pfsb.getReadOnlyParentMatrixVars() ) {
 				PartitionFormat dpf = pfsb.determineDataPartitionFormat( c );
+				double mem = getMemoryEstimate(c, vars);
 				if( dpf != PartitionFormat.NONE 
-					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N ) {
+					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N
+					&& (constrained || (mem > _lm/2 && mem > _rm/2)) ) {
 					cand2.put( c, dpf );
 				}
 			}
@@ -426,7 +428,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		PDataPartitioner REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
 				PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
-		PDataPartitioner pdp = (apply)? REMOTE : PDataPartitioner.NONE;		
+		PDataPartitioner pdp = (apply)? REMOTE : PDataPartitioner.NONE;
 		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
 		//      matrix and hence always apply REMOTE_MR (the benefit for large matrices outweigths
 		//      potentially unnecessary MR jobs for smaller matrices)
@@ -521,13 +523,20 @@ public class OptimizerRuleBased extends Optimizer
 					break;
 				case ROW_BLOCK_WISE_N:
 					mem = OptimizerUtils.estimateSize(dpf._N, mo.getNumColumns()); 
-					break;	
+					break;
 				default:
 					//do nothing
-			}	
+			}
 		}
 		
 		return mem;
+	}
+	
+	protected double getMemoryEstimate(String varName, LocalVariableMap vars) {
+		Data dat = vars.get(varName);
+		return (dat instanceof MatrixObject) ? 
+			OptimizerUtils.estimateSize(((MatrixObject)dat).getMatrixCharacteristics()) : 
+			OptimizerUtils.DEFAULT_SIZE;
 	}
 
 	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
@@ -558,7 +567,7 @@ public class OptimizerRuleBased extends Optimizer
 				break;
 				
 			default:
-				//do nothing	
+				//do nothing
 		}
 		
 		if( mem < OptimizerUtils.getLocalMemBudget() )

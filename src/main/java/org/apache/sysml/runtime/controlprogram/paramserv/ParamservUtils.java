@@ -108,7 +108,7 @@ public class ParamservUtils {
 	 */
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
-		cleanupListObject(lo, lo.getStatus());
+		cleanupListObject(ec, lo, lo.getStatus());
 	}
 
 	/**
@@ -119,28 +119,28 @@ public class ParamservUtils {
 	 */
 	public static void cleanupListObject(ExecutionContext ec, String lName, boolean[] status) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
-		cleanupListObject(lo, status);
+		cleanupListObject(ec, lo, status);
 	}
 
-	public static void cleanupListObject(ListObject lo) {
-		cleanupListObject(lo, lo.getStatus());
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo) {
+		cleanupListObject(ec, lo, lo.getStatus());
 	}
 
-	public static void cleanupListObject(ListObject lo, boolean[] status) {
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo, boolean[] status) {
 		for (int i = 0; i < lo.getLength(); i++) {
 			if (status != null && !status[i]) {
 				continue; // data referenced by other object (could not be cleaned up)
 			}
-			ParamservUtils.cleanupData(lo.getData().get(i));
+			ParamservUtils.cleanupData(ec, lo.getData().get(i));
 		}
 	}
 
-	public static void cleanupData(Data data) {
+	public static void cleanupData(ExecutionContext ec, Data data) {
 		if (!(data instanceof CacheableData))
 			return;
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
-		cd.clearData();
+		ec.cleanupCacheableData(cd);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {

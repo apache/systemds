@@ -138,7 +138,7 @@ public abstract class ParamServer
 							_accGradients, gradients, true);
 					else
 						updateGlobalModel(gradients);
-					ParamservUtils.cleanupListObject(gradients);
+					ParamservUtils.cleanupListObject(_ec, gradients);
 
 					if (allFinished()) {
 						// Update the global model with accrued gradients

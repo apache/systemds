@@ -228,7 +228,7 @@ public class OptimizerRuleBased extends Optimizer
 		
 		// rewrite 1: data partitioning (incl. log. recompile RIX and flag opt nodes)
 		HashMap<String, PartitionFormat> partitionedMatrices = new HashMap<>();
-		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget() );
+		rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, OptimizerUtils.getLocalMemBudget(), false );
 		double M0b = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 		
 		// rewrite 2: remove unnecessary compare matrix (before result partitioning)
@@ -254,8 +254,8 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			if( M1 > _rm && M3 <= _rm  ) {
 				// rewrite 1: data partitioning (apply conditional partitioning)
-				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3 );
-				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate 		
+				rewriteSetDataPartitioner( pn, ec.getVariables(), partitionedMatrices, M3, false );
+				M1 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn); //reestimate
 			}
 			
 			if( flagRecompMR ){
@@ -393,7 +393,7 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE set data partitioner
 	///
 
-	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM ) 
+	protected boolean rewriteSetDataPartitioner(OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices, double thetaM, boolean constrained ) 
 	{
 		if( n.getNodeType() != NodeType.PARFOR )
 			LOG.warn(getOptMode()+" OPT: Data partitioner can only be set for a ParFor node.");
@@ -417,7 +417,7 @@ public class OptimizerRuleBased extends Optimizer
 				double mem = getMemoryEstimate(c, vars);
 				if( dpf != PartitionFormat.NONE 
 					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N
-					&& mem > _lm/2 && mem > _rm/2 ) {
+					&& (constrained || (mem > _lm/2 && mem > _rm/2)) ) {
 					cand2.put( c, dpf );
 				}
 			}

@@ -55,7 +55,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
                 #   only (=2) possible
 
     # 1.initialize fm core
-    [w0, W, V] = fm::init(n, d, k);
+    [w0, W, V] = fm::init(d, k);
 
     # 2.initialize adam optimizer
     ## Default values for some parameters

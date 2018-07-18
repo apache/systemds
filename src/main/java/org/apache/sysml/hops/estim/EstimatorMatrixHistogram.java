@@ -123,6 +123,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		//exploit upper bound on nnz based on non-empty rows/cols
 		nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
 			Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
+			
+		//exploit lower bound		
+		int resrnz=0; //number of rows where number of nz is bigger than common dimension/2
+		int rescnz=0; //number of cols where number of nz is bigger than common dimension/2
+		if(h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) {
+			resrnz = (int) Arrays.stream(h1.rNnz).filter(item -> item > h1.getCols()/2).count();
+			rescnz = (int) Arrays.stream(h2.cNnz).filter(item -> item > h1.getCols()/2).count();		
+			Math.max(resrnz*rescnz, nnz);
+		}
 		
 		//compute final sparsity
 		return OptimizerUtils.getSparsity(

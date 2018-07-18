@@ -99,7 +99,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			int mnOut = h1.getRows()*h2.getCols();
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
-				//exact fractions, w/o double counting 
+				//exact fractions, w/o double counting
 				nnz += h1.cNnz1e[j] * h2.rNnz[j];
 				nnz += (h1.cNnz[j]-h1.cNnz1e[j]) * h2.rNnz1e[j];
 				//approximate fraction, w/o double counting
@@ -124,6 +124,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
 			Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
 		
+		//exploit lower bound on nnz based on half-full rows/cols
+		nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
+			Math.max(h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
+		
 		//compute final sparsity
 		return OptimizerUtils.getSparsity(
 			h1.getRows(), h2.getCols(), nnz);
@@ -138,6 +142,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private final int cMaxNnz;   //max nnz per col
 		private final int rNonEmpty; //number of non-empty rows (an empty row has nnz=0)
 		private final int cNonEmpty; //number of non-empty cols (an empty col has nnz=0)
+		private final int rNdiv2;    //number of rows with nnz > #cols/2
+		private final int cNdiv2;    //number of cols with nnz > #rows/2
 		
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
 			// 1) allocate basic synopsis
@@ -177,6 +183,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			cMaxNnz =  Arrays.stream(cNnz).max().orElse(0);
 			rNonEmpty = (int) Arrays.stream(rNnz).filter(v-> v!=0).count();
 			cNonEmpty = (int) Arrays.stream(cNnz).filter(v-> v!=0).count();
+			rNdiv2 = (int) Arrays.stream(rNnz).filter(item -> item > getCols()/2).count();
+			cNdiv2 = (int) Arrays.stream(cNnz).filter(item -> item > getRows()/2).count();
 			
 			// 4) compute exception details if necessary (optional)
 			if( useExcepts & !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) ) {
@@ -222,6 +230,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			rMaxNnz = rmax;
 			cMaxNnz = cmax;
 			rNonEmpty = cNonEmpty = -1;
+			rNdiv2 = cNdiv2 = -1;
 		}
 		
 		public int getRows() {

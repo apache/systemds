@@ -83,7 +83,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 
 	//internal local debug level
-	private static final boolean LDEBUG = true;
+	private static final boolean LDEBUG = false;
 	protected static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
 
 
@@ -154,6 +154,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Stop the netty server
 		server.close();
+
+		// Fetch the final model from ps
+		ListObject result = ps.getResult();
+		sec.setVariable(output.getName(), result);
+
+		// TODO 1. Handle exception
+		// TODO	2. Add statistics
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {

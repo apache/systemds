@@ -186,10 +186,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Get the gradients
 		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
 
-		_ec.cleanupCacheableData(bFeatures);
-		_ec.cleanupCacheableData(bLabels);
-		//ParamservUtils.cleanupData(bFeatures);
-		//ParamservUtils.cleanupData(bLabels);
+		ParamservUtils.cleanupMatrixObject(_ec, bFeatures);
+		ParamservUtils.cleanupMatrixObject(_ec, bLabels);
 		return gradients;
 	}
 }

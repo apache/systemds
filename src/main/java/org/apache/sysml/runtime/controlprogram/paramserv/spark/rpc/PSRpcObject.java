@@ -51,8 +51,6 @@ public abstract class PSRpcObject {
 	 * @param data list object
 	 */
 	protected void flushListObject(ListObject data) {
-		data.getData().stream().filter(d -> d instanceof CacheableData).forEach(d -> {
-			((CacheableData) d).exportData();
-		});
+		data.getData().stream().filter(d -> d instanceof CacheableData).forEach(d -> ((CacheableData) d).exportData());
 	}
 }

@@ -115,6 +115,11 @@ public class ParamservUtils {
 		});
 	}
 
+	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
+		mo.enableCleanup(true);
+		ec.cleanupCacheableData(mo);
+	}
+
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {
 		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),

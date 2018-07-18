@@ -33,7 +33,8 @@ import org.junit.runners.Suite;
 	RpcObjectTest.class,
 	ParamservRecompilationTest.class,
 	ParamservRuntimeNegativeTest.class,
-	ParamservLocalNNTest.class
+	ParamservLocalNNTest.class,
+	ParamservSparkNNTest.class
 })
 
 

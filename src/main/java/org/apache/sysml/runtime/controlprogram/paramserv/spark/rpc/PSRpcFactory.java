@@ -45,7 +45,6 @@ public class PSRpcFactory {
 	 * @return server
 	 */
 	public static TransportServer createServer(LocalParamServer ps, String host) {
-		//TODO what is the usage of TransportServerBootstrap?
 		TransportContext context = createTransportContext(ps);
 		return context.createServer(host, PORT, Collections.emptyList());
 	}

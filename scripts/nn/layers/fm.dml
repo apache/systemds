@@ -109,7 +109,7 @@ backward = function(matrix[double] dout, matrix[double] X, matrix[double] w0, ma
   # dV = mean(dout) * (t(X) %*% X %*%V) - g_V2
 }
 
-init = function(int n, int d, int k)
+init = function(int d, int k)
     return (matrix[double] w0, matrix[double] W, matrix[double] V) {
   /*
    * This function initializes the parameters.

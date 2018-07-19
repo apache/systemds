@@ -1775,7 +1775,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		//pattern: outer(v, t(seq(1,m)), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 		//note: this rewrite supports both left/right sequence 
 		
-		if( HopRewriteUtils.isBinary(hi, OpOp2.EQUAL) && ((BinaryOp)hi).isOuterVectorOperator() )
+		if( HopRewriteUtils.isBinary(hi, OpOp2.EQUAL) && ((BinaryOp)hi).isOuter() )
 		{
 			if(   ( HopRewriteUtils.isTransposeOperation(hi.getInput().get(1)) //pattern a: outer(v, t(seq(1,m)), "==")
 				    && HopRewriteUtils.isBasic1NSequence(hi.getInput().get(1).getInput().get(0))) 
@@ -1833,7 +1833,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			else {
 				OpOp2 optr = bop2.getComplementPPredOperation();
 				BinaryOp tmp = HopRewriteUtils.createBinary(bop2.getInput().get(0),
-					bop2.getInput().get(1), optr, bop2.isOuterVectorOperator());
+					bop2.getInput().get(1), optr, bop2.isOuter());
 				HopRewriteUtils.replaceChildReference(parent, bop, tmp, pos);
 				HopRewriteUtils.cleanupUnreferenced(bop, bop2);
 				hi = tmp;

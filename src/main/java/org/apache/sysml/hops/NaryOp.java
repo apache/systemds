@@ -62,6 +62,7 @@ public class NaryOp extends Hop {
 			getInput().add(i, inputs[i]);
 			inputs[i].getParent().add(this);
 		}
+		refreshSizeInformation();
 	}
 
 	/** MultipleOp may have any number of inputs. */
@@ -199,6 +200,7 @@ public class NaryOp extends Hop {
 				case MAX: return new long[]{
 					HopRewriteUtils.getMaxInputDim(this, true),
 					HopRewriteUtils.getMaxInputDim(this, false), -1};
+				case LIST: return new long[]{getInput().size(), 1, -1};
 			}
 		}
 		return null; //do nothing

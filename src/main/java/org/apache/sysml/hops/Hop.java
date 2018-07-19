@@ -613,6 +613,7 @@ public abstract class Hop implements ParseInfo
 			}
 			case FRAME:
 			case MATRIX:
+			case LIST:
 			{
 				//1a) mem estimate based on exactly known dimensions and sparsity
 				if( dimsKnown(true) ) { 
@@ -658,8 +659,7 @@ public abstract class Hop implements ParseInfo
 				break;
 			}
 			case OBJECT:
-			case UNKNOWN:
-			case LIST: {
+			case UNKNOWN: {
 				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;
 				break;
@@ -1537,6 +1537,7 @@ public abstract class Hop implements ParseInfo
 		HopsData2String.put(DataOpTypes.PERSISTENTWRITE, "PWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTWRITE, "TWrite");
 		HopsData2String.put(DataOpTypes.TRANSIENTREAD, "TRead");
+		HopsData2String.put(DataOpTypes.FUNCTIONOUTPUT, "FunOut");
 	}
 
 	public static OpOp2 getOpOp2ForOuterVectorOperation(String op) 

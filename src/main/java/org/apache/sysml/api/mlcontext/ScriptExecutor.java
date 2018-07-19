@@ -26,7 +26,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.DMLOptions;
+import org.apache.sysml.api.DMLOptions;
 import org.apache.sysml.api.DMLScript.EvictionPolicy;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;

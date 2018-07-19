@@ -131,7 +131,7 @@ public class LiteralReplacement
 		return ret;
 	}
 	
-	private static LiteralOp replaceLiteralValueTypeCastScalarRead( Hop c, LocalVariableMap vars )
+	private static LiteralOp replaceLiteralValueTypeCastScalarRead(Hop c, LocalVariableMap vars)
 	{
 		LiteralOp ret = null;
 		
@@ -141,30 +141,16 @@ public class LiteralReplacement
 				&& c.getInput().get(0) instanceof DataOp && c.getDataType()==DataType.SCALAR )
 		{
 			Data dat = vars.get(c.getInput().get(0).getName());
-			if( dat != null ) //required for selective constant propagation
-			{
+			if( dat != null ) { //required for selective constant propagation
 				ScalarObject sdat = (ScalarObject)dat;
-				UnaryOp cast = (UnaryOp) c;
-				switch( cast.getOp() ) {
-					case CAST_AS_INT:
-						ret = new LiteralOp(sdat.getLongValue());		
-						break;
-					case CAST_AS_DOUBLE:
-						ret = new LiteralOp(sdat.getDoubleValue());		
-						break;						
-					case CAST_AS_BOOLEAN:
-						ret = new LiteralOp(sdat.getBooleanValue());		
-						break;
-					default:	
-						//otherwise: do nothing
-				}
-			}	
+				ret = ScalarObjectFactory.createLiteralOp(sdat, (UnaryOp) c);
+			}
 		}
 		
 		return ret;
 	}
 	
-	private static LiteralOp replaceLiteralValueTypeCastLiteral( Hop c, LocalVariableMap vars )
+	private static LiteralOp replaceLiteralValueTypeCastLiteral(Hop c, LocalVariableMap vars)
 	{
 		LiteralOp ret = null;
 		

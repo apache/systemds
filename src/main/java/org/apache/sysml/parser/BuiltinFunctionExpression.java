@@ -662,6 +662,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(id.getDim1(), id.getDim2());
 			if( getFirstExpr().getOutput().getDataType()==DataType.SCALAR )
 				output.setDimensions(1, 1); //correction scalars
+			if( getFirstExpr().getOutput().getDataType()==DataType.LIST )
+				output.setDimensions(-1, -1); //correction list: arbitrary object
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
 			output.setValueType(ValueType.DOUBLE); //matrices always in double
 			break;

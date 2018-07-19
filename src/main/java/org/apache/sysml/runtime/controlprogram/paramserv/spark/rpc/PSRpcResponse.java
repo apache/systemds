@@ -69,9 +69,8 @@ public class PSRpcResponse extends PSRpcObject {
 	public void deserialize(ByteBuffer buffer) {
 		String input = bufferToString(buffer);
 		//header elimination
-		String tmpin = input.replaceAll(NEWLINE, ""); //normalization
-		tmpin = tmpin.substring(PS_RPC_RESPONSE_BEGIN.length(), tmpin.length() - PS_RPC_RESPONSE_END.length()); //remove start/end
-		StringTokenizer st = new StringTokenizer(tmpin, COMPONENTS_DELIM);
+		input = input.substring(PS_RPC_RESPONSE_BEGIN.length(), input.length() - PS_RPC_RESPONSE_END.length()); //remove start/end
+		StringTokenizer st = new StringTokenizer(input, COMPONENTS_DELIM);
 
 		_status = Integer.valueOf(st.nextToken());
 		String data = st.nextToken();
@@ -93,11 +92,8 @@ public class PSRpcResponse extends PSRpcObject {
 	public ByteBuffer serialize() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(PS_RPC_RESPONSE_BEGIN);
-		sb.append(NEWLINE);
 		sb.append(_status);
-		sb.append(NEWLINE);
 		sb.append(COMPONENTS_DELIM);
-		sb.append(NEWLINE);
 		switch (_status) {
 			case SUCCESS:
 				if (_data.equals(EMPTY_DATA)) {
@@ -111,7 +107,6 @@ public class PSRpcResponse extends PSRpcObject {
 				sb.append(_data.toString());
 				break;
 		}
-		sb.append(NEWLINE);
 		sb.append(PS_RPC_RESPONSE_END);
 		return ByteBuffer.wrap(sb.toString().getBytes());
 	}

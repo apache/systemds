@@ -78,10 +78,22 @@ public abstract class ParamServer
 		_ec = ec;
 		_updateType = updateType;
 		_finishedStates = new boolean[workerNum];
+		setupAggFunc(_ec, aggFunc);
+		
+		// broadcast initial model
+		try {
+			broadcastModel();
+		}
+		catch (InterruptedException e) {
+			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
+		}
+	}
+
+	public void setupAggFunc(ExecutionContext ec, String aggFunc) {
 		String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(ns, fname);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -102,14 +114,6 @@ public abstract class ParamServer
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
 		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "aggregate function");
-		
-		// broadcast initial model
-		try {
-			broadcastModel();
-		}
-		catch (InterruptedException e) {
-			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
-		}
 	}
 
 	public abstract void push(int workerID, ListObject value);

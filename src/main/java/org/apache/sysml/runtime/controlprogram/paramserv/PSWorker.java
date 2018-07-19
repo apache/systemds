@@ -130,4 +130,6 @@ public abstract class PSWorker implements Serializable {
 	public MatrixObject getLabels() {
 		return _labels;
 	}
+
+	public abstract String getWorkerName();
 }

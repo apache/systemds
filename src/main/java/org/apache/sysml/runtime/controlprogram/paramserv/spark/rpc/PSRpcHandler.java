@@ -27,6 +27,7 @@ import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcR
 
 import java.nio.ByteBuffer;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.spark.network.client.RpcResponseCallback;
 import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.network.server.OneForOneStreamManager;
@@ -54,7 +55,7 @@ public final class PSRpcHandler extends RpcHandler {
 					_server.push(call.getWorkerID(), call.getData());
 					response = new PSRpcResponse(SUCCESS, EMPTY_DATA);
 				} catch (DMLRuntimeException exception) {
-					response = new PSRpcResponse(ERROR, exception);
+					response = new PSRpcResponse(ERROR, ExceptionUtils.getFullStackTrace(exception));
 				} finally {
 					callback.onSuccess(response.serialize());
 				}
@@ -65,7 +66,7 @@ public final class PSRpcHandler extends RpcHandler {
 					data = _server.pull(call.getWorkerID());
 					response = new PSRpcResponse(SUCCESS, data);
 				} catch (DMLRuntimeException exception) {
-					response = new PSRpcResponse(ERROR, exception);
+					response = new PSRpcResponse(ERROR, ExceptionUtils.getFullStackTrace(exception));
 				} finally {
 					callback.onSuccess(response.serialize());
 				}

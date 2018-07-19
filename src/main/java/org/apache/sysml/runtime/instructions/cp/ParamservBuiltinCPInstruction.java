@@ -113,6 +113,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+
 		PSScheme scheme = getScheme();
 		int workerNum = getWorkerNum(mode);
 		String updFunc = getParam(PS_UPDATE_FUN);
@@ -137,7 +139,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create remote workers
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap, host);
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap, host);
 
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
@@ -146,21 +148,25 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
 
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
+
 		// Create the netty server for ps
 		TransportServer server = PSRpcFactory.createServer((LocalParamServer) ps, host);	// Start the server
 
-		ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
-			.foreach(worker);   // Run remote workers
-
-		// Stop the netty server
-		server.close();
+		try {
+			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
+			    .foreach(worker);   // Run remote workers
+		} catch (Exception e) {
+			throw new DMLRuntimeException("Paramserv function failed: ", e);
+		} finally {
+			// Stop the netty server
+			server.close();
+		}
 
 		// Fetch the final model from ps
 		ListObject result = ps.getResult();
 		sec.setVariable(output.getName(), result);
-
-		// TODO 1. Handle exception
-		// TODO	2. Add statistics
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {

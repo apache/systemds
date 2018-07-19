@@ -101,21 +101,46 @@ public class ParamservUtils {
 		return new ListObject(newData, lo.getNames());
 	}
 
+	/**
+	 * Clean up the list object according to its own data status
+	 * @param ec execution context
+	 * @param lName list var name
+	 */
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
-		cleanupListObject(lo);
+		cleanupListObject(ec, lo, lo.getStatus());
 	}
 
-	public static void cleanupListObject(ListObject lo) {
-		lo.getData().forEach(ParamservUtils::cleanupData);
+	/**
+	 * Clean up the list object according to the given array of data status (i.e., false => not be removed)
+	 * @param ec execution context
+	 * @param lName list var name
+	 * @param status data status
+	 */
+	public static void cleanupListObject(ExecutionContext ec, String lName, boolean[] status) {
+		ListObject lo = (ListObject) ec.removeVariable(lName);
+		cleanupListObject(ec, lo, status);
 	}
 
-	public static void cleanupData(Data data) {
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo) {
+		cleanupListObject(ec, lo, lo.getStatus());
+	}
+
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo, boolean[] status) {
+		for (int i = 0; i < lo.getLength(); i++) {
+			if (status != null && !status[i]) {
+				continue; // data referenced by other object (could not be cleaned up)
+			}
+			ParamservUtils.cleanupData(ec, lo.getData().get(i));
+		}
+	}
+
+	public static void cleanupData(ExecutionContext ec, Data data) {
 		if (!(data instanceof CacheableData))
 			return;
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
-		cd.clearData();
+		ec.cleanupCacheableData(cd);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {

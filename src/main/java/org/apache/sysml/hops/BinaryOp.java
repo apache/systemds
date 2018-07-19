@@ -125,7 +125,7 @@ public class BinaryOp extends MultiThreadedHop
 		outer = flag;
 	}
 	
-	public boolean isOuterVectorOperator(){
+	public boolean isOuter(){
 		return outer;
 	}
 	

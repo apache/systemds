@@ -651,8 +651,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
-			output.setValueType((id.getValueType()!=ValueType.UNKNOWN) ?
-				id.getValueType() : ValueType.DOUBLE);
+			output.setValueType((id.getValueType()!=ValueType.UNKNOWN 
+				|| id.getDataType()==DataType.LIST) ? id.getValueType() : ValueType.DOUBLE);
 			break;
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);

@@ -19,75 +19,66 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
 
 public class ParamservLocalNNTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME1 = "paramserv-nn-bsp-batch-dc";
-	private static final String TEST_NAME2 = "paramserv-nn-asp-batch";
-	private static final String TEST_NAME3 = "paramserv-nn-bsp-epoch";
-	private static final String TEST_NAME4 = "paramserv-nn-asp-epoch";
-	private static final String TEST_NAME5 = "paramserv-nn-bsp-batch-drr";
-	private static final String TEST_NAME6 = "paramserv-nn-bsp-batch-dr";
-	private static final String TEST_NAME7 = "paramserv-nn-bsp-batch-or";
+	private static final String TEST_NAME = "paramserv-test";
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservLocalNNTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {}));
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointContiguous() {
-		runDMLTest(TEST_NAME1);
+		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservASPBatch() {
-		runDMLTest(TEST_NAME2);
+		runDMLTest(10, 3, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservBSPEpoch() {
-		runDMLTest(TEST_NAME3);
+		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservASPEpoch() {
-		runDMLTest(TEST_NAME4);
+		runDMLTest(10, 3, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRoundRobin() {
-		runDMLTest(TEST_NAME5);
+		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
-		runDMLTest(TEST_NAME6);
+		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
 	}
 
 	@Test
 	public void testParamservBSPBatchOverlapReshuffle() {
-		runDMLTest(TEST_NAME7);
+		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE);
 	}
 
-	private void runDMLTest(String testname) {
-		TestConfiguration config = getTestConfiguration(testname);
+	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
+		TestConfiguration config = getTestConfiguration(ParamservLocalNNTest.TEST_NAME);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain" };
+		programArgs = new String[] { "-explain", "-nvargs", "mode=LOCAL", "epochs=" + epochs,
+			"workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize,
+			"scheme=" + scheme };
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + testname + ".dml";
+		fullDMLScriptName = HOME + ParamservLocalNNTest.TEST_NAME + ".dml";
 		runTest(true, false, null, null, -1);
 	}
 }

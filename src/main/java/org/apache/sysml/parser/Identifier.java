@@ -141,59 +141,40 @@ public abstract class Identifier extends Expression
 	@Override
 	public void validateExpression(HashMap<String,DataIdentifier> ids, HashMap<String,ConstIdentifier> constVars, boolean conditional) 
 	{
-		
 		if( getOutput() instanceof DataIdentifier ) {
-			
 			// set properties for Data identifier
-			String name = ((DataIdentifier)this.getOutput()).getName();
+			String name = ((DataIdentifier)getOutput()).getName();
 			Identifier id = ids.get(name);
 			if ( id == null ){
 				//undefined variables are always treated unconditionally as error in order to prevent common script-level bugs
 				raiseValidateError("Undefined Variable (" + name + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			this.getOutput().setProperties(id);
+			getOutput().setProperties(id);
 			
 			// validate IndexedIdentifier -- which is substype of DataIdentifer with index
-			if (this.getOutput() instanceof IndexedIdentifier){
-				
+			if( getOutput() instanceof IndexedIdentifier ){
 				// validate the row / col index bounds (if defined)
-				IndexedIdentifier indexedIdentiferOut = (IndexedIdentifier)this.getOutput();
-				
-				if (indexedIdentiferOut.getRowLowerBound() != null) {
-					indexedIdentiferOut.getRowLowerBound().validateExpression(ids, constVars, conditional);
-					Expression tempExpr = indexedIdentiferOut.getRowLowerBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
-						raiseValidateError("Matrix values for row lower index bound are not supported, which includes indexed identifiers.", conditional);
+				IndexedIdentifier ixId = (IndexedIdentifier)getOutput();
+				Expression[] exp = new Expression[]{ixId.getRowLowerBound(),
+					ixId.getRowUpperBound(), ixId.getColLowerBound(), ixId.getColUpperBound()};
+				String[] msg = new String[]{"row lower", "row upper", "column lower", "column upper"};
+				for( int i=0; i<4; i++ ) {
+					if( exp[i] != null ) {
+						exp[i].validateExpression(ids, constVars, conditional);
+						if (exp[i].getOutput().getDataType() == Expression.DataType.MATRIX){
+							raiseValidateError("Matrix values for "+msg[i]+" index bound are "
+								+ "not supported, which includes indexed identifiers.", conditional);
+						}
 					}
 				}
 				
-				if (indexedIdentiferOut.getRowUpperBound() != null) {
-					indexedIdentiferOut.getRowUpperBound().validateExpression(ids, constVars, conditional);
-					Expression tempExpr = indexedIdentiferOut.getRowUpperBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
-						raiseValidateError("Matrix values for row upper index bound are not supported, which includes indexed identifiers.", conditional);
-					}
-				}
-				
-				if (indexedIdentiferOut.getColLowerBound() != null) {
-					indexedIdentiferOut.getColLowerBound().validateExpression(ids,constVars, conditional);
-					Expression tempExpr = indexedIdentiferOut.getColLowerBound(); 
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
-						raiseValidateError("Matrix values for column lower index bound are not supported, which includes indexed identifiers.", conditional);
-					}
-				}
-				
-				if (indexedIdentiferOut.getColUpperBound() != null) {
-					indexedIdentiferOut.getColUpperBound().validateExpression(ids, constVars, conditional);
-					Expression tempExpr = indexedIdentiferOut.getColUpperBound();
-					if (tempExpr.getOutput().getDataType() == Expression.DataType.MATRIX){
-						raiseValidateError("Matrix values for column upper index bound are not supported, which includes indexed identifiers.", conditional);
-					}
-				}
-				
-				if( this.getOutput().getDataType() != DataType.LIST ) {
-					IndexPair updatedIndices = ((IndexedIdentifier)this.getOutput()).calculateIndexedDimensions(ids, constVars, conditional);
-					((IndexedIdentifier)this.getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
+				if( getOutput().getDataType() == DataType.LIST ) {
+					int dim1 = (((IndexedIdentifier)getOutput()).getRowUpperBound() == null) ? 1 : - 1;
+					((IndexedIdentifier)getOutput()).setDimensions(dim1, 1);
+				} 
+				else { //default
+					IndexPair updatedIndices = ((IndexedIdentifier)getOutput()).calculateIndexedDimensions(ids, constVars, conditional);
+					((IndexedIdentifier)getOutput()).setDimensions(updatedIndices._row, updatedIndices._col);
 				}
 			}
 		}
@@ -203,15 +184,9 @@ public abstract class Identifier extends Expression
 	}
 	
 	public void computeDataType() {
-				
-		if ((_dim1 == 0) && (_dim2 == 0)) {
-			_dataType = DataType.SCALAR;
-		} else if ((_dim1 >= 1) || (_dim2 >= 1)){
-			// Vector also set as matrix
-			// Data type is set as matrix, if either of dimensions is -1
-			_dataType = DataType.MATRIX;
-		} else _dataType = DataType.UNKNOWN;	 
-		
+		_dataType = ((_dim1 == 0) && (_dim2 == 0)) ?
+			DataType.SCALAR : ((_dim1 >= 1) || (_dim2 >= 1)) ?
+			DataType.MATRIX : DataType.UNKNOWN;
 	}
 	
 	public void setBooleanProperties(){

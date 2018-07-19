@@ -869,7 +869,7 @@ public class ProgramConverter
 				value = mo.getFileName();
 				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
 						mo.getPartitionFormat(),mo.getPartitionSize()) : PartitionFormat.NONE;
-				metaData = new String[10];
+				metaData = new String[11];
 				metaData[0] = String.valueOf( mc.getRows() );
 				metaData[1] = String.valueOf( mc.getCols() );
 				metaData[2] = String.valueOf( mc.getRowsPerBlock() );
@@ -880,6 +880,7 @@ public class ProgramConverter
 				metaData[7] = String.valueOf( partFormat );
 				metaData[8] = String.valueOf( mo.getUpdateType() );
 				metaData[9] = String.valueOf(mo.isHDFSFileExists());
+				metaData[10] = String.valueOf(mo.isCleanupEnabled());
 				break;
 			case LIST:
 				// SCHEMA: <name>|<datatype>|<valuetype>|value|<metadata>|<tab>element1<tab>element2<tab>element3 (this is the list)
@@ -1686,6 +1687,7 @@ public class ProgramConverter
 					mo.setPartitioned( partFormat._dpf, partFormat._N );
 				mo.setUpdateType(inplace);
 				mo.setHDFSFileExists(Boolean.valueOf(st.nextToken()));
+				mo.enableCleanup(Boolean.valueOf(st.nextToken()));
 				dat = mo;
 				break;
 			}

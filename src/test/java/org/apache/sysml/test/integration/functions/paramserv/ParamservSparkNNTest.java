@@ -35,6 +35,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservASPBatchDisjointContiguous() {
+		// TODO Dimensions mismatch matrix-matrix binary operations: [0x0 vs 1x512]
 		runDMLTest(TEST_NAME2, false, null, null);
 	}
 

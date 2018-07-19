@@ -25,7 +25,6 @@ import static org.apache.sysml.runtime.util.ProgramConverter.COMPONENTS_DELIM;
 import static org.apache.sysml.runtime.util.ProgramConverter.EMPTY;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELIN;
 import static org.apache.sysml.runtime.util.ProgramConverter.LEVELOUT;
-import static org.apache.sysml.runtime.util.ProgramConverter.NEWLINE;
 
 import java.nio.ByteBuffer;
 import java.util.StringTokenizer;

@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysml.api.DMLScript;
@@ -77,8 +79,8 @@ import scala.Tuple2;
 
 public class ParamservUtils {
 
+	protected static final Log LOG = LogFactory.getLog(ParamservUtils.class.getName());
 	public static final String PS_FUNC_PREFIX = "_ps_";
-
 	public static long SEED = -1; // Used for generating permutation
 
 	/**
@@ -144,6 +146,9 @@ public class ParamservUtils {
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
 		ec.cleanupCacheableData(cd);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
+		}
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {

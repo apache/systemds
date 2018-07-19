@@ -35,17 +35,19 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservASPBatchDisjointContiguous() {
-		// TODO Dimensions mismatch matrix-matrix binary operations: [0x0 vs 1x512]
+		// FIXME Dimensions mismatch matrix-matrix binary operations: [0x0 vs 1x512]
 		runDMLTest(TEST_NAME2, false, null, null);
 	}
 
 	@Test
 	public void testParamservBSPEpochDisjointContiguous() {
+		// FIXME Caused by: (SparseBlockCSR.java:467) java.lang.ArrayIndexOutOfBoundsException: 118
 		runDMLTest(TEST_NAME3, false, null, null);
 	}
 
 	@Test
 	public void testParamservASPEpochDisjointContiguous() {
+		// FIXME Caused by: (SparseBlockCSR.java:467) java.lang.ArrayIndexOutOfBoundsException: 113
 		runDMLTest(TEST_NAME4, false, null, null);
 	}
 

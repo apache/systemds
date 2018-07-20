@@ -45,9 +45,10 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
 	private String _host;  // host ip of driver
+	private long _rpcTimeout;	// rpc ask timeout
 	private String _aggFunc;
 
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host) {
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host, long rpcTimeout) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
@@ -56,6 +57,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_program = program;
 		_clsMap = clsMap;
 		_host = host;
+		_rpcTimeout = rpcTimeout;
 	}
 
 	@Override
@@ -90,7 +92,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		RemoteParForUtils.setupBufferPool(_workerID);
 
 		// Create the ps proxy
-		_ps = PSRpcFactory.createSparkPSProxy(_host);
+		_ps = PSRpcFactory.createSparkPSProxy(_host, _rpcTimeout);
 
 		// Initialize the update function
 		setupUpdateFunction(_updFunc, _ec);
@@ -101,5 +103,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		// Lazy initialize the matrix of features and labels
 		setFeatures(ParamservUtils.newMatrixObject(input._2._1));
 		setLabels(ParamservUtils.newMatrixObject(input._2._2));
+		_features.enableCleanup(false);
+		_labels.enableCleanup(false);
 	}
 }

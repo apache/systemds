@@ -32,21 +32,21 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.utils.Statistics;
 
-// TODO the rpc timeout should be able to be configured by user
 public class SparkPSProxy extends ParamServer {
 
 	private TransportClient _client;
-	private static final long RPC_TIME_OUT = 1000 * 60 * 5;	// 5 minute of timeout
+	private final long _rpcTimeout;
 
-	public SparkPSProxy(TransportClient client) {
+	public SparkPSProxy(TransportClient client, long rpcTimeout) {
 		super();
 		_client = client;
+		_rpcTimeout = rpcTimeout;
 	}
 
 	@Override
 	public void push(int workerID, ListObject value) {
 		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
-		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PUSH, workerID, value).serialize(), RPC_TIME_OUT));
+		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PUSH, workerID, value).serialize(), _rpcTimeout));
 		if (DMLScript.STATISTICS)
 			Statistics.accPSRpcRequestTime((long) tRpc.stop());
 		if (!response.isSuccessful()) {
@@ -57,7 +57,7 @@ public class SparkPSProxy extends ParamServer {
 	@Override
 	public ListObject pull(int workerID) {
 		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
-		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), RPC_TIME_OUT));
+		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), _rpcTimeout));
 		if (DMLScript.STATISTICS)
 			Statistics.accPSRpcRequestTime((long) tRpc.stop());
 		if (!response.isSuccessful()) {

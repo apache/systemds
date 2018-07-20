@@ -38,7 +38,6 @@ import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.recompile.Recompiler;
-import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression;
@@ -428,20 +427,5 @@ public class ParamservUtils {
 			((MatrixObject) gradients.getData().get(i)).release();
 		});
 		return accGradients;
-	}
-
-	/**
-	 * Force to recompile all the instruction on CP mode
-	 * @param program program
-	 */
-	public static void recompileToCP(Program program) {
-		// Force platform to single node
-		// because some SP instructions will remain unchanged
-		// due to the reset of platform to Spark
-		// when recompiling the instructions
-		DMLScript.RUNTIME_PLATFORM oldRtPlatform = DMLScript.rtplatform;
-		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
-		Recompiler.recompileProgramBlockHierarchy2Forced(program.getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
-		DMLScript.rtplatform = oldRtPlatform;
 	}
 }

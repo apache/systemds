@@ -40,6 +40,7 @@ import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -49,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,6 +58,8 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -130,7 +134,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
 		// Force all the instructions to CP type
-		ParamservUtils.recompileToCP(newEC.getProgram());
+		Recompiler.recompileProgramBlockHierarchy2Forced(newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
 
 		// Serialize all the needed params for remote workers
 		SparkPSBody body = new SparkPSBody(newEC);
@@ -138,8 +142,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
 
 		// Create remote workers
-		String host = sec.getSparkContext().getConf().get("spark.driver.host");
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(), getEpochs(), getBatchSize(), program, clsMap, host);
+		String host = getProperty(sec, new String[] { "spark.driver.host" });
+		long rpcTimeout = getMilliSecond(getProperty(sec, new String[] { "spark.rpc.askTimeout", "spark.network.timeout" }));
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
+			getEpochs(), getBatchSize(), program, clsMap, host, rpcTimeout);
 
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
@@ -167,6 +173,23 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Fetch the final model from ps
 		ListObject result = ps.getResult();
 		sec.setVariable(output.getName(), result);
+	}
+
+	private long getMilliSecond(String time) {
+		if (time.matches("\\d+s")) {
+			return Long.valueOf(time.substring(0, time.length() - 1)) * 1000;
+		}
+		throw new DMLRuntimeException("Paramserv func: please provide the timeout in correct form (e.g., 120s)");
+	}
+
+	private String getProperty(SparkExecutionContext sec, String[] keys) {
+		for (String key : keys) {
+			if (sec.getSparkContext().getConf().contains(key)) {
+				return sec.getSparkContext().getConf().get(key);
+			}
+		}
+		String message = StringUtils.join(keys, " or ");
+		throw new DMLRuntimeException(String.format("Paramserv func: please setup the property '%s' in spark configuration file.", message));
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {

@@ -60,7 +60,8 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		BitsetMatrix m1Map = new BitsetMatrix(m1);
-		BitsetMatrix m2Map = new BitsetMatrix(m2);
+		BitsetMatrix m2Map = (m1 == m2) ? //self product
+			m1Map : new BitsetMatrix(m2);
 		BitsetMatrix outMap = m1Map.matMult(m2Map);
 		return OptimizerUtils.getSparsity( // aggregate output histogram
 				outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());

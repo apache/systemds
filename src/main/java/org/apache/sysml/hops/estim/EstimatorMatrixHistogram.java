@@ -75,7 +75,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
-		MatrixHistogram h2 = new MatrixHistogram(m2, _useExcepts);
+		MatrixHistogram h2 = (m1 == m2) ? //self product
+			h1 : new MatrixHistogram(m2, _useExcepts);
 		return estimIntern(h1, h2);
 	}
 
@@ -96,7 +97,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		//special case, with hybrid exact and approximate output
 		else if(h1.cNnz1e!=null && h2.rNnz1e != null) {
-			int mnOut = h1.getRows()*h2.getCols();
+			//note: normally h1.getRows()*h2.getCols() would define mnOut
+			//but by leveraging the knowledge of empty rows/cols we do better
+			int mnOut = h1.rNonEmpty * h2.cNonEmpty;
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				//exact fractions, w/o double counting

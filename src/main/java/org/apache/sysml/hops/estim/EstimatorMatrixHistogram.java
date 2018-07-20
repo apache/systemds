@@ -98,8 +98,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		//special case, with hybrid exact and approximate output
 		else if(h1.cNnz1e!=null && h2.rNnz1e != null) {
 			//note: normally h1.getRows()*h2.getCols() would define mnOut
-			//but by leveraging the knowledge of empty rows/cols we do better
-			int mnOut = h1.rNonEmpty * h2.cNonEmpty;
+			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
+			//that exact and approximate fractions touch different areas
+			int mnOut = (h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				//exact fractions, w/o double counting
@@ -137,16 +138,16 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	private static class MatrixHistogram {
+		// count vectors (the histogram)
 		private final int[] rNnz;    //nnz per row
 		private int[] rNnz1e = null; //nnz per row for cols w/ <= 1 non-zeros
 		private final int[] cNnz;    //nnz per col
 		private int[] cNnz1e = null; //nnz per col for rows w/ <= 1 non-zeros
-		private final int rMaxNnz;   //max nnz per row
-		private final int cMaxNnz;   //max nnz per col
-		private final int rNonEmpty; //number of non-empty rows (an empty row has nnz=0)
-		private final int cNonEmpty; //number of non-empty cols (an empty col has nnz=0)
-		private final int rNdiv2;    //number of rows with nnz > #cols/2
-		private final int cNdiv2;    //number of cols with nnz > #rows/2
+		// additional summary statistics
+		private final int rMaxNnz, cMaxNnz;     //max nnz per row/row
+		private final int rN1, cN1;             //number of rows/cols with nnz=1
+		private final int rNonEmpty, cNonEmpty; //number of non-empty rows/cols (w/ empty is nnz=0)
+		private final int rNdiv2, cNdiv2;       //number of rows/cols with nnz > #cols/2 and #rows/2
 		
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
 			// 1) allocate basic synopsis
@@ -184,6 +185,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			// 3) compute meta data synopsis
 			rMaxNnz = Arrays.stream(rNnz).max().orElse(0);
 			cMaxNnz =  Arrays.stream(cNnz).max().orElse(0);
+			rN1 = (int) Arrays.stream(rNnz).filter(item -> item == 1).count();
+			cN1 = (int) Arrays.stream(cNnz).filter(item -> item == 1).count();
 			rNonEmpty = (int) Arrays.stream(rNnz).filter(v-> v!=0).count();
 			cNonEmpty = (int) Arrays.stream(cNnz).filter(v-> v!=0).count();
 			rNdiv2 = (int) Arrays.stream(rNnz).filter(item -> item > getCols()/2).count();
@@ -232,6 +235,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			cNnz1e = c1e;
 			rMaxNnz = rmax;
 			cMaxNnz = cmax;
+			rN1 = cN1 = -1;
 			rNonEmpty = cNonEmpty = -1;
 			rNdiv2 = cNdiv2 = -1;
 		}

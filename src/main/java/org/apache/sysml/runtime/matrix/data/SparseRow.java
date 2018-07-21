@@ -82,6 +82,16 @@ public abstract class SparseRow implements Serializable
 	public abstract boolean set(int col, double v);
 	
 	/**
+	 * Add a value to a specified column with awareness of
+	 * potential insertions.
+	 * 
+	 * @param col column index, zero-based
+	 * @param v value 
+	 * @return true if the size of the sparse row changed
+	 */
+	public abstract boolean add(int col, double v);
+	
+	/**
 	 * Appends a value to the end of the sparse row.
 	 * 
 	 * @param col column index, zero-based

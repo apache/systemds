@@ -100,7 +100,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			//note: normally h1.getRows()*h2.getCols() would define mnOut
 			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
 			//that exact and approximate fractions touch different areas
-			int mnOut = (h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
+			long mnOut = (h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				//exact fractions, w/o double counting
@@ -115,7 +115,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		//general case with approximate output
 		else {
-			int mnOut = h1.getRows()*h2.getCols();
+			long mnOut = h1.getRows()*h2.getCols();
 			double spOut = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				double lsp = (double) h1.cNnz[j] * h2.rNnz[j] / mnOut;
@@ -130,7 +130,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		//exploit lower bound on nnz based on half-full rows/cols
 		nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
-			Math.max(h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
+			Math.max((long)h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
 		
 		//compute final sparsity
 		return OptimizerUtils.getSparsity(

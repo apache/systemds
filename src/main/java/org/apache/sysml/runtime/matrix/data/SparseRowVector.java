@@ -185,6 +185,28 @@ public final class SparseRowVector extends SparseRow implements Serializable
 			shiftRightAndInsert(index, col, v);
 		return true; // nnz++
 	}
+	
+	@Override
+	public boolean add(int col, double v) {
+		//early abort on zero (if no overwrite)
+		if( v==0.0 ) return false;
+		
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		if( index >= 0 ) {
+			//add to existing values
+			values[index] += v;
+			return false;
+		}
+
+		//insert new index-value pair
+		index = Math.abs( index+1 );
+		if( size==values.length )
+			resizeAndInsert(index, col, v);
+		else
+			shiftRightAndInsert(index, col, v);
+		return true; // nnz++
+	}
 
 	@Override
 	public void append(int col, double v) {

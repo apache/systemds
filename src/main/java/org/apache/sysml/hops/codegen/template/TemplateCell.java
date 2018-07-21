@@ -336,20 +336,17 @@ public class TemplateCell extends TemplateBase
 		boolean isBinaryMatrixScalar = false;
 		boolean isBinaryMatrixVector = false;
 		boolean isBinaryMatrixMatrix = false;
-		if( hop instanceof BinaryOp && hop.getDataType().isMatrix() ) {
+		if( hop instanceof BinaryOp && hop.getDataType().isMatrix() && !((BinaryOp)hop).isOuter() ) {
 			Hop left = hop.getInput().get(0);
 			Hop right = hop.getInput().get(1);
-			DataType ldt = left.getDataType();
-			DataType rdt = right.getDataType();
-			
-			isBinaryMatrixScalar = (ldt.isScalar() || rdt.isScalar());	
+			isBinaryMatrixScalar = (left.getDataType().isScalar() || right.getDataType().isScalar());
 			isBinaryMatrixVector = hop.dimsKnown() 
-				&& ((ldt.isMatrix() && TemplateUtils.isVectorOrScalar(right)) 
-				|| (rdt.isMatrix() && TemplateUtils.isVectorOrScalar(left)) );
+				&& ((left.getDataType().isMatrix() && TemplateUtils.isVectorOrScalar(right)) 
+				|| (right.getDataType().isMatrix() && TemplateUtils.isVectorOrScalar(left)) );
 			isBinaryMatrixMatrix = hop.dimsKnown() && HopRewriteUtils.isEqualSize(left, right)
-				&& ldt.isMatrix() && rdt.isMatrix();
+				&& left.getDataType().isMatrix() && right.getDataType().isMatrix();
 		}
-				
+		
 		//prepare indicators for ternary operations
 		boolean isTernaryVectorScalarVector = false;
 		boolean isTernaryMatrixScalarMatrixDense = false;

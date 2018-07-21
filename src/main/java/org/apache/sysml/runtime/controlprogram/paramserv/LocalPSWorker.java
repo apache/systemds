@@ -85,7 +85,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				// Update the local model with gradients
 				if( j < totalIter - 1 )
 					params = updateModel(params, gradients, i, j, totalIter);
-				ParamservUtils.cleanupListObject(gradients);
+				ParamservUtils.cleanupListObject(_ec, gradients);
 			}
 
 			// Push the gradients to ps
@@ -183,8 +183,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Get the gradients
 		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
 
-		ParamservUtils.cleanupData(bFeatures);
-		ParamservUtils.cleanupData(bLabels);
+		ParamservUtils.cleanupData(_ec, bFeatures);
+		ParamservUtils.cleanupData(_ec, bLabels);
 		return gradients;
 	}
 }

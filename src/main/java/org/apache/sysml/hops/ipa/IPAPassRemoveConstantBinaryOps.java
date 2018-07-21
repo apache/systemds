@@ -137,7 +137,7 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 			return;
 
 		if( hop instanceof BinaryOp && ((BinaryOp)hop).getOp()==OpOp2.MULT
-			&& !((BinaryOp) hop).isOuterVectorOperator()
+			&& !((BinaryOp) hop).isOuter()
 			&& hop.getInput().get(0).getDataType()==DataType.MATRIX
 			&& hop.getInput().get(1) instanceof DataOp
 			&& mOnes.containsKey(hop.getInput().get(1).getName()) )
@@ -153,6 +153,6 @@ public class IPAPassRemoveConstantBinaryOps extends IPAPass
 		for( Hop c : hop.getInput() )
 			rRemoveConstantBinaryOp(c, mOnes);
 	
-		hop.setVisited();		
+		hop.setVisited();
 	}
 }

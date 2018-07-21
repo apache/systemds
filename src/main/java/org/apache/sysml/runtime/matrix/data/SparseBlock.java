@@ -80,6 +80,13 @@ public abstract class SparseBlock implements Serializable
 	 */
 	public abstract void allocate(int r, int ennz, int maxnnz);
 	
+	/**
+	 * Re-allocate physical row if physical size exceeds
+	 * logical size plus resize factor.
+	 * 
+	 * @param r row index
+	 */
+	public abstract void compact(int r);
 	
 	////////////////////////
 	//obtain basic meta data
@@ -306,7 +313,7 @@ public abstract class SparseBlock implements Serializable
 	 * @param r  row index starting at 0
 	 * @param c  column index starting at 0
 	 * @param v  zero or non-zero value 
-	 * @return ?
+	 * @return true, if number of non-zeros changed
 	 */
 	public abstract boolean set(int r, int c, double v);
 	
@@ -324,10 +331,21 @@ public abstract class SparseBlock implements Serializable
 	public abstract void set(int r, SparseRow row, boolean deep);
 	
 	/**
+	 * Add a value to a matrix cell (r,c). This might update an existing 
+	 * non-zero value, or insert a new non-zero value.
+	 * 
+	 * @param r  row index starting at 0
+	 * @param c  column index starting at 0
+	 * @param v  zero or non-zero value 
+	 * @return true, if number of non-zeros changed
+	 */
+	public abstract boolean add(int r, int c, double v);
+	
+	/**
 	 * Append a value to the end of the physical representation. This should 
 	 * only be used for operations with sequential write pattern or if followed
 	 * by a sort() operation. Note that this operation does not perform any 
-	 * matrix cell updates.  
+	 * matrix cell updates.
 	 * 
 	 * @param r  row index starting at 0
 	 * @param c  column index starting at 0

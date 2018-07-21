@@ -35,6 +35,7 @@ import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 
 public class UtilFunctions 
@@ -606,6 +607,13 @@ public class UtilFunctions
 		int lnnz = 0;
 		for( int i=ai; i<ai+len; i++ )
 			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
+	
+	public static long computeNnz(SparseBlock a, int[] aix, int ai, int alen) {
+		long lnnz = 0;
+		for( int k=ai; k<ai+alen; k++ )
+			lnnz += a.size(aix[k]);
 		return lnnz;
 	}
 

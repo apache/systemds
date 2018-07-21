@@ -322,6 +322,11 @@ public class SparseBlockCSR extends SparseBlock
 	public void allocate(int r, int ennz, int maxnnz) {
 		//do nothing everything preallocated
 	}
+	
+	@Override
+	public void compact(int r) {
+		//do nothing everything preallocated
+	}
 
 	@Override
 	public int numRows() {
@@ -443,6 +448,32 @@ public class SparseBlockCSR extends SparseBlock
 
 		//early abort on zero (if no overwrite)
 		if( v==0 ) return false;
+		
+		//insert new index-value pair
+		index = Math.abs( index+1 );
+		if( _size==_values.length )
+			resizeAndInsert(index, c, v);
+		else
+			shiftRightAndInsert(index, c, v);
+		incrPtr(r+1);
+		return true; // nnz++
+	}
+	
+	@Override
+	public boolean add(int r, int c, double v) {
+		//early abort on zero
+		if( v==0 ) return false;
+		
+		int pos = pos(r);
+		int len = size(r);
+		
+		//search for existing col index
+		int index = Arrays.binarySearch(_indexes, pos, pos+len, c);
+		if( index >= 0 ) {
+			//add to existing value
+			_values[index] += v;
+			return false;
+		}
 		
 		//insert new index-value pair
 		index = Math.abs( index+1 );

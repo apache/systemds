@@ -75,6 +75,11 @@ public final class SparseRowScalar extends SparseRow implements Serializable
 		value = v;
 		return ret;
 	}
+	
+	@Override
+	public boolean add(int col, double v) {
+		return set(col, v + get(col));
+	}
 
 	@Override
 	public void append(int col, double v) {

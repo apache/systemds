@@ -643,13 +643,13 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 		}
 		case CastAsDoubleVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), new DoubleObject(scalarInput.getDoubleValue()));
+			ScalarObject in = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToDouble(in));
 			break;
 		}
-		case CastAsIntegerVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), new IntObject(scalarInput.getLongValue()));
+		case CastAsIntegerVariable:{
+			ScalarObject in = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToLong(in));
 			break;
 		}
 		case CastAsBooleanVariable:{ 

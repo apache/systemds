@@ -20,11 +20,12 @@
 package org.apache.sysml.runtime.io;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -40,9 +41,11 @@ import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.MapReduceTool;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 /**
  * Parallel version of ReaderTextCell.java. To summarize, we create read tasks per split
@@ -91,21 +94,34 @@ public class ReaderTextCellParallel extends ReaderTextCell
 		
 		try 
 		{
-			//create read tasks for all splits
 			ExecutorService pool = CommonThreadPool.get(par);
 			InputSplit[] splits = informat.getSplits(job, par);
-			ArrayList<ReadTask> tasks = new ArrayList<>();
-			for( InputSplit split : splits ){
-				ReadTask t = new ReadTask(split, informat, job, dest, rlen, clen, _isMMFile, _mmProps);
-				tasks.add(t);
+			
+			//count nnz per row for sparse preallocation
+			if( dest.isInSparseFormat() ) {
+				int[] rNnz = new int[(int)rlen];
+				boolean isSymmetric = _isMMFile && _mmProps.isSymmetric();
+				List<CountNnzTask> tasks = Arrays.stream(splits)
+					.map(s ->new CountNnzTask(s, informat, job, rNnz, isSymmetric))
+					.collect(Collectors.toList());
+				List<Future<Void>> rt1 = pool.invokeAll(tasks);
+				for( Future<Void> task : rt1 )
+					task.get();
+				SparseBlock sblock = dest.allocateBlock().getSparseBlock();
+				for( int i=0; i<rlen; i++ )
+					if( rNnz[i] > 0 )
+						sblock.allocate(i, UtilFunctions.roundToNext(rNnz[i], 4));
 			}
 			
-			//wait until all tasks have been executed
-			List<Future<Long>> rt = pool.invokeAll(tasks);
+			//create and execute read tasks for all splits
+			List<ReadTask> tasks = Arrays.stream(splits)
+				.map(s ->new ReadTask(s, informat, job, dest, rlen, clen, _isMMFile, _mmProps))
+				.collect(Collectors.toList());
+			List<Future<Long>> rt2 = pool.invokeAll(tasks);
 			
 			//check for exceptions and aggregate nnz
 			long lnnz = 0;
-			for( Future<Long> task : rt )
+			for( Future<Long> task : rt2 )
 				lnnz += task.get();
 			
 			//post-processing
@@ -217,6 +233,46 @@ public class ReaderTextCellParallel extends ReaderTextCell
 			}
 			
 			return lnnz;
+		}
+	}
+	
+	public static class CountNnzTask implements Callable<Void> {
+		private final InputSplit _split;
+		private final TextInputFormat _informat;
+		private final JobConf _job;
+		private final int[] _rNnz;
+		private final boolean _isSymmetric;
+		
+		public CountNnzTask( InputSplit split, TextInputFormat informat, JobConf job, int[] rNnz, boolean isSymmetric ) {
+			_split = split;
+			_informat = informat;
+			_job = job;
+			_rNnz = rNnz;
+			_isSymmetric = isSymmetric;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			LongWritable key = new LongWritable();
+			Text value = new Text();
+			FastStringTokenizer st = new FastStringTokenizer(' ');
+			
+			RecordReader<LongWritable,Text> reader = _informat.getRecordReader(_split, _job, Reporter.NULL);
+			try {
+				//counting without locking as conflicts unlikely
+				while( reader.next(key, value) ) {
+					if( value.toString().charAt(0) == '%' )
+						continue;
+					st.reset( value.toString() );
+					_rNnz[(int)st.nextLong()-1] ++;
+					if( _isSymmetric )
+						_rNnz[(int)st.nextLong()-1] ++;
+				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(reader);
+			}
+			return null;
 		}
 	}
 	

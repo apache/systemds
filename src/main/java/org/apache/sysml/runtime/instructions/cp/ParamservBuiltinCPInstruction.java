@@ -50,7 +50,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -124,11 +123,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 
-		int k = getParLevel(workerNum);
-
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(sec);
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, k);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1);	// level of par is 1 in spark backend
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
@@ -141,9 +138,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
 
+		// Get some configurations
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+		long rpcTimeout;
+		if (sec.getSparkContext().getConf().contains("spark.rpc.askTimeout")) {
+			rpcTimeout = sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout");
+		} else {
+			rpcTimeout = sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
+		}
+
 		// Create remote workers
-		String host = getProperty(sec, new String[] { "spark.driver.host" });
-		long rpcTimeout = getMilliSecond(getProperty(sec, new String[] { "spark.rpc.askTimeout", "spark.network.timeout" }));
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
 			getEpochs(), getBatchSize(), program, clsMap, host, rpcTimeout);
 
@@ -173,23 +177,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Fetch the final model from ps
 		ListObject result = ps.getResult();
 		sec.setVariable(output.getName(), result);
-	}
-
-	private long getMilliSecond(String time) {
-		if (time.matches("\\d+s")) {
-			return Long.valueOf(time.substring(0, time.length() - 1)) * 1000;
-		}
-		throw new DMLRuntimeException("Paramserv func: please provide the timeout in correct form (e.g., 120s)");
-	}
-
-	private String getProperty(SparkExecutionContext sec, String[] keys) {
-		for (String key : keys) {
-			if (sec.getSparkContext().getConf().contains(key)) {
-				return sec.getSparkContext().getConf().get(key);
-			}
-		}
-		String message = StringUtils.join(keys, " or ");
-		throw new DMLRuntimeException(String.format("Paramserv func: please setup the property '%s' in spark configuration file.", message));
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {

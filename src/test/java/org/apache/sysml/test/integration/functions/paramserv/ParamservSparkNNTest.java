@@ -92,8 +92,6 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 			.in("$scheme", scheme.toString());
 
 		SparkConf conf = SparkExecutionContext.createSystemMLSparkConf().setAppName("ParamservSparkNNTest").setMaster("local[*]")
-			.set("spark.rpc.askTimeout", "120s")
-			.set("spark.network.timeout", "120s")
 			.set("spark.driver.allowMultipleContexts", "true");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		MLContext ml = new MLContext(sc);

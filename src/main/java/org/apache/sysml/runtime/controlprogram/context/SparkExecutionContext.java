@@ -214,8 +214,6 @@ public class SparkExecutionContext extends ExecutionContext
 				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
 				// conf.set("spark.driver.allowMultipleContexts", "true");
 				conf.set("spark.ui.enabled", "false");
-				conf.set("spark.rpc.askTimeout", "120s");
-				conf.set("spark.network.timeout", "120s");
 				_spctx = new JavaSparkContext(conf);
 			}
 			else //default cluster setup

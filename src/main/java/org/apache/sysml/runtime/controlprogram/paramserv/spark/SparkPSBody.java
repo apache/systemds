@@ -28,12 +28,10 @@ public class SparkPSBody {
 
 	private ExecutionContext _ec;
 
-	public SparkPSBody() {
-
-	}
+	public SparkPSBody() {}
 
 	public SparkPSBody(ExecutionContext ec) {
-		this._ec = ec;
+		_ec = ec;
 	}
 
 	public ExecutionContext getEc() {

@@ -125,6 +125,7 @@ public class Statistics
 	private static final LongAdder psLocalModelUpdateTime = new LongAdder();
 	private static final LongAdder psModelBroadcastTime = new LongAdder();
 	private static final LongAdder psBatchIndexTime = new LongAdder();
+	private static final LongAdder psRpcRequestTime = new LongAdder();
 
 	//PARFOR optimization stats (low frequency updates)
 	private static long parforOptTime = 0; //in milli sec
@@ -562,6 +563,10 @@ public class Statistics
 
 	public static void accPSBatchIndexingTime(long t) {
 		psBatchIndexTime.add(t);
+	}
+
+	public static void accPSRpcRequestTime(long t) {
+		psRpcRequestTime.add(t);
 	}
 
 	public static String getCPHeavyHitterCode( Instruction inst )
@@ -1003,6 +1008,7 @@ public class Statistics
 						psLocalModelUpdateTime.doubleValue() / 1000, psAggregationTime.doubleValue() / 1000));
 				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
 				sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
 			}
 			if( parforOptCount>0 ){
 				sb.append("ParFor loops optimized:\t\t" + getParforOptCount() + ".\n");

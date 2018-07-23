@@ -130,25 +130,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 
-		// Force all the instructions to CP type
-		Recompiler.recompileProgramBlockHierarchy2Forced(
-			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
-
-		// Serialize all the needed params for remote workers
-		SparkPSBody body = new SparkPSBody(newEC);
-		HashMap<String, byte[]> clsMap = new HashMap<>();
-		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
-
-		// Get some configurations
-		String host = sec.getSparkContext().getConf().get("spark.driver.host");
-		long rpcTimeout = sec.getSparkContext().getConf().contains("spark.rpc.askTimeout") ? 
-			sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout") :
-			sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
-
-		// Create remote workers
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
-			getEpochs(), getBatchSize(), program, clsMap, host, rpcTimeout);
-
 		// Create the agg service's execution context
 		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 
@@ -159,8 +140,29 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
+		// Get driver host
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+
 		// Create the netty server for ps
 		TransportServer server = PSRpcFactory.createServer((LocalParamServer) ps, host); // Start the server
+
+		// Force all the instructions to CP type
+		Recompiler.recompileProgramBlockHierarchy2Forced(
+			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
+
+		// Serialize all the needed params for remote workers
+		SparkPSBody body = new SparkPSBody(newEC);
+		HashMap<String, byte[]> clsMap = new HashMap<>();
+		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
+
+		// Get some configurations
+		long rpcTimeout = sec.getSparkContext().getConf().contains("spark.rpc.askTimeout") ?
+			sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout") :
+			sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
+
+		// Create remote workers
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
+			getEpochs(), getBatchSize(), program, clsMap, host, server.getPort(), rpcTimeout);
 
 		try {
 			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning

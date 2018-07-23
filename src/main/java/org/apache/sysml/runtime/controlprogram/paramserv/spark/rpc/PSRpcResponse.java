@@ -19,31 +19,22 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
-import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_BEGIN;
-import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_END;
-import static org.apache.sysml.runtime.util.ProgramConverter.COMPONENTS_DELIM;
-import static org.apache.sysml.runtime.util.ProgramConverter.EMPTY;
-import static org.apache.sysml.runtime.util.ProgramConverter.LEVELIN;
-import static org.apache.sysml.runtime.util.ProgramConverter.LEVELOUT;
-
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.StringTokenizer;
 
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.util.ProgramConverter;
 
 public class PSRpcResponse extends PSRpcObject {
 
 	public static final int SUCCESS = 1;
 	public static final int ERROR = 2;
 
-	private static final String PS_RPC_RESPONSE_BEGIN = CDATA_BEGIN + "PSRPCRESPONSE" + LEVELIN;
-	private static final String PS_RPC_RESPONSE_END = LEVELOUT + CDATA_END;
-
 	private int _status;
 	private Object _data;	// Could be list object or exception
 
-	public PSRpcResponse(ByteBuffer buffer) {
+	public PSRpcResponse(ByteBuffer buffer) throws IOException {
 		deserialize(buffer);
 	}
 
@@ -65,48 +56,38 @@ public class PSRpcResponse extends PSRpcObject {
 	}
 
 	@Override
-	public void deserialize(ByteBuffer buffer) {
-		//FIXME: instead of shallow deserialize + read, we should do a deep deserialize of the matrix blocks.
-		String input = bufferToString(buffer);
-		//header elimination
-		input = input.substring(PS_RPC_RESPONSE_BEGIN.length(), input.length() - PS_RPC_RESPONSE_END.length()); //remove start/end
-		StringTokenizer st = new StringTokenizer(input, COMPONENTS_DELIM);
-
-		_status = Integer.valueOf(st.nextToken());
-		String data = st.nextToken();
+	public void deserialize(ByteBuffer buffer) throws IOException {
+		_status = buffer.getInt();
 		switch (_status) {
 			case SUCCESS:
-				_data = data.equals(EMPTY) ? null :
-					ProgramConverter.parseDataObject(data)[1];
+				_data = parseListObject(buffer);
 				break;
 			case ERROR:
-				_data = data;
+				int messageSize = buffer.getInt();
+				byte[] messageBytes = new byte[messageSize];
+				buffer.get(messageBytes);
+				_data = new String(messageBytes, "ISO-8859-1");
 				break;
 		}
 	}
 
 	@Override
-	public ByteBuffer serialize() {
-		//FIXME: instead of export+shallow serialize, we should do a deep serialize of the matrix blocks.
-		
-		StringBuilder sb = new StringBuilder();
-		sb.append(PS_RPC_RESPONSE_BEGIN);
-		sb.append(_status);
-		sb.append(COMPONENTS_DELIM);
+	public ByteBuffer serialize() throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		dos.writeInt(_status);
 		switch (_status) {
 			case SUCCESS:
-				if (_data.equals(EMPTY_DATA)) {
-					sb.append(EMPTY);
-				} else {
-					flushListObject((ListObject) _data);
-					sb.append(ProgramConverter.serializeDataObject(DATA_KEY, (ListObject) _data));
+				if (!_data.equals(EMPTY_DATA)) {
+					dos.write(deepSerializeListObject((ListObject) _data));
 				}
 				break;
 			case ERROR:
-				sb.append(_data.toString());
+				dos.writeInt(_data.toString().length());
+				dos.write(_data.toString().getBytes());
 				break;
 		}
-		sb.append(PS_RPC_RESPONSE_END);
-		return ByteBuffer.wrap(sb.toString().getBytes());
+		dos.flush();
+		return ByteBuffer.wrap(bos.toByteArray());
 	}
 }

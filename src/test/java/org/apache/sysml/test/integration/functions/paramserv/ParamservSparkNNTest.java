@@ -42,12 +42,12 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPEpochDisjointContiguous() {
-		runDMLTest(10, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(5, 3, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservASPEpochDisjointContiguous() {
-		runDMLTest(10, 3, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(5, 3, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test

@@ -29,10 +29,8 @@ import org.apache.spark.network.util.TransportConf;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSProxy;
 
-//TODO should be able to configure the port by users
 public class PSRpcFactory {
 
-	private static final int PORT = 5055;
 	private static final String MODULE_NAME = "ps";
 
 	private static TransportContext createTransportContext(LocalParamServer ps) {
@@ -47,11 +45,11 @@ public class PSRpcFactory {
 	 */
 	public static TransportServer createServer(LocalParamServer ps, String host) {
 		TransportContext context = createTransportContext(ps);
-		return context.createServer(host, PORT, Collections.emptyList());
+		return context.createServer(host, 0, Collections.emptyList());	// bind rpc to an ephemeral port
 	}
 
-	public static SparkPSProxy createSparkPSProxy(String host, long rpcTimeout) throws IOException {
+	public static SparkPSProxy createSparkPSProxy(String host, int port, long rpcTimeout) throws IOException {
 		TransportContext context = createTransportContext(new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, PORT), rpcTimeout);
+		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout);
 	}
 }

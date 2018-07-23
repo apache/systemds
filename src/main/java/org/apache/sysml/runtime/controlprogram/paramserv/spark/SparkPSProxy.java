@@ -22,6 +22,8 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark;
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject.PULL;
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject.PUSH;
 
+import java.io.IOException;
+
 import org.apache.spark.network.client.TransportClient;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -46,7 +48,12 @@ public class SparkPSProxy extends ParamServer {
 	@Override
 	public void push(int workerID, ListObject value) {
 		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
-		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PUSH, workerID, value).serialize(), _rpcTimeout));
+		PSRpcResponse response;
+		try {
+			response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PUSH, workerID, value).serialize(), _rpcTimeout));
+		} catch (IOException e) {
+			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to push gradients.", workerID), e);
+		}
 		if (DMLScript.STATISTICS)
 			Statistics.accPSRpcRequestTime((long) tRpc.stop());
 		if (!response.isSuccessful()) {
@@ -57,7 +64,12 @@ public class SparkPSProxy extends ParamServer {
 	@Override
 	public ListObject pull(int workerID) {
 		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
-		PSRpcResponse response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), _rpcTimeout));
+		PSRpcResponse response;
+		try {
+			response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), _rpcTimeout));
+		} catch (IOException e) {
+			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to pull models.", workerID), e);
+		}
 		if (DMLScript.STATISTICS)
 			Statistics.accPSRpcRequestTime((long) tRpc.stop());
 		if (!response.isSuccessful()) {

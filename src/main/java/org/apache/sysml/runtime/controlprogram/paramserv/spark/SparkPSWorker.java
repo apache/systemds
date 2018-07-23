@@ -45,10 +45,11 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private String _program;
 	private HashMap<String, byte[]> _clsMap;
 	private String _host; // host ip of driver
+	private int _port; // rpc port
 	private long _rpcTimeout; // rpc ask timeout
 	private String _aggFunc;
 
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host, long rpcTimeout) {
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host, int port, long rpcTimeout) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
@@ -57,6 +58,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_program = program;
 		_clsMap = clsMap;
 		_host = host;
+		_port = port;
 		_rpcTimeout = rpcTimeout;
 	}
 
@@ -90,7 +92,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		RemoteParForUtils.setupBufferPool(_workerID);
 
 		// Create the ps proxy
-		_ps = PSRpcFactory.createSparkPSProxy(_host, _rpcTimeout);
+		_ps = PSRpcFactory.createSparkPSProxy(_host, _port, _rpcTimeout);
 
 		// Initialize the update function
 		setupUpdateFunction(_updFunc, _ec);

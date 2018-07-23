@@ -19,13 +19,13 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,22 +33,20 @@ import org.junit.Test;
 public class RpcObjectTest {
 
 	@Test
-	public void testPSRpcCall() {
+	public void testPSRpcCall() throws IOException {
 		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
 		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io));
+		ListObject lo = new ListObject(Arrays.asList(mo1, mo2));
 		PSRpcCall expected = new PSRpcCall(PSRpcObject.PUSH, 1, lo);
 		PSRpcCall actual = new PSRpcCall(expected.serialize());
 		Assert.assertEquals(new String(expected.serialize().array()), new String(actual.serialize().array()));
 	}
 
 	@Test
-	public void testPSRpcResponse() {
+	public void testPSRpcResponse() throws IOException {
 		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
 		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io));
+		ListObject lo = new ListObject(Arrays.asList(mo1, mo2));
 		PSRpcResponse expected = new PSRpcResponse(PSRpcResponse.SUCCESS, lo);
 		PSRpcResponse actual = new PSRpcResponse(expected.serialize());
 		Assert.assertEquals(new String(expected.serialize().array()), new String(actual.serialize().array()));

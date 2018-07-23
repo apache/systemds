@@ -35,10 +35,18 @@ import org.apache.sysml.utils.Statistics;
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected static final Log LOG = LogFactory.getLog(LocalPSWorker.class.getName());
+	private static final long serialVersionUID = 5195390748495357295L;
+
+	protected LocalPSWorker() {}
 
 	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
 		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
 		super(workerID, updFunc, freq, epochs, batchSize, valFeatures, valLabels, ec, ps);
+	}
+
+	@Override
+	public String getWorkerName() {
+		return String.format("Local worker_%d", _workerID);
 	}
 
 	@Override
@@ -60,10 +68,10 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			}
 
 			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Local worker_%d: Job finished.", _workerID));
+				LOG.debug(String.format("%s: job finished.", getWorkerName()));
 			}
 		} catch (Exception e) {
-			throw new DMLRuntimeException(String.format("Local worker_%d failed", _workerID), e);
+			throw new DMLRuntimeException(String.format("%s failed", getWorkerName()), e);
 		}
 		return null;
 	}
@@ -93,7 +101,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
 			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
+				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}
 
@@ -108,9 +116,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			Statistics.accPSLocalModelUpdateTime((long) tUpd.stop());
 		
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Local worker_%d: Local global parameter [size:%d kb] updated. "
+			LOG.debug(String.format("%s: local global parameter [size:%d kb] updated. "
 				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
-				_workerID, globalParams.getDataSize(), i + 1, _epochs, j + 1, totalIter));
+				getWorkerName(), globalParams.getDataSize(), i + 1, _epochs, j + 1, totalIter));
 		}
 		return globalParams;
 	}
@@ -129,17 +137,17 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 			}
 			if (LOG.isDebugEnabled()) {
-				LOG.debug(String.format("Local worker_%d: Finished %d epoch.", _workerID, i + 1));
+				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}
 	}
 
 	private ListObject pullModel() {
 		// Pull the global parameters from ps
-		ListObject globalParams = (ListObject)_ps.pull(_workerID);
+		ListObject globalParams = _ps.pull(_workerID);
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Local worker_%d: Successfully pull the global parameters "
-				+ "[size:%d kb] from ps.", _workerID, globalParams.getDataSize() / 1024));
+			LOG.debug(String.format("%s: successfully pull the global parameters "
+				+ "[size:%d kb] from ps.", getWorkerName(), globalParams.getDataSize() / 1024));
 		}
 		return globalParams;
 	}
@@ -148,8 +156,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Local worker_%d: Successfully push the gradients "
-				+ "[size:%d kb] to ps.", _workerID, gradients.getDataSize() / 1024));
+			LOG.debug(String.format("%s: successfully push the gradients "
+				+ "[size:%d kb] to ps.", getWorkerName(), gradients.getDataSize() / 1024));
 		}
 	}
 
@@ -168,8 +176,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		_ec.setVariable(Statement.PS_LABELS, bLabels);
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Local worker_%d: Got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
-				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", _workerID,
+			LOG.debug(String.format("%s: got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
+				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", getWorkerName(),
 				bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize, i + 1, _epochs,
 				j + 1, totalIter));
 		}

@@ -22,10 +22,13 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 public class LocalParamServer extends ParamServer {
+
+	public LocalParamServer() {
+		super();
+	}
 
 	public LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		super(model, aggFunc, updateType, ec, workerNum);
@@ -37,7 +40,7 @@ public class LocalParamServer extends ParamServer {
 	}
 
 	@Override
-	public Data pull(int workerID) {
+	public ListObject pull(int workerID) {
 		ListObject model;
 		try {
 			model = _modelMap.get(workerID).take();

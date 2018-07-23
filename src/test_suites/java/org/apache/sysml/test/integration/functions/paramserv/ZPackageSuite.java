@@ -30,9 +30,11 @@ import org.junit.runners.Suite;
 	SparkDataPartitionerTest.class,
 	ParamservSyntaxTest.class,
 	SerializationTest.class,
+	RpcObjectTest.class,
 	ParamservRecompilationTest.class,
 	ParamservRuntimeNegativeTest.class,
-	ParamservLocalNNTest.class
+	ParamservLocalNNTest.class,
+	ParamservSparkNNTest.class
 })
 
 

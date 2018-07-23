@@ -42,7 +42,6 @@ import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.utils.Statistics;
@@ -53,16 +52,18 @@ public abstract class ParamServer
 	protected static final boolean ACCRUE_BSP_GRADIENTS = true;
 	
 	// worker input queues and global model
-	protected final Map<Integer, BlockingQueue<ListObject>> _modelMap;
+	protected Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
 
 	//aggregation service
-	protected final ExecutionContext _ec;
-	private final Statement.PSUpdateType _updateType;
-	private final FunctionCallCPInstruction _inst;
-	private final String _outputName;
-	private final boolean[] _finishedStates;  // Workers' finished states
+	protected ExecutionContext _ec;
+	private Statement.PSUpdateType _updateType;
+	private FunctionCallCPInstruction _inst;
+	private String _outputName;
+	private boolean[] _finishedStates;  // Workers' finished states
 	private ListObject _accGradients = null;
+
+	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		// init worker queues and global model
@@ -77,10 +78,22 @@ public abstract class ParamServer
 		_ec = ec;
 		_updateType = updateType;
 		_finishedStates = new boolean[workerNum];
+		setupAggFunc(_ec, aggFunc);
+		
+		// broadcast initial model
+		try {
+			broadcastModel();
+		}
+		catch (InterruptedException e) {
+			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
+		}
+	}
+
+	public void setupAggFunc(ExecutionContext ec, String aggFunc) {
 		String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];
 		String fname = cfn[1];
-		FunctionProgramBlock func = _ec.getProgram().getFunctionProgramBlock(ns, fname);
+		FunctionProgramBlock func = ec.getProgram().getFunctionProgramBlock(ns, fname);
 		ArrayList<DataIdentifier> inputs = func.getInputParams();
 		ArrayList<DataIdentifier> outputs = func.getOutputParams();
 
@@ -101,19 +114,11 @@ public abstract class ParamServer
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
 		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "aggregate function");
-		
-		// broadcast initial model
-		try {
-			broadcastModel();
-		}
-		catch (InterruptedException e) {
-			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
-		}
 	}
 
 	public abstract void push(int workerID, ListObject value);
 
-	public abstract Data pull(int workerID);
+	public abstract ListObject pull(int workerID);
 
 	public ListObject getResult() {
 		// All the model updating work has terminated,

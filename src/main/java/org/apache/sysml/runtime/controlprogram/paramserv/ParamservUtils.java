@@ -28,8 +28,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
@@ -57,6 +60,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
@@ -68,13 +72,14 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ProgramConverter;
+import org.apache.sysml.utils.Statistics;
 
 import scala.Tuple2;
 
 public class ParamservUtils {
 
+	protected static final Log LOG = LogFactory.getLog(ParamservUtils.class.getName());
 	public static final String PS_FUNC_PREFIX = "_ps_";
-
 	public static long SEED = -1; // Used for generating permutation
 
 	/**
@@ -140,6 +145,14 @@ public class ParamservUtils {
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
 		ec.cleanupCacheableData(cd);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
+		}
+	}
+
+	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
+		mo.enableCleanup(true);
+		ec.cleanupCacheableData(mo);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {
@@ -365,6 +378,7 @@ public class ParamservUtils {
 
 	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitionOnSpark(SparkExecutionContext sec, MatrixObject features, MatrixObject labels, Statement.PSScheme scheme, int workerNum) {
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		// Get input RDD
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
 				sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
@@ -372,33 +386,34 @@ public class ParamservUtils {
 				sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
 
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
-		return ParamservUtils.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
+		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils
+			.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
 			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))
 			// Aggregate the partitioned matrix according to rowID for each worker
 			// i.e. (workerID => ordered list[(rowBlockID, (single row features, single row labels)]
-			.aggregateByKey(new LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>(),
-				new Partitioner() {
-					private static final long serialVersionUID = -7937781374718031224L;
-					@Override
-					public int getPartition(Object workerID) {
-						return (int) workerID;
-					}
-					@Override
-					public int numPartitions() {
-						return workerNum;
-					}
-				}, 
-				(list, input) -> {
-					list.add(input);
-					return list;
-				},
-				(l1, l2) -> {
-					l1.addAll(l2);
-					l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
-					return l1;
-				})
-			.mapToPair(new DataPartitionerSparkAggregator(
-				features.getNumColumns(), labels.getNumColumns()));
+			.aggregateByKey(new LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>(), new Partitioner() {
+				private static final long serialVersionUID = -7937781374718031224L;
+				@Override
+				public int getPartition(Object workerID) {
+					return (int) workerID;
+				}
+				@Override
+				public int numPartitions() {
+					return workerNum;
+				}
+			}, (list, input) -> {
+				list.add(input);
+				return list;
+			}, (l1, l2) -> {
+				l1.addAll(l2);
+				l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
+				return l1;
+			})
+			.mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns()));
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
+		return result;
 	}
 
 	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {

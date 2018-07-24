@@ -124,7 +124,7 @@ public abstract class PSRpcObject {
 			MatrixBlock mb = new MatrixBlock();
 			mb.readFields(cdi);
 			MatrixObject mo = ParamservUtils.newMatrixObject(mb);
-			mo.enableCleanup(false);
+			mo.enableCleanup(false); // disable cleanup
 			data.add(mo);
 		}
 		return new ListObject(data, names);

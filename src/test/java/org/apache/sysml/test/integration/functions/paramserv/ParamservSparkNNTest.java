@@ -1,15 +1,8 @@
 package org.apache.sysml.test.integration.functions.paramserv;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
-
-import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
@@ -62,9 +55,14 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException, String errMessage) {
 		programArgs = new String[] { "-explain" };
+		internalRunDMLTest(testname, exceptionExpected, expectedException, errMessage);
+	}
+
+	private void internalRunDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException,
+			String errMessage) {
 		DMLScript.RUNTIME_PLATFORM oldRtplatform = AutomatedTestBase.rtplatform;
 		boolean oldUseLocalSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.SPARK;
+		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {
@@ -80,22 +78,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 	}
 
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
-		Script script = dmlFromFile(SCRIPT_DIR + TEST_DIR + TEST_NAME1 + ".dml").in("$mode", Statement.PSModeType.REMOTE_SPARK.toString())
-			.in("$epochs", String.valueOf(epochs))
-			.in("$workers", String.valueOf(workers))
-			.in("$utype", utype.toString())
-			.in("$freq", freq.toString())
-			.in("$batchsize", String.valueOf(batchsize))
-			.in("$scheme", scheme.toString());
-
-		SparkConf conf = SparkExecutionContext.createSystemMLSparkConf().setAppName("ParamservSparkNNTest").setMaster("local[*]")
-			.set("spark.driver.allowMultipleContexts", "true");
-		JavaSparkContext sc = new JavaSparkContext(conf);
-		MLContext ml = new MLContext(sc);
-		ml.setStatistics(true);
-		ml.execute(script);
-		ml.resetConfig();
-		sc.stop();
-		ml.close();
+		programArgs = new String[] { "-explain", "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme};
+		internalRunDMLTest(TEST_NAME1, false, null, null);
 	}
 }

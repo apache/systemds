@@ -25,8 +25,10 @@ import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcO
 import java.io.IOException;
 
 import org.apache.spark.network.client.TransportClient;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse;
@@ -36,13 +38,25 @@ import org.apache.sysml.utils.Statistics;
 
 public class SparkPSProxy extends ParamServer {
 
-	private TransportClient _client;
+	private final TransportClient _client;
 	private final long _rpcTimeout;
+	private final LongAccumulator _aRPC;
 
-	public SparkPSProxy(TransportClient client, long rpcTimeout) {
+	public SparkPSProxy(TransportClient client, long rpcTimeout, LongAccumulator aRPC) {
 		super();
 		_client = client;
 		_rpcTimeout = rpcTimeout;
+		_aRPC = aRPC;
+	}
+
+	private void accRpcRequestTime(Timing tRpc) {
+		if (DMLScript.STATISTICS) {
+			if (SparkExecutionContext.isLocalMaster()) {
+				Statistics.accPSRpcRequestTime((long) tRpc.stop());
+			} else {
+				_aRPC.add((long) tRpc.stop());
+			}
+		}
 	}
 
 	@Override
@@ -54,8 +68,7 @@ public class SparkPSProxy extends ParamServer {
 		} catch (IOException e) {
 			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to push gradients.", workerID), e);
 		}
-		if (DMLScript.STATISTICS)
-			Statistics.accPSRpcRequestTime((long) tRpc.stop());
+		accRpcRequestTime(tRpc);
 		if (!response.isSuccessful()) {
 			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to push gradients. \n%s", workerID, response.getErrorMessage()));
 		}
@@ -70,8 +83,7 @@ public class SparkPSProxy extends ParamServer {
 		} catch (IOException e) {
 			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to pull models.", workerID), e);
 		}
-		if (DMLScript.STATISTICS)
-			Statistics.accPSRpcRequestTime((long) tRpc.stop());
+		accRpcRequestTime(tRpc);
 		if (!response.isSuccessful()) {
 			throw new DMLRuntimeException(String.format("SparkPSProxy: spark worker_%d failed to pull models. \n%s", workerID, response.getErrorMessage()));
 		}

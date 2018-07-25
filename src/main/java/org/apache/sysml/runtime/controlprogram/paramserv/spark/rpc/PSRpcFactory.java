@@ -26,6 +26,7 @@ import org.apache.spark.network.TransportContext;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.network.util.SystemPropertyConfigProvider;
 import org.apache.spark.network.util.TransportConf;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSProxy;
 
@@ -48,8 +49,8 @@ public class PSRpcFactory {
 		return context.createServer(host, 0, Collections.emptyList());	// bind rpc to an ephemeral port
 	}
 
-	public static SparkPSProxy createSparkPSProxy(String host, int port, long rpcTimeout) throws IOException {
+	public static SparkPSProxy createSparkPSProxy(String host, int port, long rpcTimeout, LongAccumulator aRPC) throws IOException {
 		TransportContext context = createTransportContext(new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout);
+		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
 	}
 }

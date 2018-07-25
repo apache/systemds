@@ -50,10 +50,35 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	}
 
 	@Override
-	public Void call() throws Exception {
+	public void incWorkerNumber() {
 		if (DMLScript.STATISTICS)
 			Statistics.incWorkerNumber();
-		
+	}
+
+	@Override
+	public void accLocalModelUpdateTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			Statistics.accPSLocalModelUpdateTime((long) time.stop());
+	}
+
+	@Override
+	public void accBatchIndexingTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			Statistics.accPSBatchIndexingTime((long) time.stop());
+	}
+
+	@Override
+	public void accGradientComputeTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			Statistics.accPSGradientComputeTime((long) time.stop());
+	}
+
+	@Override
+	public void showProgress(int epoch, int batch) {}
+
+	@Override
+	public Void call() throws Exception {
+		incWorkerNumber();
 		try {
 			long dataSize = _features.getNumRows();
 			int totalIter = (int) Math.ceil((double) dataSize / _batchSize);
@@ -83,6 +108,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			ListObject accGradients = null;
 			
 			for (int j = 0; j < totalIter; j++) {
+				showProgress(i, j);
+
 				_ec.setVariable(Statement.PS_MODEL, params);
 
 				ListObject gradients = computeGradients(dataSize, totalIter, i, j);
@@ -112,8 +139,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
 
-		if (DMLScript.STATISTICS)
-			Statistics.accPSLocalModelUpdateTime((long) tUpd.stop());
+		accLocalModelUpdateTime(tUpd);
 		
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("%s: local global parameter [size:%d kb] updated. "
@@ -126,6 +152,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private void computeBatch(long dataSize, int totalIter) {
 		for (int i = 0; i < _epochs; i++) {
 			for (int j = 0; j < totalIter; j++) {
+				showProgress(i, j);
+
 				ListObject globalParams = pullModel();
 
 				_ec.setVariable(Statement.PS_MODEL, globalParams);
@@ -169,8 +197,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		Timing tSlic = DMLScript.STATISTICS ? new Timing(true) : null;
 		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
 		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
-		if (DMLScript.STATISTICS)
-			Statistics.accPSBatchIndexingTime((long) tSlic.stop());
+		accBatchIndexingTime(tSlic);
 
 		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
 		_ec.setVariable(Statement.PS_LABELS, bLabels);
@@ -185,8 +212,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Invoke the update function
 		Timing tGrad = DMLScript.STATISTICS ? new Timing(true) : null;
 		_inst.processInstruction(_ec);
-		if (DMLScript.STATISTICS)
-			Statistics.accPSGradientComputeTime((long) tGrad.stop());
+		accGradientComputeTime(tGrad);
 
 		// Get the gradients
 		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());

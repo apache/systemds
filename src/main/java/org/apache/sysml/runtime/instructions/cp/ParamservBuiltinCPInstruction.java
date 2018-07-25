@@ -56,6 +56,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
@@ -78,6 +79,8 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.utils.Statistics;
+
+import scala.Tuple2;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
@@ -125,7 +128,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(sec);
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1); // level of par is 1 in spark backend
+		// Level of par is 1 in spark backend because one worker will be launched per task
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1);
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
@@ -136,9 +140,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
 		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
-
-		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -160,9 +161,27 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout") :
 			sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
 
+		// Add the accumulators for statistics
+		LongAccumulator aSetup = sec.getSparkContext().sc().longAccumulator("setup");
+		LongAccumulator aWorker = sec.getSparkContext().sc().longAccumulator("workersNum");
+		LongAccumulator aUpdate = sec.getSparkContext().sc().longAccumulator("modelUpdate");
+		LongAccumulator aIndex = sec.getSparkContext().sc().longAccumulator("batchIndex");
+		LongAccumulator aGrad = sec.getSparkContext().sc().longAccumulator("gradCompute");
+		LongAccumulator aRPC = sec.getSparkContext().sc().longAccumulator("rpcRequest");
+
+		// Create epochs and batchs counter for each worker
+		List<Tuple2<LongAccumulator, LongAccumulator>> counters = IntStream.range(0, workerNum).mapToObj(i -> {
+			LongAccumulator cEpochs = sec.getSparkContext().sc().longAccumulator(String.format("worker_%d_epochs", i));
+			LongAccumulator cBatchs = sec.getSparkContext().sc().longAccumulator(String.format("worker_%d_batchs", i));
+			return new Tuple2<>(cEpochs, cBatchs);
+		}).collect(Collectors.toList());
+
 		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
-			getEpochs(), getBatchSize(), program, clsMap, host, server.getPort(), rpcTimeout);
+			getEpochs(), getBatchSize(), program, clsMap, host, server.getPort(), rpcTimeout, aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, counters);
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		try {
 			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
@@ -172,6 +191,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} finally {
 			// Stop the netty server
 			server.close();
+		}
+
+		// Accumulate the statistics for remote workers
+		if (DMLScript.STATISTICS && !SparkExecutionContext.isLocalMaster()) {
+			Statistics.accPSSetupTime(aSetup.sum());
+			Statistics.incWorkerNumber(aWorker.sum());
+			Statistics.accPSLocalModelUpdateTime(aUpdate.sum());
+			Statistics.accPSBatchIndexingTime(aIndex.sum());
+			Statistics.accPSGradientComputeTime(aGrad.sum());
+			Statistics.accPSRpcRequestTime(aRPC.sum());
 		}
 
 		// Fetch the final model from ps

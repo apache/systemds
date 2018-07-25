@@ -23,7 +23,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -214,27 +213,10 @@ public class CNodeUnary extends CNode
 		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replace("%TMP%", var);
 		
-		String varj = _inputs.get(0).getVarname();
-		
 		//replace sparse and dense inputs
+		String varj = _inputs.get(0).getVarname();
 		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
-		tmp = tmp.replace("%IN1v%", varj+"vals");
-		tmp = tmp.replace("%IN1i%", varj+"ix");
-		tmp = tmp.replace("%IN1%", 
-			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
-			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
-		
-		//replace start position of main input
-		String spos = (_inputs.get(0) instanceof CNodeData 
-			&& _inputs.get(0).getDataType().isMatrix()) ? !varj.startsWith("b") ? 
-			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".pos(rix)" : "0" : "0";
-		
-		tmp = tmp.replace("%POS1%", spos);
-		tmp = tmp.replace("%POS2%", spos);
-		
-		//replace length
-		if( _inputs.get(0).getDataType().isMatrix() )
-			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn);
 		
 		sb.append(tmp);
 		

@@ -95,5 +95,6 @@ max_pool <- function(X, N, C, Hin, Win, Hf, Wf,
 }
 
 R = max_pool(X, numImg, numChannels, imgSize*imgSize, 1, poolSize1, poolSize2, stride, stride)
+R = R + 7;
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""))

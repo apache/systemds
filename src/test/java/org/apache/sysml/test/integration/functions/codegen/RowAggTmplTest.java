@@ -80,7 +80,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME41 = TEST_NAME+"41"; //X*rowSums(X/seq(1,N)+t(seq(M,1)))
 	private static final String TEST_NAME42 = TEST_NAME+"42"; //X/rowSums(min(X, Y, Z))
 	private static final String TEST_NAME43 = TEST_NAME+"43"; //bias_add(X,B) + bias_mult(X,B)
-	private static final String TEST_NAME44 = TEST_NAME+"44"; //maxpool(X - mean(X));
+	private static final String TEST_NAME44 = TEST_NAME+"44"; //maxpool(X - mean(X)) + 7;
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -817,6 +817,10 @@ public class RowAggTmplTest extends AutomatedTestBase
 			if( testname.equals(TEST_NAME42) )
 				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin") 
 					&& !heavyHittersContainsSubString("spoof", 2));
+			if( testname.equals(TEST_NAME44) )
+				Assert.assertTrue(!heavyHittersContainsSubString("maxpooling") 
+					&& !heavyHittersContainsSubString("spoof", 2));
+			
 		}
 		finally {
 			rtplatform = platformOld;

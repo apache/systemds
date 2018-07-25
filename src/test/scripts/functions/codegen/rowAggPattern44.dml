@@ -31,5 +31,6 @@ while(FALSE){}
 
 X = X - rowMeans(X);
 R = max_pool(X, stride=[stride, stride], padding=[pad, pad], input_shape=[numImg, numChannels, imgSize*imgSize, 1], pool_size=[poolSize1, poolSize2]);
+R = R + 7;
 
 write(R, $1, format="text");

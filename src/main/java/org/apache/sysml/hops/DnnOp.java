@@ -217,6 +217,12 @@ public class DnnOp extends MultiThreadedHop
 			isEqualAndKnown(param1.H, param2.H) && isEqualAndKnown(param1.W, param2.W);
 	}
 	
+	public boolean isStride1Pad0() {
+		DnnParameters tmp = parseInput();
+		return tmp.stride_h == 1 && tmp.stride_w == 1
+			&& tmp.pad_h == 0 && tmp.pad_w == 0;
+	}
+	
 	private static boolean isEqualAndKnown(int val1, int val2) {
 		return val1 >= 0 && val2 >= 0 && val1 == val2;
 	}

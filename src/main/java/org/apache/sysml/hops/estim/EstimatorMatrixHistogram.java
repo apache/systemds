@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.estim;
 
 import java.util.Arrays;
+import java.util.Random;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -127,6 +128,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		//exploit upper bound on nnz based on non-empty rows/cols
 		nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
 			Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
+			
+		//exploit lower bound		
+		int resrnz=0; //number of rows where number of nz is bigger than common dimension/2
+		int rescnz=0; //number of cols where number of nz is bigger than common dimension/2
+		if(h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) {
+			resrnz = (int) Arrays.stream(h1.rNnz).filter(item -> item > h1.getCols()/2).count();
+			rescnz = (int) Arrays.stream(h2.cNnz).filter(item -> item > h1.getCols()/2).count();		
+			Math.max(resrnz*rescnz, nnz);
+		}
 		
 		//exploit lower bound on nnz based on half-full rows/cols
 		nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
@@ -257,19 +267,34 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			//propagate h1.r and h2.c to output via simple scaling
 			//(this implies 0s propagate and distribution is preserved)
 			int rMaxNnz = 0, cMaxNnz = 0;
+			Random rn = new Random();
 			int[] rNnz = new int[h1.getRows()];
 			for( int i=0; i<h1.getRows(); i++ ) {
-				rNnz[i] = (int) Math.round(nnzOut/nnz1 * h1.rNnz[i]);
+				rNnz[i] = prob_round(nnzOut/nnz1 * h1.rNnz[i], rn);
+				//rNnz[i] = (int) Math.round(nnzOut/nnz1 * h1.rNnz[i]);
 				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 			}
 			int[] cNnz = new int[h2.getCols()];
 			for( int i=0; i<h2.getCols(); i++ ) {
-				cNnz[i] = (int) Math.round(nnzOut/nnz2 * h2.cNnz[i]);
+				cNnz[i] = prob_round(nnzOut/nnz2 * h2.cNnz[i], rn);
+				//cNnz[i] = (int) Math.round(nnzOut/nnz2 * h2.cNnz[i]);
 				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
 			}
 			
 			//construct new histogram object
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+		}
+		
+		public static int prob_round(double inNnz, Random rn) {
+			int outNnz=0;
+			double temp=Math.floor(inNnz);
+			double f = inNnz - temp;
+			if(f<rn.nextDouble()) {
+				outNnz=(int) (temp+1);
+			}else {
+				outNnz=(int) temp;
+			}
+			return outNnz;
 		}
 	}
 }

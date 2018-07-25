@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -189,7 +190,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		public double getValue() {
 			return value;
 		}
-
+    
 		public List<Node> getInput() {
 			return input;
 		}

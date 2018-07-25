@@ -117,7 +117,7 @@ public class LibMatrixDNNPooling {
 			Arrays.fill(out, rl*CPQ, ru*CPQ, minVal);
 			//quick-path w/o materialized index arrays 
 			for(int i = rl; i < ru; i++)
-				for (int c = 0, off=ii+(i-rl)*CHW, oix=oi; c < C; c++, off+=HW)
+				for (int c = 0, off=ii+(i-rl)*CHW, oix=oi+(i-rl)*CPQ; c < C; c++, off+=HW)
 					for (int p = 0; p < P; p++, oix+=Q)
 						for (int h = p; h < Math.min(p+R,H); h++)
 							for (int q = 0, off2=off+h*W; q < Q; q++) {
@@ -139,7 +139,7 @@ public class LibMatrixDNNPooling {
 			_rl = rl; _ru = ru;
 			_params = params;
 			_poolingType = poolingType;
-			_poolingMultiplier = 1/(params.R*params.S);
+			_poolingMultiplier = 1d/(params.R*params.S);
 		}
 		
 		@Override

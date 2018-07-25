@@ -85,7 +85,8 @@ public abstract class PSWorker implements Serializable {
 			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "update function");
+		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
+			inputNames, func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);

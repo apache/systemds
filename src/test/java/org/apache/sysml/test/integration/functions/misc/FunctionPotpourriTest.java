@@ -34,6 +34,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME4 = "FunPotpourriEval";
 	private final static String TEST_NAME5 = "FunPotpourriSubsetReturn";
 	private final static String TEST_NAME6 = "FunPotpourriSubsetReturnDead";
+	private final static String TEST_NAME7 = "FunPotpourriNamedArgsSingle";
+	private final static String TEST_NAME8 = "FunPotpourriNamedArgsMulti";
+	private final static String TEST_NAME9 = "FunPotpourriNamedArgsPartial";
+	private final static String TEST_NAME10 = "FunPotpourriNamedArgsUnknown1";
+	private final static String TEST_NAME11 = "FunPotpourriNamedArgsUnknown2";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -47,6 +52,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] { "R" }) );
 	}
 
 	@Test
@@ -79,13 +89,49 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		runFunctionTest( TEST_NAME6, false );
 	}
 	
+	@Test
+	public void testFunctionNamedArgsSingle() {
+		runFunctionTest( TEST_NAME7, false );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsSingleErr() {
+		runFunctionTest( TEST_NAME7, true );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsMulti() {
+		runFunctionTest( TEST_NAME8, false );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsMultiErr() {
+		runFunctionTest( TEST_NAME8, true );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsPartial() {
+		runFunctionTest( TEST_NAME9, true );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsUnkown1() {
+		runFunctionTest( TEST_NAME10, true );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsUnkown2() {
+		runFunctionTest( TEST_NAME11, true );
+	}
+	
 	private void runFunctionTest(String testName, boolean error) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain", "-stats"};
+		programArgs = new String[]{"-explain", "-stats",
+			"-args", String.valueOf(error).toUpperCase()};
 
 		//run script and compare output
 		runTest(true, error, DMLException.class, -1); 

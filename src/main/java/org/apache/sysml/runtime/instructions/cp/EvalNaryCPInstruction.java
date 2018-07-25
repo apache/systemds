@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -62,8 +63,9 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixObject outputMO = new MatrixObject(ec.getMatrixObject(output.getName()));
 
 		//3. call the function
-		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(
-			null, funcName, boundInputs, boundInputNames, boundOutputNames, "eval func");
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName);
+		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
+			boundInputs, boundInputNames, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
 		//4. convert the result to matrix

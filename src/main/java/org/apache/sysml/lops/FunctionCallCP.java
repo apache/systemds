@@ -31,15 +31,17 @@ import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 
-public class FunctionCallCP extends Lop  
+public class FunctionCallCP extends Lop
 {	
 	private String _fnamespace;
 	private String _fname;
-	private String[] _outputs;
+	private String[] _inputNames;
+	private String[] _outputNames;
 	private ArrayList<Lop> _outputLops = null;
 
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ArrayList<Hop> outputHops, ExecType et) {
-		this(inputs, fnamespace, fname, outputs, et);
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, 
+		String[] inputNames, String[] outputNames, ArrayList<Hop> outputHops, ExecType et) {
+		this(inputs, fnamespace, fname, inputNames, outputNames, et);
 		if(outputHops != null) {
 			_outputLops = new ArrayList<>();
 			setLevel();
@@ -55,27 +57,25 @@ public class FunctionCallCP extends Lop
 		}
 	}
 	
-	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] outputs, ExecType et) 
+	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, String[] inputNames, String[] outputNames, ExecType et) 
 	{
-		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);	
+		super(Lop.Type.FunctionCallCP, DataType.UNKNOWN, ValueType.UNKNOWN);
 		//note: data scalar in order to prevent generation of redundant createvar, rmvar
 		
 		_fnamespace = fnamespace;
 		_fname = fname;
-		_outputs = outputs;
+		_inputNames = inputNames;
+		_outputNames = outputNames;
 		
 		//wire inputs
 		for( Lop in : inputs ) {
 			addInput( in );
 			in.addOutput( this );
 		}
-			
+		
 		//lop properties: always in CP
-		boolean breaksAlignment = false; 
-		boolean aligner = false;
-		boolean definesMRJob = false;
 		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties(inputs, et, ExecLocation.ControlProgram, false, false, false);
 	}
 
 	public ArrayList<Lop> getFunctionOutputs() {
@@ -99,9 +99,9 @@ public class FunctionCallCP extends Lop
 			sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
 		
-		for(int i=0; i< _outputs.length; i++) {
+		for(int i=0; i< _outputNames.length; i++) {
 			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(_outputs[i]);
+			sb.append(_outputNames[i]);
 		}
 		
 		return sb.toString();
@@ -118,11 +118,6 @@ public class FunctionCallCP extends Lop
 		if (_fnamespace.equalsIgnoreCase(DMLProgram.INTERNAL_NAMESPACE) ) {
 			return getInstructionsMultipleReturnBuiltins(inputs, outputs);
 		}
-		
-		//Instruction format extFunct:::[FUNCTION NAMESPACE]:::[FUNCTION NAME]:::[num input params]:::[num output params]:::[list of delimited input params ]:::[list of delimited ouput params]
-		//These are the "bound names" for the inputs / outputs.  For example, out1 = ns::foo(in1, in2) yields
-		//extFunct:::ns:::foo:::2:::1:::in1:::in2:::out1
-		//NOTE: we have to append full input operand information to distinguish literals from variables w/ equal name
 
 		StringBuilder inst = new StringBuilder();
 		inst.append(getExecType());
@@ -136,19 +131,21 @@ public class FunctionCallCP extends Lop
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(inputs.length);
 		inst.append(Lop.OPERAND_DELIMITOR);
-		inst.append(_outputs.length);
+		inst.append(_outputNames.length);
 		
 		for(int i=0; i<inputs.length; i++) {
 			inst.append(Lop.OPERAND_DELIMITOR);
+			inst.append(_inputNames[i]);
+			inst.append("=");
 			inst.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
 
 		// TODO function output dataops (phase 3) - take 'outputs' into account
-		for( String out : _outputs ) {
+		for( String out : _outputNames ) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
 		}
 
-		return inst.toString();				
+		return inst.toString();
 	}
 }

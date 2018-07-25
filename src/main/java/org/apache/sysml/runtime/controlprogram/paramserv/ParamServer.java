@@ -113,7 +113,8 @@ public abstract class ParamServer
 			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "aggregate function");
+		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
+			inputNames, func.getInputParamNames(), outputNames, "aggregate function");
 	}
 
 	public abstract void push(int workerID, ListObject value);

@@ -294,8 +294,7 @@ public abstract class CostEstimator
 		else if( inst instanceof FunctionCallCPInstruction )
 		{
 			FunctionCallCPInstruction finst = (FunctionCallCPInstruction) inst;
-			ArrayList<String> outVars = finst.getBoundOutputParamNames();
-			for( String varname : outVars )
+			for( String varname : finst.getBoundOutputParamNames() )
 				stats.put(varname, _unknownStats);
 		}
 	}

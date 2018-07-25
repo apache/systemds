@@ -596,7 +596,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				}
 
 				//MB: we cannot use the hash since multiple interleaved inlined functions should be independent.
-				//String prefix = new Integer(fblock.hashCode()).toString() + "_";
 				String prefix = _seq.getNextID() + "_";
 
 				if (fstmt.getBody().size() > 1){
@@ -609,32 +608,35 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 						fcall.getParamExprs().size() + " found, but " + fstmt.getInputParams().size()+" expected.");
 				}
 
-				for (int i =0; i < fstmt.getInputParams().size(); i++) {
-					DataIdentifier currFormalParam = fstmt.getInputParams().get(i);
-
+				for (int i =0; i < fcall.getParamExprs().size(); i++) {
+					ParameterExpression inputArg = fcall.getParamExprs().get(i);
+					DataIdentifier currFormalParam = (inputArg.getName()==null) ?
+						fstmt.getInputParams().get(i) : fstmt.getInputParam(inputArg.getName());
+					if( currFormalParam == null )
+						throw new LanguageException("Non-existing named function argument '"
+							+ inputArg.getName()+"' in call to "+fcall.getName()+".");
+					
 					// create new assignment statement
 					String newFormalParameterName = prefix + currFormalParam.getName();
 					DataIdentifier newTarget = new DataIdentifier(currFormalParam);
 					newTarget.setName(newFormalParameterName);
 
-					Expression currCallParam = fcall.getParamExprs().get(i).getExpr();
+					Expression currCallParam = inputArg.getExpr();
 
 					//auto casting of inputs on inlining (if required)
 					ValueType targetVT = newTarget.getValueType();
 					if (newTarget.getDataType() == DataType.SCALAR && currCallParam.getOutput() != null
 							&& targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING) {
 						currCallParam = new BuiltinFunctionExpression(
-								BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
-								new Expression[] { currCallParam }, newTarget);
+							BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
+							new Expression[] { currCallParam }, newTarget);
 					}
 
 					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, currCallParam, newTarget);
-					newStatements.add(binding);
+					newStatements.add(new AssignmentStatement(newTarget, currCallParam, newTarget));
 				}
 
 				for (Statement stmt : sblock._statements){
-
 					// rewrite the statement to use the "rewritten" name
 					Statement rewrittenStmt = stmt.rewriteStatement(prefix);
 					newStatements.add(rewrittenStmt);

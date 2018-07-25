@@ -645,7 +645,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 							LOG.debug("Applied batchNormTrain rewrite.");
 							ArrayList<Hop> outputs = getMultiOutputHops(roots, oldHops);
 							FunctionOp ret = new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_train", 
-									inHops, outputs.stream().map(h -> h.getName()).toArray(String[]::new), outputs);
+								null, inHops, outputs.stream().map(h -> h.getName()).toArray(String[]::new), outputs);
 							Collections.reverse(roots);
 							roots.add(ret);
 							Collections.reverse(roots);
@@ -654,7 +654,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 					}
 					
 				}
-			}			
+			}
 		}
 		
 		return hi;

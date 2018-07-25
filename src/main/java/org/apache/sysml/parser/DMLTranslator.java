@@ -21,10 +21,12 @@ package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1314,29 +1316,36 @@ public class DMLTranslator
 					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
 					
 					//error handling missing function
-					if (fsb == null){
-						String error = source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace(); 
-						throw new LanguageException(error);
+					if (fsb == null) { 
+						throw new LanguageException(source.printErrorLocation() + "function " 
+							+ fci.getName() + " is undefined in namespace " + fci.getNamespace());
 					}
+					
+					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+					String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(),fci.getName());
 					
 					//error handling unsupported function call in indexing expression
 					if( target instanceof IndexedIdentifier ) {
-						String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(),fci.getName());
-						throw new LanguageException("Unsupported function call to '"+fkey+"' in left indexing expression. " +
-								"Please, assign the function output to a variable.");
+						throw new LanguageException("Unsupported function call to '"+fkey+"' in left indexing "
+							+ "expression. Please, assign the function output to a variable.");
 					}
 					
-					ArrayList<Hop> finputs = new ArrayList<>();
-					for (ParameterExpression paramName : fci.getParamExprs()){
-						Hop in = processExpression(paramName.getExpr(), null, ids);
-						finputs.add(in);
-					}
-
+					//prepare function input names and inputs
+					String[] inputNames = fci.getParamExprs().stream()
+						.map(e -> e.getName()).toArray(String[]::new);
+					List<Hop> finputs = fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					
+					//use function signature to obtain names for unnamed args
+					//(note: consistent parameters already checked for functions in general)
+					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					
 					//create function op
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = (target == null) ?
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{}, false) :
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, new String[]{target.getName()}, false);
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{}, false) :
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{target.getName()}, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -1350,22 +1359,29 @@ public class DMLTranslator
 				if ( source instanceof FunctionCallIdentifier ) {
 					FunctionCallIdentifier fci = (FunctionCallIdentifier) source;
 					FunctionStatementBlock fsb = this._dmlProg.getFunctionStatementBlock(fci.getNamespace(),fci.getName());
-					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-					if (fstmt == null){
-						throw new LanguageException(source.printErrorLocation() + "function " + fci.getName() + " is undefined in namespace " + fci.getNamespace());
+					if (fsb == null){
+						throw new LanguageException(source.printErrorLocation() + "function " 
+							+ fci.getName() + " is undefined in namespace " + fci.getNamespace());
 					}
 					
-					ArrayList<Hop> finputs = new ArrayList<>();
-					for (ParameterExpression paramName : fci.getParamExprs()){
-						Hop in = processExpression(paramName.getExpr(), null, ids);
-						finputs.add(in);
-					}
-
+					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+					
+					//prepare function input names and inputs
+					String[] inputNames = fci.getParamExprs().stream()
+						.map(e -> e.getName()).toArray(String[]::new);
+					List<Hop> finputs = fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					
+					//use function signature to obtain names for unnamed args
+					//(note: consistent parameters already checked for functions in general)
+					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					
 					//create function op
 					String[] foutputs = mas.getTargetList().stream()
 						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), finputs, foutputs, false);
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, foutputs, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -2003,7 +2019,7 @@ public class DMLTranslator
 				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				
-				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
+				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
 				break;
 				
 			default:
@@ -2220,31 +2236,31 @@ public class DMLTranslator
 		// Construct Hop for current builtin function expression based on its type
 		Hop currBuiltinOp = null;
 		switch (source.getOpCode()) {
-		case QR:
-		case LU:
-		case EIGEN:
-		case LSTM:
-		case LSTM_BACKWARD:
-		case BATCH_NORM2D:
-		case BATCH_NORM2D_BACKWARD:
-		case SVD:
-			
-			// Number of outputs = size of targetList = #of identifiers in source.getOutputs
-			String[] outputNames = new String[targetList.size()]; 
-			for ( int i=0; i < targetList.size(); i++ ) {
-				outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
-				Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
-				outputs.add(output);
-			}
-			
-			// Create the hop for current function call
-			FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), inputs, outputNames, outputs);
-			currBuiltinOp = fcall;
-			
-			break;
-			
-		default:
-			throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
+			case QR:
+			case LU:
+			case EIGEN:
+			case LSTM:
+			case LSTM_BACKWARD:
+			case BATCH_NORM2D:
+			case BATCH_NORM2D_BACKWARD:
+			case SVD:
+				
+				// Number of outputs = size of targetList = #of identifiers in source.getOutputs
+				String[] outputNames = new String[targetList.size()]; 
+				for ( int i=0; i < targetList.size(); i++ ) {
+					outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
+					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
+					outputs.add(output);
+				}
+				
+				// Create the hop for current function call
+				FunctionOp fcall = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
+				currBuiltinOp = fcall;
+				
+				break;
+				
+			default:
+				throw new ParseException("Invaid Opcode in DMLTranslator:processMultipleReturnBuiltinFunctionExpression(): " + source.getOpCode());
 		}
 
 		// set properties for created hops based on outputs of source expression

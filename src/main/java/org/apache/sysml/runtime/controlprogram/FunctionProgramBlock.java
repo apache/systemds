@@ -20,6 +20,8 @@
 package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -43,20 +45,26 @@ public class FunctionProgramBlock extends ProgramBlock
 	
 	private boolean _recompileOnce = false;
 	
-	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) 
-	{
+	public FunctionProgramBlock( Program prog, ArrayList<DataIdentifier> inputParams, ArrayList<DataIdentifier> outputParams) {
 		super(prog);
 		_childBlocks = new ArrayList<>();
 		_inputParams = new ArrayList<>();
-		for (DataIdentifier id : inputParams){
+		for (DataIdentifier id : inputParams)
 			_inputParams.add(new DataIdentifier(id));
-			
-		}
 		_outputParams = new ArrayList<>();
-		for (DataIdentifier id : outputParams){
+		for (DataIdentifier id : outputParams)
 			_outputParams.add(new DataIdentifier(id));
-		}
 	}
+	
+	public DataIdentifier getInputParam(String name) {
+		return _inputParams.stream()
+			.filter(d -> d.getName().equals(name))
+			.findFirst().orElse(null);
+	}
+	
+	public List<String> getInputParamNames() {
+		return _inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
+	} 
 	
 	public ArrayList<DataIdentifier> getInputParams(){
 		return _inputParams;
@@ -70,8 +78,7 @@ public class FunctionProgramBlock extends ProgramBlock
 		_childBlocks.add(childBlock);
 	}
 	
-	public void setChildBlocks( ArrayList<ProgramBlock> pbs)
-	{
+	public void setChildBlocks( ArrayList<ProgramBlock> pbs) {
 		_childBlocks = pbs;
 	}
 	

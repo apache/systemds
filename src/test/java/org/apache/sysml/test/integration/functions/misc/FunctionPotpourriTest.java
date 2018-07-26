@@ -39,6 +39,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME9 = "FunPotpourriNamedArgsPartial";
 	private final static String TEST_NAME10 = "FunPotpourriNamedArgsUnknown1";
 	private final static String TEST_NAME11 = "FunPotpourriNamedArgsUnknown2";
+	private final static String TEST_NAME12 = "FunPotpourriNamedArgsIPA";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -57,6 +58,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] { "R" }) );
 	}
 
 	@Test
@@ -122,6 +124,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNamedArgsUnkown2() {
 		runFunctionTest( TEST_NAME11, true );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsIPA() {
+		runFunctionTest( TEST_NAME12, false );
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {

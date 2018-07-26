@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.estim;
 
 import java.util.Arrays;
+import java.util.Random;
 
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -258,18 +259,26 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			//(this implies 0s propagate and distribution is preserved)
 			int rMaxNnz = 0, cMaxNnz = 0;
 			int[] rNnz = new int[h1.getRows()];
+			Random rn = new Random();
 			for( int i=0; i<h1.getRows(); i++ ) {
-				rNnz[i] = (int) Math.round(nnzOut/nnz1 * h1.rNnz[i]);
+				rNnz[i] = probRound(nnzOut/nnz1 * h1.rNnz[i], rn);
 				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 			}
 			int[] cNnz = new int[h2.getCols()];
 			for( int i=0; i<h2.getCols(); i++ ) {
-				cNnz[i] = (int) Math.round(nnzOut/nnz2 * h2.cNnz[i]);
+				cNnz[i] = probRound(nnzOut/nnz2 * h2.cNnz[i], rn);
 				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
 			}
 			
 			//construct new histogram object
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+		}
+		
+		private static int probRound(double inNnz, Random rand) {
+			double temp = Math.floor(inNnz);
+			double f = inNnz - temp; //non-int fraction [0,1)
+			double randf = rand.nextDouble(); //uniform [0,1)
+			return (int)((f > randf) ? temp+1 : temp);
 		}
 	}
 }

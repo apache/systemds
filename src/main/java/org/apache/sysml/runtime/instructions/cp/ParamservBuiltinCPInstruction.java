@@ -145,7 +145,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
 
 		// Create the netty server for ps
-		TransportServer server = PSRpcFactory.createServer((LocalParamServer) ps, host); // Start the server
+		TransportServer server = PSRpcFactory.createServer(sec.getSparkContext().getConf(),(LocalParamServer) ps, host); // Start the server
 
 		// Force all the instructions to CP type
 		Recompiler.recompileProgramBlockHierarchy2Forced(
@@ -155,11 +155,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		SparkPSBody body = new SparkPSBody(newEC);
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
-
-		// Get some configurations
-		long rpcTimeout = sec.getSparkContext().getConf().contains("spark.rpc.askTimeout") ?
-			sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout") :
-			sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
 
 		// Add the accumulators for statistics
 		LongAccumulator aSetup = sec.getSparkContext().sc().longAccumulator("setup");
@@ -178,7 +173,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
-			getEpochs(), getBatchSize(), program, clsMap, host, server.getPort(), rpcTimeout, aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, counters);
+			getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(), server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, counters);
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());

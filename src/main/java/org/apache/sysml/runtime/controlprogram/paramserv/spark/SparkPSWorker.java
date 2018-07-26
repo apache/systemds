@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
@@ -47,9 +48,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 
 	private final String _program;
 	private final HashMap<String, byte[]> _clsMap;
-	private final String _host; // host ip of driver
+	private final SparkConf _conf;
 	private final int _port; // rpc port
-	private final long _rpcTimeout; // rpc ask timeout
 	private final String _aggFunc;
 	private final LongAccumulator _aSetup; // accumulator for setup time
 	private final LongAccumulator _aWorker; // accumulator for worker number
@@ -59,7 +59,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private final LongAccumulator _aRPC; // accumulator for rpc request
 	private final List<Tuple2<LongAccumulator, LongAccumulator>> _counters; // counters (current epoch and batch) for showing the compute progress
 
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host, int port, long rpcTimeout, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, List<Tuple2<LongAccumulator, LongAccumulator>> counters) {
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, List<Tuple2<LongAccumulator, LongAccumulator>> counters) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
@@ -67,9 +67,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_batchSize = batchSize;
 		_program = program;
 		_clsMap = clsMap;
-		_host = host;
+		_conf = conf;
 		_port = port;
-		_rpcTimeout = rpcTimeout;
 		_aSetup = aSetup;
 		_aWorker = aWorker;
 		_aUpdate = aUpdate;
@@ -168,8 +167,14 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		// Initialize the buffer pool and register it in the jvm shutdown hook in order to be cleanuped at the end
 		RemoteParForUtils.setupBufferPool(_workerID);
 
+		// Get some configurations
+		long rpcTimeout = _conf.contains("spark.rpc.askTimeout") ?
+			_conf.getTimeAsMs("spark.rpc.askTimeout") :
+			_conf.getTimeAsMs("spark.network.timeout", "120s");
+		String host = _conf.get("spark.driver.host");
+
 		// Create the ps proxy
-		_ps = PSRpcFactory.createSparkPSProxy(_host, _port, _rpcTimeout, _aRPC);
+		_ps = PSRpcFactory.createSparkPSProxy(_conf, host, _port, rpcTimeout, _aRPC);
 
 		// Initialize the update function
 		setupUpdateFunction(_updFunc, _ec);

@@ -22,36 +22,36 @@ package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.network.TransportContext;
+import org.apache.spark.network.netty.SparkTransportConf;
 import org.apache.spark.network.server.TransportServer;
-import org.apache.spark.network.util.SystemPropertyConfigProvider;
 import org.apache.spark.network.util.TransportConf;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSProxy;
 
-//TODO should be able to configure the port by users
 public class PSRpcFactory {
 
-	private static final int PORT = 5055;
 	private static final String MODULE_NAME = "ps";
 
-	private static TransportContext createTransportContext(LocalParamServer ps) {
-		TransportConf conf = new TransportConf(MODULE_NAME, new SystemPropertyConfigProvider());
+	private static TransportContext createTransportContext(SparkConf conf, LocalParamServer ps) {
+		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);;
 		PSRpcHandler handler = new PSRpcHandler(ps);
-		return new TransportContext(conf, handler);
+		return new TransportContext(tc, handler);
 	}
 
 	/**
 	 * Create and start the server
 	 * @return server
 	 */
-	public static TransportServer createServer(LocalParamServer ps, String host) {
-		TransportContext context = createTransportContext(ps);
-		return context.createServer(host, PORT, Collections.emptyList());
+	public static TransportServer createServer(SparkConf conf, LocalParamServer ps, String host) {
+		TransportContext context = createTransportContext(conf, ps);
+		return context.createServer(host, 0, Collections.emptyList());	// bind rpc to an ephemeral port
 	}
 
-	public static SparkPSProxy createSparkPSProxy(String host, long rpcTimeout) throws IOException {
-		TransportContext context = createTransportContext(new LocalParamServer());
-		return new SparkPSProxy(context.createClientFactory().createClient(host, PORT), rpcTimeout);
+	public static SparkPSProxy createSparkPSProxy(SparkConf conf, String host, int port, long rpcTimeout, LongAccumulator aRPC) throws IOException {
+		TransportContext context = createTransportContext(conf, new LocalParamServer());
+		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
 	}
 }

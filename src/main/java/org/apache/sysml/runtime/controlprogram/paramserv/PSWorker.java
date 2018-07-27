@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 
@@ -133,4 +134,17 @@ public abstract class PSWorker implements Serializable {
 	}
 
 	public abstract String getWorkerName();
+
+	/**
+	 * ----- The following methods are dedicated to statistics -------------
+ 	 */
+	public abstract void incWorkerNumber();
+
+	public abstract void accLocalModelUpdateTime(Timing time);
+
+	public abstract void accBatchIndexingTime(Timing time);
+
+	public abstract void accGradientComputeTime(Timing time);
+
+	public abstract void showProgress(int epoch, int batch);
 }

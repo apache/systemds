@@ -25,6 +25,7 @@ import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcO
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse.ERROR;
 import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse.SUCCESS;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.commons.lang.exception.ExceptionUtils;
@@ -47,7 +48,12 @@ public final class PSRpcHandler extends RpcHandler {
 
 	@Override
 	public void receive(TransportClient client, ByteBuffer buffer, RpcResponseCallback callback) {
-		PSRpcCall call = new PSRpcCall(buffer);
+		PSRpcCall call;
+		try {
+			call = new PSRpcCall(buffer);
+		} catch (IOException e) {
+			throw new DMLRuntimeException("PSRpcHandler: some error occurred when deserializing the rpc call.", e);
+		}
 		PSRpcResponse response = null;
 		switch (call.getMethod()) {
 			case PUSH:
@@ -57,7 +63,11 @@ public final class PSRpcHandler extends RpcHandler {
 				} catch (DMLRuntimeException exception) {
 					response = new PSRpcResponse(ERROR, ExceptionUtils.getFullStackTrace(exception));
 				} finally {
-					callback.onSuccess(response.serialize());
+					try {
+						callback.onSuccess(response.serialize());
+					} catch (IOException e) {
+						throw new DMLRuntimeException("PSRpcHandler: some error occrred when wrapping the rpc response.", e);
+					}
 				}
 				break;
 			case PULL:
@@ -68,7 +78,11 @@ public final class PSRpcHandler extends RpcHandler {
 				} catch (DMLRuntimeException exception) {
 					response = new PSRpcResponse(ERROR, ExceptionUtils.getFullStackTrace(exception));
 				} finally {
-					callback.onSuccess(response.serialize());
+					try {
+						callback.onSuccess(response.serialize());
+					} catch (IOException e) {
+						throw new DMLRuntimeException("PSRpcHandler: some error occrred when wrapping the rpc response.", e);
+					}
 				}
 				break;
 			default:

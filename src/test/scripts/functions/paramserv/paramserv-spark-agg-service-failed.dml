@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-e1 = "element1"
+e1 = matrix(1, rows=100, cols=10)
 modelList = list(e1)
 X = matrix(1, rows=200, cols=30)
 Y = matrix(2, rows=200, cols=1)
@@ -42,10 +42,8 @@ aggregation = function(list[unknown] model,
   print(toString(as.matrix(gradients["agg_service_err"])))
 }
 
-e2 = "element2"
+e2 = matrix(2, rows=100, cols=10)
 params = list(e2)
-
-modelList = list("model")
 
 # Use paramserv function
 modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", epochs=10, hyperparams=params, k=1)

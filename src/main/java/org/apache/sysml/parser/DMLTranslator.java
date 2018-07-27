@@ -21,8 +21,8 @@ package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1331,21 +1331,25 @@ public class DMLTranslator
 					}
 					
 					//prepare function input names and inputs
-					String[] inputNames = fci.getParamExprs().stream()
-						.map(e -> e.getName()).toArray(String[]::new);
-					List<Hop> finputs = fci.getParamExprs().stream()
-						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> e.getName()).collect(Collectors.toList()));
+					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
+					
+					//append default expression for missing arguments
+					appendDefaultArguments(fstmt, inputNames, finputs, ids);
 					
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
-					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
-						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					if( inputNames.stream().allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
 					
 					//create function op
+					String[] inputNames2 = inputNames.toArray(new String[0]);
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = (target == null) ?
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{}, false) :
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{target.getName()}, false);
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames2, finputs, new String[]{}, false) :
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames2, finputs, new String[]{target.getName()}, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -1367,21 +1371,25 @@ public class DMLTranslator
 					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 					
 					//prepare function input names and inputs
-					String[] inputNames = fci.getParamExprs().stream()
-						.map(e -> e.getName()).toArray(String[]::new);
-					List<Hop> finputs = fci.getParamExprs().stream()
-						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> e.getName()).collect(Collectors.toList()));
+					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
 					
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
-					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
-						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					if( inputNames.stream().allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
+					
+					//append default expression for missing arguments
+					appendDefaultArguments(fstmt, inputNames, finputs, ids);
 					
 					//create function op
 					String[] foutputs = mas.getTargetList().stream()
 						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, foutputs, false);
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(),
+						inputNames.toArray(new String[0]), finputs, foutputs, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -1403,6 +1411,28 @@ public class DMLTranslator
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.setHops(output);
 
+	}
+	
+	private void appendDefaultArguments(FunctionStatement fstmt, List<String> inputNames, List<Hop> inputs, HashMap<String, Hop> ids) {
+		//NOTE: For default expressions of unspecified function arguments, we have two choices:
+		//either (a) compile ifelse(exist(argName),default, argName) into the function, or
+		//simply (b) add the default to the argument list of function calls when needed.
+		//We decided for (b) because it simplifies IPA and dynamic recompilation.
+		
+		if( fstmt.getInputParams().size() == inputs.size() )
+			return;
+		HashSet<String> probeNames = new HashSet<String>(inputNames);
+		for( DataIdentifier di : fstmt.getInputParams() ) {
+			if( probeNames.contains(di.getName()) ) continue;
+			Expression exp = fstmt.getInputDefault(di.getName());
+			if( exp == null ) {
+				throw new LanguageException("Missing default expression for unspecified "
+					+ "function argument '"+di.getName()+"' in call to function '"+fstmt.getName()+"'.");
+			}
+			//compile and add default expression
+			inputNames.add(di.getName());
+			inputs.add(processExpression(exp, null, ids));
+		}
 	}
 	
 	public void constructHopsForIfControlBlock(IfStatementBlock sb) {

@@ -36,7 +36,7 @@ public class PSRpcFactory {
 	private static final String MODULE_NAME = "ps";
 
 	private static TransportContext createTransportContext(SparkConf conf, LocalParamServer ps) {
-		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);;
+		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);
 		PSRpcHandler handler = new PSRpcHandler(ps);
 		return new TransportContext(tc, handler);
 	}

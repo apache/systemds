@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -607,5 +608,14 @@ public class IOUtilFunctions
 		ba[ off+5 ] = (byte)((val >>> 16) & 0xFF);
 		ba[ off+6 ] = (byte)((val >>>  8) & 0xFF);
 		ba[ off+7 ] = (byte)((val >>>  0) & 0xFF);
+	}
+	
+	public static byte[] getBytes(ByteBuffer buff) {
+		int len = buff.limit();
+		if( buff.hasArray() )
+			return Arrays.copyOf(buff.array(), len);
+		byte[] ret = new byte[len];
+		buff.get(ret, buff.position(), len);
+		return ret;
 	}
 }

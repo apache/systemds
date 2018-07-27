@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
@@ -34,7 +36,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.Statistics;
 
 import scala.Tuple2;
 
@@ -42,13 +43,21 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 
 	private static final long serialVersionUID = -8674739573419648732L;
 
-	private String _program;
-	private HashMap<String, byte[]> _clsMap;
-	private String _host; // host ip of driver
-	private long _rpcTimeout; // rpc ask timeout
-	private String _aggFunc;
-
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, String host, long rpcTimeout) {
+	private final String _program;
+	private final HashMap<String, byte[]> _clsMap;
+	private final SparkConf _conf;
+	private final int _port; // rpc port
+	private final String _aggFunc;
+	private final LongAccumulator _aSetup; // accumulator for setup time
+	private final LongAccumulator _aWorker; // accumulator for worker number
+	private final LongAccumulator _aUpdate; // accumulator for model update
+	private final LongAccumulator _aIndex; // accumulator for batch indexing
+	private final LongAccumulator _aGrad; // accumulator for gradients computing
+	private final LongAccumulator _aRPC; // accumulator for rpc request
+	private final LongAccumulator _nBatches; //number of executed batches
+	private final LongAccumulator _nEpochs; //number of executed epoches
+	
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, LongAccumulator aBatches, LongAccumulator aEpochs) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
@@ -56,21 +65,29 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_batchSize = batchSize;
 		_program = program;
 		_clsMap = clsMap;
-		_host = host;
-		_rpcTimeout = rpcTimeout;
+		_conf = conf;
+		_port = port;
+		_aSetup = aSetup;
+		_aWorker = aWorker;
+		_aUpdate = aUpdate;
+		_aIndex = aIndex;
+		_aGrad = aGrad;
+		_aRPC = aRPC;
+		_nBatches = aBatches;
+		_nEpochs = aEpochs;
 	}
 
 	@Override
 	public String getWorkerName() {
 		return String.format("Spark worker_%d", _workerID);
 	}
-
+	
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		configureWorker(input);
-		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+		accSetupTime(tSetup);
+
 		call(); // Launch the worker
 	}
 
@@ -89,8 +106,14 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		// Initialize the buffer pool and register it in the jvm shutdown hook in order to be cleanuped at the end
 		RemoteParForUtils.setupBufferPool(_workerID);
 
+		// Get some configurations
+		long rpcTimeout = _conf.contains("spark.rpc.askTimeout") ?
+			_conf.getTimeAsMs("spark.rpc.askTimeout") :
+			_conf.getTimeAsMs("spark.network.timeout", "120s");
+		String host = _conf.get("spark.driver.host");
+
 		// Create the ps proxy
-		_ps = PSRpcFactory.createSparkPSProxy(_host, _rpcTimeout);
+		_ps = PSRpcFactory.createSparkPSProxy(_conf, host, _port, rpcTimeout, _aRPC);
 
 		// Initialize the update function
 		setupUpdateFunction(_updFunc, _ec);
@@ -103,5 +126,47 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		setLabels(ParamservUtils.newMatrixObject(input._2._2));
 		_features.enableCleanup(false);
 		_labels.enableCleanup(false);
+	}
+	
+
+	@Override
+	public void incWorkerNumber() {
+		if (DMLScript.STATISTICS)
+			_aWorker.add(1);
+	}
+	
+	@Override
+	public void accLocalModelUpdateTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			_aUpdate.add((long) time.stop());
+	}
+
+	@Override
+	public void accBatchIndexingTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			_aIndex.add((long) time.stop());
+	}
+
+	@Override
+	public void accGradientComputeTime(Timing time) {
+		if (DMLScript.STATISTICS)
+			_aGrad.add((long) time.stop());
+	}
+	
+	@Override
+	protected void accNumEpochs(int n) {
+		if (DMLScript.STATISTICS)
+			_nEpochs.add(n);
+	}
+	
+	@Override
+	protected void accNumBatches(int n) {
+		if (DMLScript.STATISTICS)
+			_nBatches.add(n);
+	}
+	
+	private void accSetupTime(Timing tSetup) {
+		if (DMLScript.STATISTICS)
+			_aSetup.add((long) tSetup.stop());
 	}
 }

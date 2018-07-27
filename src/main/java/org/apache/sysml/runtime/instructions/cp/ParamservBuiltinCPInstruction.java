@@ -56,6 +56,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
@@ -125,10 +126,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(sec);
-		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1); // level of par is 1 in spark backend
+		// Level of par is 1 in spark backend because one worker will be launched per task
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1);
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
+
+		// Create the agg service's execution context
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
+
+		// Create the parameter server
+		ListObject model = sec.getListObject(getParam(PS_MODEL));
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+
+		// Get driver host
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+
+		// Create the netty server for ps
+		TransportServer server = PSRpcFactory.createServer(sec.getSparkContext().getConf(),(LocalParamServer) ps, host); // Start the server
 
 		// Force all the instructions to CP type
 		Recompiler.recompileProgramBlockHierarchy2Forced(
@@ -139,28 +154,23 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		HashMap<String, byte[]> clsMap = new HashMap<>();
 		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
 
-		// Get some configurations
-		String host = sec.getSparkContext().getConf().get("spark.driver.host");
-		long rpcTimeout = sec.getSparkContext().getConf().contains("spark.rpc.askTimeout") ? 
-			sec.getSparkContext().getConf().getTimeAsMs("spark.rpc.askTimeout") :
-			sec.getSparkContext().getConf().getTimeAsMs("spark.network.timeout", "120s");
+		// Add the accumulators for statistics
+		LongAccumulator aSetup = sec.getSparkContext().sc().longAccumulator("setup");
+		LongAccumulator aWorker = sec.getSparkContext().sc().longAccumulator("workersNum");
+		LongAccumulator aUpdate = sec.getSparkContext().sc().longAccumulator("modelUpdate");
+		LongAccumulator aIndex = sec.getSparkContext().sc().longAccumulator("batchIndex");
+		LongAccumulator aGrad = sec.getSparkContext().sc().longAccumulator("gradCompute");
+		LongAccumulator aRPC = sec.getSparkContext().sc().longAccumulator("rpcRequest");
+		LongAccumulator aBatch = sec.getSparkContext().sc().longAccumulator("numBatches");
+		LongAccumulator aEpoch = sec.getSparkContext().sc().longAccumulator("numEpochs");
 
 		// Create remote workers
-		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), getFrequency(),
-			getEpochs(), getBatchSize(), program, clsMap, host, rpcTimeout);
-
-		// Create the agg service's execution context
-		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
-
-		// Create the parameter server
-		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), 
+			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
+			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
-
-		// Create the netty server for ps
-		TransportServer server = PSRpcFactory.createServer((LocalParamServer) ps, host); // Start the server
 
 		try {
 			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
@@ -170,6 +180,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} finally {
 			// Stop the netty server
 			server.close();
+		}
+
+		// Accumulate the statistics for remote workers
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSSetupTime(aSetup.sum());
+			Statistics.incWorkerNumber(aWorker.sum());
+			Statistics.accPSLocalModelUpdateTime(aUpdate.sum());
+			Statistics.accPSBatchIndexingTime(aIndex.sum());
+			Statistics.accPSGradientComputeTime(aGrad.sum());
+			Statistics.accPSRpcRequestTime(aRPC.sum());
 		}
 
 		// Fetch the final model from ps

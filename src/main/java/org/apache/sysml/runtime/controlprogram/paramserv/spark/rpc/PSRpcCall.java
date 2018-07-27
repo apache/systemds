@@ -19,71 +19,34 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
-import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_BEGIN;
-import static org.apache.sysml.runtime.util.ProgramConverter.CDATA_END;
-import static org.apache.sysml.runtime.util.ProgramConverter.COMPONENTS_DELIM;
-import static org.apache.sysml.runtime.util.ProgramConverter.EMPTY;
-import static org.apache.sysml.runtime.util.ProgramConverter.LEVELIN;
-import static org.apache.sysml.runtime.util.ProgramConverter.LEVELOUT;
-
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.StringTokenizer;
 
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.util.ProgramConverter;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 
 public class PSRpcCall extends PSRpcObject {
 
-	private static final String PS_RPC_CALL_BEGIN = CDATA_BEGIN + "PSRPCCALL" + LEVELIN;
-	private static final String PS_RPC_CALL_END = LEVELOUT + CDATA_END;
-
-	private String _method;
+	private int _method;
 	private int _workerID;
 	private ListObject _data;
 
-	public PSRpcCall(String method, int workerID, ListObject data) {
+	public PSRpcCall(int method, int workerID, ListObject data) {
 		_method = method;
 		_workerID = workerID;
 		_data = data;
 	}
 
-	public PSRpcCall(ByteBuffer buffer) {
+	public PSRpcCall(ByteBuffer buffer) throws IOException {
 		deserialize(buffer);
 	}
 
-	public void deserialize(ByteBuffer buffer) {
-		//FIXME: instead of shallow deserialize + read, we should do a deep deserialize of the matrix blocks.
-		String input = bufferToString(buffer);
-		//header elimination
-		input = input.substring(PS_RPC_CALL_BEGIN.length(), input.length() - PS_RPC_CALL_END.length()); //remove start/end
-		StringTokenizer st = new StringTokenizer(input, COMPONENTS_DELIM);
-
-		_method = st.nextToken();
-		_workerID = Integer.valueOf(st.nextToken());
-		String dataStr = st.nextToken();
-		_data = dataStr.equals(EMPTY) ? null :
-			(ListObject) ProgramConverter.parseDataObject(dataStr)[1];
-	}
-
-	public ByteBuffer serialize() {
-		//FIXME: instead of export+shallow serialize, we should do a deep serialize of the matrix blocks.
-		StringBuilder sb = new StringBuilder();
-		sb.append(PS_RPC_CALL_BEGIN);
-		sb.append(_method);
-		sb.append(COMPONENTS_DELIM);
-		sb.append(_workerID);
-		sb.append(COMPONENTS_DELIM);
-		if (_data == null) {
-			sb.append(EMPTY);
-		} else {
-			flushListObject(_data);
-			sb.append(ProgramConverter.serializeDataObject(DATA_KEY, _data));
-		}
-		sb.append(PS_RPC_CALL_END);
-		return ByteBuffer.wrap(sb.toString().getBytes());
-	}
-
-	public String getMethod() {
+	public int getMethod() {
 		return _method;
 	}
 
@@ -93,5 +56,38 @@ public class PSRpcCall extends PSRpcObject {
 
 	public ListObject getData() {
 		return _data;
+	}
+	
+	public void deserialize(ByteBuffer buffer) throws IOException {
+		DataInputStream dis = new DataInputStream(
+			new ByteArrayInputStream(IOUtilFunctions.getBytes(buffer)));
+		_method = dis.readInt();
+		validateMethod(_method);
+		_workerID = dis.readInt();
+		if (dis.available() > 1)
+			_data = readAndDeserialize(dis);
+		dis.close();
+	}
+
+	public ByteBuffer serialize() throws IOException {
+		//TODO: Perf: use CacheDataOutput to avoid multiple copies (needs UTF handling)
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(getApproxSerializedSize(_data));
+		FastBufferedDataOutputStream dos = new FastBufferedDataOutputStream(bos);
+		dos.writeInt(_method);
+		dos.writeInt(_workerID);
+		if (_data != null)
+			serializeAndWriteListObject(_data, dos);
+		dos.flush();
+		return ByteBuffer.wrap(bos.toByteArray());
+	}
+	
+	private void validateMethod(int method) {
+		switch (method) {
+			case PUSH:
+			case PULL:
+				break;
+			default:
+				throw new DMLRuntimeException("PSRpcCall: only support rpc method 'push' or 'pull'");
+		}
 	}
 }

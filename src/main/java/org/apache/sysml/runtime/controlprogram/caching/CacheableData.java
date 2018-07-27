@@ -364,6 +364,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	// ***                                       ***
 	// *********************************************
 
+	public T acquireReadAndRelease() {
+		T tmp = acquireRead();
+		release();
+		return tmp;
+	}
+	
 	/**
 	 * Acquires a shared "read-only" lock, produces the reference to the cache block,
 	 * restores the cache block to main memory, reads from HDFS if needed.

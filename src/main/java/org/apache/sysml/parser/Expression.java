@@ -86,6 +86,7 @@ public abstract class Expression implements ParseInfo
 		CUMMIN,
 		CUMPROD,
 		CUMSUM,
+		CUMSUMPROD,
 		DIAG,
 		EIGEN,
 		EVAL,

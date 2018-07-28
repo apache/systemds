@@ -99,6 +99,7 @@ public class LibMatrixAgg
 		CUM_MIN,
 		CUM_MAX,
 		CUM_PROD,
+		CUM_SUM_PROD,
 		MIN,
 		MAX,
 		MEAN,
@@ -625,23 +626,19 @@ public class LibMatrixAgg
 		return AggType.INVALID;
 	}
 
-	private static AggType getAggType( UnaryOperator op )
-	{
+	private static AggType getAggType( UnaryOperator op ) {
 		ValueFunction vfn = op.fn;
-
-		//cumsum/cumprod/cummin/cummax
 		if( vfn instanceof Builtin ) {
 			BuiltinCode bfunc = ((Builtin) vfn).bFunc;
-			switch( bfunc )
-			{
-				case CUMSUM: 	return AggType.CUM_KAHAN_SUM;
-				case CUMPROD:	return AggType.CUM_PROD;
-				case CUMMIN:	return AggType.CUM_MIN;
-				case CUMMAX: 	return AggType.CUM_MAX;
-				default: 		return AggType.INVALID;
+			switch( bfunc ) {
+				case CUMSUM:     return AggType.CUM_KAHAN_SUM;
+				case CUMPROD:    return AggType.CUM_PROD;
+				case CUMMIN:     return AggType.CUM_MIN;
+				case CUMMAX:     return AggType.CUM_MAX;
+				case CUMSUMPROD: return AggType.CUM_SUM_PROD;
+				default:         return AggType.INVALID;
 			}
 		}
-		
 		return AggType.INVALID;
 	}
 
@@ -1483,6 +1480,12 @@ public class LibMatrixAgg
 				d_ucumkp(da, agg, dc, n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case CUM_SUM_PROD: { //CUMSUMPROD
+				if( n != 2 )
+					throw new DMLRuntimeException("Cumsumprod expects two-column input (n="+n+").");
+				d_ucumkpp(da, agg, dc, rl, ru);
+				break;
+			}
 			case CUM_PROD: { //CUMPROD
 				d_ucumm(a, agg, c, n, rl, ru);
 				break;
@@ -1758,6 +1761,29 @@ public class LibMatrixAgg
 		for( int i=rl; i<ru; i++ ) {
 			sumAgg( a.values(i), csums, a.pos(i), n, kbuff, kplus );
 			c.set(i, csums.values(0));
+		}
+	}
+	
+	/**
+	 * CUMSUMPROD, opcode: ucumk+*, dense input.
+	 * 
+	 * @param a ?
+	 * @param agg ?
+	 * @param c ?
+	 * @param n ?
+	 * @param kbuff ?
+	 * @param kplus ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void d_ucumkpp( DenseBlock a, double[] agg, DenseBlock c, int rl, int ru ) {
+		//init current row sum/correction arrays w/ neutral 0
+		double sum = (agg != null) ? agg[0] : 0;
+		//scan once and compute prefix sums
+		double[] avals = a.valuesAt(0);
+		double[] cvals = c.valuesAt(0);
+		for( int i=rl, ix=rl*2; i<ru; i++, ix+=2 ) {
+			sum = cvals[i] = avals[ix] + avals[ix+1] * sum;
 		}
 	}
 	
@@ -2918,7 +2944,7 @@ public class LibMatrixAgg
 			corr[pos1+i] = kbuff._correction;
 		}
 	}
-
+	
 	private static void sumAgg(double[] a, DenseBlock c, int[] aix, int ai, final int len, final int n, KahanObject kbuff, KahanFunction kplus) {
 		//note: output might span multiple physical blocks
 		double[] sum = c.values(0);
@@ -2933,7 +2959,7 @@ public class LibMatrixAgg
 			corr[pos1+ix] = kbuff._correction;
 		}
 	}
-
+	
 	private static double product( double[] a, int ai, final int len ) {
 		double val = 1;
 		if( NAN_AWARENESS ) {

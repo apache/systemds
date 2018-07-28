@@ -2597,6 +2597,7 @@ public class DMLTranslator
 		case FLOOR:
 		case CUMSUM:
 		case CUMPROD:
+		case CUMSUMPROD:
 		case CUMMIN:
 		case CUMMAX:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),

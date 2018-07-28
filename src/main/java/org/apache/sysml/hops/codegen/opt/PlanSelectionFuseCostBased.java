@@ -665,6 +665,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				case CUMMIN:
 				case CUMMAX:
 				case CUMPROD: costs = 1; break;
+				case CUMSUMPROD: costs = 2; break;
 				default:
 					LOG.warn("Cost model not "
 						+ "implemented yet for: "+((UnaryOp)current).getOp());

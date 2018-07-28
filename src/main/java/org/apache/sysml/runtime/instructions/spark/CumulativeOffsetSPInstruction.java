@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -53,13 +54,20 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		if ("bcumoffk+".equals(opcode)) {
 			_bop = new BinaryOperator(Plus.getPlusFnObject());
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
-		} else if ("bcumoff*".equals(opcode)) {
+		}
+		else if ("bcumoff*".equals(opcode)) {
 			_bop = new BinaryOperator(Multiply.getMultiplyFnObject());
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
-		} else if ("bcumoffmin".equals(opcode)) {
+		}
+		else if ("bcumoff+*".equals(opcode)) {
+			_bop = new BinaryOperator(PlusMultiply.getFnObject());
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"));
+		}
+		else if ("bcumoffmin".equals(opcode)) {
 			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("min"));
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));
-		} else if ("bcumoffmax".equals(opcode)) {
+		}
+		else if ("bcumoffmax".equals(opcode)) {
 			_bop = new BinaryOperator(Builtin.getBuiltinFnObject("max"));
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));
 		}
@@ -81,9 +89,10 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input2.getName());
-		long rlen = mc.getRows();
-		int brlen = mc.getRowsPerBlock();
+		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		long rlen = mc2.getRows();
+		int brlen = mc2.getRowsPerBlock();
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
@@ -93,12 +102,15 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		inAgg = inAgg.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, brlen));
 		
 		//execute cumulative offset (apply cumulative op w/ offsets)
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				inData.join( inAgg )
-				      .mapValues(new RDDCumOffsetFunction(_uop, _bop));
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = inData
+			.join( inAgg ).mapValues(new RDDCumOffsetFunction(_uop, _bop));
 		
-		updateUnaryOutputMatrixCharacteristics(sec);
 		//put output handle in symbol table
+		if( _bop.fn instanceof PlusMultiply )
+			sec.getMatrixCharacteristics(output.getName())
+				.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+		else //general case
+			updateUnaryOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
@@ -149,7 +161,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 				{
 					MatrixIndexes tmpix = new MatrixIndexes(rixOffset+i+2, ixIn.getColumnIndex());
 					MatrixBlock tmpblk = new MatrixBlock(1, blkIn.getNumColumns(), blkIn.isInSparseFormat());
-					blkIn.slice(i, i, 0, blkIn.getNumColumns()-1, tmpblk);	
+					blkIn.slice(i, i, 0, blkIn.getNumColumns()-1, tmpblk);
 					ret.add(new Tuple2<>(tmpix, tmpblk));
 				}
 			
@@ -164,27 +176,34 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		private UnaryOperator _uop = null;
 		private BinaryOperator _bop = null;
 		
-		public RDDCumOffsetFunction(UnaryOperator uop, BinaryOperator bop)
-		{
+		public RDDCumOffsetFunction(UnaryOperator uop, BinaryOperator bop) {
 			_uop = uop;
 			_bop = bop;
 		}
 
 		@Override
-		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0)
-			throws Exception 
-		{
+		public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception  {
 			//prepare inputs and outputs
 			MatrixBlock dblkIn = arg0._1(); //original data 
 			MatrixBlock oblkIn = arg0._2(); //offset row vector
-			MatrixBlock blkOut = new MatrixBlock(dblkIn.getNumRows(), dblkIn.getNumColumns(), dblkIn.isInSparseFormat());
+			MatrixBlock data2 = new MatrixBlock(dblkIn); //cp data
+			boolean cumsumprod = _bop.fn instanceof PlusMultiply;
 			
 			//blockwise offset aggregation and prefix sum computation
-			MatrixBlock data2 = new MatrixBlock(dblkIn); //cp data
-			MatrixBlock fdata2 = data2.slice(0, 0);
-			fdata2.binaryOperationsInPlace(_bop, oblkIn); //sum offset to first row
-			data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
-			data2.unaryOperations(_uop, blkOut); //compute columnwise prefix sums/prod/min/max
+			if( cumsumprod ) {
+				data2.quickSetValue(0, 0, data2.quickGetValue(0, 0)
+					+ data2.quickGetValue(0, 1) * oblkIn.quickGetValue(0, 0));
+			}
+			else {
+				MatrixBlock fdata2 = data2.slice(0, 0);
+				fdata2.binaryOperationsInPlace(_bop, oblkIn); //sum offset to first row
+				data2.copy(0, 0, 0, data2.getNumColumns()-1, fdata2, true); //0-based
+			}
+			
+			//compute columnwise prefix sums/prod/min/max
+			MatrixBlock blkOut = new MatrixBlock(dblkIn.getNumRows(),
+				cumsumprod ? 1 : dblkIn.getNumColumns(), dblkIn.isInSparseFormat());
+			data2.unaryOperations(_uop, blkOut);
 
 			return blkOut;
 		}

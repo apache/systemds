@@ -27,6 +27,7 @@ import scala.Tuple2;
 
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
@@ -45,13 +46,10 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	public static CumulativeAggregateSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
 		InstructionUtils.checkNumFields ( parts, 2 );
-		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		
 		AggregateUnaryOperator aggun = InstructionUtils.parseCumulativeAggregateUnaryOperator(opcode);
-		
 		return new CumulativeAggregateSPInstruction(aggun, in1, out, opcode, str);	
 	}
 	
@@ -81,13 +79,12 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	{
 		private static final long serialVersionUID = 11324676268945117L;
 		
-		private AggregateUnaryOperator _op = null;		
+		private AggregateUnaryOperator _op = null;
 		private long _rlen = -1;
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public RDDCumAggFunction( AggregateUnaryOperator op, long rlen, int brlen, int bclen )
-		{
+		public RDDCumAggFunction( AggregateUnaryOperator op, long rlen, int brlen, int bclen ) {
 			_op = op;
 			_rlen = rlen;
 			_brlen = brlen;
@@ -97,7 +94,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		@Override
 		public Tuple2<MatrixIndexes, MatrixBlock> call( Tuple2<MatrixIndexes, MatrixBlock> arg0 ) 
 			throws Exception 
-		{			
+		{
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
 
@@ -105,10 +102,20 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//process instruction
-			OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, 
-					                            ((AggregateUnaryOperator)_op), _brlen, _bclen);
-			if( ((AggregateUnaryOperator)_op).aggOp.correctionExists )
-				blkOut.dropLastRowsOrColumns(((AggregateUnaryOperator)_op).aggOp.correctionLocation);
+			AggregateUnaryOperator aop = (AggregateUnaryOperator)_op;
+			if( aop.aggOp.increOp.fn instanceof PlusMultiply ) { //cumsumprod
+				aop.indexFn.execute(ixIn, ixOut);
+				MatrixBlock t1 = blkIn.slice(0, blkIn.getNumRows()-1, 0, 0, new MatrixBlock());
+				MatrixBlock t2 = blkIn.slice(0, blkIn.getNumRows()-1, 1, 1, new MatrixBlock());
+				blkOut.reset(1, 2);
+				blkOut.quickSetValue(0, 0, t1.sum());
+				blkOut.quickSetValue(0, 1, t2.prod());
+			}
+			else { //general case
+				OperationsOnMatrixValues.performAggregateUnary( ixIn, blkIn, ixOut, blkOut, aop, _brlen, _bclen);
+				if( aop.aggOp.correctionExists )
+					blkOut.dropLastRowsOrColumns(aop.aggOp.correctionLocation);
+			}
 			
 			//cumsum expand partial aggregates
 			long rlenOut = (long)Math.ceil((double)_rlen/_brlen);

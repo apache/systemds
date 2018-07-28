@@ -173,6 +173,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "floor" , CPType.Unary);
 		String2CPInstructionType.put( "ucumk+", CPType.Unary);
 		String2CPInstructionType.put( "ucum*" , CPType.Unary);
+		String2CPInstructionType.put( "ucumk+*" , CPType.Unary);
 		String2CPInstructionType.put( "ucummin", CPType.Unary);
 		String2CPInstructionType.put( "ucummax", CPType.Unary);
 		String2CPInstructionType.put( "stop"  , CPType.Unary);

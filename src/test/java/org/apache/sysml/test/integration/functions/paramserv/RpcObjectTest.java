@@ -32,27 +32,27 @@ import org.junit.Test;
 
 public class RpcObjectTest {
 
-	@Test
-	public void testPSRpcCall() throws IOException {
+	private ListObject generateData() {
 		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
 		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2));
-		PSRpcCall expected = new PSRpcCall(PSRpcObject.PUSH, 1, lo);
+		return new ListObject(Arrays.asList(mo1, mo2));
+	}
+
+	@Test
+	public void testPSRpcCall() throws IOException {
+		PSRpcCall expected = new PSRpcCall(PSRpcObject.PUSH, 1, generateData());
 		PSRpcCall actual = new PSRpcCall(expected.serialize());
 		Assert.assertTrue(Arrays.equals(
-			expected.serialize().array(),
+			new PSRpcCall(PSRpcObject.PUSH, 1, generateData()).serialize().array(),
 			actual.serialize().array()));
 	}
 
 	@Test
 	public void testPSRpcResponse() throws IOException {
-		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
-		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2));
-		PSRpcResponse expected = new PSRpcResponse(PSRpcResponse.Type.SUCCESS, lo);
+		PSRpcResponse expected = new PSRpcResponse(PSRpcResponse.Type.SUCCESS, generateData());
 		PSRpcResponse actual = new PSRpcResponse(expected.serialize());
 		Assert.assertTrue(Arrays.equals(
-			expected.serialize().array(),
+			new PSRpcResponse(PSRpcResponse.Type.SUCCESS, generateData()).serialize().array(),
 			actual.serialize().array()));
 	}
 }

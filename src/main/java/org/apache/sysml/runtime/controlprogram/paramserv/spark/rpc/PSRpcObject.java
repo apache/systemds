@@ -46,30 +46,33 @@ public abstract class PSRpcObject {
 	/**
 	 * Deep serialize and write of a list object (currently only support list containing matrices)
 	 * @param lo a list object containing only matrices
-	 * @param dos output data to write to
+	 * @param output output data to write to
 	 */
-	protected void serializeAndWriteListObject(ListObject lo, DataOutput dos) throws IOException {
+	protected void serializeAndWriteListObject(ListObject lo, DataOutput output) throws IOException {
 		validateListObject(lo);
-		dos.writeInt(lo.getLength()); //write list length
-		dos.writeBoolean(lo.isNamedList()); //write list named
+		output.writeInt(lo.getLength()); //write list length
+		output.writeBoolean(lo.isNamedList()); //write list named
 		for (int i = 0; i < lo.getLength(); i++) {
 			if (lo.isNamedList())
-				dos.writeUTF(lo.getName(i)); //write name
+				output.writeUTF(lo.getName(i)); //write name
 			((MatrixObject) lo.getData().get(i))
-				.acquireReadAndRelease().write(dos); //write matrix
+				.acquireReadAndRelease().write(output); //write matrix
 		}
+		// Cleanup the list object
+		// because it is transferred to remote worker in binary format
+		ParamservUtils.cleanupListObject(lo);
 	}
 	
-	protected ListObject readAndDeserialize(DataInput dis) throws IOException {
-		int listLen = dis.readInt();
+	protected ListObject readAndDeserialize(DataInput input) throws IOException {
+		int listLen = input.readInt();
 		List<Data> data = new ArrayList<>();
-		List<String> names = dis.readBoolean() ?
+		List<String> names = input.readBoolean() ?
 			new ArrayList<>() : null;
 		for(int i=0; i<listLen; i++) {
 			if( names != null )
-				names.add(dis.readUTF());
+				names.add(input.readUTF());
 			MatrixBlock mb = new MatrixBlock();
-			mb.readFields(dis);
+			mb.readFields(input);
 			data.add(ParamservUtils.newMatrixObject(mb, false));
 		}
 		return new ListObject(data, names);

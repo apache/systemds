@@ -135,17 +135,20 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
-		_aUpdate.add((long) time.stop());
+		if( time != null )
+			_aUpdate.add((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
-		_aIndex.add((long) time.stop());
+		if( time != null )
+			_aIndex.add((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
-		_aGrad.add((long) time.stop());
+		if( time != null )
+			_aGrad.add((long) time.stop());
 	}
 	
 	@Override
@@ -158,7 +161,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_nBatches.add(n);
 	}
 	
-	private void accSetupTime(Timing tSetup) {
-		_aSetup.add((long) tSetup.stop());
+	private void accSetupTime(Timing time) {
+		if( time != null )
+			_aSetup.add((long) time.stop());
 	}
 }

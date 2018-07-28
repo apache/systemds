@@ -17,51 +17,54 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.caching;
+package org.apache.sysml.runtime.util;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
-import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlockDataInput;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
-public class CacheDataInput implements DataInput, MatrixBlockDataInput
+public class ByteBufferDataInput implements DataInput, MatrixBlockDataInput
 {
-	protected final byte[] _buff;
-	protected int _count;
+	protected final ByteBuffer _buff;
 
-	public CacheDataInput(byte[] mem) {
-		_buff = mem;
-		_count = 0;
+	public ByteBufferDataInput(ByteBuffer buff) {
+		_buff = buff;
 	}
 
+	public int available() {
+		return _buff.limit() - _buff.position();
+	}
+	
 	@Override
 	public void readFully(byte[] b) throws IOException {
-		throw new IOException("Not supported.");
+		_buff.get(b);
 	}
 
 	@Override
 	public void readFully(byte[] b, int off, int len) throws IOException {
-		throw new IOException("Not supported.");
+		_buff.get(b, off, len);
 	}
 
 	@Override
 	public int skipBytes(int n) throws IOException {
-		throw new IOException("Not supported.");
+		_buff.position(_buff.position()+n);
+		return n;
 	}
 
 	@Override
 	public boolean readBoolean() throws IOException {
 		//mask to adhere to the input stream semantic
-		return ( (_buff[_count++] & 0xFF) != 0 );
+		return ( (_buff.get() & 0xFF) != 0 );
 	}
 
 	@Override
 	public byte readByte() throws IOException {
 		//mask to adhere to the input stream semantic
-		return (byte) (_buff[_count++] & 0xFF);
+		return (byte) (_buff.get() & 0xFF);
 	}
 
 	@Override
@@ -71,50 +74,37 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 
 	@Override
 	public short readShort() throws IOException {
-		int ret = baToShort(_buff, _count);
-		_count += 2;
-		return (short) ret;
+		return _buff.getShort();
 	}
 
 	@Override
 	public int readUnsignedShort() throws IOException {
-		int ret = baToShort(_buff, _count);
-		_count += 2;
-		return ret;
+		return _buff.getChar();
 	}
 
 	@Override
 	public char readChar() throws IOException {
-		int ret = baToShort(_buff, _count);
-		_count += 2;
-		return (char) ret;
+		return _buff.getChar();
 	}
 
 	@Override
 	public int readInt() throws IOException {
-		int ret = baToInt(_buff, _count);
-		_count += 4;
-		return ret;
+		return _buff.getInt();
 	}
 
 	@Override
 	public long readLong() throws IOException {
-		long ret = baToLong(_buff, _count);
-		_count += 8;
-		return ret;
+		return _buff.getLong();
 	}
 
 	@Override
 	public float readFloat() throws IOException {
-		throw new IOException("Not supported.");
+		return _buff.getFloat();
 	}
 
 	@Override
 	public double readDouble() throws IOException {
-		long tmp = baToLong(_buff, _count);
-		double tmp2 = Double.longBitsToDouble(tmp);
-		_count += 8;
-		return tmp2;
+		return _buff.getDouble();
 	}
 
 	@Override
@@ -132,24 +122,10 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	///////////////////////////////////////////////
 	
 	@Override
-	public long readDoubleArray(int len, double[] varr) 
-		throws IOException 
-	{
-		//counter for non-zero elements
+	public long readDoubleArray(int len, double[] varr) throws IOException  {
 		long nnz = 0;
-		
-		int off = _count;
-		for( int i=0; i<len; i++ ) 
-		{
-			//core deserialization
-			long tmp = baToLong(_buff, off+i*8);
-			varr[i] = Double.longBitsToDouble( tmp );
-			
-			//nnz maintenance
-			nnz += (varr[i]!=0) ? 1 : 0; 
-		}
-		_count = off + len*8;
-		
+		for( int i=0; i<len; i++ )
+			nnz += (varr[i] = _buff.getDouble()) != 0 ? 1 : 0;
 		return nnz;
 	}
 
@@ -161,26 +137,13 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 		long gnnz = 0;
 		
 		//read all individual sparse rows from input
-		for( int i=0; i<rlen; i++ )
-		{
-			int lnnz = readInt();
-			
-			if( lnnz > 0 ) //non-zero row
-			{
-				//get handle to sparse (allocate if necessary)
-				rows.allocate(i, lnnz);
-				
-				//read single sparse row
-				for( int j=0; j<lnnz; j++ ) 
-				{	
-					int aix = baToInt(_buff, _count);
-					long tmp = baToLong(_buff, _count+4);
-					double aval = Double.longBitsToDouble( tmp );
-					rows.append(i, aix, aval);
-					_count+=12;
-				}
-				
-				gnnz += lnnz;	
+		for( int i=0; i<rlen; i++ ) {
+			int lnnz = _buff.getInt();
+			if( lnnz > 0 ) { //non-zero row
+				rows.allocate(i, lnnz); //preallocate row
+				for( int j=0; j<lnnz; j++ ) //read single sparse row
+					rows.append(i, _buff.getInt(), _buff.getDouble());
+				gnnz += lnnz;
 			}
 		}
 		
@@ -189,17 +152,5 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 			throw new IOException("Invalid number of read nnz: "+gnnz+" vs "+nnz);
 		
 		return nnz;
-	}
-
-	private static int baToShort( byte[] ba, final int off ) {
-		return IOUtilFunctions.baToShort(ba, off);
-	}
-
-	private static int baToInt( byte[] ba, final int off ) {
-		return IOUtilFunctions.baToInt(ba, off);
-	}
-
-	private static long baToLong( byte[] ba, final int off ) {
-		return IOUtilFunctions.baToLong(ba, off);
 	}
 }

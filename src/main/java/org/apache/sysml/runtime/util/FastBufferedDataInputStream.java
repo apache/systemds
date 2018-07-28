@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.util;
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -91,12 +92,14 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 
 	@Override
 	public short readShort() throws IOException {
-		throw new IOException("Not supported.");
+		readFully(_buff, 0, 2);
+		return (short) baToShort(_buff, 0);
 	}
 
 	@Override
 	public int readUnsignedShort() throws IOException {
-		throw new IOException("Not supported.");
+		readFully(_buff, 0, 2);
+		return baToShort(_buff, 0);
 	}
 
 	@Override
@@ -136,7 +139,7 @@ public class FastBufferedDataInputStream extends FilterInputStream implements Da
 
 	@Override
 	public String readUTF() throws IOException {
-		throw new IOException("Not supported.");
+		return DataInputStream.readUTF(this);
 	}
 
 	

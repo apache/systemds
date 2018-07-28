@@ -19,16 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
+import org.apache.sysml.runtime.util.ByteBufferDataInput;
 
 public class PSRpcCall extends PSRpcObject {
 
@@ -59,26 +56,22 @@ public class PSRpcCall extends PSRpcObject {
 	}
 	
 	public void deserialize(ByteBuffer buffer) throws IOException {
-		DataInputStream dis = new DataInputStream(
-			new ByteArrayInputStream(IOUtilFunctions.getBytes(buffer)));
+		ByteBufferDataInput dis = new ByteBufferDataInput(buffer);
 		_method = dis.readInt();
 		validateMethod(_method);
 		_workerID = dis.readInt();
 		if (dis.available() > 1)
 			_data = readAndDeserialize(dis);
-		dis.close();
 	}
 
 	public ByteBuffer serialize() throws IOException {
-		//TODO: Perf: use CacheDataOutput to avoid multiple copies (needs UTF handling)
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(getApproxSerializedSize(_data));
-		FastBufferedDataOutputStream dos = new FastBufferedDataOutputStream(bos);
+		int len = 8 + getExactSerializedSize(_data);
+		CacheDataOutput dos = new CacheDataOutput(len);
 		dos.writeInt(_method);
 		dos.writeInt(_workerID);
 		if (_data != null)
 			serializeAndWriteListObject(_data, dos);
-		dos.flush();
-		return ByteBuffer.wrap(bos.toByteArray());
+		return ByteBuffer.wrap(dos.getBytes());
 	}
 	
 	private void validateMethod(int method) {

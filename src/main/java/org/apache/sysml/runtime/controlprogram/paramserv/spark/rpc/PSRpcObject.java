@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class PSRpcObject {
@@ -80,12 +81,11 @@ public abstract class PSRpcObject {
 	 * @param lo list object
 	 * @return serialization size
 	 */
-	protected int getApproxSerializedSize(ListObject lo) {
+	protected int getExactSerializedSize(ListObject lo) {
 		if( lo == null ) return 0;
 		long result = 4 + 1; // list length and of named
-		result += lo.getLength() * (Integer.BYTES); // bytes for the size of names
-		if (lo.isNamedList())
-			result += lo.getNames().stream().mapToLong(s -> s.length()).sum();
+		if (lo.isNamedList()) //size for names incl length
+			result += lo.getNames().stream().mapToLong(s -> IOUtilFunctions.getUTFSize(s)).sum();
 		result += lo.getData().stream().mapToLong(d ->
 			((MatrixObject)d).acquireReadAndRelease().getExactSizeOnDisk()).sum();
 		if( result > Integer.MAX_VALUE )

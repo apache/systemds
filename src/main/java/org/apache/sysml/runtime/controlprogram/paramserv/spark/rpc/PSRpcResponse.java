@@ -19,15 +19,13 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.sysml.runtime.util.ByteBufferDataInput;
+import org.apache.sysml.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
 
 public class PSRpcResponse extends PSRpcObject {
 	public enum Type  {
@@ -68,8 +66,7 @@ public class PSRpcResponse extends PSRpcObject {
 
 	@Override
 	public void deserialize(ByteBuffer buffer) throws IOException {
-		DataInputStream dis = new DataInputStream(
-			new ByteArrayInputStream(IOUtilFunctions.getBytes(buffer)));
+		ByteBufferDataInput dis = new ByteBufferDataInput(buffer);
 		_status = Type.values()[dis.readInt()];
 		switch (_status) {
 			case SUCCESS:
@@ -81,16 +78,13 @@ public class PSRpcResponse extends PSRpcObject {
 				_data = dis.readUTF();
 				break;
 		}
-		dis.close();
 	}
 
 	@Override
 	public ByteBuffer serialize() throws IOException {
-		//TODO: Perf: use CacheDataOutput to avoid multiple copies (needs UTF handling)
-		int len = 4 + (_status==Type.SUCCESS ? getApproxSerializedSize((ListObject)_data) :
-			_status==Type.SUCCESS_EMPTY ? 0 : ((String)_data).length());
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
-		FastBufferedDataOutputStream dos = new FastBufferedDataOutputStream(bos);
+		int len = 4 + (_status==Type.SUCCESS ? getExactSerializedSize((ListObject)_data) :
+			_status==Type.SUCCESS_EMPTY ? 0 : IOUtilFunctions.getUTFSize((String)_data));
+		CacheDataOutput dos = new CacheDataOutput(len);
 		dos.writeInt(_status.ordinal());
 		switch (_status) {
 			case SUCCESS:
@@ -102,7 +96,6 @@ public class PSRpcResponse extends PSRpcObject {
 				dos.writeUTF(_data.toString());
 				break;
 		}
-		dos.flush();
-		return ByteBuffer.wrap(bos.toByteArray());
+		return ByteBuffer.wrap(dos.getBytes());
 	}
 }

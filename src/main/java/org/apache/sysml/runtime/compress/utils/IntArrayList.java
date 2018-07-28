@@ -39,6 +39,11 @@ public class IntArrayList
 		_data = null;
 		_size = 0;
 	}
+	
+	public IntArrayList(int value) {
+		this();
+		appendValue(value);
+	}
 
 	public int size() {
 		return _size;
@@ -79,6 +84,12 @@ public class IntArrayList
 			return new int[] { _val0 };
 		else
 			return _data;
+	}
+	
+	public int[] extractValues(boolean trim) {
+		int[] ret = extractValues();
+		return (trim && _size < ret.length) ?
+			Arrays.copyOfRange(ret, 0, _size) : ret;
 	}
 
 	private void resize() {

@@ -67,7 +67,7 @@ import org.apache.sysml.runtime.matrix.data.Pair;
 
 public class TemplateRow extends TemplateBase 
 {
-	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX};
+	private static final Hop.AggOp[] SUPPORTED_ROW_AGG = new AggOp[]{AggOp.SUM, AggOp.MIN, AggOp.MAX, AggOp.MEAN};
 	private static final Hop.OpOp1[] SUPPORTED_VECT_UNARY = new OpOp1[]{
 			OpOp1.EXP, OpOp1.SQRT, OpOp1.LOG, OpOp1.ABS, OpOp1.ROUND, OpOp1.CEIL, OpOp1.FLOOR, OpOp1.SIGN,
 			OpOp1.SIN, OpOp1.COS, OpOp1.TAN, OpOp1.ASIN, OpOp1.ACOS, OpOp1.ATAN, OpOp1.SINH, OpOp1.COSH, OpOp1.TANH,
@@ -115,7 +115,9 @@ public class TemplateRow extends TemplateBase
 				&& HopRewriteUtils.isColumnRangeIndexing((IndexingOp)hop))
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
-				&& hop.getInput().get(0).getDim2()>1);
+				&& hop.getInput().get(0).getDim2()>1)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL)
+				&& hop.getInput().get(0).dimsKnown() && ((DnnOp)hop).isStride1Pad0());
 	}
 
 	@Override
@@ -140,6 +142,8 @@ public class TemplateRow extends TemplateBase
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1)
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL)
+					&& hop.getInput().get(0).dimsKnown() && ((DnnOp)hop).isStride1Pad0())
 			|| isPartOfValidCumAggChain(hop) //cum* with transpose
 			|| isPartOfValidTransposeMMChain(hop)); //t(f(X))%*%X
 	}
@@ -156,6 +160,8 @@ public class TemplateRow extends TemplateBase
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
 				&& hop.getInput().get(0).getDim2()>1 )
+			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL)
+					&& hop.getInput().get(0).dimsKnown() && ((DnnOp)hop).isStride1Pad0())
 			|| (HopRewriteUtils.isDataGenOpWithLiteralInputs(input, DataGenMethod.SEQ)
 				&& HopRewriteUtils.hasOnlyUnaryBinaryParents(input, false))
 			|| (hop instanceof AggBinaryOp
@@ -475,6 +481,12 @@ public class TemplateRow extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			out = new CNodeBinary(cdata1, cdata2,
 				BinType.valueOf("VECT_"+((DnnOp)hop).getOp().name()));
+		}
+		else if( HopRewriteUtils.isDnn(hop, OpOpDnn.MAX_POOL, OpOpDnn.AVG_POOL) ) {
+			CNode[] in = hop.getInput().stream().map(h ->
+				tmp.get(h.getHopID())).toArray(CNode[]::new);
+			out = new CNodeNary(in, CNodeNary.NaryType
+				.valueOf("VECT_"+((DnnOp)hop).getOp().name()));
 		}
 		else if( hop instanceof NaryOp ) {
 			CNode[] inputs = new CNode[hop.getInput().size()];

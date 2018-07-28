@@ -23,7 +23,6 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -32,7 +31,8 @@ public class CNodeUnary extends CNode
 {
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, //codegen specific
-		ROW_SUMS, ROW_SUMSQS, ROW_MINS, ROW_MAXS, ROW_COUNTNNZS, //codegen specific
+		ROW_SUMS, ROW_SUMSQS, ROW_COUNTNNZS, //codegen specific
+		ROW_MEANS, ROW_MINS, ROW_MAXS,
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
 		VECT_SIN, VECT_COS, VECT_TAN, VECT_ASIN, VECT_ACOS, VECT_ATAN, 
@@ -54,6 +54,7 @@ public class CNodeUnary extends CNode
 				case ROW_SUMSQS:
 				case ROW_MINS:
 				case ROW_MAXS:
+				case ROW_MEANS:
 				case ROW_COUNTNNZS: {
 					String vectName = StringUtils.capitalize(name().substring(4, name().length()-1).toLowerCase());
 					return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n": 
@@ -212,27 +213,10 @@ public class CNodeUnary extends CNode
 		String tmp = _type.getTemplate(lsparse);
 		tmp = tmp.replace("%TMP%", var);
 		
-		String varj = _inputs.get(0).getVarname();
-		
 		//replace sparse and dense inputs
+		String varj = _inputs.get(0).getVarname();
 		boolean vectIn = varj.startsWith("b") && !_type.isScalarLookup();
-		tmp = tmp.replace("%IN1v%", varj+"vals");
-		tmp = tmp.replace("%IN1i%", varj+"ix");
-		tmp = tmp.replace("%IN1%", 
-			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
-			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
-		
-		//replace start position of main input
-		String spos = (_inputs.get(0) instanceof CNodeData 
-			&& _inputs.get(0).getDataType().isMatrix()) ? !varj.startsWith("b") ? 
-			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".pos(rix)" : "0" : "0";
-		
-		tmp = tmp.replace("%POS1%", spos);
-		tmp = tmp.replace("%POS2%", spos);
-		
-		//replace length
-		if( _inputs.get(0).getDataType().isMatrix() )
-			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+		tmp = replaceUnaryPlaceholders(tmp, varj, vectIn);
 		
 		sb.append(tmp);
 		
@@ -249,6 +233,7 @@ public class CNodeUnary extends CNode
 			case ROW_SUMSQS: return "u(Rsq+)";
 			case ROW_MINS:   return "u(Rmin)";
 			case ROW_MAXS:   return "u(Rmax)";
+			case ROW_MEANS:  return "u(Rmean)";
 			case ROW_COUNTNNZS: return "u(Rnnz)";
 			case VECT_EXP:
 			case VECT_POW2:
@@ -319,6 +304,7 @@ public class CNodeUnary extends CNode
 			case ROW_SUMSQS:
 			case ROW_MINS:
 			case ROW_MAXS:
+			case ROW_MEANS:
 			case ROW_COUNTNNZS:
 			case EXP:
 			case LOOKUP_R:

@@ -21,6 +21,7 @@ package org.apache.sysml.hops.codegen.cplan;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -203,5 +204,28 @@ public abstract class CNode
 			&& (_output == cthat._output || _output.equals(cthat._output))
 			&& _dataType == cthat._dataType
 			&& _literal == cthat._literal;
+	}
+	
+	protected String replaceUnaryPlaceholders(String tmp, String varj, boolean vectIn) {
+		//replace sparse and dense inputs
+		tmp = tmp.replace("%IN1v%", varj+"vals");
+		tmp = tmp.replace("%IN1i%", varj+"ix");
+		tmp = tmp.replace("%IN1%", 
+			(vectIn && TemplateUtils.isMatrix(_inputs.get(0))) ? varj + ".values(rix)" :
+			(vectIn && TemplateUtils.isRowVector(_inputs.get(0)) ? varj + ".values(0)" : varj));
+		
+		//replace start position of main input
+		String spos = (_inputs.get(0) instanceof CNodeData 
+			&& _inputs.get(0).getDataType().isMatrix()) ? !varj.startsWith("b") ? 
+			varj+"i" : TemplateUtils.isMatrix(_inputs.get(0)) ? varj + ".pos(rix)" : "0" : "0";
+		
+		tmp = tmp.replace("%POS1%", spos);
+		tmp = tmp.replace("%POS2%", spos);
+		
+		//replace length
+		if( _inputs.get(0).getDataType().isMatrix() )
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+		
+		return tmp;
 	}
 }

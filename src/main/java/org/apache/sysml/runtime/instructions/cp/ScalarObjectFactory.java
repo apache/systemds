@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.LiteralOp;
+import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -58,8 +59,8 @@ public abstract class ScalarObjectFactory
 	
 	public static ScalarObject createScalarObject(ValueType vt, ScalarObject so) {
 		switch( vt ) {
-			case DOUBLE:  return new DoubleObject(so.getDoubleValue());
-			case INT:     return new IntObject(so.getLongValue());
+			case DOUBLE:  return castToDouble(so);
+			case INT:     return castToLong(so);
 			case BOOLEAN: return new BooleanObject(so.getBooleanValue());
 			case STRING:  return new StringObject(so.getStringValue());
 			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
@@ -89,5 +90,26 @@ public abstract class ScalarObjectFactory
 			default:
 				throw new HopsException("Unsupported literal value type: "+so.getValueType());
 		}
+	}
+	
+	public static LiteralOp createLiteralOp(ScalarObject so, UnaryOp cast) {
+		switch( cast.getOp() ) {
+			case CAST_AS_DOUBLE:  return new LiteralOp(castToDouble(so).getDoubleValue());
+			case CAST_AS_INT:     return new LiteralOp(castToLong(so).getLongValue());
+			case CAST_AS_BOOLEAN: return new LiteralOp(so.getBooleanValue());
+			default: return null; //otherwise: do nothing
+		}
+	}
+	
+	public static IntObject castToLong(ScalarObject so) {
+		//note: cast with robustness for various combinations of value types
+		return new IntObject(!(so instanceof StringObject) ?
+			so.getLongValue() : UtilFunctions.toLong(Double.parseDouble(so.getStringValue())));
+	}
+	
+	public static DoubleObject castToDouble(ScalarObject so) {
+		//note: cast with robustness for various combinations of value types
+		return new DoubleObject(!(so instanceof StringObject) ?
+			so.getDoubleValue() : Double.parseDouble(so.getStringValue()));
 	}
 }

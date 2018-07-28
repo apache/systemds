@@ -777,6 +777,13 @@ public class HopRewriteUtils
 		return ( hop.getNnz()==0 );
 	}
 	
+	public static boolean isEqualMatrixSize(BinaryOp hop) {
+		return hop.getDataType().isMatrix()
+			&& hop.getInput().get(0).getDataType().isMatrix()
+			&& hop.getInput().get(1).getDataType().isMatrix()
+			&& isEqualSize(hop.getInput().get(0), hop.getInput().get(1));
+	}
+	
 	public static boolean isEqualSize( Hop hop1, Hop hop2 ) {
 		return (hop1.dimsKnown() && hop2.dimsKnown()
 			&& hop1.getDim1() == hop2.getDim1()
@@ -1014,6 +1021,10 @@ public class HopRewriteUtils
 	
 	public static boolean isMatrixMultiply(Hop hop) {
 		return hop instanceof AggBinaryOp && ((AggBinaryOp)hop).isMatrixMultiply();
+	}
+	
+	public static boolean isAggUnaryOp(Hop hop, AggOp op, Direction dir) {
+		return isAggUnaryOp(hop, op) && ((AggUnaryOp)hop).getDirection()==dir;
 	}
 	
 	public static boolean isAggUnaryOp(Hop hop, AggOp...op) {

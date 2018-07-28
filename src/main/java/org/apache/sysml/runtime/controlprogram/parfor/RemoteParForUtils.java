@@ -45,8 +45,10 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Stat;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.util.LocalFileUtils;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -236,6 +238,29 @@ public class RemoteParForUtils
 		
 		//create return array
 		return tmp.values().toArray(new LocalVariableMap[0]);	
+	}
+
+	/**
+	 * Init and register-cleanup of buffer pool
+	 * @param workerID worker id
+	 * @throws IOException exception
+	 */
+	public static void setupBufferPool(long workerID) throws IOException {
+		//init and register-cleanup of buffer pool (in spark, multiple tasks might
+		//share the process-local, i.e., per executor, buffer pool; hence we synchronize
+		//the initialization and immediately register the created directory for cleanup
+		//on process exit, i.e., executor exit, including any files created in the future.
+		synchronized(CacheableData.class) {
+			if (!CacheableData.isCachingActive() && !InfrastructureAnalyzer.isLocalMode()) {
+				//create id, executor working dir, and cache dir
+				String uuid = IDHandler.createDistributedUniqueID();
+				LocalFileUtils.createWorkingDirectoryWithUUID(uuid);
+				CacheableData.initCaching(uuid); //incl activation and cache dir creation
+				CacheableData.cacheEvictionLocalFilePrefix = CacheableData.cacheEvictionLocalFilePrefix + "_" + workerID;
+				//register entire working dir for delete on shutdown
+				RemoteParForUtils.cleanupWorkingDirectoriesOnShutdown();
+			}
+		}
 	}
 	
 	/**

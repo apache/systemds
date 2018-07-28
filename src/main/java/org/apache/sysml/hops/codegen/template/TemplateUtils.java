@@ -142,7 +142,7 @@ public class TemplateUtils
 	public static boolean isOperationSupported(Hop h) {
 		if(h instanceof  UnaryOp)
 			return UnaryType.contains(((UnaryOp)h).getOp().name());
-		else if(h instanceof BinaryOp)
+		else if(h instanceof BinaryOp && !((BinaryOp)h).isOuter())
 			return BinType.contains(((BinaryOp)h).getOp().name());
 		else if(h instanceof TernaryOp)
 			return TernaryType.contains(((TernaryOp)h).getOp().name());

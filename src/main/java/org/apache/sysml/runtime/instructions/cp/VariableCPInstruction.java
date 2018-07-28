@@ -40,18 +40,18 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysml.runtime.io.FileFormatProperties;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.WriterMatrixMarket;
 import org.apache.sysml.runtime.io.WriterTextCSV;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.MetaData;
-import org.apache.sysml.runtime.matrix.data.CSVFileFormatProperties;
-import org.apache.sysml.runtime.matrix.data.FileFormatProperties;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -365,7 +365,7 @@ public class VariableCPInstruction extends CPInstruction {
 					boolean hasHeader = Boolean.parseBoolean(parts[12]);
 					String delim = parts[13];
 					boolean sparse = Boolean.parseBoolean(parts[14]);
-					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, sparse) ;
+					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, sparse) ;
 				}
 				else {
 					boolean hasHeader = Boolean.parseBoolean(parts[12]);
@@ -375,7 +375,7 @@ public class VariableCPInstruction extends CPInstruction {
 					String naStrings = null;
 					if ( parts.length == 17+extSchema )
 						naStrings = parts[16];
-					fmtProperties = new CSVFileFormatProperties(hasHeader, delim, fill, fillValue, naStrings) ;
+					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
@@ -435,7 +435,7 @@ public class VariableCPInstruction extends CPInstruction {
 				boolean hasHeader = Boolean.parseBoolean(parts[4]);
 				String delim = parts[5];
 				boolean sparse = Boolean.parseBoolean(parts[6]);
-				fprops = new CSVFileFormatProperties(hasHeader, delim, sparse);
+				fprops = new FileFormatPropertiesCSV(hasHeader, delim, sparse);
 				in4 = new CPOperand(parts[7]); // description
 			} else {
 				fprops = new FileFormatProperties();
@@ -643,13 +643,13 @@ public class VariableCPInstruction extends CPInstruction {
 			break;
 		}
 		case CastAsDoubleVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), new DoubleObject(scalarInput.getDoubleValue()));
+			ScalarObject in = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToDouble(in));
 			break;
 		}
-		case CastAsIntegerVariable:{ 
-			ScalarObject scalarInput = ec.getScalarInput(getInput1());
-			ec.setScalarOutput(output.getName(), new IntObject(scalarInput.getLongValue()));
+		case CastAsIntegerVariable:{
+			ScalarObject in = ec.getScalarInput(getInput1());
+			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToLong(in));
 			break;
 		}
 		case CastAsBooleanVariable:{ 
@@ -869,7 +869,7 @@ public class VariableCPInstruction extends CPInstruction {
 				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
 				MatrixCharacteristics mc = ((MetaDataFormat)mo.getMetaData()).getMatrixCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
-					WriterTextCSV writer = new WriterTextCSV((CSVFileFormatProperties)_formatProperties);
+					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
 					writer.addHeaderToCSV(mo.getFileName(), fname, mc.getRows(), mc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {

@@ -555,7 +555,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		boolean ret = false;
 		Hop input = getInput().get(0);
 		
-		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+		if( input instanceof BinaryOp && ((BinaryOp)input).isOuter() )
 		{
 			//for special cases, we need to hold the broadcast twice in order to allow for
 			//an efficient binary search over a plain java array
@@ -592,7 +592,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		boolean ret = false;
 		Hop input = getInput().get(0);
 		
-		if( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+		if( input instanceof BinaryOp && ((BinaryOp)input).isOuter() )
 		{
 			//note: both cases (partitioned matrix, and sorted double array), require to
 			//fit the broadcast twice into the local memory budget. Also, the memory 
@@ -634,16 +634,13 @@ public class AggUnaryOp extends MultiThreadedHop
 	 *   
 	 * @return true if unary aggregate outer
 	 */
-	private boolean isUnaryAggregateOuterCPRewriteApplicable() 
-	{
+	private boolean isUnaryAggregateOuterCPRewriteApplicable() {
 		boolean ret = false;
 		Hop input = getInput().get(0);
-		
-		if(( input instanceof BinaryOp && ((BinaryOp)input).isOuterVectorOperator() )
+		if(( input instanceof BinaryOp && ((BinaryOp)input).isOuter() )
 			&& (_op == AggOp.MAXINDEX || _op == AggOp.MININDEX || _op == AggOp.SUM)
 			&& (isCompareOperator(((BinaryOp)input).getOp())))
 			ret = true;
-
 		return ret;
 	}
 

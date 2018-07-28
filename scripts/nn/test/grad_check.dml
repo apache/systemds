@@ -1142,7 +1142,7 @@ fm = function() {
   k = 2 # factorization dimensionality
   X = rand(rows=n, cols=d)
   y = rand(rows=n, cols=1)
-  [w0, W, V] = fm::init(n, d, k)
+  [w0, W, V] = fm::init(d, k)
 
   # Compute analytical gradients of loss wrt parameters
   out = fm::forward(X, w0, W, V)

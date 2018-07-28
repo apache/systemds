@@ -97,8 +97,8 @@ public class LibMatrixDNNPooling {
 		return ret;
 	}
 	
-	public static void poolingDenseStride1Pad0(PoolingType pType, double minVal, double pFact,
-			double[] in, double[] out, int rl, int ru, int C, int P, int Q, int R, int S, int H, int W) {
+	public static void poolingDenseStride1Pad0(PoolingType pType, double minVal, double pFact, double[] in,
+			double[] out, int rl, int ru, int ii, int oi, int C, int P, int Q, int R, int S, int H, int W) {
 		boolean max = (pType == PoolingType.MAX);
 		int CHW = C * H * W;
 		
@@ -106,9 +106,9 @@ public class LibMatrixDNNPooling {
 			//quick-path w/o materialized index arrays and 
 			//simplified inner loops for P = 1, Q = 1, W = 1
 			int lenh = Math.min(R,H);
-			for(int i = rl, oix=rl*C; i < ru; i++, oix+=C)
-				for (int c = 0, off=i*CHW; c < C; c++, off+=H) {
-					out[oix+c] = max ? max(minVal, in, off, lenh) :
+			for(int i = rl; i < ru; i++, oi+=C)
+				for (int c = 0, off=ii+(i-rl)*CHW; c < C; c++, off+=H) {
+					out[oi+c] = max ? max(minVal, in, off, lenh) :
 						avg(minVal, in, off, lenh, pFact);
 				}
 		}
@@ -117,7 +117,7 @@ public class LibMatrixDNNPooling {
 			Arrays.fill(out, rl*CPQ, ru*CPQ, minVal);
 			//quick-path w/o materialized index arrays 
 			for(int i = rl; i < ru; i++)
-				for (int c = 0, off=i*CHW, oix=i*CPQ; c < C; c++, off+=HW)
+				for (int c = 0, off=ii+(i-rl)*CHW, oix=oi+(i-rl)*CPQ; c < C; c++, off+=HW)
 					for (int p = 0; p < P; p++, oix+=Q)
 						for (int h = p; h < Math.min(p+R,H); h++)
 							for (int q = 0, off2=off+h*W; q < Q; q++) {
@@ -139,7 +139,7 @@ public class LibMatrixDNNPooling {
 			_rl = rl; _ru = ru;
 			_params = params;
 			_poolingType = poolingType;
-			_poolingMultiplier = Math.pow(params.R*params.S, -1);
+			_poolingMultiplier = 1d/(params.R*params.S);
 		}
 		
 		@Override
@@ -157,7 +157,7 @@ public class LibMatrixDNNPooling {
 			
 			if( _params.isStride1Pad0() ) {
 				poolingDenseStride1Pad0(_poolingType, minValForMaxPoolOperations,
-					_poolingMultiplier, in, out, _rl, _ru, C, P, Q, R, S, H, W);
+					_poolingMultiplier, in, out, _rl, _ru, _rl*CHW, _rl*CPQ, C, P, Q, R, S, H, W);
 			}
 			else { //general case
 				//thread-local initialization of output block 

@@ -313,7 +313,7 @@ public class InterProceduralAnalysis
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
 			//old stats into predicate
-			propagateStatisticsAcrossPredicateDAG(isb.getPredicateHops(), callVars);			
+			propagateStatisticsAcrossPredicateDAG(isb.getPredicateHops(), callVars);
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			LocalVariableMap callVarsElse = (LocalVariableMap) callVars.clone();
@@ -476,8 +476,8 @@ public class InterProceduralAnalysis
 				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 				FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 				
-				if(  fcallSizes.isValidFunction(fkey) && 
-				    !fnStack.contains(fkey)  ) //prevent recursion	
+				if( fcallSizes.isValidFunction(fkey) && 
+					!fnStack.contains(fkey)  ) //prevent recursion
 				{
 					//maintain function call stack
 					fnStack.add(fkey);
@@ -490,7 +490,7 @@ public class InterProceduralAnalysis
 					propagateStatisticsAcrossBlock(fsb, tmpVars, fcallSizes, fnStack);
 					
 					//extract vars from symbol table, re-map and refresh main program
-					extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);		
+					extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);
 					
 					//maintain function call stack
 					fnStack.remove(fkey);
@@ -520,26 +520,28 @@ public class InterProceduralAnalysis
 	
 	private static void populateLocalVariableMapForFunctionCall( FunctionStatement fstmt, FunctionOp fop, LocalVariableMap callvars, LocalVariableMap vars, FunctionCallSizeInfo fcallSizes ) 
 	{
-		ArrayList<DataIdentifier> inputVars = fstmt.getInputParams();
+		//note: due to arbitrary binding sequences of named function arguments,
+		//we cannot use the sequence as defined in the function signature
+		String[] funArgNames = fop.getInputVariableNames();
 		ArrayList<Hop> inputOps = fop.getInput();
 		String fkey = fop.getFunctionKey();
 		
-		for( int i=0; i<inputVars.size(); i++ )
+		for( int i=0; i<funArgNames.length; i++ )
 		{
 			//create mapping between input hops and vars
-			DataIdentifier dat = inputVars.get(i);
+			DataIdentifier dat = fstmt.getInputParam(funArgNames[i]);
 			Hop input = inputOps.get(i);
 			
 			if( input.getDataType()==DataType.MATRIX )
 			{
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
-				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(), 
+				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(),
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
 				MetaDataFormat meta = new MetaDataFormat(mc,null,null);
-				mo.setMetaData(meta);	
-				vars.put(dat.getName(), mo);	
+				mo.setMetaData(meta);
+				vars.put(dat.getName(), mo);
 			}
 			else if( input.getDataType()==DataType.SCALAR )
 			{
@@ -553,7 +555,7 @@ public class InterProceduralAnalysis
 				//and input scalar is existing variable in symbol table
 				else if( PROPAGATE_SCALAR_VARS_INTO_FUN 
 					&& fcallSizes.getFunctionCallCount(fkey) == 1
-					&& input instanceof DataOp  ) 
+					&& input instanceof DataOp )
 				{
 					Data scalar = callvars.get(input.getName()); 
 					if( scalar != null && scalar instanceof ScalarObject ) {

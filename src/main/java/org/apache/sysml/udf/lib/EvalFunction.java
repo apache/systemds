@@ -23,7 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.parser.Expression.DataType;
-
+import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
@@ -69,8 +69,9 @@ public class EvalFunction extends PackageFunction
 		CPOperand inName = new CPOperand("TMP", org.apache.sysml.parser.Expression.ValueType.DOUBLE, DataType.MATRIX);
 		ec2.setVariable("TMP", in);
 		
-		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(
-			null, fname, new CPOperand[]{inName}, inputs, outputs, "eval func");
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, fname);
+		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, fname,
+			new CPOperand[]{inName}, inputs, fpb.getInputParamNames(), outputs, "eval func");
 		fcpi.processInstruction(ec2);
 		
 		MatrixObject out = (MatrixObject)ec2.getVariable("B");

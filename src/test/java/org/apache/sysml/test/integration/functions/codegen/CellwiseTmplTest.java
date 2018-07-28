@@ -62,6 +62,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME24 = TEST_NAME+24; //min(X, Y, Z, 3, 7)
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
+	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -74,7 +75,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=26; i++ ) {
+		for( int i=1; i<=27; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -446,6 +447,20 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite26_sp() {
 		testCodegenIntegration( TEST_NAME26, true, ExecType.SPARK );
 	}
+	
+	@Test
+	public void testCodegenCellwiseRewrite27() {
+		testCodegenIntegration( TEST_NAME27, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise27() {
+		testCodegenIntegration( TEST_NAME27, false, ExecType.CP );
+	}
+
+	public void testCodegenCellwiseRewrite27_sp() {
+		testCodegenIntegration( TEST_NAME27, true, ExecType.SPARK );
+	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
@@ -498,7 +513,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			}
 			
 			if( !(rewrites && (testname.equals(TEST_NAME2)
-				|| testname.equals(TEST_NAME19))) ) //sigmoid
+				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
 				Assert.assertTrue(heavyHittersContainsSubString(
 						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused

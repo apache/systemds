@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
 	OuterProductTest.class,
+	SelfProductTest.class,
 	SquaredProductChainTest.class,
 	SquaredProductTest.class,
 })

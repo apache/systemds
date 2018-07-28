@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.instructions.cp;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.Lop;
@@ -41,16 +42,18 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _functionName;
 	private final String _namespace;
 	private final CPOperand[] _boundInputs;
-	private final ArrayList<String> _boundInputNames;
-	private final ArrayList<String> _boundOutputNames;
+	private final List<String> _boundInputNames;
+	private final List<String> _funArgNames;
+	private final List<String> _boundOutputNames;
 
 	public FunctionCallCPInstruction(String namespace, String functName, CPOperand[] boundInputs,
-		ArrayList<String> boundInputNames, ArrayList<String> boundOutputNames, String istr) {
+			List<String> boundInputNames, List<String> funArgNames, List<String> boundOutputNames, String istr) {
 		super(CPType.External, null, functName, istr);
 		_functionName = functName;
 		_namespace = namespace;
 		_boundInputs = boundInputs;
 		_boundInputNames = boundInputNames;
+		_funArgNames = funArgNames;
 		_boundOutputNames = boundOutputNames;
 	}
 
@@ -63,23 +66,26 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 	
 	public static FunctionCallCPInstruction parseInstruction(String str) {
-		//schema: extfunct, fname, num inputs, num outputs, inputs, outputs
+		//schema: extfunct, fname, num inputs, num outputs, inputs (name-value pairs), outputs
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String namespace = parts[1];
 		String functionName = parts[2];
 		int numInputs = Integer.valueOf(parts[3]);
 		int numOutputs = Integer.valueOf(parts[4]);
 		CPOperand[] boundInputs = new CPOperand[numInputs];
-		ArrayList<String> boundInputNames = new ArrayList<>();
-		ArrayList<String> boundOutputNames = new ArrayList<>();
+		List<String> boundInputNames = new ArrayList<>();
+		List<String> funArgNames = new ArrayList<>();
+		List<String> boundOutputNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
-			boundInputs[i] = new CPOperand(parts[5 + i]);
+			String[] nameValue = parts[5 + i].split("=");
+			boundInputs[i] = new CPOperand(nameValue[1]);
+			funArgNames.add(nameValue[0]);
 			boundInputNames.add(boundInputs[i].getName());
 		}
 		for (int i = 0; i < numOutputs; i++)
 			boundOutputNames.add(parts[5 + numInputs + i]);
-		return new FunctionCallCPInstruction ( namespace,
-			functionName, boundInputs, boundInputNames, boundOutputNames, str );
+		return new FunctionCallCPInstruction ( namespace, functionName,
+			boundInputs, boundInputNames, funArgNames, boundOutputNames, str );
 	}
 	
 	@Override
@@ -109,8 +115,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
 		LocalVariableMap functionVariables = new LocalVariableMap();
-		for( int i=0; i<fpb.getInputParams().size(); i++) 
-		{
+		for( int i=0; i<_boundInputs.length; i++) {
 			//error handling non-existing variables
 			CPOperand input = _boundInputs[i];
 			if( !input.isLiteral() && !ec.containsVariable(input.getName()) ) {
@@ -118,7 +123,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 					DMLProgram.constructFunctionKey(_namespace, _functionName) + " (line "+getLineNum()+").");
 			}
 			//get input matrix/frame/scalar
-			DataIdentifier currFormalParam = fpb.getInputParams().get(i);
+			String argName = _funArgNames.get(i);
+			DataIdentifier currFormalParam = fpb.getInputParam(argName);
+			if( currFormalParam == null ) {
+				throw new DMLRuntimeException("Non-existing named "
+					+ "function argument: '"+argName+"' (line "+getLineNum()+").");
+			}
+			
 			Data value = ec.getVariable(input);
 			
 			//graceful value type conversion for scalar inputs with wrong type
@@ -210,12 +221,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	public void printMe() {
 		LOG.debug("ExternalBuiltInFunction: " + this.toString());
 	}
-
-	public ArrayList<String> getBoundInputParamNames() {
-		return _boundInputNames;
-	}
 	
-	public ArrayList<String> getBoundOutputParamNames() {
+	public List<String> getBoundOutputParamNames() {
 		return _boundOutputNames;
 	}
 

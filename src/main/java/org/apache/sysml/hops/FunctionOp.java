@@ -20,6 +20,7 @@
 package org.apache.sysml.hops;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.lops.FunctionCallCP;
@@ -53,7 +54,9 @@ public class FunctionOp extends Hop
 	private FunctionType _type = null;
 	private String _fnamespace = null;
 	private String _fname = null; 
-	private String[] _outputs = null; 
+	
+	private String[] _inputNames = null;  // A,B in C = foo(A=X, B=Y)
+	private String[] _outputNames = null; // C in C = foo(A=X, B=Y)
 	private ArrayList<Hop> _outputHops = null;
 	private boolean _singleOutFun = false;
 	
@@ -61,22 +64,23 @@ public class FunctionOp extends Hop
 		//default constructor for clone
 	}
 
-	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, ArrayList<Hop> outputHops) {
-		this(type, fnamespace, fname, finputs, outputs, false);
+	public FunctionOp(FunctionType type, String fnamespace, String fname, String[] inputNames, List<Hop> inputs, String[] outputNames, ArrayList<Hop> outputHops) {
+		this(type, fnamespace, fname, inputNames, inputs, outputNames, false);
 		_outputHops = outputHops;
 	}
 
-	public FunctionOp(FunctionType type, String fnamespace, String fname, ArrayList<Hop> finputs, String[] outputs, boolean singleOut) 
+	public FunctionOp(FunctionType type, String fnamespace, String fname, String[] inputNames, List<Hop> inputs, String[] outputNames, boolean singleOut) 
 	{
 		super(fnamespace + Program.KEY_DELIM + fname, DataType.UNKNOWN, ValueType.UNKNOWN );
 		
 		_type = type;
 		_fnamespace = fnamespace;
 		_fname = fname;
-		_outputs = outputs;
+		_inputNames = inputNames;
+		_outputNames = outputNames;
 		_singleOutFun = singleOut;
 		
-		for( Hop in : finputs ) {
+		for( Hop in : inputs ) {
 			getInput().add(in);
 			in.getParent().add(this);
 		}
@@ -107,8 +111,12 @@ public class FunctionOp extends Hop
 		return _outputHops;
 	}
 	
+	public String[] getInputVariableNames() {
+		return _inputNames;
+	}
+	
 	public String[] getOutputVariableNames() {
-		return _outputs;
+		return _outputNames;
 	}
 	
 	public FunctionType getFunctionType() {
@@ -169,17 +177,20 @@ public class FunctionOp extends Hop
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward")  ) {
+			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d") ) {
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {
 				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(3).getDim1(), getOutputs().get(3).getDim2(), 1.0) + 
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(4).getDim1(), getOutputs().get(4).getDim2(), 1.0);
 			}
+			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_test") ) {
+			return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+		}
 			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ) {
 				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
@@ -215,7 +226,8 @@ public class FunctionOp extends Hop
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
-			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
+					getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) {
 				return 0; 
 			}
 			else if ( getFunctionName().equalsIgnoreCase("lstm") ||  getFunctionName().equalsIgnoreCase("lstm_backward") ) {
@@ -240,7 +252,8 @@ public class FunctionOp extends Hop
 	@Override
 	public boolean isGPUEnabled() {
 		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ||  
-			getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) 
+			getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
+			getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) 
 			return true;
 		else
 			return false;
@@ -259,10 +272,10 @@ public class FunctionOp extends Hop
 		ArrayList<Lop> tmp = new ArrayList<>();
 		for( Hop in : getInput() )
 			tmp.add( in.constructLops() );
-		 
+		
 		//construct function call
 		Lop fcall = _singleOutFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) :
-			new FunctionCallCP(tmp, _fnamespace, _fname, _outputs, _outputHops, et);
+			new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et);
 		setLineNumbers(fcall);
 		setLops(fcall);
 		
@@ -283,19 +296,24 @@ public class FunctionOp extends Hop
 		checkAndSetForcedPlatform();
 		
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
+			boolean isBuiltinFunction = isBuiltinFunction();
 			// check if there is sufficient memory to execute this function
-			if( getFunctionName().equalsIgnoreCase("transformencode") ) {
+			if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("transformencode") ) {
 				_etype = ((_etypeForced==ExecType.SPARK 
 					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
-			else if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward")) {
+			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
 				if(!DMLScript.USE_ACCELERATOR)
 					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
 				_etype = ExecType.GPU;
 			}
-			else if( getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward")) {
+			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward"))) {
 				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
+			}
+			else if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {
+				// Only GPU implementation is supported
+				_etype = ExecType.GPU;
 			}
 			else {
 				// Since the memory estimate is only conservative, do not throw
@@ -312,18 +330,20 @@ public class FunctionOp extends Hop
 		
 		return _etype;
 	}
+	
+	private boolean isBuiltinFunction() {
+		return getFunctionNamespace().equals(DMLProgram.INTERNAL_NAMESPACE);
+	}
 
 	@Override
-	public void refreshSizeInformation()
-	{
+	public void refreshSizeInformation() {
 		//do nothing
 	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public Object clone() throws CloneNotSupportedException 
-	{
-		FunctionOp ret = new FunctionOp();	
+	public Object clone() throws CloneNotSupportedException {
+		FunctionOp ret = new FunctionOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -332,7 +352,8 @@ public class FunctionOp extends Hop
 		ret._type = _type;
 		ret._fnamespace = _fnamespace;
 		ret._fname = _fname;
-		ret._outputs = _outputs.clone();
+		ret._inputNames = (_inputNames!=null) ? _inputNames.clone() : null;
+		ret._outputNames = _outputNames.clone();
 		if( _outputHops != null )
 			ret._outputHops = (ArrayList<Hop>) _outputHops.clone();
 		
@@ -340,8 +361,7 @@ public class FunctionOp extends Hop
 	}
 	
 	@Override
-	public boolean compare( Hop that )
-	{
+	public boolean compare(Hop that) {
 		return false;
 	}
 }

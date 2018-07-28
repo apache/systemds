@@ -19,22 +19,31 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.List;
+import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+public class DataPartitioner {
 
-public abstract class DataPartitioner {
+	private DataPartitionScheme _scheme;
 
-	public final class Result {
-		public final List<MatrixObject> pFeatures;
-		public final List<MatrixObject> pLabels;
-
-		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
-			this.pFeatures = pFeatures;
-			this.pLabels = pLabels;
+	public DataPartitioner(Statement.PSScheme scheme) {
+		switch (scheme) {
+			case DISJOINT_CONTIGUOUS:
+				_scheme = new DCScheme();
+				break;
+			case DISJOINT_ROUND_ROBIN:
+				_scheme = new DRRScheme();
+				break;
+			case DISJOINT_RANDOM:
+				_scheme = new DRScheme();
+				break;
+			case OVERLAP_RESHUFFLE:
+				_scheme = new ORScheme();
+				break;
 		}
 	}
 
-	public abstract Result doPartitioning(int workersNum, MatrixObject features, MatrixObject labels);
-
+	public DataPartitionScheme.Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
+		return _scheme.doPartitioning(workersNum, features, labels);
+	}
 }

@@ -26,7 +26,9 @@ import org.apache.sysml.runtime.functionobjects.BitwAnd;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPooling;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 
 /**
  * This library contains all vector primitives that are used in 
@@ -338,6 +340,14 @@ public class LibSpoofPrimitives
 	public static double vectCountnnz(double[] avals, int[] aix, int ai, int alen, int len) {
 		//pure meta data operation
 		return alen;
+	}
+	
+	public static double vectMean(double[] a, int ai, int len) {
+		return vectSum(a, ai, len) / len;
+	} 
+	
+	public static double vectMean(double[] avals, int[] aix, int ai, int alen, int len) {
+		return vectSum(avals, aix, ai, alen, len) / len;
 	}
 	
 	//custom vector div
@@ -2044,7 +2054,45 @@ public class LibSpoofPrimitives
 		LibMatrixDNN.multBias(c, b, 1, b.length, len/b.length);
 		return c;
 	}
+	
+	//maxpool
+	
+	public static double[] vectMaxpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+		double[] c = allocVector(C*P*Q, true);
+		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.MAX,
+			-Double.MAX_VALUE, 1, a, c, rix, rix+1, ai, 0, C, P, Q, R, S, H, W);
+		return c;
+	} 
+	
+	public static double[] vectMaxpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+		double[] a = allocVector(len, true);
+		double[] c = allocVector(C*P*Q, true);
+		for(int k=ai; k<ai+alen; k++)
+			a[aix[k]] = avals[k];
+		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.MAX,
+			-Double.MAX_VALUE, 1, a, c, rix, rix+1, 0, 0, C, P, Q, R, S, H, W);
+		return c;
+	}
+	
+	//avgpool
 
+	public static double[] vectAvgpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+		double[] c = allocVector(C*P*Q, true);
+		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.AVG,
+			0, 1/(R*S), a, c, rix, rix+1, ai, 0, C, P, Q, R, S, H, W);
+		return c;
+	} 
+	
+	public static double[] vectAvgpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+		double[] a = allocVector(len, true);
+		double[] c = allocVector(C*P*Q, true);
+		for(int k=ai; k<ai+alen; k++)
+			a[aix[k]] = avals[k];
+		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.AVG,
+			0, 1/(R*S), a, c, rix, rix+1, 0, 0, C, P, Q, R, S, H, W);
+		return c;
+	}
+	
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)
 	

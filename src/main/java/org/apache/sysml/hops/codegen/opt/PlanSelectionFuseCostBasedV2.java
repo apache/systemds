@@ -951,7 +951,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		//add compute costs of current operator to costs vector
-		costVect.computeCosts += computeCosts.get(currentHopId);
+		if( computeCosts.containsKey(currentHopId) )
+			costVect.computeCosts += computeCosts.get(currentHopId);
 		
 		//process children recursively
 		for( int i=0; i< current.getInput().size(); i++ ) {

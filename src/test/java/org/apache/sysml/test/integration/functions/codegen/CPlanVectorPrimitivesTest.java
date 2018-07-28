@@ -89,6 +89,16 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorAggPrimitive(UnaryType.ROW_MAXS, InputType.VECTOR_SPARSE);
 	}
 	
+	@Test
+	public void testVectorMeansDense() {
+		testVectorAggPrimitive(UnaryType.ROW_MEANS, InputType.VECTOR_DENSE);
+	}
+	
+	@Test
+	public void testVectorMeansSparse() {
+		testVectorAggPrimitive(UnaryType.ROW_MEANS, InputType.VECTOR_SPARSE);
+	}
+	
 	//support unary vector primitives (pow2/mult2 current excluded because not unary)
 	
 	@Test
@@ -716,7 +726,8 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			MatrixBlock in = MatrixBlock.randOperations(m, n, sparsity, -1, 1, "uniform", 7);
 			
 			//get vector primitive via reflection
-			String meName = "vect"+StringUtils.camelize(aggtype.name().split("_")[1].substring(0, 3));
+			String tmp = StringUtils.camelize(aggtype.name().split("_")[1]);
+			String meName = "vect"+tmp.substring(0, tmp.length()-1);
 			Method me = (type1 == InputType.VECTOR_DENSE) ? 
 				LibSpoofPrimitives.class.getMethod(meName, new Class[]{double[].class, int.class, int.class}) : 
 				LibSpoofPrimitives.class.getMethod(meName, new Class[]{double[].class, int[].class, int.class, int.class, int.class});
@@ -732,9 +743,10 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				MatrixBlock in2 = in.slice(i, i, 0, n-1, new MatrixBlock());
 				Double ret2 = -1d;
 				switch( aggtype ) {
-					case ROW_SUMS: ret2 = in2.sum(); break;
-					case ROW_MAXS: ret2 = in2.max(); break;
-					case ROW_MINS: ret2 = in2.min(); break;	
+					case ROW_SUMS:  ret2 = in2.sum(); break;
+					case ROW_MAXS:  ret2 = in2.max(); break;
+					case ROW_MINS:  ret2 = in2.min(); break;
+					case ROW_MEANS: ret2 = in2.mean(); break;
 				}
 				
 				//compare results

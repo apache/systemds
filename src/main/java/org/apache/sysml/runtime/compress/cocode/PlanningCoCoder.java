@@ -63,7 +63,7 @@ public class PlanningCoCoder
 		}
 		
 		// use column group partitioner to create partitions of columns
-		List<List<Integer>> bins = createColumnGroupPartitioner(COLUMN_PARTITIONER)
+		List<int[]> bins = createColumnGroupPartitioner(COLUMN_PARTITIONER)
 				.partitionColumns(groupCols, groupColsInfo);
 
 		// brute force grouping within each partition
@@ -72,13 +72,13 @@ public class PlanningCoCoder
 				getCocodingGroupsBruteForce(bins, groupColsInfo, sizeEstimator, numRows);
 	}
 
-	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) 
+	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen) 
 	{
 		List<int[]> retGroups = new ArrayList<>();
-		for (List<Integer> bin : bins) {
+		for( int[] bin : bins ) {
 			// building an array of singleton CoCodingGroup
 			ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<>();
-			for (Integer col : bin)
+			for( int col : bin )
 				sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
 			// brute force co-coding	
 			PlanningCoCodingGroup[] outputGroups = findCocodesBruteForce(
@@ -90,20 +90,20 @@ public class PlanningCoCoder
 		return retGroups;
 	}
 
-	private static List<int[]> getCocodingGroupsBruteForce(List<List<Integer>> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
+	private static List<int[]> getCocodingGroupsBruteForce(List<int[]> bins, HashMap<Integer, GroupableColInfo> groupColsInfo, CompressedSizeEstimator estim, int rlen, int k) 
 	{
 		List<int[]> retGroups = new ArrayList<>();
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<CocodeTask> tasks = new ArrayList<>();
-			for (List<Integer> bin : bins) {
+			for( int[] bin : bins ) {
 				// building an array of singleton CoCodingGroup
 				ArrayList<PlanningCoCodingGroup> sgroups = new ArrayList<>();
-				for (Integer col : bin)
+				for( int col : bin )
 					sgroups.add(new PlanningCoCodingGroup(col, groupColsInfo.get(col)));
 				tasks.add(new CocodeTask(estim, sgroups, rlen));
 			}
-			List<Future<PlanningCoCodingGroup[]>> rtask = pool.invokeAll(tasks);	
+			List<Future<PlanningCoCodingGroup[]>> rtask = pool.invokeAll(tasks);
 			for( Future<PlanningCoCodingGroup[]> lrtask : rtask )
 				for (PlanningCoCodingGroup grp : lrtask.get())
 					retGroups.add(grp.getColIndices());

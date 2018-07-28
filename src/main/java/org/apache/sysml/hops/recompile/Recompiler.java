@@ -82,7 +82,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -295,12 +295,16 @@ public class Recompiler
 	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, LocalVariableMap vars, RecompileStatus status,
 		boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, boolean pred, ExecType et, long tid ) 
 	{
+		boolean codegen = ConfigurationManager.isCodegenEnabled()
+			&& !(forceEt && et == null ) //not on reset
+			&& SpoofCompiler.RECOMPILE_CODEGEN;
+		
 		// prepare hops dag for recompile
 		if( !inplace ){ 
 			// deep copy hop dag (for non-reversable rewrites)
 			hops = deepCopyHopsDag(hops);
 		}
-		else {
+		else if( !codegen ) {
 			// clear existing lops
 			Hop.resetVisitStatus(hops);
 			for( Hop hopRoot : hops )
@@ -356,9 +360,7 @@ public class Recompiler
 		}
 		
 		// codegen if enabled
-		if( ConfigurationManager.isCodegenEnabled()
-			&& !(forceEt && et == null ) //not on reset
-			&& SpoofCompiler.RECOMPILE_CODEGEN ) {
+		if( codegen ) {
 			//create deep copy for in-place
 			if( inplace )
 				hops = deepCopyHopsDag(hops);
@@ -589,8 +591,7 @@ public class Recompiler
 		//update function names
 		if( hop instanceof FunctionOp && ((FunctionOp)hop).getFunctionType() != FunctionType.MULTIRETURN_BUILTIN) {
 			FunctionOp fop = (FunctionOp) hop;
-			fop.setFunctionName( fop.getFunctionName() +
-					             ProgramConverter.CP_CHILD_THREAD + pid);
+			fop.setFunctionName( fop.getFunctionName() + Lop.CP_CHILD_THREAD + pid);
 		}
 		
 		if( hop.getInput() != null )

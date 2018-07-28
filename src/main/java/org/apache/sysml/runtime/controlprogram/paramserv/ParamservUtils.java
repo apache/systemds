@@ -22,11 +22,18 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.spark.Partitioner;
+import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -34,6 +41,7 @@ import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.Expression;
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StatementBlock;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ForProgramBlock;
@@ -49,7 +57,10 @@ import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
-import org.apache.sysml.runtime.controlprogram.parfor.ProgramConverter;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
@@ -57,12 +68,19 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.util.ProgramConverter;
+import org.apache.sysml.utils.Statistics;
+
+import scala.Tuple2;
 
 public class ParamservUtils {
 
+	protected static final Log LOG = LogFactory.getLog(ParamservUtils.class.getName());
 	public static final String PS_FUNC_PREFIX = "_ps_";
+	public static long SEED = -1; // Used for generating permutation
 
 	/**
 	 * Deep copy the list object
@@ -88,25 +106,67 @@ public class ParamservUtils {
 		return new ListObject(newData, lo.getNames());
 	}
 
+	/**
+	 * Clean up the list object according to its own data status
+	 * @param ec execution context
+	 * @param lName list var name
+	 */
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
-		cleanupListObject(lo);
+		cleanupListObject(ec, lo, lo.getStatus());
 	}
 
-	public static void cleanupListObject(ListObject lo) {
-		lo.getData().forEach(ParamservUtils::cleanupData);
+	/**
+	 * Clean up the list object according to the given array of data status (i.e., false => not be removed)
+	 * @param ec execution context
+	 * @param lName list var name
+	 * @param status data status
+	 */
+	public static void cleanupListObject(ExecutionContext ec, String lName, boolean[] status) {
+		ListObject lo = (ListObject) ec.removeVariable(lName);
+		cleanupListObject(ec, lo, status);
 	}
 
-	public static void cleanupData(Data data) {
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo) {
+		cleanupListObject(ec, lo, lo.getStatus());
+	}
+
+	public static void cleanupListObject(ExecutionContext ec, ListObject lo, boolean[] status) {
+		for (int i = 0; i < lo.getLength(); i++) {
+			if (status != null && !status[i])
+				continue; // data ref by other object must not be cleaned up
+			ParamservUtils.cleanupData(ec, lo.getData().get(i));
+		}
+	}
+
+	public static void cleanupData(ExecutionContext ec, Data data) {
 		if (!(data instanceof CacheableData))
 			return;
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
-		cd.clearData();
+		ec.cleanupCacheableData(cd);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
+		}
 	}
 
-	public static MatrixObject newMatrixObject() {
-		return new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), new MetaDataFormat(new MatrixCharacteristics(-1, -1, -1, -1), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
+		mo.enableCleanup(true);
+		ec.cleanupCacheableData(mo);
+	}
+
+	public static MatrixObject newMatrixObject(MatrixBlock mb) {
+		return newMatrixObject(mb, true);
+	}
+	
+	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
+		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
+			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		result.acquireModify(mb);
+		result.release();
+		result.enableCleanup(cleanup);
+		return result;
 	}
 
 	/**
@@ -118,20 +178,31 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixObject result = newMatrixObject();
-		MatrixBlock tmp = mo.acquireRead();
-		result.acquireModify(tmp.slice((int) rl - 1, (int) rh - 1));
-		mo.release();
-		result.release();
+		MatrixBlock mb = mo.acquireRead();
+		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
 		result.enableCleanup(false);
+		mo.release();
 		return result;
 	}
 
-	public static MatrixBlock generatePermutation(int numEntries) {
+	/**
+	 * Slice the matrix block and return a matrix block
+	 * (used in spark)
+	 *
+	 * @param mb input matrix
+	 * @param rl low boundary
+	 * @param rh high boundary
+	 * @return new sliced matrix block
+	 */
+	public static MatrixBlock sliceMatrixBlock(MatrixBlock mb, long rl, long rh) {
+		return mb.slice((int) rl - 1, (int) rh - 1);
+	}
+
+	public static MatrixBlock generatePermutation(int numEntries, long seed) {
 		// Create a sequence and sample w/o replacement
 		// (no need to materialize the sequence because ctable only uses its meta data)
 		MatrixBlock seq = new MatrixBlock(numEntries, 1, false);
-		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, -1);
+		MatrixBlock sample = MatrixBlock.sampleOperations(numEntries, numEntries, false, seed);
 
 		// Combine the sequence and sample as a table
 		return seq.ctableSeqOperations(sample, 1.0,
@@ -146,9 +217,8 @@ public class ParamservUtils {
 			new String[]{ns, name} : new String[]{ns, name};
 	}
 
-	public static List<ExecutionContext> createExecutionContexts(ExecutionContext ec, LocalVariableMap varsMap,
-		String updFunc, String aggFunc, int workerNum, int k) {
-
+	public static ExecutionContext createExecutionContext(ExecutionContext ec, LocalVariableMap varsMap, String updFunc,
+		String aggFunc, int k) {
 		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
 		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
 
@@ -159,27 +229,21 @@ public class ParamservUtils {
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
-		// 3. Copy function for workers
-		List<ExecutionContext> workerECs = IntStream.range(0, workerNum)
-			.mapToObj(i -> {
-				FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
-				FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
-				Program newProg = new Program();
-				putFunction(newProg, newUpdFunc);
-				putFunction(newProg, newAggFunc);
-				return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
-			})
-			.collect(Collectors.toList());
-
-		// 4. Copy function for agg service
+		// 3. Copy function
+		FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
 		FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
 		Program newProg = new Program();
+		putFunction(newProg, newUpdFunc);
 		putFunction(newProg, newAggFunc);
-		ExecutionContext aggEC = ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+		return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+	}
 
-		List<ExecutionContext> result = new ArrayList<>(workerECs);
-		result.add(aggEC);
-		return result;
+	public static List<ExecutionContext> copyExecutionContext(ExecutionContext ec, int num) {
+		return IntStream.range(0, num).mapToObj(i -> {
+			Program newProg = new Program();
+			ec.getProgram().getFunctionProgramBlocks().forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
+			return ExecutionContextFactory.createContext(new LocalVariableMap(ec.getVariables()), newProg);
+		}).collect(Collectors.toList());
 	}
 
 	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {
@@ -257,14 +321,106 @@ public class ParamservUtils {
 		return recompiled;
 	}
 
-
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
 		String[] cfn = getCompleteFuncName(funcName, null);
 		String ns = cfn[0];
 		String fname = cfn[1];
 		return ec.getProgram().getFunctionProgramBlock(ns, fname);
 	}
-	
+
+	public static MatrixBlock cbindMatrix(MatrixBlock left, MatrixBlock right) {
+		return left.append(right, new MatrixBlock());
+	}
+
+	/**
+	 * Assemble the matrix of features and labels according to the rowID
+	 *
+	 * @param numRows row size of the data
+	 * @param featuresRDD indexed features matrix block
+	 * @param labelsRDD indexed labels matrix block
+	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID -> features, labels)
+	 */
+	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
+		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(numRows, featuresRDD);
+		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(numRows, labelsRDD);
+		//TODO Add an additional physical operator which broadcasts the labels directly (broadcast join with features) if certain memory budgets are satisfied
+		return fRDD.join(lRDD);
+	}
+
+	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+		//TODO could use join and aggregation to avoid unnecessary shuffle introduced by reduceByKey
+		return rdd.mapToPair(input -> new Tuple2<>(input._1.getRowIndex(), new Tuple2<>(input._1.getColumnIndex(), input._2)))
+			.aggregateByKey(new LinkedList<Tuple2<Long, MatrixBlock>>(),
+				new Partitioner() {
+					private static final long serialVersionUID = -7032660778344579236L;
+					@Override
+					public int getPartition(Object rblkID) {
+						return Math.toIntExact((Long) rblkID);
+					}
+					@Override
+					public int numPartitions() {
+						return Math.toIntExact(numRows);
+					}
+				},
+				(list, input) -> {
+					list.add(input); 
+					return list;
+				}, 
+				(l1, l2) -> {
+					l1.addAll(l2);
+					l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
+					return l1;
+				})
+			.mapToPair(input -> {
+				LinkedList<Tuple2<Long, MatrixBlock>> list = input._2;
+				MatrixBlock result = list.get(0)._2;
+				for (int i = 1; i < list.size(); i++) {
+					result = ParamservUtils.cbindMatrix(result, list.get(i)._2);
+				}
+				return new Tuple2<>(input._1, result);
+			});
+	}
+
+	@SuppressWarnings("unchecked")
+	public static JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitionOnSpark(SparkExecutionContext sec, MatrixObject features, MatrixObject labels, Statement.PSScheme scheme, int workerNum) {
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		// Get input RDD
+		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
+				sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
+				sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
+
+		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
+		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils
+			.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
+			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))
+			// Aggregate the partitioned matrix according to rowID for each worker
+			// i.e. (workerID => ordered list[(rowBlockID, (single row features, single row labels)]
+			.aggregateByKey(new LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>(), new Partitioner() {
+				private static final long serialVersionUID = -7937781374718031224L;
+				@Override
+				public int getPartition(Object workerID) {
+					return (int) workerID;
+				}
+				@Override
+				public int numPartitions() {
+					return workerNum;
+				}
+			}, (list, input) -> {
+				list.add(input);
+				return list;
+			}, (l1, l2) -> {
+				l1.addAll(l2);
+				l1.sort((o1, o2) -> o1._1.compareTo(o2._1));
+				return l1;
+			})
+			.mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns()));
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
+		return result;
+	}
+
 	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
 		return accrueGradients(accGradients, gradients, false);
 	}

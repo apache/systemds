@@ -74,7 +74,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		MatrixBlock m1Map = computeDensityMap(m1);
-		MatrixBlock m2Map = computeDensityMap(m2);
+		MatrixBlock m2Map = (m1 == m2) ? //self product
+			m1Map : computeDensityMap(m2);
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
 			true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
 		return OptimizerUtils.getSparsity( //aggregate output histogram

@@ -39,6 +39,8 @@ import static org.apache.sysml.parser.Statement.PS_UPDATE_TYPE;
 import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
 import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -53,23 +55,29 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.spark.network.server.TransportServer;
+import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.hops.recompile.Recompiler;
+import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDC;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDR;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerDRR;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionerOR;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSBody;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
+import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
@@ -97,9 +105,99 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		PSModeType mode = getPSMode();
+		switch (mode) {
+			case LOCAL:
+				runLocally(ec, mode);
+				break;
+			case REMOTE_SPARK:
+				runOnSpark((SparkExecutionContext) ec, mode);
+				break;
+		}
+	}
+
+	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 
-		PSModeType mode = getPSMode();
+		PSScheme scheme = getScheme();
+		int workerNum = getWorkerNum(mode);
+		String updFunc = getParam(PS_UPDATE_FUN);
+		String aggFunc = getParam(PS_AGGREGATION_FUN);
+
+		// Get the compiled execution context
+		LocalVariableMap newVarsMap = createVarsMap(sec);
+		// Level of par is 1 in spark backend because one worker will be launched per task
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(sec, newVarsMap, updFunc, aggFunc, 1);
+
+		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
+		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
+
+		// Create the agg service's execution context
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
+
+		// Create the parameter server
+		ListObject model = sec.getListObject(getParam(PS_MODEL));
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), workerNum, model, aggServiceEC);
+
+		// Get driver host
+		String host = sec.getSparkContext().getConf().get("spark.driver.host");
+
+		// Create the netty server for ps
+		TransportServer server = PSRpcFactory.createServer(sec.getSparkContext().getConf(),(LocalParamServer) ps, host); // Start the server
+
+		// Force all the instructions to CP type
+		Recompiler.recompileProgramBlockHierarchy2Forced(
+			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
+
+		// Serialize all the needed params for remote workers
+		SparkPSBody body = new SparkPSBody(newEC);
+		HashMap<String, byte[]> clsMap = new HashMap<>();
+		String program = ProgramConverter.serializeSparkPSBody(body, clsMap);
+
+		// Add the accumulators for statistics
+		LongAccumulator aSetup = sec.getSparkContext().sc().longAccumulator("setup");
+		LongAccumulator aWorker = sec.getSparkContext().sc().longAccumulator("workersNum");
+		LongAccumulator aUpdate = sec.getSparkContext().sc().longAccumulator("modelUpdate");
+		LongAccumulator aIndex = sec.getSparkContext().sc().longAccumulator("batchIndex");
+		LongAccumulator aGrad = sec.getSparkContext().sc().longAccumulator("gradCompute");
+		LongAccumulator aRPC = sec.getSparkContext().sc().longAccumulator("rpcRequest");
+		LongAccumulator aBatch = sec.getSparkContext().sc().longAccumulator("numBatches");
+		LongAccumulator aEpoch = sec.getSparkContext().sc().longAccumulator("numEpochs");
+		
+		// Create remote workers
+		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), 
+			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
+			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
+
+		if (DMLScript.STATISTICS)
+			Statistics.accPSSetupTime((long) tSetup.stop());
+
+		try {
+			ParamservUtils.doPartitionOnSpark(sec, features, labels, scheme, workerNum) // Do data partitioning
+				.foreach(worker); // Run remote workers
+		} catch (Exception e) {
+			throw new DMLRuntimeException("Paramserv function failed: ", e);
+		} finally {
+			// Stop the netty server
+			server.close();
+		}
+
+		// Accumulate the statistics for remote workers
+		if (DMLScript.STATISTICS) {
+			Statistics.accPSSetupTime(aSetup.value().longValue());
+			Statistics.incWorkerNumber(aWorker.value().longValue());
+			Statistics.accPSLocalModelUpdateTime(aUpdate.value().longValue());
+			Statistics.accPSBatchIndexingTime(aIndex.value().longValue());
+			Statistics.accPSGradientComputeTime(aGrad.value().longValue());
+			Statistics.accPSRpcRequestTime(aRPC.value().longValue());
+		}
+
+		// Fetch the final model from ps
+		sec.setVariable(output.getName(), ps.getResult());
+	}
+
+	private void runLocally(ExecutionContext ec, PSModeType mode) {
+		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 			.namingPattern("workers-pool-thread-%d").build();
@@ -110,15 +208,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int k = getParLevel(workerNum);
 
 		// Get the compiled execution context
-		// Create workers' execution context
 		LocalVariableMap newVarsMap = createVarsMap(ec);
-		List<ExecutionContext> newECs = ParamservUtils.createExecutionContexts(ec, newVarsMap, updFunc, aggFunc, workerNum, k);
+		ExecutionContext newEC = ParamservUtils.createExecutionContext(ec, newVarsMap, updFunc, aggFunc, k);
 
 		// Create workers' execution context
-		List<ExecutionContext> workerECs = newECs.subList(0, newECs.size() - 1);
+		List<ExecutionContext> workerECs = ParamservUtils.copyExecutionContext(newEC, workerNum);
 
 		// Create the agg service's execution context
-		ExecutionContext aggServiceEC = newECs.get(newECs.size() - 1);
+		ExecutionContext aggServiceEC = ParamservUtils.copyExecutionContext(newEC, 1).get(0);
 
 		PSFrequency freq = getFrequency();
 		PSUpdateType updateType = getUpdateType();
@@ -137,8 +234,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Do data partition
 		PSScheme scheme = getScheme();
-		doDataPartitioning(scheme, ec, workers);
-		
+		partitionLocally(scheme, ec, workers);
+
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
@@ -180,8 +277,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		} catch (IllegalArgumentException e) {
 			throw new DMLRuntimeException(String.format("Paramserv function: not support ps execution mode '%s'", getParam(PS_MODE)));
 		}
-		if( mode == PSModeType.REMOTE_SPARK )
-			throw new DMLRuntimeException("Do not support remote spark.");
 		return mode;
 	}
 
@@ -236,12 +331,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		switch (mode) {
 			case LOCAL:
 				// default worker number: available cores - 1 (assign one process for agg service)
-				int workerNum = getRemainingCores();
-				if (getParameterMap().containsKey(PS_PARALLELISM))
-					workerNum = Integer.valueOf(getParam(PS_PARALLELISM));
-				return workerNum;
+				return getParameterMap().containsKey(PS_PARALLELISM) ?
+					Integer.valueOf(getParam(PS_PARALLELISM)) : getRemainingCores();
+			case REMOTE_SPARK:
+				return getParameterMap().containsKey(PS_PARALLELISM) ?
+					Integer.valueOf(getParam(PS_PARALLELISM)) : SparkExecutionContext.getDefaultParallelism(true);
 			default:
-				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
+				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
 	}
 
@@ -253,6 +349,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType, int workerNum, ListObject model, ExecutionContext ec) {
 		switch (mode) {
 			case LOCAL:
+			case REMOTE_SPARK:
 				return new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: "+mode.name());
@@ -279,22 +376,24 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return hyperparams;
 	}
 
-	private void doDataPartitioning(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
+	private void partitionLocally(PSScheme scheme, ExecutionContext ec, List<LocalPSWorker> workers) {
 		MatrixObject features = ec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = ec.getMatrixObject(getParam(PS_LABELS));
-		switch (scheme) {
-			case DISJOINT_CONTIGUOUS:
-				doDataPartitioning(new DataPartitionerDC(), features, labels, workers);
-				break;
-			case DISJOINT_ROUND_ROBIN:
-				doDataPartitioning(new DataPartitionerDRR(), features, labels, workers);
-				break;
-			case DISJOINT_RANDOM:
-				doDataPartitioning(new DataPartitionerDR(), features, labels, workers);
-				break;
-			case OVERLAP_RESHUFFLE:
-				doDataPartitioning(new DataPartitionerOR(), features, labels, workers);
-				break;
+		DataPartitionScheme.Result result = new DataPartitioner(scheme).doPartitioning(workers.size(), features.acquireRead(), labels.acquireRead());
+		features.release();
+		labels.release();
+		List<MatrixObject> pfs = result.pFeatures;
+		List<MatrixObject> pls = result.pLabels;
+		if (pfs.size() < workers.size()) {
+			if (LOG.isWarnEnabled()) {
+				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
+					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
+			}
+			workers = workers.subList(0, pfs.size());
+		}
+		for (int i = 0; i < workers.size(); i++) {
+			workers.get(i).setFeatures(pfs.get(i));
+			workers.get(i).setLabels(pls.get(i));
 		}
 	}
 
@@ -310,20 +409,4 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return scheme;
 	}
 
-	private void doDataPartitioning(DataPartitioner dp, MatrixObject features, MatrixObject labels, List<LocalPSWorker> workers) {
-		DataPartitioner.Result result = dp.doPartitioning(workers.size(), features, labels);
-		List<MatrixObject> pfs = result.pFeatures;
-		List<MatrixObject> pls = result.pLabels;
-		if (pfs.size() < workers.size()) {
-			if (LOG.isWarnEnabled()) {
-				LOG.warn(String.format("There is only %d batches of data but has %d workers. "
-					+ "Hence, reset the number of workers with %d.", pfs.size(), workers.size(), pfs.size()));
-			}
-			workers = workers.subList(0, pfs.size());
-		}
-		for (int i = 0; i < workers.size(); i++) {
-			workers.get(i).setFeatures(pfs.get(i));
-			workers.get(i).setLabels(pls.get(i));
-		}
-	}
 }

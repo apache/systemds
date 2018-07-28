@@ -56,7 +56,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
     k = 2; # factorization dimensionality, only(=2) possible for now.
 
     # 1.initialize fm core
-    [w0, W, V] = fm::init(n, d, k);
+    [w0, W, V] = fm::init(d, k);
 
     # 2.initialize adam optimizer
     ## Default values for some parameters

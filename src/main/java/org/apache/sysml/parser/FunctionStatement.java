@@ -24,11 +24,11 @@ import java.util.ArrayList;
 
 public class FunctionStatement extends Statement
 {
-		
 	private ArrayList<StatementBlock> _body;
 	protected String _name;
-	protected ArrayList <DataIdentifier> _inputParams;
-	protected ArrayList <DataIdentifier> _outputParams;
+	protected ArrayList<DataIdentifier> _inputParams;
+	protected ArrayList<Expression> _inputDefaults;
+	protected ArrayList<DataIdentifier> _outputParams;
 	
 	@Override
 	public Statement rewriteStatement(String prefix) {
@@ -36,22 +36,44 @@ public class FunctionStatement extends Statement
 	}
 	
 	public FunctionStatement(){
-		 _body = new ArrayList<>();
-		 _name = null;
-		 _inputParams = new ArrayList<>();
-		 _outputParams = new ArrayList<>();
+		_body = new ArrayList<>();
+		_name = null;
+		_inputParams = new ArrayList<>();
+		_inputDefaults = new ArrayList<>();
+		_outputParams = new ArrayList<>();
 	}
 	
 	public ArrayList<DataIdentifier> getInputParams(){
 		return _inputParams;
 	}
 	
+	public DataIdentifier getInputParam(String name) {
+		return _inputParams.stream()
+			.filter(d -> d.getName().equals(name))
+			.findFirst().orElse(null);
+	}
+	
+	public ArrayList<Expression> getInputDefaults() {
+		return _inputDefaults;
+	}
+	
+	public Expression getInputDefault(String name) {
+		for(int i=0; i<_inputParams.size(); i++)
+			if( _inputParams.get(i).getName().equals(name) )
+				return _inputDefaults.get(i);
+		return null;
+	}
+	
 	public ArrayList<DataIdentifier> getOutputParams(){
 		return _outputParams;
 	}
 	
-	public void setInputParams(ArrayList<DataIdentifier> inputParams){
+	public void setInputParams(ArrayList<DataIdentifier> inputParams) {
 		_inputParams = inputParams;
+	}
+	
+	public void setInputDefaults(ArrayList<Expression> inputDefaults) {
+		_inputDefaults = inputDefaults;
 	}
 	
 	public void setOutputParams(ArrayList<DataIdentifier> outputParams){

@@ -21,6 +21,7 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.PS_FUNC_PREFIX;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
@@ -31,27 +32,31 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 
-@SuppressWarnings("unused")
-public abstract class PSWorker {
+public abstract class PSWorker implements Serializable 
+{
+	private static final long serialVersionUID = -3510485051178200118L;
 
-	protected final int _workerID;
-	protected final int _epochs;
-	protected final long _batchSize;
-	protected final ExecutionContext _ec;
-	protected final ParamServer _ps;
-	protected final DataIdentifier _output;
-	protected final FunctionCallCPInstruction _inst;
+	protected int _workerID;
+	protected int _epochs;
+	protected long _batchSize;
+	protected ExecutionContext _ec;
+	protected ParamServer _ps;
+	protected DataIdentifier _output;
+	protected FunctionCallCPInstruction _inst;
 	protected MatrixObject _features;
 	protected MatrixObject _labels;
-	
-	private MatrixObject _valFeatures;
-	private MatrixObject _valLabels;
-	private final String _updFunc;
-	protected final Statement.PSFrequency _freq;
-	
+
+	protected MatrixObject _valFeatures;
+	protected MatrixObject _valLabels;
+	protected String _updFunc;
+	protected Statement.PSFrequency _freq;
+
+	protected PSWorker() {}
+
 	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
 		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
 		_workerID = workerID;
@@ -63,7 +68,10 @@ public abstract class PSWorker {
 		_valLabels = valLabels;
 		_ec = ec;
 		_ps = ps;
+		setupUpdateFunction(updFunc, ec);
+	}
 
+	protected void setupUpdateFunction(String updFunc, ExecutionContext ec) {
 		// Get the update function
 		String[] cfn = ParamservUtils.getCompleteFuncName(updFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];
@@ -78,7 +86,8 @@ public abstract class PSWorker {
 			.collect(Collectors.toCollection(ArrayList::new));
 		ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 			.collect(Collectors.toCollection(ArrayList::new));
-		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs, inputNames, outputNames, "update function");
+		_inst = new FunctionCallCPInstruction(ns, fname, boundInputs,
+			inputNames, func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function
 		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
@@ -122,5 +131,26 @@ public abstract class PSWorker {
 
 	public MatrixObject getLabels() {
 		return _labels;
+	}
+
+	public abstract String getWorkerName();
+
+	/**
+	 * ----- The following methods are dedicated to statistics -------------
+ 	 */
+	protected abstract void incWorkerNumber();
+
+	protected abstract void accLocalModelUpdateTime(Timing time);
+
+	protected abstract void accBatchIndexingTime(Timing time);
+
+	protected abstract void accGradientComputeTime(Timing time);
+
+	protected void accNumEpochs(int n) {
+		//do nothing
+	}
+	
+	protected void accNumBatches(int n) {
+		//do nothing
 	}
 }

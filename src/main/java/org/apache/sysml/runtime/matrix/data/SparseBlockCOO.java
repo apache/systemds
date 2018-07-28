@@ -171,6 +171,11 @@ public class SparseBlockCOO extends SparseBlock
 	public void allocate(int r, int ennz, int maxnnz) {
 		//do nothing everything preallocated
 	}
+	
+	@Override
+	public void compact(int r) {
+		//do nothing everything preallocated
+	}
 
 	@Override
 	public int numRows() {
@@ -379,6 +384,11 @@ public class SparseBlockCOO extends SparseBlock
 		Arrays.fill(_rindexes, pos, pos+alen, r);
 		System.arraycopy(aix, 0, _cindexes, pos, alen);
 		System.arraycopy(avals, 0, _values, pos, alen);
+	}
+	
+	@Override
+	public boolean add(int r, int c, double v) {
+		return set(r, c, get(r, c) + v);
 	}
 
 	@Override

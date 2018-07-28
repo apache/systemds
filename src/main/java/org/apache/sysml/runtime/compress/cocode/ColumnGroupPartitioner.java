@@ -34,5 +34,5 @@ public abstract class ColumnGroupPartitioner
 	 * @param groupColsInfo list of column infos
 	 * @return list of partitions (where each partition is a list of columns)
 	 */
-	public abstract List<List<Integer>> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo);
+	public abstract List<int[]> partitionColumns(List<Integer> groupCols, HashMap<Integer, GroupableColInfo> groupColsInfo);
 }

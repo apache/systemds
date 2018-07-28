@@ -145,14 +145,14 @@ public class ParamservUtils {
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
 		ec.cleanupCacheableData(cd);
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
-		}
 	}
 
-	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
-		mo.enableCleanup(true);
-		ec.cleanupCacheableData(mo);
+	public static void cleanupData(ExecutionContext ec, String varName) {
+		cleanupData(ec, ec.removeVariable(varName));
+	}
+
+	public static void cleanupListObject(ListObject lo) {
+		cleanupListObject(ExecutionContextFactory.createContext(), lo);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {

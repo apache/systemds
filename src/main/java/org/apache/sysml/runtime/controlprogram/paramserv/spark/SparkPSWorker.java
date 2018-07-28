@@ -26,7 +26,6 @@ import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
@@ -84,7 +83,7 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = new Timing(true);
 		configureWorker(input);
 		accSetupTime(tSetup);
 
@@ -130,43 +129,36 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	
 
 	@Override
-	public void incWorkerNumber() {
-		if (DMLScript.STATISTICS)
-			_aWorker.add(1);
+	protected void incWorkerNumber() {
+		_aWorker.add(1);
 	}
 	
 	@Override
-	public void accLocalModelUpdateTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			_aUpdate.add((long) time.stop());
+	protected void accLocalModelUpdateTime(Timing time) {
+		_aUpdate.add((long) time.stop());
 	}
 
 	@Override
-	public void accBatchIndexingTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			_aIndex.add((long) time.stop());
+	protected void accBatchIndexingTime(Timing time) {
+		_aIndex.add((long) time.stop());
 	}
 
 	@Override
-	public void accGradientComputeTime(Timing time) {
-		if (DMLScript.STATISTICS)
-			_aGrad.add((long) time.stop());
+	protected void accGradientComputeTime(Timing time) {
+		_aGrad.add((long) time.stop());
 	}
 	
 	@Override
 	protected void accNumEpochs(int n) {
-		if (DMLScript.STATISTICS)
-			_nEpochs.add(n);
+		_nEpochs.add(n);
 	}
 	
 	@Override
 	protected void accNumBatches(int n) {
-		if (DMLScript.STATISTICS)
-			_nBatches.add(n);
+		_nBatches.add(n);
 	}
 	
 	private void accSetupTime(Timing tSetup) {
-		if (DMLScript.STATISTICS)
-			_aSetup.add((long) tSetup.stop());
+		_aSetup.add((long) tSetup.stop());
 	}
 }

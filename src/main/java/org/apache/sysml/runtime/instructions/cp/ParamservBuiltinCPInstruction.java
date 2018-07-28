@@ -163,7 +163,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		LongAccumulator aRPC = sec.getSparkContext().sc().longAccumulator("rpcRequest");
 		LongAccumulator aBatch = sec.getSparkContext().sc().longAccumulator("numBatches");
 		LongAccumulator aEpoch = sec.getSparkContext().sc().longAccumulator("numEpochs");
-
+		
 		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN), 
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
@@ -184,12 +184,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Accumulate the statistics for remote workers
 		if (DMLScript.STATISTICS) {
-			Statistics.accPSSetupTime(aSetup.sum());
-			Statistics.incWorkerNumber(aWorker.sum());
-			Statistics.accPSLocalModelUpdateTime(aUpdate.sum());
-			Statistics.accPSBatchIndexingTime(aIndex.sum());
-			Statistics.accPSGradientComputeTime(aGrad.sum());
-			Statistics.accPSRpcRequestTime(aRPC.sum());
+			Statistics.accPSSetupTime(aSetup.value().longValue());
+			Statistics.incWorkerNumber(aWorker.value().longValue());
+			Statistics.accPSLocalModelUpdateTime(aUpdate.value().longValue());
+			Statistics.accPSBatchIndexingTime(aIndex.value().longValue());
+			Statistics.accPSGradientComputeTime(aGrad.value().longValue());
+			Statistics.accPSRpcRequestTime(aRPC.value().longValue());
 		}
 
 		// Fetch the final model from ps

@@ -27,6 +27,7 @@ import scala.Tuple2;
 
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
@@ -36,6 +37,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 
 public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction {
 
@@ -79,10 +81,11 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	{
 		private static final long serialVersionUID = 11324676268945117L;
 		
-		private AggregateUnaryOperator _op = null;
-		private long _rlen = -1;
-		private int _brlen = -1;
-		private int _bclen = -1;
+		private final AggregateUnaryOperator _op;
+		private UnaryOperator _uop = null;
+		private final long _rlen;
+		private final int _brlen;
+		private final int _bclen;
 		
 		public RDDCumAggFunction( AggregateUnaryOperator op, long rlen, int brlen, int bclen ) {
 			_op = op;
@@ -105,10 +108,12 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			AggregateUnaryOperator aop = (AggregateUnaryOperator)_op;
 			if( aop.aggOp.increOp.fn instanceof PlusMultiply ) { //cumsumprod
 				aop.indexFn.execute(ixIn, ixOut);
-				MatrixBlock t1 = blkIn.slice(0, blkIn.getNumRows()-1, 0, 0, new MatrixBlock());
+				if( _uop == null )
+					_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"));
+				MatrixBlock t1 = (MatrixBlock) blkIn.unaryOperations(_uop, new MatrixBlock());
 				MatrixBlock t2 = blkIn.slice(0, blkIn.getNumRows()-1, 1, 1, new MatrixBlock());
 				blkOut.reset(1, 2);
-				blkOut.quickSetValue(0, 0, t1.sum());
+				blkOut.quickSetValue(0, 0, t1.quickGetValue(t1.getNumRows()-1, 0));
 				blkOut.quickSetValue(0, 1, t2.prod());
 			}
 			else { //general case

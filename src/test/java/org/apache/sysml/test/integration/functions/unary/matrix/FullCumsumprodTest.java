@@ -111,8 +111,7 @@ public class FullCumsumprodTest extends AutomatedTestBase
 				String.valueOf(reverse).toUpperCase(), output("C") };
 			
 			double[][] A = getRandomMatrix(rows, 1, -10, 10, sparsity, 3);
-			double[][] B = getRandomMatrix(rows, 1, -1, 1, 0.1, 7);
-			//FIXME double[][] B = getRandomMatrix(rows, 1, -1, 1, 0.9, 7);
+			double[][] B = getRandomMatrix(rows, 1, -1, 1, 0.9, 7);
 			writeInputMatrixWithMTD("A", A, false);
 			writeInputMatrixWithMTD("B", B, false);
 			

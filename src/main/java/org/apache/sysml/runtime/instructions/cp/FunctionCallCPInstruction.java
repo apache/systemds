@@ -37,6 +37,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 
 public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _functionName;
@@ -77,7 +78,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		List<String> funArgNames = new ArrayList<>();
 		List<String> boundOutputNames = new ArrayList<>();
 		for (int i = 0; i < numInputs; i++) {
-			String[] nameValue = parts[5 + i].split("=");
+			String[] nameValue = IOUtilFunctions.splitByFirst(parts[5 + i], "=");
 			boundInputs[i] = new CPOperand(nameValue[1]);
 			funArgNames.add(nameValue[0]);
 			boundInputNames.add(boundInputs[i].getName());

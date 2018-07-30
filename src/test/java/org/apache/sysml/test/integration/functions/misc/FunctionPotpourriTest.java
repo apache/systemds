@@ -44,6 +44,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME14 = "FunPotpourriDefaultArgMatrix";
 	private final static String TEST_NAME15 = "FunPotpourriDefaultArgScalarMatrix1";
 	private final static String TEST_NAME16 = "FunPotpourriDefaultArgScalarMatrix2";
+	private final static String TEST_NAME17 = "FunPotpourriNamedArgsQuotedAssign";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -67,6 +68,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME16, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME16, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME17, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME17, new String[] { "R" }) );
 	}
 
 	@Test
@@ -157,6 +159,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionDefaultArgsScalarMatrix2() {
 		runFunctionTest( TEST_NAME16, false );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsQuotedAssign() {
+		runFunctionTest( TEST_NAME17, false );
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {

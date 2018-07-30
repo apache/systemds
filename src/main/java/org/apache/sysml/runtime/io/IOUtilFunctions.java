@@ -333,6 +333,12 @@ public class IOUtilFunctions
 		return numTokens;
 	}
 	
+	public static String[] splitByFirst(String str, String delim) {
+		int pos = str.indexOf(delim);
+		return new String[]{str.substring(0, pos),
+			str.substring(pos+1, str.length())};
+	}
+	
 	public static FileFormatPropertiesMM readAndParseMatrixMarketHeader(String filename) throws DMLRuntimeException {
 		String[] header = readMatrixMarketHeader(filename);
 		return FileFormatPropertiesMM.parse(header[0]);

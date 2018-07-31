@@ -28,28 +28,6 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
-import sparsity.Experiment1;
-import sparsity.Experiment10;
-import sparsity.Experiment11;
-import sparsity.Experiment12;
-import sparsity.Experiment13;
-import sparsity.Experiment14;
-import sparsity.Experiment15;
-import sparsity.Experiment16;
-import sparsity.Experiment17;
-import sparsity.Experiment18;
-import sparsity.Experiment19;
-import sparsity.Experiment2;
-import sparsity.Experiment20;
-import sparsity.Experiment21;
-import sparsity.Experiment3;
-import sparsity.Experiment4;
-import sparsity.Experiment5;
-import sparsity.Experiment6;
-import sparsity.Experiment7;
-import sparsity.Experiment8;
-import sparsity.Experiment9;
-
 /**
  * This estimator implements a remarkably simple yet effective
  * approach for incorporating structural properties into sparsity
@@ -93,6 +71,14 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		return ret;
 	}
+	
+	@Override 
+	public double estim(MatrixBlock m1, MatrixBlock m2) {
+		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
+		MatrixHistogram h2 = (m1 == m2) ? //self product
+			h1 : new MatrixHistogram(m2, _useExcepts);
+		return estimIntern(h1, h2);
+	}
 
 	public double estim(MatrixBlock m1, MatrixBlock m2, String op) {
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
@@ -100,25 +86,23 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			h1 : new MatrixHistogram(m2, _useExcepts);
 		switch (op) {
 		case "mult":
-			return estimIntern(h1, h2);
+			//element-wise multiplication
 		case "plus":
-			//do smth here
+			//elementwise addition
 		case "transpose":
-			//do smth here
+			//transpose
 		case "diag":
-			//do smth here
+			//diag
 		case "reshape":
-			//do smth here
+			//reshaping
 		case "cbind":
 			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
 		case "rbind":
 			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()+1)*m1.getNumColumns();
-		case "elmult": //elementwise mult
-			//do smth here
 		case "!=0":
-			//do smth here
+			//?
 		case "==0":
-			//do smth here
+			//invert?
 		default:
 			return estimIntern(h1, h2);
 		}

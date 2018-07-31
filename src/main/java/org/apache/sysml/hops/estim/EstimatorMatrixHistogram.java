@@ -99,11 +99,26 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExcepts);
 		switch (op) {
-		// micro benchmarks
 		case "mult":
 			return estimIntern(h1, h2);
-		case "and":
-			//do smth here	
+		case "plus":
+			//do smth here
+		case "transpose":
+			//do smth here
+		case "diag":
+			//do smth here
+		case "reshape":
+			//do smth here
+		case "cbind":
+			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
+		case "rbind":
+			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()+1)*m1.getNumColumns();
+		case "elmult": //elementwise mult
+			//do smth here
+		case "!=0":
+			//do smth here
+		case "==0":
+			//do smth here
 		default:
 			return estimIntern(h1, h2);
 		}

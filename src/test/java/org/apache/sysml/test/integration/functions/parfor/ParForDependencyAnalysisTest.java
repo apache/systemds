@@ -67,7 +67,7 @@ import org.junit.Test;
  * * accumulators
  *    53a: no, 53b dep, 53c dep, 53d dep, 53e dep
  * * lists
- *    54a: no, 54b: dep, 54c: dep
+ *    54a: no, 54b: no, 54c: dep, 54d: dep
  */
 public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
@@ -76,9 +76,7 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParForDependencyAnalysisTest.class.getSimpleName() + "/";
 	
 	@Override
-	public void setUp() {
-		
-	}
+	public void setUp() {}
 	
 	@Test
 	public void testDependencyAnalysis1() { runTest("parfor1.dml", false); }
@@ -322,11 +320,13 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	public void testDependencyAnalysis54a() { runTest("parfor54a.dml", false); }
 	
 	@Test
-	public void testDependencyAnalysis54b() { runTest("parfor54b.dml", true); }
+	public void testDependencyAnalysis54b() { runTest("parfor54b.dml", false); }
 	
 	@Test
 	public void testDependencyAnalysis54c() { runTest("parfor54c.dml", true); }
 	
+	@Test
+	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
 	
 	private void runTest( String scriptFilename, boolean expectedException ) {
 		boolean raisedException = false;

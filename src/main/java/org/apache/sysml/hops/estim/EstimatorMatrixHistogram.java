@@ -149,6 +149,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private final int rN1, cN1;             //number of rows/cols with nnz=1
 		private final int rNonEmpty, cNonEmpty; //number of non-empty rows/cols (w/ empty is nnz=0)
 		private final int rNdiv2, cNdiv2;       //number of rows/cols with nnz > #cols/2 and #rows/2
+		private boolean fulldiag; 						//true if there exists a full diagonal of nonzeros
 		
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
 			// 1) allocate basic synopsis
@@ -192,6 +193,16 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			cNonEmpty = (int) Arrays.stream(cNnz).filter(v-> v!=0).count();
 			rNdiv2 = (int) Arrays.stream(rNnz).filter(item -> item > getCols()/2).count();
 			cNdiv2 = (int) Arrays.stream(cNnz).filter(item -> item > getRows()/2).count();
+			
+			if(!in.isEmpty()) {
+				fulldiag=true;
+				for(int k=0; k<Math.min(in.getNumColumns(),in.getNumRows()); k++) {
+					if(in.getValue(k, k)==0) {
+						fulldiag=false; 
+						break;
+					}
+				}
+			}
 			
 			// 4) compute exception details if necessary (optional)
 			if( useExcepts & !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) ) {

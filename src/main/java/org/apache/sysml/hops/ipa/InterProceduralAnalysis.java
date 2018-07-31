@@ -136,9 +136,12 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveUnnecessaryCheckpoints());
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
-		_passes.add(new IPAPassApplyStaticHopRewrites());
 		_passes.add(new IPAPassInlineFunctions());
 		_passes.add(new IPAPassEliminateDeadCode());
+		//note: apply rewrites last because statement block rewrites
+		//might merge relevant statement blocks in special cases, which 
+		//would require an update of the function call graph
+		_passes.add(new IPAPassApplyStaticHopRewrites());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {

@@ -132,7 +132,7 @@ gradients = function(matrix[double] features,
 
 # PB: not be able to get scalar from list
 
-  C = 1
+  C = as.scalar(hyperparams["C"])
   Hin = 28
   Win = 28
   Hf = 5

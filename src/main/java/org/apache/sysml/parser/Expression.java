@@ -205,7 +205,10 @@ public abstract class Expression implements ParseInfo
 	 * Value types (int, double, string, boolean, object, unknown).
 	 */
 	public enum ValueType {
-		INT, DOUBLE, STRING, BOOLEAN, OBJECT, UNKNOWN
+		INT, DOUBLE, STRING, BOOLEAN, OBJECT, UNKNOWN;
+		public boolean isNumeric() {
+			return this == INT || this == DOUBLE;
+		}
 	}
 
 	/**

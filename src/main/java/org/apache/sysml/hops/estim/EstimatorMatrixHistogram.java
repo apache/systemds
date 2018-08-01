@@ -84,20 +84,26 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExcepts);
+		double r_sparsity = 0;
+		double c_sparsity = 0;
+		int msize = h1.getCols()*h1.getRows();
 		switch (op) {
 		case "mult":
-			double r_sparsity = 0;
-			double c_sparsity = 0;
-			int msize = h1.getCols()*h1.getRows();
 			for(int k=0; k<h1.getCols();k++) {
-				c_sparsity += h1.cNnz[k]/msize + h1.cNnz[k]/msize - (h1.cNnz[k]/msize)*(h1.cNnz[k]/msize);
+				c_sparsity += (h1.cNnz[k]/msize)*(h2.cNnz[k]/msize);
 			}
 			for(int j=0; j<h1.getRows();j++) {
-				r_sparsity += h1.rNnz[j]/msize + h1.rNnz[j]/msize - (h1.rNnz[j]/msize)*(h1.rNnz[j]/msize);
+				r_sparsity += (h1.rNnz[j]/msize)*(h2.rNnz[j]/msize);
 			}
 			return Math.min(c_sparsity, r_sparsity);
 		case "plus":
-			//elementwise addition
+			for(int k=0; k<h1.getCols();k++) {
+				c_sparsity += h1.cNnz[k]/msize + h2.cNnz[k]/msize - (h1.cNnz[k]/msize)*(h2.cNnz[k]/msize);
+			}
+			for(int j=0; j<h1.getRows();j++) {
+				r_sparsity += h1.rNnz[j]/msize + h2.rNnz[j]/msize - (h1.rNnz[j]/msize)*(h2.rNnz[j]/msize);
+			}
+			return Math.min(c_sparsity, r_sparsity);
 		case "cbind":
 			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
 		case "rbind":

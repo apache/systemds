@@ -33,12 +33,11 @@ import org.apache.sysml.parser.Expression.*;
 
 public class Aggregate extends Lop 
 {
-
-	
 	/** Aggregate operation types **/
 	
 	public enum OperationTypes {
-		Sum, Product, Min, Max, Trace, KahanSum, KahanSumSq, KahanTrace, Mean, Var, MaxIndex, MinIndex
+		Sum, Product, SumProduct, Min, Max, Trace,
+		KahanSum, KahanSumSq, KahanTrace, Mean, Var, MaxIndex, MinIndex
 	}
 	OperationTypes operation;
  

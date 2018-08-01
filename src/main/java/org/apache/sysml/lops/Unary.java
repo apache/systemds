@@ -42,7 +42,7 @@ public class Unary extends Lop
 		LESS_THAN, LESS_THAN_OR_EQUALS, GREATER_THAN, GREATER_THAN_OR_EQUALS, EQUALS, NOT_EQUALS,
 		AND, OR, XOR, BW_AND, BW_OR, BW_XOR, BW_SHIFTL, BW_SHIFTR,
 		ROUND, CEIL, FLOOR, MR_IQM, INVERSE, CHOLESKY,
-		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
+		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
 		SPROP, SIGMOID, SUBTRACT_NZ, LOG_NZ,
 		CAST_AS_MATRIX, CAST_AS_FRAME,
 		NOTSUPPORTED
@@ -288,7 +288,10 @@ public class Unary extends Lop
 		
 		case CUMMAX:
 			return "ucummax";
-			
+		
+		case CUMSUMPROD:
+			return "ucumk+*";
+		
 		case INVERSE:
 			return "inverse";
 		
@@ -330,6 +333,7 @@ public class Unary extends Lop
 			|| op==OperationTypes.CUMPROD
 			|| op==OperationTypes.CUMMIN
 			|| op==OperationTypes.CUMMAX
+			|| op==OperationTypes.CUMSUMPROD
 			|| op==OperationTypes.EXP
 			|| op==OperationTypes.LOG
 			|| op==OperationTypes.SIGMOID;

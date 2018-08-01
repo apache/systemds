@@ -99,7 +99,7 @@ functionStatement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     // ------------------------------------------
     // FunctionStatement & ExternalFunctionStatement
     // small change: only allow typed arguments here ... instead of data identifier
-    name=ID ('<-'|'=') 'function' '(' ( inputParams+=typedArgNoAssign (',' inputParams+=typedArgNoAssign)* )? ')'  ( 'return' '(' ( outputParams+=typedArgNoAssign (',' outputParams+=typedArgNoAssign)* )? ')' )? '{' (body+=statement ';'*)* '}' ';'* # InternalFunctionDefExpression
+    name=ID ('<-'|'=') 'function' '(' ( inputParams+=typedArgAssign (',' inputParams+=typedArgAssign)* )? ')'  ( 'return' '(' ( outputParams+=typedArgNoAssign (',' outputParams+=typedArgNoAssign)* )? ')' )? '{' (body+=statement ';'*)* '}' ';'* # InternalFunctionDefExpression
     | name=ID ('<-'|'=') 'externalFunction' '(' ( inputParams+=typedArgNoAssign (',' inputParams+=typedArgNoAssign)* )? ')'  ( 'return' '(' ( outputParams+=typedArgNoAssign (',' outputParams+=typedArgNoAssign)* )? ')' )?   'implemented' 'in' '(' ( otherParams+=strictParameterizedKeyValueString (',' otherParams+=strictParameterizedKeyValueString)* )? ')' ';'*    # ExternalFunctionDefExpression
     // ------------------------------------------
 ;
@@ -176,6 +176,8 @@ expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
 ;
 
 typedArgNoAssign : paramType=ml_type paramName=ID;
+typedArgAssign : paramType=ml_type (paramName=ID | (paramName=ID '=')? paramVal=expression);
+
 parameterizedExpression : (paramName=ID '=')? paramVal=expression;
 strictParameterizedExpression : paramName=ID '=' paramVal=expression ;
 strictParameterizedKeyValueString : paramName=ID '=' paramVal=STRING ;

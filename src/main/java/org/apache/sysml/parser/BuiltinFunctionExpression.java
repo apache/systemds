@@ -627,11 +627,14 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		case CUMSUM:
 		case CUMPROD:
+		case CUMSUMPROD:
 		case CUMMIN:
 		case CUMMAX:
 			// cumsum(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
+			if( getOpCode() == BuiltinFunctionOp.CUMSUMPROD && id.getDim2() > 2 )
+				raiseValidateError("Cumsumprod only supported over two-column matrices", conditional);
 			
 			output.setDataType(DataType.MATRIX);
 			output.setDimensions(id.getDim1(), id.getDim2());
@@ -1910,6 +1913,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			 bifop = Expression.BuiltinFunctionOp.CUMPROD;
 		else if (functionName.equals("cumsum"))
 			 bifop = Expression.BuiltinFunctionOp.CUMSUM;
+		else if (functionName.equals("cumsumprod"))
+			 bifop = Expression.BuiltinFunctionOp.CUMSUMPROD;
 		//'castAsScalar' for backwards compatibility
 		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) 
 			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;

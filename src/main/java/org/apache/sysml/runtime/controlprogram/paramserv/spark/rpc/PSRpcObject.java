@@ -19,39 +19,89 @@
 
 package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class PSRpcObject {
 
-	public static final String PUSH = "push";
-	public static final String PULL = "pull";
-	public static final String DATA_KEY = "data";
-	public static final String EMPTY_DATA = "";
+	public static final int PUSH = 1;
+	public static final int PULL = 2;
 
-	public abstract void deserialize(ByteBuffer buffer);
+	public abstract void deserialize(ByteBuffer buffer) throws IOException;
 
-	public abstract ByteBuffer serialize();
+	public abstract ByteBuffer serialize() throws IOException;
 
 	/**
-	 * Convert direct byte buffer to string
-	 * @param buffer direct byte buffer
-	 * @return string
+	 * Deep serialize and write of a list object (currently only support list containing matrices)
+	 * @param lo a list object containing only matrices
+	 * @param output output data to write to
 	 */
-	protected String bufferToString(ByteBuffer buffer) {
-		byte[] result = new byte[buffer.limit()];
-		buffer.get(result, 0, buffer.limit());
-		return new String(result);
+	protected void serializeAndWriteListObject(ListObject lo, DataOutput output) throws IOException {
+		validateListObject(lo);
+		output.writeInt(lo.getLength()); //write list length
+		output.writeBoolean(lo.isNamedList()); //write list named
+		for (int i = 0; i < lo.getLength(); i++) {
+			if (lo.isNamedList())
+				output.writeUTF(lo.getName(i)); //write name
+			((MatrixObject) lo.getData().get(i))
+				.acquireReadAndRelease().write(output); //write matrix
+		}
+		// Cleanup the list object
+		// because it is transferred to remote worker in binary format
+		ParamservUtils.cleanupListObject(lo);
+	}
+	
+	protected ListObject readAndDeserialize(DataInput input) throws IOException {
+		int listLen = input.readInt();
+		List<Data> data = new ArrayList<>();
+		List<String> names = input.readBoolean() ?
+			new ArrayList<>() : null;
+		for(int i=0; i<listLen; i++) {
+			if( names != null )
+				names.add(input.readUTF());
+			MatrixBlock mb = new MatrixBlock();
+			mb.readFields(input);
+			data.add(ParamservUtils.newMatrixObject(mb, false));
+		}
+		return new ListObject(data, names);
 	}
 
 	/**
-	 * Flush the data into HDFS
-	 * @param data list object
+	 * Get serialization size of a list object
+	 * (scheme: size|name|size|matrix)
+	 * @param lo list object
+	 * @return serialization size
 	 */
-	protected void flushListObject(ListObject data) {
-		data.getData().stream().filter(d -> d instanceof CacheableData)
-			.forEach(d -> ((CacheableData<?>) d).exportData());
+	protected int getExactSerializedSize(ListObject lo) {
+		if( lo == null ) return 0;
+		long result = 4 + 1; // list length and of named
+		if (lo.isNamedList()) //size for names incl length
+			result += lo.getNames().stream().mapToLong(s -> IOUtilFunctions.getUTFSize(s)).sum();
+		result += lo.getData().stream().mapToLong(d ->
+			((MatrixObject)d).acquireReadAndRelease().getExactSizeOnDisk()).sum();
+		if( result > Integer.MAX_VALUE )
+			throw new DMLRuntimeException("Serialized size ("+result+") larger than Integer.MAX_VALUE.");
+		return (int) result;
+	}
+
+	private void validateListObject(ListObject lo) {
+		for (Data d : lo.getData()) {
+			if (!(d instanceof MatrixObject)) {
+				throw new DMLRuntimeException(String.format("Paramserv func:"
+					+ " Unsupported deep serialize of %s, which is not matrix.", d.getDebugName()));
+			}
+		}
 	}
 }

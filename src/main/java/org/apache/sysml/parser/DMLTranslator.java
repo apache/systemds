@@ -21,8 +21,8 @@ package org.apache.sysml.parser;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1331,21 +1331,25 @@ public class DMLTranslator
 					}
 					
 					//prepare function input names and inputs
-					String[] inputNames = fci.getParamExprs().stream()
-						.map(e -> e.getName()).toArray(String[]::new);
-					List<Hop> finputs = fci.getParamExprs().stream()
-						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> e.getName()).collect(Collectors.toList()));
+					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
+					
+					//append default expression for missing arguments
+					appendDefaultArguments(fstmt, inputNames, finputs, ids);
 					
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
-					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
-						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					if( inputNames.stream().allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
 					
 					//create function op
+					String[] inputNames2 = inputNames.toArray(new String[0]);
 					FunctionType ftype = fsb.getFunctionOpType();
 					FunctionOp fcall = (target == null) ?
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{}, false) :
-						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, new String[]{target.getName()}, false);
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames2, finputs, new String[]{}, false) :
+						new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames2, finputs, new String[]{target.getName()}, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -1367,21 +1371,25 @@ public class DMLTranslator
 					FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 					
 					//prepare function input names and inputs
-					String[] inputNames = fci.getParamExprs().stream()
-						.map(e -> e.getName()).toArray(String[]::new);
-					List<Hop> finputs = fci.getParamExprs().stream()
-						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList());
+					List<String> inputNames = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> e.getName()).collect(Collectors.toList()));
+					List<Hop> finputs = new ArrayList<>(fci.getParamExprs().stream()
+						.map(e -> processExpression(e.getExpr(), null, ids)).collect(Collectors.toList()));
 					
 					//use function signature to obtain names for unnamed args
 					//(note: consistent parameters already checked for functions in general)
-					if( Arrays.stream(inputNames).allMatch(n -> n==null) )
-						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).toArray(String[]::new);
+					if( inputNames.stream().allMatch(n -> n==null) )
+						inputNames = fstmt._inputParams.stream().map(d -> d.getName()).collect(Collectors.toList());
+					
+					//append default expression for missing arguments
+					appendDefaultArguments(fstmt, inputNames, finputs, ids);
 					
 					//create function op
 					String[] foutputs = mas.getTargetList().stream()
 						.map(d -> d.getName()).toArray(String[]::new);
 					FunctionType ftype = fsb.getFunctionOpType();
-					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(), inputNames, finputs, foutputs, false);
+					FunctionOp fcall = new FunctionOp(ftype, fci.getNamespace(), fci.getName(),
+						inputNames.toArray(new String[0]), finputs, foutputs, false);
 					fcall.setParseInfo(fci);
 					output.add(fcall);
 				}
@@ -1403,6 +1411,28 @@ public class DMLTranslator
 		sb.updateLiveVariablesOut(updatedLiveOut);
 		sb.setHops(output);
 
+	}
+	
+	private void appendDefaultArguments(FunctionStatement fstmt, List<String> inputNames, List<Hop> inputs, HashMap<String, Hop> ids) {
+		//NOTE: For default expressions of unspecified function arguments, we have two choices:
+		//either (a) compile ifelse(exist(argName),default, argName) into the function, or
+		//simply (b) add the default to the argument list of function calls when needed.
+		//We decided for (b) because it simplifies IPA and dynamic recompilation.
+		
+		if( fstmt.getInputParams().size() == inputs.size() )
+			return;
+		HashSet<String> probeNames = new HashSet<String>(inputNames);
+		for( DataIdentifier di : fstmt.getInputParams() ) {
+			if( probeNames.contains(di.getName()) ) continue;
+			Expression exp = fstmt.getInputDefault(di.getName());
+			if( exp == null ) {
+				throw new LanguageException("Missing default expression for unspecified "
+					+ "function argument '"+di.getName()+"' in call to function '"+fstmt.getName()+"'.");
+			}
+			//compile and add default expression
+			inputNames.add(di.getName());
+			inputs.add(processExpression(exp, null, ids));
+		}
 	}
 	
 	public void constructHopsForIfControlBlock(IfStatementBlock sb) {
@@ -2295,10 +2325,7 @@ public class DMLTranslator
 		}
 		
 		Hop currBuiltinOp = null;
-
-		if (target == null) {
-			target = createTarget(source);
-		}
+		target = (target == null) ? createTarget(source) : target;
 		
 		// Construct the hop based on the type of Builtin function
 		switch (source.getOpCode()) {
@@ -2314,15 +2341,15 @@ public class DMLTranslator
 		case COLMEAN:
 		case COLPROD:
 		case COLVAR:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				AggOp.valueOf(source.getOpCode().name().substring(3)), Direction.Col, expr);
 			break;
 
 		case COLSD:
 			// colStdDevs = sqrt(colVariances)
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), AggOp.VAR, Direction.Col, expr);
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
 			break;
 
@@ -2332,25 +2359,25 @@ public class DMLTranslator
 		case ROWMEAN:
 		case ROWPROD:
 		case ROWVAR:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				AggOp.valueOf(source.getOpCode().name().substring(3)), Direction.Row, expr);
 			break;
 
 		case ROWINDEXMAX:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MAXINDEX,
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), AggOp.MAXINDEX,
 					Direction.Row, expr);
 			break;
 		
 		case ROWINDEXMIN:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MININDEX,
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), AggOp.MININDEX,
 					Direction.Row, expr);
 			break;
 		
 		case ROWSD:
 			// rowStdDevs = sqrt(rowVariances)
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), AggOp.VAR, Direction.Row, expr);
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX,
 					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
 			break;
 
@@ -2379,38 +2406,38 @@ public class DMLTranslator
 			break;
 			
 		case EXISTS:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR,
 				target.getValueType(), Hop.OpOp1.EXISTS, expr);
 			break;
 		
 		case SUM:
 		case PROD:
 		case VAR:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
 				AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr);
 			break;
 
 		case MEAN:
 			if ( expr2 == null ) {
 				// example: x = mean(Y);
-				currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.MEAN,
+				currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), AggOp.MEAN,
 					Direction.RowCol, expr);
 			}
 			else {
 				// example: x = mean(Y,W);
 				// stable weighted mean is implemented by using centralMoment with order = 0
 				Hop orderHop = new LiteralOp(0);
-				currBuiltinOp=new TernaryOp(target.getName(), target.getDataType(), target.getValueType(), 
+				currBuiltinOp=new TernaryOp(target.getName(), DataType.SCALAR, target.getValueType(), 
 						Hop.OpOp3.MOMENT, expr, expr2, orderHop);
 			}
 			break;
 
 		case SD:
 			// stdDev = sqrt(variance)
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR,
 					target.getValueType(), AggOp.VAR, Direction.RowCol, expr);
 			HopRewriteUtils.setOutputParametersForScalar(currBuiltinOp);
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR,
 					target.getValueType(), Hop.OpOp1.SQRT, currBuiltinOp);
 			break;
 
@@ -2418,7 +2445,7 @@ public class DMLTranslator
 		case MAX:
 			//construct AggUnary for min(X) but BinaryOp for min(X,Y) and NaryOp for min(X,Y,Z)
 			currBuiltinOp = (expr2 == null) ? 
-				new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(),
+				new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(),
 					AggOp.valueOf(source.getOpCode().name()), Direction.RowCol, expr) : 
 				(source.getAllExpr().length == 2) ?
 				new BinaryOp(target.getName(), target.getDataType(), target.getValueType(),
@@ -2450,14 +2477,14 @@ public class DMLTranslator
 			break;
 			
 		case TRACE:
-			currBuiltinOp = new AggUnaryOp(target.getName(), target.getDataType(), target.getValueType(), AggOp.TRACE,
+			currBuiltinOp = new AggUnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), AggOp.TRACE,
 					Direction.RowCol, expr);
 			break;
 
 		case TRANS:
 		case DIAG:
 		case REV:
-			currBuiltinOp = new ReorgOp(target.getName(), target.getDataType(),
+			currBuiltinOp = new ReorgOp(target.getName(), DataType.MATRIX,
 				target.getValueType(), ReOrgOp.valueOf(source.getOpCode().name()), expr);
 			break;
 			
@@ -2516,16 +2543,16 @@ public class DMLTranslator
 			}
 			break;
 
-		//data type casts	
+		//data type casts
 		case CAST_AS_SCALAR:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.SCALAR, target.getValueType(), Hop.OpOp1.CAST_AS_SCALAR, expr);
 			break;
 		case CAST_AS_MATRIX:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.MATRIX, target.getValueType(), Hop.OpOp1.CAST_AS_MATRIX, expr);
-			break;	
+			break;
 		case CAST_AS_FRAME:
 			currBuiltinOp = new UnaryOp(target.getName(), DataType.FRAME, target.getValueType(), Hop.OpOp1.CAST_AS_FRAME, expr);
-			break;	
+			break;
 
 		//value type casts
 		case CAST_AS_DOUBLE:
@@ -2567,6 +2594,7 @@ public class DMLTranslator
 		case FLOOR:
 		case CUMSUM:
 		case CUMPROD:
+		case CUMSUMPROD:
 		case CUMMIN:
 		case CUMMAX:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), target.getValueType(),
@@ -2694,7 +2722,7 @@ public class DMLTranslator
 			if( op == null )
 				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
 			
-			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), op, expr, expr2);
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2);
 			((BinaryOp)currBuiltinOp).setOuterVectorOperation(true); //flag op as specific outer vector operation
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
@@ -2704,21 +2732,21 @@ public class DMLTranslator
 			ArrayList<Hop> inHops1 = new ArrayList<>();
 			inHops1.add(expr);
 			inHops1.add(expr2);
-			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				OpOpDnn.valueOf(source.getOpCode().name()), inHops1);
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL:
 		case MAX_POOL: {
-			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForPoolingForwardIM2COL(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
 		}
 		case AVG_POOL_BACKWARD:
 		case MAX_POOL_BACKWARD: {
-			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOpPoolingCOL2IM(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;
@@ -2726,7 +2754,7 @@ public class DMLTranslator
 		case CONV2D:
 		case CONV2D_BACKWARD_FILTER:
 		case CONV2D_BACKWARD_DATA: {
-			currBuiltinOp = new DnnOp(target.getName(), target.getDataType(), target.getValueType(),
+			currBuiltinOp = new DnnOp(target.getName(), DataType.MATRIX, target.getValueType(),
 				OpOpDnn.valueOf(source.getOpCode().name()), getALHopsForConvOp(expr, source, 1, hops));
 			setBlockSizeAndRefreshSizeInfo(expr, currBuiltinOp);
 			break;

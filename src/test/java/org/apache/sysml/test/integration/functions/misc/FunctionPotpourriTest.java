@@ -39,6 +39,12 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME9 = "FunPotpourriNamedArgsPartial";
 	private final static String TEST_NAME10 = "FunPotpourriNamedArgsUnknown1";
 	private final static String TEST_NAME11 = "FunPotpourriNamedArgsUnknown2";
+	private final static String TEST_NAME12 = "FunPotpourriNamedArgsIPA";
+	private final static String TEST_NAME13 = "FunPotpourriDefaultArgScalar";
+	private final static String TEST_NAME14 = "FunPotpourriDefaultArgMatrix";
+	private final static String TEST_NAME15 = "FunPotpourriDefaultArgScalarMatrix1";
+	private final static String TEST_NAME16 = "FunPotpourriDefaultArgScalarMatrix2";
+	private final static String TEST_NAME17 = "FunPotpourriNamedArgsQuotedAssign";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -57,6 +63,12 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME16, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME16, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME17, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME17, new String[] { "R" }) );
 	}
 
 	@Test
@@ -124,6 +136,36 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		runFunctionTest( TEST_NAME11, true );
 	}
 	
+	@Test
+	public void testFunctionNamedArgsIPA() {
+		runFunctionTest( TEST_NAME12, false );
+	}
+	
+	@Test
+	public void testFunctionDefaultArgsScalar() {
+		runFunctionTest( TEST_NAME13, false );
+	}
+	
+	@Test
+	public void testFunctionDefaultArgsMatrix() {
+		runFunctionTest( TEST_NAME14, false );
+	}
+	
+	@Test
+	public void testFunctionDefaultArgsScalarMatrix1() {
+		runFunctionTest( TEST_NAME15, false );
+	}
+	
+	@Test
+	public void testFunctionDefaultArgsScalarMatrix2() {
+		runFunctionTest( TEST_NAME16, false );
+	}
+	
+	@Test
+	public void testFunctionNamedArgsQuotedAssign() {
+		runFunctionTest( TEST_NAME17, false );
+	}
+	
 	private void runFunctionTest(String testName, boolean error) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
@@ -134,6 +176,6 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 			"-args", String.valueOf(error).toUpperCase()};
 
 		//run script and compare output
-		runTest(true, error, DMLException.class, -1); 
+		runTest(true, error, DMLException.class, -1);
 	}
 }

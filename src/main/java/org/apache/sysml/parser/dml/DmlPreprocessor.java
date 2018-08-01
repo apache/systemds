@@ -69,6 +69,7 @@ import org.apache.sysml.parser.dml.DmlParser.RelationalExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.SimpleDataIdentifierExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedKeyValueStringContext;
+import org.apache.sysml.parser.dml.DmlParser.TypedArgAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
@@ -176,6 +177,12 @@ public class DmlPreprocessor implements DmlListener {
 	@Override
 	public void exitTypedArgNoAssign(TypedArgNoAssignContext ctx) {}
 
+	@Override
+	public void enterTypedArgAssign(TypedArgAssignContext ctx) {}
+
+	@Override
+	public void exitTypedArgAssign(TypedArgAssignContext ctx) {}
+	
 	@Override
 	public void enterWhileStatement(WhileStatementContext ctx) {}
 

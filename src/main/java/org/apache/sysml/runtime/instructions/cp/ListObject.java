@@ -47,6 +47,13 @@ public class ListObject extends Data {
 		_names = names;
 	}
 	
+	public ListObject(ListObject that) {
+		this(new ArrayList<>(that._data), (that._names != null) ?
+			new ArrayList<>(that._names) : null);
+		if( that._dataState != null )
+			_dataState = Arrays.copyOf(that._dataState, getLength());
+	}
+	
 	public void setStatus(boolean[] status) {
 		_dataState = status;
 	}

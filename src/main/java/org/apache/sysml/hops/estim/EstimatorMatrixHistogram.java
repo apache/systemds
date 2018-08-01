@@ -86,25 +86,41 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			h1 : new MatrixHistogram(m2, _useExcepts);
 		switch (op) {
 		case "mult":
-			//element-wise multiplication
+			double r_sparsity = 0;
+			double c_sparsity = 0;
+			int msize = h1.getCols()*h1.getRows();
+			for(int k=0; k<h1.getCols();k++) {
+				c_sparsity += h1.cNnz[k]/msize + h1.cNnz[k]/msize - (h1.cNnz[k]/msize)*(h1.cNnz[k]/msize);
+			}
+			for(int j=0; j<h1.getRows();j++) {
+				r_sparsity += h1.rNnz[j]/msize + h1.rNnz[j]/msize - (h1.rNnz[j]/msize)*(h1.rNnz[j]/msize);
+			}
+			return Math.min(c_sparsity, r_sparsity);
 		case "plus":
 			//elementwise addition
+		case "cbind":
+			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
+		case "rbind":
+			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()+1)*m1.getNumColumns();
+		default:
+			return estimIntern(h1, h2);
+		}
+	}
+	public double estim(MatrixBlock m, String op) {
+		MatrixHistogram h1 = new MatrixHistogram(m, _useExcepts);
+		switch (op) {
 		case "transpose":
 			//transpose
 		case "diag":
 			//diag
 		case "reshape":
 			//reshaping
-		case "cbind":
-			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
-		case "rbind":
-			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()+1)*m1.getNumColumns();
 		case "!=0":
 			//?
 		case "==0":
 			//invert?
 		default:
-			return estimIntern(h1, h2);
+			return 0;
 		}
 	}
 

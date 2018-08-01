@@ -21,6 +21,7 @@ package org.apache.sysml.hops.estim;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.sysml.hops.estim.SparsityEstimator.OPCode;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
@@ -67,6 +68,18 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);
 		return OptimizerUtils.getSparsity(m1.getNumRows(),
 			m2.getNumColumns(), graph.estimateNnz());
+	}
+
+	@Override
+	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
+		//TODO: to be implemented
+		return -1;
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OPCode op) {
+		//TODO: to be implemented
+		return -1;
 	}
 
 	private static class LayeredGraph {

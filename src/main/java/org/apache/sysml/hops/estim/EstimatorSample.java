@@ -81,6 +81,18 @@ public class EstimatorSample extends SparsityEstimator
 		return new EstimatorBasicAvg().estim(mc1, mc2);
 	}
 	
+	@Override
+	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
+		//TODO: to be implemented
+		return -1;
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OPCode op) {
+		//TODO: to be implemented
+		return -1;
+	}	
+	
 	private int[] computeColumnNnz(MatrixBlock in, int[] ix) {
 		int[] nnz = new int[in.getNumColumns()];
 		//count column nnz brute force or selective

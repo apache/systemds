@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.estim.SparsityEstimator.OPCode;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
@@ -72,13 +73,65 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		return ret;
 	}
-
-	@Override
+	
+	@Override 
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
+		return estim(m1, m2, OPCode.MM);
+	}
+	
+	@Override
+	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExcepts);
-		return estimIntern(h1, h2);
+		double r_sparsity = 0;
+		double c_sparsity = 0;
+		double msize = m1.getNumRows()*m1.getNumColumns();
+		switch (op) {
+		case MM:
+			return estimIntern(h1, h2);
+		case MULT:
+			for(int k=0; k<h1.getCols();k++) {
+				c_sparsity = c_sparsity + ((double)h1.cNnz[k]/msize)*((double)h2.cNnz[k]/msize);
+			}
+			for(int j=0; j<h1.getRows();j++) {
+				r_sparsity = r_sparsity + ((double)h1.rNnz[j]/msize)*((double)h2.rNnz[j]/msize);
+			}
+			return Math.min(c_sparsity, r_sparsity);
+		case PLUS:
+			for(int k=0; k<h1.getCols();k++) {
+				c_sparsity = c_sparsity + (double)h1.cNnz[k]/msize + (double)h2.cNnz[k]/msize - ((double)h1.cNnz[k]/msize)*((double)h2.cNnz[k]/msize);
+			}
+			for(int j=0; j<h1.getRows();j++) {
+				r_sparsity = r_sparsity + (double)h1.rNnz[j]/msize + (double)h2.rNnz[j]/msize - ((double)h1.rNnz[j]/msize)*((double)h2.rNnz[j]/msize);
+			}
+			return Math.min(c_sparsity, r_sparsity);
+		case CBIND:
+			return OptimizerUtils.getSparsity(m1.getNumRows(), (m1.getNumColumns()+m2.getNumColumns()), m1.getNonZeros()+m2.getNonZeros());
+		case RBIND:
+			return OptimizerUtils.getSparsity((m1.getNumRows()+m2.getNumRows()), m1.getNumColumns(), m1.getNonZeros()+m2.getNonZeros());
+		default:
+			return estimIntern(h1, h2);
+		}
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OPCode op) {
+		MatrixHistogram h1 = new MatrixHistogram(m, _useExcepts);
+		switch (op) {
+		case TRANSP:
+			//transpose
+		case DIAG:
+			//diag
+		case RESHAPE:
+			//reshaping
+		case EQZERO:
+			//?
+		case INVERT:
+			//invert?
+		default:
+			return 0;
+		}
 	}
 
 	@Override

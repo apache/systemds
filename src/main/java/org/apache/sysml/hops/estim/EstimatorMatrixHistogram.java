@@ -86,32 +86,33 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			h1 : new MatrixHistogram(m2, _useExcepts);
 		double r_sparsity = 0;
 		double c_sparsity = 0;
-		int msize = h1.getCols()*h1.getRows();
+		double msize = m1.getNumRows()*m1.getNumColumns();
 		switch (op) {
 		case "mult":
 			for(int k=0; k<h1.getCols();k++) {
-				c_sparsity += (h1.cNnz[k]/msize)*(h2.cNnz[k]/msize);
+				c_sparsity = c_sparsity + ((double)h1.cNnz[k]/msize)*((double)h2.cNnz[k]/msize);
 			}
 			for(int j=0; j<h1.getRows();j++) {
-				r_sparsity += (h1.rNnz[j]/msize)*(h2.rNnz[j]/msize);
+				r_sparsity = r_sparsity + ((double)h1.rNnz[j]/msize)*((double)h2.rNnz[j]/msize);
 			}
 			return Math.min(c_sparsity, r_sparsity);
 		case "plus":
 			for(int k=0; k<h1.getCols();k++) {
-				c_sparsity += h1.cNnz[k]/msize + h2.cNnz[k]/msize - (h1.cNnz[k]/msize)*(h2.cNnz[k]/msize);
+				c_sparsity = c_sparsity + (double)h1.cNnz[k]/msize + (double)h2.cNnz[k]/msize - ((double)h1.cNnz[k]/msize)*((double)h2.cNnz[k]/msize);
 			}
 			for(int j=0; j<h1.getRows();j++) {
-				r_sparsity += h1.rNnz[j]/msize + h2.rNnz[j]/msize - (h1.rNnz[j]/msize)*(h2.rNnz[j]/msize);
+				r_sparsity = r_sparsity + (double)h1.rNnz[j]/msize + (double)h2.rNnz[j]/msize - ((double)h1.rNnz[j]/msize)*((double)h2.rNnz[j]/msize);
 			}
 			return Math.min(c_sparsity, r_sparsity);
 		case "cbind":
-			return (double) m1.getNonZeros()+m2.getNonZeros()/m1.getNumRows()*(m1.getNumColumns()+1);
+			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()*(m1.getNumColumns()+1));
 		case "rbind":
-			return (double) m1.getNonZeros()+m2.getNonZeros()/(m1.getNumRows()+1)*m1.getNumColumns();
+			return (double) m1.getNonZeros()+m2.getNonZeros()/((m1.getNumRows()+1)*m1.getNumColumns());
 		default:
 			return estimIntern(h1, h2);
 		}
 	}
+	
 	public double estim(MatrixBlock m, String op) {
 		MatrixHistogram h1 = new MatrixHistogram(m, _useExcepts);
 		switch (op) {

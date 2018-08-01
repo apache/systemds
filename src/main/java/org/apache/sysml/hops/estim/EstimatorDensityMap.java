@@ -20,6 +20,7 @@
 package org.apache.sysml.hops.estim;
 
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.estim.SparsityEstimator.OPCode;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -86,6 +87,16 @@ public class EstimatorDensityMap extends SparsityEstimator
 	public double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
 		LOG.warn("Meta-data-only estimates not supported in EstimatorDensityMap, falling back to EstimatorBasicAvg.");
 		return new EstimatorBasicAvg().estim(mc1, mc2);
+	}
+	
+	@Override
+	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
+		return 0;
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OPCode op) {
+		return 0;
 	}
 
 	private MatrixBlock computeDensityMap(MatrixBlock in) {

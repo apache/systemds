@@ -21,6 +21,7 @@ package org.apache.sysml.hops.estim;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.hops.estim.SparsityEstimator.OPCode;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -55,6 +56,13 @@ public abstract class SparsityEstimator
 	 * @param mc2 right-hand-side operand
 	 * @return sparsity
 	 */
+	public abstract double estim(MatrixBlock m1, MatrixBlock m2, OPCode op);
+	
+	public abstract double estim(MatrixBlock m, OPCode op);
+	
 	public abstract double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2);
-
+	
+	public static enum OPCode {
+		MM, MULT, PLUS, CBIND, RBIND, TRANSP, DIAG, RESHAPE, EQZERO, INVERT;
+	}
 }

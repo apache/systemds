@@ -83,12 +83,14 @@ public class EstimatorSample extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
-		return 0;
+		//TODO: to be implemented
+		return -1;
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OPCode op) {
-		return 0;
+		//TODO: to be implemented
+		return -1;
 	}	
 	
 	private int[] computeColumnNnz(MatrixBlock in, int[] ix) {

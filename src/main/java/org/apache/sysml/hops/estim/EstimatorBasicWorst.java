@@ -58,12 +58,14 @@ public class EstimatorBasicWorst extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
-		return 0;
+		//TODO: to be implemented
+		return -1;
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OPCode op) {
-		return 0;
+		//TODO: to be implemented
+		return -1;
 	}
 
 	private double estimIntern(double sp1, double sp2, long m, long k, long n) {

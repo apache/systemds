@@ -70,7 +70,17 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			m2.getNumColumns(), graph.estimateNnz());
 	}
 
-
+	@Override
+	public double estim(MatrixBlock m1, MatrixBlock m2, OPCode op) {
+		//TODO: to be implemented
+		return -1;
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OPCode op) {
+		//TODO: to be implemented
+		return -1;
+	}
 
 	private static class LayeredGraph {
 		private final List<Node[]> _nodes; //nodes partitioned by graph level

@@ -58,8 +58,8 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionerSparkAggregator;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionerSparkMapper;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -89,9 +89,6 @@ public class ParamservUtils {
 	 * @return a new copied list object
 	 */
 	public static ListObject copyList(ListObject lo) {
-		if (lo.getLength() == 0) {
-			return lo;
-		}
 		List<Data> newData = IntStream.range(0, lo.getLength()).mapToObj(i -> {
 			Data oldData = lo.slice(i);
 			if (oldData instanceof MatrixObject)
@@ -197,6 +194,12 @@ public class ParamservUtils {
 		return mb.slice((int) rl - 1, (int) rh - 1);
 	}
 
+	/**
+	 * Generate the permutation
+	 * @param numEntries permutation size
+	 * @param seed seed used to generate random number
+	 * @return permutation matrix
+	 */
 	public static MatrixBlock generatePermutation(int numEntries, long seed) {
 		// Create a sequence and sample w/o replacement
 		// (no need to materialize the sequence because ctable only uses its meta data)
@@ -208,6 +211,12 @@ public class ParamservUtils {
 			new MatrixBlock(numEntries, numEntries, true));
 	}
 
+	/**
+	 * Get the namespace and function name of a given physical func name
+	 * @param funcName physical func name (e.g., "ns:func")
+	 * @param prefix prefix
+	 * @return an string array of size 2 where array[0] is namespace and array[1] is name
+	 */
 	public static String[] getCompleteFuncName(String funcName, String prefix) {
 		String[] keys = DMLProgram.splitFunctionKey(funcName);
 		String ns = (keys.length==2) ? keys[0] : null;
@@ -373,9 +382,9 @@ public class ParamservUtils {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		// Get input RDD
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-				sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-				sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
 
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
 		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils

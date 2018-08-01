@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
 
@@ -34,7 +35,7 @@ import org.apache.sysml.runtime.util.DataConverter;
  * or simpler a removeEmpty such as removeEmpty
  * (target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
  */
-public class DRRScheme extends DataPartitionScheme {
+public class DRRLocalScheme extends DataPartitionLocalScheme {
 
 	public static MatrixBlock removeEmpty(MatrixBlock mb, int k, int workerId) {
 		double[] data = LongStream.range(0, mb.getNumRows()).mapToDouble(l -> l % k == workerId ? 1 : 0).toArray();

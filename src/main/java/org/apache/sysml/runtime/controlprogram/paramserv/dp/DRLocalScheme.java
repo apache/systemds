@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
 
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -35,7 +36,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * where P is constructed for example with P=table(seq(1,nrow(X)),sample(nrow(X), nrow(X))),
  * i.e., sampling without replacement to ensure disjointness.
  */
-public class DRScheme extends DataPartitionScheme {
+public class DRLocalScheme extends DataPartitionLocalScheme {
 
 	private List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
 		int batchSize = (int) Math.ceil((double) mb.getNumRows() / k);

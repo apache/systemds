@@ -17,31 +17,35 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
-import java.util.List;
-
+import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-import scala.Tuple2;
+public class LocalDataPartitioner {
 
-/**
- * Spark Disjoint_Contiguous data partitioner:
- * <p>
- * For each row, find out the shifted place according to the workerID indicator
- */
-public class DCSparkScheme extends DataPartitionSparkScheme {
+	private DataPartitionLocalScheme _scheme;
 
-	private static final long serialVersionUID = -2786906947020788787L;
-
-	protected DCSparkScheme() {
-		// No-args constructor used for deserialization
+	public LocalDataPartitioner(Statement.PSScheme scheme) {
+		switch (scheme) {
+			case DISJOINT_CONTIGUOUS:
+				_scheme = new DCLocalScheme();
+				break;
+			case DISJOINT_ROUND_ROBIN:
+				_scheme = new DRRLocalScheme();
+				break;
+			case DISJOINT_RANDOM:
+				_scheme = new DRLocalScheme();
+				break;
+			case OVERLAP_RESHUFFLE:
+				_scheme = new ORLocalScheme();
+				break;
+			default:
+				throw new DMLRuntimeException(String.format("LocalDataPartitioner: not support data partition scheme '%s'", scheme));
+		}
 	}
 
-	@Override
-	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
-		return new Result(pfs, pls);
+	public DataPartitionLocalScheme.Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
+		return _scheme.doPartitioning(workersNum, features, labels);
 	}
 }

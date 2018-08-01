@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,9 +28,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.codegen.CodegenUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcFactory;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -105,14 +103,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		// Initialize the buffer pool and register it in the jvm shutdown hook in order to be cleanuped at the end
 		RemoteParForUtils.setupBufferPool(_workerID);
 
-		// Get some configurations
-		long rpcTimeout = _conf.contains("spark.rpc.askTimeout") ?
-			_conf.getTimeAsMs("spark.rpc.askTimeout") :
-			_conf.getTimeAsMs("spark.network.timeout", "120s");
-		String host = _conf.get("spark.driver.host");
-
 		// Create the ps proxy
-		_ps = PSRpcFactory.createSparkPSProxy(_conf, host, _port, rpcTimeout, _aRPC);
+		_ps = PSRpcFactory.createSparkPSProxy(_conf, _port, _aRPC);
 
 		// Initialize the update function
 		setupUpdateFunction(_updFunc, _ec);
@@ -121,10 +113,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_ps.setupAggFunc(_ec, _aggFunc);
 
 		// Lazy initialize the matrix of features and labels
-		setFeatures(ParamservUtils.newMatrixObject(input._2._1));
-		setLabels(ParamservUtils.newMatrixObject(input._2._2));
-		_features.enableCleanup(false);
-		_labels.enableCleanup(false);
+		setFeatures(ParamservUtils.newMatrixObject(input._2._1, false));
+		setLabels(ParamservUtils.newMatrixObject(input._2._2, false));
 	}
 	
 

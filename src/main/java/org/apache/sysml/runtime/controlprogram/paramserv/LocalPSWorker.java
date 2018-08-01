@@ -189,7 +189,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		accGradientComputeTime(tGrad);
 
 		// Get the gradients
-		ListObject gradients = (ListObject) _ec.getVariable(_output.getName());
+		ListObject gradients = _ec.getListObject(_output.getName());
 
 		ParamservUtils.cleanupData(_ec, Statement.PS_FEATURES);
 		ParamservUtils.cleanupData(_ec, Statement.PS_LABELS);

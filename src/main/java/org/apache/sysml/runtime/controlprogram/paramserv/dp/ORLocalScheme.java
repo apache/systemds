@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
 
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -34,7 +35,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * for each worker, use a new permutation multiply P %*% X,
  * where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X))))
  */
-public class ORScheme extends DataPartitionScheme {
+public class ORLocalScheme extends DataPartitionLocalScheme {
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb, List<MatrixBlock> permutations) {
 		return IntStream.range(0, k).mapToObj(i -> {

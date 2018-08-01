@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
+package org.apache.sysml.runtime.controlprogram.paramserv.rpc;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

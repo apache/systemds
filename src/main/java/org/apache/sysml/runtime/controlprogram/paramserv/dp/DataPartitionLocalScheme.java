@@ -17,28 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import java.util.List;
 
-/**
- * Wrapper class containing all needed for launching spark remote worker
- */
-public class SparkPSBody {
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-	private ExecutionContext _ec;
+public abstract class DataPartitionLocalScheme {
 
-	public SparkPSBody() {}
+	public final class Result {
+		public final List<MatrixObject> pFeatures;
+		public final List<MatrixObject> pLabels;
 
-	public SparkPSBody(ExecutionContext ec) {
-		_ec = ec;
+		public Result(List<MatrixObject> pFeatures, List<MatrixObject> pLabels) {
+			this.pFeatures = pFeatures;
+			this.pLabels = pLabels;
+		}
 	}
 
-	public ExecutionContext getEc() {
-		return _ec;
-	}
-
-	public void setEc(ExecutionContext ec) {
-		this._ec = ec;
-	}
+	public abstract Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels);
 }

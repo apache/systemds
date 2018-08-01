@@ -17,13 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -33,7 +34,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * operation X[beg:end,] to obtain contiguous,
  * non-overlapping partitions of rows.
  */
-public class DCScheme extends DataPartitionScheme {
+public class DCLocalScheme extends DataPartitionLocalScheme {
 
 	public static List<MatrixBlock> partition(int k, MatrixBlock mb) {
 		List<MatrixBlock> list = new ArrayList<>();

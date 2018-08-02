@@ -55,6 +55,15 @@ public class ListObject extends Data {
 			_dataState = Arrays.copyOf(that._dataState, getLength());
 	}
 	
+	public void deriveAndSetStatusFromData() {
+		_dataState = new boolean[_data.size()];
+		for(int i=0; i<_data.size(); i++) {
+			Data dat = _data.get(i);
+			if( dat instanceof CacheableData<?> )
+			_dataState[i] = ((CacheableData<?>) dat).isCleanupEnabled();
+		}
+	}
+	
 	public void setStatus(boolean[] status) {
 		_dataState = status;
 	}
@@ -129,7 +138,8 @@ public class ListObject extends Data {
 		ListObject ret = isNamedList() ?
 			new ListObject(new ArrayList<>(getData()), new ArrayList<>(getNames())) :
 			new ListObject(new ArrayList<>(getData()));
-		ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
+		if( getStatus() != null )
+			ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
 		return ret;
 	}
 	

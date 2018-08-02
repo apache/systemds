@@ -344,7 +344,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data, names);
-			list.setStatus(new boolean[params.size()]);
+			list.deriveAndSetStatusFromData();
 			
 			ec.setVariable(output.getName(), list);
 		}

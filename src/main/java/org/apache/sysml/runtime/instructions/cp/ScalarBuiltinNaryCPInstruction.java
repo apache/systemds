@@ -97,7 +97,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data);
-			list.setStatus(new boolean[data.size()]);
+			list.deriveAndSetStatusFromData();
 			
 			ec.setVariable(output.getName(), list);
 		}

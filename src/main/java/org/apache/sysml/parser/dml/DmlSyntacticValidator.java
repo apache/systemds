@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -104,6 +105,7 @@ import org.apache.sysml.parser.dml.DmlParser.SimpleDataIdentifierExpressionConte
 import org.apache.sysml.parser.dml.DmlParser.StatementContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.StrictParameterizedKeyValueStringContext;
+import org.apache.sysml.parser.dml.DmlParser.TypedArgAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.TypedArgNoAssignContext;
 import org.apache.sysml.parser.dml.DmlParser.UnaryExpressionContext;
 import org.apache.sysml.parser.dml.DmlParser.ValueTypeContext;
@@ -667,8 +669,8 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		ctx.info.stmt = parForStmt;
 	}
 
-	private ArrayList<DataIdentifier> getFunctionParameters(List<TypedArgNoAssignContext> ctx) {
-		ArrayList<DataIdentifier> retVal = new ArrayList<>();
+	private ArrayList<DataIdentifier> getFunctionParametersNoAssign(List<TypedArgNoAssignContext> ctx) {
+		ArrayList<DataIdentifier> retVal = new ArrayList<>(ctx.size());
 		for(TypedArgNoAssignContext paramCtx : ctx) {
 			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
 			String dataType = (paramCtx.paramType == null || paramCtx.paramType.dataType() == null
@@ -683,6 +685,29 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			retVal.add(dataId);
 		}
 		return retVal;
+	}
+	
+	private ArrayList<DataIdentifier> getFunctionParametersAssign(List<TypedArgAssignContext> ctx) {
+		ArrayList<DataIdentifier> retVal = new ArrayList<>(ctx.size());
+		for(TypedArgAssignContext paramCtx : ctx) {
+			DataIdentifier dataId = new DataIdentifier(paramCtx.paramName.getText());
+			String dataType = (paramCtx.paramType == null || paramCtx.paramType.dataType() == null
+				|| paramCtx.paramType.dataType().getText() == null || paramCtx.paramType.dataType().getText().isEmpty()) ?
+				"scalar" : paramCtx.paramType.dataType().getText();
+			String valueType = paramCtx.paramType.valueType().getText();
+			
+			//check and assign data type
+			checkValidDataType(dataType, paramCtx.start);
+			if( !setDataAndValueType(dataId, dataType, valueType, paramCtx.start, false, true) )
+				return null;
+			retVal.add(dataId);
+		}
+		return retVal;
+	}
+	
+	private ArrayList<Expression> getFunctionDefaults(List<TypedArgAssignContext> ctx) {
+		return new ArrayList<>(ctx.stream().map(arg -> 
+			(arg.paramVal!=null)?arg.paramVal.info.expr:null).collect(Collectors.toList()));
 	}
 
 	@Override
@@ -706,23 +731,18 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 
 	// -----------------------------------------------------------------
-	// 				Internal & External Functions Definitions
+	//            Internal & External Functions Definitions
 	// -----------------------------------------------------------------
 
 	@Override
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {
+		//populate function statement
 		FunctionStatement functionStmt = new FunctionStatement();
-
-		ArrayList<DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
-		functionStmt.setInputParams(functionInputs);
-
-		// set function outputs
-		ArrayList<DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
-		functionStmt.setOutputParams(functionOutputs);
-
-		// set function name
 		functionStmt.setName(ctx.name.getText());
-
+		functionStmt.setInputParams(getFunctionParametersAssign(ctx.inputParams));
+		functionStmt.setInputDefaults(getFunctionDefaults(ctx.inputParams));
+		functionStmt.setOutputParams(getFunctionParametersNoAssign(ctx.outputParams));
+		
 		if(ctx.body.size() > 0) {
 			// handle function body
 			// Create arraylist of one statement block
@@ -745,17 +765,11 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 
 	@Override
 	public void exitExternalFunctionDefExpression(ExternalFunctionDefExpressionContext ctx) {
+		//populate function statement
 		ExternalFunctionStatement functionStmt = new ExternalFunctionStatement();
-
-		ArrayList<DataIdentifier> functionInputs  = getFunctionParameters(ctx.inputParams);
-		functionStmt.setInputParams(functionInputs);
-
-		// set function outputs
-		ArrayList<DataIdentifier> functionOutputs = getFunctionParameters(ctx.outputParams);
-		functionStmt.setOutputParams(functionOutputs);
-
-		// set function name
 		functionStmt.setName(ctx.name.getText());
+		functionStmt.setInputParams(getFunctionParametersNoAssign(ctx.inputParams));
+		functionStmt.setOutputParams(getFunctionParametersNoAssign(ctx.outputParams));
 
 		// set other parameters
 		HashMap<String, String> otherParams = new HashMap<>();
@@ -948,6 +962,10 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 	@Override public void enterTypedArgNoAssign(TypedArgNoAssignContext ctx) {}
 
 	@Override public void exitTypedArgNoAssign(TypedArgNoAssignContext ctx) {}
+
+	@Override public void enterTypedArgAssign(TypedArgAssignContext ctx) {}
+
+	@Override public void exitTypedArgAssign(TypedArgAssignContext ctx) {}
 
 	@Override public void enterStrictParameterizedExpression(StrictParameterizedExpressionContext ctx) {}
 

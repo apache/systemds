@@ -179,8 +179,10 @@ public class FunctionCallGraph
 	 * @param sb source statement block
 	 */
 	public void removeFunctionCall(String fkey, FunctionOp fop, StatementBlock sb) {
-		_fCalls.get(fkey).remove(fop);
-		_fCallsSB.get(fkey).remove(sb);
+		if( _fCalls.containsKey(fkey) )
+			_fCalls.get(fkey).remove(fop);
+		if( _fCallsSB.containsKey(fkey) )
+			_fCallsSB.get(fkey).remove(sb);
 	}
 	
 	/**

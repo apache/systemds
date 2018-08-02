@@ -297,10 +297,12 @@ public class SPInstructionParser extends InstructionParser
 		//cumsum/cumprod/cummin/cummax
 		String2SPInstructionType.put( "ucumack+"  , SPType.CumsumAggregate);
 		String2SPInstructionType.put( "ucumac*"   , SPType.CumsumAggregate);
+		String2SPInstructionType.put( "ucumac+*"  , SPType.CumsumAggregate);
 		String2SPInstructionType.put( "ucumacmin" , SPType.CumsumAggregate);
 		String2SPInstructionType.put( "ucumacmax" , SPType.CumsumAggregate);
 		String2SPInstructionType.put( "bcumoffk+" , SPType.CumsumOffset);
 		String2SPInstructionType.put( "bcumoff*"  , SPType.CumsumOffset);
+		String2SPInstructionType.put( "bcumoff+*" , SPType.CumsumOffset);
 		String2SPInstructionType.put( "bcumoffmin", SPType.CumsumOffset);
 		String2SPInstructionType.put( "bcumoffmax", SPType.CumsumOffset);
 
@@ -352,7 +354,7 @@ public class SPInstructionParser extends InstructionParser
 			case TSMM:
 				return TsmmSPInstruction.parseInstruction(str);
 			case TSMM2:
-				return Tsmm2SPInstruction.parseInstruction(str);	
+				return Tsmm2SPInstruction.parseInstruction(str);
 			case PMM:
 				return PmmSPInstruction.parseInstruction(str);
 			case ZIPMM:

@@ -225,6 +225,10 @@ public class ExecutionContext {
 		return (FrameObject) dat;
 	}
 
+	public CacheableData<?> getCacheableData(CPOperand input) {
+		return getCacheableData(input.getName());
+	}
+	
 	public CacheableData<?> getCacheableData(String varname) {
 		Data dat = getVariable(varname);
 		//error handling if non existing or no matrix

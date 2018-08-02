@@ -34,6 +34,7 @@ import org.junit.runners.Suite;
 	ParForDataPartitionExecuteTest.class,
 	ParForDataPartitionLeftIndexingTest.class,
 	ParForDependencyAnalysisTest.class,
+	ParForListResultVarsTest.class,
 	ParForFunctionSerializationTest.class,
 	ParForMultipleDataPartitioningTest.class,
 	ParForNaNResultMergeTest.class,

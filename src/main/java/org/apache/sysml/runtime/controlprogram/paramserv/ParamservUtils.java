@@ -94,14 +94,12 @@ public class ParamservUtils {
 		}
 		List<Data> newData = IntStream.range(0, lo.getLength()).mapToObj(i -> {
 			Data oldData = lo.slice(i);
-			if (oldData instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) oldData;
-				return sliceMatrix(mo, 1, mo.getNumRows());
-			} else if (oldData instanceof ListObject || oldData instanceof FrameObject) {
+			if (oldData instanceof MatrixObject)
+				return createShallowCopy((MatrixObject) oldData);
+			else if (oldData instanceof ListObject || oldData instanceof FrameObject)
 				throw new DMLRuntimeException("Copy list: does not support list or frame.");
-			} else {
+			else
 				return oldData;
-			}
 		}).collect(Collectors.toList());
 		return new ListObject(newData, lo.getNames());
 	}
@@ -145,23 +143,32 @@ public class ParamservUtils {
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
 		ec.cleanupCacheableData(cd);
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
-		}
 	}
 
-	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
-		mo.enableCleanup(true);
-		ec.cleanupCacheableData(mo);
+	public static void cleanupData(ExecutionContext ec, String varName) {
+		cleanupData(ec, ec.removeVariable(varName));
+	}
+
+	public static void cleanupListObject(ListObject lo) {
+		cleanupListObject(ExecutionContextFactory.createContext(), lo);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {
+		return newMatrixObject(mb, true);
+	}
+	
+	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
 		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
 			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		result.acquireModify(mb);
 		result.release();
+		result.enableCleanup(cleanup);
 		return result;
+	}
+	
+	public static MatrixObject createShallowCopy(MatrixObject mo) {
+		return newMatrixObject(mo.acquireReadAndRelease(), false);
 	}
 
 	/**
@@ -173,11 +180,8 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixBlock mb = mo.acquireRead();
-		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
-		result.enableCleanup(false);
-		mo.release();
-		return result;
+		MatrixBlock mb = mo.acquireReadAndRelease();
+		return newMatrixObject(sliceMatrixBlock(mb, rl, rh), false);
 	}
 
 	/**
@@ -330,35 +334,23 @@ public class ParamservUtils {
 	/**
 	 * Assemble the matrix of features and labels according to the rowID
 	 *
-	 * @param numRows row size of the data
 	 * @param featuresRDD indexed features matrix block
 	 * @param labelsRDD indexed labels matrix block
 	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID -> features, labels)
 	 */
-	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
-		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(numRows, featuresRDD);
-		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(numRows, labelsRDD);
+	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
+		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(featuresRDD);
+		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(labelsRDD);
 		//TODO Add an additional physical operator which broadcasts the labels directly (broadcast join with features) if certain memory budgets are satisfied
 		return fRDD.join(lRDD);
 	}
 
-	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
 		//TODO could use join and aggregation to avoid unnecessary shuffle introduced by reduceByKey
 		return rdd.mapToPair(input -> new Tuple2<>(input._1.getRowIndex(), new Tuple2<>(input._1.getColumnIndex(), input._2)))
 			.aggregateByKey(new LinkedList<Tuple2<Long, MatrixBlock>>(),
-				new Partitioner() {
-					private static final long serialVersionUID = -7032660778344579236L;
-					@Override
-					public int getPartition(Object rblkID) {
-						return Math.toIntExact((Long) rblkID);
-					}
-					@Override
-					public int numPartitions() {
-						return Math.toIntExact(numRows);
-					}
-				},
 				(list, input) -> {
-					list.add(input); 
+					list.add(input);
 					return list;
 				}, 
 				(l1, l2) -> {
@@ -387,7 +379,7 @@ public class ParamservUtils {
 
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
 		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils
-			.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
+			.assembleTrainingData(featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
 			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))
 			// Aggregate the partitioned matrix according to rowID for each worker
 			// i.e. (workerID => ordered list[(rowBlockID, (single row features, single row labels)]

@@ -50,7 +50,7 @@ public class Builtin extends ValueFunction
 	
 	public enum BuiltinCode { SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, ROUND, MAXINDEX, MININDEX,
-		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, INVERSE, SPROP, SIGMOID, EVAL, LIST }
+		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST }
 	public BuiltinCode bFunc;
 	
 	private static final boolean FASTMATH = true;
@@ -91,6 +91,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
 		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
 		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
+		String2BuiltinCode.put( "ucumk+*", BuiltinCode.CUMSUMPROD);
 		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);
 		String2BuiltinCode.put( "ucummax", BuiltinCode.CUMMAX);
 		String2BuiltinCode.put( "inverse", BuiltinCode.INVERSE);
@@ -103,7 +104,7 @@ public class Builtin extends ValueFunction
 	private static Builtin logObj = null, lognzObj = null, minObj = null, maxObj = null, maxindexObj = null, minindexObj=null;
 	private static Builtin absObj = null, signObj = null, sqrtObj = null, expObj = null, plogpObj = null, printObj = null, printfObj;
 	private static Builtin nrowObj = null, ncolObj = null, lengthObj = null, roundObj = null, ceilObj=null, floorObj=null; 
-	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null;
+	private static Builtin inverseObj=null, cumsumObj=null, cumprodObj=null, cumminObj=null, cummaxObj=null, cumsprodObj=null;
 	private static Builtin stopObj = null, spropObj = null, sigmoidObj = null;
 	
 	private Builtin(BuiltinCode bf) {
@@ -256,7 +257,11 @@ public class Builtin extends ValueFunction
 		case CUMPROD:
 			if ( cumprodObj == null )
 				cumprodObj = new Builtin(BuiltinCode.CUMPROD);
-			return cumprodObj;	
+			return cumprodObj;
+		case CUMSUMPROD:
+			if ( cumsprodObj == null )
+				cumsprodObj = new Builtin(BuiltinCode.CUMSUMPROD);
+			return cumsprodObj;	
 		case CUMMIN:
 			if ( cumminObj == null )
 				cumminObj = new Builtin(BuiltinCode.CUMMIN);

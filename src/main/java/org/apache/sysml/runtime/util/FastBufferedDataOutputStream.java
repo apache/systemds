@@ -186,7 +186,7 @@ public class FastBufferedDataOutputStream extends FilterOutputStream implements 
 		//write utf payload
 		for( int i=0; i<slen; i++ ) {
 			if (_count+3 > _bufflen)
-			    flushBuffer();
+				flushBuffer();
 			char c = s.charAt(i);
 			if( c>= 0x0001 && c<=0x007F ) //1 byte range
 				_buff[_count++] = (byte) c;

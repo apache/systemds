@@ -794,6 +794,18 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	/**
+	 * Wrapper method for reduceall-product of a matrix.
+	 * 
+	 * @return ?
+	 */
+	public double prod() {
+		MatrixBlock out = new MatrixBlock(1, 1, false);
+		LibMatrixAgg.aggregateUnaryMatrix(this, out,
+			InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1));
+		return out.quickGetValue(0, 0);
+	}
+	
+	/**
 	 * Wrapper method for reduceall-mean of a matrix.
 	 * 
 	 * @return ?
@@ -2612,14 +2624,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		boolean sp = this.sparse && op.sparseSafe;
 		
 		//allocate output
+		int n = Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUMPROD) ? 1 : clen;
 		if( ret == null )
-			ret = new MatrixBlock(rlen, clen, sp, this.nonZeros);
+			ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
 		else
-			ret.reset(rlen, clen, sp);
+			ret.reset(rlen, n, sp);
 		
 		//core execute
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
-			//e.g., cumsum/cumprod/cummin/cumax
+			//e.g., cumsum/cumprod/cummin/cumax/cumsumprod
 			if( op.getNumThreads() > 1 )
 				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
 			else

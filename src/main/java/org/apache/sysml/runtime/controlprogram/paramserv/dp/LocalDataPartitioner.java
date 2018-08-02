@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import org.apache.sysml.parser.Statement;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public class LocalDataPartitioner {

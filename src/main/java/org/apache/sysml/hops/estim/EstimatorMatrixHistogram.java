@@ -94,7 +94,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	private double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op) {
-		double msize = h1.getRows()*h1.getCols();
+		double msize = (double)h1.getRows()*h1.getCols();
 		
 		switch (op) {
 			case MM:

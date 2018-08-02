@@ -19,8 +19,8 @@
 
 package org.apache.sysml.hops.estim;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -45,14 +45,18 @@ public class EstimatorBasicWorst extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		return estim(m1.getMatrixCharacteristics(), m2.getMatrixCharacteristics());
+		return estimIntern(m1.getSparsity(), m2.getSparsity(),
+			m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
 	}
-
+	
 	@Override
-	public double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
-		return estimIntern(
-			OptimizerUtils.getSparsity(mc1), OptimizerUtils.getSparsity(mc2),
-			mc1.getRows(), mc1.getCols(), mc2.getCols());
+	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		throw new NotImplementedException();
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OpCode op) {
+		throw new NotImplementedException();
 	}
 
 	private double estimIntern(double sp1, double sp2, long m, long k, long n) {

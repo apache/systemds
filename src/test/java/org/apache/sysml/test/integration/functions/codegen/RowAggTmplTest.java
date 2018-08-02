@@ -81,6 +81,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME42 = TEST_NAME+"42"; //X/rowSums(min(X, Y, Z))
 	private static final String TEST_NAME43 = TEST_NAME+"43"; //bias_add(X,B) + bias_mult(X,B)
 	private static final String TEST_NAME44 = TEST_NAME+"44"; //maxpool(X - mean(X)) + 7;
+	private static final String TEST_NAME45 = TEST_NAME+"45"; //vector allocation;
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -92,7 +93,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=44; i++)
+		for(int i=1; i<=45; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -755,6 +756,21 @@ public class RowAggTmplTest extends AutomatedTestBase
 	public void testCodegenRowAgg44SP() {
 		testCodegenIntegration( TEST_NAME44, false, ExecType.SPARK );
 	}
+	
+	@Test
+	public void testCodegenRowAggRewrite45CP() {
+		testCodegenIntegration( TEST_NAME45, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg45CP() {
+		testCodegenIntegration( TEST_NAME45, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg45SP() {
+		testCodegenIntegration( TEST_NAME45, false, ExecType.SPARK );
+	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
@@ -799,7 +815,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
 			if( testname.equals(TEST_NAME17) )
 				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
-			if( testname.equals(TEST_NAME28) )
+			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )

@@ -21,8 +21,8 @@ package org.apache.sysml.hops.estim;
 
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -66,11 +66,15 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 		return OptimizerUtils.getSparsity( // aggregate output histogram
 				outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());
 	}
-
+	
 	@Override
-	public double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
-		LOG.warn("Meta-data-only estimates not supported in EstimatorBitsetMM, falling back to EstimatorBasicAvg.");
-		return new EstimatorBasicAvg().estim(mc1, mc2);
+	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		throw new NotImplementedException();
+	}
+	
+	@Override
+	public double estim(MatrixBlock m, OpCode op) {
+		throw new NotImplementedException();
 	}
 
 	private static class BitsetMatrix {

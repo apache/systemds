@@ -22,7 +22,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -56,12 +55,17 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	public double estim(MMNode root) {
 		throw new NotImplementedException();
 	}
-	
+
 	@Override
-	public double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
+	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public double estim(MatrixBlock m, OpCode op) {
+		throw new NotImplementedException();
+	}
+	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2){
 		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);

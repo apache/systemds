@@ -1684,8 +1684,8 @@ public class ParForProgramBlock extends ForProgramBlock
 					
 					//cleanup existing var
 					Data exdata = ec.removeVariable(var._name);
-					if( exdata != null && exdata != outNew && exdata instanceof MatrixObject )
-						ec.cleanupCacheableData((MatrixObject)exdata);
+					if( exdata != null && exdata != outNew )
+						ec.cleanupDataObject(exdata);
 					
 					//cleanup of intermediate result variables
 					cleanWorkerResultVariables( ec, out, in );

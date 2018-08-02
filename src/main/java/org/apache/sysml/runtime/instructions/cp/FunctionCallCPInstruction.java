@@ -32,7 +32,6 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
 import org.apache.sysml.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.Instruction;
@@ -181,9 +180,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			if( expectRetVars.contains(varName) )
 				continue;
 			//cleanup unexpected return values to avoid leaks
-			Data var = fn_ec.removeVariable(varName);
-			if( var instanceof CacheableData )
-				fn_ec.cleanupCacheableData((CacheableData<?>)var);
+			fn_ec.cleanupDataObject(fn_ec.removeVariable(varName));
 		}
 		
 		// Unpin the pinned variables
@@ -200,9 +197,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 			//cleanup existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
-			if ( exdata != null && exdata instanceof CacheableData && exdata != boundValue ) {
-				ec.cleanupCacheableData( (CacheableData<?>)exdata );
-			}
+			if( exdata != boundValue )
+				ec.cleanupDataObject(exdata);
 			
 			//add/replace data in symbol table
 			ec.setVariable(boundVarName, boundValue);

@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -129,11 +127,6 @@ public class GPUMemoryManager {
 	// If the available free size is less than this factor, GPUMemoryManager will warn users of multiple programs grabbing onto GPU memory.
 	// This often happens if user tries to use both TF and SystemML, and TF grabs onto 90% of the memory ahead of time.
 	private static final double WARN_UTILIZATION_FACTOR = 0.7;
-	
-	// Invoke cudaMemGetInfo to get available memory information. Useful if GPU is shared among multiple application.
-	public double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig()
-			.getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
-	
 	
 	public GPUMemoryManager(GPUContext gpuCtx) {
 		matrixMemoryManager = new GPUMatrixMemoryManager(this);
@@ -603,7 +596,7 @@ public class GPUMemoryManager {
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
-		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
+		return (long) (free[0] * DMLScript.GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 	
 	private static class CustomPointer extends Pointer {

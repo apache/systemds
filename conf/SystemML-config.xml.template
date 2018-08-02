@@ -96,7 +96,7 @@
     <!-- the floating point precision. supported values are double, single -->
     <sysml.floating.point.precision>double</sysml.floating.point.precision>
     
-    <!-- the eviction policy for the GPU bufferpool. supported values are lru, mru, lfu, min_evict, align_memory -->
+    <!-- the eviction policy for the GPU bufferpool. Supported values are lru, mru, lfu, min_evict, align_memory -->
     <sysml.gpu.eviction.policy>align_memory</sysml.gpu.eviction.policy>
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
@@ -108,4 +108,8 @@
    <!-- Advanced optimization: fraction of driver memory to use for GPU shadow buffer. This optimization is ignored for double precision. 
    By default, it is disabled (hence set to 0.0). If you intend to train network larger than GPU memory size, consider using single precision and setting this to 0.1 -->
    <sysml.gpu.eviction.shadow.bufferSize>0.0</sysml.gpu.eviction.shadow.bufferSize>
+   
+   <!-- Fraction of available GPU memory to use. This is similar to TensorFlow's per_process_gpu_memory_fraction configuration property. (default: 0.9) -->
+   <sysml.gpu.memory.util.factor>0.9</sysml.gpu.memory.util.factor>
+   
 </root>

@@ -18,9 +18,7 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -54,7 +52,10 @@ public class GPUMatrixMemoryManager {
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(!gpuObj.isDensePointerNull()) {
-			ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
+			if(gpuObj.shadowPointer == null)
+				ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
+			else
+				ret = 0; // evicted hence no contiguous memory on GPU
 		}
 		else if(gpuObj.getJcudaSparseMatrixPtr() != null) {
 			CSRPointer sparsePtr = gpuObj.getJcudaSparseMatrixPtr();
@@ -81,6 +82,7 @@ public class GPUMatrixMemoryManager {
 			LOG.warn("Matrix allocated in both dense and sparse format");
 		}
 		if(!gObj.isDensePointerNull()) {
+			// && gObj.evictedDenseArr == null - Ignore evicted array
 			ret.add(gObj.getDensePointer());
 		}
 		if(gObj.getSparseMatrixCudaPointer() != null) {
@@ -107,16 +109,6 @@ public class GPUMatrixMemoryManager {
 	HashSet<GPUObject> gpuObjects = new HashSet<>();
 	
 	/**
-	 * Get GPUObjects from the first memory sections "Matrix Memory"
-	 * @param locked return locked GPU objects if true
-	 * @param dirty return dirty GPU objects if true
-	 * @return set of GPU Objects
-	 */
-	Set<GPUObject> getGPUObjects(boolean locked, boolean dirty) {
-		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).collect(Collectors.toSet());
-	}
-	
-	/**
 	 * Return all pointers in the first section
 	 * @return all pointers in this section
 	 */
@@ -132,32 +124,6 @@ public class GPUMatrixMemoryManager {
 	 */
 	Set<Pointer> getPointers(boolean locked, boolean dirty) {
 		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
-	}
-	
-	/**
-	 * Clear the memory of the gpu object that matches the provided parameters
-	 * 
-	 * @param locked is locked
-	 * @param dirty is dirty
-	 * @param minSize of atleast given size
-	 * @param comparator sorting comparator in case there are more than one gpu object that matches above parameters
-	 * @param opcode instruction code
-	 * @return true if a gpu object satisfies the above condition else false
-	 * @throws DMLRuntimeException if error occurs
-	 */
-	boolean clear(boolean locked, boolean dirty, long minSize, Comparator<GPUObject> comparator, String opcode) throws DMLRuntimeException {
-		Optional<GPUObject> toClear = getGPUObjects(locked, dirty).stream()
-				.filter(gObj -> getWorstCaseContiguousMemorySize(gObj) >= minSize)
-					.max(comparator);
-		if(toClear.isPresent()) {
-			GPUObject gObj = toClear.get();
-			if(gObj.dirty) 
-				gObj.copyFromDeviceToHost(opcode, true, true); // Perform eviction if dirty
-			else
-				gObj.clearData(opcode, true);
-			gpuObjects.remove(gObj);
-		}
-		return toClear.isPresent();
 	}
 	
 	/**

@@ -410,7 +410,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			getCache();
 		
 		//call acquireHostRead if gpuHandle is set as well as is allocated
-		if( DMLScript.USE_ACCELERATOR ) {
+		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
 			for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
 				GPUObject gObj = kv.getValue();
@@ -617,11 +617,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
-		if( _gpuObjects != null )
+		if( _gpuObjects != null ) {
 			for (GPUObject gObj : _gpuObjects.values())
 				if (gObj != null)
 					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
-
+		}
+		
 		// change object state EMPTY
 		setDirty(false);
 		setEmpty();
@@ -684,7 +685,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
-		if( DMLScript.USE_ACCELERATOR ) {
+		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
 			for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
 				GPUObject gObj = kv.getValue();

@@ -104,4 +104,8 @@
    
    <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
    <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
+   
+   <!-- Advanced optimization: fraction of driver memory to use for GPU shadow buffer. This optimization is ignored for double precision. 
+   By default, it is disabled (hence set to 0.0). If you intend to train network larger than GPU memory size, consider using single precision and setting this to 0.1 -->
+   <sysml.gpu.eviction.shadow.bufferSize>0.0</sysml.gpu.eviction.shadow.bufferSize>
 </root>

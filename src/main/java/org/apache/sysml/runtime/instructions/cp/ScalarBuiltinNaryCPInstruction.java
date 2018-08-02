@@ -97,10 +97,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data);
-			
-			//disable cleanup of individual objects and store cleanup state
-			list.setStatus(ec.pinVariables(Arrays.stream(inputs)
-				.map(in -> in.getName()).collect(Collectors.toList())));
+			list.setStatus(new boolean[data.size()]);
 			
 			ec.setVariable(output.getName(), list);
 		}

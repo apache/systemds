@@ -34,17 +34,18 @@ public class ListObject extends Data {
 	private final List<Data> _data;
 	private boolean[] _dataState = null;
 	private List<String> _names = null;
+	private int _nCacheable;
 	
 	public ListObject(List<Data> data) {
-		super(DataType.LIST, ValueType.UNKNOWN);
-		_data = data;
-		_names = null;
+		this(data, null);
 	}
 
 	public ListObject(List<Data> data, List<String> names) {
 		super(DataType.LIST, ValueType.UNKNOWN);
 		_data = data;
 		_names = names;
+		_nCacheable = (int) data.stream().filter(
+			d -> d instanceof CacheableData).count();
 	}
 	
 	public ListObject(ListObject that) {
@@ -64,6 +65,10 @@ public class ListObject extends Data {
 	
 	public int getLength() {
 		return _data.size();
+	}
+	
+	public int getNumCacheableData() {
+		return _nCacheable;
 	}
 	
 	public List<String> getNames() {

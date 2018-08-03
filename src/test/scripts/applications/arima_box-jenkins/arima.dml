@@ -18,7 +18,6 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
 # Arguments
 # 'X': X (one column time series - there has to be an .mtd file associated to the src file!) 
 # 'max_func_invoc': max_func_invoc (default 1000)
@@ -36,24 +35,18 @@
 # 'result_format': the format of the destination file (default "csv") 
 
 #TODO: Add external function to run ARIMA -> to create another dml file to
-
-arima_residuals = function(Matrix[Double] weights, Matrix[Double] X, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return (Matrix[Double] errs, Matrix[Double] combined_weights){
+arima_prediction = function(Matrix[Double] weights, Matrix[Double] Z, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return (Matrix[Double] approximated_solution, Matrix[Double] combined_weights){
 	
-	#TODO: Add q and Q weights to combined_weights
-	
-	#Combining weights because of the definition of seasonal AR in R
-	#https://stats.stackexchange.com/questions/112927/seasonal-vs-non-seasonal-coefficients-in-r-arima
+	combined_weights = weights
 	if (p>0 & P>0){
-		combined_weights = rbind(weights, matrix(weights[1:p,] %*% t(weights[p+1:p+P,]), rows=p*P, cols=1))
+		combined_weights = rbind(combined_weights, matrix(weights[1:p,] %*% t(weights[p+1:p+P,]), rows=p*P, cols=1))
 	}
-	else{
-		combined_weights = weights
+	if (q>0 & Q>0){
+		combined_weights = rbind(combined_weights, matrix(weights[p+P+1:p+P+q,] %*% t(weights[p+P+q+1:p+P+q+Q,]), rows=q*Q, cols=1))
 	}
 	
-	b = X[,2:ncol(X)]%*%combined_weights
-	
-	R = matrix(0, nrow(X), nrow(X))
-	#TODO: use correct positions of q and Q weights (position might have changed)
+	b = Z%*%combined_weights
+	R = matrix(0, nrow(Z), nrow(Z))
 	for(i in seq(1, q, 1)){
 		d_ns = matrix(as.scalar(weights[P+p+i,1]), nrow(R)-i, 1)
 		R[1+i:nrow(R),1:ncol(R)-i] = R[1+i:nrow(R),1:ncol(R)-i] + diag(d_ns)
@@ -63,26 +56,40 @@ arima_residuals = function(Matrix[Double] weights, Matrix[Double] X, Integer p, 
 		err_ind_s = s*i
 		d_s = matrix(as.scalar(weights[P+p+q+i,1]), nrow(R)-err_ind_s, 1)
 		R[1+err_ind_s:nrow(R),1:ncol(R)-err_ind_s] = R[1+err_ind_s:nrow(R),1:ncol(R)-err_ind_s] + diag(d_s)
-	}
-  	
-	#TODO: provide default dml "solve()" as well
-	solution = eval(solver + "_solver", R, b, 0.01, 100)
-	errs = X[,1] - solution
-	#errs = solution - X[,1] 
+	} 	
+	
+	#TODO for SMA: add combined_weights to R the same way as q and Q weights
+	
+	approximated_solution = eval(solver + "_solver", R, b, 0.01, 100)
 }
 
-arima_css = function(Matrix[Double] weights, Matrix[Double] X, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return (Double obj){
-	[errs, combined_weights] = arima_residuals(weights, X, p, P, q, Q, s, solver)
-	obj = sum(errs*errs)
+#This function is used to calculate the error that occures when predicting using the given weights
+arima_residuals = function(Matrix[Double] weights, Matrix[Double] X, Matrix[Double] Z, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return (Matrix[Double] errs, Matrix[Double] combined_weights){
+	[approximated_solution, combined_weights] = arima_prediction(weights, Z, p, P, q, Q, s, solver)
+	errs = X - approximated_solution
 }
 
-cg_solver = function (Matrix[Double] R, Matrix[Double] B, Double tolerance, Integer max_iterations) return (Matrix[Double] y_hat){
+#Calculates the condition sum of square of residuals-> this is one of the possible functions to optimize over to solve ARIMA
+arima_css = function(Matrix[Double] weights, Matrix[Double] X, Matrix[Double] Z, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return (Double obj, Matrix[Double] errs){
+	[errs, combined_weights] = arima_residuals(weights, X, Z, p, P, q, Q, s, solver)
+	obj = 0.5 * sum(errs^2)
+}
+
+#Conjugate gradients solver for Systems of Linear Equations
+#Given a system of linear eqations of size m:
+#R is a m times m Matrix
+#b is a m times 1 Matrix (m sizes vector)
+#the sys of lin eq. to be solved is defined by:
+#R * x = b
+#with the unknown variables x being contained by an m times 1 matrix 
+#TODO: test correctness
+cg_solver = function (Matrix[Double] R, Matrix[Double] b, Double tolerance, Integer max_iterations) return (Matrix[Double] y_hat){
 	y_hat = matrix(0, nrow(R), 1)
 	iter = 0
 
-	A = R + diag(matrix(1, rows=nrow(R), cols=1))
+	A = R #+ diag(matrix(1, rows=nrow(R), cols=1))
 	Z = t(A)%*%A
-	r = -(t(A)%*%B)
+	r = -(t(A)%*%b)
 	p = -r
 	norm_r2 = sum(r^2)
 	
@@ -102,42 +109,45 @@ cg_solver = function (Matrix[Double] R, Matrix[Double] B, Double tolerance, Inte
 	}
 }
 
-jacobi_solver = function (Matrix[Double] A, Matrix[Double] B, Double tolerance, Integer max_iterations) return (Matrix[Double] y_hat){
+#Conjugate gradients solver for Systems of Linear Equations
+#Given a system of linear eqations of size m:
+#R is a m times m Matrix
+#b is a m times 1 Matrix (m sizes vector)
+#the sys of lin eq. to be solved is defined by:
+#R * x = b
+#with the unknown variables x being contained by an m times 1 matrix
+jacobi_solver = function (Matrix[Double] R, Matrix[Double] b, Double tolerance, Integer max_iterations) return (Matrix[Double] x){
 	
-	y_hat = matrix(0, nrow(A), 1)
+	x = matrix(0, nrow(R), 1)
   	iter = 0
 	diff = tolerance+1
 	
 	#checking for strict diagonal dominance
 	#required for jacobi's method
-  	check = sum(rowSums(abs(A)) >= 1)
+  	check = sum(rowSums(abs(R)) >= 1)
 	if(check > 0){
 		warning("The matrix is not diagonal dominant. Suggest switching to an exact solver.")
+		debug("sum(rowSums(abs(R))=" + check)
 	}
 		
 	while(iter < max_iterations & diff > tolerance){
-		y_hat_new = B - A%*%y_hat
-		diff = sum((y_hat_new-y_hat)^2)
-		y_hat = y_hat_new
+		new_weights = b - R%*%x
+		diff = sum((new_weights-x)^2)
+		x = new_weights
 		iter += 1
 	}
 }
 
-neldermead_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] best_point){
+#This optimization method gives the same results as R's build-in arima for small p, but as p is increased the accuaracy when comparing to R's arima decreases
+#TODO: Fix this ^^
+neldermead_optimizer = function (Matrix[Double] X, Matrix[Double] Z, Integer max_iterations, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] arima_model){
 	nParam = p+P+q+Q
 	simplex = cbind(matrix(0, nParam, 1), diag(matrix(0.1, nParam, 1)))
 	objvals = matrix(0, 1, ncol(simplex))
 
-	#TODO: remove debug output
-	debug("Simplex:\n" + toString(simplex))
-
-	parfor(i in seq(1,ncol(simplex))){
-		objvals[1,i] = arima_css(simplex[,i], M, p, P, q, Q, s, solver)
+	for(i in seq(1,ncol(simplex))){
+		objvals[1,i] = arima_css(simplex[,i], X, Z, p, P, q, Q, s, solver)
 	}
-
-	#TODO: remove debug output
-	debug("objvals:\n" + toString(objvals))
-
 
 	#TODO: make this an optional parameter
 	tol = 1.5 * 10^(-8) * as.scalar(objvals[1,1])
@@ -159,12 +169,12 @@ neldermead_optimizer = function (Matrix[Double] M, Integer max_iterations, Integ
 		c = (rowSums(simplex) - simplex[,worst_index])/(nrow(simplex))
 		
 		x_r = 2*c - simplex[,worst_index]
-		obj_x_r = arima_css(x_r, M, p, P, q, Q, s, solver)
+		obj_x_r = arima_css(x_r, X, Z, p, P, q, Q, s, solver)
 		num_func_invoc += 1
 		
 		if(obj_x_r < best_obj_val){
 			x_e = 2*x_r - c
-			obj_x_e = arima_css(x_e, M, p, P, q, Q, s, solver)
+			obj_x_e = arima_css(x_e, X, Z, p, P, q, Q, s, solver)
 			num_func_invoc = num_func_invoc + 1
 			
 			simplex[,worst_index] = ifelse (obj_x_r <= obj_x_e, x_r, x_e)
@@ -176,7 +186,7 @@ neldermead_optimizer = function (Matrix[Double] M, Integer max_iterations, Integ
 			}
 			
 			x_c_in = (simplex[,worst_index] + c)/2
-			obj_x_c_in = arima_css(x_c_in, M, p, P, q, Q, s, solver)
+			obj_x_c_in = arima_css(x_c_in, X, Z, p, P, q, Q, s, solver)
 			num_func_invoc += 1
 			
 			if(obj_x_c_in < as.scalar(objvals[1,worst_index])){
@@ -184,11 +194,11 @@ neldermead_optimizer = function (Matrix[Double] M, Integer max_iterations, Integ
 				objvals[1,worst_index] = obj_x_c_in
 			}else{
 				if(obj_x_r >= worst_obj_val){
-					best_point = simplex[,best_index]
-					parfor(i4 in 1:ncol(simplex)){
-						if(i4 != best_index){
-							simplex[,i4] = (simplex[,i4] + best_point)/2
-							objvals[1,i4] = arima_css(simplex[,i4], M, p, P, q, Q, s, solver)
+					arima_model = simplex[,best_index]
+					for(i in 1:ncol(simplex)){
+						if(i != best_index){
+							simplex[,i] = (simplex[,i] + arima_model)/2
+							objvals[1,i] = arima_css(simplex[,i], X, Z, p, P, q, Q, s, solver)
 						}
 					}
 					num_func_invoc += ncol(simplex) - 1
@@ -196,81 +206,90 @@ neldermead_optimizer = function (Matrix[Double] M, Integer max_iterations, Integ
 			}
 		}
 	}
-
-	debug ("best_index: "+ toString(best_index))
-	best_point = simplex[,best_index]
-}
-
-gradArimaCSS = function(Matrix[Double] weights, Matrix[Double] X, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return(Matrix[double] grad){
-	[residuals, combined_weights] = arima_residuals(weights, X, p, P, q, Q, s, solver)
 	
-	res_A = t(-X[,2:ncol(X)]) %*% residuals
-	grad = matrix(0, rows=p+P, cols=1)
-
-	if (p > 0) grad[1:p,] = res_A[1:p,]
-	if (P > 0) grad[p+1:p+P,] = res_A[p+1:p+P,]
+	debug("final simplex:\n" + toString(simplex) + "\n with best index at " + best_index)
+	arima_model = simplex[,best_index]
+}
+ 
+#Calculates the gradient of ARIMA_CSS (Condition Sum of Squares of Residuals)
+#not working for q > 0 or Q > 0 -> gradFinitDifference(...) retuns differnt values 
+gradArimaCSS = function(Matrix[Double] weights, Matrix[Double] X, Matrix[Double] Z, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver) return(Matrix[double] grad){
+	[residuals, combined_weights] = arima_residuals(weights, X, Z, p, P, q, Q, s, solver)
+	
+	#to calculate the gradient of MA we need to built another Matrix like Z, but containing the residuals instead of the time series X
+	b = matrix(0, nrow(residuals), q+Q)
+	for (i in seq(1,q,1)){
+		b = addShiftedMatrix(b, residuals, i, i)
+	}
+	
+	for (i in seq(1,Q,1)){
+		b = addShiftedMatrix(b, residuals, i * s, q+i)
+	}
+	
+	res_ma = t(-b) %*% residuals
+	res_ar = t(-Z) %*% residuals
+		
+	grad = matrix(0, rows=p+P+q+Q, cols=1)
+	if (p > 0) grad[1:p,] = res_ar[1:p,]
+	if (P > 0) grad[p+1:p+P,] = res_ar[p+1:p+P,]
+	if (q > 0) grad[p+P+1:p+P+q] = res_ma[1:q,]
+	if (Q > 0) grad[p+P+q+1:p+P+q+Q] = res_ma[q+1:q+Q,]
 	if (p>0 & P>0){		
 		for(i in seq(1, p, 1)){
 			permut = matrix(0, rows=p, cols=P)
-			permut[i,] = t(combined_weights[p+1:p+P,])###!!!
-			grad[i,1] = grad[i,1] + sum(res_A[p+P+1:nrow(res_A),] * matrix(permut, rows=p*P, cols=1))
+			permut[i,] = t(combined_weights[p+1:p+P,])
+			grad[i,1] = grad[i,1] + sum(res_ar[p+P+1:p+P+p*P,] * matrix(permut, rows=p*P, cols=1))
 		}
 
 		for(i in seq(1, P, 1)){
 			permut = matrix(0, rows=p, cols=P)
-			permut[,i] = combined_weights[1:p,]###!!!!
-			grad[p+i,1] = grad[p+i,1] + sum(res_A[p+P+1:nrow(res_A),] * matrix(permut, rows=p*P, cols=1))
+			permut[,i] = combined_weights[1:p,]
+			grad[p+i,1] = grad[p+i,1] + sum(res_ar[p+P+1:p+P+p*P,] * matrix(permut, rows=p*P, cols=1))
 		}
 		
 	}
 }
 
+# L2 norm of descent direction at x
 L2norm = function (Matrix[Double] fx)return(Double norm){
-	# L2 norm of descent direction at x
-	# https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
 	norm = (sum(fx^2))^0.5 
 }
 
-#Bactracking paramters
-#https://en.wikipedia.org/wiki/Backtracking_line_search
-linesearch = function (Matrix[Double] searchDirection, Double fx,  Matrix[Double] x, Matrix[Double] M, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] xnew, Double fxnew, Double ak){
+#Bactracking Line Search
+linesearch = function (Matrix[Double] searchDirection, Double fx,  Matrix[Double] weights, Matrix[Double] X, Matrix[Double] Z, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] new_weights, Double fxnew, Double ak){
 	#TODO: What are the best starting paramters?
 	alpha = 0.0001
 	r = 0.9
 	
 	#stepsize
-	ak = 1
+	ak = 1.0
 	
-	xnew = x + ak*searchDirection
-	fxnew = arima_css(xnew, M, p, P, q, Q, s, solver)
+	new_weights = weights + ak*searchDirection
+	fxnew = arima_css(new_weights, X, Z, p, P, q, Q, s, solver)	
 	
-	#TODO: check if Armijo–Goldstein condition tests is used properly
 	while(fxnew > fx + alpha*ak*as.scalar(t(searchDirection)%*%searchDirection)){ 
 		ak = r*ak
-		xnew = x + ak*searchDirection
-		fxnew = arima_css(xnew, M, p, P, q, Q, s, solver)
+		new_weights = weights + ak*searchDirection
+		fxnew = arima_css(new_weights, X, Z, p, P, q, Q, s, solver)
 	}
 }
 
-#Quasi Newton Optimizer: Broyden–Fletcher–Goldfarb–Shanno Algorithm
-#https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm
-bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] x){
-	#TODO: Refactor this
-	
+#Quasi Newton Optimizer: Broyden–Fletcher–Goldfarb–Shanno 
+bfgs_optimizer = function (Matrix[Double] X, Matrix[Double] Z, Integer max_iterations, Integer p, Integer P, Integer q, Integer Q, Integer s, String solver)return(Matrix[Double] weights){
 	nParam = p+P+q+Q
 	
-	#'first guess' x should not be intitialized with 0, otherwise the norm of gx will equal 0 and the loop will not run
-	x = matrix(0.5, nParam, 1)
-	fx = arima_css(x, M, p, P, q, Q, s, solver)
-	gx = gradArimaCSS(x, M, p, P, q, Q, s, solver)
+	#'first guess' weights should not be intitialized with 0, otherwise the norm of gx will equal 0 and the loop will not run
+	weights = matrix(0.5, nParam, 1)
+	fx = arima_css(weights, X, Z, p, P, q, Q, s, solver)
+	gx = gradArimaCSS(weights, X, Z, p, P, q, Q, s, solver)
 	norm_gx = L2norm(gx)
-
-	#The approximated inverse hessian 
-	B = diag(matrix(1.0, nParam,1)) 	
 	
-	debug(" sum gx^2 " + sum(gx ^2))
-	debug("arima_css initial " + fx)
-		
+	#The approximated inverse hessian 
+	B = diag(matrix(1.0, nParam,1)) 
+	
+	debug("bfgs_optimizer sum gx^2 " + sum(gx ^2))
+	debug("bfgs_optimizer arima_css initial " + fx)
+	
 	iter = 0
 	tol = 1.5 * 10^(-8)
 	diff = tol +1
@@ -278,12 +297,12 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 		debug("bfgs_optimizer iterations " + iter)
 		
 		#1. + 2. step
-		[xnew, fxnew, stepsize] = linesearch ((-B%*%gx), fx, x, M, p, P, q, Q, s, solver)
-		gxnew = gradArimaCSS(xnew, M, p, P, q, Q, s, solver)
+		[new_weights, fxnew, stepsize] = linesearch ((-B%*%gx), fx, weights, X, Z, p, P, q, Q, s, solver)
+		gxnew = gradArimaCSS(new_weights, X, Z, p, P, q, Q, s, solver)
 		
 		#3. step
-		ss = xnew - x # = stepsize * searchDirection
-		x = xnew
+		ss = new_weights - weights # = stepsize * searchDirection
+		weights = new_weights
 		
 		#4. step
 		yk = gxnew - gx
@@ -292,11 +311,12 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 		# inverse B for next step
 		FT = as.scalar(t(ss)%*%yk + t(yk)%*%B%*%yk)*ss%*%t(ss)/as.scalar(t(ss)%*%yk)^2
 		ST = (B%*%(yk%*%t(ss)) + (ss%*%t(yk))%*%B)/as.scalar(t(ss)%*%yk)
+				
 		B = B + FT - ST
 		
 		diff = abs(fx - fxnew)
-		debug("next diff is " + diff)
-		debug("arima css = " + fxnew + " with weights:\n" +toString(xnew, decimal=17))
+		debug("diff is " + diff)
+		debug("arima css = " + fxnew + " with weights:\n" +toString(new_weights, decimal=17))
 		
 		fx = fxnew
 		gx = gxnew
@@ -306,32 +326,49 @@ bfgs_optimizer = function (Matrix[Double] M, Integer max_iterations, Integer p, 
 	debug("global best " + fx)
 }
 
-readParamters = function (String default_solver, String default_optim_method, Integer default_max_func_invoc, Integer default_include_mean, Integer default_p, Integer default_d, Integer default_q, Integer default_P, Integer default_D, Integer default_Q, Integer default_s , String default_dest, String default_result_format, Integer default_verbose)return (Matrix[Double] X, String solver, String optim_method, Integer max_func_invoc, Integer include_mean, Integer p, Integer d, Integer q, Integer P, Integer D, Integer Q, Integer s, String dest, String result_format){
-	#input col of time series data
-	X = read($X)
-	solver = ifdef($solver, default_solver)	
-	optim_method = ifdef($optim_method, default_optim_method)
-	max_func_invoc = ifdef($max_func_invoc, default_max_func_invoc)
-	include_mean = ifdef($include_mean, default_include_mean)
-	dest = ifdef($dest, default_dest)
-	result_format = ifdef($result_format, default_result_format)
-	
-	#non-seasonal order
-	p =	ifdef($p, default_p)
-	d = ifdef($d, default_d)
-	q = ifdef($q, default_q)
-
-	#seasonal order
-	P = ifdef($P, default_P)
-	D = ifdef($D, default_D)
-	Q = ifdef($Q, default_Q)
-
-	#length of the season
-	s = ifdef($s, default_s)	
+#inserts the first column of source matrix into the n-th column of target matrix with the specified row offset
+addShiftedMatrix = function (Matrix[Double] targetMatrix, Matrix[Double] sourceMatrix, Integer rowOffset, Integer nthColumn) return (Matrix[Double] targetMatrix){
+	targetMatrix[rowOffset+1:nrow(targetMatrix), nthColumn] = sourceMatrix[1:nrow(targetMatrix)-rowOffset, 1]	
 }
 
-[X, solver, optim_method, max_func_invoc, include_mean, p, d, q, P, D, Q, s, dest, result_format] = readParamters ("jacobi", "bfgs", 1000, FALSE, 0,0,0,0,0,0,1, "arima-results.csv", "csv", TRUE)
 
+addValuesForCombinedModel = function (Matrix[Double] targetMatrix, Matrix[Double] sourceMatrix, Integer nonSeasonalParam, Integer seasonalParam, Integer seasonality, Integer columnOffset)return (Matrix[Double] targetMatrix){
+	counter = 1
+	for	(k in seq(1, nonSeasonalParam, 1)){
+		for(j in seq(1, seasonalParam, 1)){
+			targetMatrix = addShiftedMatrix(targetMatrix, sourceMatrix, k + (j*seasonality), columnOffset + counter)
+			counter+=1
+		}
+	}
+	#for combination of non seasonal and seasonal model the sign has to be inverted:
+	if (nonSeasonalParam>0&seasonalParam>0) {
+		targetMatrix[,columnOffset+1:columnOffset+nonSeasonalParam*seasonalParam] = -targetMatrix[,columnOffset+1:columnOffset+nonSeasonalParam*seasonalParam]
+	}
+}
+
+
+
+#input col of time series data
+X = read($X)
+solver = ifdef($solver, "jacobi")	
+optim_method = ifdef($optim_method, "bfgs")
+max_func_invoc = ifdef($max_func_invoc, 1000)
+dest = ifdef($dest, "arima-results.csv")
+result_format = ifdef($result_format, "csv")
+
+#non-seasonal order
+p =	ifdef($p, 0)
+d = ifdef($d, 0)
+q = ifdef($q, 0)
+
+#seasonal order
+P = ifdef($P, 0)
+D = ifdef($D, 0)
+Q = ifdef($Q, 0)
+
+#length of the season
+s = ifdef($s, 1)	
+	
 debug ("p= " + p)
 debug ("d= " + d)
 debug ("q= " + q)
@@ -339,18 +376,16 @@ debug ("P= " + P)
 debug ("D= " + D)
 debug ("Q= " + Q)
 debug ("s= " + s)
-debug ("include_mean= " + include_mean)
 debug ("solver= " + solver)
 debug ("optim_method= " + optim_method)
+debug ("source= " + $X)
 debug ("dest= " + dest)
 debug ("result_format= " + result_format)
 
 #p+P cols for ar & sar 
 #q+Q cols for ma & sma 
 #p*P cols as tmp parameter when combining season and non seasonal AR
-#TODO: better var name  - is this var necessary 
-totparamcols = p+P+Q+q+p*P 
-debug ("totparamcols=" + totparamcols)
+totparamcols = p+P+Q+q+p*P+q*Q
 
 #TODO: check max_func_invoc < totparamcols --> print warning (stop here ??)
 
@@ -364,12 +399,6 @@ if(num_rows <= s*D){
 	warning("seasonal differencing order should be smaller than number of observations divided by length of season")
 }
 
-mu = 0.0
-if(include_mean == 1){
-	mu = mean(X)
-	X = X - mu
-}
-
 # d-th order differencing:
 for(i in seq(1,d,1)){
 	X = X[2:nrow(X),] - X[1:nrow(X)-1,]
@@ -380,72 +409,48 @@ for(i in seq(1,D,1)){
 	X = X[s+1:n1,] - X[1:n1-s,]
 }
 
-#Matrix Z with target values of prediction (X) in first column and 
-#all values that can be used to predict a this target value in column 2:totparamcols+1 of same row
-#We only want rows of X to be in this matrix if we can fill all parameter columns as well:
-#nrow(X) - ( p or Q or P*s or Q*s) >= 0 
 
-max_timesteps_back = max(p, P*s, p+(P*s))
+#Matrix Z with all values that can be used to calculate an approximation of the timeseries in X. 
+#Each row in Z is used to predict the same value in the corresponding row of X
+Z = matrix(0, nrow(X), totparamcols)
 
-#first column is the target column (values to be predicted)
-Z = cbind (X[max_timesteps_back+1:nrow(X),], matrix(0, nrow(X)-max_timesteps_back, totparamcols))
 
-addShiftedMatrix = function (Matrix[Double] targetMatrix, Matrix[Double] sourceMatrix, Integer nShift, Integer column) return (Matrix[Double] targetMatrix){
-	targetMatrix[1:nrow(targetMatrix), column] = sourceMatrix[nShift+1:nrow(targetMatrix)+nShift, 1]
-}
-	
 # fills Z with values used for non seasonal AR prediction
 for	(i in seq(1, p, 1)){
-	Z = addShiftedMatrix(Z, X, max_timesteps_back -i, i +1)
+	Z = addShiftedMatrix(Z, X, i, i)
 }
 
 #prediction values for seasonal AR 
 for(i in seq(1, P, 1)){
-	Z = addShiftedMatrix(Z, X, max_timesteps_back - (i * s), p + i + 1)
+	Z = addShiftedMatrix(Z, X, (i * s), p + i)
 }
+
+#prediction values for combined models of non-seasonal and seasonal AR
+Z = addValuesForCombinedModel (Z, X, p, P, s, p + P)
 
 #prediction values for non seasonal MA 
 for(i in seq(1, q, 1), check=0){
-	Z = addShiftedMatrix(Z, X, max_timesteps_back - i, p + P + i + 1)
+	Z = addShiftedMatrix(Z, X, i, p + P + p*P + i)
 }
 
 #prediction values for seasonal MA 
 for(i in seq(1,Q, 1), check=0){
-	Z = addShiftedMatrix(Z, X, max_timesteps_back - (i * s), p + P + q + i + 1)
+	Z = addShiftedMatrix(Z, X, (i * s), p + P + p*P + q + i)
 }
 
-#prediction values for combined models of non-seasonal and seasonal AR
-counter = 1
-for	(k in seq(1, p, 1)){
-	for(j in seq(1, P, 1)){
-		Z = addShiftedMatrix(Z, X, max_timesteps_back - k - (j*s), p + P + q + Q + counter + 1)
-		counter+=1
-	}
-}
-#for combination of non seasonal and seasonal AR the sign has to be inverted:
-if (p>0&P>0) Z[,p+P+q+Q+2:ncol(Z)] = -Z[,p+P+q+Q+2:ncol(Z)]
+#prediction values for combined models of non-seasonal and seasonal MA
+Z = addValuesForCombinedModel (Z, X, q, Q, s, p + P + p*P + q + Q )
 
-#TODO: remove debug output
-debug("\n" + toString( cbind (seq(1,nrow(Z)) + max_timesteps_back, Z)))
+debug("Z Matrix of size "+nrow(Z)+"x"+ncol(Z)+":\n" + toString( cbind (seq(1,nrow(Z)), Z)))
+
+#R does not use the first rows of Z where the values in columns for p or P are zero, so we cut of all those first rows
+max_ar_lag = max(p, P*s, p+(P*s))
 
 
-#TODO: More expressive Var name
-#stop("here")
-best_point = eval(optim_method + "_optimizer", Z, max_func_invoc, p, P, q, Q, s, solver)
+arima_model = eval(optim_method + "_optimizer", X[max_ar_lag+1:nrow(X)], Z[max_ar_lag+1:nrow(Z)], max_func_invoc, p, P, q, Q, s, solver)
 
-if(include_mean){
-	best_point = rbind(best_point, as.matrix(mu))
-}
 
-#TODO: Add R like output of result like this:
-#########################################################################
-# Coefficients:															#
-#          ar1      ar2     ar3      ma1     ma2     ma3				#
-#       1.1115  -0.1793  0.0660  -0.0679  0.1732  0.1251				#
-# s.e.     NaN   0.2370  0.2183      NaN  0.1951  0.0302				#
-#																		#
-# sigma^2 estimated as 0.002628:  log likelihood = 1551.8,  aic = NA	#
-#########################################################################
+#TODO: Add RMSE to output
 
 colNames = as.frame("")
 for (i in seq(1, p, 1)){
@@ -460,20 +465,17 @@ for (i in seq(1, q, 1)){
 for (i in seq(1, Q, 1)){
 	colNames = rbind(colNames, as.frame("sma"+i))
 }
+print("Coefficients for SARIMA("+p+", "+d+", "+q+")("+P+", "+D+", "+Q+") with seasonality s="+s+":\n" + toString(cbind(colNames[2:p+P+q+Q+1, ], as.frame(arima_model)), decimal=15))
+write(arima_model, dest, format=result_format)
 
-print("Coefficients for SARIMA("+p+", "+d+", "+q+")("+P+", "+D+", "+Q+") with seasonality s="+s+":\n" + toString(cbind(colNames[2:p+P+q+Q+1, ], as.frame(best_point)), decimal=6))
 
-result_format = ifdef($result_format, "csv")
-write(best_point, dest, format=result_format)
 
 debug = function (String msg){
 	verbosePrint("INFO: " + msg)
 }
-
 warning = function (String msg){
-	verbosePrint("!WARNING!" + msg)
+	print("WARNING: " + msg)
 }
-
 verbosePrint = function (String msg){
 	verbose = ifdef($verbose, FALSE)
 	if (verbose){

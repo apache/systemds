@@ -1046,9 +1046,10 @@ public class LibMatrixMult
 		}
 	}
 	
-	private static void matrixMultDenseDenseMM(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+	//note: public for use by codegen for consistency
+	public static void matrixMultDenseDenseMM(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
 		//1) Unrolled inner loop (for better instruction-level parallelism)
-		//2) Blocked execution (for less cache trashing in parallel exec) 	
+		//2) Blocked execution (for less cache trashing in parallel exec) 
 		//3) Asymmetric block sizes (for less misses in inner loop, yet blocks in L1/L2)
 		
 		final int blocksizeI = 32; //64//256KB c block (typical L2 size per core), 32KB a block 
@@ -3093,7 +3094,7 @@ public class LibMatrixMult
 	{
 		double val = 0;
 		final int bn = len%8;
-				
+		
 		//compute rest
 		for( int i = 0; i < bn; i++, ai++, bi++ )
 			val += a[ ai ] * b[ bi ];

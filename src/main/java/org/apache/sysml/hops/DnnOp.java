@@ -601,15 +601,13 @@ public class DnnOp extends MultiThreadedHop
 				|| op == OpOpDnn.CONV2D 
 				|| op == OpOpDnn.CONV2D_BACKWARD_FILTER
 				|| op == OpOpDnn.CONV2D_BACKWARD_DATA) {
-			imageHeightHop = getInput().get(8);
-			filterHeightHop = getInput().get(12);
 			_cachedParams.setIfUnknown(
 					getInput().get(6),  // N
 					getInput().get(7),  // C
-					imageHeightHop,     // H
+					getInput().get(8),  // H
 					getInput().get(9),  // W
 					getInput().get(10), // K
-					filterHeightHop,    // R
+					getInput().get(12), // R
 					getInput().get(13), // S
 					getInput().get(2),  // stride_h
 					getInput().get(3),  // stride_w
@@ -617,19 +615,17 @@ public class DnnOp extends MultiThreadedHop
 					getInput().get(5), _maxNumThreads);
 		}
 		else {
-			imageHeightHop = getInput().get(7);
-			filterHeightHop = getInput().get(11);
 			_cachedParams.setIfUnknown(
 					getInput().get(5),
-					getInput().get(6), 
-					imageHeightHop, 
-					getInput().get(8), 
-					getInput().get(9), 
-					filterHeightHop, 
-					getInput().get(12), 
-					getInput().get(1), 
-					getInput().get(2), 
-					getInput().get(3), 
+					getInput().get(6),
+					getInput().get(7),
+					getInput().get(8),
+					getInput().get(9),
+					getInput().get(11),
+					getInput().get(12),
+					getInput().get(1),
+					getInput().get(2),
+					getInput().get(3),
 					getInput().get(4), _maxNumThreads);
 		}
 		

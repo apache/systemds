@@ -464,11 +464,11 @@ public class TemplateRow extends TemplateBase
 			CNode cdata2 = tmp.get(hop.getInput().get(1).getHopID());
 			CNode cdata3 = tmp.get(hop.getInput().get(2).getHopID());
 			
-			if( hop.getDim2() > 2 ) { //row vectors
+			if( hop.getDim2() >= 2 ) { //matrices
 				out = new CNodeBinary(cdata1, new CNodeBinary(cdata2, cdata3, BinType.VECT_MULT_SCALAR),
 					top.getOp()==OpOp3.PLUS_MULT? BinType.VECT_PLUS : BinType.VECT_MINUS);
 			}
-			else {
+			else { //column vectors
 				//add lookups if required
 				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 				cdata2 = TemplateUtils.wrapLookupIfNecessary(cdata2, hop.getInput().get(1));

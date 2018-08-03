@@ -123,7 +123,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 				for (int i=0; i<m; i++) {
 					double[] avals = a.values(i);
 					int aix = a.pos(i);
-					for (int j=0; j<m; j++)
+					for (int j=0; j<n; j++)
 						if( avals[aix+j] != 0 )
 							cols[j].addInput(rows[i]);
 				}
@@ -159,6 +159,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 				return _input;
 			}
 			
+			@SuppressWarnings("unused")
 			public double[] getVector() {
 				return _rvect;
 			}
@@ -183,8 +184,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 					return _rvect = ltmp.get(0);
 				else {
 					double[] tmp = ltmp.get(0).clone();
-					for(int i=1; i<_input.size(); i++) {
-						double[] v2 = _input.get(i).getVector();
+					for(int i=1; i<ltmp.size(); i++) {
+						double[] v2 = ltmp.get(i);
 						for(int j=0; j<rounds; j++)
 							tmp[j] = Math.min(tmp[j], v2[j]);
 					}

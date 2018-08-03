@@ -47,6 +47,7 @@ import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
+import org.apache.sysml.hops.codegen.cplan.CNodeNary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
@@ -409,7 +410,9 @@ public class TemplateUtils
 	public static boolean isUnaryOperatorPipeline(CNode node) {
 		if( node.isVisited() ) {
 			//second reference to vector intermediate invalidates a unary pipeline
-			return !(node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive());
+			return !((node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive())
+				|| (node instanceof CNodeTernary && ((CNodeTernary)node).getType().isVectorPrimitive())
+				|| (node instanceof CNodeNary && ((CNodeNary)node).getType().isVectorPrimitive()));
 		}
 		boolean ret = true;
 		for( CNode input : node.getInput() )
@@ -452,7 +455,9 @@ public class TemplateUtils
 				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
 		int cntTn = (node instanceof CNodeTernary
 				&& ((CNodeTernary)node).getType().isVectorPrimitive()) ? 1 : 0;
-		return ret + cntBin + cntUn + cntTn;
+		int cntNn = (node instanceof CNodeNary 
+				&& ((CNodeNary)node).getType().isVectorPrimitive()) ? 1 : 0;
+		return ret + cntBin + cntUn + cntTn + cntNn;
 	}
 	
 	public static int getMaxLiveVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Set<Pair<Long, Long>> stack) {
@@ -479,6 +484,7 @@ public class TemplateUtils
 	}
 	
 	public static boolean isValidNumVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Map<Long, Pair<Long, MutableInt>> inUse, Set<Long> inUse2, int count) {
+		if( count <= 1 ) return false;
 		IDSequence buff = new IDSequence(true, count-1); //zero based
 		inUse.clear(); inUse2.clear();
 		node.resetVisitStatus();

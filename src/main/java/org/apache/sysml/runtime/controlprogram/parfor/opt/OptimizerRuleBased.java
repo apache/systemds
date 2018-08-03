@@ -418,6 +418,7 @@ public class OptimizerRuleBased extends Optimizer
 				if( dpf != PartitionFormat.NONE 
 					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N
 					&& (constrained || (mem > _lm/2 && mem > _rm/2))
+					&& vars.get(c) != null //robustness non-existing vars
 					&& !vars.get(c).getDataType().isList() ) {
 					cand2.put( c, dpf );
 				}

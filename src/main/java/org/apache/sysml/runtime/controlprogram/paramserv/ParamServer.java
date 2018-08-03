@@ -81,7 +81,7 @@ public abstract class ParamServer
 		setupAggFunc(_ec, aggFunc);
 		
 		// broadcast initial model
-		broadcastModel();
+		broadcastModel(true);
 	}
 
 	protected void setupAggFunc(ExecutionContext ec, String aggFunc) {
@@ -135,11 +135,9 @@ public abstract class ParamServer
 
 					// Accumulate the intermediate gradients
 					if( ACCRUE_BSP_GRADIENTS )
-						_accGradients = ParamservUtils.accrueGradients(
-							_accGradients, gradients, true);
+						_accGradients = ParamservUtils.accrueGradients(_accGradients, gradients, true);
 					else
 						updateGlobalModel(gradients);
-					ParamservUtils.cleanupListObject(_ec, gradients);
 
 					if (allFinished()) {
 						// Update the global model with accrued gradients
@@ -150,7 +148,7 @@ public abstract class ParamServer
 						
 						// Broadcast the updated model
 						resetFinishedStates();
-						broadcastModel();
+						broadcastModel(true);
 						if (LOG.isDebugEnabled())
 							LOG.debug("Global parameter is broadcasted successfully.");
 					}
@@ -217,8 +215,9 @@ public abstract class ParamServer
 	/**
 	 * Broadcast the model for all workers
 	 */
-	private void broadcastModel() {
-		IntStream.range(0, _modelMap.size()).forEach(workerID -> {
+	private void broadcastModel(boolean par) {
+		IntStream stream = IntStream.range(0, _modelMap.size());
+		(par ? stream.parallel() : stream).forEach(workerID -> {
 			try {
 				broadcastModel(workerID);
 			} catch (InterruptedException e) {
@@ -231,7 +230,7 @@ public abstract class ParamServer
 		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
 
 		//broadcast copy of model to specific worker, cleaned up by worker
-		_modelMap.get(workerID).put(ParamservUtils.copyList(_model));
+		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());

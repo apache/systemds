@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.controlprogram.paramserv;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 public class LocalParamServer extends ParamServer {
@@ -31,7 +30,11 @@ public class LocalParamServer extends ParamServer {
 		super();
 	}
 
-	public LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
+	public static LocalParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
+		return new LocalParamServer(model, aggFunc, updateType, ec, workerNum);
+	}
+
+	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType, ExecutionContext ec, int workerNum) {
 		super(model, aggFunc, updateType, ec, workerNum);
 	}
 

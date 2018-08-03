@@ -86,9 +86,10 @@ public class ParamservUtils {
 	 * Deep copy the list object
 	 *
 	 * @param lo list object
+	 * @param cleanup clean up the given list object
 	 * @return a new copied list object
 	 */
-	public static ListObject copyList(ListObject lo) {
+	public static ListObject copyList(ListObject lo, boolean cleanup) {
 		List<Data> newData = IntStream.range(0, lo.getLength()).mapToObj(i -> {
 			Data oldData = lo.slice(i);
 			if (oldData instanceof MatrixObject)
@@ -98,7 +99,11 @@ public class ParamservUtils {
 			else
 				return oldData;
 		}).collect(Collectors.toList());
-		return new ListObject(newData, lo.getNames());
+		ListObject result = new ListObject(newData, lo.getNames());
+		if (cleanup) {
+			ParamservUtils.cleanupListObject(lo);
+		}
+		return result;
 	}
 
 	/**
@@ -417,21 +422,39 @@ public class ParamservUtils {
 		return result;
 	}
 
-	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
-		return accrueGradients(accGradients, gradients, false);
+	/**
+	 * Accumulate the given gradients into the accrued gradients
+	 *
+	 * @param accGradients accrued gradients list object
+	 * @param gradients given gradients list object
+	 * @param cleanup clean up the given gradients list object
+	 * @return new accrued gradients list object
+	 */
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean cleanup) {
+		return accrueGradients(accGradients, gradients, false, cleanup);
 	}
-	
-	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par) {
+
+	/**
+	 * Accumulate the given gradients into the accrued gradients
+	 *
+	 * @param accGradients accrued gradients list object
+	 * @param gradients given gradients list object
+	 * @param par parallel execution
+	 * @param cleanup clean up the given gradients list object
+	 * @return new accrued gradients list object
+	 */
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par, boolean cleanup) {
 		if (accGradients == null)
-			return ParamservUtils.copyList(gradients);
+			return ParamservUtils.copyList(gradients, cleanup);
 		IntStream range = IntStream.range(0, accGradients.getLength());
 		(par ? range.parallel() : range).forEach(i -> {
-			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireRead();
-			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireRead();
+			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireReadAndRelease();
+			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireReadAndRelease();
 			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
-			((MatrixObject) accGradients.getData().get(i)).release();
-			((MatrixObject) gradients.getData().get(i)).release();
 		});
+		if (cleanup) {
+			ParamservUtils.cleanupListObject(gradients);
+		}
 		return accGradients;
 	}
 }

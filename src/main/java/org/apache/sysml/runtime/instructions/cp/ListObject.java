@@ -34,17 +34,34 @@ public class ListObject extends Data {
 	private final List<Data> _data;
 	private boolean[] _dataState = null;
 	private List<String> _names = null;
+	private int _nCacheable;
 	
 	public ListObject(List<Data> data) {
-		super(DataType.LIST, ValueType.UNKNOWN);
-		_data = data;
-		_names = null;
+		this(data, null);
 	}
 
 	public ListObject(List<Data> data, List<String> names) {
 		super(DataType.LIST, ValueType.UNKNOWN);
 		_data = data;
 		_names = names;
+		_nCacheable = (int) data.stream().filter(
+			d -> d instanceof CacheableData).count();
+	}
+	
+	public ListObject(ListObject that) {
+		this(new ArrayList<>(that._data), (that._names != null) ?
+			new ArrayList<>(that._names) : null);
+		if( that._dataState != null )
+			_dataState = Arrays.copyOf(that._dataState, getLength());
+	}
+	
+	public void deriveAndSetStatusFromData() {
+		_dataState = new boolean[_data.size()];
+		for(int i=0; i<_data.size(); i++) {
+			Data dat = _data.get(i);
+			if( dat instanceof CacheableData<?> )
+			_dataState[i] = ((CacheableData<?>) dat).isCleanupEnabled();
+		}
 	}
 	
 	public void setStatus(boolean[] status) {
@@ -57,6 +74,10 @@ public class ListObject extends Data {
 	
 	public int getLength() {
 		return _data.size();
+	}
+	
+	public int getNumCacheableData() {
+		return _nCacheable;
 	}
 	
 	public List<String> getNames() {
@@ -117,7 +138,8 @@ public class ListObject extends Data {
 		ListObject ret = isNamedList() ?
 			new ListObject(new ArrayList<>(getData()), new ArrayList<>(getNames())) :
 			new ListObject(new ArrayList<>(getData()));
-		ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
+		if( getStatus() != null )
+			ret.setStatus(Arrays.copyOf(getStatus(), getLength()));
 		return ret;
 	}
 	

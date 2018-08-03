@@ -36,7 +36,7 @@ import org.apache.sysml.api.DMLScript;
  */
 public class GPUStatistics {
 	private static int iNoOfExecutedGPUInst = 0;
-
+	
 	public static long cudaInitTime = 0;
 	public static long cudaLibrariesInitTime = 0;
 	public static LongAdder cudaSparseToDenseTime = new LongAdder();		// time spent in converting sparse matrix block to dense
@@ -47,12 +47,16 @@ public class GPUStatistics {
 	public static LongAdder cudaSparseConversionCount = new LongAdder();
 
 	public static LongAdder cudaAllocTime = new LongAdder();             // time spent in allocating memory on the GPU
+	public static LongAdder cudaAllocSuccessTime = new LongAdder();      // time spent in successful allocation
+	public static LongAdder cudaAllocFailedTime = new LongAdder();      // time spent in unsuccessful allocation
 	public static LongAdder cudaDeAllocTime = new LongAdder();           // time spent in deallocating memory on the GPU
 	public static LongAdder cudaMemSet0Time = new LongAdder();           // time spent in setting memory to 0 on the GPU (part of reusing and for new allocates)
 	public static LongAdder cudaToDevTime = new LongAdder();             // time spent in copying data from host (CPU) to device (GPU) memory
 	public static LongAdder cudaFromDevTime = new LongAdder();           // time spent in copying data from device to host
+	public static LongAdder cudaFromShadowToHostTime = new LongAdder();  // time spent in copying data from shadow to host
+	public static LongAdder cudaFromDevToShadowTime = new LongAdder();  // time spent in copying data from device to shadow
 	public static LongAdder cudaEvictTime = new LongAdder();           	 // time spent in eviction
-	public static LongAdder cudaEvictMallocTime = new LongAdder();      // time spent in eviction
+	public static LongAdder cudaEvictSizeTime = new LongAdder();         // time spent in eviction
 	public static LongAdder cudaFloat2DoubleTime = new LongAdder(); 	// time spent in converting float to double during eviction
 	public static LongAdder cudaDouble2FloatTime = new LongAdder(); 	// time spent in converting double to float during eviction
 	public static LongAdder cudaEvictMemcpyTime = new LongAdder(); 		// time spent in cudaMemcpy kernel during eviction
@@ -63,10 +67,15 @@ public class GPUStatistics {
 	public static LongAdder cudaMemSet0Count = new LongAdder();
 	public static LongAdder cudaToDevCount = new LongAdder();
 	public static LongAdder cudaFromDevCount = new LongAdder();
-	public static LongAdder cudaEvictionCount = new LongAdder();
+	public static LongAdder cudaFromShadowToHostCount = new LongAdder();
+	public static LongAdder cudaFromDevToShadowCount = new LongAdder();
+	public static LongAdder cudaEvictCount = new LongAdder();
+	public static LongAdder cudaEvictSizeCount = new LongAdder();
 	public static LongAdder cudaFloat2DoubleCount = new LongAdder();
 	public static LongAdder cudaDouble2FloatCount = new LongAdder();
-	public static LongAdder cudaEvictionMallocCount = new LongAdder();
+	public static LongAdder cudaAllocSuccessCount = new LongAdder();
+	public static LongAdder cudaAllocFailedCount = new LongAdder();
+	public static LongAdder cudaAllocReuseCount = new LongAdder();
 
 	// Per instruction miscellaneous timers.
 	// Used to record events in a CP Heavy Hitter instruction and
@@ -94,8 +103,10 @@ public class GPUStatistics {
 		cudaMemSet0Count.reset();
 		cudaToDevTime.reset();
 		cudaFromDevTime.reset();
+		cudaFromShadowToHostTime.reset();
+		cudaFromDevToShadowTime.reset();
 		cudaEvictTime.reset();
-		cudaEvictMallocTime.reset();
+		cudaEvictSizeTime.reset();
 		cudaFloat2DoubleTime.reset();
 		cudaDouble2FloatTime.reset();
 		cudaFloat2DoubleCount.reset();
@@ -106,8 +117,15 @@ public class GPUStatistics {
 		cudaDeAllocCount.reset();
 		cudaToDevCount.reset();
 		cudaFromDevCount.reset();
-		cudaEvictionCount.reset();
-		cudaEvictionMallocCount.reset();
+		cudaFromShadowToHostCount.reset();
+		cudaFromDevToShadowCount.reset();
+		cudaEvictCount.reset();
+		cudaEvictSizeCount.reset();
+		cudaAllocSuccessTime.reset();
+		cudaAllocFailedTime.reset();
+		cudaAllocSuccessCount.reset();
+		cudaAllocFailedCount.reset();
+		cudaAllocReuseCount.reset();
 		resetMiscTimers();
 	}
 
@@ -206,34 +224,45 @@ public class GPUStatistics {
 		sb.append("CUDA/CuLibraries init time:\t" + String.format("%.3f", cudaInitTime*1e-9) + "/"
 				+ String.format("%.3f", cudaLibrariesInitTime*1e-9) + " sec.\n");
 		sb.append("Number of executed GPU inst:\t" + getNoOfExecutedGPUInst() + ".\n");
-		sb.append("GPU mem tx time  (alloc/dealloc/set0/toDev(d2f)/fromDev(f2d)/evict(alloc)):\t"
-				+ String.format("%.3f", cudaAllocTime.longValue()*1e-9) + "/"
-				+ String.format("%.3f", cudaDeAllocTime.longValue()*1e-9) + "/"
-				+ String.format("%.3f", cudaMemSet0Time.longValue()*1e-9) + "/"
+		// cudaSparseConversionCount
+		sb.append("GPU mem alloc time  (alloc(success/fail) / dealloc / set0):\t"
+				+ String.format("%.3f", cudaAllocTime.longValue()*1e-9) + "("
+				+ String.format("%.3f", cudaAllocSuccessTime.longValue()*1e-9) + "/"
+				+ String.format("%.3f", cudaAllocFailedTime.longValue()*1e-9) + ") / "
+				+ String.format("%.3f", cudaDeAllocTime.longValue()*1e-9) + " / "
+				+ String.format("%.3f", cudaMemSet0Time.longValue()*1e-9) + " sec.\n");
+		sb.append("GPU mem alloc count (alloc(success/fail/reuse) / dealloc / set0):\t"
+				+ cudaAllocCount.longValue() + "("
+				+ cudaAllocSuccessCount.longValue() + "/"
+				+ cudaAllocFailedCount.longValue() + "/" +
+				+ cudaAllocReuseCount.longValue() +") / "
+				+ cudaDeAllocCount.longValue() + " / "
+				+ cudaMemSet0Count.longValue() + ".\n");
+		sb.append("GPU mem tx time  (toDev(d2f) / fromDev(f2d/s2h) / evict(d2s/size)):\t"
 				+ String.format("%.3f", cudaToDevTime.longValue()*1e-9) + "("
-				+ String.format("%.3f", cudaDouble2FloatTime.longValue()*1e-9)+ ")/"
+				+ String.format("%.3f", cudaDouble2FloatTime.longValue()*1e-9)+ ") / "
 				+ String.format("%.3f", cudaFromDevTime.longValue()*1e-9) + "("
-				+ String.format("%.3f", cudaFloat2DoubleTime.longValue()*1e-9) + ")/"
+				+ String.format("%.3f", cudaFloat2DoubleTime.longValue()*1e-9) + "/"
+				+ String.format("%.3f", cudaFromShadowToHostTime.longValue()*1e-9) + ") / "
 				+ String.format("%.3f", cudaEvictTime.longValue()*1e-9) + "("
-				+ String.format("%.3f", cudaEvictMallocTime.longValue()*1e-9) + ") sec.\n");
-		sb.append("GPU mem tx count (alloc/dealloc/set0/toDev(d2f)/fromDev(f2d)/evict(alloc)):\t"
-				+ cudaAllocCount.longValue() + "/"
-				+ cudaDeAllocCount.longValue() + "/"
-				+ cudaMemSet0Count.longValue() + "/"
-				+ cudaSparseConversionCount.longValue() + "/"
+				+ String.format("%.3f", cudaFromDevToShadowTime.longValue()*1e-9) + "/"
+				+ String.format("%.3f", cudaEvictSizeTime.longValue()*1e-9) + ") sec.\n");
+		sb.append("GPU mem tx count (toDev(d2f) / fromDev(f2d/s2h) / evict(d2s/size)):\t"
 				+ cudaToDevCount.longValue() + "("
-				+ cudaDouble2FloatCount.longValue() + ")/"
+				+ cudaDouble2FloatCount.longValue() + ") / "
 				+ cudaFromDevCount.longValue() + "("
-				+ cudaFloat2DoubleCount.longValue() + ")/"
-				+ cudaEvictionCount.longValue() + "("
-				+ cudaEvictionMallocCount.longValue() + ").\n");
-		sb.append("GPU conversion time  (sparseConv/sp2dense/dense2sp):\t"
-				+ String.format("%.3f", cudaSparseConversionTime.longValue()*1e-9) + "/"
-				+ String.format("%.3f", cudaSparseToDenseTime.longValue()*1e-9) + "/"
+				+ cudaFloat2DoubleCount.longValue() + "/"
+				+ cudaFromShadowToHostCount.longValue() + ") / "
+				+ cudaEvictCount.longValue() + "("
+				+ cudaFromDevToShadowCount.longValue() + "/" + 
+				+ cudaEvictSizeCount.longValue() + ").\n");
+		sb.append("GPU conversion time  (sparseConv / sp2dense / dense2sp):\t"
+				+ String.format("%.3f", cudaSparseConversionTime.longValue()*1e-9) + " / "
+				+ String.format("%.3f", cudaSparseToDenseTime.longValue()*1e-9) + " / "
 				+ String.format("%.3f", cudaDenseToSparseTime.longValue()*1e-9) + " sec.\n");
-		sb.append("GPU conversion count (sparseConv/sp2dense/dense2sp):\t"
-				+ cudaSparseConversionCount.longValue() + "/"
-				+ cudaSparseToDenseCount.longValue() + "/"
+		sb.append("GPU conversion count (sparseConv / sp2dense / dense2sp):\t"
+				+ cudaSparseConversionCount.longValue() + " / "
+				+ cudaSparseToDenseCount.longValue() + " / "
 				+ cudaDenseToSparseCount.longValue() + ".\n");
 
 		return sb.toString();

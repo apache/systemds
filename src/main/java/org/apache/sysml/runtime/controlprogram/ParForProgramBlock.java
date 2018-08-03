@@ -1670,30 +1670,49 @@ public class ParForProgramBlock extends ForProgramBlock
 			for( ResultVar var : _resultVars ) //foreach non-local write
 			{
 				Data dat = ec.getVariable(var._name);
+				
 				if( dat instanceof MatrixObject ) //robustness scalars
 				{
 					MatrixObject out = (MatrixObject) dat;
-					MatrixObject[] in = new MatrixObject[ results.length ];
-					for( int i=0; i< results.length; i++ )
-						in[i] = (MatrixObject) results[i].get( var._name );
+					MatrixObject[] in = Arrays.stream(results).map(vars -> 
+						vars.get(var._name)).toArray(MatrixObject[]::new);
 					String fname = constructResultMergeFileName();
 					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, ec);
-					MatrixObject outNew = null;
-					if( USE_PARALLEL_RESULT_MERGE )
-						outNew = rm.executeParallelMerge( _numThreads );
-					else
-						outNew = rm.executeSerialMerge();
+					MatrixObject outNew = USE_PARALLEL_RESULT_MERGE ?
+						rm.executeParallelMerge(_numThreads) :
+						rm.executeSerialMerge();
 					
 					//cleanup existing var
 					Data exdata = ec.removeVariable(var._name);
-					if( exdata != null && exdata != outNew && exdata instanceof MatrixObject )
-						ec.cleanupCacheableData((MatrixObject)exdata);
+					if( exdata != null && exdata != outNew )
+						ec.cleanupDataObject(exdata);
 					
 					//cleanup of intermediate result variables
 					cleanWorkerResultVariables( ec, out, in );
-					
+
 					//set merged result variable
 					ec.setVariable(var._name, outNew);
+				}
+				else if(dat instanceof ListObject) {
+					ListObject oldList = (ListObject) dat;
+					ListObject newList = new ListObject(oldList);
+					ListObject[] in = Arrays.stream(results).map(vars -> 
+						vars.get(var._name)).toArray(ListObject[]::new);
+					
+					//merge modified list entries into result
+					for(int i=0; i<oldList.getLength(); i++) {
+						Data compare = oldList.slice(i);
+						for( int j=0; j<in.length; j++ ) {
+							Data tmp = in[j].slice(i);
+							if( compare != tmp ) {
+								newList.set(i, tmp);
+								break; //inner for loop
+							}
+						}
+					}
+					
+					//set merged result variable
+					ec.setVariable(var._name, newList);
 				}
 			}
 		}

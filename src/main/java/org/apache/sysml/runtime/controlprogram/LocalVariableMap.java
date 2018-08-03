@@ -31,6 +31,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.cp.Data;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -113,7 +114,8 @@ public class LocalVariableMap implements Cloneable
 	}
 
 	public boolean hasReferences( Data d ) {
-		return localMap.containsValue(d);
+		return localMap.values().stream().anyMatch(e -> (e instanceof ListObject) ?
+			((ListObject)e).getData().contains(d) : e == d);
 	}
 	
 	public void setRegisteredOutputs(HashSet<String> outputs) {

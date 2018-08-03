@@ -19,38 +19,40 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject;
 import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class RpcObjectTest {
 
-	@Test
-	public void testPSRpcCall() {
+	private ListObject generateData() {
 		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
 		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io));
-		PSRpcCall expected = new PSRpcCall(PSRpcObject.PUSH, 1, lo);
-		PSRpcCall actual = new PSRpcCall(expected.serialize());
-		Assert.assertEquals(new String(expected.serialize().array()), new String(actual.serialize().array()));
+		return new ListObject(Arrays.asList(mo1, mo2));
 	}
 
 	@Test
-	public void testPSRpcResponse() {
-		MatrixObject mo1 = SerializationTest.generateDummyMatrix(10);
-		MatrixObject mo2 = SerializationTest.generateDummyMatrix(20);
-		IntObject io = new IntObject(30);
-		ListObject lo = new ListObject(Arrays.asList(mo1, mo2, io));
-		PSRpcResponse expected = new PSRpcResponse(PSRpcResponse.SUCCESS, lo);
+	public void testPSRpcCall() throws IOException {
+		PSRpcCall expected = new PSRpcCall(PSRpcObject.PUSH, 1, generateData());
+		PSRpcCall actual = new PSRpcCall(expected.serialize());
+		Assert.assertTrue(Arrays.equals(
+			new PSRpcCall(PSRpcObject.PUSH, 1, generateData()).serialize().array(),
+			actual.serialize().array()));
+	}
+
+	@Test
+	public void testPSRpcResponse() throws IOException {
+		PSRpcResponse expected = new PSRpcResponse(PSRpcResponse.Type.SUCCESS, generateData());
 		PSRpcResponse actual = new PSRpcResponse(expected.serialize());
-		Assert.assertEquals(new String(expected.serialize().array()), new String(actual.serialize().array()));
+		Assert.assertTrue(Arrays.equals(
+			new PSRpcResponse(PSRpcResponse.Type.SUCCESS, generateData()).serialize().array(),
+			actual.serialize().array()));
 	}
 }

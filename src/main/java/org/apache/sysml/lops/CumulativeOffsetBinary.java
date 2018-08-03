@@ -88,8 +88,9 @@ public class CumulativeOffsetBinary extends Lop
 
 	private static void checkSupportedOperations(OperationTypes op) {
 		//sanity check for supported aggregates
-		if( !(op == OperationTypes.KahanSum || op == OperationTypes.Product ||
-		      op == OperationTypes.Min || op == OperationTypes.Max) )
+		if( !( op == OperationTypes.KahanSum || op == OperationTypes.Product
+			|| op == OperationTypes.SumProduct
+			|| op == OperationTypes.Min || op == OperationTypes.Max) )
 		{
 			throw new LopsException("Unsupported aggregate operation type: "+op);
 		}
@@ -97,11 +98,12 @@ public class CumulativeOffsetBinary extends Lop
 	
 	private String getOpcode() {
 		switch( _op ) {
-			case KahanSum: 	return "bcumoffk+";
-			case Product: 	return "bcumoff*";
-			case Min:		return "bcumoffmin";
-			case Max: 		return "bcumoffmax";
-			default: 		return null;
+			case KahanSum:   return "bcumoffk+";
+			case Product:    return "bcumoff*";
+			case SumProduct: return "bcumoff+*";
+			case Min:        return "bcumoffmin";
+			case Max:        return "bcumoffmax";
+			default:         return null;
 		}
 	}
 	

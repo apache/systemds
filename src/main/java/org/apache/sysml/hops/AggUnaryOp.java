@@ -264,7 +264,7 @@ public class AggUnaryOp extends MultiThreadedHop
 						setLops(unary1);
 					}
 				
-				}				
+				}
 				else //default
 				{
 					boolean needAgg = requiresAggregation(input, _direction);

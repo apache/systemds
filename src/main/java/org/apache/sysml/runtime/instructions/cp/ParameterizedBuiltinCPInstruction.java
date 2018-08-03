@@ -344,9 +344,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			//create list object over all inputs
 			ListObject list = new ListObject(data, names);
-			
-			//disable cleanup of individual objects and store cleanup state
-			list.setStatus(ec.pinVariables(new ArrayList<>(params.values())));
+			list.deriveAndSetStatusFromData();
 			
 			ec.setVariable(output.getName(), list);
 		}

@@ -110,7 +110,7 @@ public class SpoofCompiler
 	public static final boolean PRUNE_REDUNDANT_PLANS  = true;
 	public static PlanCachePolicy PLAN_CACHE_POLICY    = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE            = 1024; //max 1K classes
-	public static final RegisterAlloc REG_ALLOC_POLICY = RegisterAlloc.EXACT;
+	public static final RegisterAlloc REG_ALLOC_POLICY = RegisterAlloc.EXACT_STATIC_BUFF;
 	
 	public enum CompilerType {
 		AUTO,
@@ -150,8 +150,9 @@ public class SpoofCompiler
 	}
 	
 	public enum RegisterAlloc {
-		HEURISTIC,
-		EXACT,
+		HEURISTIC,           //max vector intermediates, special handling pipelines (always safe)
+		EXACT_DYNAMIC_BUFF,  //min number of live vector intermediates, assuming dynamic pooling
+		EXACT_STATIC_BUFF,   //min number of live vector intermediates, assuming static array ring buffer
 	}
 	
 	static {

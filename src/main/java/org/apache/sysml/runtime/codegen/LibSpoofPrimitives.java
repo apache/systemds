@@ -25,10 +25,12 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.sysml.runtime.functionobjects.BitwAnd;
 import org.apache.sysml.runtime.functionobjects.IntegerDivide;
 import org.apache.sysml.runtime.functionobjects.Modulus;
+import org.apache.sysml.runtime.matrix.data.DenseBlockDRB;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNPooling;
 import org.apache.sysml.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysml.runtime.matrix.data.LibMatrixDNNIm2Col;
 
 /**
  * This library contains all vector primitives that are used in 
@@ -2057,14 +2059,14 @@ public class LibSpoofPrimitives
 	
 	//maxpool
 	
-	public static double[] vectMaxpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+	public static double[] vectMaxpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
 		double[] c = allocVector(C*P*Q, true);
 		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.MAX,
 			-Double.MAX_VALUE, 1, a, c, rix, rix+1, ai, 0, C, P, Q, R, S, H, W);
 		return c;
 	} 
 	
-	public static double[] vectMaxpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+	public static double[] vectMaxpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
 		double[] a = allocVector(len, true);
 		double[] c = allocVector(C*P*Q, true);
 		for(int k=ai; k<ai+alen; k++)
@@ -2076,14 +2078,14 @@ public class LibSpoofPrimitives
 	
 	//avgpool
 
-	public static double[] vectAvgpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+	public static double[] vectAvgpoolWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
 		double[] c = allocVector(C*P*Q, true);
 		LibMatrixDNNPooling.poolingDenseStride1Pad0(PoolingType.AVG,
 			0, 1/(R*S), a, c, rix, rix+1, ai, 0, C, P, Q, R, S, H, W);
 		return c;
 	} 
 	
-	public static double[] vectAvgpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int R, int S, int H, int W) {
+	public static double[] vectAvgpoolWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
 		double[] a = allocVector(len, true);
 		double[] c = allocVector(C*P*Q, true);
 		for(int k=ai; k<ai+alen; k++)
@@ -2092,6 +2094,34 @@ public class LibSpoofPrimitives
 			0, 1/(R*S), a, c, rix, rix+1, 0, 0, C, P, Q, R, S, H, W);
 		return c;
 	}
+	
+	//im2col
+	
+	public static double[] vectIm2colWrite(double[] a, int ai, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
+		double[] c = allocVector(C*R*S * P*Q, true);
+		LibMatrixDNNIm2Col.im2colDenseStride1Pad0(a, c, ai, C, R, S, H, W, P, Q);
+		return c;
+	}
+	
+	public static double[] vectIm2colWrite(double[] avals, int[] aix, int ai, int alen, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
+		double[] a = allocVector(len, true);
+		double[] c = allocVector(C*R*S * P*Q, true);
+		for(int k=ai; k<ai+alen; k++)
+			a[aix[k]] = avals[k];
+		LibMatrixDNNIm2Col.im2colDenseStride1Pad0(a, c, ai, C, R, S, H, W, P, Q);
+		return c;
+	}
+	
+	//conv2d matrix mult
+	
+	public static double[] vectConv2dmmWrite(double[] a, double[] b, int ai, int bi, int len, int rix, int C, int P, int Q, int K, int R, int S, int H, int W) {
+		double[] c = allocVector(K*P*Q, true);
+		int CRS = C*R*S, PQ = P*Q;
+		LibMatrixMult.matrixMultDenseDenseMM(
+			new DenseBlockDRB(a, K, CRS), new DenseBlockDRB(b, CRS, PQ),
+			new DenseBlockDRB(c, K, PQ), PQ, CRS, 0, K, 0, PQ);
+		return c;
+	} 
 	
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)

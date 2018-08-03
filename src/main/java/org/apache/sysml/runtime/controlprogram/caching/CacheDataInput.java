@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.caching;
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.IOException;
 
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -28,13 +29,11 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {
-	protected byte[] _buff;
-	protected int _bufflen;
+	protected final byte[] _buff;
 	protected int _count;
 
-	public CacheDataInput( byte[] mem ) {
+	public CacheDataInput(byte[] mem) {
 		_buff = mem;
-		_bufflen = _buff.length;
 		_count = 0;
 	}
 
@@ -72,12 +71,16 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 
 	@Override
 	public short readShort() throws IOException {
-		throw new IOException("Not supported.");
+		int ret = baToShort(_buff, _count);
+		_count += 2;
+		return (short) ret;
 	}
 
 	@Override
 	public int readUnsignedShort() throws IOException {
-		throw new IOException("Not supported.");
+		int ret = baToShort(_buff, _count);
+		_count += 2;
+		return ret;
 	}
 
 	@Override
@@ -107,13 +110,10 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 	}
 
 	@Override
-	public double readDouble() 
-		throws IOException 
-	{
+	public double readDouble() throws IOException {
 		long tmp = baToLong(_buff, _count);
 		double tmp2 = Double.longBitsToDouble(tmp);
 		_count += 8;
-		
 		return tmp2;
 	}
 
@@ -124,12 +124,12 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 
 	@Override
 	public String readUTF() throws IOException {
-		throw new IOException("Not supported.");
+		return DataInputStream.readUTF(this);
 	}
 	
-    ///////////////////////////////////////////////
-    // Implementation of MatrixBlockDSMDataOutput
-    ///////////////////////////////////////////////	
+	///////////////////////////////////////////////
+	// Implementation of MatrixBlockDSMDataOutput
+	///////////////////////////////////////////////
 	
 	@Override
 	public long readDoubleArray(int len, double[] varr) 

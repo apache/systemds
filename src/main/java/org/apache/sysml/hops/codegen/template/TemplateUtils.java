@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -46,6 +47,7 @@ import org.apache.sysml.hops.codegen.cplan.CNode;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysml.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysml.hops.codegen.cplan.CNodeData;
+import org.apache.sysml.hops.codegen.cplan.CNodeNary;
 import org.apache.sysml.hops.codegen.cplan.CNodeTernary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysml.hops.codegen.cplan.CNodeUnary.UnaryType;
@@ -59,6 +61,7 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysml.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class TemplateUtils 
@@ -371,18 +374,34 @@ public class TemplateUtils
 		node.resetVisitStatus();
 		int count = -1;
 		switch( SpoofCompiler.REG_ALLOC_POLICY ) {
-			case HEURISTIC:
+			case HEURISTIC: {
 				boolean unaryPipe = isUnaryOperatorPipeline(node);
 				node.resetVisitStatus();
 				count = unaryPipe ? getMaxVectorIntermediates(node) :
 					countVectorIntermediates(node);
 				break;
-			case EXACT:
+			}
+			case EXACT_DYNAMIC_BUFF: {
 				Map<Long, Set<Long>> parents = getAllParents(node);
 				node.resetVisitStatus();
 				count = getMaxLiveVectorIntermediates(
 					node, main, parents, new HashSet<>());
 				break;
+			}
+			case EXACT_STATIC_BUFF: {
+				//init with basic heuristic
+				boolean unaryPipe = isUnaryOperatorPipeline(node);
+				node.resetVisitStatus();
+				count = unaryPipe ? getMaxVectorIntermediates(node) :
+					countVectorIntermediates(node);
+				//reduce count and proof validity
+				Map<Long, Set<Long>> parents = getAllParents(node);
+				Map<Long, Pair<Long, MutableInt>> inUse = new HashMap<>(); //node ID, vector ID, num Refs
+				Set<Long> inUse2 = new HashSet<>(); //for fast probes
+				while( count > 0 && isValidNumVectorIntermediates(node, main, parents, inUse, inUse2, count-1) )
+					count--;
+				break;
+			}
 		}
 		node.resetVisitStatus();
 		return count;
@@ -391,7 +410,9 @@ public class TemplateUtils
 	public static boolean isUnaryOperatorPipeline(CNode node) {
 		if( node.isVisited() ) {
 			//second reference to vector intermediate invalidates a unary pipeline
-			return !(node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive());
+			return !((node instanceof CNodeBinary && ((CNodeBinary)node).getType().isVectorPrimitive())
+				|| (node instanceof CNodeTernary && ((CNodeTernary)node).getType().isVectorPrimitive())
+				|| (node instanceof CNodeNary && ((CNodeNary)node).getType().isVectorPrimitive()));
 		}
 		boolean ret = true;
 		for( CNode input : node.getInput() )
@@ -434,10 +455,10 @@ public class TemplateUtils
 				&& ((CNodeUnary)node).getType().isVectorScalarPrimitive()) ? 1 : 0;
 		int cntTn = (node instanceof CNodeTernary
 				&& ((CNodeTernary)node).getType().isVectorPrimitive()) ? 1 : 0;
-		return ret + cntBin + cntUn + cntTn;
+		int cntNn = (node instanceof CNodeNary 
+				&& ((CNodeNary)node).getType().isVectorPrimitive()) ? 1 : 0;
+		return ret + cntBin + cntUn + cntTn + cntNn;
 	}
-	
-	
 	
 	public static int getMaxLiveVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Set<Pair<Long, Long>> stack) {
 		if( node.isVisited() )
@@ -460,6 +481,46 @@ public class TemplateUtils
 			stack.remove(Pair.of(node.getID(), c.getID()));
 		node.setVisited();
 		return max;
+	}
+	
+	public static boolean isValidNumVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents, Map<Long, Pair<Long, MutableInt>> inUse, Set<Long> inUse2, int count) {
+		if( count <= 1 ) return false;
+		IDSequence buff = new IDSequence(true, count-1); //zero based
+		inUse.clear(); inUse2.clear();
+		node.resetVisitStatus();
+		return rIsValidNumVectorIntermediates(node, main, parents, inUse, inUse2, buff);
+	}
+	
+	public static boolean rIsValidNumVectorIntermediates(CNode node, CNode main, Map<Long, Set<Long>> parents,
+			Map<Long, Pair<Long, MutableInt>> inUse, Set<Long> inUse2, IDSequence buff) {
+		if( node.isVisited() )
+			return true;
+		//recursively process inputs
+		for( CNode c : node.getInput() )
+			if( !rIsValidNumVectorIntermediates(c, main, parents, inUse, inUse2, buff) )
+				return false;
+		// add current node consumers for vectors
+		if( !node.getDataType().isScalar() && parents.containsKey(node.getID()) && node != main ) {
+			long vectID = buff.getNextID();
+			if( inUse2.contains(vectID) )
+				return false; //CONFLICT detected
+			inUse.put(node.getID(), Pair.of(vectID,
+				new MutableInt(parents.get(node.getID()).size())));
+			inUse2.add(vectID);
+		}
+		//remove input dependencies
+		for( CNode c : node.getInput() ) {
+			Pair<Long, MutableInt> tmp = inUse.get(c.getID());
+			if( tmp != null ) {
+				tmp.getValue().decrement();
+				if( tmp.getValue().intValue() <= 0 ) {
+					inUse.remove(c.getID());
+					inUse2.remove(tmp.getKey());
+				}
+			}
+		}
+		node.setVisited();
+		return true;
 	}
 	
 	public static Map<Long, Set<Long>> getAllParents(CNode node) {

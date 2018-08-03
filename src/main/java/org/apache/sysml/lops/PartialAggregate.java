@@ -377,6 +377,14 @@ public class PartialAggregate extends Lop
 				}
 			}
 			
+			case SumProduct: {
+				switch( dir ) {
+					case RowCol: return "ua+*";
+					case Row:    return "uar+*";
+					case Col:    return "uac+*";
+				}
+			}
+			
 			case Max: {
 				if( dir == DirectionTypes.RowCol ) 
 					return "uamax";

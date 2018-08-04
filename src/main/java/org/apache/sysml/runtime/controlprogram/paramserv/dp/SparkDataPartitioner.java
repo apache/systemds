@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import static org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils.SEED;
 

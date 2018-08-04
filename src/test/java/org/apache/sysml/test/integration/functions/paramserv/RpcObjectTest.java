@@ -23,9 +23,9 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcCall;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcObject;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.junit.Assert;
 import org.junit.Test;

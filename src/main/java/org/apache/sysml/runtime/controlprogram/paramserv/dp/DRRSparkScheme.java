@@ -17,33 +17,29 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
-import org.apache.sysml.parser.Statement;
+import java.util.List;
+
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
-public class DataPartitioner {
+import scala.Tuple2;
 
-	private DataPartitionScheme _scheme;
+/**
+ * Spark Disjoint_Round_Robin data partitioner:
+ */
+public class DRRSparkScheme extends DataPartitionSparkScheme {
 
-	public DataPartitioner(Statement.PSScheme scheme) {
-		switch (scheme) {
-			case DISJOINT_CONTIGUOUS:
-				_scheme = new DCScheme();
-				break;
-			case DISJOINT_ROUND_ROBIN:
-				_scheme = new DRRScheme();
-				break;
-			case DISJOINT_RANDOM:
-				_scheme = new DRScheme();
-				break;
-			case OVERLAP_RESHUFFLE:
-				_scheme = new ORScheme();
-				break;
-		}
+	private static final long serialVersionUID = -3130831851505549672L;
+
+	protected DRRSparkScheme() {
+		// No-args constructor used for deserialization
 	}
 
-	public DataPartitionScheme.Result doPartitioning(int workersNum, MatrixBlock features, MatrixBlock labels) {
-		return _scheme.doPartitioning(workersNum, features, labels);
+	@Override
+	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
+		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
+		return new Result(pfs, pls);
 	}
 }

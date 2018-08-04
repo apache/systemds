@@ -3152,6 +3152,24 @@ public class LibMatrixAgg
 		}
 	}
 	
+	public static void countAgg( double[] a, int[] c, int ai, final int len ) {
+		final int bn = len%8;
+		//compute rest, not aligned to 8-block
+		for( int i=0; i<bn; i++ )
+			c[i] += a[ai+i]!=0 ? 1 : 0;
+		//unrolled 8-block (for better instruction level parallelism)
+		for( int i=bn; i<len; i+=8 ) {
+			c[i+0] += a[ai+i+0]!=0 ? 1 : 0;
+			c[i+1] += a[ai+i+1]!=0 ? 1 : 0;
+			c[i+2] += a[ai+i+2]!=0 ? 1 : 0;
+			c[i+3] += a[ai+i+3]!=0 ? 1 : 0;
+			c[i+4] += a[ai+i+4]!=0 ? 1 : 0;
+			c[i+5] += a[ai+i+5]!=0 ? 1 : 0;
+			c[i+6] += a[ai+i+6]!=0 ? 1 : 0;
+			c[i+7] += a[ai+i+7]!=0 ? 1 : 0;
+		}
+	}
+	
 	private static void countDisAgg( double[] a, double[] c, int[] aix, int ai, final int ci, final int len ) {
 		final int bn = len%8;
 		//compute rest, not aligned to 8-block

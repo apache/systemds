@@ -112,4 +112,6 @@
    <!-- Fraction of available GPU memory to use. This is similar to TensorFlow's per_process_gpu_memory_fraction configuration property. (default: 0.9) -->
    <sysml.gpu.memory.util.factor>0.9</sysml.gpu.memory.util.factor>
    
+   <!-- Allocator to use to allocate GPU device memory. Supported values are cuda, unified_memory (default: cuda) -->
+   <sysml.gpu.memory.allocator>cuda</sysml.gpu.memory.allocator>
 </root>

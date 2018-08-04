@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
+package org.apache.sysml.runtime.controlprogram.paramserv.rpc;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.network.util.TransportConf;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.SparkPSProxy;
+import org.apache.sysml.runtime.controlprogram.paramserv.SparkPSProxy;
 
 public class PSRpcFactory {
 
@@ -50,7 +50,11 @@ public class PSRpcFactory {
 		return context.createServer(host, 0, Collections.emptyList());	// bind rpc to an ephemeral port
 	}
 
-	public static SparkPSProxy createSparkPSProxy(SparkConf conf, String host, int port, long rpcTimeout, LongAccumulator aRPC) throws IOException {
+	public static SparkPSProxy createSparkPSProxy(SparkConf conf, int port, LongAccumulator aRPC) throws IOException {
+		long rpcTimeout = conf.contains("spark.rpc.askTimeout") ?
+			conf.getTimeAsMs("spark.rpc.askTimeout") :
+			conf.getTimeAsMs("spark.network.timeout", "120s");
+		String host = conf.get("spark.driver.host");
 		TransportContext context = createTransportContext(conf, new LocalParamServer());
 		return new SparkPSProxy(context.createClientFactory().createClient(host, port), rpcTimeout, aRPC);
 	}

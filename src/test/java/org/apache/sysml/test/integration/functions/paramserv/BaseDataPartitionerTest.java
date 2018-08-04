@@ -22,8 +22,8 @@ package org.apache.sysml.test.integration.functions.paramserv;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitioner;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
@@ -54,26 +54,26 @@ public abstract class BaseDataPartitionerTest {
 		return IntStream.range(from, to).mapToDouble(i -> (double) i).toArray();
 	}
 
-	protected DataPartitionScheme.Result launchLocalDataPartitionerDC() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_CONTIGUOUS);
+	protected DataPartitionLocalScheme.Result launchLocalDataPartitionerDC() {
+		LocalDataPartitioner dp = new LocalDataPartitioner(Statement.PSScheme.DISJOINT_CONTIGUOUS);
 		MatrixBlock[] mbs = generateData();
 		return dp.doPartitioning(WORKER_NUM, mbs[0], mbs[1]);
 	}
 
-	protected DataPartitionScheme.Result launchLocalDataPartitionerDR(MatrixBlock[] mbs) {
+	protected DataPartitionLocalScheme.Result launchLocalDataPartitionerDR(MatrixBlock[] mbs) {
 		ParamservUtils.SEED = System.nanoTime();
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_RANDOM);
+		LocalDataPartitioner dp = new LocalDataPartitioner(Statement.PSScheme.DISJOINT_RANDOM);
 		return dp.doPartitioning(WORKER_NUM, mbs[0], mbs[1]);
 	}
 
-	protected DataPartitionScheme.Result launchLocalDataPartitionerDRR() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+	protected DataPartitionLocalScheme.Result launchLocalDataPartitionerDRR() {
+		LocalDataPartitioner dp = new LocalDataPartitioner(Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 		MatrixBlock[] mbs = generateData();
 		return dp.doPartitioning(WORKER_NUM, mbs[0], mbs[1]);
 	}
 
-	protected DataPartitionScheme.Result launchLocalDataPartitionerOR() {
-		DataPartitioner dp = new DataPartitioner(Statement.PSScheme.OVERLAP_RESHUFFLE);
+	protected DataPartitionLocalScheme.Result launchLocalDataPartitionerOR() {
+		LocalDataPartitioner dp = new LocalDataPartitioner(Statement.PSScheme.OVERLAP_RESHUFFLE);
 		MatrixBlock[] mbs = generateData();
 		return dp.doPartitioning(WORKER_NUM, mbs[0], mbs[1]);
 	}

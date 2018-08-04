@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv.dp;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ public class ORSparkScheme extends DataPartitionSparkScheme {
 	}
 
 	private List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> partition(int numWorkers, int rblkID, MatrixBlock mb) {
-		return IntStream.range(0, numWorkers).mapToObj(i -> i).flatMap(workerID -> {
+		return IntStream.range(0, numWorkers).boxed().flatMap(workerID -> {
 				MatrixBlock partialPerm = _globalPerms.get(workerID).getBlock(rblkID, 1);
 				return IntStream.range(0, mb.getNumRows()).mapToObj(r -> {
 					MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);

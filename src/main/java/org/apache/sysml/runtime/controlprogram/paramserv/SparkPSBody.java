@@ -17,29 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark;
+package org.apache.sysml.runtime.controlprogram.paramserv;
 
-import java.util.List;
-
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-
-import scala.Tuple2;
+import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 
 /**
- * Spark Disjoint_Round_Robin data partitioner:
+ * Wrapper class containing all needed for launching spark remote worker
  */
-public class DRRSparkScheme extends DataPartitionSparkScheme {
+public class SparkPSBody {
 
-	private static final long serialVersionUID = -3130831851505549672L;
+	private ExecutionContext _ec;
 
-	protected DRRSparkScheme() {
-		// No-args constructor used for deserialization
+	public SparkPSBody() {}
+
+	public SparkPSBody(ExecutionContext ec) {
+		_ec = ec;
 	}
 
-	@Override
-	public Result doPartitioning(int numWorkers, int rblkID, MatrixBlock features, MatrixBlock labels) {
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pfs = nonShuffledPartition(rblkID, features);
-		List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> pls = nonShuffledPartition(rblkID, labels);
-		return new Result(pfs, pls);
+	public ExecutionContext getEc() {
+		return _ec;
+	}
+
+	public void setEc(ExecutionContext ec) {
+		this._ec = ec;
 	}
 }

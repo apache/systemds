@@ -81,15 +81,10 @@ public abstract class ParamServer
 		setupAggFunc(_ec, aggFunc);
 		
 		// broadcast initial model
-		try {
-			broadcastModel();
-		}
-		catch (InterruptedException e) {
-			throw new DMLRuntimeException("Param server: failed to broadcast the initial model.", e);
-		}
+		broadcastModel(true);
 	}
 
-	public void setupAggFunc(ExecutionContext ec, String aggFunc) {
+	protected void setupAggFunc(ExecutionContext ec, String aggFunc) {
 		String[] cfn = ParamservUtils.getCompleteFuncName(aggFunc, PS_FUNC_PREFIX);
 		String ns = cfn[0];
 		String fname = cfn[1];
@@ -140,11 +135,9 @@ public abstract class ParamServer
 
 					// Accumulate the intermediate gradients
 					if( ACCRUE_BSP_GRADIENTS )
-						_accGradients = ParamservUtils.accrueGradients(
-							_accGradients, gradients, true);
+						_accGradients = ParamservUtils.accrueGradients(_accGradients, gradients, true);
 					else
 						updateGlobalModel(gradients);
-					ParamservUtils.cleanupListObject(_ec, gradients);
 
 					if (allFinished()) {
 						// Update the global model with accrued gradients
@@ -155,7 +148,7 @@ public abstract class ParamServer
 						
 						// Broadcast the updated model
 						resetFinishedStates();
-						broadcastModel();
+						broadcastModel(true);
 						if (LOG.isDebugEnabled())
 							LOG.debug("Global parameter is broadcasted successfully.");
 					}
@@ -199,7 +192,7 @@ public abstract class ParamServer
 		_inst.processInstruction(ec);
 
 		// Get the new model
-		ListObject newModel = (ListObject) ec.getVariable(_outputName);
+		ListObject newModel = ec.getListObject(_outputName);
 
 		// Clean up the list according to the data referencing status
 		ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL, newModel.getStatus());
@@ -218,23 +211,26 @@ public abstract class ParamServer
 	private void setFinishedState(int workerID) {
 		_finishedStates[workerID] = true;
 	}
-	
-	private void broadcastModel() throws InterruptedException {
-		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
 
-		//broadcast copy of the model to all workers, cleaned up by workers
-		for (BlockingQueue<ListObject> q : _modelMap.values())
-			q.put(ParamservUtils.copyList(_model));
-
-		if (DMLScript.STATISTICS)
-			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
+	/**
+	 * Broadcast the model for all workers
+	 */
+	private void broadcastModel(boolean par) {
+		IntStream stream = IntStream.range(0, _modelMap.size());
+		(par ? stream.parallel() : stream).forEach(workerID -> {
+			try {
+				broadcastModel(workerID);
+			} catch (InterruptedException e) {
+				throw new DMLRuntimeException("Paramserv func: some error occurred when broadcasting model", e);
+			}
+		});
 	}
 
 	private void broadcastModel(int workerID) throws InterruptedException {
 		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
 
 		//broadcast copy of model to specific worker, cleaned up by worker
-		_modelMap.get(workerID).put(ParamservUtils.copyList(_model));
+		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());

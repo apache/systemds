@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.DataPartitionScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -36,7 +36,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDC() {
-		DataPartitionScheme.Result result = launchLocalDataPartitionerDC();
+		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDC();
 
 		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
 		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
@@ -45,7 +45,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		}
 	}
 
-	private void assertDCResult(DataPartitionScheme.Result result, int workerID) {
+	private void assertDCResult(DataPartitionLocalScheme.Result result, int workerID) {
 		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM) * COL_SIZE, (workerID + 1) * (ROW_SIZE / WORKER_NUM) * COL_SIZE), result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
 		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM), (workerID + 1) * (ROW_SIZE / WORKER_NUM)), result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
 	}
@@ -53,7 +53,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 	@Test
 	public void testLocalDataPartitionerDR() {
 		MatrixBlock[] mbs = generateData();
-		DataPartitionScheme.Result result = launchLocalDataPartitionerDR(mbs);
+		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDR(mbs);
 
 		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
 		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
@@ -82,7 +82,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test
 	public void testLocalDataPartitionerDRR() {
-		DataPartitionScheme.Result result = launchLocalDataPartitionerDRR();
+		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDRR();
 
 		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
 		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
@@ -91,7 +91,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		}
 	}
 
-	private void assertDRRResult(DataPartitionScheme.Result result, int workerID) {
+	private void assertDRRResult(DataPartitionLocalScheme.Result result, int workerID) {
 		Tuple2<double[], double[]> expected = generateExpectedData(workerID, WORKER_NUM, ROW_SIZE / WORKER_NUM);
 		Assert.assertArrayEquals(expected._1, result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
 		Assert.assertArrayEquals(expected._2, result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
@@ -114,7 +114,7 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 	@Test
 	public void testLocalDataPartitionerOR() {
 		ParamservUtils.SEED = System.nanoTime();
-		DataPartitionScheme.Result result = launchLocalDataPartitionerOR();
+		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerOR();
 
 		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
 		Assert.assertEquals(WORKER_NUM, result.pLabels.size());

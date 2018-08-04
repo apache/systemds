@@ -17,10 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc;
+package org.apache.sysml.runtime.controlprogram.paramserv.rpc;
 
-import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall.PULL;
-import static org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcCall.PUSH;
+import static org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcCall.PULL;
+import static org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcCall.PUSH;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,7 +33,7 @@ import org.apache.spark.network.server.RpcHandler;
 import org.apache.spark.network.server.StreamManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.rpc.PSRpcResponse.Type;
+import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcResponse.Type;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 
 public final class PSRpcHandler extends RpcHandler {

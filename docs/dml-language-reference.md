@@ -53,6 +53,7 @@ limitations under the License.
     * [Read/Write Built-In Functions](dml-language-reference.html#readwrite-built-in-functions)
     * [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions)
     * [Deep Learning Built-In Functions](dml-language-reference.html#deep-learning-built-in-functions)
+    * [Parameter Server Built-In Function](dml-language-reference.html#parameter-server-built-in-function)
     * [Other Built-In Functions](dml-language-reference.html#other-built-in-functions)
   * [Frames](dml-language-reference.html#frames)
     * [Creating Frames](dml-language-reference.html#creating-frames)
@@ -1535,6 +1536,62 @@ Examples:
 | conv2d_backward_data | stride=[2,2] and 2x2 filter | ![conv2d_backward_data with stride 2 2x2 filter](img/dml-language-reference/Conv2d_backward_data1.gif "conv2d_backward_data with stride 2 with 2x2 filter") |
 | bias_add             |                             | `ones = matrix(1, rows=1, cols=height*width); output = input + matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
 | bias_multiply        |                             | `ones = matrix(1, rows=1, cols=height*width); output = input * matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
+
+### Parameter Server Built-in Function
+SystemML supports large-scale machine learning architecture **data-parallel Parameter Server**, introduced by a built-in function **paramserv**. Currently both local multi-threaded and spark distributed backend are supported to execute the **paramserv** function. For example, in order to train a model in local backend with update strategy BSP, 10 epochs, 64 batchsize, 10 workers, **paramserv** function should look like this:
+
+
+    model'=paramserv(model=params, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="fun1", agg="fun2", mode="LOCAL", utype="BSP", epochs=10, batchsize=64, k=10, hyperparams=hParams)
+
+
+**Table**: Inputs of paramserv function
+
+Parameters | Description | Type | Mandatory | Options
+-------- | ----------- | ---------- | ---------- | -------
+model | All the parameters (e.g., the weight and bias matrices) | list | yes | 
+features | Training features | matrix | yes 
+labels | Training labels | matrix | yes
+val_features | Validation features | matrix | yes
+val_labels | Validation labels | matrix | yes
+upd | Physical name of gradient calculation function. The format should be "related path:func name". For example, "./mnist_lenet_paramserv_sgd.dml::gradients". | string | yes
+agg | Physical name of gradient aggregation function. The format should be "related path:func name". For example, "./mnist_lenet_paramserv_sgd.dml::aggregation". | string | yes
+mode | Execution backend where the parameter function is executed | string | yes | "LOCAL", "REMOTE_SPARK"
+utype | Update strategy | string | yes | "BSP", "ASP"
+freq | Frequency of parameters updating. When setting to "BATCH", the gradients will be pushed to server for updating the parameters after each mini-batch. When setting to "EPOCH", the gradients will be pushed to server after each epoch. | string | no | "BATCH"(default), "EPOCH"
+epochs | Number of epoch | integer | yes |
+batchsize | Size of mini-batch, if the update frequence is setted to "EPOCH", this parameter will be ignored. | integer | no | 64(default)
+k | Degree of parallelism | integer | no | Number of vcores, otherwise vcores / 2 if using openblas(default)
+scheme | Scheme of data partition, i.e., how the data is distributed across workers | string | no | "DISJOINT_CONTIGUOUS", "DISJOINT_ROUND_ROBIN", "DISJOINT_RANDOM", "OVERLAP_RESHUFFLE"
+hyperparams | Additional hyper parameters, e.g., learning rate, momentum | list | yes | 
+checkpointing | Checkpoint strategy, currently not supported | string | no | 
+
+**Table**: Output of paramserv function
+
+Output | Description | Type
+-------- | ----------- | ----------
+model | Trained model | list
+
+**Update function:**
+
+The update function aims to apply the input training data to calculate the gradients for the given model. The implementation of this function should be based on a function signature like this: (i.e., **the input parameter including both type and name should be exactly the same as the below, except that the output name could be different**)
+
+```sh
+gradients = function(matrix[double] features, matrix[double] labels,
+                    list[unknown] hyperparams, list[unknown] model)
+          return (list[unknown] gradients)
+          # the output name can be something else than "gradients" but should always return a list
+```
+
+**Aggregate function:**
+
+The aggregate function aims to leverage some optimizers to update the model with the given gradients. The implementation of this function should be based on a function signature like this: (i.e., **the input parameter including both type and name should be exactly the same as the below, except that the output name could be different**)
+
+```sh
+aggregation = function(list[unknown] model, list[unknown] gradients,
+                       list[unknown] hyperparams)
+         return (list[unknown] modelResult)
+         # the output name can be something else than "modelResult" but should always return a list
+```
 
 ### Other Built-In Functions
 

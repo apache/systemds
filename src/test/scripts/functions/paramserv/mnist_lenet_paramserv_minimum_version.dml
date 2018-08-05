@@ -120,10 +120,10 @@ train = function(matrix[double] X, matrix[double] Y,
 
 }
 
-gradients = function(matrix[double] features,
-                     matrix[double] labels,
+gradients = function(list[unknown] model,
                      list[unknown] hyperparams,
-                     list[unknown] model)
+                     matrix[double] features,
+                     matrix[double] labels)
           return (list[unknown] gradients) {
 
   C = as.integer(as.scalar(hyperparams["C"]))
@@ -200,8 +200,8 @@ gradients = function(matrix[double] features,
 }
 
 aggregation = function(list[unknown] model,
-                       list[unknown] gradients,
-                       list[unknown] hyperparams)
+                       list[unknown] hyperparams,
+                       list[unknown] gradients)
    return (list[unknown] modelResult) {
      W1 = as.matrix(model[1])
      W2 = as.matrix(model[2])

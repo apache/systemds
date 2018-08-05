@@ -38,6 +38,18 @@ e2 = "element2"
 params = list(e2=e2)
 
 # Use paramserv function
+# Remove the optional "val_features" and "val_labels"
+modelList2 = paramserv(model=modelList, features=X, labels=Y, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
+
+# Remove the optional "mode"
+modelList2 = paramserv(model=modelList, features=X, labels=Y, upd="gradients", agg="aggregation", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
+
+# Remove the optional "utype"
+modelList2 = paramserv(model=modelList, features=X, labels=Y, upd="gradients", agg="aggregation", epochs=100, freq="EPOCH", batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
+
+# Remove the optional "freq"
+modelList2 = paramserv(model=modelList, features=X, labels=Y, upd="gradients", agg="aggregation", utype="BSP", epochs=100, batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
+
 # Remove the optional "hyperparams"
 modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_ROUND_ROBIN", checkpointing="EPOCH")
 

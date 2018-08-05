@@ -316,7 +316,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private int getRemainingCores() {
-		return InfrastructureAnalyzer.getLocalParallelism() - 1;
+		return InfrastructureAnalyzer.getLocalParallelism();
 	}
 
 	/**
@@ -328,7 +328,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private int getWorkerNum(PSModeType mode) {
 		switch (mode) {
 			case LOCAL:
-				// default worker number: available cores - 1 (assign one process for agg service)
 				return getParameterMap().containsKey(PS_PARALLELISM) ?
 					Integer.valueOf(getParam(PS_PARALLELISM)) : getRemainingCores();
 			case REMOTE_SPARK:

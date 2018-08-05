@@ -334,7 +334,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataValueType(true, fname, Statement.PS_VAL_LABELS, DataType.MATRIX, ValueType.DOUBLE, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
-		checkStringParam(false, fname, Statement.PS_MODE, conditional);
+		checkStringParam(true, fname, Statement.PS_MODE, conditional);
 		checkStringParam(false, fname, Statement.PS_UPDATE_TYPE, conditional);
 		checkStringParam(true, fname, Statement.PS_FREQUENCY, conditional);
 		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);

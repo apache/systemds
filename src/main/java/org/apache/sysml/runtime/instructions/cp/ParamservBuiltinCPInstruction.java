@@ -83,6 +83,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final int DEFAULT_BATCH_SIZE = 64;
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.BATCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
+	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
@@ -267,6 +268,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSModeType getPSMode() {
+		if (!getParameterMap().containsKey(PS_MODE)) {
+			return DEFAULT_MODE;
+		}
 		PSModeType mode;
 		try {
 			mode = PSModeType.valueOf(getParam(PS_MODE));

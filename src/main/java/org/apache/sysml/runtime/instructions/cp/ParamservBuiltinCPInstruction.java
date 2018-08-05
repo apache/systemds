@@ -81,7 +81,7 @@ import org.apache.sysml.utils.Statistics;
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 
 	private static final int DEFAULT_BATCH_SIZE = 64;
-	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.BATCH;
+	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.EPOCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;

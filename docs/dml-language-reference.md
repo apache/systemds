@@ -1538,10 +1538,11 @@ Examples:
 | bias_multiply        |                             | `ones = matrix(1, rows=1, cols=height*width); output = input * matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
 
 ### Parameter Server Built-in Function
-SystemML supports large-scale machine learning architecture **data-parallel Parameter Server**, introduced by a built-in function **paramserv**. Currently both local multi-threaded and spark distributed backend are supported to execute the **paramserv** function. For example, in order to train a model in local backend with update strategy BSP, 10 epochs, 64 batchsize, 10 workers, **paramserv** function should look like this:
+Apart from data-parallel operations and task-parallel parfor loops, SystemML also supports a **data-parallel Parameter Server** via a built-in function **paramserv**. Currently both local multi-threaded and spark distributed backend are supported to execute the **paramserv** function. For example, in order to train a model in local backend with update strategy BSP, 10 epochs, 64 batchsize, 10 workers, **paramserv** function should look like this:
 
 
-    model'=paramserv(model=params, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="fun1", agg="fun2", mode="LOCAL", utype="BSP", epochs=10, batchsize=64, k=10, hyperparams=hParams)
+    resultModel=paramserv(model=initModel, features=X, labels=Y, 
+                          upd="fun1", agg="fun2", epochs=10, k=10, hyperparams=hParams)
 
 
 **Table**: Inputs of paramserv function
@@ -1551,17 +1552,17 @@ Parameters | Description | Type | Mandatory | Options
 model | All the parameters (e.g., the weight and bias matrices) | list | yes | 
 features | Training features | matrix | yes 
 labels | Training labels | matrix | yes
-val_features | Validation features | matrix | yes
-val_labels | Validation labels | matrix | yes
+val_features | Validation features | matrix | no
+val_labels | Validation labels | matrix | no
 upd | Physical name of gradient calculation function. The format should be "related path:func name". For example, "./mnist_lenet_paramserv_sgd.dml::gradients". | string | yes
 agg | Physical name of gradient aggregation function. The format should be "related path:func name". For example, "./mnist_lenet_paramserv_sgd.dml::aggregation". | string | yes
-mode | Execution backend where the parameter function is executed | string | yes | "LOCAL", "REMOTE_SPARK"
-utype | Update strategy | string | yes | "BSP", "ASP"
-freq | Frequency of parameters updating. When setting to "BATCH", the gradients will be pushed to server for updating the parameters after each mini-batch. When setting to "EPOCH", the gradients will be pushed to server after each epoch. | string | no | "BATCH"(default), "EPOCH"
+mode | Execution backend where the parameter function is executed | string | no | "LOCAL"(default), "REMOTE_SPARK"
+utype | Update strategy | string | no | "ASP"(default), "BSP"
+freq | Frequency of model updating | string | no | "EPOCH"(default), "BATCH"
 epochs | Number of epoch | integer | yes |
-batchsize | Size of mini-batch, if the update frequence is setted to "EPOCH", this parameter will be ignored. | integer | no | 64(default)
-k | Degree of parallelism | integer | no | Number of vcores, otherwise vcores / 2 if using openblas(default)
-scheme | Scheme of data partition, i.e., how the data is distributed across workers | string | no | "DISJOINT_CONTIGUOUS", "DISJOINT_ROUND_ROBIN", "DISJOINT_RANDOM", "OVERLAP_RESHUFFLE"
+batchsize | Rows size of batch | integer | no | 64(default)
+k | Degree of parallelism | integer | no | Number of vcores(default)
+scheme | Scheme of data partition, i.e., how the data is distributed across workers | string | no | "DISJOINT_CONTIGUOUS"(default), "DISJOINT_ROUND_ROBIN", "DISJOINT_RANDOM", "OVERLAP_RESHUFFLE"
 hyperparams | Additional hyper parameters, e.g., learning rate, momentum | list | yes | 
 checkpointing | Checkpoint strategy, currently not supported | string | no | 
 
@@ -1576,8 +1577,8 @@ model | Trained model | list
 The update function aims to apply the input training data to calculate the gradients for the given model. The implementation of this function should be based on a function signature like this: (i.e., **the input parameter including both type and name should be exactly the same as the below, except that the output name could be different**)
 
 ```sh
-gradients = function(matrix[double] features, matrix[double] labels,
-                    list[unknown] hyperparams, list[unknown] model)
+gradients = function(list[unknown] model, list[unknown] hyperparams,
+                     matrix[double] features, matrix[double] labels)
           return (list[unknown] gradients)
           # the output name can be something else than "gradients" but should always return a list
 ```
@@ -1587,11 +1588,30 @@ gradients = function(matrix[double] features, matrix[double] labels,
 The aggregate function aims to leverage some optimizers to update the model with the given gradients. The implementation of this function should be based on a function signature like this: (i.e., **the input parameter including both type and name should be exactly the same as the below, except that the output name could be different**)
 
 ```sh
-aggregation = function(list[unknown] model, list[unknown] gradients,
-                       list[unknown] hyperparams)
+aggregation = function(list[unknown] model, list[unknown] hyperparams,
+                       list[unknown] gradients)
          return (list[unknown] modelResult)
          # the output name can be something else than "modelResult" but should always return a list
 ```
+
+**Update strategy:**
+
+Currently, two types of update strategy, **ASP** and **BSP**, are supported. **ASP**, a.k.a. _Asynchronous Parallel_, means that the model updates will be completed in an asynchronous manner. The parameter server updates the model and broadcasts the updated model immediately with the fresh gradients pushed by the worker and then the worker is able to pull the new updated model. This push-and-pull process is done asynchronously across workers. While **BSP**, a.k.a. _Bulk Synchronous Parallel_, the server will update the global model until having received all the gradients sent by workers in one iteration and then workers could move into the next iteration. Hence, the overall performance depends on the stragglers (i.e., the slowest worker).
+
+**Update frequency:**
+
+When pushing the gradients from workers to server for updating the model, we could determine how often this push-and-pull process will be done. Currently, two types of update frequency, **EPOCH** and **BATCH** are supported. When setting to **EPOCH**, the generated gradients of each mini-batch are accumulated locally in each worker. And this accrued gradients will be pushed to server until one epoch finishes. While setting to **BATCH**, the generated gradients of each mini-batch are pushed to server immediately to launch the push-and-pull process.
+
+**Data partition schemes:**
+
+Before launching the data-parallel parameter server, the original data will be partitioned across workers according to some schemes. Currently, four types of schemes are supported, Disjoint_Contigous, Disjoint_Round_Robin, Disjoint_Random, Overlap_Reshuffle.
+
+Scheme | Definition
+-------- | -----------
+Disjoint_Contiguous | For each worker, use a right indexing operation X[beg:end,] to obtain contiguous, non-overlapping partitions of rows
+Disjoint_Round_Robin | For each worker, use a permutation multiply or simpler a removeEmpty such as removeEmpty(target=X, margin=rows, select=(seq(1,nrow(X))%%k)==id)
+Disjoint_Random | For each worker, use a permutation multiply P[beg:end,] %*% X, where P is constructed for example with P=table(seq(1,nrow(X),sample(nrow(X), nrow(X)))), i.e., sampling without replacement to ensure disjointness
+Overlap_Reshuffle | Similar to the above, except to create a new permutation matrix for each worker and without the indexing on P
 
 ### Other Built-In Functions
 

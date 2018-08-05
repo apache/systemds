@@ -84,6 +84,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final PSFrequency DEFAULT_UPDATE_FREQUENCY = PSFrequency.BATCH;
 	private static final PSScheme DEFAULT_SCHEME = PSScheme.DISJOINT_CONTIGUOUS;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
+	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
 
 	//internal local debug level
 	private static final boolean LDEBUG = false;
@@ -288,6 +289,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private PSUpdateType getUpdateType() {
+		if (!getParameterMap().containsKey(PS_UPDATE_TYPE)) {
+			return DEFAULT_TYPE;
+		}
 		PSUpdateType updType;
 		try {
 			updType = PSUpdateType.valueOf(getParam(PS_UPDATE_TYPE));

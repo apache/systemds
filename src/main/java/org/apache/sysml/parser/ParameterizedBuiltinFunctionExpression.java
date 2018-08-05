@@ -330,8 +330,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
 		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
-		checkDataType(fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, conditional);
-		checkDataType(fname, Statement.PS_VAL_LABELS, DataType.MATRIX, conditional);
+		checkDataValueType(true, fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, ValueType.DOUBLE, conditional);
+		checkDataValueType(true, fname, Statement.PS_VAL_LABELS, DataType.MATRIX, ValueType.DOUBLE, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkStringParam(false, fname, Statement.PS_MODE, conditional);
@@ -860,7 +860,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			if (optional) {
 				return;
 			}
-			raiseValidateError(String.format("Named parameter '%s' is missing. Please specify the input.", fname),
+			raiseValidateError(String.format("Named parameter '%s' is missing. Please specify the input.", pname),
 					conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		} else if (data.getOutput().getDataType() != dt || data.getOutput().getValueType() != vt)
 			raiseValidateError(String.format("Input to %s::%s must be of type '%s', '%s'.It should not be of type '%s', '%s'.",

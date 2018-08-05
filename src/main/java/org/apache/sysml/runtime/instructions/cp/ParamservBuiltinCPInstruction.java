@@ -36,8 +36,6 @@ import static org.apache.sysml.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysml.parser.Statement.PS_SCHEME;
 import static org.apache.sysml.parser.Statement.PS_UPDATE_FUN;
 import static org.apache.sysml.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysml.parser.Statement.PS_VAL_FEATURES;
-import static org.apache.sysml.parser.Statement.PS_VAL_LABELS;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,14 +63,14 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalPSWorker;
 import org.apache.sysml.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysml.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
 import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcFactory;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
@@ -226,10 +224,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		ParamServer ps = createPS(mode, aggFunc, updateType, workerNum, model, aggServiceEC);
 
 		// Create the local workers
-		MatrixObject valFeatures = ec.getMatrixObject(getParam(PS_VAL_FEATURES));
-		MatrixObject valLabels = ec.getMatrixObject(getParam(PS_VAL_LABELS));
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
-			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, epochs, getBatchSize(), valFeatures, valLabels, workerECs.get(i), ps))
+			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq, epochs, getBatchSize(), workerECs.get(i), ps))
 			.collect(Collectors.toList());
 
 		// Do data partition

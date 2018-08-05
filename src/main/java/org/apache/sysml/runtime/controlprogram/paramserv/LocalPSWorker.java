@@ -39,9 +39,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected LocalPSWorker() {}
 
-	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-		MatrixObject valFeatures, MatrixObject valLabels, ExecutionContext ec, ParamServer ps) {
-		super(workerID, updFunc, freq, epochs, batchSize, valFeatures, valLabels, ec, ps);
+	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
 	}
 
 	@Override

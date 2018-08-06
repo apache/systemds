@@ -40,10 +40,12 @@ public class EstimatorBasicWorst extends SparsityEstimator
 
 
 	public double estim(MMNode root, OpCode op) {
-		double sp1 = !root.getLeft().isLeaf() ? estim(root.getLeft()) :
+		double sp1 = !root.getLeft().isLeaf() ? estim(root.getLeft(), root.getLeft().getOp()) :
 			OptimizerUtils.getSparsity(root.getLeft().getMatrixCharacteristics());
-		double sp2 = !root.getRight().isLeaf() ? estim(root.getRight()) :
+		double sp2 = !root.getRight().isLeaf() ? estim(root.getRight(), root.getRight().getOp()) :
 			OptimizerUtils.getSparsity(root.getRight().getMatrixCharacteristics());
+		MatrixBlock m1 = root.getLeft().getData();
+		MatrixBlock m2 = root.getRight().getData();
 		double ret = 0;
 		switch (op) {
 		case MM:
@@ -58,6 +60,12 @@ public class EstimatorBasicWorst extends SparsityEstimator
 			ret = Math.min(sp1, sp2);
 			root.setSynopsis(ret);
 			return ret;
+		case RBIND:
+			return OptimizerUtils.getSparsity(m1.getNumRows() + m2.getNumRows(),
+					m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
+		case CBIND:
+			return OptimizerUtils.getSparsity(m1.getNumRows(),
+					m1.getNumColumns() + m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
 		default:
 			throw new NotImplementedException();
 		}

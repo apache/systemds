@@ -1046,7 +1046,7 @@ public abstract class Hop implements ParseInfo
 		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
 		SVD, EXISTS,
 		//cumulative sums, products, extreme values
-		CUMSUM, CUMPROD, CUMMIN, CUMMAX,
+		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
@@ -1303,6 +1303,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsU.put(OpOp1.CUMPROD, org.apache.sysml.lops.Unary.OperationTypes.CUMPROD);
 		HopsOpOp1LopsU.put(OpOp1.CUMMIN, org.apache.sysml.lops.Unary.OperationTypes.CUMMIN);
 		HopsOpOp1LopsU.put(OpOp1.CUMMAX, org.apache.sysml.lops.Unary.OperationTypes.CUMMAX);
+		HopsOpOp1LopsU.put(OpOp1.CUMSUMPROD, org.apache.sysml.lops.Unary.OperationTypes.CUMSUMPROD);
 		HopsOpOp1LopsU.put(OpOp1.INVERSE, org.apache.sysml.lops.Unary.OperationTypes.INVERSE);
 		HopsOpOp1LopsU.put(OpOp1.CHOLESKY, org.apache.sysml.lops.Unary.OperationTypes.CHOLESKY);
 		HopsOpOp1LopsU.put(OpOp1.CAST_AS_SCALAR, org.apache.sysml.lops.Unary.OperationTypes.NOTSUPPORTED);

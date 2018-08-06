@@ -28,32 +28,36 @@ import java.util.concurrent.atomic.AtomicLong;
 public class IDSequence 
 {
 	private final AtomicLong _current;
-	private final boolean _wrapAround;
+	private final boolean _cyclic;
+	private final long _cycleLen;
 	
 	public IDSequence() {
-		this(false);
+		this(false, -1);
 	}
 	
-	public IDSequence(boolean wrapAround) {
-		_current = new AtomicLong(-1);
-		_wrapAround = wrapAround;
+	public IDSequence(boolean cyclic) {
+		this(cyclic, Long.MAX_VALUE);
 	}
+	
+	public IDSequence(boolean cyclic, long cycleLen) {
+		_current = new AtomicLong(-1);
+		_cyclic = cyclic;
+		_cycleLen = cycleLen;
+	}
+	
 	
 	/**
 	 * Creates the next ID, if overflow a RuntimeException is thrown.
 	 * 
 	 * @return ID
 	 */
-	public long getNextID()
-	{
+	public long getNextID() {
 		long val = _current.incrementAndGet();
-		
-		if( val == Long.MAX_VALUE ) {
-			if( !_wrapAround )
+		if( val == _cycleLen ) {
+			if( !_cyclic )
 				throw new RuntimeException("WARNING: IDSequence will produced numeric overflow.");
 			reset();
 		}
-		
 		return val;
 	}
 	

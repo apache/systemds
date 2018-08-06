@@ -19,39 +19,77 @@
 
 package org.apache.sysml.hops.estim;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 /**
  * Basic average case estimator for matrix sparsity:
  * sp = 1 - Math.pow(1-sp1*sp2, k)
  */
-public class EstimatorBasicAvg extends SparsityEstimator
-{
+public class EstimatorBasicAvg extends SparsityEstimator {
 	@Override
 	public double estim(MMNode root) {
-		//recursive sparsity evaluation of non-leaf nodes
+		// recursive sparsity evaluation of non-leaf nodes
 		double sp1 = !root.getLeft().isLeaf() ? estim(root.getLeft()) :
 			OptimizerUtils.getSparsity(root.getLeft().getMatrixCharacteristics());
 		double sp2 = !root.getRight().isLeaf() ? estim(root.getRight()) :
 			OptimizerUtils.getSparsity(root.getRight().getMatrixCharacteristics());
-		return estimIntern(sp1, sp2, root.getRows(), root.getLeft().getCols(), root.getCols());
+		return estimInternMM(sp1, sp2, root.getRows(), root.getLeft().getCols(), root.getCols());
 	}
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		return estim(m1.getMatrixCharacteristics(), m2.getMatrixCharacteristics());
+		return estimInternMM(m1.getSparsity(), m2.getSparsity(),
+			m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
 	}
 
 	@Override
-	public double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
-		return estimIntern(
-			OptimizerUtils.getSparsity(mc1), OptimizerUtils.getSparsity(mc2),
-			mc1.getRows(), mc1.getCols(), mc2.getCols());
+	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		return estimIntern(m1, m2, op);
 	}
 
-	private double estimIntern(double sp1, double sp2, long m, long k, long n) {
+	@Override
+	public double estim(MatrixBlock m, OpCode op) {
+		return estimIntern(m, null, op);
+	}
+
+	private double estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		switch (op) {
+			case MM:
+				return estimInternMM(m1.getSparsity(), m2.getSparsity(),
+					m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
+			case MULT:
+				return m1.getSparsity() * m2.getSparsity();
+			case PLUS:
+				return m1.getSparsity() + m2.getSparsity() - m1.getSparsity() * m2.getSparsity();
+			case EQZERO:
+				return OptimizerUtils.getSparsity(m1.getNumRows(), m1.getNumColumns(),
+					(long) m1.getNumRows() * m1.getNumColumns() - m1.getNonZeros());
+			case DIAG:
+				return (m1.getNumColumns() == 1) ?
+					OptimizerUtils.getSparsity(m1.getNumRows(), m1.getNumRows(), m1.getNonZeros()) :
+					OptimizerUtils.getSparsity(m1.getNumRows(), 1, Math.min(m1.getNumRows(), m1.getNonZeros()));
+			// binary operations that preserve sparsity exactly
+			case CBIND:
+				return OptimizerUtils.getSparsity(m1.getNumRows(),
+					m1.getNumColumns() + m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
+			case RBIND:
+				return OptimizerUtils.getSparsity(m1.getNumRows() + m2.getNumRows(),
+					m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
+			// unary operation that preserve sparsity exactly
+			case NEQZERO:
+				return m1.getSparsity();
+			case TRANS:
+				return m1.getSparsity();
+			case RESHAPE:
+				return m1.getSparsity();
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	private double estimInternMM(double sp1, double sp2, long m, long k, long n) {
 		return OptimizerUtils.getMatMultSparsity(sp1, sp2, m, k, n, false);
 	}
 }

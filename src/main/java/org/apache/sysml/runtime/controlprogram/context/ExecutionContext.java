@@ -225,6 +225,10 @@ public class ExecutionContext {
 		return (FrameObject) dat;
 	}
 
+	public CacheableData<?> getCacheableData(CPOperand input) {
+		return getCacheableData(input.getName());
+	}
+	
 	public CacheableData<?> getCacheableData(String varname) {
 		Data dat = getVariable(varname);
 		//error handling if non existing or no matrix
@@ -535,21 +539,40 @@ public class ExecutionContext {
 	 */
 	public boolean[] pinVariables(List<String> varList) 
 	{
-		//2-pass approach since multiple vars might refer to same matrix object
-		boolean[] varsState = new boolean[varList.size()];
-		
-		//step 1) get current information
+		//analyze list variables
+		int nlist = 0;
+		int nlistItems = 0;
 		for( int i=0; i<varList.size(); i++ ) {
 			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof MatrixObject )
-				varsState[i] = ((MatrixObject)dat).isCleanupEnabled();
+			if( dat instanceof ListObject ) {
+				nlistItems += ((ListObject)dat).getNumCacheableData();
+				nlist++;
+			}
+		}
+		
+		//2-pass approach since multiple vars might refer to same matrix object
+		boolean[] varsState = new boolean[varList.size()-nlist+nlistItems];
+		
+		//step 1) get current information
+		for( int i=0, pos=0; i<varList.size(); i++ ) {
+			Data dat = _variables.get(varList.get(i));
+			if( dat instanceof CacheableData<?>  )
+				varsState[pos++] = ((CacheableData<?>)dat).isCleanupEnabled();
+			else if( dat instanceof ListObject )
+				for( Data dat2 : ((ListObject)dat).getData() )
+					if( dat2 instanceof CacheableData<?> )
+						varsState[pos++] = ((CacheableData<?>)dat2).isCleanupEnabled();
 		}
 		
 		//step 2) pin variables
 		for( int i=0; i<varList.size(); i++ ) {
 			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof MatrixObject )
-				((MatrixObject)dat).enableCleanup(false); 
+			if( dat instanceof CacheableData<?> )
+				((CacheableData<?>)dat).enableCleanup(false);
+			else if( dat instanceof ListObject )
+				for( Data dat2 : ((ListObject)dat).getData() )
+					if( dat2 instanceof CacheableData<?> )
+						((CacheableData<?>)dat2).enableCleanup(false);
 		}
 		
 		return varsState;
@@ -572,10 +595,14 @@ public class ExecutionContext {
 	 * @param varsState variable state
 	 */
 	public void unpinVariables(List<String> varList, boolean[] varsState) {
-		for( int i=0; i<varList.size(); i++ ) {
+		for( int i=0, pos=0; i<varList.size(); i++ ) {
 			Data dat = _variables.get(varList.get(i));
-			if( dat instanceof MatrixObject )
-				((MatrixObject)dat).enableCleanup(varsState[i]);
+			if( dat instanceof CacheableData<?> )
+				((CacheableData<?>)dat).enableCleanup(varsState[pos++]);
+			else if( dat instanceof ListObject )
+				for( Data dat2 : ((ListObject)dat).getData() )
+					if( dat2 instanceof CacheableData<?> )
+						((CacheableData<?>)dat2).enableCleanup(varsState[pos++]);
 		}
 	}
 	
@@ -602,6 +629,16 @@ public class ExecutionContext {
 				ret.add(var);
 		}
 		return ret;
+	}
+	
+	public final void cleanupDataObject(Data dat) {
+		if( dat == null ) return;
+		if ( dat instanceof CacheableData )
+			cleanupCacheableData( (CacheableData<?>)dat );
+		else if( dat instanceof ListObject )
+			for( Data dat2 : ((ListObject)dat).getData() )
+				if( dat2 instanceof CacheableData<?> )
+					cleanupCacheableData( (CacheableData<?>)dat2 );
 	}
 	
 	public void cleanupCacheableData(CacheableData<?> mo) {

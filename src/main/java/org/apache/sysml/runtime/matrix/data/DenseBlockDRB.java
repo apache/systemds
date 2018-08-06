@@ -114,12 +114,7 @@ public class DenseBlockDRB extends DenseBlock
 
 	@Override
 	public long countNonZeros() {
-		final int len = rlen * clen;
-		double[] a = data;
-		int nnz = 0;
-		for(int i=0; i<len; i++)
-			nnz += (a[i]!=0) ? 1 : 0;
-		return nnz;
+		return UtilFunctions.computeNnz(data, 0, rlen*clen);
 	}
 	
 	@Override

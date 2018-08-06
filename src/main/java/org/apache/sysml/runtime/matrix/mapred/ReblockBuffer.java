@@ -40,31 +40,23 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock.Type;
 import org.apache.sysml.runtime.matrix.data.TaggedAdaptivePartialBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
-public class ReblockBuffer 
+public class ReblockBuffer
 {
-	
-	//default buffer size: 5M -> 5M * 3x8B = 120MB 
-	public static final int DEFAULT_BUFFER_SIZE = 5000000;
+	public static final int DEFAULT_BUFFER_SIZE = 5000000; //5M x 3x8B = 120MB 
 
-	//buffer <long rowindex, long colindex, long value>
-	//(pure long buffer for sort on flush) 
-	private long[][] _buff = null;
-	
-	private int _bufflen = -1;
-	private int _count = -1;
-	
-	private long _rlen = -1;
-	private long _clen = -1;
-	private int _brlen = -1;
-	private int _bclen = -1;
+	//buffer <long rowindex, long colindex, long value> (long for sort on flush) 
+	private final long[][] _buff;
+	private final int _bufflen;
+	private int _count;
+	private final long _rlen;
+	private final long _clen;
+	private final int _brlen;
+	private final int _bclen;
 
-	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  )
-	{
-		_bufflen = buffersize;
+	public ReblockBuffer( int buffersize, long rlen, long clen, int brlen, int bclen  ) {
+		_bufflen = Math.max(buffersize, 16);
 		_count = 0;
-		
 		_buff = new long[ _bufflen ][3];
-		
 		_rlen = rlen;
 		_clen = clen;
 		_brlen = brlen;
@@ -85,8 +77,7 @@ public class ReblockBuffer
 		if( inBlk.isInSparseFormat() ) //SPARSE
 		{
 			Iterator<IJV> iter = inBlk.getSparseBlockIterator();
-			while( iter.hasNext() )
-			{
+			while( iter.hasNext() ) {
 				IJV cell = iter.next();
 				long tmp = Double.doubleToRawLongBits(cell.getV());
 				_buff[_count][0] = r_offset + cell.getI();
@@ -105,11 +96,9 @@ public class ReblockBuffer
 			int rlen = inBlk.getNumRows();
 			int clen = inBlk.getNumColumns();
 			for( int i=0; i<rlen; i++ )
-				for( int j=0; j<clen; j++ )
-				{
+				for( int j=0; j<clen; j++ ) {
 					double val = inBlk.getValueDenseUnsafe(i, j);
-					if( val !=0 )
-					{
+					if( val !=0 ) {
 						long tmp = Double.doubleToRawLongBits(val);
 						_buff[_count][0] = r_offset + i;
 						_buff[_count][1] = c_offset + j;
@@ -124,13 +113,11 @@ public class ReblockBuffer
 		}
 	}
 	
-	public int getSize()
-	{
+	public int getSize() {
 		return _count;
 	}
 	
-	public int getCapacity()
-	{
+	public int getCapacity() {
 		return _bufflen;
 	}
 
@@ -224,7 +211,7 @@ public class ReblockBuffer
 		_count = 0;
 	}
 
-	public List<IndexedMatrixValue> flushBufferToBinaryBlocks() 
+	public List<IndexedMatrixValue> flushBufferToBinaryBlocks()
 		throws IOException, DMLRuntimeException
 	{
 		if( _count == 0 )
@@ -301,14 +288,14 @@ public class ReblockBuffer
 		out.collect(key, value);
 	}
 
-	private static void outputBlock( ArrayList<IndexedMatrixValue> out, MatrixIndexes key, MatrixBlock value ) 
+	private static void outputBlock( ArrayList<IndexedMatrixValue> out, MatrixIndexes key, MatrixBlock value )
 		throws IOException, DMLRuntimeException
 	{
 		//skip output of unassigned blocks
 		if( key.getRowIndex() == -1 || key.getColumnIndex() == -1 )
 			return;
 		
-		//sort sparse rows due to blockwise buffer sort and append  
+		//sort sparse rows due to blockwise buffer sort and append
 		if( value.isInSparseFormat() )
 			value.sortSparseRows();
 		
@@ -325,22 +312,19 @@ public class ReblockBuffer
 	}
 	
 	/**
-	 * Comparator to sort the reblock buffer by block indexes, where we 
+	 * Comparator to sort the reblock buffer by block indexes, where we
 	 * compute the block indexes on-the-fly based on the given cell indexes.
 	 * 
 	 */
-	private class ReblockBufferComparator implements Comparator<long[]> 
-	{	
+	private class ReblockBufferComparator implements Comparator<long[]> {
 		@Override
-		public int compare(long[] arg0, long[] arg1) 
-		{
+		public int compare(long[] arg0, long[] arg1) {
 			long bi0 = UtilFunctions.computeBlockIndex( arg0[0], _brlen );
 			long bj0 = UtilFunctions.computeBlockIndex( arg0[1], _bclen );
 			long bi1 = UtilFunctions.computeBlockIndex( arg1[0], _brlen );
 			long bj1 = UtilFunctions.computeBlockIndex( arg1[1], _bclen );
-			
 			return ( bi0 < bi1 || (bi0 == bi1 && bj0 < bj1) ) ? -1 :
-                   (( bi0 == bi1 && bj0 == bj1)? 0 : 1);		
-		}		
+				(( bi0 == bi1 && bj0 == bj1)? 0 : 1);
+		}
 	}
 }

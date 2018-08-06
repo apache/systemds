@@ -686,10 +686,10 @@ public class ParForStatementBlock extends ForStatementBlock
 						for(DataIdentifier write : datsUpdated) {
 							if( !c._var.equals( write.getName() ) ) continue;
 							
-							if( cdt != DataType.MATRIX ) {
+							if( cdt != DataType.MATRIX && cdt != DataType.LIST ) {
 								//cannot infer type, need to exit (conservative approach)
-								throw new LanguageException("PARFOR loop dependency analysis: "
-									+ "cannot check for dependencies due to unknown datatype of var '"+c._var+"'.");
+								throw new LanguageException("PARFOR loop dependency analysis: cannot check "
+									+ "for dependencies due to unknown datatype of var '"+c._var+"': "+cdt.name()+".");
 							}
 							
 							DataIdentifier dat2 = write;
@@ -724,7 +724,8 @@ public class ParForStatementBlock extends ForStatementBlock
 							if( ABORT_ON_FIRST_DEPENDENCY )
 								return;
 						}
-						else if( cdt == DataType.MATRIX && dat2dt == DataType.MATRIX )
+						else if( (cdt == DataType.MATRIX && dat2dt == DataType.MATRIX)
+							|| (cdt == DataType.LIST && dat2dt == DataType.LIST ) )
 						{
 							boolean invalid = false;
 							if( runEqualsCheck(c._dat, dat2) )
@@ -746,8 +747,8 @@ public class ParForStatementBlock extends ForStatementBlock
 						}
 						else { //if( c._dat.getDataType() == DataType.UNKNOWN )
 							//cannot infer type, need to exit (conservative approach)
-							throw new LanguageException("PARFOR loop dependency analysis: "
-								+ "cannot check for dependencies due to unknown datatype of var '"+c._var+"'.");
+							throw new LanguageException("PARFOR loop dependency analysis: cannot check "
+								+ "for dependencies due to unknown datatype of var '"+c._var+"': "+cdt.name()+".");
 						}
 					}
 				}

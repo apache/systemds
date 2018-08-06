@@ -79,6 +79,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.Explain;
+import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
@@ -120,9 +121,13 @@ public class DMLScript
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
-	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;           // currently employed GPU eviction policy
+	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.MIN_EVICT;           	// currently employed GPU eviction policy
 	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
-
+	public static long            	EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
+	public static long            	EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
+	public static double 			GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 						  // fraction of available GPU memory to use
+	public static String 			GPU_MEMORY_ALLOCATOR = "cuda"; 						  		  // GPU memory allocator to use
+	
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
 	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
@@ -413,16 +418,8 @@ public class DMLScript
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-
-		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
-		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
 		
-		String evictionPolicy = dmlconf.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
-		try {
-			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
-		} catch(IllegalArgumentException e) {
-			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
-		}
+		setGlobalFlags(dmlconf);
 
 		//Step 2: set local/remote memory if requested (for compile in AM context) 
 		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
@@ -492,6 +489,62 @@ public class DMLScript
 			LOG.info("END DML run " + getDateTime() );
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution( dmlconf );
+		}
+	}
+	
+	/**
+	 * Sets the global flags in DMLScript based on user provided configuration
+	 * 
+	 * @param dmlconf user provided configuration
+	 */
+	public static void setGlobalFlags(DMLConfig dmlconf) {
+		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
+		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
+		
+		String evictionPolicy = dmlconf.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
+		try {
+			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
+		} catch(IllegalArgumentException e) {
+			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
+		}
+		
+		// Whether extra statistics useful for developers and others interested
+		// in digging into performance problems are recorded and displayed
+		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		CacheableData.CACHING_BUFFER_SIZE = dmlconf.getDoubleValue(DMLConfig.CACHING_BUFFER_SIZE);
+		if(CacheableData.CACHING_BUFFER_SIZE < 0 || CacheableData.CACHING_BUFFER_SIZE > 1) 
+			throw new RuntimeException("Incorrect value (" + CacheableData.CACHING_BUFFER_SIZE + ") for the configuration " + DMLConfig.CACHING_BUFFER_SIZE);
+		
+		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);		
+		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
+		
+		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
+		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
+		DMLScript.PRINT_GPU_MEMORY_INFO = dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
+		DMLScript.GPU_MEMORY_UTILIZATION_FACTOR = dmlconf.getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
+		DMLScript.GPU_MEMORY_ALLOCATOR = dmlconf.getTextValue(DMLConfig.GPU_MEMORY_ALLOCATOR);
+		if(DMLScript.GPU_MEMORY_UTILIZATION_FACTOR < 0) {
+			throw new RuntimeException("Incorrect value (" + DMLScript.GPU_MEMORY_UTILIZATION_FACTOR + ") for the configuration:" + DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
+		}
+		
+		DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
+		org.apache.sysml.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
+		if(DMLScript.FLOATING_POINT_PRECISION.equals("double")) {
+			DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;
+		}
+		else {
+			double shadowBufferSize = dmlconf.getDoubleValue(DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
+			if(shadowBufferSize < 0 || shadowBufferSize > 1) 
+				throw new RuntimeException("Incorrect value (" + shadowBufferSize + ") for the configuration:" + DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
+			DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (((double)InfrastructureAnalyzer.getLocalMaxMemory())*shadowBufferSize);
+			if(DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES > 0 && 
+					DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES > DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES) {
+				// This will be printed in a very rare situation when:
+				// 1. There is a memory leak which leads to non-cleared shadow buffer OR
+				// 2. MLContext is registering to bunch of outputs that are all part of shadow buffer
+				System.out.println("WARN: Cannot use the shadow buffer due to potentially cached GPU objects. Current shadow buffer size (in bytes):" 
+					+ DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES + " > Max shadow buffer size (in bytes):" + DMLScript.EVICTION_SHADOW_BUFFER_MAX_BYTES);
+			}
 		}
 	}
 	

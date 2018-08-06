@@ -98,7 +98,7 @@ public class KahanPlus extends KahanFunction implements Serializable
 		//default path for any other value
 		double correction = in2 + in1._correction;
 		double sum = in1._sum + correction;
-		in1.set(sum, correction-(sum-in1._sum)); //prevent eager JIT opt 	
+		in1.set(sum, correction-(sum-in1._sum)); //prevent eager JIT opt
 	}
 	
 	@Override

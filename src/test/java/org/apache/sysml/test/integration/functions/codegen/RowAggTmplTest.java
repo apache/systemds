@@ -81,6 +81,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME42 = TEST_NAME+"42"; //X/rowSums(min(X, Y, Z))
 	private static final String TEST_NAME43 = TEST_NAME+"43"; //bias_add(X,B) + bias_mult(X,B)
 	private static final String TEST_NAME44 = TEST_NAME+"44"; //maxpool(X - mean(X)) + 7;
+	private static final String TEST_NAME45 = TEST_NAME+"45"; //vector allocation;
+	private static final String TEST_NAME46 = TEST_NAME+"46"; //conv2d(X - mean(X), F1) + conv2d(X - mean(X), F2);
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
@@ -92,7 +94,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=44; i++)
+		for(int i=1; i<=46; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -755,6 +757,36 @@ public class RowAggTmplTest extends AutomatedTestBase
 	public void testCodegenRowAgg44SP() {
 		testCodegenIntegration( TEST_NAME44, false, ExecType.SPARK );
 	}
+	
+	@Test
+	public void testCodegenRowAggRewrite45CP() {
+		testCodegenIntegration( TEST_NAME45, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg45CP() {
+		testCodegenIntegration( TEST_NAME45, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg45SP() {
+		testCodegenIntegration( TEST_NAME45, false, ExecType.SPARK );
+	}
+	
+	@Test
+	public void testCodegenRowAggRewrite46CP() {
+		testCodegenIntegration( TEST_NAME46, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg46CP() {
+		testCodegenIntegration( TEST_NAME46, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg46SP() {
+		testCodegenIntegration( TEST_NAME46, false, ExecType.SPARK );
+	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
@@ -777,17 +809,17 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain", "recompile_runtime", "-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 			
-			runTest(true, false, null, -1); 
-			runRScript(true); 
+			runTest(true, false, null, -1);
+			runRScript(true);
 			
-			//compare matrices 
+			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
@@ -799,7 +831,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
 			if( testname.equals(TEST_NAME17) )
 				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
-			if( testname.equals(TEST_NAME28) )
+			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )
@@ -819,6 +851,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 					&& !heavyHittersContainsSubString("spoof", 2));
 			if( testname.equals(TEST_NAME44) )
 				Assert.assertTrue(!heavyHittersContainsSubString("maxpooling") 
+					&& !heavyHittersContainsSubString("spoof", 2));
+			if( testname.equals(TEST_NAME46) )
+				Assert.assertTrue(!heavyHittersContainsSubString("conv2d") 
 					&& !heavyHittersContainsSubString("spoof", 2));
 			
 		}

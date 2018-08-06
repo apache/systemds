@@ -33,13 +33,15 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
  */
 public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput 
 {
-	protected byte[] _buff;
-	protected int _bufflen;
+	protected final byte[] _buff;
 	protected int _count;
 
-	public CacheDataOutput( byte[] mem ) {
+	public CacheDataOutput(int size) {
+		this(new byte[size]);
+	}
+	
+	public CacheDataOutput(byte[] mem) {
 		_buff = mem;
-		_bufflen = _buff.length;
 		_count = 0;
 	}
 	
@@ -196,6 +198,10 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 		//process remaining empty rows
 		for( int i=lrlen; i<rlen; i++ )
 			writeInt( 0 );
+	}
+	
+	public byte[] getBytes() {
+		return _buff;
 	}
 
 	private static void shortToBa( final int val, byte[] ba, final int off ) {

@@ -91,26 +91,20 @@ public class HopRewriteUtils
 	// literal handling
 
 	public static boolean getBooleanValue( LiteralOp op ) {
-		switch( op.getValueType() )
-		{
+		switch( op.getValueType() ) {
 			case DOUBLE:  return op.getDoubleValue() != 0; 
-			case INT:	  return op.getLongValue()   != 0;
+			case INT:     return op.getLongValue()   != 0;
 			case BOOLEAN: return op.getBooleanValue();
-			
 			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 		}
 	}
 
-	public static boolean getBooleanValueSafe( LiteralOp op )
-	{
-		try
-		{
-			switch( op.getValueType() )
-			{
+	public static boolean getBooleanValueSafe( LiteralOp op ) {
+		try {
+			switch( op.getValueType() ) {
 				case DOUBLE:  return op.getDoubleValue() != 0; 
-				case INT:	  return op.getLongValue()   != 0;
+				case INT:     return op.getLongValue()   != 0;
 				case BOOLEAN: return op.getBooleanValue();
-				
 				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 			}
 		}
@@ -123,8 +117,9 @@ public class HopRewriteUtils
 
 	public static double getDoubleValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
+			case STRING:
 			case DOUBLE:  return op.getDoubleValue(); 
-			case INT:	  return op.getLongValue();
+			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
@@ -133,7 +128,7 @@ public class HopRewriteUtils
 	public static double getDoubleValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case DOUBLE:  return op.getDoubleValue(); 
-			case INT:	  return op.getLongValue();
+			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Double.MAX_VALUE;
 		}
@@ -151,8 +146,9 @@ public class HopRewriteUtils
 	 */
 	public static long getIntValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
-			case INT:	  return op.getLongValue();
+			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue());
+			case STRING:
+			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid int value: "+op.getValueType());
 		}
@@ -160,8 +156,8 @@ public class HopRewriteUtils
 	
 	public static long getIntValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue()); 
-			case INT:	  return op.getLongValue();
+			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue());
+			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
 		}

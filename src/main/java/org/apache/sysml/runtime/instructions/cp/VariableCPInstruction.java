@@ -726,8 +726,8 @@ public class VariableCPInstruction extends CPInstruction {
 			// example: mvvar tempA A
 			
 			// get source variable 
-			Data srcData = ec.getVariable(getInput1().getName());		
-				
+			Data srcData = ec.getVariable(getInput1().getName());
+			
 			if ( srcData == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object "
 					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
@@ -738,9 +738,8 @@ public class VariableCPInstruction extends CPInstruction {
 				Data tgt = ec.removeVariable(getInput2().getName());
 					
 				//cleanup matrix data on fs/hdfs (if necessary)
-				if ( tgt != null && tgt instanceof CacheableData ) {
-					ec.cleanupCacheableData((CacheableData<?>) tgt);
-				}
+				if( tgt != null )
+					ec.cleanupDataObject(tgt);
 			}
 			
 			// do the actual move
@@ -788,9 +787,8 @@ public class VariableCPInstruction extends CPInstruction {
 		Data input2_data = ec.removeVariable(getInput2().getName());
 		
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if ( input2_data != null && input2_data instanceof CacheableData ) {
-			ec.cleanupCacheableData((CacheableData<?>) input2_data);
-		}
+		if( input2_data != null )
+			ec.cleanupDataObject(input2_data);
 		
 		// do the actual copy!
 		ec.setVariable(getInput2().getName(), dd);
@@ -844,9 +842,8 @@ public class VariableCPInstruction extends CPInstruction {
 		// remove variable from symbol table
 		Data dat = ec.removeVariable(varname);
 		//cleanup matrix data on fs/hdfs (if necessary)
-		if ( dat != null && dat instanceof CacheableData ) {
-			ec.cleanupCacheableData((CacheableData<?>) dat);
-		}
+		if( dat != null )
+			ec.cleanupDataObject(dat);
 	}
 	
 	/**

@@ -541,6 +541,10 @@ public class Statistics
 		psNumWorkers.increment();
 	}
 
+	public static void incWorkerNumber(long n) {
+		psNumWorkers.add(n);
+	}
+
 	public static void accPSSetupTime(long t) {
 		psSetupTime.add(t);
 	}

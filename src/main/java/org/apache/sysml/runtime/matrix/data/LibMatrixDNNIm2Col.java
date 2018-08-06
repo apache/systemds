@@ -41,7 +41,7 @@ public class LibMatrixDNNIm2Col
 		//dense and sparse operation dispatch
 		if( !in.sparse && stride1Pad0 && !trans )
 			im2colDenseStride1Pad0(in.getDenseBlockValues(),
-				out.getDenseBlockValues(), r, C, R, S, H, W, P, Q);
+				out.getDenseBlockValues(), r*C*H*W, C, R, S, H, W, P, Q);
 		else if( !in.sparse )
 			im2colDense(in.getDenseBlockValues(), out.getDenseBlockValues(),
 				r, C, R, S, H, W, P, Q, stride_h, stride_w, pad_h, pad_w, trans);
@@ -50,8 +50,7 @@ public class LibMatrixDNNIm2Col
 				stride_h, stride_w, pad_h, pad_w, trans);
 	}
 	
-	public static void im2colDenseStride1Pad0(double[] in, double[] out, int r, int C, int R, int S, int H, int W, int P, int Q) {
-		int nOffset = r * C * H * W;
+	public static void im2colDenseStride1Pad0(double[] in, double[] out, int ai, int C, int R, int S, int H, int W, int P, int Q) {
 		int CRS = C * R * S;
 		for (int c = 0; c < CRS; ++c) {
 			int wOffset = c % S;
@@ -60,7 +59,7 @@ public class LibMatrixDNNIm2Col
 			for (int h = 0; h < P; ++h) {
 				int hPadded = h + hOffset;
 				int outOffset = (c * P + h) * Q;
-				int inputOffset = nOffset + (cInput * H + hPadded) * W;
+				int inputOffset = ai + (cInput * H + hPadded) * W;
 				System.arraycopy(in, inputOffset + wOffset, out, outOffset, Q);
 				int w = Q - 1;
 				int wPadded = w + wOffset;

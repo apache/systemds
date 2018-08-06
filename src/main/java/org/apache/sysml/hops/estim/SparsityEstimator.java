@@ -21,12 +21,23 @@ package org.apache.sysml.hops.estim;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class SparsityEstimator 
 {
 	protected static final Log LOG = LogFactory.getLog(SparsityEstimator.class.getName());
+	
+	//internal configuration
+	public static boolean MULTI_THREADED_BUILD = false;
+	public static boolean MULTI_THREADED_ESTIM = false;
+	public static final int MIN_PAR_THRESHOLD = 10 * 1024;
+	
+	public static enum OpCode {
+		MM, 
+		MULT, PLUS, EQZERO, NEQZERO,
+		CBIND, RBIND, 
+		TRANS, DIAG, RESHAPE;
+	}
 	
 	/**
 	 * Estimates the output sparsity of a DAG of matrix multiplications
@@ -38,8 +49,7 @@ public abstract class SparsityEstimator
 	public abstract double estim(MMNode root);
 	
 	/**
-	 * Estimates the output sparsity of a single matrix multiplication
-	 * for the two given matrices.
+	 * Estimates the output sparsity for a single matrix multiplication.
 	 * 
 	 * @param m1 left-hand-side operand
 	 * @param m2 right-hand-side operand
@@ -48,13 +58,21 @@ public abstract class SparsityEstimator
 	public abstract double estim(MatrixBlock m1, MatrixBlock m2);
 	
 	/**
-	 * Estimates the output sparsity of a single matrix multiplication
-	 * for the two given matrices represented by meta data only.
+	 * Estimates the output sparsity for a given binary operation.
 	 * 
-	 * @param mc1 left-hand-side operand
-	 * @param mc2 right-hand-side operand
+	 * @param m1 left-hand-side operand
+	 * @param m2 right-hand-side operand
+	 * @param op operator code
 	 * @return sparsity
 	 */
-	public abstract double estim(MatrixCharacteristics mc1, MatrixCharacteristics mc2);
-
+	public abstract double estim(MatrixBlock m1, MatrixBlock m2, OpCode op);
+	
+	/**
+	 * Estimates the output sparsity for a given unary operation.
+	 * 
+	 * @param m1 left-hand-side operand
+	 * @param op operator code
+	 * @return sparsity
+	 */
+	public abstract double estim(MatrixBlock m, OpCode op);
 }

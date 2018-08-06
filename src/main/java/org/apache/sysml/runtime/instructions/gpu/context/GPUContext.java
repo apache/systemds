@@ -211,7 +211,7 @@ public class GPUContext {
 	 * @return the available memory in bytes
 	 */
 	public long getAvailableMemory() {
-		return memoryManager.getAvailableMemory();
+		return memoryManager.allocator.getAvailableMemory();
 	}
 
 	/**

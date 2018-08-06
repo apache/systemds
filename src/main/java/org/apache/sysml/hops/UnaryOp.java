@@ -456,8 +456,7 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//recursive preaggregation until aggregates fit into CP memory budget
 		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
-				 > OptimizerUtils.getLocalMemBudget()
-			   && TEMP.getOutputParameters().getNumRows()>1) || force )
+			> OptimizerUtils.getLocalMemBudget() && TEMP.getOutputParameters().getNumRows()>1) || force )
 		{
 			DATA.add(TEMP);
 	
@@ -468,7 +467,7 @@ public class UnaryOp extends MultiThreadedHop
 			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			setLineNumbers(preagg);
 			
-			TEMP = preagg;	
+			TEMP = preagg;
 			level++;
 			force = false; //in case of unknowns, generate one level
 		}
@@ -497,19 +496,20 @@ public class UnaryOp extends MultiThreadedHop
 		return TEMP;
 	}
 
-	private OperationTypes getCumulativeAggType()
-	{
+	private OperationTypes getCumulativeAggType() {
 		switch( _op ) {
-			case CUMSUM: 	return OperationTypes.KahanSum;
-			case CUMPROD: 	return OperationTypes.Product;
-			case CUMMIN: 	return OperationTypes.Min;
-			case CUMMAX: 	return OperationTypes.Max;
-			default: 		return null;
+			case CUMSUM:     return OperationTypes.KahanSum;
+			case CUMPROD:    return OperationTypes.Product;
+			case CUMSUMPROD: return OperationTypes.SumProduct;
+			case CUMMIN:     return OperationTypes.Min;
+			case CUMMAX:     return OperationTypes.Max;
+			default:         return null;
 		}
 	}
 
 	private double getCumulativeInitValue() {
 		switch( _op ) {
+			case CUMSUMPROD: 
 			case CUMSUM:  return 0;
 			case CUMPROD: return 1;
 			case CUMMIN:  return Double.POSITIVE_INFINITY;
@@ -580,6 +580,8 @@ public class UnaryOp extends MultiThreadedHop
 			{
 				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
 			}
+			else if( _op==OpOp1.CUMSUMPROD )
+				ret = new long[]{mc.getRows(), 1, -1};
 			else 
 				ret = new long[]{mc.getRows(), mc.getCols(), -1};
 		}
@@ -603,7 +605,8 @@ public class UnaryOp extends MultiThreadedHop
 		return (_op == OpOp1.CUMSUM 
 			|| _op == OpOp1.CUMPROD
 			|| _op == OpOp1.CUMMIN
-			|| _op == OpOp1.CUMMAX);
+			|| _op == OpOp1.CUMMAX
+			|| _op == OpOp1.CUMSUMPROD);
 	}
 
 	public boolean isCastUnaryOperation() {
@@ -701,6 +704,10 @@ public class UnaryOp extends MultiThreadedHop
 			setDim1( 1 );
 			setDim2( 1 );
 		}
+		else if ( _op==OpOp1.CUMSUMPROD ) {
+			setDim1(input.getDim1());
+			setDim2(1);
+		}
 		else //general case
 		{
 			// If output is a Matrix then this operation is of type (B = op(A))
@@ -721,7 +728,7 @@ public class UnaryOp extends MultiThreadedHop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		UnaryOp ret = new UnaryOp();	
+		UnaryOp ret = new UnaryOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);
@@ -749,7 +756,7 @@ public class UnaryOp extends MultiThreadedHop
 		if( _op == OpOp1.PRINT )
 			return false;
 		
-		UnaryOp that2 = (UnaryOp)that;		
+		UnaryOp that2 = (UnaryOp)that;
 		return (   _op == that2._op
 				&& getInput().get(0) == that2.getInput().get(0));
 	}

@@ -92,8 +92,10 @@ public class DMLConfig
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
 	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
+	public static final String GPU_MEMORY_ALLOCATOR = "sysml.gpu.memory.allocator"; // String to specify the memory allocator to use. Supported values are: cuda, unified_memory
 	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
 	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
+	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysml.gpu.eviction.shadow.bufferSize";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -136,15 +138,16 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
+		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
+		_defaultVals.put(GPU_MEMORY_ALLOCATOR,	 "cuda");
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
-		_defaultVals.put(GPU_EVICTION_POLICY,    "align_memory");
+		_defaultVals.put(GPU_EVICTION_POLICY,    "min_evict");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
 		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
-		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false");
 	}
 	
 	public DMLConfig() {
@@ -426,7 +429,8 @@ public class DMLConfig
 				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
-				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY
+				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, EVICTION_SHADOW_BUFFERSIZE,
+				GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

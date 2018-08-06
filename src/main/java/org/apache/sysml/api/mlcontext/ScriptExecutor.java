@@ -27,7 +27,6 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLOptions;
-import org.apache.sysml.api.DMLScript.EvictionPolicy;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
@@ -51,7 +50,6 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -246,16 +244,7 @@ public class ScriptExecutor {
 			throw new RuntimeException(ex);
 		}
 
-		// set the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
-		GPUContextPool.AVAILABLE_GPUS = config.getTextValue(DMLConfig.AVAILABLE_GPUS);
-		
-		String evictionPolicy = config.getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
-		try {
-			DMLScript.GPU_EVICTION_POLICY = EvictionPolicy.valueOf(evictionPolicy);
-		} 
-		catch(IllegalArgumentException e) {
-			throw new RuntimeException("Unsupported eviction policy:" + evictionPolicy);
-		}
+		DMLScript.setGlobalFlags(config);
 	}
 	
 

@@ -33,7 +33,9 @@ public class CNodeNary extends CNode
 	public enum NaryType {
 		VECT_CBIND,
 		VECT_MAX_POOL,
-		VECT_AVG_POOL;
+		VECT_AVG_POOL,
+		VECT_IM2COL,
+		VECT_CONV2DMM;
 		
 		public static boolean contains(String value) {
 			for( NaryType bt : values() )
@@ -63,18 +65,30 @@ public class CNodeNary extends CNode
 					}
 					return sb.toString();
 				case VECT_MAX_POOL:
-				case VECT_AVG_POOL:
+				case VECT_AVG_POOL: {
 					String vectName = (this==VECT_MAX_POOL) ? "Maxpool" : "Avgpool";
-					String paramStr = getPoolingParameterString(inputs);
+					String paramStr = getDnnParameterString(inputs, true);
 					return sparseGen ?
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len, "+paramStr+");\n" : 
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%, "+paramStr+");\n";
+				}
+				case VECT_IM2COL: {
+					String paramStr = getDnnParameterString(inputs, true);
+					return sparseGen ?
+						"    double[] %TMP% = LibSpoofPrimitives.vectIm2colWrite(%IN1v%, %IN1i%, %POS1%, alen, len, "+paramStr+");\n" : 
+						"    double[] %TMP% = LibSpoofPrimitives.vectIm2colWrite(%IN1%, %POS1%, %LEN%, "+paramStr+");\n";
+				}
+				case VECT_CONV2DMM: {
+					return "    double[] %TMP% = LibSpoofPrimitives.vectConv2dmmWrite(%IN2%, %IN1%, %POS2%, %POS1%, %LEN%, "
+						+ getDnnParameterString(inputs, false) +");\n";
+				}
 				default:
 					throw new RuntimeException("Invalid nary type: "+this.toString());
 			}
 		}
 		public boolean isVectorPrimitive() {
-			return this == VECT_CBIND || this == VECT_MAX_POOL || this == VECT_AVG_POOL;
+			return this == VECT_CBIND || this == VECT_MAX_POOL || this == VECT_AVG_POOL
+				|| this == VECT_IM2COL || this == NaryType.VECT_CONV2DMM;
 		}
 	}
 	
@@ -111,8 +125,11 @@ public class CNodeNary extends CNode
 		tmp = tmp.replace("%TMP%", var);
 		
 		//replace sparse and dense inputs
-		String varj = _inputs.get(0).getVarname();
-		tmp = replaceUnaryPlaceholders(tmp, varj, false);
+		String varj1 = _inputs.get(0).getVarname();
+		String varj2 = _inputs.get(1).getVarname();
+		tmp = (_type == NaryType.VECT_CONV2DMM) ?
+			replaceBinaryPlaceholders(tmp, new String[]{varj1,varj2}, false) :
+			replaceUnaryPlaceholders(tmp, varj1, false);
 		
 		sb.append(tmp);
 		
@@ -128,6 +145,8 @@ public class CNodeNary extends CNode
 			case VECT_CBIND:    return "n(cbind)";
 			case VECT_MAX_POOL: return "n(maxpool)";
 			case VECT_AVG_POOL: return "n(avgpool)";
+			case VECT_IM2COL:   return "n(im2col)";
+			case VECT_CONV2DMM: return "n(conv2dmm)";
 			default:
 				return "m("+_type.name().toLowerCase()+")";
 		}
@@ -144,7 +163,7 @@ public class CNodeNary extends CNode
 				_dataType = DataType.MATRIX;
 				break;
 			case VECT_MAX_POOL:
-			case VECT_AVG_POOL: //only stride 1, pad 0
+			case VECT_AVG_POOL: { //only stride 1, pad 0
 				int C = Integer.parseInt(_inputs.get(6).getVarname());
 				int H = Integer.parseInt(_inputs.get(7).getVarname());
 				int W = Integer.parseInt(_inputs.get(8).getVarname());
@@ -152,10 +171,28 @@ public class CNodeNary extends CNode
 				int S = Integer.parseInt(_inputs.get(12).getVarname());
 				long P = DnnUtils.getP(H, R, 1, 0);
 				long Q = DnnUtils.getQ(W, S, 1, 0);
-				_rows = _inputs.get(0)._rows;
+				_rows = _inputs.get(0)._rows; //N
 				_cols =  C * P * Q;
 				_dataType = DataType.MATRIX;
 				break;
+			}
+			case VECT_IM2COL:
+				_rows = 1;
+				_cols = -1;
+				_dataType = DataType.MATRIX;
+				break;
+			case VECT_CONV2DMM: {
+				int H = Integer.parseInt(_inputs.get(8).getVarname());
+				int W = Integer.parseInt(_inputs.get(9).getVarname());
+				int K = Integer.parseInt(_inputs.get(10).getVarname());
+				int R = Integer.parseInt(_inputs.get(12).getVarname());
+				int S = Integer.parseInt(_inputs.get(13).getVarname());
+				long P = DnnUtils.getP(H, R, 1, 0);
+				long Q = DnnUtils.getQ(W, S, 1, 0);
+				_rows = _inputs.get(0)._rows; //N
+				_cols = K * P * Q;
+				_dataType = DataType.MATRIX;
+			}
 		}
 	}
 	
@@ -178,18 +215,46 @@ public class CNodeNary extends CNode
 			&& _type == that._type;
 	}
 	
-	private static String getPoolingParameterString(List<CNode> inputs) {
+	private static String getDnnParameterString(List<CNode> inputs, boolean unary) {
+		int off = unary ? 0 : 1;
+		
 		//extract and derive individual parameters
-		int C = Integer.parseInt(inputs.get(6).getVarname());
-		int H = Integer.parseInt(inputs.get(7).getVarname());
-		int W = Integer.parseInt(inputs.get(8).getVarname());
-		int R = Integer.parseInt(inputs.get(11).getVarname());
-		int S = Integer.parseInt(inputs.get(12).getVarname());
+		int C = Integer.parseInt(inputs.get(off+6).getVarname());
+		int H = Integer.parseInt(inputs.get(off+7).getVarname());
+		int W = Integer.parseInt(inputs.get(off+8).getVarname());
+		int K = Integer.parseInt(inputs.get(off+9).getVarname());
+		int R = Integer.parseInt(inputs.get(off+11).getVarname());
+		int S = Integer.parseInt(inputs.get(off+12).getVarname());
 		int P = (int) DnnUtils.getP(H, R, 1, 0);
 		int Q = (int) DnnUtils.getQ(W, S, 1, 0);
 		
 		//construct parameter string
 		return "rix, " + StringUtils.join(
-			new int[]{C, P, Q, R, S, H, W}, ',');
+			new int[]{C, P, Q, K, R, S, H, W}, ',');
+	}
+	
+
+	private String replaceBinaryPlaceholders(String tmp, String[] vars, boolean vectIn) {
+		//replace sparse and dense inputs
+		for( int j=0; j<2; j++ ) {
+			String varj = vars[j];
+			
+			//replace sparse and dense inputs
+			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
+			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
+			tmp = tmp.replace("%IN"+(j+1)+"%", 
+				varj.startsWith("b") ? varj + ".values(rix)" : varj );
+			
+			//replace start position of main input
+			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
+				&& _inputs.get(j).getDataType().isMatrix()) ? !varj.startsWith("b") ? varj+"i" : 
+				(TemplateUtils.isMatrix(_inputs.get(j)) && _type!=NaryType.VECT_CONV2DMM) ? varj + ".pos(rix)" : "0" : "0");
+		}
+		
+		//replace length
+		if( _inputs.get(0).getDataType().isMatrix() )
+			tmp = tmp.replace("%LEN%", _inputs.get(0).getVectorLength());
+		
+		return tmp;
 	}
 }

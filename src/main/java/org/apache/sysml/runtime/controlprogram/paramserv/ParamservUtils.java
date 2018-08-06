@@ -58,8 +58,8 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkAggregator;
-import org.apache.sysml.runtime.controlprogram.paramserv.spark.DataPartitionerSparkMapper;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionerSparkAggregator;
+import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionerSparkMapper;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -86,24 +86,23 @@ public class ParamservUtils {
 	 * Deep copy the list object
 	 *
 	 * @param lo list object
+	 * @param cleanup clean up the given list object
 	 * @return a new copied list object
 	 */
-	public static ListObject copyList(ListObject lo) {
-		if (lo.getLength() == 0) {
-			return lo;
-		}
+	public static ListObject copyList(ListObject lo, boolean cleanup) {
 		List<Data> newData = IntStream.range(0, lo.getLength()).mapToObj(i -> {
 			Data oldData = lo.slice(i);
-			if (oldData instanceof MatrixObject) {
-				MatrixObject mo = (MatrixObject) oldData;
-				return sliceMatrix(mo, 1, mo.getNumRows());
-			} else if (oldData instanceof ListObject || oldData instanceof FrameObject) {
+			if (oldData instanceof MatrixObject)
+				return createShallowCopy((MatrixObject) oldData);
+			else if (oldData instanceof ListObject || oldData instanceof FrameObject)
 				throw new DMLRuntimeException("Copy list: does not support list or frame.");
-			} else {
+			else
 				return oldData;
-			}
 		}).collect(Collectors.toList());
-		return new ListObject(newData, lo.getNames());
+		ListObject result = new ListObject(newData, lo.getNames());
+		if (cleanup)
+			ParamservUtils.cleanupListObject(lo);
+		return result;
 	}
 
 	/**
@@ -145,23 +144,32 @@ public class ParamservUtils {
 		CacheableData<?> cd = (CacheableData<?>) data;
 		cd.enableCleanup(true);
 		ec.cleanupCacheableData(cd);
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s has been deleted.", cd.getFileName()));
-		}
 	}
 
-	public static void cleanupMatrixObject(ExecutionContext ec, MatrixObject mo) {
-		mo.enableCleanup(true);
-		ec.cleanupCacheableData(mo);
+	public static void cleanupData(ExecutionContext ec, String varName) {
+		cleanupData(ec, ec.removeVariable(varName));
+	}
+
+	public static void cleanupListObject(ListObject lo) {
+		cleanupListObject(ExecutionContextFactory.createContext(), lo);
 	}
 
 	public static MatrixObject newMatrixObject(MatrixBlock mb) {
+		return newMatrixObject(mb, true);
+	}
+	
+	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
 		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
 			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		result.acquireModify(mb);
 		result.release();
+		result.enableCleanup(cleanup);
 		return result;
+	}
+	
+	public static MatrixObject createShallowCopy(MatrixObject mo) {
+		return newMatrixObject(mo.acquireReadAndRelease(), false);
 	}
 
 	/**
@@ -173,11 +181,8 @@ public class ParamservUtils {
 	 * @return new sliced matrix
 	 */
 	public static MatrixObject sliceMatrix(MatrixObject mo, long rl, long rh) {
-		MatrixBlock mb = mo.acquireRead();
-		MatrixObject result = newMatrixObject(sliceMatrixBlock(mb, rl, rh));
-		result.enableCleanup(false);
-		mo.release();
-		return result;
+		MatrixBlock mb = mo.acquireReadAndRelease();
+		return newMatrixObject(sliceMatrixBlock(mb, rl, rh), false);
 	}
 
 	/**
@@ -193,6 +198,12 @@ public class ParamservUtils {
 		return mb.slice((int) rl - 1, (int) rh - 1);
 	}
 
+	/**
+	 * Generate the permutation
+	 * @param numEntries permutation size
+	 * @param seed seed used to generate random number
+	 * @return permutation matrix
+	 */
 	public static MatrixBlock generatePermutation(int numEntries, long seed) {
 		// Create a sequence and sample w/o replacement
 		// (no need to materialize the sequence because ctable only uses its meta data)
@@ -204,6 +215,12 @@ public class ParamservUtils {
 			new MatrixBlock(numEntries, numEntries, true));
 	}
 
+	/**
+	 * Get the namespace and function name of a given physical func name
+	 * @param funcName physical func name (e.g., "ns:func")
+	 * @param prefix prefix
+	 * @return an string array of size 2 where array[0] is namespace and array[1] is name
+	 */
 	public static String[] getCompleteFuncName(String funcName, String prefix) {
 		String[] keys = DMLProgram.splitFunctionKey(funcName);
 		String ns = (keys.length==2) ? keys[0] : null;
@@ -330,35 +347,23 @@ public class ParamservUtils {
 	/**
 	 * Assemble the matrix of features and labels according to the rowID
 	 *
-	 * @param numRows row size of the data
 	 * @param featuresRDD indexed features matrix block
 	 * @param labelsRDD indexed labels matrix block
 	 * @return Assembled rdd with rowID as key while matrix of features and labels as value (rowID -> features, labels)
 	 */
-	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
-		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(numRows, featuresRDD);
-		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(numRows, labelsRDD);
+	public static JavaPairRDD<Long, Tuple2<MatrixBlock, MatrixBlock>> assembleTrainingData(JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD, JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD) {
+		JavaPairRDD<Long, MatrixBlock> fRDD = groupMatrix(featuresRDD);
+		JavaPairRDD<Long, MatrixBlock> lRDD = groupMatrix(labelsRDD);
 		//TODO Add an additional physical operator which broadcasts the labels directly (broadcast join with features) if certain memory budgets are satisfied
 		return fRDD.join(lRDD);
 	}
 
-	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(long numRows, JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
+	private static JavaPairRDD<Long, MatrixBlock> groupMatrix(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd) {
 		//TODO could use join and aggregation to avoid unnecessary shuffle introduced by reduceByKey
 		return rdd.mapToPair(input -> new Tuple2<>(input._1.getRowIndex(), new Tuple2<>(input._1.getColumnIndex(), input._2)))
 			.aggregateByKey(new LinkedList<Tuple2<Long, MatrixBlock>>(),
-				new Partitioner() {
-					private static final long serialVersionUID = -7032660778344579236L;
-					@Override
-					public int getPartition(Object rblkID) {
-						return Math.toIntExact((Long) rblkID);
-					}
-					@Override
-					public int numPartitions() {
-						return Math.toIntExact(numRows);
-					}
-				},
 				(list, input) -> {
-					list.add(input); 
+					list.add(input);
 					return list;
 				}, 
 				(l1, l2) -> {
@@ -381,13 +386,13 @@ public class ParamservUtils {
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		// Get input RDD
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-				sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
 		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
-				sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
+			sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
 
 		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int) features.getNumRows());
 		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils
-			.assembleTrainingData(features.getNumRows(), featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
+			.assembleTrainingData(featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
 			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))
 			// Aggregate the partitioned matrix according to rowID for each worker
 			// i.e. (workerID => ordered list[(rowBlockID, (single row features, single row labels)]
@@ -416,21 +421,38 @@ public class ParamservUtils {
 		return result;
 	}
 
-	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients) {
-		return accrueGradients(accGradients, gradients, false);
+	/**
+	 * Accumulate the given gradients into the accrued gradients
+	 *
+	 * @param accGradients accrued gradients list object
+	 * @param gradients given gradients list object
+	 * @param cleanup clean up the given gradients list object
+	 * @return new accrued gradients list object
+	 */
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean cleanup) {
+		return accrueGradients(accGradients, gradients, false, cleanup);
 	}
-	
-	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par) {
+
+	/**
+	 * Accumulate the given gradients into the accrued gradients
+	 *
+	 * @param accGradients accrued gradients list object
+	 * @param gradients given gradients list object
+	 * @param par parallel execution
+	 * @param cleanup clean up the given gradients list object
+	 * @return new accrued gradients list object
+	 */
+	public static ListObject accrueGradients(ListObject accGradients, ListObject gradients, boolean par, boolean cleanup) {
 		if (accGradients == null)
-			return ParamservUtils.copyList(gradients);
+			return ParamservUtils.copyList(gradients, cleanup);
 		IntStream range = IntStream.range(0, accGradients.getLength());
 		(par ? range.parallel() : range).forEach(i -> {
-			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireRead();
-			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireRead();
+			MatrixBlock mb1 = ((MatrixObject) accGradients.getData().get(i)).acquireReadAndRelease();
+			MatrixBlock mb2 = ((MatrixObject) gradients.getData().get(i)).acquireReadAndRelease();
 			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
-			((MatrixObject) accGradients.getData().get(i)).release();
-			((MatrixObject) gradients.getData().get(i)).release();
 		});
+		if (cleanup)
+			ParamservUtils.cleanupListObject(gradients);
 		return accGradients;
 	}
 }

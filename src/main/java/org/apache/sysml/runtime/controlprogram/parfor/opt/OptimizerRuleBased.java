@@ -417,7 +417,9 @@ public class OptimizerRuleBased extends Optimizer
 				double mem = getMemoryEstimate(c, vars);
 				if( dpf != PartitionFormat.NONE 
 					&& dpf._dpf != PDataPartitionFormat.BLOCK_WISE_M_N
-					&& (constrained || (mem > _lm/2 && mem > _rm/2)) ) {
+					&& (constrained || (mem > _lm/2 && mem > _rm/2))
+					&& vars.get(c) != null //robustness non-existing vars
+					&& !vars.get(c).getDataType().isList() ) {
 					cand2.put( c, dpf );
 				}
 			}
@@ -2039,7 +2041,6 @@ public class OptimizerRuleBased extends Optimizer
 			if( dat instanceof MatrixObject && ((MatrixObject)dat).getNnz()!=0     //subject to result merge with compare
 				&& n.hasOnlySimpleChilds()                                         //guaranteed no conditional indexing	
 				&& rContainsResultFullReplace(n, rvar._name, itervar, (MatrixObject)dat) //guaranteed full matrix replace 
-				//&& !pfsb.variablesRead().containsVariable(rvar)                  //never read variable in loop body
 				&& !rIsReadInRightIndexing(n, rvar._name)                          //never read variable in loop body
 				&& ((MatrixObject)dat).getNumRows()<=Integer.MAX_VALUE
 				&& ((MatrixObject)dat).getNumColumns()<=Integer.MAX_VALUE )
@@ -2334,15 +2335,17 @@ public class OptimizerRuleBased extends Optimizer
 				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
-				if( ResultVar.contains(resultVars, varName) && vars.keySet().contains(varName) )
-				{
+				if( ResultVar.contains(resultVars, varName) && vars.keySet().contains(varName) ) {
+					Data dat = vars.get(hop.getInput().get(0).getName());
 					//dims of result vars must be known at this point in time
-					MatrixObject mo = (MatrixObject) vars.get( hop.getInput().get(0).getName() );
-					long rows = mo.getNumRows();
-					long cols = mo.getNumColumns();
-					double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
-						                         OptimizerUtils.getRemoteMemBudgetMap();
-					ret &= isInMemoryResultMerge(rows, cols, memBudget);
+					if( dat instanceof MatrixObject ) {
+						MatrixObject mo = (MatrixObject) dat;
+						long rows = mo.getNumRows();
+						long cols = mo.getNumColumns();
+						double memBudget = inLocal ? OptimizerUtils.getLocalMemBudget() : 
+							                         OptimizerUtils.getRemoteMemBudgetMap();
+						ret &= isInMemoryResultMerge(rows, cols, memBudget);
+					}
 				}
 			}
 		}

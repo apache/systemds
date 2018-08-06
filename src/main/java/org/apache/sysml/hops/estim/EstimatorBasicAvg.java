@@ -28,14 +28,35 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
  * sp = 1 - Math.pow(1-sp1*sp2, k)
  */
 public class EstimatorBasicAvg extends SparsityEstimator {
+	
 	@Override
 	public double estim(MMNode root) {
-		// recursive sparsity evaluation of non-leaf nodes
+		return estim(root, OpCode.MM);
+	}
+
+
+	public double estim(MMNode root, OpCode op) {
 		double sp1 = !root.getLeft().isLeaf() ? estim(root.getLeft()) :
 			OptimizerUtils.getSparsity(root.getLeft().getMatrixCharacteristics());
 		double sp2 = !root.getRight().isLeaf() ? estim(root.getRight()) :
 			OptimizerUtils.getSparsity(root.getRight().getMatrixCharacteristics());
-		return estimInternMM(sp1, sp2, root.getRows(), root.getLeft().getCols(), root.getCols());
+		double ret = 0;
+		switch (op) {
+		case MM:
+			ret = estimInternMM(sp1, sp2, root.getRows(), root.getLeft().getCols(), root.getCols());
+			root.setSynopsis(ret);
+			return ret;
+		case MULT:
+			ret = sp1 + sp2 - sp1 * sp2;
+			root.setSynopsis(ret);
+			return ret;
+		case PLUS:
+			ret = sp1 * sp2;
+			root.setSynopsis(ret);
+			return ret;
+		default:
+			throw new NotImplementedException();
+		}
 	}
 
 	@Override

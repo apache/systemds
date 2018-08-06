@@ -21,6 +21,7 @@ package org.apache.sysml.hops.estim;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -52,7 +53,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	@Override
-	public double estim(MMNode root) {
+	public MatrixCharacteristics estim(MMNode root) {
 		//recursive density map computation of non-leaf nodes
 		if( !root.getLeft().isLeaf() )
 			estim(root.getLeft()); //obtain synopsis
@@ -67,8 +68,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
 			false, root.getRows(), root.getLeft().getCols(), root.getCols());
 		root.setSynopsis(outMap); //memoize density map
-		return OptimizerUtils.getSparsity( //aggregate output histogram
-			root.getRows(), root.getCols(), (long)outMap.sum());
+		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+			root.getLeft().getRows(), root.getRight().getCols(), (long)outMap.sum()));
 	}
 
 	@Override

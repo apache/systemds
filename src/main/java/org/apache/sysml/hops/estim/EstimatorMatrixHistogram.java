@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 
 import org.apache.directory.api.util.exception.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -52,7 +53,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	@Override
-	public double estim(MMNode root) {
+	public MatrixCharacteristics estim(MMNode root) {
 		//recursive histogram computation of non-leaf nodes
 		if( !root.getLeft().isLeaf() )
 			estim(root.getLeft()); //obtain synopsis
@@ -69,9 +70,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		double ret = estimIntern(h1, h2, OpCode.MM);
 		
 		//derive and memoize output histogram
-		root.setSynopsis(MatrixHistogram.deriveOutputHistogram(h1, h2, ret));
-		
-		return ret;
+		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret);
+		root.setSynopsis(outMap);
+		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+			outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
 	}
 	
 	@Override 

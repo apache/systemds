@@ -81,6 +81,10 @@ public class MatrixCharacteristics implements Serializable
 	
 	public MatrixCharacteristics() {}
 	
+	public MatrixCharacteristics(long nr, long nc, long nnz) {
+		set(nr, nc, -1, -1, nnz);
+	}
+	
 	public MatrixCharacteristics(long nr, long nc, int bnr, int bnc) {
 		set(nr, nc, bnr, bnc);
 	}
@@ -93,29 +97,32 @@ public class MatrixCharacteristics implements Serializable
 		set(that.numRows, that.numColumns, that.numRowsPerBlock, that.numColumnsPerBlock, that.nonZero);
 	}
 
-	public void set(long nr, long nc, int bnr, int bnc) {
+	public MatrixCharacteristics set(long nr, long nc, int bnr, int bnc) {
 		numRows = nr;
 		numColumns = nc;
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
+		return this;
 	}
 	
-	public void set(long nr, long nc, int bnr, int bnc, long nnz) {
+	public MatrixCharacteristics set(long nr, long nc, int bnr, int bnc, long nnz) {
 		numRows = nr;
 		numColumns = nc;
 		numRowsPerBlock = bnr;
 		numColumnsPerBlock = bnc;
 		nonZero = nnz;
 		ubNnz = false;
+		return this;
 	}
 	
-	public void set(MatrixCharacteristics that) {
+	public MatrixCharacteristics set(MatrixCharacteristics that) {
 		numRows = that.numRows;
 		numColumns = that.numColumns;
 		numRowsPerBlock = that.numRowsPerBlock;
 		numColumnsPerBlock = that.numColumnsPerBlock;
 		nonZero = that.nonZero;
 		ubNnz = that.ubNnz;
+		return this;
 	}
 	
 	public long getRows(){
@@ -205,6 +212,10 @@ public class MatrixCharacteristics implements Serializable
 	
 	public long getNonZerosBound() {
 		return nonZero;
+	}
+	
+	public double getSparsity() {
+		return OptimizerUtils.getSparsity(this);
 	}
 	
 	public boolean dimsKnown() {

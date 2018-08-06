@@ -21,6 +21,7 @@ package org.apache.sysml.hops.estim;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
 public abstract class SparsityEstimator 
@@ -46,7 +47,8 @@ public abstract class SparsityEstimator
 	 * @param root
 	 * @return
 	 */
-	public abstract double estim(MMNode root);
+	public abstract MatrixCharacteristics estim(MMNode root);
+	
 	
 	/**
 	 * Estimates the output sparsity for a single matrix multiplication.

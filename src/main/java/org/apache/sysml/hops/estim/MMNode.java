@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.estim;
 
+import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -33,20 +34,22 @@ public class MMNode
 	private final MatrixBlock _data;
 	private final MatrixCharacteristics _mc;
 	private Object _synops = null;
+	private final OpCode _op;
 	
 	public MMNode(MatrixBlock in) {
 		_m1 = null;
 		_m2 = null;
 		_data = in;
 		_mc = in.getMatrixCharacteristics();
+		_op = null;
 	}
 	
-	public MMNode(MMNode left, MMNode right) {
+	public MMNode(MMNode left, MMNode right, OpCode op) {
 		_m1 = left;
 		_m2 = right;
 		_data = null;
-		_mc = new MatrixCharacteristics(
-			_m1.getRows(), _m2.getCols(), -1, -1);
+		_mc = new MatrixCharacteristics(-1, -1, -1, -1);
+		_op = op;
 	}
 	
 	public int getRows() {
@@ -59,6 +62,10 @@ public class MMNode
 	
 	public MatrixCharacteristics getMatrixCharacteristics() {
 		return _mc;
+	}
+	
+	public MatrixCharacteristics setMatrixCharacteristics(MatrixCharacteristics mc) {
+		return _mc.set(mc); //implicit copy
 	}
 	
 	public MMNode getLeft() {
@@ -83,5 +90,9 @@ public class MMNode
 	
 	public Object getSynopsis() {
 		return _synops;
+	}
+	
+	public OpCode getOp() {
+		return _op;
 	}
 }

@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -42,7 +43,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
  */
 public class EstimatorBitsetMM extends SparsityEstimator {
 	@Override
-	public double estim(MMNode root) {
+	public MatrixCharacteristics estim(MMNode root) {
 		// recursive density map computation of non-leaf nodes
 		if (!root.getLeft().isLeaf())
 			estim(root.getLeft()); // obtain synopsis
@@ -56,7 +57,8 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 		// estimate output density map and sparsity via boolean matrix mult
 		BitsetMatrix outMap = m1Map.matMult(m2Map);
 		root.setSynopsis(outMap); // memoize boolean matrix
-		return OptimizerUtils.getSparsity(outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());
+		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
 	}
 
 	@Override
@@ -277,7 +279,7 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 				c[ci+0] |= b[bi+0]; c[ci+1] |= b[bi+1];
 				c[ci+2] |= b[bi+2]; c[ci+3] |= b[bi+3];
 				c[ci+4] |= b[bi+4]; c[ci+5] |= b[bi+5];
-				c[ci+6] |= b[bi+4]; c[ci+7] |= b[bi+7];
+				c[ci+6] |= b[bi+6]; c[ci+7] |= b[bi+7];
 			}
 		}
 	}

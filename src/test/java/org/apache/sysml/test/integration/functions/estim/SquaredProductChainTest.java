@@ -19,18 +19,19 @@
 
 package org.apache.sysml.test.integration.functions.estim;
 
-import org.junit.Test;
 import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysml.hops.estim.MMNode;
+import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
+import org.junit.Test;
 
 /**
  * This is a basic sanity check for all estimator, which need
@@ -135,8 +136,8 @@ public class SquaredProductChainTest extends AutomatedTestBase
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 		
 		//compare estimated and real sparsity
-		double est = estim.estim(new MMNode(
-			new MMNode(new MMNode(m1), new MMNode(m2)), new MMNode(m3)));
+		double est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2),
+			OpCode.MM), new MMNode(m3), OpCode.MM)).getSparsity();
 		TestUtils.compareScalars(est, m5.getSparsity(),
 			(estim instanceof EstimatorBitsetMM) ? eps3 : //exact
 			(estim instanceof EstimatorBasicWorst) ? eps1 : eps2);

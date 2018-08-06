@@ -27,6 +27,11 @@ public abstract class SparsityEstimator
 {
 	protected static final Log LOG = LogFactory.getLog(SparsityEstimator.class.getName());
 	
+	//internal configuration
+	public static boolean MULTI_THREADED_BUILD = false;
+	public static boolean MULTI_THREADED_ESTIM = false;
+	public static final int MIN_PAR_THRESHOLD = 10 * 1024;
+	
 	public static enum OpCode {
 		MM, 
 		MULT, PLUS, EQZERO, NEQZERO,

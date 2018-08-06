@@ -20,9 +20,11 @@
 package org.apache.sysml.hops.estim;
 
 import java.util.BitSet;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -87,8 +89,6 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 			_rlen = rlen;
 			_clen = clen;
 			_data = new BitSet[_rlen];
-			for (int i = 0; i < _rlen; i++)
-				_data[i] = new BitSet(_clen);
 			_nonZeros = 0;
 		}
 
@@ -112,12 +112,45 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 		private void init(MatrixBlock in) {
 			if (in.isEmptyBlock(false))
 				return;
+			if( MULTI_THREADED_BUILD && in.getNonZeros() > MIN_PAR_THRESHOLD ) {
+				int k = 8 * InfrastructureAnalyzer.getLocalParallelism();
+				int blklen = (int)Math.ceil((double)_rlen/k);
+				IntStream.range(0, k).parallel().forEach(i ->
+					buildIntern(this, in, i*blklen, Math.min((i+1)*blklen, _rlen)));
+			}
+			else {
+				//single-threaded bitset construction
+				buildIntern(this, in, 0, in.getNumRows());
+			}
+			_nonZeros = in.getNonZeros();
+		}
+
+		public BitsetMatrix matMult(BitsetMatrix m2) {
+			BitsetMatrix out = new BitsetMatrix(_rlen, m2._clen);
+			if( this.getNonZeros() == 0 || m2.getNonZeros() == 0 )
+				return out;
+			long size = (long)_rlen*_clen+(long)m2._rlen*m2._clen;
+			if( MULTI_THREADED_ESTIM && size > MIN_PAR_THRESHOLD ) {
+				int k = 8 * InfrastructureAnalyzer.getLocalParallelism();
+				int blklen = (int)Math.ceil((double)_rlen/k);
+				out._nonZeros = IntStream.range(0, k).parallel().mapToLong(i ->
+					matMultIntern(this, m2, out, i*blklen, Math.min((i+1)*blklen, _rlen))).sum();
+			}
+			else {
+				//single-threaded boolean matrix mult
+				out._nonZeros = matMultIntern(this, m2, out, 0, _rlen);
+			}
+			return out;
+		}
+		
+		private static void buildIntern(BitsetMatrix bitset, MatrixBlock in, int rl, int ru) {
+			final int clen = in.getNumColumns();
 			if (in.isInSparseFormat()) {
 				SparseBlock sblock = in.getSparseBlock();
-				for (int i = 0; i < in.getNumRows(); i++) {
+				for (int i = rl; i < ru; i++) {
 					if (sblock.isEmpty(i))
 						continue;
-					BitSet lbs = _data[i];
+					BitSet lbs = bitset._data[i] = new BitSet(clen);
 					int alen = sblock.size(i);
 					int apos = sblock.pos(i);
 					int[] aix = sblock.indexes(i);
@@ -127,7 +160,7 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 			} else {
 				DenseBlock dblock = in.getDenseBlock();
 				for (int i = 0; i < in.getNumRows(); i++) {
-					BitSet lbs = _data[i];
+					BitSet lbs = bitset._data[i] = new BitSet(clen);
 					double[] avals = dblock.values(i);
 					int aix = dblock.pos(i);
 					for (int j = 0; j < in.getNumColumns(); j++)
@@ -135,25 +168,27 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 							lbs.set(j);
 				}
 			}
-			_nonZeros = in.getNonZeros();
 		}
-
-		public BitsetMatrix matMult(BitsetMatrix m2) {
-			final int m = this._rlen;
-			final int cd = this._clen;
-			final int n = m2._clen;
+		
+		private static long matMultIntern(BitsetMatrix bsa, BitsetMatrix bsb, BitsetMatrix bsc, int rl, int ru) {
+			final int cd = bsa._clen;
+			final int n = bsb._clen;
 			// matrix multiply with IKJ schedule and pure OR ops in inner loop
-			BitsetMatrix out = new BitsetMatrix(m, n);
-			for (int i = 0; i < m; i++) {
-				BitSet a = this._data[i], c = out._data[i];
-				for (int k = 0; k < cd; k++) {
-					if (a.get(k))
-						c.or(m2._data[k]);
+			long lnnz = 0;
+			for (int i = rl; i < ru; i++) {
+				BitSet a = bsa._data[i];
+				if( a != null ) {
+					BitSet c = bsc._data[i] = new BitSet(n);
+					for (int k = 0; k < cd; k++) {
+						BitSet b = bsb._data[k];
+						if (a.get(k) && b != null)
+							c.or(b);
+					}
+					// maintain nnz
+					lnnz += c.cardinality();
 				}
-				// maintain nnz
-				out._nonZeros += c.cardinality();
 			}
-			return out;
+			return lnnz;
 		}
 	}
 }

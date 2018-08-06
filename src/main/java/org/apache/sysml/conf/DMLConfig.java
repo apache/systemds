@@ -143,7 +143,7 @@ public class DMLConfig
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(GPU_MEMORY_ALLOCATOR,	 "cuda");
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
-		_defaultVals.put(GPU_EVICTION_POLICY,    "align_memory");
+		_defaultVals.put(GPU_EVICTION_POLICY,    "min_evict");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
 		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );

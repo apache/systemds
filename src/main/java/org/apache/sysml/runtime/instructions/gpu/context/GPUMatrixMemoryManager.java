@@ -52,7 +52,7 @@ public class GPUMatrixMemoryManager {
 	long getWorstCaseContiguousMemorySize(GPUObject gpuObj) {
 		long ret = 0;
 		if(!gpuObj.isDensePointerNull()) {
-			if(gpuObj.shadowPointer == null)
+			if(!gpuObj.shadowBuffer.isBuffered())
 				ret = gpuManager.allPointers.get(gpuObj.getDensePointer()).getSizeInBytes();
 			else
 				ret = 0; // evicted hence no contiguous memory on GPU

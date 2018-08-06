@@ -121,7 +121,7 @@ public class DMLScript
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
-	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.ALIGN_MEMORY;           // currently employed GPU eviction policy
+	public static EvictionPolicy    GPU_EVICTION_POLICY = EvictionPolicy.MIN_EVICT;           	// currently employed GPU eviction policy
 	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
 	public static long            	EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
 	public static long            	EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer

@@ -92,3 +92,29 @@ num_cores=`grep -c ^processor /proc/cpuinfo`
 make -j $num_cores
 sudo make install
 ```
+
+# Advanced Configuration
+
+## Using single precision
+
+By default, SystemML uses double precision to store its matrices in the GPU memory.
+To use single precision, the user needs to set the configuration property 'sysml.floating.point.precision'
+to 'single'. However, with exception of BLAS operations, SystemML always performs all CPU operations
+in double precision.
+
+## Training very deep network
+
+### Shadow buffer
+To train very deep network with double precision, no additional configurations are necessary.
+But to train very deep network with single precision, the user can speed up the eviction by 
+using shadow buffer. The fraction of the driver memory to be allocated to the shadow buffer can  
+be set by using the configuration property 'sysml.gpu.eviction.shadow.bufferSize'.
+In the current version, the shadow buffer is currently not guarded by SystemML
+and can potentially lead to OOM if the network is deep as well as wide.
+
+### Unified memory allocator
+
+By default, SystemML uses CUDA's memory allocator and performs on-demand eviction
+using the eviction policy set by the configuration property 'sysml.gpu.eviction.policy'.
+To use CUDA's unified memory allocator that performs page-level eviction instead,
+please set the configuration property 'sysml.gpu.memory.allocator' to 'unified_memory'.

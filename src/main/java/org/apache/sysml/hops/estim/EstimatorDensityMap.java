@@ -66,7 +66,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		
 		//estimate output density map and sparsity
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
-			false, root.getRows(), root.getLeft().getCols(), root.getCols());
+			false, root.getRows(), root.getLeft().getCols(), root.getCols(), root.getOp());
 		root.setSynopsis(outMap); //memoize density map
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
 			root.getLeft().getRows(), root.getRight().getCols(), (long)outMap.sum()));
@@ -78,19 +78,19 @@ public class EstimatorDensityMap extends SparsityEstimator
 		MatrixBlock m2Map = (m1 == m2) ? //self product
 			m1Map : computeDensityMap(m2);
 		MatrixBlock outMap = estimIntern(m1Map, m2Map,
-			true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns());
+			true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), OpCode.MM);
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		throw new NotImplementedException();
+		return estimIntern(m1, m2, op);
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		throw new NotImplementedException();
+		return estimIntern(m, null, op);
 	}
 
 	private MatrixBlock computeDensityMap(MatrixBlock in) {
@@ -159,39 +159,107 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 * @param nOrig number of columns of output matrix, required for returning nnz
 	 * @return density map
 	 */
-	private MatrixBlock estimIntern(MatrixBlock m1Map, MatrixBlock m2Map, boolean retNnz, int mOrig, int cdOrig, int nOrig) {
+	
+	private double estimIntern(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		MatrixBlock m1Map = computeDensityMap(m1);
+		MatrixBlock m2Map = (m1 == m2) ? //self product
+			m1Map : computeDensityMap(m2);
+		MatrixBlock outMap;
+		switch(op) {
+		case MM:
+			return estim(m1, m2);
+		case MULT:
+			outMap = estimIntern(m1Map, m2Map,true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), op);
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
+		case PLUS:
+			outMap = estimIntern(m1Map, m2Map,true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), op);
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
+		case EQZERO:
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m1.getNumColumns(),
+				(long)m1.getNumRows() * m1.getNumColumns() - m1.getNonZeros());
+		case DIAG:
+			return (m1.getNumColumns()==1) ?
+				OptimizerUtils.getSparsity(m1.getNumRows(), m1.getNumRows(), m1.getNonZeros()) :
+				OptimizerUtils.getSparsity(m1.getNumRows(), 1, Math.min(m1.getNumRows(), m1.getNonZeros()));
+		case CBIND:
+			outMap = estimIntern(m1Map, m2Map,true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), op);
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
+		case RBIND:
+			outMap = estimIntern(m1Map, m2Map,true, m1.getNumRows(), m1.getNumColumns(), m2.getNumColumns(), op);
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m2.getNumColumns(), (long)outMap.sum());
+		case NEQZERO:
+		case TRANS:
+		case RESHAPE:
+			return OptimizerUtils.getSparsity(m1.getNumRows(), m1.getNumColumns(), m1.getNonZeros());
+		default:
+			throw new NotImplementedException();
+		}
+	}
+	
+	private MatrixBlock estimIntern(MatrixBlock m1Map, MatrixBlock m2Map, boolean retNnz, int mOrig, int cdOrig, int nOrig, OpCode op) {
 		final int m = m1Map.getNumRows();
 		final int cd = m1Map.getNumColumns();
 		final int n = m2Map.getNumColumns();
 		MatrixBlock out = new MatrixBlock(m, n, false);
 		if( m1Map.isEmptyBlock(false) || m2Map.isEmptyBlock(false) )
 			return out;
-		
-		//compute output density map with IKJ schedule
 		DenseBlock c = out.allocateBlock().getDenseBlock();
-		for(int i=0; i<m; i++) {
-			for(int k=0; k<cd; k++) {
-				int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
-				double sp1 = m1Map.quickGetValue(i, k);
-				if( sp1 == 0 ) continue;
-				for(int j=0; j<n; j++) {
-					double sp2 = m2Map.quickGetValue(k, j);
-					if( sp2 == 0 ) continue;
-					//custom multiply for scalar sparsity
-					double tmp1 = 1 - Math.pow(1-sp1*sp2, lbk);
-					//custom add for scalar sparsity
-					double tmp2 = c.get(i, j);
-					c.set(i, j, tmp1+tmp2 - tmp1*tmp2);
+		switch(op) {
+		case MM:
+			//compute output density map with IKJ schedule
+			for(int i=0; i<m; i++) {
+				for(int k=0; k<cd; k++) {
+					int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
+					double sp1 = m1Map.quickGetValue(i, k);
+					if( sp1 == 0 ) continue;
+					for(int j=0; j<n; j++) {
+						double sp2 = m2Map.quickGetValue(k, j);
+						if( sp2 == 0 ) continue;
+						//custom multiply for scalar sparsity
+						double tmp1 = 1 - Math.pow(1-sp1*sp2, lbk);
+						//custom add for scalar sparsity
+						double tmp2 = c.get(i, j);
+						c.set(i, j, tmp1+tmp2 - tmp1*tmp2);
+					}
+				}
+				//scale to non-zeros instead of sparsity if needed
+				if( retNnz ) {
+					int lbm = UtilFunctions.computeBlockSize(mOrig, i+1, _b);
+					for( int j=0; j<n; j++ ) {
+						int lbn = UtilFunctions.computeBlockSize(nOrig, j+1, _b);
+						c.set(i, j, c.get(i, j) * lbm * lbn);
+					}
 				}
 			}
-			//scale to non-zeros instead of sparsity if needed
-			if( retNnz ) {
-				int lbm = UtilFunctions.computeBlockSize(mOrig, i+1, _b);
-				for( int j=0; j<n; j++ ) {
-					int lbn = UtilFunctions.computeBlockSize(nOrig, j+1, _b);
-					c.set(i, j, c.get(i, j) * lbm * lbn);
+		case MULT:
+			for(int i=0; i<m; i++) {
+				for(int k=0; k<cd; k++) {
+					int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
+					double sp1 = m1Map.quickGetValue(i, k);
+					if( sp1 == 0 ) continue;
+					for(int j=0; j<n; j++) {
+						double sp2 = m2Map.quickGetValue(k, j);
+						if( sp2 == 0 ) continue;
+						c.set(i, j, sp1 * sp2);
+					}
 				}
 			}
+		case PLUS:
+			for(int i=0; i<m; i++) {
+				for(int k=0; k<cd; k++) {
+					int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
+					double sp1 = m1Map.quickGetValue(i, k);
+					for(int j=0; j<n; j++) {
+						double sp2 = m2Map.quickGetValue(k, j);
+						if(sp1 == 0 && sp2 == 0) continue;
+						c.set(i, j, sp1 + sp2 - sp1 * sp2);
+					}
+				}
+			}
+		case RBIND:
+			m1Map.append(m2Map, out, false);
+		case CBIND:
+			m1Map.append(m2Map, out, true);
 		}
 		out.recomputeNonZeros();
 		return out;

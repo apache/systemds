@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.directory.api.util.exception.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -65,15 +66,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h2 = !root.getRight().isLeaf() ?
 			(MatrixHistogram)root.getRight().getSynopsis() :
 			new MatrixHistogram(root.getRight().getData(), _useExcepts);
-		
+			
 		//estimate output sparsity based on input histograms
-		double ret = estimIntern(h1, h2, OpCode.MM);
-		
-		//derive and memoize output histogram
-		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret);
+		double ret = estimIntern(h1, h2, root.getOp());
+
+		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret, root.getOp());
 		root.setSynopsis(outMap);
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
 			outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
+
 	}
 	
 	@Override 
@@ -304,33 +305,87 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				IntStream.range(0, getRows()).mapToLong(i-> cNnz[i]).sum();
 		}
 		
-		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut) {
+		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op) {
 			//exact propagation if lhs or rhs full diag
-			if( h1.fullDiag ) return h2;
-			if( h2.fullDiag ) return h1;
 			
 			//get input/output nnz for scaling
 			long nnz1 = Arrays.stream(h1.rNnz).sum();
 			long nnz2 = Arrays.stream(h2.cNnz).sum();
 			double nnzOut = spOut * h1.getRows() * h2.getCols();
+			double msize = (double)h1.getRows()*h1.getCols();
 			
 			//propagate h1.r and h2.c to output via simple scaling
 			//(this implies 0s propagate and distribution is preserved)
 			int rMaxNnz = 0, cMaxNnz = 0;
 			int[] rNnz = new int[h1.getRows()];
-			Random rn = new Random();
-			for( int i=0; i<h1.getRows(); i++ ) {
-				rNnz[i] = probRound(nnzOut/nnz1 * h1.rNnz[i], rn);
-				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
-			}
 			int[] cNnz = new int[h2.getCols()];
-			for( int i=0; i<h2.getCols(); i++ ) {
-				cNnz[i] = probRound(nnzOut/nnz2 * h2.cNnz[i], rn);
-				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
-			}
 			
-			//construct new histogram object
-			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			Random rn = new Random();
+			
+			switch(op) {
+			case MM:
+				if( h1.fullDiag ) return h2;
+				if( h2.fullDiag ) return h1;
+				for( int i=0; i<h1.getRows(); i++ ) {
+					rNnz[i] = probRound(nnzOut/nnz1 * h1.rNnz[i], rn);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				for( int i=0; i<h2.getCols(); i++ ) {
+					cNnz[i] = probRound(nnzOut/nnz2 * h2.cNnz[i], rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				
+				//construct new histogram object
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case MULT:
+				final long N1 = h1.getNonZeros();
+				final long N2 = h2.getNonZeros();
+				final long scaler = IntStream.range(0, h1.getCols())
+					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+				final long scalec = IntStream.range(0, h1.getRows())
+						.mapToLong(j -> (long)h1.rNnz[j] * h2.rNnz[j]).sum();
+				for(int i=0; i<h1.getRows(); i++) {
+					rNnz[i] = probRound(h1.rNnz[i] * h2.rNnz[i] * scaler / N1 / N2, rn);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				for(int i=0; i<h1.getCols(); i++) {
+					cNnz[i] = probRound(h1.cNnz[i] * h2.cNnz[i] * scalec / N1 / N2, rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case PLUS:
+				for(int i=0; i<h1.getRows(); i++) {
+					rNnz[i] = probRound(h1.rNnz[i]/msize + h2.rNnz[i]/msize - h1.rNnz[i]/msize * h2.rNnz[i]/msize, rn);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				for(int i=0; i<h1.getCols(); i++) {
+					cNnz[i] = probRound(h1.cNnz[i]/msize + h2.cNnz[i]/msize - h1.cNnz[i]/msize * h2.cNnz[i]/msize, rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case RBIND:
+				rNnz = ArrayUtils.addAll(h1.rNnz, h2.rNnz);
+				for( int i=0; i<h1.getRows(); i++ ) {
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				for(int i=0; i<h1.getCols(); i++) {
+					cNnz[i] = probRound(h1.cNnz1e[i]/msize + h2.cNnz1e[i]/msize - h1.cNnz1e[i]/msize * h2.cNnz1e[i]/msize, rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case CBIND:
+				cNnz = ArrayUtils.addAll(h1.cNnz, h2.cNnz);
+				for( int i=0; i<h1.getCols(); i++ ) {
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				for(int i=0; i<h1.getRows(); i++) {
+					rNnz[i] = probRound(h1.rNnz1e[i]/msize + h2.rNnz1e[i]/msize - h1.rNnz1e[i]/msize * h2.rNnz1e[i]/msize, rn);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			default:
+				throw new NotImplementedException();
+			}
 		}
 		
 		private static int probRound(double inNnz, Random rand) {

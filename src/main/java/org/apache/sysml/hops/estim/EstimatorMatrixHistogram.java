@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.directory.api.util.exception.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -360,6 +361,26 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				for(int i=0; i<h1.getCols(); i++) {
 					cNnz[i] = probRound(h1.cNnz[i]/msize + h2.cNnz[i]/msize - h1.cNnz[i]/msize * h2.cNnz[i]/msize, rn);
 					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case RBIND:
+				rNnz = ArrayUtils.addAll(h1.rNnz, h2.rNnz);
+				for( int i=0; i<h1.getRows(); i++ ) {
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+				}
+				for(int i=0; i<h1.getCols(); i++) {
+					cNnz[i] = probRound(h1.cNnz1e[i]/msize + h2.cNnz1e[i]/msize - h1.cNnz1e[i]/msize * h2.cNnz1e[i]/msize, rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+			case CBIND:
+				cNnz = ArrayUtils.addAll(h1.cNnz, h2.cNnz);
+				for( int i=0; i<h1.getCols(); i++ ) {
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
+				for(int i=0; i<h1.getRows(); i++) {
+					rNnz[i] = probRound(h1.rNnz1e[i]/msize + h2.rNnz1e[i]/msize - h1.rNnz1e[i]/msize * h2.rNnz1e[i]/msize, rn);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 				}
 				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
 			default:

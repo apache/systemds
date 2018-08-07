@@ -65,11 +65,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram h2 = !root.getRight().isLeaf() ?
 			(MatrixHistogram)root.getRight().getSynopsis() :
 			new MatrixHistogram(root.getRight().getData(), _useExcepts);
-		
+			
 		//estimate output sparsity based on input histograms
-		double ret = estimIntern(h1, h2, OpCode.MM);
-		
-		//derive and memoize output histogram
+		double ret = estimIntern(h1, h2, root.getOp());
+
 		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret);
 		root.setSynopsis(outMap);
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(

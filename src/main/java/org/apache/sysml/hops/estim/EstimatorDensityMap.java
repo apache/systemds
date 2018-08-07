@@ -197,16 +197,16 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	private MatrixBlock estimIntern(MatrixBlock m1Map, MatrixBlock m2Map, boolean retNnz, int mOrig, int cdOrig, int nOrig, OpCode op) {
-		final int m = m1Map.getNumRows();
-		final int cd = m1Map.getNumColumns();
-		final int n = m2Map.getNumColumns();
-		MatrixBlock out = new MatrixBlock(m, n, false);
-		if( m1Map.isEmptyBlock(false) || m2Map.isEmptyBlock(false) )
-			return out;
-		DenseBlock c = out.allocateBlock().getDenseBlock();
+			
+	final int m = m1Map.getNumRows();
+	final int cd = m1Map.getNumColumns();
+	final int n = m2Map.getNumColumns();
+	MatrixBlock out = new MatrixBlock(m, n, false);
+	if( m1Map.isEmptyBlock(false) || m2Map.isEmptyBlock(false) )
+		return out;
+	DenseBlock c = out.allocateBlock().getDenseBlock();
 		switch(op) {
 		case MM:
-			//compute output density map with IKJ schedule
 			for(int i=0; i<m; i++) {
 				for(int k=0; k<cd; k++) {
 					int lbk = UtilFunctions.computeBlockSize(cdOrig, k+1, _b);
@@ -231,6 +231,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 					}
 				}
 			}
+			break;
 		case MULT:
 			for(int i=0; i<m; i++) {
 				for(int k=0; k<cd; k++) {
@@ -244,6 +245,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 					}
 				}
 			}
+			break;
 		case PLUS:
 			for(int i=0; i<m; i++) {
 				for(int k=0; k<cd; k++) {
@@ -256,10 +258,16 @@ public class EstimatorDensityMap extends SparsityEstimator
 					}
 				}
 			}
+			out.recomputeNonZeros();
+			return out;
 		case RBIND:
 			m1Map.append(m2Map, out, false);
+			break;
 		case CBIND:
 			m1Map.append(m2Map, out, true);
+			break;
+		default:
+			throw new NotImplementedException();
 		}
 		out.recomputeNonZeros();
 		return out;

@@ -32,13 +32,6 @@ public abstract class SparsityEstimator
 	public static boolean MULTI_THREADED_ESTIM = false;
 	public static final int MIN_PAR_THRESHOLD = 10 * 1024;
 	
-	public static enum OpCode {
-		MM, 
-		MULT, PLUS, EQZERO, NEQZERO,
-		CBIND, RBIND, 
-		TRANS, DIAG, RESHAPE;
-	}
-	
 	/**
 	 * Estimates the output sparsity of a DAG of matrix multiplications
 	 * for the given operator graph of a single root node.

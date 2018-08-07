@@ -33,20 +33,23 @@ public class MMNode
 	private final MatrixBlock _data;
 	private final MatrixCharacteristics _mc;
 	private Object _synops = null;
+	private final OpCode operation;
 	
 	public MMNode(MatrixBlock in) {
 		_m1 = null;
 		_m2 = null;
 		_data = in;
 		_mc = in.getMatrixCharacteristics();
+		operation = null;
 	}
 	
-	public MMNode(MMNode left, MMNode right) {
+	public MMNode(MMNode left, MMNode right, OpCode op) {
 		_m1 = left;
 		_m2 = right;
 		_data = null;
 		_mc = new MatrixCharacteristics(
 			_m1.getRows(), _m2.getCols(), -1, -1);
+		operation = op;
 	}
 	
 	public int getRows() {
@@ -83,5 +86,9 @@ public class MMNode
 	
 	public Object getSynopsis() {
 		return _synops;
+	}
+	
+	public OpCode getOp() {
+		return operation;
 	}
 }

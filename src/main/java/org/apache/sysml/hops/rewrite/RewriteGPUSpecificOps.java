@@ -120,7 +120,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
 			if(roots != null) {
-				hi = batchNormTrain(roots, hop, hi, i);
+				//hi = batchNormTrain(roots, hop, hi, i);
 			}
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 

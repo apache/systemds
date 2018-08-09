@@ -97,23 +97,28 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	
 	private double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op) {
 		double msize = (double)h1.getRows()*h1.getCols();
-		
 		switch (op) {
 			case MM:
 				return estimInternMM(h1, h2);
-			case MULT:
+			case MULT: {
 				final long N1 = h1.getNonZeros();
 				final long N2 = h2.getNonZeros();
 				final long scale = IntStream.range(0, h1.getCols())
 					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
-				return IntStream.range(0, h1.getRows()).mapToLong(
-					i -> (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2).sum() / msize;
-			case PLUS:
-				return Math.min(
-					IntStream.range(0, h1.getRows()).mapToDouble(i -> h1.rNnz[i]/msize 
-						+ h2.rNnz[i]/msize - h1.rNnz[i]/msize * h2.rNnz[i]/msize).sum(),
-					IntStream.range(0, h1.getCols()).mapToDouble(i -> h1.cNnz[i]/msize 
-						+ h2.cNnz[i]/msize - h1.cNnz[i]/msize * h2.cNnz[i]/msize).sum());
+				return IntStream.range(0, h1.getRows())
+					.mapToLong(i -> (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2) //collisions
+					.sum() / msize;
+			}
+			case PLUS: {
+				final long N1 = h1.getNonZeros();
+				final long N2 = h2.getNonZeros();
+				final long scale = IntStream.range(0, h1.getCols())
+					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+				return IntStream.range(0, h1.getRows())
+					.mapToLong(i -> (long)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
+						- (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2)
+					.sum() / msize;
+			}
 			case EQZERO:
 				return OptimizerUtils.getSparsity(h1.getRows(), h1.getCols(),
 					(long)h1.getRows() * h1.getCols() - h1.getNonZeros());
@@ -301,7 +306,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		public long getNonZeros() {
 			return getRows() < getCols() ?
 				IntStream.range(0, getRows()).mapToLong(i-> rNnz[i]).sum() :
-				IntStream.range(0, getRows()).mapToLong(i-> cNnz[i]).sum();
+				IntStream.range(0, getCols()).mapToLong(i-> cNnz[i]).sum();
 		}
 		
 		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op) {

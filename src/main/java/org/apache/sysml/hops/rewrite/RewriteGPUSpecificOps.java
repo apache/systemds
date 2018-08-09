@@ -566,6 +566,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @param pos position
 	 * @return a new FunctionOp or hi
 	 */
+	@SuppressWarnings("unused")
 	private static Hop batchNormTrain(ArrayList<Hop> roots, Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))

@@ -83,7 +83,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		DensityMap m1Map = new DensityMap(m1, _b);
 		DensityMap m2Map = (m1 == m2) ? //self product
 			m1Map : new DensityMap(m2, _b);
-		DensityMap outMap = estimIntern(m1Map, m2Map, OpCode.MM);
+		DensityMap outMap = estimIntern(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros());
 	}

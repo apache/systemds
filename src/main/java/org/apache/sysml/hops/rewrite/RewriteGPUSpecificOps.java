@@ -120,7 +120,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
 			if(roots != null) {
-				hi = batchNormTrain(roots, hop, hi, i);
+				//hi = batchNormTrain(roots, hop, hi, i);
 			}
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
@@ -566,6 +566,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @param pos position
 	 * @return a new FunctionOp or hi
 	 */
+	@SuppressWarnings("unused")
 	private static Hop batchNormTrain(ArrayList<Hop> roots, Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))

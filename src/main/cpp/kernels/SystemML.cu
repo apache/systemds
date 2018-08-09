@@ -2247,3 +2247,35 @@ extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnIn
   prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
 }
 
+
+/**
+ * Do an log over all the elements of a matrix
+ * @param A the input matrix (of length = size)
+ * @param C the pre-allocated output matrix (of length = size)
+ * @param size the length of the input and output matrices
+ */
+template <typename T>
+__device__ void colwise_reshape(T *A, T *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	int i = index / outCols;
+    int j = index % outCols;
+    int k = (outRows*j+i) % inRows;
+    int l = (outRows*j+i) / inRows;
+    C[index] = A[k*inCols+l];
+  }
+}
+
+extern "C" __global__ void colwise_reshape_d(double *A, double *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+extern "C" __global__ void colwise_reshape_f(float *A, float *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}

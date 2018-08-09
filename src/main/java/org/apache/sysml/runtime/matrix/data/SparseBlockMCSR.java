@@ -188,8 +188,8 @@ public class SparseBlockMCSR extends SparseBlock
 			double[] avals = values(i);
 			for (int k = apos + 1; k < apos + alen; k++) {
 				if (aix[k-1] >= aix[k])
-					throw new RuntimeException("Wrong sparse row ordering, at row: "
-						+ k + "with " + aix[k-1] + ">=" + aix[k]);
+					throw new RuntimeException("Wrong sparse row ordering, at row="+i+", pos="+k
+						+ " with column indexes " + aix[k-1] + ">=" + aix[k]);
 				if (avals[k] == 0)
 					throw new RuntimeException("The values are expected to be non zeros "
 						+ "but zero at row: "+ i + ", col pos: " + k);

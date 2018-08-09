@@ -124,9 +124,11 @@ public class EstimatorSample extends SparsityEstimator
 			}
 			return NnzOut;
 		case RBIND:
-			//TODO just to the stuff from avg and worst case
+			return OptimizerUtils.getSparsity(m1.getNumRows() + m2.getNumRows(), 
+					m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
 		case CBIND:
-			//TODO
+			return OptimizerUtils.getSparsity(m1.getNumRows(), 
+					m1.getNumColumns() + m2.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
 		case EQZERO:
 			return 1-m1.getSparsity();
 		case NEQZERO:

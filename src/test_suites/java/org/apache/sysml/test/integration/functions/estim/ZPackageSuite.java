@@ -30,6 +30,9 @@ import org.junit.runners.Suite;
 	SelfProductTest.class,
 	SquaredProductChainTest.class,
 	SquaredProductTest.class,
+	OpBind.class,
+	OpElemW.class
+	//OpSingle.class
 })
 
 

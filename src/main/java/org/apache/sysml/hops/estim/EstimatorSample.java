@@ -63,27 +63,88 @@ public class EstimatorSample extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		//get sampled indexes
-		int k = m1.getNumColumns();
-		int[] ix = UtilFunctions.getSortedSampleIndexes(
-			k, (int)Math.max(k*_frac, 1));
-		//compute output sparsity 
-		int[] cnnz = computeColumnNnz(m1, ix);
-		long nnzOut = 0;
-		for(int i=0; i<ix.length; i++)
-			nnzOut = Math.max(nnzOut, cnnz[i] * m2.recomputeNonZeros(ix[i], ix[i]));
-		return OptimizerUtils.getSparsity( 
-			m1.getNumRows(), m2.getNumColumns(), nnzOut);
+		return estim(m1, m2, OpCode.MM);
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		throw new NotImplementedException();
+		int k;
+		int[] ix;
+		int[] cnnz;
+		double NnzOut = 0;
+		long nnzOut = 0;
+		double csize = m1.getNumColumns();
+		double rsize = m1.getNumRows();
+		switch(op) {
+		case MM:
+			k =  m1.getNumColumns();
+			ix = UtilFunctions.getSortedSampleIndexes(
+					k, (int)Math.max(k*_frac, 1));
+			cnnz = computeColumnNnz(m1, ix);
+			for(int i=0; i<ix.length; i++)
+				nnzOut = Math.max(nnzOut, cnnz[i] * m2.recomputeNonZeros(ix[i], ix[i]));
+			return OptimizerUtils.getSparsity( 
+				m1.getNumRows(), m2.getNumColumns(), nnzOut);
+		case MULT:
+			k = m1.getNumColumns() > m1.getNumRows() ? 
+					m1.getNumColumns() : 
+					m1.getNumRows();
+			ix = UtilFunctions.getSortedSampleIndexes(
+				k, (int)Math.max(k*_frac, 1));
+			if(m1.getNumColumns() > m1.getNumRows()) {
+				cnnz = computeColumnNnz(m1, ix);
+				for(int i=0; i<ix.length; i++) {
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/csize * m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/csize);
+				}
+			}
+			else {
+				cnnz = computeRowNnz(m1, ix);
+				for(int i=0; i<ix.length; i++) {
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/rsize * m2.recomputeNonZeros(ix[i], ix[i])/rsize);
+				}
+			}
+			return NnzOut;
+		case PLUS:
+			k = m1.getNumColumns() > m1.getNumRows() ? 
+					m1.getNumColumns() : 
+					m1.getNumRows();
+			ix = UtilFunctions.getSortedSampleIndexes(
+				k, (int)Math.max(k*_frac, 1));
+			if(m1.getNumColumns() > m1.getNumRows()) {
+				cnnz = computeColumnNnz(m1, ix);
+				for(int i=0; i<ix.length; i++) {
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/csize + m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/csize - cnnz[i]/csize * m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/csize);
+				}
+			}
+			else {
+				cnnz = computeRowNnz(m1, ix);
+				for(int i=0; i<ix.length; i++) {
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/rsize + m2.recomputeNonZeros(ix[i], ix[i])/rsize - cnnz[i]/rsize * m2.recomputeNonZeros(ix[i], ix[i])/rsize);
+				}
+			}
+			return NnzOut;
+		case RBIND:
+			//TODO just to the stuff from avg and worst case
+		case CBIND:
+			//TODO
+		case EQZERO:
+			return 1-m1.getSparsity();
+		case NEQZERO:
+			return m1.getSparsity();
+		case TRANS:
+			return m1.getSparsity();
+		case DIAG:
+			//TODO
+		case RESHAPE:
+			return m1.getSparsity();
+		default:
+			throw new NotImplementedException();
+		}
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		throw new NotImplementedException();
+		return estim(m, null, op);
 	}
 	
 	private int[] computeColumnNnz(MatrixBlock in, int[] ix) {
@@ -103,6 +164,34 @@ public class EstimatorSample extends SparsityEstimator
 				double[] avals = dblock.values(i);
 				int aix = dblock.pos(i);
 				for( int j=0; j<in.getNumColumns(); j++ )
+					nnz[j] += (avals[aix+j] != 0) ? 1 : 0;
+			}
+		}
+		
+		//copy nnz into reduced vector
+		int[] ret = new int[ix.length];
+		for(int i=0; i<ix.length; i++)
+			ret[i] = nnz[ix[i]];
+		return ret;
+	}
+	
+	private int[] computeRowNnz(MatrixBlock in, int[] ix) {
+		int[] nnz = new int[in.getNumRows()];
+		//count column nnz brute force or selective
+		if( in.isInSparseFormat() ) {
+			SparseBlock sblock = in.getSparseBlock();
+			for( int i=0; i<in.getNumColumns(); i++ ) {
+				if( sblock.isEmpty(i) ) continue;
+				LibMatrixAgg.countAgg(sblock.values(i), nnz,
+					sblock.indexes(i), sblock.pos(i), sblock.size(i));
+			}
+		}
+		else {
+			DenseBlock dblock = in.getDenseBlock();
+			for( int i=0; i<in.getNumColumns(); i++ ) {
+				double[] avals = dblock.values(i);
+				int aix = dblock.pos(i);
+				for( int j=0; j<in.getNumRows(); j++ )
 					nnz[j] += (avals[aix+j] != 0) ? 1 : 0;
 			}
 		}

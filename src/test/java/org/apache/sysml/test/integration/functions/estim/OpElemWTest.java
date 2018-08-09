@@ -26,6 +26,7 @@ import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysml.hops.estim.EstimatorSample;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -40,9 +41,9 @@ import org.apache.sysml.test.utils.TestUtils;
 public class OpElemWTest extends AutomatedTestBase 
 {
 	//TODO experiment with m>2n for MNC (currently suboptimal accuracy)
-	private final static int m = 600;
+	private final static int m = 6000;
 	private final static int n = 700;
-	private final static double[] sparsity = new double[]{0.1, 0.04};
+	private final static double[] sparsity = new double[]{0.2, 0.6};
 	private final static OpCode mult = OpCode.MULT;
 	private final static OpCode plus = OpCode.PLUS;
 //	private final static OpCode rbind = OpCode.RBIND;
@@ -121,23 +122,23 @@ public class OpElemWTest extends AutomatedTestBase
 	@Test
 	public void testLGCaseplus() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);
-	}
+	}*/
 	
 	//Sample
 	@Test
 	public void testSampleCasemult() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, mult);
 	}
 		
 	@Test
 	public void testSampleCaseplus() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, plus);
-	}*/
+		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, plus);
+	}
 	
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
-		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 3);
+		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = new MatrixBlock();
 		BinaryOperator bOp;
 		double est = 0;
@@ -146,11 +147,15 @@ public class OpElemWTest extends AutomatedTestBase
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
+				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
+				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();

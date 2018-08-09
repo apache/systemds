@@ -316,7 +316,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				case PLUS:  return derivePlusHistogram(h1, h2);
 				case RBIND: return deriveRbindHistogram(h1, h2);
 				case CBIND: return deriveCbindHistogram(h1, h2);
-				//TODO add missing unary operations
+				case DIAG:
+				case TRANS: return deriveTransHistogram(h1);
+				case RESHAPE:
 				default:
 					throw new NotImplementedException();
 			}
@@ -399,6 +401,14 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				cNnz[i] = h1.cNnz[i] + h2.cNnz[i];
 				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
 			}
+			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+		}
+		
+		private static MatrixHistogram deriveTransHistogram(MatrixHistogram h) {
+			int[] cNnz = h.rNnz;
+			int[] rNnz = h.cNnz;
+			int rMaxNnz = h.cMaxNnz;
+			int cMaxNnz = h.rMaxNnz;
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
 		}
 		

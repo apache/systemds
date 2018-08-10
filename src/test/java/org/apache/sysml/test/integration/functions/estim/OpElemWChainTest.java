@@ -40,7 +40,7 @@ import org.apache.sysml.test.utils.TestUtils;
 /**
  * this is the basic operation check for all estimators with single operations
  */
-public class OpElemWTest extends AutomatedTestBase 
+public class OpElemWChainTest extends AutomatedTestBase 
 {
 	//TODO experiment with m>2n for MNC (currently suboptimal accuracy)
 	private final static int m = 600;
@@ -91,7 +91,7 @@ public class OpElemWTest extends AutomatedTestBase
 	@Test
 	public void testDMPlus() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, plus);
-	}*/
+	}
 	
 	//MNC
 	@Test
@@ -102,10 +102,10 @@ public class OpElemWTest extends AutomatedTestBase
 	@Test
 	public void testMNCPlus() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, plus);
-	}
+	}*/
 	
 	//Bitset
-	/*@Test
+	@Test
 	public void testBitsetCasemult() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, mult);
 	}
@@ -116,7 +116,7 @@ public class OpElemWTest extends AutomatedTestBase
 	}
 	
 	//Layered Graph
-	@Test
+	/*@Test
 	public void testLGCasemult() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
 	}
@@ -154,11 +154,10 @@ public class OpElemWTest extends AutomatedTestBase
 				System.out.println(m5.getSparsity());
 				System.out.println(est);
 				break;
-				break;
 			default:
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m4.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-3);
+		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 : 1e-2);
 	}
 }

@@ -41,7 +41,7 @@ import org.apache.sysml.test.utils.TestUtils;
 public class OpElemWTest extends AutomatedTestBase 
 {
 	//TODO experiment with m>2n for MNC (currently suboptimal accuracy)
-	private final static int m = 6000;
+	private final static int m = 600;
 	private final static int n = 700;
 	private final static double[] sparsity = new double[]{0.2, 0.6};
 	private final static OpCode mult = OpCode.MULT;
@@ -161,6 +161,6 @@ public class OpElemWTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-3);
+		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : (estim instanceof EstimatorSample) ? 1e-1 : 1e-3);
 	}
 }

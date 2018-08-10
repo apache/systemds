@@ -22,6 +22,7 @@ package org.apache.sysml.hops.estim;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -53,32 +54,76 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 			new BitsetMatrix1(root.getLeft().getData());
 		BitsetMatrix m2Map = !root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :
 			new BitsetMatrix1(root.getRight().getData());
-
-		// estimate output density map and sparsity via boolean matrix mult
-		BitsetMatrix outMap = m1Map.matMult(m2Map);
-		root.setSynopsis(outMap); // memoize boolean matrix
-		return root.setMatrixCharacteristics(new MatrixCharacteristics(
-			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+		BitsetMatrix outMap;
+		switch(root.getOp()){
+			case MM:
+				outMap = m1Map.matMult(m2Map);
+				root.setSynopsis(outMap); // memorize boolean matrix
+				return root.setMatrixCharacteristics(new MatrixCharacteristics(
+						outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
+			//TODO:
+			case MULT:
+			case PLUS:
+			case RBIND:
+				BitsetMatrix1 bs1 = (BitsetMatrix1) m1Map;
+				BitsetMatrix1 bs2 = (BitsetMatrix1) m2Map;
+				long[] ret = ArrayUtils.addAll(bs1._data, bs2._data);
+				//TODO: implement construct Matrix with _data input
+			case CBIND:
+			case RESHAPE:
+			case TRANS:
+			case DIAG:
+			default:
+				throw new NotImplementedException();
+		}
 	}
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		BitsetMatrix m1Map = new BitsetMatrix1(m1);
-		BitsetMatrix m2Map = (m1 == m2) ? //self product
-			m1Map : new BitsetMatrix1(m2);
-		BitsetMatrix outMap = m1Map.matMult(m2Map);
-		return OptimizerUtils.getSparsity( // aggregate output histogram
-				outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());
+		return estim(m1, m2, OpCode.MM);
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		throw new NotImplementedException();
+		BitsetMatrix m1Map = new BitsetMatrix1(m1);
+		BitsetMatrix m2Map = (m1 == m2) ? //self product
+			m1Map : new BitsetMatrix1(m2);
+		BitsetMatrix out;
+		switch(op) {
+		case MM:
+			BitsetMatrix outMap = m1Map.matMult(m2Map);
+			return OptimizerUtils.getSparsity( // aggregate output histogram
+					outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros());
+		case MULT:
+			//TODO: implement out = m1Map.matEMult(m2Map);
+			//return OptimizerUtils.getSparsity(out.getNumColumns(), out.getNumRows(), out.getNonZeros());
+		case PLUS:
+			//TODO: implement out = m1Map.matPlus(m2Map);
+			//return OptimizerUtils.getSparsity(out.getNumColumns(), out.getNumRows(), out.getNonZeros());
+		case CBIND:
+			return OptimizerUtils.getSparsity(m1.getNumRows(), 
+				m1.getNumColumns() + m2.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
+		case RBIND:
+			return OptimizerUtils.getSparsity(m1.getNumRows() + m2.getNumRows(), 
+				m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
+		case TRANS:
+			return m1.getSparsity();
+		case NEQZERO:
+			return m1.getSparsity();
+		case EQZERO:
+			return 1 - m1.getSparsity();
+		case DIAG:
+			//TODO: implement as soon as info
+		case RESHAPE:
+			return m1.getSparsity();
+		default:
+			throw new NotImplementedException();
+		}
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		throw new NotImplementedException();
+		return estim(m, null, op);
 	}
 
 	private abstract static class BitsetMatrix {

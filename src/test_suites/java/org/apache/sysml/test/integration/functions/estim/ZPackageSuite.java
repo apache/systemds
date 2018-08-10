@@ -28,11 +28,11 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 	OpBindTest.class,
 	OpElemWTest.class,
+	OpSingleTest.class,
 	OuterProductTest.class,
 	SelfProductTest.class,
 	SquaredProductChainTest.class,
 	SquaredProductTest.class,
-	//OpSingle.class
 })
 
 

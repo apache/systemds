@@ -147,11 +147,15 @@ public class OpElemWTest extends AutomatedTestBase
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
+				System.out.println(m3.getSparsity());
+				System.out.println(est);
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
+				System.out.println(m3.getSparsity());
+				System.out.println(est);
 				break;
 			default:
 				throw new NotImplementedException();

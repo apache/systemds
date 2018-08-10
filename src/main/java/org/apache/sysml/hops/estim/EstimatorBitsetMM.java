@@ -433,5 +433,47 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			System.arraycopy(b._data, 0, ret._data, _rlen, b._rlen); //shallow copy
 			return ret;
 		}
+		
+		@Override 
+		public BitsetMatrix matEMult(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix2) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix2 b = (BitsetMatrix2) bsb;
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				_data[i].and(b._data[i]);
+				 ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matPlus(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix2) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix2 b = (BitsetMatrix2) bsb;
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				 _data[i].or(b._data[i]);
+				 ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
 	}
 }

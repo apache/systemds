@@ -2248,12 +2248,6 @@ extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnIn
 }
 
 
-/**
- * Do an log over all the elements of a matrix
- * @param A the input matrix (of length = size)
- * @param C the pre-allocated output matrix (of length = size)
- * @param size the length of the input and output matrices
- */
 template <typename T>
 __device__ void colwise_reshape(T *A, T *C, unsigned int size, 
 	unsigned int inRows, unsigned int inCols,
@@ -2278,4 +2272,21 @@ extern "C" __global__ void colwise_reshape_f(float *A, float *C, unsigned int si
 	unsigned int inRows, unsigned int inCols,
 	unsigned int outRows, unsigned int outCols) {
   colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+// Performs the operation: out = X - mu*v_prev + (1+mu)*v
+template <typename T>
+__device__ void update_nesterov_x(T *X, T *v, T *v_prev, double mu, T *out, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	out[index] = X[index] - mu*v_prev[index] + (1+mu)*v[index];
+  }
+}
+
+extern "C" __global__ void update_nesterov_x_d(double *X, double *v, double *v_prev, double mu, double *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
+}
+
+extern "C" __global__ void update_nesterov_x_f(float *X, float *v, float *v_prev, double mu, float *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
 }

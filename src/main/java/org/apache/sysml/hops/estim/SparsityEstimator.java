@@ -19,8 +19,10 @@
 
 package org.apache.sysml.hops.estim;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 
@@ -32,6 +34,11 @@ public abstract class SparsityEstimator
 	public static boolean MULTI_THREADED_BUILD = false;
 	public static boolean MULTI_THREADED_ESTIM = false;
 	public static final int MIN_PAR_THRESHOLD = 10 * 1024;
+	
+	private static OpCode[] EXACT_META_DATA_OPS = new OpCode[] {
+		OpCode.EQZERO, OpCode.NEQZERO, OpCode.CBIND,
+		OpCode.RBIND, OpCode.TRANS, OpCode.DIAG, OpCode.RESHAPE
+	};
 	
 	public static enum OpCode {
 		MM, 
@@ -77,4 +84,34 @@ public abstract class SparsityEstimator
 	 * @return sparsity
 	 */
 	public abstract double estim(MatrixBlock m, OpCode op);
+	
+	protected boolean isExactMetadataOp(OpCode op) {
+		return ArrayUtils.contains(EXACT_META_DATA_OPS, op);
+	}
+	
+	protected MatrixCharacteristics estimExactMetaData(MatrixCharacteristics mc1, MatrixCharacteristics mc2, OpCode op) {
+		switch( op ) {
+			case EQZERO:
+				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
+					(long) mc1.getRows() * mc1.getCols() - mc1.getNonZeros());
+			case DIAG:
+				return (mc1.getCols() == 1) ?
+					new MatrixCharacteristics(mc1.getRows(), mc1.getRows(), mc1.getNonZeros()) :
+					new MatrixCharacteristics(mc1.getRows(), 1, Math.min(mc1.getRows(), mc1.getNonZeros()));
+			// binary operations that preserve sparsity exactly
+			case CBIND:
+				return new MatrixCharacteristics(mc1.getRows(), 
+					mc1.getCols() + mc2.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
+			case RBIND:
+				return new MatrixCharacteristics(mc1.getRows() + mc2.getRows(), 
+					mc1.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
+			// unary operation that preserve sparsity exactly
+			case NEQZERO:
+			case TRANS:
+			case RESHAPE:
+				return mc1;
+			default:
+				throw new HopsException("Opcode is not an exact meta data operation: "+op.name());
+		}
+	}
 }

@@ -80,6 +80,9 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		if( isExactMetadataOp(op) )
+			return estimExactMetaData(m1.getMatrixCharacteristics(),
+				m2.getMatrixCharacteristics(), op).getSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
 		DensityMap m2Map = (m1 == m2) ? //self product
 			m1Map : new DensityMap(m2, _b);

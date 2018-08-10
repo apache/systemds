@@ -68,7 +68,6 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		
 		//estimate output sparsity based on input histograms
 		double ret = estimIntern(h1, h2, root.getOp());
-
 		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret, root.getOp());
 		root.setSynopsis(outMap);
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
@@ -83,6 +82,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		if( isExactMetadataOp(op) )
+			return estimExactMetaData(m1.getMatrixCharacteristics(),
+				m2.getMatrixCharacteristics(), op).getSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExcepts);
@@ -91,6 +93,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
+		if( isExactMetadataOp(op) )
+			return estimExactMetaData(m1.getMatrixCharacteristics(), null, op).getSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
 		return estimIntern(h1, null, op);
 	}

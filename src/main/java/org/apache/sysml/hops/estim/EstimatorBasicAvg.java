@@ -70,24 +70,13 @@ public class EstimatorBasicAvg extends SparsityEstimator
 					OptimizerUtils.getNnz(mc1.getRows(), mc1.getCols(), 
 						mc1.getSparsity() + mc2.getSparsity() - mc1.getSparsity() * mc2.getSparsity()));
 			case EQZERO:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
-					(long) mc1.getRows() * mc1.getCols() - mc1.getNonZeros());
 			case DIAG:
-				return (mc1.getCols() == 1) ?
-					new MatrixCharacteristics(mc1.getRows(), mc1.getRows(), mc1.getNonZeros()) :
-					new MatrixCharacteristics(mc1.getRows(), 1, Math.min(mc1.getRows(), mc1.getNonZeros()));
-			// binary operations that preserve sparsity exactly
 			case CBIND:
-				return new MatrixCharacteristics(mc1.getRows(), 
-					mc1.getCols() + mc2.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
 			case RBIND:
-				return new MatrixCharacteristics(mc1.getRows() + mc2.getRows(), 
-					mc1.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
-			// unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return mc1;
+				return estimExactMetaData(mc1, mc2, op);
 			default:
 				throw new NotImplementedException();
 		}

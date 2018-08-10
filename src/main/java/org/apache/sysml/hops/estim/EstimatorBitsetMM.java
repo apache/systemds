@@ -88,13 +88,13 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		switch(op) {
 			case MM:      return m1Map.matMult(m2Map);
 			case RBIND:   return m1Map.rbind(m2Map);
-			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
 			case MULT:		return m1Map.matEMult(m2Map);
 			case PLUS:		return m1Map.matPlus(m2Map);
+			case NEQZERO:	return m1Map;
+			case EQZERO:	return m1Map.matEqzero();
+			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
 			case CBIND:	
 			case TRANS:
-			case NEQZERO:
-			case EQZERO:
 			case DIAG:
 			case RESHAPE:
 			default:
@@ -170,6 +170,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected abstract BitsetMatrix matEMult(BitsetMatrix bsb);
 		
 		protected abstract BitsetMatrix matPlus(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matEqzero();
 	}
 	
 	/**
@@ -302,6 +304,16 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
 			for(int i=0; i<_data.length; i++) {
 				ret._data[i] = _data[i] | b._data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEqzero() {
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = Long.MAX_VALUE - _data[i];
 			}
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
@@ -465,6 +477,23 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			for(int i=0; i<_data.length; i++) {
 				 _data[i].or(b._data[i]);
 				 ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEqzero() {
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				_data[i].flip(0, _data[i].size());
+				ret._data[i] = _data[i];
 			}
 			for(int i=0; i<_data.length;i++) {
 				for(int k=0; i<_data[i].size(); k++) {

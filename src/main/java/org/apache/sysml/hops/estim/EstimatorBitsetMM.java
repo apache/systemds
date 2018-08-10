@@ -69,9 +69,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
+		/*if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();
+				m2.getMatrixCharacteristics(), op).getSparsity();*/
 		BitsetMatrix m1Map = new BitsetMatrix1(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
 			m1Map : new BitsetMatrix1(m2);
@@ -93,7 +93,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			case PLUS:		return m1Map.matPlus(m2Map);
 			case NEQZERO:	return m1Map;
 			case EQZERO:	return m1Map.matEqzero();
-			case CBIND:		return m1Map.cbind();
+			case CBIND:		return m1Map.cbind(m2Map);
 			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2	
 			case TRANS:
 			case DIAG:
@@ -281,6 +281,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows()+bsb.getNumRows(), getNumColumns());
 			System.arraycopy(_data, 0, ret._data, 0, _rlen*_rowLen);
 			System.arraycopy(b._data, 0, ret._data, _rlen*_rowLen, b._rlen*_rowLen);
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 		
@@ -291,18 +292,31 @@ public class EstimatorBitsetMM extends SparsityEstimator
 					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
 			BitsetMatrix1 b = (BitsetMatrix1) bsb;
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns() + bsb.getNumColumns());
-			int rest = ret.getNumColumns()%64;
-			int fulllongs = (int) Math.floor(ret.getNumColumns()/64);
+			int restlong = (ret.getNumColumns()%64 + bsb.getNumColumns())/64;
+			int fulllongs = (int) Math.floor(getNumColumns()/64);
 			for(int i=0; i<ret.getNumRows(); i++) {
+				//cope full longs
 				for(int k=0; k<fulllongs; k++) {
 					if(k==0) {
-						ArrayUtils.add(ret._data,_data[i]);
+						ret._data[i] = _data[i];
 						continue;
 					}
-					ArrayUtils.add(ret._data,_data[i*fulllongs+i+k]);
+					ret._data[i*fulllongs+i+k+i*restlong] = _data[i*fulllongs+i+k];
 				}
-				//handle add of cbind stuff here
+				//handle rest of the longs
+				for(int j=0;j<ret.getNumColumns()%64;j++) {
+					if(get(i, j+fulllongs*64)) {
+						ret.set(i, j+fulllongs*64);
+					}
+				}
+				//handle appended matrix
+				for(int j=0; j<b.getNumColumns();j++) {
+					if(b.get(i, j)) {
+						ret.set(i, getNumColumns()+j);
+					}
+				}
 			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 		

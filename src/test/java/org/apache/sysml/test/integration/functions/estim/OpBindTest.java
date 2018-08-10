@@ -105,13 +105,13 @@ public class OpBindTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
 	}
 	
-	/*@Test
+	@Test
 	public void testBitsetCaserbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}
 		
 	//Layered Graph
-	@Test
+	/*@Test
 	public void testLGCaserbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
 	}
@@ -144,12 +144,16 @@ public class OpBindTest extends AutomatedTestBase
 				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3, false);
 				est = estim.estim(m1, m2, op);
+				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			case CBIND:
 				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
 				m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 3);
 				m1.append(m2, m3);
 				est = estim.estim(m1, m2, op);
+				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();

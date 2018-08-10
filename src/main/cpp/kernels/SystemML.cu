@@ -2247,3 +2247,46 @@ extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnIn
   prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
 }
 
+
+template <typename T>
+__device__ void colwise_reshape(T *A, T *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	int i = index / outCols;
+    int j = index % outCols;
+    int k = (outRows*j+i) % inRows;
+    int l = (outRows*j+i) / inRows;
+    C[index] = A[k*inCols+l];
+  }
+}
+
+extern "C" __global__ void colwise_reshape_d(double *A, double *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+extern "C" __global__ void colwise_reshape_f(float *A, float *C, unsigned int size, 
+	unsigned int inRows, unsigned int inCols,
+	unsigned int outRows, unsigned int outCols) {
+  colwise_reshape(A, C, size, inRows, inCols, outRows, outCols);
+}
+
+// Performs the operation: out = X - mu*v_prev + (1+mu)*v
+template <typename T>
+__device__ void update_nesterov_x(T *X, T *v, T *v_prev, double mu, T *out, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	out[index] = X[index] - mu*v_prev[index] + (1+mu)*v[index];
+  }
+}
+
+extern "C" __global__ void update_nesterov_x_d(double *X, double *v, double *v_prev, double mu, double *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
+}
+
+extern "C" __global__ void update_nesterov_x_f(float *X, float *v, float *v_prev, double mu, float *out, unsigned int size) {
+  update_nesterov_x(X, v, v_prev, mu, out, size);
+}

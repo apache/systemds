@@ -1231,16 +1231,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			throw new RuntimeException("Number of non zeros incorrect: "+nnzBefore+" vs "+nnzAfter);
 	}
 	
+	public void checkSparseRows() {
+		checkSparseRows(0, rlen);
+	}
+	
 	/**
 	 * Basic debugging primitive to check sparse block column ordering.
-	 * This method is not intended for production use. 
+	 * This method is not intended for production use.
+	 * 
+	 * @param rl row lower bound (inclusive)
+	 * @param ru row upper bound (exclusive)
 	 */
-	public void checkSparseRows() {
+	public void checkSparseRows(int rl, int ru) {
 		if( !sparse || sparseBlock == null )
 			return;
 		
 		//check ordering of column indexes per sparse row
-		for( int i=0; i<rlen; i++ )
+		for( int i=rl; i<ru; i++ )
 			if( !sparseBlock.isEmpty(i) ) {
 				int apos = sparseBlock.pos(i);
 				int alen = sparseBlock.size(i);

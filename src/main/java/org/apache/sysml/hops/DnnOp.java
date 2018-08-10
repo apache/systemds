@@ -136,6 +136,7 @@ public class DnnOp extends MultiThreadedHop
 			}
 			case BATCH_NORM2D_TEST:
 			case CHANNEL_SUMS:
+			case UPDATE_NESTEROV_X:
 			{	
 				if(et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
@@ -175,6 +176,8 @@ public class DnnOp extends MultiThreadedHop
 				return 6;
 			case CHANNEL_SUMS:
 				return 3;
+			case UPDATE_NESTEROV_X:
+				return 4;
 			default:
 				return 13;
 		}
@@ -528,7 +531,9 @@ public class DnnOp extends MultiThreadedHop
 		// [numRows, numCols, NNZ] 
 		long[] ret = new long[3];
 		
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
+			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			// Same dimension as the first input
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
@@ -734,7 +739,8 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
+			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
@@ -840,8 +846,9 @@ public class DnnOp extends MultiThreadedHop
 	 * @return either -1 or value associated with the dimString
 	 */
 	private long getDim(String dimString) {
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS) {
-			throw new RuntimeException("getDim method should not be invoked for batch_norm_test, channel_sums, bias_add and bias_multiply");
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
+			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {
 			parseInput();

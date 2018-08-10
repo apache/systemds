@@ -132,9 +132,11 @@ public class ReorgOp extends MultiThreadedHop
 					return true;
 				}
 			}
+			case RESHAPE: {
+				return true;
+			}
 			case DIAG:
 			case REV:
-			case RESHAPE:
 			case SORT:
 				return false;
 			default:

@@ -124,21 +124,15 @@ public class EstimatorSample extends SparsityEstimator
 			}
 			return NnzOut;
 		case RBIND:
-			return OptimizerUtils.getSparsity(m1.getNumRows() + m2.getNumRows(), 
-					m1.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
 		case CBIND:
-			return OptimizerUtils.getSparsity(m1.getNumRows(), 
-					m1.getNumColumns() + m2.getNumColumns(), m1.getNonZeros() + m2.getNonZeros());
 		case EQZERO:
-			return 1-m1.getSparsity();
 		case NEQZERO:
-			return m1.getSparsity();
 		case TRANS:
-			return m1.getSparsity();
 		case DIAG:
-			//TODO
 		case RESHAPE:
-			return m1.getSparsity();
+			MatrixCharacteristics mc1 = m1.getMatrixCharacteristics();
+			MatrixCharacteristics mc2 = m2.getMatrixCharacteristics();
+			return OptimizerUtils.getSparsity(estimExactMetaData(mc1, mc2, op));
 		default:
 			throw new NotImplementedException();
 		}

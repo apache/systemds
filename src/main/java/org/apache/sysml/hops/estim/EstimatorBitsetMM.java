@@ -292,24 +292,26 @@ public class EstimatorBitsetMM extends SparsityEstimator
 					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
 			BitsetMatrix1 b = (BitsetMatrix1) bsb;
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns() + bsb.getNumColumns());
-			int restlong = (ret.getNumColumns()%64 + bsb.getNumColumns())/64;
+			int restlong = (int) Math.floor((ret.getNumColumns()%64 + bsb.getNumColumns())/64);
 			int fulllongs = (int) Math.floor(getNumColumns()/64);
 			for(int i=0; i<ret.getNumRows(); i++) {
-				//cope full longs
+				//copy full longs - o.k.
 				for(int k=0; k<fulllongs; k++) {
-					if(k==0) {
-						ret._data[i] = _data[i];
+					if(i==0) {
+						ret._data[k] = _data[k];
 						continue;
 					}
-					ret._data[i*fulllongs+i+k+i*restlong] = _data[i*fulllongs+i+k];
+					else {
+						ret._data[i*fulllongs+i*(restlong+1)+k] = _data[i*fulllongs+i+k];
+					}
 				}
-				//handle rest of the longs
-				for(int j=0;j<ret.getNumColumns()%64;j++) {
+				//handle rest of the longs o.k.
+				for(int j=0;j<getNumColumns()%64;j++) {
 					if(get(i, j+fulllongs*64)) {
 						ret.set(i, j+fulllongs*64);
 					}
 				}
-				//handle appended matrix
+				//handle appended matrix - o.k.
 				for(int j=0; j<b.getNumColumns();j++) {
 					if(b.get(i, j)) {
 						ret.set(i, getNumColumns()+j);

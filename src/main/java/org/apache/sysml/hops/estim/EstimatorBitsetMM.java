@@ -22,6 +22,7 @@ package org.apache.sysml.hops.estim;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -92,8 +93,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			case PLUS:		return m1Map.matPlus(m2Map);
 			case NEQZERO:	return m1Map;
 			case EQZERO:	return m1Map.matEqzero();
-			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
-			case CBIND:	
+			case CBIND:		return m1Map.cbind();
+			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2	
 			case TRANS:
 			case DIAG:
 			case RESHAPE:
@@ -166,6 +167,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected abstract long matMultIntern(BitsetMatrix bsb, BitsetMatrix bsc, int rl, int ru);
 		
 		protected abstract BitsetMatrix rbind(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix cbind(BitsetMatrix bsb);
 		
 		protected abstract BitsetMatrix matEMult(BitsetMatrix bsb);
 		
@@ -278,6 +281,28 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows()+bsb.getNumRows(), getNumColumns());
 			System.arraycopy(_data, 0, ret._data, 0, _rlen*_rowLen);
 			System.arraycopy(b._data, 0, ret._data, _rlen*_rowLen, b._rlen*_rowLen);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix cbind(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns() + bsb.getNumColumns());
+			int rest = ret.getNumColumns()%64;
+			int fulllongs = (int) Math.floor(ret.getNumColumns()/64);
+			for(int i=0; i<ret.getNumRows(); i++) {
+				for(int k=0; k<fulllongs; k++) {
+					if(k==0) {
+						ArrayUtils.add(ret._data,_data[i]);
+						continue;
+					}
+					ArrayUtils.add(ret._data,_data[i*fulllongs+i+k]);
+				}
+				//handle add of cbind stuff here
+			}
 			return ret;
 		}
 		

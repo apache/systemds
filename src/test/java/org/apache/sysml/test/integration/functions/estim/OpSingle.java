@@ -28,7 +28,13 @@ import org.apache.sysml.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysml.hops.estim.EstimatorSample;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
+import org.apache.sysml.runtime.functionobjects.Equals;
+import org.apache.sysml.runtime.functionobjects.Multiply;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.test.integration.AutomatedTestBase;
+import org.apache.sysml.test.utils.TestUtils;
 
 /**
  * this is the basic operation check for all estimators with single operations
@@ -38,10 +44,6 @@ public class OpSingle extends AutomatedTestBase
 	private final static int m = 600;
 	private final static int k = 300;
 	private final static double sparsity = 0.2;
-//	private final static OpCode mult = OpCode.MULT;
-//	private final static OpCode plus = OpCode.PLUS;
-//	private final static OpCode rbind = OpCode.RBIND;
-//	private final static OpCode cbind = OpCode.CBIND;
 	private final static OpCode eqzero = OpCode.EQZERO;
 	private final static OpCode diag = OpCode.DIAG;
 	private final static OpCode neqzero = OpCode.NEQZERO;
@@ -236,17 +238,25 @@ public class OpSingle extends AutomatedTestBase
 	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
-//		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
-//		MatrixBlock m2 = null;
-//		double est = 0;
-//		switch(op) {
-//			case EQZERO:
-//			case DIAG:
-//			case NEQZERO:
-//			case TRANS:
-//			case RESHAPE:
-//		}
-//		//compare estimated and real sparsity
-//		TestUtils.compareScalars(est, m2.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
+		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
+		MatrixBlock m2 = new MatrixBlock();
+		double est = 0;
+		UnaryOperator bOp;
+		switch(op) {
+			case EQZERO:
+				//TODO find out how to do eqzero
+			case DIAG:
+			case NEQZERO:
+				m2 = m1;
+				est = estim.estim(m1, op);
+			case TRANS:
+				m2 = m1;
+				est = estim.estim(m1, op);
+			case RESHAPE:
+				m2 = m1;
+				est = estim.estim(m1, op);
+		}
+		//compare estimated and real sparsity
+		TestUtils.compareScalars(est, m2.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
 	}
 }

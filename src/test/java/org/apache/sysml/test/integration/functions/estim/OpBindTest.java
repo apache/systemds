@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
+import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
@@ -99,14 +100,14 @@ public class OpBindTest extends AutomatedTestBase
 	}
 
 	//Bitset
-	/*@Test
-	public void testBitsetCaserbind() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
-	}
-		
 	@Test
 	public void testBitsetCasecbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
+	}
+	
+	/*@Test
+	public void testBitsetCaserbind() {
+		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}
 		
 	//Layered Graph

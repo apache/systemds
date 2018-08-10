@@ -22,6 +22,7 @@ package org.apache.sysml.hops.estim;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -64,13 +65,13 @@ public class EstimatorBitsetMM extends SparsityEstimator {
 			case MULT:
 			case PLUS:
 			case RBIND:
-				//outMap = m1Map.matCBind(m2Map);
+				BitsetMatrix1 bs1 = (BitsetMatrix1) m1Map;
+				BitsetMatrix1 bs2 = (BitsetMatrix1) m2Map;
+				long[] ret = ArrayUtils.addAll(bs1._data, bs2._data);
+				//TODO: implement construct Matrix with _data input
 			case CBIND:
-				//outMap = m1Map.matRBind(m2Map);
 			case RESHAPE:
 			case TRANS:
-				//outMap = new BitsetMatrix1(new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), 0));
-				//outMap.matTrans(m1Map);
 			case DIAG:
 			default:
 				throw new NotImplementedException();

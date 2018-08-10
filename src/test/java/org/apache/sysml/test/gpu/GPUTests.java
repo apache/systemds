@@ -311,6 +311,16 @@ public abstract class GPUTests extends AutomatedTestBase {
 		Set<String> heavyHitterOpCodes = Statistics.getCPHeavyHitterOpCodes();
 		Assert.assertTrue(heavyHitterOpCodes.contains(heavyHitterOpCode));
 	}
+	
+	/**
+	 * asserts that the expected op was executed
+	 *
+	 * @param heavyHitterOpCode opcode of the heavy hitter for the unary op
+	 */
+	protected void assertHeavyHitterNotPresent(String heavyHitterOpCode) {
+		Set<String> heavyHitterOpCodes = Statistics.getCPHeavyHitterOpCodes();
+		Assert.assertTrue(!heavyHitterOpCodes.contains(heavyHitterOpCode));
+	}
 
 	/**
 	 * Runs a program on the CPU

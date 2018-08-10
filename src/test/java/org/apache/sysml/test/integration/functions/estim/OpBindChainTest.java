@@ -106,16 +106,13 @@ public class OpBindChainTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}
 	
-	/* @Test
+	 @Test
 	public void testBitsetCasecbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
-	}
-	public void testBitsetCaserbind() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
-	}
+	 }
 		
 	//Layered Graph
-	@Test
+	/*@Test
 	public void testLGCaserbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
 	}

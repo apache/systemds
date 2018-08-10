@@ -69,9 +69,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		/*if( isExactMetadataOp(op) )
+		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();*/
+				m2.getMatrixCharacteristics(), op).getSparsity();
 		BitsetMatrix m1Map = new BitsetMatrix1(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
 			m1Map : new BitsetMatrix1(m2);

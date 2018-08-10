@@ -172,30 +172,10 @@ public class EstimatorSample extends SparsityEstimator
 	}
 	
 	private int[] computeRowNnz(MatrixBlock in, int[] ix) {
-		int[] nnz = new int[in.getNumRows()];
-		//count column nnz brute force or selective
-		if( in.isInSparseFormat() ) {
-			SparseBlock sblock = in.getSparseBlock();
-			for( int i=0; i<in.getNumColumns(); i++ ) {
-				if( sblock.isEmpty(i) ) continue;
-				LibMatrixAgg.countAgg(sblock.values(i), nnz,
-					sblock.indexes(i), sblock.pos(i), sblock.size(i));
-			}
-		}
-		else {
-			DenseBlock dblock = in.getDenseBlock();
-			for( int i=0; i<in.getNumColumns(); i++ ) {
-				double[] avals = dblock.values(i);
-				int aix = dblock.pos(i);
-				for( int j=0; j<in.getNumRows(); j++ )
-					nnz[j] += (avals[aix+j] != 0) ? 1 : 0;
-			}
-		}
-		
 		//copy nnz into reduced vector
 		int[] ret = new int[ix.length];
 		for(int i=0; i<ix.length; i++)
-			ret[i] = nnz[ix[i]];
+			ret[i] = (int) in.recomputeNonZeros(0, in.getNumColumns(), ix[i], ix[i]);
 		return ret;
 	}
 }

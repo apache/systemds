@@ -89,9 +89,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			case MM:      return m1Map.matMult(m2Map);
 			case RBIND:   return m1Map.rbind(m2Map);
 			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
-			case MULT:
-			case PLUS:
-			case CBIND:
+			case MULT:		return m1Map.matEMult(m2Map);
+			case PLUS:		return m1Map.matPlus(m2Map);
+			case CBIND:	
 			case TRANS:
 			case NEQZERO:
 			case EQZERO:
@@ -166,6 +166,10 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected abstract long matMultIntern(BitsetMatrix bsb, BitsetMatrix bsc, int rl, int ru);
 		
 		protected abstract BitsetMatrix rbind(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matEMult(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matPlus(BitsetMatrix bsb);
 	}
 	
 	/**
@@ -272,6 +276,34 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows()+bsb.getNumRows(), getNumColumns());
 			System.arraycopy(_data, 0, ret._data, 0, _rlen*_rowLen);
 			System.arraycopy(b._data, 0, ret._data, _rlen*_rowLen, b._rlen*_rowLen);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEMult(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = _data[i] & b._data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matPlus(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = _data[i] | b._data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 		

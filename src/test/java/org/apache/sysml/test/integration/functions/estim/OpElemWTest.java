@@ -24,6 +24,7 @@ import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
+import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysml.hops.estim.SparsityEstimator;
@@ -102,16 +103,16 @@ public class OpElemWTest extends AutomatedTestBase
 	}
 	
 	//Bitset
-	/*@Test
+	@Test
 	public void testBitsetCasemult() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, mult);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, mult);
 	}
 	
 	@Test
 	public void testBitsetCaseplus() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, plus);
+		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, plus);
 	}
-	
+	/*
 	//Layered Graph
 	@Test
 	public void testLGCasemult() {

@@ -27,10 +27,12 @@ import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysml.hops.estim.MMNode;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
@@ -38,7 +40,7 @@ import org.apache.sysml.test.utils.TestUtils;
 /**
  * this is the basic operation check for all estimators with single operations
  */
-public class OpElemWTest extends AutomatedTestBase 
+public class OpElemWChainTest extends AutomatedTestBase 
 {
 	//TODO experiment with m>2n for MNC (currently suboptimal accuracy)
 	private final static int m = 600;
@@ -81,7 +83,7 @@ public class OpElemWTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	@Test
+	/*@Test
 	public void testDMMult() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, mult);
 	}
@@ -100,7 +102,7 @@ public class OpElemWTest extends AutomatedTestBase
 	@Test
 	public void testMNCPlus() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, plus);
-	}
+	}*/
 	
 	//Bitset
 	@Test
@@ -112,9 +114,9 @@ public class OpElemWTest extends AutomatedTestBase
 	public void testBitsetCaseplus() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, plus);
 	}
-	/*
+	
 	//Layered Graph
-	@Test
+	/*@Test
 	public void testLGCasemult() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
 	}
@@ -122,45 +124,40 @@ public class OpElemWTest extends AutomatedTestBase
 	@Test
 	public void testLGCaseplus() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);
-	}
-	
-	//Sample
-	@Test
-	public void testSampleCasemult() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, mult);
-	}
-		
-	@Test
-	public void testSampleCaseplus() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, plus);
 	}*/
 	
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 3);
-		MatrixBlock m3 = new MatrixBlock();
+		MatrixBlock m3 = MatrixBlock.randOperations(n, m, sp[1], 1, 1, "uniform", 3);
+		MatrixBlock m4 = new MatrixBlock();
+		MatrixBlock m5 = new MatrixBlock();
 		BinaryOperator bOp;
 		double est = 0;
 		switch(op) {
 			case MULT:
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
-				m1.binaryOperations(bOp, m2, m3);
-				est = estim.estim(m1, m2, op);
-				System.out.println(m3.getSparsity());
+				m1.binaryOperations(bOp, m2, m4);
+				m5 = m1.aggregateBinaryOperations(m4, m3, 
+						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
+				System.out.println(m5.getSparsity());
 				System.out.println(est);
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
-				m1.binaryOperations(bOp, m2, m3);
-				est = estim.estim(m1, m2, op);
-				System.out.println(m3.getSparsity());
+				m1.binaryOperations(bOp, m2, m4);
+				m5 = m1.aggregateBinaryOperations(m4, m3, 
+						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m3), OpCode.MM)).getSparsity();
+				System.out.println(m5.getSparsity());
 				System.out.println(est);
 				break;
 			default:
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-3);
+		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 9e-1 : 1e-2);
 	}
 }

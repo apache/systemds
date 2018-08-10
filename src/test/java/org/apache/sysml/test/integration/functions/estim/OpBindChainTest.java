@@ -25,8 +25,10 @@ import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysml.hops.estim.MMNode;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
+import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
@@ -34,7 +36,7 @@ import org.apache.sysml.test.utils.TestUtils;
 /**
  * this is the basic operation check for all estimators with single operations
  */
-public class OpBindTest extends AutomatedTestBase 
+public class OpBindChainTest extends AutomatedTestBase 
 {
 	private final static int m = 600;
 	private final static int k = 300;
@@ -100,15 +102,14 @@ public class OpBindTest extends AutomatedTestBase
 	}
 
 	//Bitset
-	@Test
-	public void testBitsetCasecbind() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
-	}
-	
-	@Test
 	public void testBitsetCaserbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}
+	
+	 @Test
+	public void testBitsetCasecbind() {
+		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, cbind);
+	 }
 		
 	//Layered Graph
 	/*@Test
@@ -119,17 +120,6 @@ public class OpBindTest extends AutomatedTestBase
 	@Test
 	public void testLGCasecbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
-	}
-		
-	//Sample
-	@Test
-	public void testSampleCaserbind() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, rbind);
-	}
-			
-	@Test
-	public void testSampleCasecbind() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, cbind);
 	}*/
 	
 	
@@ -137,28 +127,36 @@ public class OpBindTest extends AutomatedTestBase
 		MatrixBlock m1;
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();
+		MatrixBlock m4;
+		MatrixBlock m5 = new MatrixBlock();
 		double est = 0;
 		switch(op) {
 			case RBIND:
 				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
-				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 3);
+				m2 = MatrixBlock.randOperations(n, k, sp[1], 1, 1, "uniform", 7);
 				m1.append(m2, m3, false);
-				est = estim.estim(m1, m2, op);
-				System.out.println(est);
-				System.out.println(m3.getSparsity());
+				m4 = MatrixBlock.randOperations(k, m, sp[1], 1, 1, "uniform", 5);
+				m5 = m1.aggregateBinaryOperations(m3, m4, 
+						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
+				//System.out.println(est);
+				//System.out.println(m5.getSparsity());
 				break;
 			case CBIND:
-				m1 = MatrixBlock.randOperations(10, 130, sp[0], 1, 1, "uniform", 3);
-				m2 = MatrixBlock.randOperations(10, 70, sp[1], 1, 1, "uniform", 3);
-				m1.append(m2, m3);
-				est = estim.estim(m1, m2, op);
-				System.out.println(est);
-				System.out.println(m3.getSparsity());
+				m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
+				m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
+				m1.append(m2, m3, true);
+				m4 = MatrixBlock.randOperations(k+n, m, sp[1], 1, 1, "uniform", 5);
+				m5 = m1.aggregateBinaryOperations(m3, m4, 
+						new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
+				est = estim.estim(new MMNode(new MMNode(new MMNode(m1), new MMNode(m2), op), new MMNode(m4), OpCode.MM)).getSparsity();
+				//System.out.println(est);
+				//System.out.println(m5.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
+		TestUtils.compareScalars(est, m5.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
 	}
 }

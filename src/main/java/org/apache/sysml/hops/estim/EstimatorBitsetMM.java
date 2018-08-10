@@ -22,6 +22,7 @@ package org.apache.sysml.hops.estim;
 import java.util.BitSet;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -88,13 +89,13 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		switch(op) {
 			case MM:      return m1Map.matMult(m2Map);
 			case RBIND:   return m1Map.rbind(m2Map);
-			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
-			case MULT:
-			case PLUS:
-			case CBIND:
-			case TRANS:
-			case NEQZERO:
-			case EQZERO:
+			case MULT:		return m1Map.matEMult(m2Map);
+			case PLUS:		return m1Map.matPlus(m2Map);
+			case NEQZERO:	return m1Map;
+			case EQZERO:	return m1Map.matEqzero();
+			case CBIND:		return m1Map.cbind(m2Map);
+			case TRANS:		return m1Map.matTrans();
+			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2	
 			case DIAG:
 			case RESHAPE:
 			default:
@@ -166,6 +167,16 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected abstract long matMultIntern(BitsetMatrix bsb, BitsetMatrix bsc, int rl, int ru);
 		
 		protected abstract BitsetMatrix rbind(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix cbind(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matEMult(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matTrans();
+		
+		protected abstract BitsetMatrix matPlus(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matEqzero();
 	}
 	
 	/**
@@ -272,6 +283,95 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows()+bsb.getNumRows(), getNumColumns());
 			System.arraycopy(_data, 0, ret._data, 0, _rlen*_rowLen);
 			System.arraycopy(b._data, 0, ret._data, _rlen*_rowLen, b._rlen*_rowLen);
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix cbind(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns() + bsb.getNumColumns());
+			int restlong = (int) Math.floor((ret.getNumColumns()%64 + bsb.getNumColumns())/64);
+			int fulllongs = (int) Math.floor(getNumColumns()/64);
+			for(int i=0; i<ret.getNumRows(); i++) {
+				//copy full longs - o.k.
+				for(int k=0; k<fulllongs; k++) {
+					if(i==0) {
+						ret._data[k] = _data[k];
+						continue;
+					}
+					else {
+						ret._data[i*fulllongs+i*(restlong+1)+k] = _data[i*fulllongs+i+k];
+					}
+				}
+				//handle rest of the longs o.k.
+				for(int j=0;j<getNumColumns()%64;j++) {
+					if(get(i, j+fulllongs*64)) {
+						ret.set(i, j+fulllongs*64);
+					}
+				}
+				//handle appended matrix - o.k.
+				for(int j=0; j<b.getNumColumns();j++) {
+					if(b.get(i, j)) {
+						ret.set(i, getNumColumns()+j);
+					}
+				}
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override
+		public BitsetMatrix matTrans() {
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<getNumColumns(); i++) {
+				for(int k=0; k<getNumRows(); k++) {
+					if(get(i,k)) {
+						ret.set(k, i);
+					}
+				}
+			}
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEMult(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = _data[i] & b._data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matPlus(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix1) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix1 b = (BitsetMatrix1) bsb;
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = _data[i] | b._data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEqzero() {
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				ret._data[i] = Long.MAX_VALUE - _data[i];
+			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 		
@@ -400,6 +500,77 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			System.arraycopy(_data, 0, ret._data, 0, _rlen); //shallow copy
 			System.arraycopy(b._data, 0, ret._data, _rlen, b._rlen); //shallow copy
 			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEMult(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix2) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix2 b = (BitsetMatrix2) bsb;
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				_data[i].and(b._data[i]);
+				 ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matPlus(BitsetMatrix bsb) {
+			if( !(bsb instanceof BitsetMatrix2) )
+				throw new HopsException("Incompatible bitset types: "
+					+ getClass().getSimpleName()+" and "+bsb.getClass().getSimpleName());
+			BitsetMatrix2 b = (BitsetMatrix2) bsb;
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				 _data[i].or(b._data[i]);
+				 ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
+		
+		@Override 
+		public BitsetMatrix matEqzero() {
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
+			for(int i=0; i<_data.length; i++) {
+				_data[i].flip(0, _data[i].size());
+				ret._data[i] = _data[i];
+			}
+			for(int i=0; i<_data.length;i++) {
+				for(int k=0; i<_data[i].size(); k++) {
+					if(_data[i].get(k)) {
+						ret._nonZeros++;
+					}
+				}
+			}
+			return ret;
+		}
+
+		@Override
+		protected BitsetMatrix cbind(BitsetMatrix bsb) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected BitsetMatrix matTrans() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 }

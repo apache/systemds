@@ -356,12 +356,12 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		
 		private static MatrixHistogram deriveMultHistogram(MatrixHistogram h1, MatrixHistogram h2) {
-			final long N1 = h1.getNonZeros();
-			final long N2 = h2.getNonZeros();
-			final long scaler = IntStream.range(0, h1.getCols())
-				.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
-			final long scalec = IntStream.range(0, h1.getRows())
-				.mapToLong(j -> (long)h1.rNnz[j] * h2.rNnz[j]).sum();
+			final double N1 = h1.getNonZeros();
+			final double N2 = h2.getNonZeros();
+			final double scaler = IntStream.range(0, h1.getCols())
+				.mapToDouble(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+			final double scalec = IntStream.range(0, h1.getRows())
+				.mapToDouble(j -> (long)h1.rNnz[j] * h2.rNnz[j]).sum();
 			int rMaxNnz = 0, cMaxNnz = 0;
 			Random rn = new Random();
 			int[] rNnz = new int[h1.getRows()];

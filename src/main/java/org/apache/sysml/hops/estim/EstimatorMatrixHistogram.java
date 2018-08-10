@@ -105,21 +105,21 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			case MM:
 				return estimInternMM(h1, h2);
 			case MULT: {
-				final long N1 = h1.getNonZeros();
-				final long N2 = h2.getNonZeros();
+				final double N1 = h1.getNonZeros();
+				final double N2 = h2.getNonZeros();
 				final long scale = IntStream.range(0, h1.getCols())
 					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
 				return IntStream.range(0, h1.getRows())
-					.mapToLong(i -> (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2) //collisions
+					.mapToDouble(i -> (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2) //collisions
 					.sum() / msize;
 			}
 			case PLUS: {
-				final long N1 = h1.getNonZeros();
-				final long N2 = h2.getNonZeros();
+				final double N1 = h1.getNonZeros();
+				final double N2 = h2.getNonZeros();
 				final long scale = IntStream.range(0, h1.getCols())
 					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
 				return IntStream.range(0, h1.getRows())
-					.mapToLong(i -> (long)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
+					.mapToDouble(i -> (long)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
 						- (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2)
 					.sum() / msize;
 			}

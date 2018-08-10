@@ -94,8 +94,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			case NEQZERO:	return m1Map;
 			case EQZERO:	return m1Map.matEqzero();
 			case CBIND:		return m1Map.cbind(m2Map);
+			case TRANS:		return m1Map.matTrans();
 			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2	
-			case TRANS:
 			case DIAG:
 			case RESHAPE:
 			default:
@@ -171,6 +171,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected abstract BitsetMatrix cbind(BitsetMatrix bsb);
 		
 		protected abstract BitsetMatrix matEMult(BitsetMatrix bsb);
+		
+		protected abstract BitsetMatrix matTrans();
 		
 		protected abstract BitsetMatrix matPlus(BitsetMatrix bsb);
 		
@@ -319,6 +321,19 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				}
 			}
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
+			return ret;
+		}
+		
+		@Override
+		public BitsetMatrix matTrans() {
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
+			for(int i=0; i<getNumColumns(); i++) {
+				for(int k=0; k<getNumRows(); k++) {
+					if(get(i,k)) {
+						ret.set(k, i);
+					}
+				}
+			}
 			return ret;
 		}
 		
@@ -544,6 +559,18 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				}
 			}
 			return ret;
+		}
+
+		@Override
+		protected BitsetMatrix cbind(BitsetMatrix bsb) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		protected BitsetMatrix matTrans() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 	}
 }

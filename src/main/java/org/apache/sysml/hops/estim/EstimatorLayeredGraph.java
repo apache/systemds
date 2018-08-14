@@ -22,6 +22,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -54,7 +55,24 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		throw new NotImplementedException();
+		//recursive histogram computation of non-leaf nodes
+				if( !root.getLeft().isLeaf() )
+					estim(root.getLeft()); //obtain synopsis
+				if( !root.getRight().isLeaf() )
+					estim(root.getLeft()); //obtain synopsis
+				MatrixHistogram h1 = !root.getLeft().isLeaf() ?
+					(MatrixHistogram)root.getLeft().getSynopsis() :
+					new MatrixHistogram(root.getLeft().getData(), _useExcepts);
+				MatrixHistogram h2 = !root.getRight().isLeaf() ?
+					(MatrixHistogram)root.getRight().getSynopsis() :
+					new MatrixHistogram(root.getRight().getData(), _useExcepts);
+				
+				//estimate output sparsity based on input histograms
+				double ret = estimIntern(h1, h2, root.getOp());
+				MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret, root.getOp());
+				root.setSynopsis(outMap);
+				return root.setMatrixCharacteristics(new MatrixCharacteristics(
+					outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
 	}
 
 	@Override

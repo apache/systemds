@@ -41,6 +41,7 @@ public abstract class GPUInstruction extends Instruction {
 		Dnn,
 		MMTSJ,
 		Reorg,
+		MatrixReshape,
 		Append,
 		ArithmeticBinary,
 		BuiltinUnary,

@@ -1542,7 +1542,7 @@ public class LibMatrixCUDA {
 	 * @param rlen number of rows
 	 * @param clen number of columns
 	 */
-	private static void deviceCopy(String instName, Pointer src, Pointer dest, int rlen, int clen) {
+	public static void deviceCopy(String instName, Pointer src, Pointer dest, int rlen, int clen) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		int size = rlen * clen * sizeOfDataType;
@@ -2512,7 +2512,7 @@ public class LibMatrixCUDA {
 	 * @param numCols number of columns of output matrix object
 	 * @return	the matrix object
 	 */
-	protected static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
+	public static MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String instName, String name, long numRows, long numCols) {
 		long t0=0;
 		if (DMLScript.FINEGRAINED_STATISTICS) t0 = System.nanoTime();
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);

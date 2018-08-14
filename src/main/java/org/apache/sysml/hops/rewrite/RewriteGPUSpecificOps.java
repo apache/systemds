@@ -120,10 +120,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
 			if(roots != null) {
-				hi = batchNormTrain(roots, hop, hi, i);
+				//hi = batchNormTrain(roots, hop, hi, i);
 			}
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
+			hi = updateNesterovX(hop, hi, i);
 	
 			if( !descendFirst )
 				rule_GPUKernels(roots, hi, descendFirst);
@@ -281,6 +282,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
 	}
 	
+	private static boolean isBinaryMMMinus(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MINUS 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
+	}
+	
 	private static boolean isBinaryMSMult(Hop h, double expectedValue) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
 				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR
@@ -321,6 +327,16 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	private static boolean isBinarySMMult(Hop h) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
 				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR;
+	}
+	
+	private static boolean isBinarySMMult(Hop h, double expectedVal) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
+				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR
+				&& getValue(getFirstInput(h)) == expectedVal;
+	}
+	
+	private static double getValue(Hop h) {
+		return OptimizerUtils.rEvalSimpleDoubleExpression(h, new HashMap<>());
 	}
 	
 	/**
@@ -566,6 +582,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	 * @param pos position
 	 * @return a new FunctionOp or hi
 	 */
+	@SuppressWarnings("unused")
 	private static Hop batchNormTrain(ArrayList<Hop> roots, Hop parent, Hop hi, int pos) 
 	{		
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
@@ -701,6 +718,51 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return ret;
 	}
 	// ------------------------------------------------------------
+	
+	/**
+	 * Checks for the nesterov_update_x pattern (X = X - mu*v_prev + (1+mu)*v)
+	 * and returns a new DnnOp if matched
+	 * 
+	 * @param parent parent of the input
+	 * @param hi input to be matched
+	 * @param pos position
+	 * @return a new DnnOp or hi
+	 */
+	private static Hop updateNesterovX(Hop parent, Hop hi, int pos) {
+		if(fitsOnGPU(hi, 4) && isBinaryMMAdd(hi) && isBinaryMMMinus(getFirstInput(hi))
+			&& isBinarySMMult(getSecondInput(getFirstInput(hi))) 
+			&& isBinarySMMult(getSecondInput(hi))) {
+			Hop onePlusMu = getFirstInput(getSecondInput(hi));
+			Hop tmp = getSecondInput(getFirstInput(hi));
+			Hop mu = getFirstInput(tmp);
+			if(isOnePlusMu(onePlusMu, mu)) {
+				Hop v_prev = getSecondInput(tmp);
+				Hop v = getSecondInput(getSecondInput(hi));
+				Hop X = getFirstInput(getFirstInput(hi));
+				if(hasSameDimensions(X, v) && hasSameDimensions(X, v_prev)) {
+					ArrayList<Hop> inHops = new ArrayList<Hop>();
+					inHops.add(X);
+					inHops.add(v);
+					inHops.add(v_prev);
+					inHops.add(mu);
+					LOG.debug("Applied updateNesterovX rewrite.");
+					Hop newHop = new DnnOp(hi.getName(), hi.getDataType(), hi.getValueType(),
+							OpOpDnn.UPDATE_NESTEROV_X, inHops);
+					return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+				}
+			}
+		}
+		return hi;
+	}
+	
+	private static boolean hasSameDimensions(Hop x, Hop y) {
+		return x.dimsKnown() && y.dimsKnown() && (x.getDim1() == y.getDim1()) && (x.getDim2() == y.getDim2());
+	}
+	
+	private static boolean isOnePlusMu(Hop onePlusMu, Hop mu) {
+		return (isBinarySMMult(onePlusMu, 1.0) && getSecondInput(onePlusMu) == mu) ||
+				getValue(onePlusMu) == getValue(mu) + 1;
+	}
 	
 	/**
 	 * Checks for the batch norm (mode="test") pattern using the helper isBatchNormTrainMean and isBatchNormTrainVar

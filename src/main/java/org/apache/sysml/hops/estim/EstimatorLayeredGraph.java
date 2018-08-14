@@ -68,7 +68,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	}
 	
 	@Override
-	public double estim(MatrixBlock m1, MatrixBlock m2){
+	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);
 		return OptimizerUtils.getSparsity(m1.getNumRows(),
 			m2.getNumColumns(), graph.estimateNnz());

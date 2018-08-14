@@ -405,7 +405,8 @@ public class GPUMemoryManager {
 			allPointers.remove(toFree);
 			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 			allocator.free(toFree);
-			// JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
+			if(DMLScript.SYNCHRONIZE_GPU)
+				jcuda.runtime.JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 		}
 		else {
 			throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
@@ -447,7 +448,7 @@ public class GPUMemoryManager {
 	public void removeGPUObject(GPUObject gpuObj) {
 		if(LOG.isDebugEnabled())
 			LOG.debug("Removing the GPU object: " + gpuObj);
-		matrixMemoryManager.gpuObjects.removeIf(a -> a.equals(gpuObj));
+		matrixMemoryManager.gpuObjects.remove(gpuObj);
 	}
 
 	

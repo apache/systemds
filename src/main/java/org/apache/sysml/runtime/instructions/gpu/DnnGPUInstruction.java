@@ -124,6 +124,21 @@ public class DnnGPUInstruction extends GPUInstruction {
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 	
+	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr, 
+			double intermediateMemoryBudget) throws DMLRuntimeException {
+		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
+		if( !opcode.equals("update_nesterov_x") ) {
+			throw new DMLRuntimeException("Incorrect opcode: " + opcode);
+		}
+		_input1 = in1;
+		_input2 = in2;
+		_input3 = in3;
+		_input4 = in4;
+		_gputype = GPUINSTRUCTION_TYPE.Dnn;
+		_output = out;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode,
 			String istr, ArrayList<CPOperand> stride,
 			ArrayList<CPOperand> padding, ArrayList<CPOperand> input_shape,
@@ -297,6 +312,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 			CPOperand in3 = new CPOperand(parts[3]);
 			CPOperand out = new CPOperand(parts[4]);
 			return new DnnGPUInstruction(in, in2, in3, out, opcode, str, 0);
+		}
+		else if (opcode.equalsIgnoreCase("update_nesterov_x")) {
+			InstructionUtils.checkNumFields(parts, 5);
+			CPOperand in = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
+			return new DnnGPUInstruction(in, in2, in3, in4, out, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
 			InstructionUtils.checkNumFields(parts, 8);
@@ -552,6 +576,34 @@ public class DnnGPUInstruction extends GPUInstruction {
 		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
 	}
 	
+	private void processNesterovUpdateInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();;
+		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
+		MatrixObject v = getMatrixInputForGPUInstruction(ec, _input2.getName());
+		MatrixObject v_prev = getMatrixInputForGPUInstruction(ec, _input3.getName());
+		double mu = (int) ec.getScalarInput(_input4.getName(), _input4.getValueType(), _input4.isLiteral()).getDoubleValue();
+		int rows = LibMatrixCUDA.toInt(input.getNumRows());
+		int cols = LibMatrixCUDA.toInt(input.getNumColumns());
+		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), rows, cols);
+		
+		GPUContext gCtx = ec.getGPUContext(0);
+		String instName = getExtendedOpcode();
+		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("update_nesterov_x", 
+				ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(rows*cols)),
+				LibMatrixCUDA.getDensePointer(gCtx, input, instName), 
+				LibMatrixCUDA.getDensePointer(gCtx, v, instName),
+				LibMatrixCUDA.getDensePointer(gCtx, v_prev, instName),
+				mu, 
+				LibMatrixCUDA.getDensePointer(gCtx, out, instName),
+				rows*cols);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
+		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
+		ec.releaseMatrixOutputForGPUInstruction(_output.getName());
+	}
+	
 	private static int toInt(long num) throws DMLRuntimeException {
 		if(num >= Integer.MAX_VALUE || num <= Integer.MIN_VALUE) {
 			throw new DMLRuntimeException("GPU : Exceeded supported size " + num);
@@ -695,6 +747,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("channel_sums")) {
 			processChannelSumsInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("update_nesterov_x")) {
+			processNesterovUpdateInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("lstm")) {

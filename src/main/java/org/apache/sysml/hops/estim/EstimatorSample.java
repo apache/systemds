@@ -113,13 +113,13 @@ public class EstimatorSample extends SparsityEstimator
 			if(m1.getNumColumns() > m1.getNumRows()) {
 				cnnz = computeColumnNnz(m1, ix);
 				for(int i=0; i<ix.length; i++) {
-					NnzOut = (double) Math.max(NnzOut, cnnz[i]/csize + m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/csize - cnnz[i]/csize * m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/csize);
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/rsize + m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/rsize - cnnz[i]/rsize * m2.recomputeNonZeros(0, m1.getNumRows()-1, ix[i], ix[i])/rsize);
 				}
 			}
 			else {
 				cnnz = computeRowNnz(m1, ix);
 				for(int i=0; i<ix.length; i++) {
-					NnzOut = (double) Math.max(NnzOut, cnnz[i]/rsize + m2.recomputeNonZeros(ix[i], ix[i])/rsize - cnnz[i]/rsize * m2.recomputeNonZeros(ix[i], ix[i])/rsize);
+					NnzOut = (double) Math.max(NnzOut, cnnz[i]/csize + m2.recomputeNonZeros(ix[i], ix[i])/csize - cnnz[i]/csize * m2.recomputeNonZeros(ix[i], ix[i])/csize);
 				}
 			}
 			return NnzOut;

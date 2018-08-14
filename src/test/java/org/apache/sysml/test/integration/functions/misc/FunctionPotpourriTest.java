@@ -20,6 +20,7 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -45,6 +46,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	private final static String TEST_NAME15 = "FunPotpourriDefaultArgScalarMatrix1";
 	private final static String TEST_NAME16 = "FunPotpourriDefaultArgScalarMatrix2";
 	private final static String TEST_NAME17 = "FunPotpourriNamedArgsQuotedAssign";
+	private final static String TEST_NAME18 = "FunPotpourriMultiReturnBuiltin1";
+	private final static String TEST_NAME19 = "FunPotpourriMultiReturnBuiltin2";
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionPotpourriTest.class.getSimpleName() + "/";
@@ -69,6 +72,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME15, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME15, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME16, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME16, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME17, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME17, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME18, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME18, new String[] { "R" }) );
+		addTestConfiguration( TEST_NAME19, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME19, new String[] { "R" }) );
 	}
 
 	@Test
@@ -166,16 +171,28 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		runFunctionTest( TEST_NAME17, false );
 	}
 	
+	@Test
+	public void testFunctionMultiReturnBuiltin1() {
+		runFunctionTest( TEST_NAME18, false );
+	}
+	
+	@Test
+	public void testFunctionMultiReturnBuiltin2() {
+		runFunctionTest( TEST_NAME19, false );
+	}
+	
 	private void runFunctionTest(String testName, boolean error) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain", "-stats",
+		programArgs = new String[]{"-explain","hops", "-stats",
 			"-args", String.valueOf(error).toUpperCase()};
-
+		
 		//run script and compare output
 		runTest(true, error, DMLException.class, -1);
+		if( testName.equals(TEST_NAME18) )
+			Assert.assertTrue(heavyHittersContainsString("print"));
 	}
 }

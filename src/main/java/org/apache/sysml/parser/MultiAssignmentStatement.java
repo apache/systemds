@@ -20,6 +20,7 @@
 package org.apache.sysml.parser;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.debug.DMLBreakpointManager;
@@ -59,6 +60,11 @@ public class MultiAssignmentStatement extends Statement
 
 	public ArrayList<DataIdentifier> getTargetList(){
 		return _targetList;
+	}
+	
+	public void setTargetList(List<DataIdentifier> diList) {
+		_targetList.clear();
+		_targetList.addAll(diList);
 	}
 	
 	public Expression getSource(){

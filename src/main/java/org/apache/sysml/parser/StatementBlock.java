@@ -288,12 +288,18 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
     				if( !ret ) return false;
         		}
-        		if( s instanceof MultiAssignmentStatement && ((MultiAssignmentStatement)s).getSource() instanceof FunctionCallIdentifier )
-        		{
-        			FunctionCallIdentifier fcall = (FunctionCallIdentifier) ((MultiAssignmentStatement)s).getSource();
-    				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-    				ret &= rIsInlineableFunction(fblock2, prog);
-    				if( !ret ) return false;
+        		else if( s instanceof MultiAssignmentStatement ) {
+        			MultiAssignmentStatement mas = (MultiAssignmentStatement)s;
+        			if( mas.getSource() instanceof FunctionCallIdentifier ) {
+        				FunctionCallIdentifier fcall = (FunctionCallIdentifier) ((MultiAssignmentStatement)s).getSource();
+        				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+        				ret &= rIsInlineableFunction(fblock2, prog);
+        				if( !ret ) return false;
+        			}
+        			else if( mas.getSource() instanceof BuiltinFunctionExpression
+        				&& ((BuiltinFunctionExpression)mas.getSource()).multipleReturns() ) {
+        				return false;
+        			}
         		}
         	}
 		}
@@ -574,142 +580,179 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public ArrayList<Statement> rewriteFunctionCallStatements (DMLProgram dmlProg, ArrayList<Statement> statements) {
 
 		ArrayList<Statement> newStatements = new ArrayList<>();
-		for (Statement current : statements){
-			if (isRewritableFunctionCall(current, dmlProg)){
-
-				Expression sourceExpr = null;
-				if (current instanceof AssignmentStatement)
-					sourceExpr = ((AssignmentStatement)current).getSource();
-				else
-					sourceExpr = ((MultiAssignmentStatement)current).getSource();
-
-				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
-				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-				if (fblock == null){
-					fcall.raiseValidateError("function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace(), false);
-				}
-				FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
-
-				// recursive inlining (no memo required because update-inplace of function statement blocks, so no redundant inlining)
-				if( rIsInlineableFunction(fblock, dmlProg) ){
-					fstmt.getBody().get(0).setStatements(rewriteFunctionCallStatements(dmlProg, fstmt.getBody().get(0).getStatements()));
-				}
-
-				//MB: we cannot use the hash since multiple interleaved inlined functions should be independent.
-				String prefix = _seq.getNextID() + "_";
-
-				if (fstmt.getBody().size() > 1){
-					sourceExpr.raiseValidateError("rewritable function can only have 1 statement block", false);
-				}
-				StatementBlock sblock = fstmt.getBody().get(0);
-
-				if( fcall.getParamExprs().size() != fstmt.getInputParams().size() ) {
-					sourceExpr.raiseValidateError("Wrong number of function input arguments: "+
-						fcall.getParamExprs().size() + " found, but " + fstmt.getInputParams().size()+" expected.");
-				}
-
-				for (int i =0; i < fcall.getParamExprs().size(); i++) {
-					ParameterExpression inputArg = fcall.getParamExprs().get(i);
-					DataIdentifier currFormalParam = (inputArg.getName()==null) ?
-						fstmt.getInputParams().get(i) : fstmt.getInputParam(inputArg.getName());
-					if( currFormalParam == null )
-						throw new LanguageException("Non-existing named function argument '"
-							+ inputArg.getName()+"' in call to "+fcall.getName()+".");
-					
-					// create new assignment statement
-					String newFormalParameterName = prefix + currFormalParam.getName();
-					DataIdentifier newTarget = new DataIdentifier(currFormalParam);
-					newTarget.setName(newFormalParameterName);
-
-					Expression currCallParam = inputArg.getExpr();
-
-					//auto casting of inputs on inlining (if required)
-					ValueType targetVT = newTarget.getValueType();
-					if (newTarget.getDataType() == DataType.SCALAR && currCallParam.getOutput() != null
-							&& targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING) {
-						currCallParam = new BuiltinFunctionExpression(
-							BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
-							new Expression[] { currCallParam }, newTarget);
-					}
-
-					// create the assignment statement to bind the call parameter to formal parameter
-					newStatements.add(new AssignmentStatement(newTarget, currCallParam, newTarget));
-				}
-
-				for (Statement stmt : sblock._statements){
-					// rewrite the statement to use the "rewritten" name
-					Statement rewrittenStmt = stmt.rewriteStatement(prefix);
-					newStatements.add(rewrittenStmt);
-				}
-
-				if (current instanceof AssignmentStatement) {
-					if (fstmt.getOutputParams().size() == 0) {
-						AssignmentStatement as = (AssignmentStatement) current;
-						if ((as.getTargetList().size() == 1) && (as.getTargetList().get(0) != null)) {
-							raiseValidateError("Function '" + fcall.getName()
-									+ "' does not return a value but is assigned to " + as.getTargetList().get(0),
-									true);
-						}
-					}
-				} else if (current instanceof MultiAssignmentStatement) {
-					if (fstmt.getOutputParams().size() == 0) {
-						MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
-						raiseValidateError("Function '" + fcall.getName()
-								+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
-					}
-				}
-				// handle the return values
-				for (int i = 0; i < fstmt.getOutputParams().size(); i++){
-
-					// get the target (return parameter from function)
-					DataIdentifier currReturnParam = fstmt.getOutputParams().get(i);
-					String newSourceName = prefix + currReturnParam.getName();
-					DataIdentifier newSource = new DataIdentifier(currReturnParam);
-					newSource.setName(newSourceName);
-
-					// get binding
-					DataIdentifier newTarget = null;
-					if (current instanceof AssignmentStatement){
-						if (i > 0) {
-							fstmt.raiseValidateError("Assignment statement cannot return multiple values", false);
-						}
-						AssignmentStatement as = (AssignmentStatement) current;
-						DataIdentifier targ = as.getTarget();
-						if (targ == null) {
-							Expression exp = as.getSource();
-							FunctionCallIdentifier fci = (FunctionCallIdentifier) exp;
-							String functionName = fci.getName();
-							fstmt.raiseValidateError(functionName + " requires LHS value", false);
-						} else {
-							newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
-						}
-					}
-					else{
-						newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));
-					}
-
-					//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites)
-					ValueType sourceVT = newSource.getValueType();
-					if (newSource.getDataType() == DataType.SCALAR && sourceVT != ValueType.STRING) {
-						newSource = new BuiltinFunctionExpression(
-								BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),
-								new Expression[] { newSource }, newTarget);
-					}
-
-					// create the assignment statement to bind the call parameter to formal parameter
-					AssignmentStatement binding = new AssignmentStatement(newTarget, newSource, newTarget);
-
-					newStatements.add(binding);
-				}
-
-			} // end if (isRewritableFunctionCall(current, dmlProg)
-
-			else {
+		for (Statement current : statements) {
+			if( !isRewritableFunctionCall(current, dmlProg) ) {
 				newStatements.add(current);
+				continue;
 			}
-		}
 
+			Expression sourceExpr = (current instanceof AssignmentStatement) ?
+				((AssignmentStatement)current).getSource() :
+				((MultiAssignmentStatement)current).getSource();
+			FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
+			FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+			if( fblock == null )
+				fcall.raiseValidateError("function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace(), false);
+			FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
+
+			// recursive inlining (no memo required because update-inplace of function statement blocks, so no redundant inlining)
+			if( rIsInlineableFunction(fblock, dmlProg) ){
+				fstmt.getBody().get(0).setStatements(
+					rewriteFunctionCallStatements(dmlProg, fstmt.getBody().get(0).getStatements()));
+			}
+
+			//MB: we cannot use the hash since multiple interleaved inlined functions should be independent.
+			String prefix = _seq.getNextID() + "_";
+
+			if (fstmt.getBody().size() > 1){
+				sourceExpr.raiseValidateError("rewritable function can only have 1 statement block", false);
+			}
+			StatementBlock sblock = fstmt.getBody().get(0);
+
+			if( fcall.getParamExprs().size() != fstmt.getInputParams().size() ) {
+				sourceExpr.raiseValidateError("Wrong number of function input arguments: "+
+					fcall.getParamExprs().size() + " found, but " + fstmt.getInputParams().size()+" expected.");
+			}
+
+			for (int i =0; i < fcall.getParamExprs().size(); i++) {
+				ParameterExpression inputArg = fcall.getParamExprs().get(i);
+				DataIdentifier currFormalParam = (inputArg.getName()==null) ?
+					fstmt.getInputParams().get(i) : fstmt.getInputParam(inputArg.getName());
+				if( currFormalParam == null )
+					throw new LanguageException("Non-existing named function argument '"
+						+ inputArg.getName()+"' in call to "+fcall.getName()+".");
+				
+				// create new assignment statement
+				String newFormalParameterName = prefix + currFormalParam.getName();
+				DataIdentifier newTarget = new DataIdentifier(currFormalParam);
+				newTarget.setName(newFormalParameterName);
+
+				Expression currCallParam = inputArg.getExpr();
+
+				//auto casting of inputs on inlining (if required)
+				ValueType targetVT = newTarget.getValueType();
+				if (newTarget.getDataType() == DataType.SCALAR && currCallParam.getOutput() != null
+						&& targetVT != currCallParam.getOutput().getValueType() && targetVT != ValueType.STRING) {
+					currCallParam = new BuiltinFunctionExpression(
+						BuiltinFunctionExpression.getValueTypeCastOperator(targetVT),
+						new Expression[] { currCallParam }, newTarget);
+				}
+
+				// create the assignment statement to bind the call parameter to formal parameter
+				newStatements.add(new AssignmentStatement(newTarget, currCallParam, newTarget));
+			}
+
+			for (Statement stmt : sblock._statements){
+				// rewrite the statement to use the "rewritten" name
+				Statement rewrittenStmt = stmt.rewriteStatement(prefix);
+				newStatements.add(rewrittenStmt);
+			}
+
+			if (current instanceof AssignmentStatement) {
+				if (fstmt.getOutputParams().size() == 0) {
+					AssignmentStatement as = (AssignmentStatement) current;
+					if ((as.getTargetList().size() == 1) && (as.getTargetList().get(0) != null)) {
+						raiseValidateError("Function '" + fcall.getName()
+								+ "' does not return a value but is assigned to " + as.getTargetList().get(0),
+								true);
+					}
+				}
+			} else if (current instanceof MultiAssignmentStatement) {
+				if (fstmt.getOutputParams().size() == 0) {
+					MultiAssignmentStatement mas = (MultiAssignmentStatement) current;
+					raiseValidateError("Function '" + fcall.getName()
+							+ "' does not return a value but is assigned to " + mas.getTargetList(), true);
+				}
+			}
+			
+			// handle returns by appending name mappings, but with special handling of 
+			// statements that contain function calls or multi-return builtin expressions (but disabled)
+//			Statement lastAdd = newStatements.get(newStatements.size()-1);
+//			if( isOutputBindingViaFunctionCall(lastAdd, prefix, fstmt) && lastAdd instanceof AssignmentStatement )
+//				((AssignmentStatement)lastAdd).setTarget(((AssignmentStatement)current).getTarget());
+//			else if ( isOutputBindingViaFunctionCall(lastAdd, prefix, fstmt) && lastAdd instanceof MultiAssignmentStatement )
+//				if( current instanceof MultiAssignmentStatement )
+//					((MultiAssignmentStatement)lastAdd).setTargetList(((MultiAssignmentStatement)current).getTargetList());
+//				else //correct for multi-assignment to assignment transform
+//					newStatements.set(newStatements.size()-1, createNewPartialMultiAssignment(lastAdd, current, prefix, fstmt));
+//			else
+			appendOutputAssignments(current, prefix, fstmt, newStatements);
+		}
 		return newStatements;
+	}
+	
+	@SuppressWarnings("unused")
+	private static boolean isOutputBindingViaFunctionCall(Statement last, String prefix, FunctionStatement fstmt) {
+		if( last instanceof AssignmentStatement ) {
+			AssignmentStatement as = (AssignmentStatement) last;
+			String newName = prefix + fstmt.getOutputParams().get(0).getName();
+			return as.getSource() instanceof FunctionCallIdentifier
+				&& as.getTarget().getName().equals(newName);
+		}
+		else if( last instanceof MultiAssignmentStatement ) {
+			MultiAssignmentStatement mas = (MultiAssignmentStatement) last;
+			List<DataIdentifier> tlist1 = mas.getTargetList();
+			boolean ret = mas.getSource() instanceof FunctionCallIdentifier
+				|| (mas.getSource() instanceof BuiltinFunctionExpression 
+					&& ((BuiltinFunctionExpression)mas.getSource()).multipleReturns());
+			for( DataIdentifier di : fstmt.getOutputParams() )
+				ret &= tlist1.stream().anyMatch(d -> d.getName().equals(prefix+di.getName()));
+			return ret;
+		}
+		return false; //default
+	}
+	
+	@SuppressWarnings("unused")
+	private static MultiAssignmentStatement createNewPartialMultiAssignment(Statement last, Statement current, String prefix, FunctionStatement fstmt) {
+		MultiAssignmentStatement mas = (MultiAssignmentStatement) last;
+		AssignmentStatement as = (AssignmentStatement) current;
+		ArrayList<DataIdentifier> tlist = new ArrayList<>();
+		String tmpStr = prefix+fstmt.getOutputParams().get(0).getName();
+		for( DataIdentifier di : mas.getTargetList() )
+			tlist.add( di.getName().equals(tmpStr) ? as.getTarget() : di );
+		return new MultiAssignmentStatement(tlist, mas.getSource());
+	}
+	
+	private static void appendOutputAssignments(Statement current, String prefix, FunctionStatement fstmt, List<Statement> newStatements) {
+		for (int i = 0; i < fstmt.getOutputParams().size(); i++){
+			// get the target (return parameter from function)
+			DataIdentifier currReturnParam = fstmt.getOutputParams().get(i);
+			String newSourceName = prefix + currReturnParam.getName();
+			DataIdentifier newSource = new DataIdentifier(currReturnParam);
+			newSource.setName(newSourceName);
+
+			// get binding
+			DataIdentifier newTarget = null;
+			if (current instanceof AssignmentStatement){
+				if (i > 0) {
+					fstmt.raiseValidateError("Assignment statement cannot return multiple values", false);
+				}
+				AssignmentStatement as = (AssignmentStatement) current;
+				DataIdentifier targ = as.getTarget();
+				if (targ == null) {
+					Expression exp = as.getSource();
+					FunctionCallIdentifier fci = (FunctionCallIdentifier) exp;
+					String functionName = fci.getName();
+					fstmt.raiseValidateError(functionName + " requires LHS value", false);
+				} else {
+					newTarget = new DataIdentifier(((AssignmentStatement)current).getTarget());
+				}
+			}
+			else{
+				newTarget = new DataIdentifier(((MultiAssignmentStatement)current).getTargetList().get(i));
+			}
+
+			//auto casting of inputs on inlining (always, redundant cast removed during Hop Rewrites)
+			ValueType sourceVT = newSource.getValueType();
+			if (newSource.getDataType() == DataType.SCALAR && sourceVT != ValueType.STRING) {
+				newSource = new BuiltinFunctionExpression(
+					BuiltinFunctionExpression.getValueTypeCastOperator(sourceVT),
+					new Expression[] { newSource }, newTarget);
+			}
+
+			// create the assignment statement to bind the call parameter to formal parameter
+			newStatements.add(new AssignmentStatement(newTarget, newSource, newTarget));
+		}
 	}
 
 	public VariableSet validate(DMLProgram dmlProg, VariableSet ids, HashMap<String, ConstIdentifier> constVars, boolean conditional)

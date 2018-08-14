@@ -73,6 +73,10 @@ public class AssignmentStatement extends Statement
 		return _targetList;
 	}
 
+	public void setTarget(DataIdentifier di) {
+		_targetList.set(0, di);
+	}
+	
 	public Expression getSource(){
 		return _source;
 	}

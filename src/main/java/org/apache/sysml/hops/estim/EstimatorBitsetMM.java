@@ -50,7 +50,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		if (!root.getLeft().isLeaf())
 			estim(root.getLeft()); // obtain synopsis
 		if (!root.getRight().isLeaf())
-			estim(root.getLeft()); // obtain synopsis
+			estim(root.getRight()); // obtain synopsis
 		BitsetMatrix m1Map = !root.getLeft().isLeaf() ? (BitsetMatrix) root.getLeft().getSynopsis() :
 			new BitsetMatrix1(root.getLeft().getData());
 		BitsetMatrix m2Map = !root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :

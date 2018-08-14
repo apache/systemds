@@ -58,7 +58,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		if( !root.getLeft().isLeaf() )
 			estim(root.getLeft()); //obtain synopsis
 		if( !root.getRight().isLeaf() )
-			estim(root.getLeft()); //obtain synopsis
+			estim(root.getRight()); //obtain synopsis
 		MatrixHistogram h1 = !root.getLeft().isLeaf() ?
 			(MatrixHistogram)root.getLeft().getSynopsis() :
 			new MatrixHistogram(root.getLeft().getData(), _useExcepts);

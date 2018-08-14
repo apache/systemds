@@ -58,7 +58,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		if( !root.getLeft().isLeaf() )
 			estim(root.getLeft()); //obtain synopsis
 		if( !root.getRight().isLeaf() )
-			estim(root.getLeft()); //obtain synopsis
+			estim(root.getRight()); //obtain synopsis
 		DensityMap m1Map = !root.getLeft().isLeaf() ?
 			(DensityMap)root.getLeft().getSynopsis() : 
 			new DensityMap(root.getLeft().getData(), _b);

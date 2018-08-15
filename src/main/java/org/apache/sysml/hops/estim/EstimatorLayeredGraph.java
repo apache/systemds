@@ -22,7 +22,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.math3.distribution.ExponentialDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.estim.EstimatorMatrixHistogram.MatrixHistogram;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -44,6 +43,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	private static final int ROUNDS = 128;
 	private final int _rounds;
+	private List<MatrixBlock> MMNodes = new ArrayList();
 	
 	public EstimatorLayeredGraph() {
 		this(ROUNDS);
@@ -55,26 +55,23 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		//recursive histogram computation of non-leaf nodes
-				if( !root.getLeft().isLeaf() )
-					estim(root.getLeft()); //obtain synopsis
-				if( !root.getRight().isLeaf() )
-					estim(root.getLeft()); //obtain synopsis
-				MatrixHistogram h1 = !root.getLeft().isLeaf() ?
-					(MatrixHistogram)root.getLeft().getSynopsis() :
-					new MatrixHistogram(root.getLeft().getData(), _useExcepts);
-				MatrixHistogram h2 = !root.getRight().isLeaf() ?
-					(MatrixHistogram)root.getRight().getSynopsis() :
-					new MatrixHistogram(root.getRight().getData(), _useExcepts);
-				
-				//estimate output sparsity based on input histograms
-				double ret = estimIntern(h1, h2, root.getOp());
-				MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret, root.getOp());
-				root.setSynopsis(outMap);
-				return root.setMatrixCharacteristics(new MatrixCharacteristics(
-					outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
+		getMatrices(root);
+		LayeredGraph graph = new LayeredGraph(MMNodes,  _rounds);
+		int length = MMNodes.size();
+		return root.setMatrixCharacteristics(new MatrixCharacteristics(MMNodes.get(length-2).getNumRows(),
+				MMNodes.get(length-1).getNumColumns(), graph.estimateNnz()));
 	}
 
+	public void getMatrices(MMNode root){
+		if(root.isLeaf()) {
+			MMNodes.add(root.getData());
+			return;
+		}
+		getMatrices(root.getLeft());
+		getMatrices(root.getRight());
+		return;
+	}
+	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		throw new NotImplementedException();
@@ -87,7 +84,9 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);
+		MMNodes.add(m1);
+		MMNodes.add(m2);
+		LayeredGraph graph = new LayeredGraph(MMNodes,  _rounds);
 		return OptimizerUtils.getSparsity(m1.getNumRows(),
 			m2.getNumColumns(), graph.estimateNnz());
 	}
@@ -96,11 +95,10 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		private final List<Node[]> _nodes; //nodes partitioned by graph level
 		private final int _rounds;         //length of propagated r-vectors 
 		
-		public LayeredGraph(MatrixBlock m1, MatrixBlock m2, int r) {
+		public LayeredGraph(List<MatrixBlock> chain,int r) {
 			_nodes = new ArrayList<>();
 			_rounds = r;
-			buildNext(m1);
-			buildNext(m2);
+			chain.forEach(i -> buildNext(i));
 		}
 		
 		public void buildNext(MatrixBlock mb) {

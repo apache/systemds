@@ -577,7 +577,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	}
 	
 	private void processNesterovUpdateInstruction(ExecutionContext ec) {
-		GPUStatistics.incrementNoOfExecutedGPUInst();;
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject v = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject v_prev = getMatrixInputForGPUInstruction(ec, _input3.getName());

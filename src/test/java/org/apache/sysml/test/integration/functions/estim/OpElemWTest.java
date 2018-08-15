@@ -27,6 +27,7 @@ import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysml.hops.estim.EstimatorSample;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.runtime.functionobjects.Multiply;
@@ -42,16 +43,9 @@ public class OpElemWTest extends AutomatedTestBase
 {
 	private final static int m = 1600;
 	private final static int n = 700;
-	private final static double[] sparsity = new double[]{0.1, 0.04};
+	private final static double[] sparsity = new double[]{0.2, 0.4};
 	private final static OpCode mult = OpCode.MULT;
 	private final static OpCode plus = OpCode.PLUS;
-//	private final static OpCode rbind = OpCode.RBIND;
-//	private final static OpCode cbind = OpCode.CBIND;
-//	private final static OpCode eqzero = OpCode.EQZERO;
-//	private final static OpCode diag = OpCode.DIAG;
-//	private final static OpCode neqzero = OpCode.NEQZERO;
-//	private final static OpCode trans = OpCode.TRANS;
-//	private final static OpCode reshape = OpCode.RESHAPE;
 
 	@Override
 	public void setUp() {
@@ -103,12 +97,12 @@ public class OpElemWTest extends AutomatedTestBase
 	
 	//Bitset
 	@Test
-	public void testBitsetCasemult() {
+	public void testBitsetMult() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, mult);
 	}
 	
 	@Test
-	public void testBitsetCaseplus() {
+	public void testBitsetPlus() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, n, sparsity, plus);
 	}
 	/*
@@ -117,23 +111,22 @@ public class OpElemWTest extends AutomatedTestBase
 	public void testLGCasemult() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
 	}
-		
+	
 	@Test
 	public void testLGCaseplus() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);
-	}
+	}*/
 	
 	//Sample
 	@Test
-	public void testSampleCasemult() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, mult);
+	public void testSampleMult() {
+		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, mult);
 	}
-		
-	@Test
-	public void testSampleCaseplus() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, plus);
-	}*/
 	
+	@Test
+	public void testSamplePlus() {
+		runSparsityEstimateTest(new EstimatorSample(), m, n, sparsity, plus);
+	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
@@ -146,20 +139,20 @@ public class OpElemWTest extends AutomatedTestBase
 				bOp = new BinaryOperator(Multiply.getMultiplyFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
-				System.out.println(m3.getSparsity());
 				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			case PLUS:
 				bOp = new BinaryOperator(Plus.getPlusFnObject());
 				m1.binaryOperations(bOp, m2, m3);
 				est = estim.estim(m1, m2, op);
-				System.out.println(m3.getSparsity());
 				System.out.println(est);
+				System.out.println(m3.getSparsity());
 				break;
 			default:
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-3);
+		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 5e-3);
 	}
 }

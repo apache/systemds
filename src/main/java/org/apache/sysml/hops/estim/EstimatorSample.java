@@ -63,27 +63,89 @@ public class EstimatorSample extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		//get sampled indexes
-		int k = m1.getNumColumns();
-		int[] ix = UtilFunctions.getSortedSampleIndexes(
-			k, (int)Math.max(k*_frac, 1));
-		//compute output sparsity 
-		int[] cnnz = computeColumnNnz(m1, ix);
-		long nnzOut = 0;
-		for(int i=0; i<ix.length; i++)
-			nnzOut = Math.max(nnzOut, cnnz[i] * m2.recomputeNonZeros(ix[i], ix[i]));
-		return OptimizerUtils.getSparsity( 
-			m1.getNumRows(), m2.getNumColumns(), nnzOut);
+		return estim(m1, m2, OpCode.MM);
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		throw new NotImplementedException();
+		switch(op) {
+			case MM: {
+				int k =  m1.getNumColumns();
+				int[] ix = UtilFunctions.getSortedSampleIndexes(
+					k, (int)Math.max(k*_frac, 1));
+				int[] cnnz = computeColumnNnz(m1, ix);
+				long nnzOut = 0;
+				for(int i=0; i<ix.length; i++)
+					nnzOut = Math.max(nnzOut, cnnz[i] * m2.recomputeNonZeros(ix[i], ix[i]));
+				return OptimizerUtils.getSparsity( 
+					m1.getNumRows(), m2.getNumColumns(), nnzOut);
+			}
+			case MULT: {
+				int k = Math.max(m1.getNumColumns(), m1.getNumRows());
+				int[] ix = UtilFunctions.getSortedSampleIndexes(
+					k, (int)Math.max(k*_frac, 1));
+				double spOut = 0;
+				if( m1.getNumColumns() > m1.getNumRows() ) {
+					int[] cnnz1 = computeColumnNnz(m1, ix);
+					int[] cnnz2 = computeColumnNnz(m2, ix);
+					for(int i=0; i<ix.length; i++)
+						spOut += (double)cnnz1[i]/m1.getNumRows() 
+							* (double)cnnz2[i]/m1.getNumRows();
+				}
+				else {
+					int[] rnnz1 = computeRowNnz(m1, ix);
+					int[] rnnz2 = computeRowNnz(m2, ix);
+					for(int i=0; i<ix.length; i++)
+						spOut += (double)rnnz1[i]/m1.getNumColumns() 
+							* (double)rnnz2[i]/m1.getNumColumns();
+				}
+				return spOut/ix.length;
+			}
+			case PLUS: {
+				int k = Math.max(m1.getNumColumns(), m1.getNumRows());
+				int[] ix = UtilFunctions.getSortedSampleIndexes(
+					k, (int)Math.max(k*_frac, 1));
+				double spOut = 0;
+				if( m1.getNumColumns() > m1.getNumRows() ) {
+					int[] cnnz1 = computeColumnNnz(m1, ix);
+					int[] cnnz2 = computeColumnNnz(m2, ix);
+					for(int i=0; i<ix.length; i++) {
+						spOut += (double)cnnz1[i]/m1.getNumRows() 
+							+ (double)cnnz2[i]/m1.getNumRows()
+							- (double)cnnz1[i]/m1.getNumRows() 
+							* (double)cnnz2[i]/m1.getNumRows();
+					}
+				}
+				else {
+					int[] rnnz1 = computeRowNnz(m1, ix);
+					int[] rnnz2 = computeRowNnz(m2, ix);
+					for(int i=0; i<ix.length; i++) {
+						spOut += (double)rnnz1[i]/m1.getNumColumns() 
+							+ (double)rnnz2[i]/m1.getNumColumns()
+							- (double)rnnz1[i]/m1.getNumColumns() 
+							* (double)rnnz2[i]/m1.getNumColumns();
+					}
+				}
+				return spOut/ix.length;
+			}
+			case RBIND:
+			case CBIND:
+			case EQZERO:
+			case NEQZERO:
+			case TRANS:
+			case DIAG:
+			case RESHAPE:
+				MatrixCharacteristics mc1 = m1.getMatrixCharacteristics();
+				MatrixCharacteristics mc2 = m2.getMatrixCharacteristics();
+				return OptimizerUtils.getSparsity(estimExactMetaData(mc1, mc2, op));
+			default:
+				throw new NotImplementedException();
+		}
 	}
 	
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		throw new NotImplementedException();
+		return estim(m, null, op);
 	}
 	
 	private int[] computeColumnNnz(MatrixBlock in, int[] ix) {
@@ -111,6 +173,14 @@ public class EstimatorSample extends SparsityEstimator
 		int[] ret = new int[ix.length];
 		for(int i=0; i<ix.length; i++)
 			ret[i] = nnz[ix[i]];
+		return ret;
+	}
+	
+	private int[] computeRowNnz(MatrixBlock in, int[] ix) {
+		//copy nnz into reduced vector
+		int[] ret = new int[ix.length];
+		for(int i=0; i<ix.length; i++)
+			ret[i] = (int) in.recomputeNonZeros(ix[i], ix[i]);
 		return ret;
 	}
 }

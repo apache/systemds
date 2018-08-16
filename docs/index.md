@@ -82,3 +82,4 @@ command-line interface.
 * [Troubleshooting Guide](troubleshooting-guide) - Troubleshoot various issues related to SystemML.
 * [Release Process](release-process) - Description of the SystemML release process.
 * [Using Native BLAS](native-backend) in SystemML.
+* [Using GPU backend](gpu) in SystemML.

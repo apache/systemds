@@ -53,11 +53,10 @@ public class BinaryOpTests extends GPUTests {
 		double sparsity = 1.0; // Only dense matrices supported by "solve"
 		final int[] sides = { 32, 33, 128, 256, 513, 2049 };
 		for (int i = 0; i < sides.length; i++) {
-			for (int j = i; j < sides.length; j++) {
-				int m = sides[j];
-				int n = sides[i];
-				runSolveTest(sparsity, m, n);
-			}
+			// CP LibCommonsMath expects square matrices
+			int m = sides[i];
+			int n = sides[i];
+			runSolveTest(sparsity, m, n);
 		}
 
 	}

@@ -43,7 +43,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	private static final int ROUNDS = 128;
 	private final int _rounds;
-	private List<MatrixBlock> MMNodes = new ArrayList();
+	private List<MatrixBlock> MMNodes = new ArrayList<MatrixBlock>();
 	
 	public EstimatorLayeredGraph() {
 		this(ROUNDS);

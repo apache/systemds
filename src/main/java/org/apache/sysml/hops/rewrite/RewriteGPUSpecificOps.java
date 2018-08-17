@@ -22,6 +22,9 @@ package org.apache.sysml.hops.rewrite;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.AggUnaryOp;
@@ -120,7 +123,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				rule_GPUKernels(roots, hi, descendFirst); //see below
 			
 			if(roots != null) {
-				//hi = batchNormTrain(roots, hop, hi, i);
+				hi = batchNormTrain(roots, hop, hi, i);
+				hi = batchNormBackward(roots, hop, hi, i);
 			}
 			hi = batchNormTest(hop, hi, i); 
 			hi = channelSums(hop, hi, i); 
@@ -241,6 +245,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Row; 
 	}
 	
+	private static boolean isRowSums(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.SUM && ((AggUnaryOp)h).getDirection() == Direction.Row; 
+	}
+	
 	private static boolean isRowVars(Hop h) {
 		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.VAR && ((AggUnaryOp)h).getDirection() == Direction.Row; 
 	}
@@ -251,6 +259,10 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	private static boolean isColMeans(Hop h) {
 		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.MEAN && ((AggUnaryOp)h).getDirection() == Direction.Col; 
+	}
+	
+	private static boolean isColSums(Hop h) {
+		return h instanceof AggUnaryOp && ((AggUnaryOp)h).getOp() == AggOp.SUM && ((AggUnaryOp)h).getDirection() == Direction.Col; 
 	}
 	
 	private static boolean isColVars(Hop h) {
@@ -283,7 +295,12 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	}
 	
 	private static boolean isBinaryMMMinus(Hop h) {
-		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MINUS 
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MINUS
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
+	}
+	
+	private static boolean isBinaryMMMult(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT
 				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.MATRIX;
 	}
 	
@@ -295,11 +312,6 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	private static boolean isBinarySSMinus(Hop h) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MINUS 
-				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.SCALAR;
-	}
-	
-	private static boolean isBinarySSDiv(Hop h) {
-		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
 				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.SCALAR;
 	}
 	
@@ -324,6 +336,11 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR;
 	}
 	
+	private static boolean isBinarySSDiv(Hop h) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.DIV 
+				&& getFirstInput(h).getDataType() == DataType.SCALAR && getSecondInput(h).getDataType() == DataType.SCALAR;
+	}
+	
 	private static boolean isBinarySMMult(Hop h) {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
 				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR;
@@ -333,10 +350,6 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.MULT 
 				&& getSecondInput(h).getDataType() == DataType.MATRIX && getFirstInput(h).getDataType() == DataType.SCALAR
 				&& getValue(getFirstInput(h)) == expectedVal;
-	}
-	
-	private static double getValue(Hop h) {
-		return OptimizerUtils.rEvalSimpleDoubleExpression(h, new HashMap<>());
 	}
 	
 	/**
@@ -572,6 +585,198 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				isBinarySMDiv(denom.getParent().get(0).getParent().get(0), 1);
 	}
 	
+	// Does not check for dmean as it requires C and HW
+	private static boolean isDxMeanBranchTemplate(Hop dX_mean_branch) {
+		// dX_mean_branch = scalar * bias_add(matrix(0, rows=1, ...), ...)
+		return isBinarySMMult(dX_mean_branch) && isBiasAdd(getSecondInput(dX_mean_branch)) &&
+				HopRewriteUtils.isDataGenOpWithConstantValue(getFirstInput(getSecondInput(dX_mean_branch)), 0) &&
+				getFirstInput(getSecondInput(dX_mean_branch)).getDim1() == 1;
+	}
+	
+	// Does not check for dvar as it requires C and HW
+	private static boolean isDxVarBranchTemplate(Hop dX_var_branch) {
+		// dX_var_branch = scalar * bias_multiply(centered, ...)
+		return isBinarySMMult(dX_var_branch) && isBiasMultiply(getSecondInput(dX_var_branch)) &&
+				isCentered(getFirstInput(getSecondInput(dX_var_branch)));
+	}
+	
+	private static boolean isDmeanNormBranch(Hop dmean_norm_branch, long C, long HW) {
+		// dnorm = bias_multiply(dout, gamma)
+		// dmean_norm_branch = util::channel_sums(bias_multiply(dnorm, -cache_inv_var), C, Hin, Win)
+		Hop in = getChannelSumInput(dmean_norm_branch, C, HW);
+		return in != null && isBiasMultiply(in) && isBiasMultiply(getFirstInput(in)) && 
+				isUnaryMinus(getSecondInput(in));
+	}
+	
+	private static boolean isDmeanVarBranch(Hop dmean_var_branch, long C, long HW) {
+		// dmean_var_branch =  util::channel_sums((-2/(N*Hin*Win)) * centered, C, Hin, Win)
+		// dmean_var_branch = dmean_var_branch * dvar
+		if(isBinaryMMMult(dmean_var_branch) && isDVar(getSecondInput(dmean_var_branch), C, HW)) {
+			Hop in = getChannelSumInput(getFirstInput(dmean_var_branch), C, HW);
+			return in != null && isBinarySMMult(in) && isCentered(getSecondInput(in));
+		}
+		return false;
+	}
+	
+	private static boolean isDmean(Hop dmean, long C, long HW) {
+		// dmean = dmean_norm_branch + dmean_var_branch
+		return isBinaryMMAdd(dmean) && isDmeanNormBranch(getFirstInput(dmean), C, HW) &&
+				isDmeanVarBranch(getSecondInput(dmean), C, HW);
+	}
+	
+	private static boolean isBinaryMSPow(Hop h, double expectedVal) {
+		return h instanceof BinaryOp && ((BinaryOp)h).getOp() == OpOp2.POW 
+				&& getFirstInput(h).getDataType() == DataType.MATRIX && getSecondInput(h).getDataType() == DataType.SCALAR
+				&& getValue(getSecondInput(h)) == expectedVal;
+	}
+	
+	private static boolean isDVar(Hop dvar, long C, long HW) {
+		// dvar = util::channel_sums((-1/2) * bias_multiply(centered, cache_inv_var^3) * dnorm, C, Hin, Win)
+		Hop in = getChannelSumInput(dvar, C, HW);
+		return in != null && isBinaryMMMult(in) && isBinarySMMult(getFirstInput(in), -0.5) 
+				&& isBiasMultiply(getSecondInput(getFirstInput(in)))
+				&& isCentered(getFirstInput(getSecondInput(getFirstInput(in))))
+				&& isBinaryMSPow(getSecondInput(getSecondInput(getFirstInput(in))), 3)
+				// dnorm = bias_multiply(dout, gamma)
+				&& isBiasMultiply(getSecondInput(in));
+	}
+	
+	/**
+	 * Checks for the batch norm backward pattern
+	 * and returns a new FunctionOp if matched
+	 * 
+	 * @param roots root hops of the given statement block
+	 * @param parent parent of the input
+	 * @param dX input to be matched
+	 * @param pos position
+	 * @return a new FunctionOp or hi
+	 */
+	private static Hop batchNormBackward(ArrayList<Hop> roots, Hop parent, Hop dX, int pos) 
+	{
+		if(isBinaryMMAdd(dX) && isBinaryMMAdd(getFirstInput(dX)) && !isBinaryMMAdd(getSecondInput(dX)) && fitsOnGPU(dX, 3)) {
+			Hop dX_norm_branch = getFirstInput(getFirstInput(dX));
+			Hop dX_mean_branch = getSecondInput(getFirstInput(dX));
+			Hop dX_var_branch = getSecondInput(dX);
+			
+			boolean isCondition1Valid = isBiasMultiply(dX_norm_branch);
+			boolean isCondition2Valid = isCondition1Valid && isDxMeanBranchTemplate(dX_mean_branch);
+			boolean isCondition3Valid = isCondition2Valid && isDxVarBranchTemplate(dX_var_branch);
+			if(isCondition3Valid) {
+				Hop dnorm = getFirstInput(dX_norm_branch);
+				Hop dmean = getSecondInput(getSecondInput(dX_mean_branch));
+				Hop dvar = getSecondInput(getSecondInput(dX_var_branch));
+				// dX_mean_branch = ... * bias_add(matrix(0, rows=1, cols=C*Hin*Win), ...)
+				long CHW = getFirstInput(getSecondInput(dX_mean_branch)).getDim2();
+				long C = checkBiasVectors(new Hop[] {dvar});
+				long HW = CHW/C;
+				if(C > 0 && HW > 0 && isDmean(dmean, C, HW) && isDVar(dvar, C, HW)) {
+					// Inputs:
+					// dnorm = bias_multiply(dout, gamma)
+					Hop dout = getFirstInput(dnorm);
+					Hop gamma = getSecondInput(dnorm);
+					Hop epsilon = new LiteralOp(1e-5); // currently not part of backward
+					// dX_var_branch = ... * bias_multiply(bias_add(X, -mean), ...)
+					Hop innerBiasAdd = getFirstInput(getSecondInput(dX_var_branch));
+					Hop cache_mean = getSecondInput(getSecondInput(innerBiasAdd));
+					Hop X = getFirstInput(innerBiasAdd);
+					
+					Hop cache_inv_var = getSecondInput(dX_norm_branch);
+					
+					// Outputs:
+					// dX
+					Hop dgamma = getDGamma(dout, cache_mean, X, C, HW);
+					Hop dbeta = getDBeta(dout, C, HW);
+					if(dgamma != null && dbeta != null) {
+						Hop [] oldHops = {dX, dgamma, dbeta};
+						if(!isAnyPersistentWrite(oldHops)) {
+							ArrayList<Hop> inHops = new ArrayList<Hop>();
+							inHops.add(X);
+							inHops.add(dout);
+							inHops.add(gamma);
+							inHops.add(epsilon);
+							inHops.add(cache_mean);
+							inHops.add(cache_inv_var);
+							
+							long C1 = checkBiasVectors(new Hop[] {gamma, cache_mean, cache_inv_var});
+							if(C != C1)
+								return dX;
+							
+							LOG.debug("Applied batchNormBackward rewrite.");
+							ArrayList<Hop> outputs = getMultiOutputHops(roots, oldHops);
+							FunctionOp ret = new FunctionOp(FunctionType.MULTIRETURN_BUILTIN, DMLProgram.INTERNAL_NAMESPACE, "batch_norm2d_backward", 
+								null, inHops, outputs.stream().map(h -> h.getName()).toArray(String[]::new), outputs);
+							Collections.reverse(roots);
+							roots.add(ret);
+							Collections.reverse(roots);
+							return ret;
+						}
+					}
+				}
+			}
+			
+		}
+		return dX;
+	}
+	
+	private static long checkBiasVectors(Hop[] hops) {
+		long numChannels = hops[0].getDim1();
+		for(Hop h : hops) {
+			if(!h.dimsKnown() || h.getDim1() != numChannels || h.getDim2() != 1)
+				return -1;
+		}
+		return numChannels;
+	}
+	
+	private static double getValue(Hop scalar) {
+		return OptimizerUtils.rEvalSimpleDoubleExpression(scalar, new HashMap<>());
+	}
+	
+	private static Hop getDGamma(Hop dout, Hop mean, Hop X, long C, long HW) {
+		for(Hop h : dout.getParent()) {
+			if(isBinaryMMMult(h) && getFirstInput(h) == dout && isNorm(getSecondInput(h), mean, X)) {
+				return getChannelSumOutput(h, C, HW);
+			}
+		}
+		return null;
+	}
+	
+	private static Hop getDBeta(Hop dout, long C, long HW) {
+		return getChannelSumOutput(dout, C, HW);
+	}
+	 
+	private static boolean isCentered(Hop h) {
+		return isBiasAdd(h) && isUnaryMinus(getSecondInput(h));
+	}
+	
+	private static boolean isCentered(Hop h, Hop mean, Hop X) {
+		return isBiasAdd(h) && getFirstInput(h) == X && isUnaryMinus(getSecondInput(h)) && getSecondInput(getSecondInput(h)) == mean;
+	}
+	
+	private static boolean isNorm(Hop h, Hop mean, Hop X) {
+		return isBiasMultiply(h) && isCentered(getFirstInput(h), mean, X);
+	}
+	
+	private static Hop getChannelSumOutput(Hop X, long C, long HW) {
+		ArrayList<Hop> tmp = new ArrayList<>();
+		tmp.add(X);
+		List<Hop> ret = getMatrixParents(getMatrixParents(getMatrixParents(tmp.stream())))
+				.filter(h -> getChannelSumInput(h, C, HW) == X).collect(Collectors.toList());
+		return ret.size() == 1 ? ret.get(0) : null;
+	}
+	
+	private static Stream<Hop> getMatrixParents(Stream<Hop> parents) {
+		return parents.flatMap(h -> h.getParent().stream().filter(p -> p.getDataType() == DataType.MATRIX));
+	}
+	
+	private static Hop getChannelSumInput(Hop h, long C, long HW) {
+		// TODO: Handle special cases such as C=1 and N=1
+		if(isRowSums(h) && isReshape(getFirstInput(h), C, HW) && isColSums(getFirstInput(getFirstInput(h)))) {
+			return getFirstInput(getFirstInput(getFirstInput(h)));
+		}
+		return null;
+	}
+	
+	
 	/**
 	 * Checks for the batch norm (mode="train") pattern using the helper isBatchNormTrainMean and isBatchNormTrainVar
 	 * and returns a new FunctionOp if matched
@@ -588,8 +793,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 		// norm = bias_multiply(bias_add(X, -mean), 1/sqrt(var+eps))
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
 		// 2x for input and output and 1x for overhead
-		// fitsOnGPU(hi, 3)
-		if( hasFirstInput(hi) && isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) ) {	
+		if( hasFirstInput(hi) && isBiasAdd(hi) && isBiasMultiply(getFirstInput(hi)) && fitsOnGPU(hi, 3)  ) {	
 			Hop norm = getFirstInput(getFirstInput(hi));
 			if(hasSecondInput(norm) && isBiasMultiply(norm) && isBiasAdd(getFirstInput(norm)) 
 					&& hasSecondInput(getFirstInput(norm)) && isUnaryMinus(getSecondInput(getFirstInput(norm)))
@@ -712,7 +916,8 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 			ret.add(tRead);
 			// Remove old output from roots to avoid unnecessary computation.
 			if(roots.contains(oldHops[i])) {
-				roots.remove(oldHops[i]);
+				// roots.remove(oldHops[i]);
+				roots.add(roots.indexOf(oldHops[i]), tRead);
 			}
 		}
 		return ret;

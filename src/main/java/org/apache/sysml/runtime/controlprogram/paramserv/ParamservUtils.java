@@ -32,7 +32,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.MultiThreadedHop;
@@ -383,7 +382,7 @@ public class ParamservUtils {
 
 	@SuppressWarnings("unchecked")
 	public static JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitionOnSpark(SparkExecutionContext sec, MatrixObject features, MatrixObject labels, Statement.PSScheme scheme, int workerNum) {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		// Get input RDD
 		JavaPairRDD<MatrixIndexes, MatrixBlock> featuresRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
 			sec.getRDDHandleForMatrixObject(features, InputInfo.BinaryBlockInputInfo);
@@ -416,7 +415,7 @@ public class ParamservUtils {
 			})
 			.mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns()));
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSSetupTime((long) tSetup.stop());
 		return result;
 	}

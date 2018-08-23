@@ -26,7 +26,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLOptions;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
@@ -34,6 +33,7 @@ import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
@@ -108,7 +108,6 @@ public class ScriptExecutor {
 	protected boolean forceGPU = false;
 	protected boolean oldForceGPU = false;
 	protected boolean statistics = false;
-	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
 	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
@@ -225,13 +224,12 @@ public class ScriptExecutor {
 	 * Set the global flags (for example: statistics, gpu, etc).
 	 */
 	protected void setGlobalFlags() {
-		oldStatistics = DMLScript.STATISTICS;
-		DMLScript.STATISTICS = statistics;
-		oldForceGPU = DMLScript.FORCE_ACCELERATOR;
-		DMLScript.FORCE_ACCELERATOR = forceGPU;
-		oldGPU = DMLScript.USE_ACCELERATOR;
-		DMLScript.USE_ACCELERATOR = gpu;
-		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
+		ConfigurationManager.setStatistics(statistics);
+		oldForceGPU = ConfigurationManager.isForcedGPU();
+		ConfigurationManager.getLocalOptions().setForceGPU(forceGPU);
+		oldGPU = ConfigurationManager.isGPU();
+		ConfigurationManager.getLocalOptions().setGPU(gpu);
+		ConfigurationManager.getLocalOptions().setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 
 		// set the global compiler configuration
 		try {
@@ -253,10 +251,10 @@ public class ScriptExecutor {
 	 * post-execution.
 	 */
 	protected void resetGlobalFlags() {
-		DMLScript.STATISTICS = oldStatistics;
-		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
-		DMLScript.USE_ACCELERATOR = oldGPU;
-		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
+		ConfigurationManager.resetStatistics();
+		ConfigurationManager.getLocalOptions().setForceGPU(oldForceGPU);
+		ConfigurationManager.getLocalOptions().setGPU(oldGPU);
+		ConfigurationManager.getLocalOptions().setStatisticsMaxHeavyHitters(DMLOptions.defaultOptions.statsCount);
 	}
 	
 	public void compile(Script script) {

@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -1224,7 +1223,7 @@ public class OptimizerRuleBased extends Optimizer
 			// otherwise it default to the number of CPU cores and the
 			// operations are run in CP mode
 			//FIXME rework for nested parfor parallelism and body w/o gpu ops
-			if (DMLScript.USE_ACCELERATOR) {
+			if (ConfigurationManager.isGPU()) {
 				long perGPUBudget = GPUContextPool.initialGPUMemBudget();
 				double maxMemUsage = getMaxCPOnlyBudget(n);
 				if (maxMemUsage < perGPUBudget){

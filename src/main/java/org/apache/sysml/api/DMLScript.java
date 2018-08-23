@@ -52,6 +52,7 @@ import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.debug.DMLDebugger;
 import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -112,10 +113,7 @@ public class DMLScript
 	}
 	
 	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
-	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
-	public static boolean           FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
 	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
-	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
@@ -134,9 +132,6 @@ public class DMLScript
 	 * case (TRUE/FALSE for DML and True/False for PYDML).
 	 */
 	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
-	
-	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
-	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
 	// whether to synchronize GPU after every instruction
 	public static boolean           SYNCHRONIZE_GPU  	= true;
 	// whether to perform eager CUDA free on rmvar
@@ -225,12 +220,9 @@ public class DMLScript
 		try
 		{
 			dmlOptions = DMLOptions.parseCLArguments(args);
+			ConfigurationManager.setLocalOptions(dmlOptions);
 			
-			STATISTICS          = dmlOptions.stats;
-			STATISTICS_COUNT    = dmlOptions.statsCount;
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
-			USE_ACCELERATOR     = dmlOptions.gpu;
-			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE   = dmlOptions.debug;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
@@ -481,7 +473,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, STATISTICS ? STATISTICS_COUNT : 0, null);
+			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, ConfigurationManager.isStatistics() ? ConfigurationManager.getLocalOptions().getStatisticsMaxHeavyHitters() : 0, null);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)
@@ -510,12 +502,12 @@ public class DMLScript
 		
 		// Whether extra statistics useful for developers and others interested
 		// in digging into performance problems are recorded and displayed
-		DMLScript.FINEGRAINED_STATISTICS = DMLScript.STATISTICS && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+		ConfigurationManager.setFinegrainedStatistics(ConfigurationManager.isStatistics() && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS));
 		CacheableData.CACHING_BUFFER_SIZE = dmlconf.getDoubleValue(DMLConfig.CACHING_BUFFER_SIZE);
 		if(CacheableData.CACHING_BUFFER_SIZE < 0 || CacheableData.CACHING_BUFFER_SIZE > 1) 
 			throw new RuntimeException("Incorrect value (" + CacheableData.CACHING_BUFFER_SIZE + ") for the configuration " + DMLConfig.CACHING_BUFFER_SIZE);
 		
-		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);		
+		STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);		
 		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
 		
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
@@ -621,7 +613,7 @@ public class DMLScript
 		
 		//reset statistics (required if multiple scripts executed in one JVM)
 		Statistics.resetNoOfExecutedJobs();
-		if( STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.reset();
 	}
 	

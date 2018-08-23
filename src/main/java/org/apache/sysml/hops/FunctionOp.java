@@ -22,7 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;
@@ -304,12 +304,12 @@ public class FunctionOp extends Hop
 						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
 			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
-				if(!DMLScript.USE_ACCELERATOR)
+				if(!ConfigurationManager.isGPU())
 					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
 				_etype = ExecType.GPU;
 			}
 			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward"))) {
-				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
+				_etype = ConfigurationManager.isGPU() ? ExecType.GPU : ExecType.CP;
 			}
 			else if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {
 				// Only GPU implementation is supported

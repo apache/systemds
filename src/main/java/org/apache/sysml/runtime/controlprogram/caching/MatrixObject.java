@@ -243,7 +243,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire partition "+hashCode()+" "+pred);
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
 			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
@@ -345,7 +345,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireRTime(t1-t0);
 		}
@@ -553,7 +553,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			LOG.trace ("Writing matrix to HDFS ("+fname+") - NOTHING TO WRITE (_data == null).");
 		}
 		
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			CacheStatistics.incrementHDFSWrites();
 	}
 	

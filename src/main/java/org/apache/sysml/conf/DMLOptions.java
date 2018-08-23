@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api;
+package org.apache.sysml.conf;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,6 +64,59 @@ public class DMLOptions {
 
 	public DMLOptions(Options opts) {
 		options = opts;
+		ConfigurationManager.setStatistics(stats);
+	}
+	
+	/**
+	 * Sets the maximum number of heavy hitters that are printed out as part of
+	 * the statistics.
+	 *
+	 * @param maxHeavyHitters
+	 *            maximum number of heavy hitters to print
+	 */
+	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
+		this.statsCount = maxHeavyHitters;
+	}
+	
+	/**
+	 * @return the number of statistics instructions to print
+	 */
+	public int getStatisticsMaxHeavyHitters() {
+		return statsCount;
+	}
+
+	/**
+	 * Whether or not to enable GPU usage.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public void setGPU(boolean enabled) {
+		this.gpu = enabled;
+	}
+
+	/**
+	 * @return true if gpu is enabled
+	 */
+	public boolean isGPU() {
+		return gpu;
+	}
+	
+	/**
+	 * Whether or not to force GPU usage.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public void setForceGPU(boolean enabled) {
+		this.forceGPU = enabled;
+	}
+	
+	/**
+	 * @return true if GPU is enabled in forced mode
+	 */
+	public boolean isForceGPU() {
+		return forceGPU;
 	}
 	
 	@Override

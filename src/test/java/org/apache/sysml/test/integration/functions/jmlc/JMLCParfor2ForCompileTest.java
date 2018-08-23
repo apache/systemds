@@ -23,10 +23,10 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.utils.Statistics;
 
@@ -50,6 +50,7 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 	private void runJMLCParFor2ForTest(boolean par) 
 		throws IOException
 	{
+		ConfigurationManager.setStatistics(true);
 		try {
 			Connection conn = !par ? new Connection() :
 				new Connection(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
@@ -59,7 +60,6 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 				+ "parfor(i in 1:nrow(X))"
 				+ "  R[i,] = sum(X[i,])"
 				+ "print(sum(R))";
-			DMLScript.STATISTICS = true;
 			Statistics.reset();
 		
 			PreparedScript pscript = conn.prepareScript(
@@ -69,6 +69,8 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			Assert.fail("JMLC parfor test failed: "+ex.getMessage());
+		} finally {
+			ConfigurationManager.resetStatistics();
 		}
 		
 		//check for existing or non-existing parfor

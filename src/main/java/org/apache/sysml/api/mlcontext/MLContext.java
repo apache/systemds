@@ -608,7 +608,6 @@ public class MLContext implements ConfigurableAPI
 	 *            otherwise
 	 */
 	public void setStatistics(boolean statistics) {
-		DMLScript.STATISTICS = statistics;
 		this.statistics = statistics;
 	}
 
@@ -620,7 +619,6 @@ public class MLContext implements ConfigurableAPI
 	 *            maximum number of heavy hitters to print
 	 */
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
-		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
 		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
 

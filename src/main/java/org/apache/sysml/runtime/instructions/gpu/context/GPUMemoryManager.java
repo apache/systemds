@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -167,11 +168,11 @@ public class GPUMemoryManager {
 	 * @return allocated pointer
 	 */
 	private Pointer cudaMallocNoWarn(Pointer A, long size, String printDebugMessage) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		try {
 			allocator.allocate(A, size);
 			allPointers.put(A, new PointerInfo(size));
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaAllocSuccessTime.add(totalTime);
 				GPUStatistics.cudaAllocSuccessCount.increment();
@@ -183,7 +184,7 @@ public class GPUMemoryManager {
 			}
 			return A;
 		} catch(jcuda.CudaException e) {
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaAllocFailedTime.add(System.nanoTime() - t0);
 				GPUStatistics.cudaAllocFailedCount.increment();
@@ -280,7 +281,7 @@ public class GPUMemoryManager {
 		
 		// Step 5: Try eviction/clearing exactly one with size restriction
 		if(A == null) {
-			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 =  ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
 						.filter(gpuObj -> !gpuObj.isLocked() && matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
 						.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
@@ -289,7 +290,7 @@ public class GPUMemoryManager {
 				A = cudaMallocNoWarn(tmpA, size, null);
 				if(A == null)
 					LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
-				if(DMLScript.STATISTICS) {
+				if(ConfigurationManager.isStatistics()) {
 					long totalTime = System.nanoTime() - t0;
 					GPUStatistics.cudaEvictTime.add(totalTime);
 					GPUStatistics.cudaEvictSizeTime.add(totalTime);
@@ -301,7 +302,7 @@ public class GPUMemoryManager {
 		
 		// Step 6: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
-			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 =  ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			long currentAvailableMemory = allocator.getAvailableMemory();
 			boolean canFit = false;
 			// ---------------------------------------------------------------
@@ -322,10 +323,10 @@ public class GPUMemoryManager {
 					// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
 					A = cudaMallocNoWarn(tmpA, size, null); 
 				}
-				if(DMLScript.STATISTICS) 
+				if(ConfigurationManager.isStatistics()) 
 					GPUStatistics.cudaEvictCount.increment();
 			}
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaEvictTime.add(totalTime);
 			}
@@ -346,7 +347,7 @@ public class GPUMemoryManager {
 					+ toString());
 		}
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		cudaMemset(A, 0, size);
 		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
 		return A;
@@ -426,7 +427,7 @@ public class GPUMemoryManager {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
 		if (eager) {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
@@ -515,11 +516,11 @@ public class GPUMemoryManager {
 	 * @param startTime start time
 	 */
 	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
-		if(DMLScript.STATISTICS) {
+		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - startTime;
 			globalGPUTimer.add(totalTime);
 			globalGPUCounter.add(1);
-			if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
+			if (opcode != null && ConfigurationManager.isFinegrainedStatistics())
 				GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, totalTime);
 		}
 	}
@@ -532,7 +533,7 @@ public class GPUMemoryManager {
 	 * @param startTime start time
 	 */
 	void addMiscTime(String opcode, String instructionLevelTimer, long startTime) {
-		if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
+		if (opcode != null && ConfigurationManager.isFinegrainedStatistics())
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	

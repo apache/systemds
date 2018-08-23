@@ -23,6 +23,7 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.GPUStatistics;
@@ -55,14 +56,14 @@ public class ShadowBuffer {
 	 * @param instName name of the instruction
 	 */
 	public void moveFromDevice(String instName) {
-		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		int numElems = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 		shadowPointer = new float[numElems];
 		DMLScript.EVICTION_SHADOW_BUFFER_CURR_BYTES += shadowPointer.length*Sizeof.FLOAT;
 		cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 		gpuObj.getGPUContext().cudaFreeHelper(instName, gpuObj.jcudaDenseMatrixPtr, true);
 		gpuObj.jcudaDenseMatrixPtr = null;
-		if (DMLScript.STATISTICS) {
+		if (ConfigurationManager.isStatistics()) {
 			// Eviction time measure in malloc
 			long totalTime = System.nanoTime() - start;
 			GPUStatistics.cudaFromDevToShadowTime.add(totalTime);
@@ -75,7 +76,7 @@ public class ShadowBuffer {
 	 * Move the data from shadow buffer to Matrix object
 	 */
 	public void moveToHost() {
-		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		MatrixBlock tmp = new MatrixBlock(GPUObject.toIntExact(gpuObj.mat.getNumRows()), GPUObject.toIntExact(gpuObj.mat.getNumColumns()), false);
 		tmp.allocateDenseBlock();
 		double [] tmpArr = tmp.getDenseBlockValues();
@@ -86,7 +87,7 @@ public class ShadowBuffer {
 		gpuObj.mat.release();
 		clearShadowPointer();
 		gpuObj.dirty = false;
-		if (DMLScript.STATISTICS) {
+		if (ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - start;
 			GPUStatistics.cudaFromShadowToHostTime.add(totalTime);
 			GPUStatistics.cudaFromShadowToHostCount.increment();
@@ -100,12 +101,12 @@ public class ShadowBuffer {
 	 * Move the data from shadow buffer to GPU
 	 */
 	public void moveToDevice() {
-		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		long numBytes = shadowPointer.length*LibMatrixCUDA.sizeOfDataType;
 		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes);
 		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, Pointer.to(shadowPointer), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 		clearShadowPointer();
-		if (DMLScript.STATISTICS) {
+		if (ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - start;
 			GPUStatistics.cudaFromShadowToDevTime.add(totalTime);
 			GPUStatistics.cudaFromShadowToDevCount.increment();

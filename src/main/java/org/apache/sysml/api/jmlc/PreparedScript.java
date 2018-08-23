@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -79,6 +80,7 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
+	private boolean _isStatisticsEnabled = false;
 	
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
@@ -122,6 +124,24 @@ public class PreparedScript implements ConfigurableAPI
 		//on execute, which allows different threads creating/executing the script
 		_dmlconf = dmlconf;
 		_cconf = cconf;
+	}
+	
+	/**
+	 * Sets a boolean flag indicating if runtime statistics should be gathered
+	 * Same behavior as in "MLContext.setStatistics()"
+	 *
+	 * @param stats boolean value with true indicating statistics should be gathered
+	 */
+	public void setStatistics(boolean stats) { this._isStatisticsEnabled = stats; }
+
+	/**
+	 * Sets a boolean flag indicating if memory profiling statistics should be
+	 * gathered. The option is false by default.
+	 * @param stats boolean value with true indicating memory statistics should be gathered
+	 */
+	public void gatherMemStats(boolean stats) {
+		this._isStatisticsEnabled = this._isStatisticsEnabled || ConfigurationManager.isStatistics();
+		DMLScript.JMLC_MEM_STATISTICS = stats;
 	}
 	
 	@Override
@@ -427,6 +447,7 @@ public class PreparedScript implements ConfigurableAPI
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
+		ConfigurationManager.setStatistics(_isStatisticsEnabled);
 		
 		//create and populate execution context
 		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
@@ -447,6 +468,8 @@ public class PreparedScript implements ConfigurableAPI
 		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
+		
+		ConfigurationManager.resetStatistics();
 
 		return rvars;
 	}

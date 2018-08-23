@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
@@ -139,7 +140,7 @@ public class LocalVariableMap implements Cloneable
 			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData ) {
 				dict.put(hash, e.getValue());
 				double size = ((CacheableData<?>) e.getValue()).getDataSize();
-				if (DMLScript.JMLC_MEM_STATISTICS && DMLScript.FINEGRAINED_STATISTICS)
+				if (DMLScript.JMLC_MEM_STATISTICS && ConfigurationManager.isFinegrainedStatistics())
 					Statistics.maintainCPHeavyHittersMem(e.getKey(), size);
 				total += size;
 			}

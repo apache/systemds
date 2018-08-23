@@ -189,10 +189,10 @@ public abstract class Hop implements ParseInfo
 	
 	public void checkAndSetForcedPlatform()
 	{
-		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
+		if(ConfigurationManager.isGPU() && ConfigurationManager.isForcedGPU() && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
-			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
+			if(OptimizerUtils.isMemoryBasedOptLevel() && ConfigurationManager.isGPU() && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();
 				if(_etypeForced != ExecType.CP && _etypeForced != ExecType.GPU)
@@ -735,7 +735,7 @@ public abstract class Hop implements ParseInfo
 		char c = ' ';
 		double memEst = getMemEstimate();
 		if ( memEst < OptimizerUtils.getLocalMemBudget() ) {
-			if (DMLScript.USE_ACCELERATOR && isGPUEnabled() && memEst < GPUContextPool.initialGPUMemBudget())
+			if (ConfigurationManager.isGPU() && isGPUEnabled() && memEst < GPUContextPool.initialGPUMemBudget())
 				et = ExecType.GPU;
 			else
 				et = ExecType.CP;

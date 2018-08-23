@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.LongAdder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
@@ -315,7 +316,7 @@ public class GPUObject {
 			LOG.trace("GPU : dense -> sparse on " + this + ", GPUContext=" + getGPUContext());
 		}
 		long t0 = 0;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			t0 = System.nanoTime();
 		cusparseHandle cusparseHandle = getGPUContext().getCusparseHandle();
 		if (cusparseHandle == null)
@@ -331,9 +332,9 @@ public class GPUObject {
 				columnMajorDenseToRowMajorSparse(getGPUContext(), cusparseHandle, getDensePointer(), rows,
 						cols));
 		// TODO: What if mat.getNnz() is -1 ?
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaDenseToSparseTime.add(System.nanoTime() - t0);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaDenseToSparseCount.add(1);
 	}
 
@@ -398,20 +399,20 @@ public class GPUObject {
 			LOG.trace("GPU : sparse -> dense on " + this + ", GPUContext=" + getGPUContext());
 		}
 		long start = 0, end = 0;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			start = System.nanoTime();
 		if (getJcudaSparseMatrixPtr() == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
 
 		sparseToColumnMajorDense();
 		denseColumnMajorToRowMajor();
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			end = System.nanoTime();
-		if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
+		if (instructionName != null && ConfigurationManager.isFinegrainedStatistics())
 			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, end - start);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaSparseToDenseTime.add(end - start);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaSparseToDenseCount.add(1);
 	}
 
@@ -525,7 +526,7 @@ public class GPUObject {
 				if(!recomputeDenseNNZ)
 					return -1;
 				
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				GPUContext gCtx = getGPUContext();
 				cusparseHandle cusparseHandle = gCtx.getCusparseHandle();
 				cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
@@ -547,7 +548,7 @@ public class GPUObject {
 				}
 				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
 				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
-				if(DMLScript.FINEGRAINED_STATISTICS) {
+				if(ConfigurationManager.isFinegrainedStatistics()) {
 					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
 			}
 				return nnzC[0];
@@ -785,12 +786,12 @@ public class GPUObject {
 			LOG.trace("GPU : copyFromHostToDevice, on " + this + ", GPUContext=" + getGPUContext());
 		}
 		long start = 0;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			start = System.nanoTime();
 
-		long acqrTime = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long acqrTime = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		MatrixBlock tmp = mat.acquireRead();
-		if(DMLScript.FINEGRAINED_STATISTICS) {
+		if(ConfigurationManager.isFinegrainedStatistics()) {
 			if(tmp.isInSparseFormat())
 				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, System.nanoTime()-acqrTime);
 			else
@@ -829,23 +830,23 @@ public class GPUObject {
 					csrBlock = (SparseBlockCSR) block;
 				} else if (block instanceof SparseBlockCOO) {
 					// TODO - should we do this on the GPU using cusparse<t>coo2csr() ?
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						t0 = System.nanoTime();
 					SparseBlockCOO cooBlock = (SparseBlockCOO) block;
 					csrBlock = new SparseBlockCSR(toIntExact(mat.getNumRows()), cooBlock.rowIndexes(),
 							cooBlock.indexes(), cooBlock.values());
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						GPUStatistics.cudaSparseConversionTime.add(System.nanoTime() - t0);
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						GPUStatistics.cudaSparseConversionCount.increment();
 				} else if (block instanceof SparseBlockMCSR) {
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						t0 = System.nanoTime();
 					SparseBlockMCSR mcsrBlock = (SparseBlockMCSR) block;
 					csrBlock = new SparseBlockCSR(mcsrBlock.getRows(), toIntExact(mcsrBlock.size()));
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						GPUStatistics.cudaSparseConversionTime.add(System.nanoTime() - t0);
-					if (DMLScript.STATISTICS)
+					if (ConfigurationManager.isStatistics())
 						GPUStatistics.cudaSparseConversionCount.increment();
 				} else {
 					throw new DMLRuntimeException("Unsupported sparse matrix format for CUDA operations");
@@ -858,10 +859,10 @@ public class GPUObject {
 			allocateSparseMatrixOnDevice();
 
 			if (copyToDevice) {
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
 						values);
-				if(DMLScript.FINEGRAINED_STATISTICS) 
+				if(ConfigurationManager.isFinegrainedStatistics()) 
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
@@ -877,9 +878,9 @@ public class GPUObject {
 			if (tmp.getNonZeros() == 0) {
 				// Minor optimization: No need to allocate empty error for CPU 
 				// data = new double[tmp.getNumRows() * tmp.getNumColumns()];
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				cudaMemset(getDensePointer(), 0, getDatatypeSizeOf(mat.getNumRows() * mat.getNumColumns()));
-				if(DMLScript.FINEGRAINED_STATISTICS) 
+				if(ConfigurationManager.isFinegrainedStatistics()) 
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t1);
 			}
 			else {
@@ -891,9 +892,9 @@ public class GPUObject {
 
 		mat.release();
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - start);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevCount.add(1);
 	}
 
@@ -954,7 +955,7 @@ public class GPUObject {
 		}
 		
 		MatrixBlock tmp = null;
-		long start = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		if (!isDensePointerNull()) {
 			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
@@ -979,7 +980,7 @@ public class GPUObject {
 		}
 		mat.acquireModify(tmp);
 		mat.release();
-		if (DMLScript.STATISTICS && !isEviction) {
+		if (ConfigurationManager.isStatistics() && !isEviction) {
 			// Eviction time measure in malloc
 			long totalTime = System.nanoTime() - start;
 			int count = !isDensePointerNull() ? 1 : 3;

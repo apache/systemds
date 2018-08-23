@@ -39,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -152,7 +153,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			memo.setDistinct(e.getKey(), e.getValue());
 		
 		//maintain statistics
-		if( DMLScript.STATISTICS ) {
+		if( ConfigurationManager.isStatistics() ) {
 			if( sumMatPoints >= 63 )
 				LOG.warn("Long overflow on maintaining codegen statistics "
 					+ "for a DAG with "+sumMatPoints+" interesting points.");
@@ -321,7 +322,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				LOG.trace("Enum: Skip "+pskip+" plans (by structure).");
 		}
 		
-		if( DMLScript.STATISTICS ) {
+		if( ConfigurationManager.isStatistics() ) {
 			Statistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
 			Statistics.incrementCodegenEnumEval(numEvalPlans);
 			Statistics.incrementCodegenEnumEvalP(numEvalPartPlans);
@@ -1197,7 +1198,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		synchronized( _planCache ) {
 			plan = _planCache.get(pKey);
 		}
-		if( DMLScript.STATISTICS ) {
+		if( ConfigurationManager.isStatistics() ) {
 			if( plan != null )
 				Statistics.incrementCodegenPlanCacheHits();
 			Statistics.incrementCodegenPlanCacheTotal();

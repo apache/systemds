@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataIdentifier;
@@ -151,7 +152,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
 		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
-		if (DMLScript.USE_ACCELERATOR) {
+		if (ConfigurationManager.isGPU()) {
 			fn_ec.setGPUContexts(ec.getGPUContexts());
 			fn_ec.getGPUContext(0).initializeThread();
 		}

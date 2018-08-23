@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.utils.GPUStatistics;
@@ -168,7 +169,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	
 	@Override
 	public void deviceToHost(GPUContext gCtx, Pointer src, double[] dest, String instName, boolean isEviction) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		// We invoke transfer matrix from device to host in two cases:
 		// 1. During eviction of unlocked matrices
 		// 2. During acquireHostRead
@@ -190,11 +191,11 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			cudaMemcpy(Pointer.to(floatData), src, ((long)dest.length)*Sizeof.FLOAT, cudaMemcpyDeviceToHost);
 			LibMatrixNative.fromFloatBuffer(floatData, dest);
 		}
-		if(DMLScript.STATISTICS) {
+		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - t0;
 			GPUStatistics.cudaFloat2DoubleTime.add(totalTime);
 			GPUStatistics.cudaFloat2DoubleCount.add(1);
-			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+			if(ConfigurationManager.isFinegrainedStatistics() && instName != null) 
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, totalTime);
 		}
 	}
@@ -203,7 +204,7 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	public void hostToDevice(GPUContext gCtx, double[] src, Pointer dest, String instName) {
 		LOG.debug("Potential OOM: Allocated additional space in hostToDevice");
 		// TODO: Perform conversion on GPU using double2float and float2double kernels
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		if(PERFORM_CONVERSION_ON_DEVICE) {
 			Pointer deviceDoubleData = gCtx.allocate(instName, ((long)src.length)*Sizeof.DOUBLE);
 			cudaMemcpy(deviceDoubleData, Pointer.to(src), ((long)src.length)*Sizeof.DOUBLE, cudaMemcpyHostToDevice);
@@ -216,11 +217,11 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			cudaMemcpy(dest, Pointer.to(floatData), ((long)src.length)*Sizeof.FLOAT, cudaMemcpyHostToDevice);
 		}
 		
-		if(DMLScript.STATISTICS) {
+		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - t0;
 			GPUStatistics.cudaDouble2FloatTime.add(totalTime);
 			GPUStatistics.cudaDouble2FloatCount.add(1);
-			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
+			if(ConfigurationManager.isFinegrainedStatistics() && instName != null) 
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
 		}
 	}

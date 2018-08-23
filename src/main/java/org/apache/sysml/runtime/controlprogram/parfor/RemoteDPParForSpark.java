@@ -38,7 +38,7 @@ import org.apache.spark.util.LongAccumulator;
 
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
@@ -74,7 +74,7 @@ public class RemoteDPParForSpark
 			boolean tSparseCol, boolean enableCPCaching, int numReducers ) 
 	{
 		String jobname = "ParFor-DPESP";
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
@@ -112,7 +112,7 @@ public class RemoteDPParForSpark
 		//maintain statistics
 	    Statistics.incrementNoOfCompiledSPInst();
 	    Statistics.incrementNoOfExecutedSPInst();
-	    if( DMLScript.STATISTICS ){
+	    if( ConfigurationManager.isStatistics() ){
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 		

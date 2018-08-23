@@ -20,7 +20,6 @@
 package org.apache.sysml.conf;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
@@ -44,6 +43,9 @@ public class ConfigurationManager
 	
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
+	
+	/** Local DML configuration for thread-local options */
+	private static ThreadLocalDMLOptions _ldmlOptions = new ThreadLocalDMLOptions();
 	
     /** Global compiler configuration (defaults) */
     private static CompilerConfig _cconf = null;
@@ -115,6 +117,24 @@ public class ConfigurationManager
 	 */
 	public static DMLConfig getDMLConfig() {
 		return _ldmlconf.get();
+	}
+	
+	/**
+	 * Sets the current thread-local dml configuration to the given options.
+	 * 
+	 * @param conf the configuration
+	 */
+	public static void setLocalOptions( DMLOptions opts ) {
+		_ldmlOptions.set(opts);
+	}
+	
+	/**
+	 * Gets the current thread-local dml configuration.
+	 * 
+	 * @return the dml configuration
+	 */
+	public static DMLOptions getLocalOptions() {
+		return _ldmlOptions.get();
 	}
 	
 	public synchronized static void setGlobalConfig( CompilerConfig conf ) {
@@ -193,14 +213,103 @@ public class ConfigurationManager
 	public static boolean isCodegenEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
 			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED))
-			&& !DMLScript.USE_ACCELERATOR;
+			&& !ConfigurationManager.isGPU();
 		//note: until codegen is supported for the GPU backend, we globally
 		//disable codegen if operations are forced to the GPU to avoid
 		//a counter-productive impact on performance.
 	}
 	
+	/**
+	 * @return true if gpu is enabled
+	 */
+	public static boolean isGPU() {
+		return _ldmlOptions.get().isGPU();
+	}
+	
+	/**
+	 * @return true if GPU is enabled in forced mode
+	 */
+	public static boolean isForcedGPU() {
+		return _ldmlOptions.get().isGPU();
+	}
+	
+	
+	// -------------------------------------------------------------------------------
+	// The below logic ensures that no two parallel invoker set different statistics options:
+	// For example: One thread sets statistics to true and other sets it to false.
+	// With this restriction, there is no performance regression for heavily used isStatistics() and isFinegrainedStatistics() method.
+	
+	// NULL if statistics is not set by any API
+	private static Boolean isStatsSet = null;
+	private static boolean stats = false;
+	
+	/**
+	 * @return true if statistics is enabled
+	 */
+	public static boolean isStatistics() {
+		return stats;
+	}
+	
+	/**
+	 * Whether or not to enable statistics.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public static void setStatistics(boolean enabled) {
+		if(isStatsSet != null && stats != enabled) {
+			throw new RuntimeException("Multiple statistics configuration is not supported");
+		}
+		stats = enabled;
+		isStatsSet = enabled;
+	}
+	
+	/**
+	 * Should be called after execution
+	 */
+	public static void resetStatistics() {
+		stats = false;
+		isStatsSet = null;
+		finegrainedStats = false;
+		isFinegrainedStatsSet = null;
+	}
+	
+	// NULL if statistics is not set by any API
+	private static Boolean isFinegrainedStatsSet = null;
+	private static boolean finegrainedStats = false;
+	
+	/**
+	 * @return true if finegrained statistics is enabled
+	 */
+	public static boolean isFinegrainedStatistics() {
+		return finegrainedStats;
+	}
+	
+	/**
+	 * Whether or not to enable finegrained statistics.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public static void setFinegrainedStatistics(boolean enabled) {
+		if(isFinegrainedStatsSet != null && finegrainedStats != enabled) {
+			throw new RuntimeException("Multiple finegrained statistics configuration is not supported");
+		}
+		finegrainedStats = enabled;
+		isFinegrainedStatsSet = enabled;
+	}
+	
+	// -------------------------------------------------------------------------------
+	
 	///////////////////////////////////////
 	// Thread-local classes
+	
+	private static class ThreadLocalDMLOptions extends ThreadLocal<DMLOptions> {
+		@Override 
+		protected DMLOptions initialValue() {  
+			return DMLOptions.defaultOptions;
+		}
+	}
 	
 	private static class ThreadLocalDMLConfig extends ThreadLocal<DMLConfig> {
 		@Override 

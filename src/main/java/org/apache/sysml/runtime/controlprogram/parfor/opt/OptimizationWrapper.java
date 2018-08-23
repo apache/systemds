@@ -27,7 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.ipa.InterProceduralAnalysis;
@@ -136,7 +135,7 @@ public class OptimizationWrapper
 		Timing time = new Timing(true);
 		
 		//maintain statistics
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.incrementParForOptimCount();
 		
 		//create specified optimizer
@@ -256,7 +255,7 @@ public class OptimizationWrapper
 		
 		long ltime = (long) time.stop();
 		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.incrementParForOptimTime(ltime);
 		
 		//cleanup phase

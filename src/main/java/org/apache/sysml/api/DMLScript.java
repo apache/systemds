@@ -114,10 +114,14 @@ public class DMLScript
 	
 	// TODO: Anthony
 	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
+	
 	// debug mode is deprecated and will be removed soon.
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
+	
+	// These flags are not used by JMLC and hence are not cleaned up. We can revisit this later.
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
+	
 	// TODO: For now, assume that multiple threads won't attempt to use different floating point precision.
 	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally. 
 	

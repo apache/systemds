@@ -447,7 +447,6 @@ public class PreparedScript implements ConfigurableAPI
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
-		ConfigurationManager.setStatistics(_isStatisticsEnabled);
 		
 		//create and populate execution context
 		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);

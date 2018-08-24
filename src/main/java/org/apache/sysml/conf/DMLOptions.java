@@ -75,6 +75,7 @@ public class DMLOptions {
 		options = null;
 		this.argVals = argVals;
 		this.stats = stats;
+		ConfigurationManager.setStatistics(stats);
 		this.statsCount = statsCount;
 		this.memStats = memStats;
 		this.explainType = explainType;

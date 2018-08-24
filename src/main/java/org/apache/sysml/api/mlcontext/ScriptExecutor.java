@@ -335,7 +335,7 @@ public class ScriptExecutor {
 		Map<String, String> args = MLContextUtil
 				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
 		ConfigurationManager.setGlobalOptions(new DMLOptions(args, 
-				statistics, statisticsMaxHeavyHitters, false, explainLevel.getExplainType(), 
+				statistics, statisticsMaxHeavyHitters, false, explain ? explainLevel.getExplainType() : Explain.ExplainType.NONE, 
 				getExecutionType().getRuntimePlatform(), gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
 				script.getScriptExecutionString()));
 		

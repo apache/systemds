@@ -62,9 +62,28 @@ public class DMLOptions {
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
+	// Set when invoked via DMLScript
 	public DMLOptions(Options opts) {
 		options = opts;
 		ConfigurationManager.setStatistics(stats);
+	}
+	
+	// Set when invoked via MLContext and JMLC via Configuration.setGlobalOptions and Configuration.setLocalOptions respectively
+	public DMLOptions(Map<String, String>  argVals, boolean stats, int statsCount, boolean memStats, 
+			Explain.ExplainType  explainType, RUNTIME_PLATFORM execMode, boolean gpu, boolean forceGPU, 
+			ScriptType scriptType, String filePath, String script) {
+		options = null;
+		this.argVals = argVals;
+		this.stats = stats;
+		this.statsCount = statsCount;
+		this.memStats = memStats;
+		this.explainType = explainType;
+		this.execMode = execMode;
+		this.gpu = gpu;
+		this.forceGPU = forceGPU;
+		this.scriptType = scriptType;
+		this.filePath = filePath;
+		this.script = script;
 	}
 	
 	/**

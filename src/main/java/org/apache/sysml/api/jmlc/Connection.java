@@ -39,6 +39,7 @@ import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
 import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
@@ -64,6 +65,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
+import org.apache.sysml.utils.Explain;
 import org.apache.wink.json4j.JSONObject;
 
 /**
@@ -149,8 +151,6 @@ public class Connection implements Closeable
 	 * @param dmlconfig a dml configuration.
 	 */
 	public Connection(DMLConfig dmlconfig) {
-		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.SINGLE_NODE);
-		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)
 		CompilerConfig cconf = new CompilerConfig();
@@ -231,6 +231,12 @@ public class Connection implements Closeable
 	 */
 	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
 		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+
+		// Set DML Options here:
+		boolean gpu = false; boolean forceGPU = false;
+		ConfigurationManager.setLocalOptions(new DMLOptions(args, 
+				false, 10, false, Explain.ExplainType.NONE, RUNTIME_PLATFORM.SINGLE_NODE, gpu, forceGPU, 
+				parsePyDML ? ScriptType.PYDML : ScriptType.DML, null, script));
 		
 		//check for valid names of passed arguments
 		String[] invalidArgs = args.keySet().stream()

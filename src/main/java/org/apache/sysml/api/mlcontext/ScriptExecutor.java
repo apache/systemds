@@ -332,6 +332,13 @@ public class ScriptExecutor {
 	 */
 	public MLResults execute(Script script) {
 
+		Map<String, String> args = MLContextUtil
+				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+		ConfigurationManager.setGlobalOptions(new DMLOptions(args, 
+				statistics, statisticsMaxHeavyHitters, false, explainLevel.getExplainType(), 
+				getExecutionType().getRuntimePlatform(), gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
+				script.getScriptExecutionString()));
+		
 		// main steps in script execution
 		compile(script);
 

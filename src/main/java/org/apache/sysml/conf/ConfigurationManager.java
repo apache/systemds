@@ -235,9 +235,10 @@ public class ConfigurationManager
 	
 	
 	// -------------------------------------------------------------------------------
-	// The below logic ensures that no two parallel invoker set different statistics options:
+	// The below logic ensures that no two parallel invoker set different statistics options.
 	// For example: One thread sets statistics to true and other sets it to false.
 	// With this restriction, there is no performance regression for heavily used isStatistics() and isFinegrainedStatistics() method.
+	// The current refactoring also allows to revisit this assumption in future. 
 	
 	// NULL if statistics is not set by any API
 	private static Boolean isStatsSet = null;

@@ -150,7 +150,7 @@ public class FrameTest extends MLContextTestBase
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
-		ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
+		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;
@@ -341,7 +341,7 @@ public class FrameTest extends MLContextTestBase
 			System.out.println("Frame MLContext test completed successfully.");
 		}
 		finally {
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldRT);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldRT);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}

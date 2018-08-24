@@ -41,7 +41,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	static {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		ConfigurationManager.getLocalOptions().setExecutionMode(DMLScript.RUNTIME_PLATFORM.SPARK);
+		ConfigurationManager.getDMLOptions().setExecutionMode(DMLScript.RUNTIME_PLATFORM.SPARK);
 		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
 	}
 

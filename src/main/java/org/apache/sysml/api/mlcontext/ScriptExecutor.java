@@ -226,10 +226,10 @@ public class ScriptExecutor {
 	protected void setGlobalFlags() {
 		ConfigurationManager.setStatistics(statistics);
 		oldForceGPU = ConfigurationManager.isForcedGPU();
-		ConfigurationManager.getLocalOptions().setForceGPU(forceGPU);
+		ConfigurationManager.getDMLOptions().setForceGPU(forceGPU);
 		oldGPU = ConfigurationManager.isGPU();
-		ConfigurationManager.getLocalOptions().setGPU(gpu);
-		ConfigurationManager.getLocalOptions().setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
+		ConfigurationManager.getDMLOptions().setGPU(gpu);
+		ConfigurationManager.getDMLOptions().setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 
 		// set the global compiler configuration
 		try {
@@ -252,9 +252,9 @@ public class ScriptExecutor {
 	 */
 	protected void resetGlobalFlags() {
 		ConfigurationManager.resetStatistics();
-		ConfigurationManager.getLocalOptions().setForceGPU(oldForceGPU);
-		ConfigurationManager.getLocalOptions().setGPU(oldGPU);
-		ConfigurationManager.getLocalOptions().setStatisticsMaxHeavyHitters(DMLOptions.defaultOptions.statsCount);
+		ConfigurationManager.getDMLOptions().setForceGPU(oldForceGPU);
+		ConfigurationManager.getDMLOptions().setGPU(oldGPU);
+		ConfigurationManager.getDMLOptions().setStatisticsMaxHeavyHitters(DMLOptions.defaultOptions.statsCount);
 	}
 	
 	public void compile(Script script) {
@@ -716,7 +716,7 @@ public class ScriptExecutor {
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		ConfigurationManager.getLocalOptions().setExecutionMode(executionType.getRuntimePlatform());
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 		this.executionType = executionType;
 	}
 }

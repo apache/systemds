@@ -254,7 +254,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
+			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata
 			int cols = schema.length + colsVector - 1;
@@ -285,7 +285,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldPlatform);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldPlatform);
 		}
 	}
 

@@ -45,6 +45,9 @@ public class ConfigurationManager
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
 	
+	/** Global DML options (read or defaults) */
+	private static DMLOptions _dmlOptions = null; 
+	
 	/** Local DML configuration for thread-local options */
 	private static ThreadLocalDMLOptions _ldmlOptions = new ThreadLocalDMLOptions();
 	
@@ -103,6 +106,20 @@ public class ConfigurationManager
 	}
 	
 	/**
+	 * Sets a global options as a basis for any thread-local configurations.
+	 * NOTE: This global options should never be accessed directly but only
+	 * through its thread-local derivatives. 
+	 * 
+	 * @param opts the dml options
+	 */
+	public synchronized static void setGlobalOptions( DMLOptions opts ) {
+		_dmlOptions = opts;
+		
+		//reinitialize thread-local dml options w/ _dmlOptions
+		_ldmlOptions = new ThreadLocalDMLOptions();
+	}
+	
+	/**
 	 * Sets the current thread-local dml configuration to the given config.
 	 * 
 	 * @param conf the configuration
@@ -121,6 +138,15 @@ public class ConfigurationManager
 	}
 	
 	/**
+	 * Gets the current thread-local dml options.
+	 * 
+	 * @return the dml options
+	 */
+	public static DMLOptions getDMLOptions() {
+		return _ldmlOptions.get();
+	}
+	
+	/**
 	 * Sets the current thread-local dml configuration to the given options.
 	 * 
 	 * @param conf the configuration
@@ -129,14 +155,6 @@ public class ConfigurationManager
 		_ldmlOptions.set(opts);
 	}
 	
-	/**
-	 * Gets the current thread-local dml configuration.
-	 * 
-	 * @return the dml configuration
-	 */
-	public static DMLOptions getLocalOptions() {
-		return _ldmlOptions.get();
-	}
 	
 	public synchronized static void setGlobalConfig( CompilerConfig conf ) {
 		_cconf = conf;
@@ -161,6 +179,7 @@ public class ConfigurationManager
 	public static void clearLocalConfigs() {
 		_ldmlconf.remove();
 		_lcconf.remove();
+		_ldmlOptions.remove();
 	}
 	
 	/**
@@ -315,6 +334,8 @@ public class ConfigurationManager
 	private static class ThreadLocalDMLOptions extends ThreadLocal<DMLOptions> {
 		@Override 
 		protected DMLOptions initialValue() {  
+			if(_dmlOptions != null)
+				return _dmlOptions;
 			return DMLOptions.defaultOptions;
 		}
 	}

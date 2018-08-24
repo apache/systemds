@@ -214,7 +214,7 @@ public class DMLScript
 		try
 		{
 			dmlOptions = DMLOptions.parseCLArguments(args);
-			ConfigurationManager.setLocalOptions(dmlOptions);
+			ConfigurationManager.setGlobalOptions(dmlOptions);
 			
 			JMLC_MEM_STATISTICS = dmlOptions.memStats;
 			EXPLAIN             = dmlOptions.explainType;
@@ -282,7 +282,7 @@ public class DMLScript
 		}
 		finally {
 			//reset runtime platform and visualize flag
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldExecMode);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldExecMode);
 			EXPLAIN = oldexplain;
 		}
 		
@@ -466,7 +466,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, ConfigurationManager.isStatistics() ? ConfigurationManager.getLocalOptions().getStatisticsMaxHeavyHitters() : 0, null);
+			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, ConfigurationManager.isStatistics() ? ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0, null);
 		}
 		finally {
 			if(ec != null && ec instanceof SparkExecutionContext)

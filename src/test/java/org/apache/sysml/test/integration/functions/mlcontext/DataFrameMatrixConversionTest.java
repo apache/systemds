@@ -198,7 +198,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
+			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata
 			int rows = (cols == cols3) ? rows3 : rows1;
@@ -229,7 +229,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldPlatform);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldPlatform);
 		}
 	}
 
@@ -240,7 +240,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
+			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata
 			double[][] A = getRandomMatrix(rows1, 1, -10, 10, 0.7, 2373);
@@ -271,7 +271,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldPlatform);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldPlatform);
 		}
 	}
 	

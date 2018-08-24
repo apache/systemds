@@ -83,7 +83,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 	private static void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
 	{
 		RUNTIME_PLATFORM oldplatform = ConfigurationManager.getExecutionMode();
-		ConfigurationManager.getLocalOptions().setExecutionMode(platform);
+		ConfigurationManager.getDMLOptions().setExecutionMode(platform);
 		
 		//create mlcontext
 		SparkSession spark = createSystemMLSparkSession("MLContextMultipleScriptsTest", "local");
@@ -109,7 +109,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 			System.out.println(z);
 		}
 		finally {
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldplatform);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldplatform);
 			
 			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)

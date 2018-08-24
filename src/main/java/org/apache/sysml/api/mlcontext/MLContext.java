@@ -270,7 +270,7 @@ public class MLContext implements ConfigurableAPI
 		}
 
 		this.spark = spark;
-		ConfigurationManager.getLocalOptions().setExecutionMode(executionType.getRuntimePlatform());
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 
 		activeMLContext = this;
 		MLContextProxy.setActive(true);
@@ -738,7 +738,7 @@ public class MLContext implements ConfigurableAPI
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		ConfigurationManager.getLocalOptions().setExecutionMode(executionType.getRuntimePlatform());
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 		this.executionType = executionType;
 	}
 

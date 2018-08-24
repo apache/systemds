@@ -909,7 +909,7 @@ public class Statistics
 	 * @return statistics as a string
 	 */
 	public static String display() {
-		return display(ConfigurationManager.getLocalOptions().getStatisticsMaxHeavyHitters());
+		return display(ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters());
 	}
 	
 	

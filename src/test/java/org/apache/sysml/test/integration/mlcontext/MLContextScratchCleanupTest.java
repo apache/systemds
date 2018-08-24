@@ -83,7 +83,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 	private static void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
 	{
 		RUNTIME_PLATFORM oldplatform = ConfigurationManager.getExecutionMode();
-		ConfigurationManager.getLocalOptions().setExecutionMode(platform);
+		ConfigurationManager.getDMLOptions().setExecutionMode(platform);
 		
 		//create mlcontext
 		SparkSession spark = createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
@@ -110,7 +110,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			ConfigurationManager.getLocalOptions().setExecutionMode(oldplatform);
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldplatform);
 			
 			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)

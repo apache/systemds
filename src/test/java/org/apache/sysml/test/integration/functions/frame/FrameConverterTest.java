@@ -204,7 +204,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.SPARK);
+		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.SPARK);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
@@ -263,7 +263,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 		finally
 		{
-			ConfigurationManager.getLocalOptions().setExecutionMode(platformOld);
+			ConfigurationManager.getDMLOptions().setExecutionMode(platformOld);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

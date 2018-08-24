@@ -123,7 +123,7 @@ public class ScriptExecutorUtils {
 			Statistics.stopRunTimer();
 			(exceptionThrown ? System.err : System.out)
 				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
-					statisticsMaxHeavyHitters : ConfigurationManager.getLocalOptions().getStatisticsMaxHeavyHitters()));
+					statisticsMaxHeavyHitters : ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters()));
 		}
 	}
 

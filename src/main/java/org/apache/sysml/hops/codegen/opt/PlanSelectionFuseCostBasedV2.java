@@ -37,7 +37,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -740,7 +739,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				if( !memo.contains(hopID, TemplateType.ROW) )
 					continue;
 				Hop hop = memo.getHopRefs().get(hopID);
-				boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+				boolean isSpark = ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK
 					|| OptimizerUtils.getTotalMemEstimate(hop.getInput().toArray(new Hop[0]), hop, true)
 						> OptimizerUtils.getLocalMemBudget();
 				boolean validNcol = hop.getDataType().isScalar() || (HopRewriteUtils.isTransposeOperation(hop) ? 

@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.matrix.data;
 import static jcuda.runtime.JCuda.cudaMemset;
 import jcuda.Pointer;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;

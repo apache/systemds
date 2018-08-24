@@ -726,7 +726,7 @@ public class SpoofCompiler
 				}
 				else if( OptimizerUtils.isSparkExecutionMode() ) {
 					Hop hop = memo.getHopRefs().get(e.getKey());
-					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+					boolean isSpark = ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK
 						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
 					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?

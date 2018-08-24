@@ -112,7 +112,6 @@ public class DMLScript
 		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
 	}
 	
-	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
 	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
@@ -212,7 +211,7 @@ public class DMLScript
 	@SuppressWarnings("null")
 	public static boolean executeScript( Configuration conf, String[] args ) {
 		//parse arguments and set execution properties
-		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
+		RUNTIME_PLATFORM oldExecMode  = ConfigurationManager.getExecutionMode();  //keep old ConfigurationManager.getExecutionMode()
 		ExplainType oldexplain          = EXPLAIN;     //keep old explain
 
 		DMLOptions dmlOptions = null;
@@ -226,7 +225,6 @@ public class DMLScript
 			EXPLAIN             = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE   = dmlOptions.debug;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
-			rtplatform          = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -289,7 +287,7 @@ public class DMLScript
 		}
 		finally {
 			//reset runtime platform and visualize flag
-			rtplatform = oldrtplatform;
+			ConfigurationManager.getLocalOptions().setExecutionMode(oldExecMode);
 			EXPLAIN = oldexplain;
 		}
 		
@@ -704,7 +702,7 @@ public class DMLScript
 
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals) {
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-			+ "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+			+ "RUNTIME: " + ConfigurationManager.getExecutionMode() + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
 			+ "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
@@ -716,7 +714,7 @@ public class DMLScript
 	private static void printStartExecInfo(String dmlScriptString) {
 		LOG.info("BEGIN DML run " + getDateTime());
 		LOG.debug("DML script: \n" + dmlScriptString);
-		if (rtplatform == RUNTIME_PLATFORM.HADOOP || rtplatform == RUNTIME_PLATFORM.HYBRID) {
+		if (ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP || ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID) {
 			String hadoop_home = System.getenv("HADOOP_HOME");
 			LOG.info("HADOOP_HOME: " + hadoop_home);
 		}

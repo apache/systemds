@@ -20,6 +20,7 @@
 package org.apache.sysml.conf;
 
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
@@ -233,6 +234,12 @@ public class ConfigurationManager
 		return _ldmlOptions.get().isGPU();
 	}
 	
+	/**
+	 * @return the execution Mode
+	 */
+	public static RUNTIME_PLATFORM getExecutionMode() {
+		return _ldmlOptions.get().getExecutionMode();
+	}
 	
 	// -------------------------------------------------------------------------------
 	// The below logic ensures that no two parallel invoker set different statistics options.

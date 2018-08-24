@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -40,7 +41,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	static {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SPARK;
+		ConfigurationManager.getLocalOptions().setExecutionMode(DMLScript.RUNTIME_PLATFORM.SPARK);
 		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
 	}
 

@@ -1853,7 +1853,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		long ret = -1;
 		
 		//if forced remote exec and single node
-		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+		if(    ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE 
 			&& _execMode == PExecMode.REMOTE_MR
 			&& _optMode == POptMode.NONE      )
 		{

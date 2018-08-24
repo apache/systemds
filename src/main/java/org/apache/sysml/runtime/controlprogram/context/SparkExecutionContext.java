@@ -127,7 +127,7 @@ public class SparkExecutionContext extends ExecutionContext
 		super( allocateVars, prog );
 		
 		//spark context creation via internal initializer
-		if( !LAZY_SPARKCTX_CREATION || DMLScript.rtplatform==RUNTIME_PLATFORM.SPARK ) {
+		if( !LAZY_SPARKCTX_CREATION || ConfigurationManager.getExecutionMode()==RUNTIME_PLATFORM.SPARK ) {
 			initSparkContext();
 		}
 	}

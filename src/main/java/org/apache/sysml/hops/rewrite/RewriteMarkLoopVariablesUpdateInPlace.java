@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.OpOp1;
@@ -55,8 +55,8 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 	{
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
-			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP
+			|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK )
 		{
 			// nothing to do here, return original statement block
 			return Arrays.asList(sb);

@@ -149,7 +149,7 @@ public class Connection implements Closeable
 	 * @param dmlconfig a dml configuration.
 	 */
 	public Connection(DMLConfig dmlconfig) {
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		ConfigurationManager.getLocalOptions().setExecutionMode(RUNTIME_PLATFORM.SINGLE_NODE);
 		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)

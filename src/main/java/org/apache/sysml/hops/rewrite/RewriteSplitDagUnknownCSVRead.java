@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.Hop.DataOpTypes;
@@ -53,7 +53,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+		if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE
 			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return Arrays.asList(sb);
 		

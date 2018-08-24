@@ -1165,7 +1165,7 @@ public class Dag<N extends Lop>
 	 */
 	private static boolean sendWriteLopToMR(Lop node) 
 	{
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
+		if ( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE )
 			return false;
 		Lop in = node.getInputs().get(0);
 		Format nodeFormat = node.getOutputParameters().getFormat();

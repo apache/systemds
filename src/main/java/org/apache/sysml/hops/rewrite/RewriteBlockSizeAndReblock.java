@@ -21,7 +21,6 @@ package org.apache.sysml.hops.rewrite;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
@@ -124,7 +123,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				} 
 				else if (dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD) {
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+					if ( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE ) {
 						// simply copy the values from its input
 						dop.setRowsInBlock(hop.getInput().get(0).getRowsInBlock());
 						dop.setColsInBlock(hop.getInput().get(0).getColsInBlock());
@@ -214,6 +213,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	}
 	
 	private static boolean isReblockValid() {
-		return ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
+		return ( ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.SINGLE_NODE);
 	}
 }

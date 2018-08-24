@@ -68,6 +68,20 @@ public class DMLOptions {
 	}
 	
 	/**
+	 * @return the execution Mode
+	 */
+	public RUNTIME_PLATFORM getExecutionMode() {
+		return execMode;
+	}
+
+	/**
+	 * @param execMode the execution Mode to set
+	 */
+	public void setExecutionMode(RUNTIME_PLATFORM execMode) {
+		this.execMode = execMode;
+	}
+
+	/**
 	 * Sets the maximum number of heavy hitters that are printed out as part of
 	 * the statistics.
 	 *

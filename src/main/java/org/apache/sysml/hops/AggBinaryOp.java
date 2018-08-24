@@ -19,7 +19,6 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
@@ -1266,8 +1265,8 @@ public class AggBinaryOp extends MultiThreadedHop
 	{
 		//check for forced MR or Spark execution modes, which prevent the introduction of
 		//additional CP operations and hence the rewrite application
-		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP  //not hybrid_mr
-			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) //not hybrid_spark
+		if(    ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP  //not hybrid_mr
+			|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK ) //not hybrid_spark
 		{
 			return false;
 		}

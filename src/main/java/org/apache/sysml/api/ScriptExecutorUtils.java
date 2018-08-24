@@ -124,6 +124,7 @@ public class ScriptExecutorUtils {
 			(exceptionThrown ? System.err : System.out)
 				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
 					statisticsMaxHeavyHitters : ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters()));
+			ConfigurationManager.resetStatistics();
 		}
 	}
 

@@ -251,7 +251,6 @@ public class ScriptExecutor {
 	 * post-execution.
 	 */
 	protected void resetGlobalFlags() {
-		ConfigurationManager.resetStatistics();
 		ConfigurationManager.getDMLOptions().setForceGPU(oldForceGPU);
 		ConfigurationManager.getDMLOptions().setGPU(oldGPU);
 		ConfigurationManager.getDMLOptions().setStatisticsMaxHeavyHitters(DMLOptions.defaultOptions.statsCount);

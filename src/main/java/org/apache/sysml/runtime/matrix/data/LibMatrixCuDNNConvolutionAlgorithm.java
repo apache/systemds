@@ -19,7 +19,6 @@
 
 package org.apache.sysml.runtime.matrix.data;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
@@ -98,7 +97,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			cudnnDestroyConvolutionDescriptor(convDesc);
 		if(sizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, workSpace, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, workSpace, gCtx.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}

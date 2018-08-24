@@ -20,7 +20,8 @@ package org.apache.sysml.runtime.instructions.gpu.context;
 
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -30,6 +31,8 @@ import jcuda.runtime.cudaError;
 import static jcuda.runtime.JCuda.cudaFree;
 
 public class CudaMemoryAllocator implements GPUMemoryAllocator {
+	
+	private final double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
 	
 	/**
 	 * Allocate memory on the device. 
@@ -77,7 +80,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
-		return (long) (free[0] * DMLScript.GPU_MEMORY_UTILIZATION_FACTOR);
+		return (long) (free[0] * GPU_MEMORY_UTILIZATION_FACTOR);
 	}
 
 }

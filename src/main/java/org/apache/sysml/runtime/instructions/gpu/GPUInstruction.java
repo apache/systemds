@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -202,7 +201,7 @@ public abstract class GPUInstruction extends Instruction {
 	
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
-		if(DMLScript.SYNCHRONIZE_GPU) {
+		if(GPUContext.SYNCHRONIZE_GPU) {
 			long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
 			if(ConfigurationManager.isFinegrainedStatistics())

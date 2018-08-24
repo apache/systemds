@@ -26,7 +26,6 @@ import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -284,9 +283,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			cudaSupportFunctions.cublasgeam(gCtx.getCublasHandle(), cublasOperation.CUBLAS_OP_T, cublasOperation.CUBLAS_OP_T,
 					toInt(outCLen), toInt(outRLen), one(), output, toInt(outRLen), zero(), new Pointer(),
 					toInt(outRLen), C, toInt(outCLen));
-			if (!DMLScript.EAGER_CUDA_FREE)
+			if (!gCtx.EAGER_CUDA_FREE)
 				JCuda.cudaDeviceSynchronize();
-			gCtx.cudaFreeHelper(instName, output, DMLScript.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, output, gCtx.EAGER_CUDA_FREE);
 			if (ConfigurationManager.isFinegrainedStatistics())
 				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_TRANSPOSE_LIB, System.nanoTime()
 						- t0);

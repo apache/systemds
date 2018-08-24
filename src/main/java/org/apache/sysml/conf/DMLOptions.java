@@ -68,6 +68,13 @@ public class DMLOptions {
 	}
 	
 	/**
+	 * @return the filePath
+	 */
+	public String getFilePath() {
+		return filePath;
+	}
+
+	/**
 	 * @return the execution Mode
 	 */
 	public RUNTIME_PLATFORM getExecutionMode() {

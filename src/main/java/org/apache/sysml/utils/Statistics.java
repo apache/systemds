@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -722,7 +723,8 @@ public class Statistics
 
 			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
 		}
-		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
+		int statsMaxWrapLength = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
+		maxInstLen = Math.min(maxInstLen, statsMaxWrapLength);
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
@@ -744,11 +746,11 @@ public class Statistics
 			String [] miscTimers = null;
 			
 			if (ConfigurationManager.isFinegrainedStatistics()) {
-				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
+				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), statsMaxWrapLength);
 				numLines = Math.max(numLines, miscTimers.length);
 			}
 			
-			String miscFormatString = (ConfigurationManager.isFinegrainedStatistics()) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			String miscFormatString = (ConfigurationManager.isFinegrainedStatistics()) ? " %" + statsMaxWrapLength + "s" : "%s";
 			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
 				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
 				String miscTimerStr = ( (ConfigurationManager.isFinegrainedStatistics()) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 

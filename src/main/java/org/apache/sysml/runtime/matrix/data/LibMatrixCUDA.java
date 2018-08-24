@@ -368,7 +368,7 @@ public class LibMatrixCUDA {
 		Pointer tmp = gCtx.allocate(instName, cols*sizeOfDataType);
 		reduceCol(gCtx, instName, "reduce_col_sum", imagePointer, tmp, N, cols);
 		reduceRow(gCtx, instName, "reduce_row_sum", tmp, outputPointer, toInt(C), toInt(HW));
-		gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 	}
 
 	/**
@@ -741,7 +741,7 @@ public class LibMatrixCUDA {
 			default:
 				throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for summation squared");
 			}
-			gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
 			break;
 		}
 		case OP_MEAN:{
@@ -854,7 +854,7 @@ public class LibMatrixCUDA {
 				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
 				matrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
 
-				gCtx.cudaFreeHelper(instName, tmpRow, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, tmpRow, gCtx.EAGER_CUDA_FREE);
 
 				break;
 			}
@@ -872,15 +872,15 @@ public class LibMatrixCUDA {
 				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
 				matrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
 
-				gCtx.cudaFreeHelper(instName, tmpCol, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, tmpCol, gCtx.EAGER_CUDA_FREE);
 
 				break;
 			}
 			default:
 				throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
 			}
-			gCtx.cudaFreeHelper(instName, tmp, DMLScript.EAGER_CUDA_FREE);
-			gCtx.cudaFreeHelper(instName, tmp2, DMLScript.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+			gCtx.cudaFreeHelper(instName, tmp2, gCtx.EAGER_CUDA_FREE);
 			break;
 		}
 		case OP_MAXINDEX : {
@@ -956,7 +956,7 @@ public class LibMatrixCUDA {
 		}
 		double[] result = {-1f};
 		cudaSupportFunctions.deviceToHost(gCtx, tempOut, result, instName, false);
-		gCtx.cudaFreeHelper(instName, tempOut, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tempOut, gCtx.EAGER_CUDA_FREE);
 		return result[0];
 	}
 
@@ -2491,10 +2491,10 @@ public class LibMatrixCUDA {
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, in1.getNumColumns(), 1);
 		cudaMemcpy(out.getGPUObject(gCtx).getDensePointer(), bTobj.getDensePointer(), n * 1 * sizeOfDataType, cudaMemcpyDeviceToDevice);
 
-		gCtx.cudaFreeHelper(instName, work, DMLScript.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(instName, tau, DMLScript.EAGER_CUDA_FREE);
-		ATobj.clearData(instName, DMLScript.EAGER_CUDA_FREE);
-		bTobj.clearData(instName, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, work, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tau, gCtx.EAGER_CUDA_FREE);
+		ATobj.clearData(instName, gCtx.EAGER_CUDA_FREE);
+		bTobj.clearData(instName, gCtx.EAGER_CUDA_FREE);
 
 		//debugPrintMatrix(b, n, 1);
     }

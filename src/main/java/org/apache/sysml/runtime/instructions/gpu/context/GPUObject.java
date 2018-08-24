@@ -198,10 +198,10 @@ public class GPUObject {
 	}
 
 	private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(null, toFree, DMLScript.EAGER_CUDA_FREE);
+		getGPUContext().cudaFreeHelper(null, toFree, gpuContext.EAGER_CUDA_FREE);
 	}
 
-	GPUContext getGPUContext() {
+	public GPUContext getGPUContext() {
 		return gpuContext;
 	}
 
@@ -275,8 +275,8 @@ public class GPUObject {
 				C.colInd);
 		//cudaDeviceSynchronize();
 
-		gCtx.cudaFreeHelper(null, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(null, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(null, nnzPerRowPtr, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(null, nnzTotalDevHostPtr, gCtx.EAGER_CUDA_FREE);
 
 		return C;
 	}
@@ -546,8 +546,8 @@ public class GPUObject {
 					throw new DMLRuntimeException(
 							"cusparseDnnz did not calculate the correct number of nnz on the GPU");
 				}
-				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
-				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, gpuContext.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, gpuContext.EAGER_CUDA_FREE);
 				if(ConfigurationManager.isFinegrainedStatistics()) {
 					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
 			}
@@ -691,7 +691,7 @@ public class GPUObject {
 	 * Updates the locks depending on the eviction policy selected
 	 */
 	private void updateReleaseLocks() {
-		DMLScript.EvictionPolicy evictionPolicy = DMLScript.GPU_EVICTION_POLICY;
+		DMLScript.EvictionPolicy evictionPolicy = GPUContext.GPU_EVICTION_POLICY;
 		switch (evictionPolicy) {
 			case LRU:
 				timestamp.set(System.nanoTime());

@@ -65,7 +65,6 @@ public class DMLOptions {
 	// Set when invoked via DMLScript
 	public DMLOptions(Options opts) {
 		options = opts;
-		ConfigurationManager.setStatistics(stats);
 	}
 	
 	// Set when invoked via MLContext and JMLC via Configuration.setGlobalOptions and Configuration.setLocalOptions respectively
@@ -75,7 +74,6 @@ public class DMLOptions {
 		options = null;
 		this.argVals = argVals;
 		this.stats = stats;
-		ConfigurationManager.setStatistics(stats);
 		this.statsCount = statsCount;
 		this.memStats = memStats;
 		this.explainType = explainType;

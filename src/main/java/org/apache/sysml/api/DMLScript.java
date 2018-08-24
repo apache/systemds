@@ -399,7 +399,7 @@ public class DMLScript
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);		
+		ConfigurationManager.setGlobalConfig(dmlconf);
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
 		ConfigurationManager.setGlobalConfig(cconf);
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
@@ -486,9 +486,6 @@ public class DMLScript
 		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
 		
-		// Whether extra statistics useful for developers and others interested
-		// in digging into performance problems are recorded and displayed
-		ConfigurationManager.setFinegrainedStatistics(ConfigurationManager.isStatistics() && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS));
 		CacheableData.CACHING_BUFFER_SIZE = dmlconf.getDoubleValue(DMLConfig.CACHING_BUFFER_SIZE);
 		if(CacheableData.CACHING_BUFFER_SIZE < 0 || CacheableData.CACHING_BUFFER_SIZE > 1) 
 			throw new RuntimeException("Incorrect value (" + CacheableData.CACHING_BUFFER_SIZE + ") for the configuration " + DMLConfig.CACHING_BUFFER_SIZE);

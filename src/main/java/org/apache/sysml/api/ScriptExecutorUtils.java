@@ -73,6 +73,10 @@ public class ScriptExecutorUtils {
 	 */
 	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		boolean exceptionThrown = false;
+		
+		// Whether extra statistics useful for developers and others interested
+		// in digging into performance problems are recorded and displayed
+		ConfigurationManager.setFinegrainedStatistics(ConfigurationManager.isStatistics() && dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS));
 
 		Statistics.startRunTimer();
 		try {

@@ -114,6 +114,7 @@ public class ConfigurationManager
 	 */
 	public synchronized static void setGlobalOptions( DMLOptions opts ) {
 		_dmlOptions = opts;
+		ConfigurationManager.setStatistics(opts.stats);
 		
 		//reinitialize thread-local dml options w/ _dmlOptions
 		_ldmlOptions = new ThreadLocalDMLOptions();
@@ -153,6 +154,7 @@ public class ConfigurationManager
 	 */
 	public static void setLocalOptions( DMLOptions opts ) {
 		_ldmlOptions.set(opts);
+		ConfigurationManager.setStatistics(opts.stats);
 	}
 	
 	

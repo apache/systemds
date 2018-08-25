@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
@@ -333,9 +334,18 @@ public class ScriptExecutor {
 
 		Map<String, String> args = MLContextUtil
 				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+		
+		Explain.ExplainType explainType = Explain.ExplainType.NONE;
+		if(explain && explainLevel != null) {
+			explainType = explainLevel.getExplainType();
+		}
+		RUNTIME_PLATFORM rtplatform = DMLOptions.defaultOptions.execMode;
+		if(executionType != null) {
+			rtplatform = getExecutionType().getRuntimePlatform();
+		}
 		ConfigurationManager.setGlobalOptions(new DMLOptions(args, 
-				statistics, statisticsMaxHeavyHitters, false, explain ? explainLevel.getExplainType() : Explain.ExplainType.NONE, 
-				getExecutionType().getRuntimePlatform(), gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
+				statistics, statisticsMaxHeavyHitters, false, explainType, 
+				rtplatform, gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
 				script.getScriptExecutionString()));
 		
 		// main steps in script execution

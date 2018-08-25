@@ -46,7 +46,7 @@ public class ConfigurationManager
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
 	
 	/** Global DML options (read or defaults) */
-	private static DMLOptions _dmlOptions = null; 
+	private static DMLOptions _dmlOptions = DMLOptions.defaultOptions; 
 	
 	/** Local DML configuration for thread-local options */
 	private static ThreadLocalDMLOptions _ldmlOptions = new ThreadLocalDMLOptions();
@@ -103,6 +103,8 @@ public class ConfigurationManager
 		
 		//reinitialize thread-local dml configs w/ _dmlconf
 		_ldmlconf = new ThreadLocalDMLConfig();
+		
+		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 	}
 	
 	/**
@@ -114,10 +116,11 @@ public class ConfigurationManager
 	 */
 	public synchronized static void setGlobalOptions( DMLOptions opts ) {
 		_dmlOptions = opts;
-		ConfigurationManager.setStatistics(opts.stats);
 		
 		//reinitialize thread-local dml options w/ _dmlOptions
 		_ldmlOptions = new ThreadLocalDMLOptions();
+		
+		STATISTICS = opts.stats;
 	}
 	
 	/**
@@ -127,6 +130,8 @@ public class ConfigurationManager
 	 */
 	public static void setLocalConfig( DMLConfig conf ) {
 		_ldmlconf.set(conf);
+		
+		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 	}
 	
 	/**
@@ -153,8 +158,9 @@ public class ConfigurationManager
 	 * @param conf the configuration
 	 */
 	public static void setLocalOptions( DMLOptions opts ) {
+		_dmlOptions = opts;
 		_ldmlOptions.set(opts);
-		ConfigurationManager.setStatistics(opts.stats);
+		STATISTICS = opts.stats;
 	}
 	
 	
@@ -263,70 +269,46 @@ public class ConfigurationManager
 	}
 	
 	// -------------------------------------------------------------------------------
-	// The below logic ensures that no two parallel invoker set different statistics options.
-	// For example: One thread sets statistics to true and other sets it to false.
-	// With this restriction, there is no performance regression for heavily used isStatistics() and isFinegrainedStatistics() method.
-	// The current refactoring also allows to revisit this assumption in future. 
-	
-	// NULL if statistics is not set by any API
-	private static Boolean isStatsSet = null;
-	private static boolean stats = false;
+	// This needs to be revisited in context of multi-threaded execution: JMLC.
+	// Since STATISTICS and FINEGRAINED_STATISTICS are frequently used flags,
+	// we use static variables here instead of _dmlOptions.stats and 
+	// _dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+	private static boolean STATISTICS = false;
+	private static boolean FINEGRAINED_STATISTICS = false;
 	
 	/**
 	 * @return true if statistics is enabled
 	 */
 	public static boolean isStatistics() {
-		return stats;
+		return STATISTICS;
 	}
-	
-	/**
-	 * Whether or not to enable statistics.
-	 *
-	 * @param enabled
-	 *            {@code true} if enabled, {@code false} otherwise
-	 */
-	public static void setStatistics(boolean enabled) {
-		if(isStatsSet != null && stats != enabled) {
-			throw new RuntimeException("Multiple statistics configuration is not supported");
-		}
-		stats = enabled;
-		isStatsSet = enabled;
-	}
-	
-	/**
-	 * Should be called after execution
-	 */
-	public static void resetStatistics() {
-		stats = false;
-		isStatsSet = null;
-		finegrainedStats = false;
-		isFinegrainedStatsSet = null;
-	}
-	
-	// NULL if statistics is not set by any API
-	private static Boolean isFinegrainedStatsSet = null;
-	private static boolean finegrainedStats = false;
 	
 	/**
 	 * @return true if finegrained statistics is enabled
 	 */
 	public static boolean isFinegrainedStatistics() {
-		return finegrainedStats;
+		return FINEGRAINED_STATISTICS;
 	}
 	
 	/**
-	 * Whether or not to enable finegrained statistics.
+	 * Whether or not statistics about the DML/PYDML program should be output to
+	 * standard output.
 	 *
 	 * @param enabled
-	 *            {@code true} if enabled, {@code false} otherwise
+	 *            {@code true} if statistics should be output, {@code false}
+	 *            otherwise
 	 */
-	public static void setFinegrainedStatistics(boolean enabled) {
-		if(isFinegrainedStatsSet != null && finegrainedStats != enabled) {
-			throw new RuntimeException("Multiple finegrained statistics configuration is not supported");
-		}
-		finegrainedStats = enabled;
-		isFinegrainedStatsSet = enabled;
+	public static void setStatistics(boolean enabled) {
+		STATISTICS = enabled;
 	}
+	
+	/**
+	 * Reset the statistics flag.
+	 */
+	public static void resetStatistics() {
+		STATISTICS = false;
+	}
+	
 	
 	// -------------------------------------------------------------------------------
 	

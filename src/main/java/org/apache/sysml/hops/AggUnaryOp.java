@@ -19,7 +19,7 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
@@ -89,7 +89,7 @@ public class AggUnaryOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(!DMLScript.USE_ACCELERATOR)
+		if(!ConfigurationManager.isGPU())
 			return false;
 		
 		try {
@@ -499,7 +499,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		boolean ret = false;
 		
 		// TODO: Disable ternary aggregate rewrite on GPU backend.
-		if(DMLScript.USE_ACCELERATOR)
+		if(!ConfigurationManager.isGPU())
 			return false;
 		
 		//currently we support only sum over binary multiply but potentially 

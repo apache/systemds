@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -201,10 +201,10 @@ public abstract class GPUInstruction extends Instruction {
 	
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
-		if(DMLScript.SYNCHRONIZE_GPU) {
-			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		if(GPUContext.SYNCHRONIZE_GPU) {
+			long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(DMLScript.FINEGRAINED_STATISTICS)
+			if(ConfigurationManager.isFinegrainedStatistics())
 				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
 		}
 		if(LOG.isDebugEnabled()) {
@@ -235,9 +235,9 @@ public abstract class GPUInstruction extends Instruction {
 	 * @return	the matrix object
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
-		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
+		if (ConfigurationManager.isFinegrainedStatistics() && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
 		return mb.getKey();
 	}
 }

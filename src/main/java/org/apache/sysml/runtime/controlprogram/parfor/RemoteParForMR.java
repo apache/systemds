@@ -37,7 +37,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.lib.NLineInputFormat;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -73,7 +72,7 @@ public class RemoteParForMR
 	{
 		RemoteParForJobReturn ret = null;
 		String jobname = "ParFor-EMR";
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		JobConf job;
 		job = new JobConf( RemoteParForMR.class );
@@ -185,7 +184,7 @@ public class RemoteParForMR
 			Group pgroup = runjob.getCounters().getGroup(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME);
 			int numTasks = (int)pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() );
 			int numIters = (int)pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() );
-			if( DMLScript.STATISTICS && !InfrastructureAnalyzer.isLocalMode() ) {
+			if( ConfigurationManager.isStatistics() && !InfrastructureAnalyzer.isLocalMode() ) {
 				Statistics.incrementJITCompileTime( pgroup.getCounter( Stat.PARFOR_JITCOMPILE.toString() ) );
 				Statistics.incrementJVMgcCount( pgroup.getCounter( Stat.PARFOR_JVMGC_COUNT.toString() ) );
 				Statistics.incrementJVMgcTime( pgroup.getCounter( Stat.PARFOR_JVMGC_TIME.toString() ) );
@@ -228,7 +227,7 @@ public class RemoteParForMR
 			}
 		}
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
 		}

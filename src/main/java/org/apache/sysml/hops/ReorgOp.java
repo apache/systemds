@@ -21,7 +21,7 @@ package org.apache.sysml.hops;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Group;
@@ -115,7 +115,7 @@ public class ReorgOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(!DMLScript.USE_ACCELERATOR)
+		if(!ConfigurationManager.isGPU())
 			return false;
 		switch( op ) {
 			case TRANS: {

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.debug.DMLFrame;
 import org.apache.sysml.debug.DMLProgramCounter;
 import org.apache.sysml.debug.DebugState;
@@ -256,9 +257,9 @@ public class ExecutionContext {
 	 * @return matrix block
 	 */
 	public MatrixBlock getMatrixInput(String varName, String opcode) {
-		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long t1 = opcode != null && ConfigurationManager.isStatistics() && ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		MatrixBlock mb = getMatrixInput(varName);
-		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+		if(opcode != null && ConfigurationManager.isStatistics() && ConfigurationManager.isFinegrainedStatistics()) {
 			long t2 = System.nanoTime();
 			if(mb.isInSparseFormat())
 				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, t2-t1);
@@ -404,9 +405,9 @@ public class ExecutionContext {
 	}
 	
 	public void releaseMatrixInput(String varName, String opcode) {
-		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+		long t1 = opcode != null && ConfigurationManager.isStatistics() && ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		releaseMatrixInput(varName);
-		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
+		if(opcode != null && ConfigurationManager.isStatistics() && ConfigurationManager.isFinegrainedStatistics()) {
 			long t2 = System.nanoTime();
 			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_INPUT_MB, t2-t1);
 		}

@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
@@ -172,16 +172,16 @@ public class LibMatrixDNNConv2d
 			MatrixBlock outMM = new MatrixBlock(K, PQ, _params.output.sparse);
 			long time1 = 0; long time2 = 0;
 			for(int n = _rl; n < _ru; n++)  {
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				LibMatrixDNNIm2Col.im2col(_params.input1, outIm2col, n, _params, false);
-				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t2 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
 				// filter %*% _im2ColOutBlock => matMultOutBlock
 				outMM.reset(outMM.rlen, outMM.clen, _params.output.sparse);
 				LibMatrixDNNHelper.singleThreadedMatMult(_params.input2, outIm2col, outMM, false, true, _params);
-				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t3 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
-				if(DMLScript.FINEGRAINED_STATISTICS) {
+				if(ConfigurationManager.isFinegrainedStatistics()) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
@@ -195,7 +195,7 @@ public class LibMatrixDNNConv2d
 						_params.bias.getDenseBlockValues(), K, PQ);
 			}
 			
-			if(DMLScript.FINEGRAINED_STATISTICS) {
+			if(ConfigurationManager.isFinegrainedStatistics()) {
 				LibMatrixDNN.loopedConvIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvMatMultTime.addAndGet(time2);
 			}
@@ -416,20 +416,20 @@ public class LibMatrixDNNConv2d
 				// rotate180(dout[n,]) => dout_reshaped
 				rotate180Worker.execute(n, 0);
 				// dout_reshaped %*% filter => temp
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				outMM.reset(PQ, CRS, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, filter, outMM, !outRotate.sparse, false, _params);
-				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t2 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				// col2im(temp) => output[n,] 
 				LibMatrixDNNIm2Col.col2imOverSingleImage(n, outMM, _params);
-				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t3 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
-				if(DMLScript.FINEGRAINED_STATISTICS) {
+				if(ConfigurationManager.isFinegrainedStatistics()) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
-			if(DMLScript.FINEGRAINED_STATISTICS) {
+			if(ConfigurationManager.isFinegrainedStatistics()) {
 				LibMatrixDNN.loopedConvBwdDataMatMultTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdDataCol2ImTime.addAndGet(time2);
 			}
@@ -512,24 +512,24 @@ public class LibMatrixDNNConv2d
 				rotate180Worker.execute(n, 0);
 				
 				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				LibMatrixDNNIm2Col.im2col(_params.input1, im2ColOutBlock, n, _params, false);
-				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t2 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
 				outMM.reset(CRS, K, false);
 				LibMatrixDNNHelper.singleThreadedMatMult(im2ColOutBlock, outRotate, outMM, !im2ColOutBlock.sparse, !outRotate.sparse, _params);
-				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t3 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
 					LibMatrixMult.vectAdd(outMM.getDenseBlockValues(), partRet, 0, 0, K*CRS);
 				
-				if(DMLScript.FINEGRAINED_STATISTICS) {
+				if(ConfigurationManager.isFinegrainedStatistics()) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
 			inplaceTransAdd(partRet, _params);
-			if(DMLScript.FINEGRAINED_STATISTICS) {
+			if(ConfigurationManager.isFinegrainedStatistics()) {
 				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
 			}
@@ -562,27 +562,27 @@ public class LibMatrixDNNConv2d
 				rotate180Worker.execute(n, 0);
 				
 				// im2col(input) => _im2ColOutBlock
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t1 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				LibMatrixDNNIm2Col.im2col(_params.input1, im2ColOutBlock, n, _params, true);
-				long t2 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t2 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
 				outMM.reset(K, CRS, false);
 				//Timing time = new Timing(true);
 				LibMatrixDNNHelper.singleThreadedMatMult(outRotate, im2ColOutBlock, 
 					outMM, !outRotate.sparse, !im2ColOutBlock.sparse, _params);
-				long t3 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
+				long t3 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 				
 				if( !outMM.isEmptyBlock() ) //accumulate row results
 					LibMatrixMult.vectAdd(outMM.getDenseBlockValues(), partRet, 0, 0, K*CRS);
 				
-				if(DMLScript.FINEGRAINED_STATISTICS) {
+				if(ConfigurationManager.isFinegrainedStatistics()) {
 					time1 += t2 - t1;
 					time2 += t3 - t2;
 				}
 			}
 			//no need to transpose because t(t(out)) cancel out
 			inplaceAdd(partRet, _params);
-			if(DMLScript.FINEGRAINED_STATISTICS) {
+			if(ConfigurationManager.isFinegrainedStatistics()) {
 				LibMatrixDNN.loopedConvBwdFilterIm2ColTime.addAndGet(time1);
 				LibMatrixDNN.loopedConvBwdFilterMatMultTime.addAndGet(time2);
 			}

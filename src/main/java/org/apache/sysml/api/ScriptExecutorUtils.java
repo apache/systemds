@@ -73,11 +73,11 @@ public class ScriptExecutorUtils {
 	 */
 	public static void executeRuntimeProgram(Program rtprog, ExecutionContext ec, DMLConfig dmlconf, int statisticsMaxHeavyHitters, Set<String> outputVariables) {
 		boolean exceptionThrown = false;
-
+		
 		Statistics.startRunTimer();
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
-			if (DMLScript.USE_ACCELERATOR && ec != null) {
+			if (ConfigurationManager.isGPU() && ec != null) {
 				List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
 				if (gCtxs == null) {
 					throw new DMLRuntimeException(
@@ -91,7 +91,7 @@ public class ScriptExecutorUtils {
 			exceptionThrown = true;
 			throw e;
 		} finally { // ensure cleanup/shutdown
-			if (DMLScript.USE_ACCELERATOR && !ec.getGPUContexts().isEmpty()) {
+			if (ConfigurationManager.isGPU() && !ec.getGPUContexts().isEmpty()) {
 				// -----------------------------------------------------------------
 				// The below code pulls the output variables on the GPU to the host. This is required especially when:
 				// The output variable was generated as part of a MLContext session with GPU enabled
@@ -123,7 +123,8 @@ public class ScriptExecutorUtils {
 			Statistics.stopRunTimer();
 			(exceptionThrown ? System.err : System.out)
 				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
-					statisticsMaxHeavyHitters : DMLScript.STATISTICS_COUNT));
+					statisticsMaxHeavyHitters : ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters()));
+			ConfigurationManager.resetStatistics();
 		}
 	}
 

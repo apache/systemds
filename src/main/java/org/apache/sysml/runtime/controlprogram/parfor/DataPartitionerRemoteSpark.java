@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import org.apache.spark.api.java.JavaPairRDD;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -60,7 +60,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 	{
 		String jobname = "ParFor-DPSP";
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		SparkExecutionContext sec = (SparkExecutionContext)_ec;
 
@@ -90,7 +90,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 		//maintain statistics
 	    Statistics.incrementNoOfCompiledSPInst();
 	    Statistics.incrementNoOfExecutedSPInst();
-	    if( DMLScript.STATISTICS ){
+	    if( ConfigurationManager.isStatistics() ){
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		}
 	}

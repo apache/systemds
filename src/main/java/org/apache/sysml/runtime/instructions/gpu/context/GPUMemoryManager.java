@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -53,6 +54,8 @@ public class GPUMemoryManager {
 	// This has an additional overhead of maintaining stack trace of all the allocated GPU pointers via PointerInfo class.
 	private static final boolean DEBUG_MEMORY_LEAK = false;
 	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10}; // Avoids printing too much text while debuggin
+	
+	private final boolean PRINT_GPU_MEMORY_INFO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
 	
 	protected final GPUMemoryAllocator allocator;
 	/*****************************************************************************************/
@@ -131,14 +134,15 @@ public class GPUMemoryManager {
 	public GPUMemoryManager(GPUContext gpuCtx) {
 		matrixMemoryManager = new GPUMatrixMemoryManager(this);
 		lazyCudaFreeMemoryManager = new GPULazyCudaFreeMemoryManager(this);
-		if(DMLScript.GPU_MEMORY_ALLOCATOR.equals("cuda")) {
+		String allocatorType = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.GPU_MEMORY_ALLOCATOR);
+		if(allocatorType.equals("cuda")) {
 			allocator = new CudaMemoryAllocator();
 		}
-		else if(DMLScript.GPU_MEMORY_ALLOCATOR.equals("unified_memory")) {
+		else if(allocatorType.equals("unified_memory")) {
 			allocator = new UnifiedMemoryAllocator();
 		}
 		else {
-			throw new RuntimeException("Unsupported value (" + DMLScript.GPU_MEMORY_ALLOCATOR + ") for the configuration " + DMLConfig.GPU_MEMORY_ALLOCATOR 
+			throw new RuntimeException("Unsupported value (" + allocatorType + ") for the configuration " + DMLConfig.GPU_MEMORY_ALLOCATOR 
 					+ ". Supported values are cuda, unified_memory.");
 		}
 		long free[] = { 0 };
@@ -167,30 +171,30 @@ public class GPUMemoryManager {
 	 * @return allocated pointer
 	 */
 	private Pointer cudaMallocNoWarn(Pointer A, long size, String printDebugMessage) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		try {
 			allocator.allocate(A, size);
 			allPointers.put(A, new PointerInfo(size));
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaAllocSuccessTime.add(totalTime);
 				GPUStatistics.cudaAllocSuccessCount.increment();
 				GPUStatistics.cudaAllocTime.add(totalTime);
 				GPUStatistics.cudaAllocCount.increment();
 			}
-			if(printDebugMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
+			if(printDebugMessage != null && (PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
 				LOG.info("Success: " + printDebugMessage + ":" + byteCountToDisplaySize(size));
 			}
 			return A;
 		} catch(jcuda.CudaException e) {
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaAllocFailedTime.add(System.nanoTime() - t0);
 				GPUStatistics.cudaAllocFailedCount.increment();
 				GPUStatistics.cudaAllocTime.add(totalTime);
 				GPUStatistics.cudaAllocCount.increment();
 			}
-			if(printDebugMessage != null && (DMLScript.PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
+			if(printDebugMessage != null && (PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
 				LOG.info("Failed: " + printDebugMessage + ":" + byteCountToDisplaySize(size));
 				LOG.info("GPU Memory info " + printDebugMessage + ":" + toString());
 			}
@@ -280,7 +284,7 @@ public class GPUMemoryManager {
 		
 		// Step 5: Try eviction/clearing exactly one with size restriction
 		if(A == null) {
-			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 =  ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
 						.filter(gpuObj -> !gpuObj.isLocked() && matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
 						.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
@@ -289,7 +293,7 @@ public class GPUMemoryManager {
 				A = cudaMallocNoWarn(tmpA, size, null);
 				if(A == null)
 					LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
-				if(DMLScript.STATISTICS) {
+				if(ConfigurationManager.isStatistics()) {
 					long totalTime = System.nanoTime() - t0;
 					GPUStatistics.cudaEvictTime.add(totalTime);
 					GPUStatistics.cudaEvictSizeTime.add(totalTime);
@@ -301,7 +305,7 @@ public class GPUMemoryManager {
 		
 		// Step 6: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
-			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 =  ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			long currentAvailableMemory = allocator.getAvailableMemory();
 			boolean canFit = false;
 			// ---------------------------------------------------------------
@@ -322,10 +326,10 @@ public class GPUMemoryManager {
 					// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
 					A = cudaMallocNoWarn(tmpA, size, null); 
 				}
-				if(DMLScript.STATISTICS) 
+				if(ConfigurationManager.isStatistics()) 
 					GPUStatistics.cudaEvictCount.increment();
 			}
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaEvictTime.add(totalTime);
 			}
@@ -346,7 +350,7 @@ public class GPUMemoryManager {
 					+ toString());
 		}
 		
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		cudaMemset(A, 0, size);
 		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
 		return A;
@@ -405,7 +409,7 @@ public class GPUMemoryManager {
 			allPointers.remove(toFree);
 			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 			allocator.free(toFree);
-			if(DMLScript.SYNCHRONIZE_GPU)
+			if(GPUContext.SYNCHRONIZE_GPU)
 				jcuda.runtime.JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 		}
 		else {
@@ -426,7 +430,7 @@ public class GPUMemoryManager {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
 		if (eager) {
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
@@ -515,11 +519,11 @@ public class GPUMemoryManager {
 	 * @param startTime start time
 	 */
 	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
-		if(DMLScript.STATISTICS) {
+		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - startTime;
 			globalGPUTimer.add(totalTime);
 			globalGPUCounter.add(1);
-			if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
+			if (opcode != null && ConfigurationManager.isFinegrainedStatistics())
 				GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, totalTime);
 		}
 	}
@@ -532,7 +536,7 @@ public class GPUMemoryManager {
 	 * @param startTime start time
 	 */
 	void addMiscTime(String opcode, String instructionLevelTimer, long startTime) {
-		if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
+		if (opcode != null && ConfigurationManager.isFinegrainedStatistics())
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	
@@ -656,7 +660,7 @@ public class GPUMemoryManager {
 				return 1;
 			} else {
 				// Both are unlocked
-				if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
+				if (GPUContext.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
 					if(!p1.isDensePointerNull() && !p2.isDensePointerNull()) {
 						long p1Ptr = new CustomPointer(p1.getDensePointer()).getNativePointer();
 						long p2Ptr = new CustomPointer(p2.getDensePointer()).getNativePointer();
@@ -676,7 +680,7 @@ public class GPUMemoryManager {
 						return minEvictCompare(p1, p2);
 					}
 				}
-				else if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
+				else if (GPUContext.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
 					return minEvictCompare(p1, p2);
 				} else {
 					return Long.compare(p2.timestamp.get(), p1.timestamp.get());

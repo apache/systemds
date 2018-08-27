@@ -208,7 +208,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_uniqueID = isCachingActive() ? _seq.getNextID() : -1;
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
-		_gpuObjects = DMLScript.USE_ACCELERATOR ? new HashMap<>() : null;
+		_gpuObjects = ConfigurationManager.isGPU() ? new HashMap<>() : null;
 	}
 	
 	/**
@@ -383,7 +383,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @return cacheable data
 	 */
 	public T acquireRead() {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		//core internal acquire (synchronized per object)
 		T ret = acquireReadIntern();
@@ -393,7 +393,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( !isBelowCachingThreshold() )
 			updateStatusPinned(true);
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireRTime(t1-t0);
 		}
@@ -410,7 +410,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			getCache();
 		
 		//call acquireHostRead if gpuHandle is set as well as is allocated
-		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
+		if( ConfigurationManager.isGPU() && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
 			for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
 				GPUObject gObj = kv.getValue();
@@ -428,7 +428,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//(probe data for cache_nowrite / jvm_reuse)
 		if( _data==null && isEmpty(true) ) {
 			try {
-				if( DMLScript.STATISTICS )
+				if( ConfigurationManager.isStatistics() )
 					CacheStatistics.incrementHDFSHits();
 				
 				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
@@ -459,7 +459,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			}
 			_isAcquireFromEmpty = true;
 		}
-		else if( _data!=null && DMLScript.STATISTICS ) {
+		else if( _data!=null && ConfigurationManager.isStatistics() ) {
 			CacheStatistics.incrementMemHits();
 		}
 		
@@ -480,7 +480,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @return cacheable data
 	 */
 	public T acquireModify(T newData) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		//core internal acquire (synchronized per object)
 		T ret = acquireModifyIntern(newData);
@@ -490,7 +490,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( !isBelowCachingThreshold() )
 			updateStatusPinned(true);
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireMTime(t1-t0);
 			if (DMLScript.JMLC_MEM_STATISTICS)
@@ -531,7 +531,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * 
 	 */
 	public void release() {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		//update thread-local status (before unpin but outside
 		//the critical section of accessing a shared object)
@@ -541,7 +541,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//core internal release (synchronized per object)
 		releaseIntern();
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementReleaseTime(t1-t0);
 		}
@@ -620,7 +620,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( _gpuObjects != null ) {
 			for (GPUObject gObj : _gpuObjects.values())
 				if (gObj != null)
-					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
+					gObj.clearData(null, gObj.getGPUContext().EAGER_CUDA_FREE);
 		}
 		
 		// change object state EMPTY
@@ -677,7 +677,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties, String opcode) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Export data "+hashCode()+" "+fName);
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
@@ -685,7 +685,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 		LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
 		
-		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
+		if( ConfigurationManager.isGPU() && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
 			for (Map.Entry<GPUContext, GPUObject> kv : _gpuObjects.entrySet()) {
 				GPUObject gObj = kv.getValue();
@@ -791,7 +791,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
 		  
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementExportTime(t1-t0);
 		}
@@ -923,7 +923,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE &&
 				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
 			{
 				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());

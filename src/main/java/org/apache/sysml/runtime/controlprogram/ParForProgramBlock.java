@@ -768,7 +768,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			
 			//maintain statistics
 			long tinit = (long) time.stop();
-			if( DMLScript.STATISTICS )
+			if( ConfigurationManager.isStatistics() )
 				Statistics.incrementParForInitTime(tinit);
 			if( _monitor ) 
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, tinit);
@@ -831,7 +831,7 @@ public class ParForProgramBlock extends ForProgramBlock
 
 			// Frees up the GPUContexts used in the threaded Parfor and sets
 			// the main thread to use the GPUContext
-			if (DMLScript.USE_ACCELERATOR) {
+			if (ConfigurationManager.isGPU()) {
 				ec.getGPUContext(0).initializeThread();
 			}
 		}
@@ -1365,7 +1365,7 @@ public class ParForProgramBlock extends ForProgramBlock
 
 			// If GPU mode is enabled, gets a GPUContext from the pool of GPUContexts
 			// and sets it in the ExecutionContext of the parfor
-			if (DMLScript.USE_ACCELERATOR){
+			if (ConfigurationManager.isGPU()){
 				cpEc.setGPUContexts(Arrays.asList(ec.getGPUContext(index)));
 			}
 			
@@ -1726,7 +1726,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( numTasks != expTasks || numIters !=expIters ) //consistency check
 			throw new DMLRuntimeException("PARFOR: Number of executed tasks does not match the number of created tasks: tasks "+numTasks+"/"+expTasks+", iters "+numIters+"/"+expIters+".");
 	
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.incrementParForMergeTime((long) time.stop());
 	}
 	
@@ -1853,7 +1853,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		long ret = -1;
 		
 		//if forced remote exec and single node
-		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+		if(    ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE 
 			&& _execMode == PExecMode.REMOTE_MR
 			&& _optMode == POptMode.NONE      )
 		{

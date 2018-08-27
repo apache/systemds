@@ -20,7 +20,7 @@
 package org.apache.sysml.conf;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
@@ -44,6 +44,12 @@ public class ConfigurationManager
 	
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
+	
+	/** Global DML options (read or defaults) */
+	private static DMLOptions _dmlOptions = DMLOptions.defaultOptions; 
+	
+	/** Local DML configuration for thread-local options */
+	private static ThreadLocalDMLOptions _ldmlOptions = new ThreadLocalDMLOptions();
 	
     /** Global compiler configuration (defaults) */
     private static CompilerConfig _cconf = null;
@@ -97,6 +103,24 @@ public class ConfigurationManager
 		
 		//reinitialize thread-local dml configs w/ _dmlconf
 		_ldmlconf = new ThreadLocalDMLConfig();
+		
+		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+	}
+	
+	/**
+	 * Sets a global options as a basis for any thread-local configurations.
+	 * NOTE: This global options should never be accessed directly but only
+	 * through its thread-local derivatives. 
+	 * 
+	 * @param opts the dml options
+	 */
+	public synchronized static void setGlobalOptions( DMLOptions opts ) {
+		_dmlOptions = opts;
+		
+		//reinitialize thread-local dml options w/ _dmlOptions
+		_ldmlOptions = new ThreadLocalDMLOptions();
+		
+		STATISTICS = opts.stats;
 	}
 	
 	/**
@@ -106,6 +130,8 @@ public class ConfigurationManager
 	 */
 	public static void setLocalConfig( DMLConfig conf ) {
 		_ldmlconf.set(conf);
+		
+		FINEGRAINED_STATISTICS = conf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 	}
 	
 	/**
@@ -116,6 +142,27 @@ public class ConfigurationManager
 	public static DMLConfig getDMLConfig() {
 		return _ldmlconf.get();
 	}
+	
+	/**
+	 * Gets the current thread-local dml options.
+	 * 
+	 * @return the dml options
+	 */
+	public static DMLOptions getDMLOptions() {
+		return _ldmlOptions.get();
+	}
+	
+	/**
+	 * Sets the current thread-local dml configuration to the given options.
+	 * 
+	 * @param conf the configuration
+	 */
+	public static void setLocalOptions( DMLOptions opts ) {
+		_dmlOptions = opts;
+		_ldmlOptions.set(opts);
+		STATISTICS = opts.stats;
+	}
+	
 	
 	public synchronized static void setGlobalConfig( CompilerConfig conf ) {
 		_cconf = conf;
@@ -140,6 +187,7 @@ public class ConfigurationManager
 	public static void clearLocalConfigs() {
 		_ldmlconf.remove();
 		_lcconf.remove();
+		_ldmlOptions.remove();
 	}
 	
 	/**
@@ -193,14 +241,88 @@ public class ConfigurationManager
 	public static boolean isCodegenEnabled() {
 		return (getDMLConfig().getBooleanValue(DMLConfig.CODEGEN)
 			|| getCompilerConfigFlag(ConfigType.CODEGEN_ENABLED))
-			&& !DMLScript.USE_ACCELERATOR;
+			&& !ConfigurationManager.isGPU();
 		//note: until codegen is supported for the GPU backend, we globally
 		//disable codegen if operations are forced to the GPU to avoid
 		//a counter-productive impact on performance.
 	}
 	
+	/**
+	 * @return true if gpu is enabled
+	 */
+	public static boolean isGPU() {
+		return _ldmlOptions.get().isGPU();
+	}
+	
+	/**
+	 * @return true if GPU is enabled in forced mode
+	 */
+	public static boolean isForcedGPU() {
+		return _ldmlOptions.get().isGPU();
+	}
+	
+	/**
+	 * @return the execution Mode
+	 */
+	public static RUNTIME_PLATFORM getExecutionMode() {
+		return _ldmlOptions.get().getExecutionMode();
+	}
+	
+	// -------------------------------------------------------------------------------
+	// This needs to be revisited in context of multi-threaded execution: JMLC.
+	// Since STATISTICS and FINEGRAINED_STATISTICS are frequently used flags,
+	// we use static variables here instead of _dmlOptions.stats and 
+	// _dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
+	private static boolean STATISTICS = false;
+	private static boolean FINEGRAINED_STATISTICS = false;
+	
+	/**
+	 * @return true if statistics is enabled
+	 */
+	public static boolean isStatistics() {
+		return STATISTICS;
+	}
+	
+	/**
+	 * @return true if finegrained statistics is enabled
+	 */
+	public static boolean isFinegrainedStatistics() {
+		return FINEGRAINED_STATISTICS;
+	}
+	
+	/**
+	 * Whether or not statistics about the DML/PYDML program should be output to
+	 * standard output.
+	 *
+	 * @param enabled
+	 *            {@code true} if statistics should be output, {@code false}
+	 *            otherwise
+	 */
+	public static void setStatistics(boolean enabled) {
+		STATISTICS = enabled;
+	}
+	
+	/**
+	 * Reset the statistics flag.
+	 */
+	public static void resetStatistics() {
+		STATISTICS = false;
+	}
+	
+	
+	// -------------------------------------------------------------------------------
+	
 	///////////////////////////////////////
 	// Thread-local classes
+	
+	private static class ThreadLocalDMLOptions extends ThreadLocal<DMLOptions> {
+		@Override 
+		protected DMLOptions initialValue() {  
+			if(_dmlOptions != null)
+				return _dmlOptions;
+			return DMLOptions.defaultOptions;
+		}
+	}
 	
 	private static class ThreadLocalDMLConfig extends ThreadLocal<DMLConfig> {
 		@Override 

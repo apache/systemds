@@ -23,12 +23,12 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -77,15 +77,20 @@ public class APICodegenTest extends AutomatedTestBase
 			
 			//execute scripts
 			if( jmlc ) {
-				DMLScript.STATISTICS = true;
-				Connection conn = new Connection(ConfigType.CODEGEN_ENABLED, 
-					ConfigType.ALLOW_DYN_RECOMPILATION);
-				PreparedScript pscript = conn.prepareScript(
-					s, new String[]{"X"}, new String[]{"R"}, false); 
-				pscript.setMatrix("X", mX, false);
-				pscript.executeScript();
-				conn.close();
-				System.out.println(Statistics.display());
+				ConfigurationManager.setStatistics(true);
+				try {
+					Connection conn = new Connection(ConfigType.CODEGEN_ENABLED, 
+						ConfigType.ALLOW_DYN_RECOMPILATION);
+					PreparedScript pscript = conn.prepareScript(
+						s, new String[]{"X"}, new String[]{"R"}, false); 
+					pscript.setMatrix("X", mX, false);
+					pscript.executeScript();
+					conn.close();
+					System.out.println(Statistics.display());
+				}
+				finally {
+					ConfigurationManager.resetStatistics();
+				}
 			}
 			else {
 				SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()

@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.instructions.spark;
 
 import java.io.IOException;
+
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ import org.apache.spark.util.random.SamplingUtils;
 
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.DataGenOp;
 import org.apache.sysml.hops.Hop.DataGenMethod;
@@ -254,7 +255,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 		//step 2: potential in-memory rand operations if applicable
 		if( isMemAvail(lrows, lcols, sparsity, minValue, maxValue) 
-			&&  DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK )
+			&&  ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.SPARK )
 		{
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 				pdf, (int)lrows, (int)lcols, rowsInBlock, colsInBlock, 

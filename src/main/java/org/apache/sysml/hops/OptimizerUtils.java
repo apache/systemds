@@ -552,18 +552,18 @@ public class OptimizerUtils
 	}
 
 	public static boolean isSparkExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK);
+		return (   ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK
+				|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID_SPARK);
 	}
 
 	public static boolean isHadoopExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID);
+		return (   ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HADOOP
+				|| ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID);
 	}
 
 	public static boolean isHybridExecutionMode() {
-		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
-			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );
+		return (  ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID 
+			   || ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.HYBRID_SPARK );
 	}
 	
 	/**

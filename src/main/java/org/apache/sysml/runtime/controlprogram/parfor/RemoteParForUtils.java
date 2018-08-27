@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.Reporter;
 
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.ParForStatementBlock.ResultVar;
@@ -68,7 +67,7 @@ public class RemoteParForUtils
 			reporter.incrCounter(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_NUMITERS.toString(), deltaIterations);
 		
 		JobConf job = ConfigurationManager.getCachedJobConf();
-		if( DMLScript.STATISTICS  && !InfrastructureAnalyzer.isLocalMode(job) ) 
+		if( ConfigurationManager.isStatistics()  && !InfrastructureAnalyzer.isLocalMode(job) ) 
 		{
 			//report cache statistics
 			reporter.incrCounter( ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME, Stat.PARFOR_JITCOMPILE.toString(), Statistics.getJITCompileTime());

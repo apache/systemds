@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -243,7 +242,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	public synchronized MatrixBlock readMatrixPartition( IndexRange pred ) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Acquire partition "+hashCode()+" "+pred);
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		if ( !_partitioned )
 			throw new DMLRuntimeException("MatrixObject not available to indexed read.");
@@ -345,7 +344,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( DMLScript.STATISTICS ){
+		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireRTime(t1-t0);
 		}
@@ -536,7 +535,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
-			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE &&
+			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE &&
 				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
 			{
 				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
@@ -553,7 +552,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			LOG.trace ("Writing matrix to HDFS ("+fname+") - NOTHING TO WRITE (_data == null).");
 		}
 		
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			CacheStatistics.incrementHDFSWrites();
 	}
 	

@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -241,7 +242,7 @@ public class Statistics
 		numExecutedSPInst.reset();
 		numExecutedMRJobs.reset();
 		
-		if( DMLScript.USE_ACCELERATOR )
+		if( ConfigurationManager.isGPU() )
 			GPUStatistics.setNoOfExecutedGPUInst(0);
 	}
 	
@@ -400,12 +401,12 @@ public class Statistics
 	}
 
 	public static void startCompileTimer() {
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			compileStartTime = System.nanoTime();
 	}
 
 	public static void stopCompileTimer() {
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			compileEndTime = System.nanoTime();
 	}
 
@@ -722,11 +723,12 @@ public class Statistics
 
 			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
 		}
-		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
+		int statsMaxWrapLength = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
+		maxInstLen = Math.min(maxInstLen, statsMaxWrapLength);
 		sb.append(String.format(
 				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
 				instCol, timeSCol, countCol));
-		if (DMLScript.FINEGRAINED_STATISTICS) {
+		if (ConfigurationManager.isFinegrainedStatistics()) {
 			sb.append("  ");
 			sb.append(gpuCol);
 		}
@@ -743,15 +745,15 @@ public class Statistics
 			int numLines = wrappedInstruction.length;
 			String [] miscTimers = null;
 			
-			if (DMLScript.FINEGRAINED_STATISTICS) {
-				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
+			if (ConfigurationManager.isFinegrainedStatistics()) {
+				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), statsMaxWrapLength);
 				numLines = Math.max(numLines, miscTimers.length);
 			}
 			
-			String miscFormatString = (DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			String miscFormatString = (ConfigurationManager.isFinegrainedStatistics()) ? " %" + statsMaxWrapLength + "s" : "%s";
 			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
 				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
-				String miscTimerStr = ( (DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
+				String miscTimerStr = ( (ConfigurationManager.isFinegrainedStatistics()) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
 				if(wrapIter == 0) {
 					// Display instruction count
 					sb.append(String.format(
@@ -907,7 +909,7 @@ public class Statistics
 	 * @return statistics as a string
 	 */
 	public static String display() {
-		return display(DMLScript.STATISTICS_COUNT);
+		return display(ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters());
 	}
 	
 	
@@ -931,27 +933,27 @@ public class Statistics
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("SystemML Statistics:\n");
-		if( DMLScript.STATISTICS ) {
+		if( ConfigurationManager.isStatistics() ) {
 			sb.append("Total elapsed time:\t\t" + String.format("%.3f", (getCompileTime()+getRunTime())*1e-9) + " sec.\n"); // nanoSec --> sec
 			sb.append("Total compilation time:\t\t" + String.format("%.3f", getCompileTime()*1e-9) + " sec.\n"); // nanoSec --> sec
 		}
 		sb.append("Total execution time:\t\t" + String.format("%.3f", getRunTime()*1e-9) + " sec.\n"); // nanoSec --> sec
 		if( OptimizerUtils.isSparkExecutionMode() ) {
-			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+			if( ConfigurationManager.isStatistics() ) //moved into stats on Shiv's request
 				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");
 			sb.append("Number of executed Spark inst:\t" + getNoOfExecutedSPInst() + ".\n");
 		}
 		else {
-			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
+			if( ConfigurationManager.isStatistics() ) //moved into stats on Shiv's request
 				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
 			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		}
 
-		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS)
+		if( ConfigurationManager.isGPU() && ConfigurationManager.isStatistics())
 			sb.append(GPUStatistics.getStringForCudaTimers());
 
 		//show extended caching/compilation statistics
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 		{
 			if(NativeHelper.CURRENT_NATIVE_BLAS_STATE == NativeHelper.NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE) {
 				String blas = NativeHelper.getCurrentBLAS();
@@ -1027,7 +1029,7 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
-			if (DMLScript.JMLC_MEM_STATISTICS && DMLScript.FINEGRAINED_STATISTICS)
+			if (DMLScript.JMLC_MEM_STATISTICS && ConfigurationManager.isFinegrainedStatistics())
 				sb.append("Heavy hitter objects:\n" + getCPHeavyHittersMem(maxHeavyHitters));
 		}
 

@@ -249,12 +249,12 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 
 	private void testDataFrameConversion(ValueType[] schema, boolean containsID, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
+		RUNTIME_PLATFORM oldPlatform = ConfigurationManager.getExecutionMode();
 
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata
 			int cols = schema.length + colsVector - 1;
@@ -285,7 +285,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			DMLScript.rtplatform = oldPlatform;
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldPlatform);
 		}
 	}
 

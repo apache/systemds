@@ -26,7 +26,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLOptions;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
@@ -34,6 +34,7 @@ import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
@@ -108,7 +109,6 @@ public class ScriptExecutor {
 	protected boolean forceGPU = false;
 	protected boolean oldForceGPU = false;
 	protected boolean statistics = false;
-	protected boolean oldStatistics = false;
 	protected ExplainLevel explainLevel;
 	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
@@ -225,13 +225,12 @@ public class ScriptExecutor {
 	 * Set the global flags (for example: statistics, gpu, etc).
 	 */
 	protected void setGlobalFlags() {
-		oldStatistics = DMLScript.STATISTICS;
-		DMLScript.STATISTICS = statistics;
-		oldForceGPU = DMLScript.FORCE_ACCELERATOR;
-		DMLScript.FORCE_ACCELERATOR = forceGPU;
-		oldGPU = DMLScript.USE_ACCELERATOR;
-		DMLScript.USE_ACCELERATOR = gpu;
-		DMLScript.STATISTICS_COUNT = statisticsMaxHeavyHitters;
+		ConfigurationManager.setStatistics(statistics);
+		oldForceGPU = ConfigurationManager.isForcedGPU();
+		ConfigurationManager.getDMLOptions().setForceGPU(forceGPU);
+		oldGPU = ConfigurationManager.isGPU();
+		ConfigurationManager.getDMLOptions().setGPU(gpu);
+		ConfigurationManager.getDMLOptions().setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
 
 		// set the global compiler configuration
 		try {
@@ -253,10 +252,9 @@ public class ScriptExecutor {
 	 * post-execution.
 	 */
 	protected void resetGlobalFlags() {
-		DMLScript.STATISTICS = oldStatistics;
-		DMLScript.FORCE_ACCELERATOR = oldForceGPU;
-		DMLScript.USE_ACCELERATOR = oldGPU;
-		DMLScript.STATISTICS_COUNT = DMLOptions.defaultOptions.statsCount;
+		ConfigurationManager.getDMLOptions().setForceGPU(oldForceGPU);
+		ConfigurationManager.getDMLOptions().setGPU(oldGPU);
+		ConfigurationManager.getDMLOptions().setStatisticsMaxHeavyHitters(DMLOptions.defaultOptions.statsCount);
 	}
 	
 	public void compile(Script script) {
@@ -334,6 +332,22 @@ public class ScriptExecutor {
 	 */
 	public MLResults execute(Script script) {
 
+		Map<String, String> args = MLContextUtil
+				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+		
+		Explain.ExplainType explainType = Explain.ExplainType.NONE;
+		if(explain && explainLevel != null) {
+			explainType = explainLevel.getExplainType();
+		}
+		RUNTIME_PLATFORM rtplatform = DMLOptions.defaultOptions.execMode;
+		if(executionType != null) {
+			rtplatform = getExecutionType().getRuntimePlatform();
+		}
+		ConfigurationManager.setGlobalOptions(new DMLOptions(args, 
+				statistics, statisticsMaxHeavyHitters, false, explainType, 
+				rtplatform, gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
+				script.getScriptExecutionString()));
+		
 		// main steps in script execution
 		compile(script);
 
@@ -718,7 +732,7 @@ public class ScriptExecutor {
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 		this.executionType = executionType;
 	}
 }

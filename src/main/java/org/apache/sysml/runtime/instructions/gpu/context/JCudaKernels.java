@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
@@ -108,7 +107,7 @@ public class JCudaKernels {
 		checkResult(cuLaunchKernel(function, config.gridDimX, config.gridDimY, config.gridDimZ, config.blockDimX,
 				config.blockDimY, config.blockDimZ, config.sharedMemBytes, config.stream, Pointer.to(kernelParams),
 				null));
-		if(DMLScript.SYNCHRONIZE_GPU)
+		if(GPUContext.SYNCHRONIZE_GPU)
 			JCuda.cudaDeviceSynchronize();
 	}
 

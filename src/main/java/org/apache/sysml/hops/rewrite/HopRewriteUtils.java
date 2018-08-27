@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -811,7 +810,7 @@ public class HopRewriteUtils
 	{
 		//awareness of forced exec single node (e.g., standalone), where we can 
 		//guarantee a single block independent of the size because always in CP.
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+		if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE ) {
 			return true;
 		}
 		

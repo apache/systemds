@@ -20,6 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -80,7 +81,7 @@ public class CostEstimatorHops extends CostEstimator
 			}
 			//check for invalid cp memory estimate
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() ) {
-				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
+				if( ConfigurationManager.getExecutionMode() != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_REMOTE;
 			}

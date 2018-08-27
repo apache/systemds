@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import org.apache.spark.network.client.TransportClient;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcCall;
 import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
@@ -47,13 +47,13 @@ public class SparkPSProxy extends ParamServer {
 	}
 
 	private void accRpcRequestTime(Timing tRpc) {
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			_aRPC.add((long) tRpc.stop());
 	}
 
 	@Override
 	public void push(int workerID, ListObject value) {
-		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tRpc = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		PSRpcResponse response;
 		try {
 			response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PUSH, workerID, value).serialize(), _rpcTimeout));
@@ -68,7 +68,7 @@ public class SparkPSProxy extends ParamServer {
 
 	@Override
 	public ListObject pull(int workerID) {
-		Timing tRpc = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tRpc = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		PSRpcResponse response;
 		try {
 			response = new PSRpcResponse(_client.sendRpcSync(new PSRpcCall(PULL, workerID, null).serialize(), _rpcTimeout));

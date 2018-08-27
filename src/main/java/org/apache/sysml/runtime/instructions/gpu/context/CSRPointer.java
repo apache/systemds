@@ -34,7 +34,7 @@ import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
@@ -180,7 +180,7 @@ public class CSRPointer {
 	public static void copyToDevice(GPUContext gCtx, CSRPointer dest, int rows, long nnz, int[] rowPtr, int[] colInd, double[] values) {
 		CSRPointer r = dest;
 		long t0 = 0;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			t0 = System.nanoTime();
 		r.nnz = nnz;
 		if(rows < 0) throw new DMLRuntimeException("Incorrect input parameter: rows=" + rows);
@@ -191,9 +191,9 @@ public class CSRPointer {
 		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevTime.add(System.nanoTime() - t0);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaToDevCount.add(3);
 	}
 	
@@ -458,7 +458,7 @@ public class CSRPointer {
 	 */
 	public Pointer toColumnMajorDenseMatrix(cusparseHandle cusparseHandle, cublasHandle cublasHandle, int rows,
 			int cols, String instName) {
-		long t0 = DMLScript.FINEGRAINED_STATISTICS && instName != null ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isFinegrainedStatistics() && instName != null ? System.nanoTime() : 0;
 		LOG.trace("GPU : sparse -> column major dense (inside CSRPointer) on " + this + ", GPUContext="
 				+ getGPUContext());
 		long size = ((long) rows) * getDataTypeSizeOf((long) cols);
@@ -471,7 +471,7 @@ public class CSRPointer {
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");
 		}
-		if (DMLScript.FINEGRAINED_STATISTICS && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
+		if (ConfigurationManager.isFinegrainedStatistics() && instName != null) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, System.nanoTime() - t0);
 		return A;
 	}
 
@@ -480,7 +480,7 @@ public class CSRPointer {
 	 *
 	 */
 	public void deallocate() {
-		deallocate(DMLScript.EAGER_CUDA_FREE);
+		deallocate(getGPUContext().EAGER_CUDA_FREE);
 	}
 
 	/**

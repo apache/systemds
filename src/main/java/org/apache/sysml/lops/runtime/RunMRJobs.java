@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -186,7 +185,7 @@ public class RunMRJobs
 			case DATAGEN:
 				if(    ConfigurationManager.isDynamicRecompilation()
 					&& OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE
-					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
+					&& ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPDataGen( inst, rdInst ) ) 
 				{
 					ret = executeInMemoryDataGenOperations(inst, rdInst, outputMatrices);
@@ -221,7 +220,7 @@ public class RunMRJobs
 			case REBLOCK:
 			case CSV_REBLOCK:
 				if(    ConfigurationManager.isDynamicRecompilation() 
-					&& DMLScript.rtplatform != RUNTIME_PLATFORM.HADOOP 
+					&& ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.HADOOP 
 					&& Recompiler.checkCPReblock( inst, inputMatrices ) ) 
 				{
 					ret = executeInMemoryReblockOperations(inst, shuffleInst, inputMatrices, outputMatrices);

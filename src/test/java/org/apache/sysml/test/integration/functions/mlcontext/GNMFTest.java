@@ -145,11 +145,11 @@ public class GNMFTest extends MLContextTestBase
 		
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
+		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
 		
 		try 
 		{
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			// set positional argument values
@@ -235,7 +235,7 @@ public class GNMFTest extends MLContextTestBase
 			TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
 		}
 		finally {
-			DMLScript.rtplatform = oldRT;
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldRT);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}

@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Statement;
@@ -169,9 +169,9 @@ public abstract class ParamServer
 	}
 
 	private void updateGlobalModel(ListObject gradients) {
-		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tAgg = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		_model = updateLocalModel(_ec, gradients, _model);
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSAggregationTime((long) tAgg.stop());
 	}
 
@@ -227,12 +227,12 @@ public abstract class ParamServer
 	}
 
 	private void broadcastModel(int workerID) throws InterruptedException {
-		Timing tBroad = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tBroad = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 
 		//broadcast copy of model to specific worker, cleaned up by worker
 		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
 	}
 }

@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 
 /**
  * Measures performance numbers when GPU mode is enabled
@@ -155,7 +155,7 @@ public class GPUStatistics {
 	 */
 	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
 	{
-		if (!(DMLScript.FINEGRAINED_STATISTICS))
+		if (!(ConfigurationManager.isFinegrainedStatistics()))
 			return;
 
 		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);

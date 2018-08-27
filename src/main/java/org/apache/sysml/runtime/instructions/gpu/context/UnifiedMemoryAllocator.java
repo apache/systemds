@@ -23,7 +23,8 @@ import static jcuda.runtime.JCuda.cudaMallocManaged;
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.cudaError.cudaSuccess;
 import static jcuda.runtime.JCuda.cudaMemAttachGlobal;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 
 import jcuda.CudaException;
 import jcuda.Pointer;
@@ -31,6 +32,8 @@ import jcuda.runtime.cudaError;
 
 public class UnifiedMemoryAllocator  implements GPUMemoryAllocator {
 
+	private final double GPU_MEMORY_UTILIZATION_FACTOR = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
+	
 	/**
 	 * Allocate memory on the device. 
 	 * 
@@ -78,12 +81,12 @@ public class UnifiedMemoryAllocator  implements GPUMemoryAllocator {
 	 * @return the available memory in bytes
 	 */
 	public long getAvailableMemory() {
-		if(maxAvailableMemory < 0 || gpuUtilizationFactor != DMLScript.GPU_MEMORY_UTILIZATION_FACTOR) {
+		if(maxAvailableMemory < 0 || gpuUtilizationFactor != GPU_MEMORY_UTILIZATION_FACTOR) {
 			long free[] = { 0 };
 			long total[] = { 0 };
 			cudaMemGetInfo(free, total);
-			maxAvailableMemory = (long) (total[0] * DMLScript.GPU_MEMORY_UTILIZATION_FACTOR);
-			gpuUtilizationFactor = DMLScript.GPU_MEMORY_UTILIZATION_FACTOR;
+			maxAvailableMemory = (long) (total[0] * GPU_MEMORY_UTILIZATION_FACTOR);
+			gpuUtilizationFactor = GPU_MEMORY_UTILIZATION_FACTOR;
 		}
 		return maxAvailableMemory;
 	}

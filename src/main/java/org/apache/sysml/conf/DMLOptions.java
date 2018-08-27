@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysml.api;
+package org.apache.sysml.conf;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,8 +62,100 @@ public class DMLOptions {
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
+	// Set when invoked via DMLScript
 	public DMLOptions(Options opts) {
 		options = opts;
+	}
+	
+	// Set when invoked via MLContext and JMLC via Configuration.setGlobalOptions and Configuration.setLocalOptions respectively
+	public DMLOptions(Map<String, String>  argVals, boolean stats, int statsCount, boolean memStats, 
+			Explain.ExplainType  explainType, RUNTIME_PLATFORM execMode, boolean gpu, boolean forceGPU, 
+			ScriptType scriptType, String filePath, String script) {
+		options = null;
+		this.argVals = argVals;
+		this.stats = stats;
+		this.statsCount = statsCount;
+		this.memStats = memStats;
+		this.explainType = explainType;
+		this.execMode = execMode;
+		this.gpu = gpu;
+		this.forceGPU = forceGPU;
+		this.scriptType = scriptType;
+		this.filePath = filePath;
+		this.script = script;
+	}
+	
+	/**
+	 * @return the filePath
+	 */
+	public String getFilePath() {
+		return filePath;
+	}
+
+	/**
+	 * @return the execution Mode
+	 */
+	public RUNTIME_PLATFORM getExecutionMode() {
+		return execMode;
+	}
+
+	/**
+	 * @param execMode the execution Mode to set
+	 */
+	public void setExecutionMode(RUNTIME_PLATFORM execMode) {
+		this.execMode = execMode;
+	}
+
+	/**
+	 * Sets the maximum number of heavy hitters that are printed out as part of
+	 * the statistics.
+	 *
+	 * @param maxHeavyHitters
+	 *            maximum number of heavy hitters to print
+	 */
+	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
+		this.statsCount = maxHeavyHitters;
+	}
+	
+	/**
+	 * @return the number of statistics instructions to print
+	 */
+	public int getStatisticsMaxHeavyHitters() {
+		return statsCount;
+	}
+
+	/**
+	 * Whether or not to enable GPU usage.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public void setGPU(boolean enabled) {
+		this.gpu = enabled;
+	}
+
+	/**
+	 * @return true if gpu is enabled
+	 */
+	public boolean isGPU() {
+		return gpu;
+	}
+	
+	/**
+	 * Whether or not to force GPU usage.
+	 *
+	 * @param enabled
+	 *            {@code true} if enabled, {@code false} otherwise
+	 */
+	public void setForceGPU(boolean enabled) {
+		this.forceGPU = enabled;
+	}
+	
+	/**
+	 * @return true if GPU is enabled in forced mode
+	 */
+	public boolean isForceGPU() {
+		return forceGPU;
 	}
 	
 	@Override

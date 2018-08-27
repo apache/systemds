@@ -33,7 +33,9 @@ import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.EvictionPolicy;
+import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.utils.GPUStatistics;
@@ -88,6 +90,25 @@ public class GPUContext {
 	
 	private GPUMemoryManager memoryManager;
 	
+	// whether to synchronize GPU after every instruction 
+	// global for all GPUContext for simplicity, but initialized every time to check if the configuration has been updated
+	// Note: cudaDeviceSynchronize is static method of JCuda
+	public static boolean SYNCHRONIZE_GPU = false;
+	// whether to perform eager CUDA free on rmvar
+	public final boolean EAGER_CUDA_FREE = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
+	
+	public static final EvictionPolicy GPU_EVICTION_POLICY;
+	static {
+		String evictionPolicy = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.GPU_EVICTION_POLICY).toUpperCase();
+		EvictionPolicy policyToUse = EvictionPolicy.MIN_EVICT;
+		try {
+			policyToUse = EvictionPolicy.valueOf(evictionPolicy);
+		} catch(IllegalArgumentException e) {
+			LOG.warn("Unsupported eviction policy:" + evictionPolicy + ". Using min_evict instead.");
+		}
+		GPU_EVICTION_POLICY = policyToUse;
+	}
+	
 	public GPUMemoryManager getMemoryManager() {
 		return memoryManager;
 	}
@@ -97,14 +118,15 @@ public class GPUContext {
 		cudaSetDevice(deviceNum);
 
 		cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
+		SYNCHRONIZE_GPU = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 
 		long start = -1;
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			start = System.nanoTime();
 		initializeCudaLibraryHandles();
 		
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaLibrariesInitTime = System.nanoTime() - start;
 
 		memoryManager = new GPUMemoryManager(this);

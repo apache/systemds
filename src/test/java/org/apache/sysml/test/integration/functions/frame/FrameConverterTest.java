@@ -35,6 +35,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructType;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
@@ -203,7 +204,7 @@ public class FrameConverterTest extends AutomatedTestBase
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
+		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.SPARK);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
@@ -262,7 +263,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 		finally
 		{
-			DMLScript.rtplatform = platformOld;
+			ConfigurationManager.getDMLOptions().setExecutionMode(platformOld);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

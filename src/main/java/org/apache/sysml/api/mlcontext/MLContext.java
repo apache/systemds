@@ -270,7 +270,7 @@ public class MLContext implements ConfigurableAPI
 		}
 
 		this.spark = spark;
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 
 		activeMLContext = this;
 		MLContextProxy.setActive(true);
@@ -608,7 +608,6 @@ public class MLContext implements ConfigurableAPI
 	 *            otherwise
 	 */
 	public void setStatistics(boolean statistics) {
-		DMLScript.STATISTICS = statistics;
 		this.statistics = statistics;
 	}
 
@@ -620,7 +619,6 @@ public class MLContext implements ConfigurableAPI
 	 *            maximum number of heavy hitters to print
 	 */
 	public void setStatisticsMaxHeavyHitters(int maxHeavyHitters) {
-		DMLScript.STATISTICS_COUNT = maxHeavyHitters;
 		this.statisticsMaxHeavyHitters = maxHeavyHitters;
 	}
 
@@ -740,7 +738,7 @@ public class MLContext implements ConfigurableAPI
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		ConfigurationManager.getDMLOptions().setExecutionMode(executionType.getRuntimePlatform());
 		this.executionType = executionType;
 	}
 

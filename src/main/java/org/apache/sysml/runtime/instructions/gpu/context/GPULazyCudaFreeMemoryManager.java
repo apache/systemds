@@ -26,7 +26,7 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
@@ -56,11 +56,11 @@ public class GPULazyCudaFreeMemoryManager {
 		if (rmvarGPUPointers.containsKey(size)) {
 			if(LOG.isTraceEnabled())
 				LOG.trace("Getting rmvar-ed pointers for size:" + size);
-			boolean measureTime = opcode != null && DMLScript.FINEGRAINED_STATISTICS; 
+			boolean measureTime = opcode != null && ConfigurationManager.isFinegrainedStatistics(); 
 			long t0 = measureTime ? System.nanoTime() : 0;
 			Pointer A = remove(rmvarGPUPointers, size); // remove from rmvarGPUPointers as you are not calling cudaFree
 			long totalTime = System.nanoTime() - t0;
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				GPUStatistics.cudaAllocReuseCount.increment();
 			}
 			if(measureTime) {
@@ -81,7 +81,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param startTime start time
 	 */
 	void addMiscTime(String opcode, String instructionLevelTimer, long startTime) {
-		if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
+		if (opcode != null && ConfigurationManager.isFinegrainedStatistics())
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	
@@ -104,13 +104,13 @@ public class GPULazyCudaFreeMemoryManager {
 		Optional<Long> toClear = rmvarGPUPointers.entrySet().stream().filter(e -> e.getValue().size() > 0).map(e -> e.getKey())
 				.filter(size -> size >= minSize).min((s1, s2) -> s1 < s2 ? -1 : 1);
 		if(toClear.isPresent()) {
-			boolean measureTime = opcode != null && DMLScript.FINEGRAINED_STATISTICS;
+			boolean measureTime = opcode != null && ConfigurationManager.isFinegrainedStatistics();
 			long t0 = measureTime ?  System.nanoTime() : 0;
 			Pointer A = remove(rmvarGPUPointers, toClear.get()); // remove from rmvarGPUPointers as you are not calling cudaFree
 			if(measureTime) {
 				gpuManager.addMiscTime(opcode, GPUInstruction.MISC_TIMER_REUSE, t0);
 			}
-			if(DMLScript.STATISTICS) {
+			if(ConfigurationManager.isStatistics()) {
 				GPUStatistics.cudaAllocReuseCount.increment();
 			}
 			return A;

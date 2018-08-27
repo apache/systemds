@@ -23,8 +23,8 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -161,8 +161,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
-		boolean oldStatistics = DMLScript.STATISTICS;
-		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + scriptNum + ".dml";
@@ -190,7 +188,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		}
 		finally
 		{
-			DMLScript.STATISTICS = oldStatistics;
+			ConfigurationManager.resetStatistics();
 			rtplatform = oldPlatform;
 		}
 		

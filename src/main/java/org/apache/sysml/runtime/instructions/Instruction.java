@@ -21,7 +21,7 @@ package org.apache.sysml.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DataIdentifier;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -165,7 +165,7 @@ public abstract class Instruction
 	public String getExtendedOpcode() {
 		if(extendedOpcode != null)
 			return extendedOpcode;
-		if(DMLScript.FINEGRAINED_STATISTICS) {
+		if(ConfigurationManager.isFinegrainedStatistics()) {
 			String scriptInfo;
 			if(filename != null)
 				scriptInfo = " [" + filename + " " + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";

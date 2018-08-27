@@ -22,7 +22,6 @@ import java.util.ArrayList;
 
 import jcuda.Pointer;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -673,8 +672,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 				cudnnInput, out0Pointer, c0Pointer, cudnnWPointer, doutName, dcyName,  // input
 				dxName, dwName, dbName, dhxName, dcxName, // output 
 				return_sequences, N, M, D, T);
-		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, DMLScript.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(instructionName, cudnnInput, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instructionName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());
@@ -725,8 +724,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instructionName); 
 		
 		LibMatrixCuDNN.lstm(ec, gCtx, instructionName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
-		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, DMLScript.EAGER_CUDA_FREE);
-		gCtx.cudaFreeHelper(instructionName, cudnnInput, DMLScript.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instructionName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instructionName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		
 		// release inputs/outputs
 		ec.releaseMatrixInputForGPUInstruction(_input4.getName());

@@ -55,7 +55,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.lops.LopProperties;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -119,7 +119,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runOnSpark(SparkExecutionContext sec, PSModeType mode) {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 
 		int workerNum = getWorkerNum(mode);
 		String updFunc = getParam(PS_UPDATE_FUN);
@@ -167,7 +167,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch);
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
@@ -182,7 +182,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		}
 
 		// Accumulate the statistics for remote workers
-		if (DMLScript.STATISTICS) {
+		if (ConfigurationManager.isStatistics()) {
 			Statistics.accPSSetupTime(aSetup.value());
 			Statistics.incWorkerNumber(aWorker.value());
 			Statistics.accPSLocalModelUpdateTime(aUpdate.value());
@@ -196,7 +196,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {
-		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSetup = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
 			.namingPattern("workers-pool-thread-%d").build();
@@ -230,7 +230,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSScheme scheme = getScheme();
 		partitionLocally(scheme, ec, workers);
 
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSSetupTime((long) tSetup.stop());
 
 		if (LOG.isDebugEnabled()) {

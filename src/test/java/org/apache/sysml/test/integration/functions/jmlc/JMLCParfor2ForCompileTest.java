@@ -49,8 +49,7 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 
 	private void runJMLCParFor2ForTest(boolean par) 
 		throws IOException
-	{
-		ConfigurationManager.setStatistics(true);
+	{		
 		try {
 			Connection conn = !par ? new Connection() :
 				new Connection(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
@@ -64,16 +63,16 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 		
 			PreparedScript pscript = conn.prepareScript(
 				script, new String[]{}, new String[]{}, false);
+			ConfigurationManager.setStatistics(true);
 			pscript.executeScript();
 			conn.close();
+			//check for existing or non-existing parfor
+			Assert.assertTrue(Statistics.getParforOptCount()==(par?1:0));
 		}
 		catch(Exception ex) {
 			Assert.fail("JMLC parfor test failed: "+ex.getMessage());
 		} finally {
 			ConfigurationManager.resetStatistics();
 		}
-		
-		//check for existing or non-existing parfor
-		Assert.assertTrue(Statistics.getParforOptCount()==(par?1:0));
 	}
 }

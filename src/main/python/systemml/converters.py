@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,9 +17,19 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
-__all__ = [ 'getNumCols', 'convertToMatrixBlock', 'convert_caffemodel', 'convert_lmdb_to_jpeg', 'convertToNumPyArr', 'convertToPandasDF', 'SUPPORTED_TYPES' , 'convertToLabeledDF', 'convertImageToNumPyArr', 'getDatasetMean']
+__all__ = [
+    'getNumCols',
+    'convertToMatrixBlock',
+    'convert_caffemodel',
+    'convert_lmdb_to_jpeg',
+    'convertToNumPyArr',
+    'convertToPandasDF',
+    'SUPPORTED_TYPES',
+    'convertToLabeledDF',
+    'convertImageToNumPyArr',
+    'getDatasetMean']
 
 import numpy as np
 import pandas as pd
@@ -32,7 +42,8 @@ from .classloader import *
 
 SUPPORTED_TYPES = (np.ndarray, pd.DataFrame, spmatrix)
 
-DATASET_MEAN = {'VGG_ILSVRC_19_2014':[103.939, 116.779, 123.68]}
+DATASET_MEAN = {'VGG_ILSVRC_19_2014': [103.939, 116.779, 123.68]}
+
 
 def getNumCols(numPyArr):
     if numPyArr.ndim == 1:
@@ -40,8 +51,10 @@ def getNumCols(numPyArr):
     else:
         return numPyArr.shape[1]
 
+
 def get_pretty_str(key, value):
     return '\t"' + key + '": ' + str(value) + ',\n'
+
 
 def save_tensor_csv(tensor, file_path, shouldTranspose):
     w = w.reshape(w.shape[0], -1)
@@ -53,9 +66,12 @@ def save_tensor_csv(tensor, file_path, shouldTranspose):
         file.write(get_pretty_str('rows', w.shape[0]))
         file.write(get_pretty_str('cols', w.shape[1]))
         file.write(get_pretty_str('nnz', np.count_nonzero(w)))
-        file.write('\t"format": "csv",\n\t"description": {\n\t\t"author": "SystemML"\n\t}\n}\n')
+        file.write(
+            '\t"format": "csv",\n\t"description": {\n\t\t"author": "SystemML"\n\t}\n}\n')
 
-def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="binary", is_caffe_installed=False):
+
+def convert_caffemodel(sc, deploy_file, caffemodel_file,
+                       output_dir, format="binary", is_caffe_installed=False):
     """
     Saves the weights and bias in the caffemodel file to output_dir in the specified format.
     This method does not requires caffe to be installed.
@@ -82,7 +98,10 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
     """
     if is_caffe_installed:
         if format != 'csv':
-            raise ValueError('The format ' + str(format) + ' is not supported when caffe is installed. Hint: Please specify format=csv')
+            raise ValueError(
+                'The format ' +
+                str(format) +
+                ' is not supported when caffe is installed. Hint: Please specify format=csv')
         import caffe
         net = caffe.Net(deploy_file, caffemodel_file, caffe.TEST)
         for layerName in net.params.keys():
@@ -91,21 +110,48 @@ def convert_caffemodel(sc, deploy_file, caffemodel_file, output_dir, format="bin
                 continue
             elif num_parameters == 2:
                 # Weights and Biases
-                layerType = net.layers[list(net._layer_names).index(layerName)].type
+                layerType = net.layers[list(
+                    net._layer_names).index(layerName)].type
                 shouldTranspose = True if layerType == 'InnerProduct' else False
-                save_tensor_csv(net.params[layerName][0].data, os.path.join(output_dir, layerName + '_weight.mtx'), shouldTranspose)
-                save_tensor_csv(net.params[layerName][1].data, os.path.join(output_dir, layerName + '_bias.mtx'), shouldTranspose)
+                save_tensor_csv(
+                    net.params[layerName][0].data,
+                    os.path.join(
+                        output_dir,
+                        layerName +
+                        '_weight.mtx'),
+                    shouldTranspose)
+                save_tensor_csv(
+                    net.params[layerName][1].data,
+                    os.path.join(
+                        output_dir,
+                        layerName +
+                        '_bias.mtx'),
+                    shouldTranspose)
             elif num_parameters == 1:
                 # Only Weight
-                layerType = net.layers[list(net._layer_names).index(layerName)].type
+                layerType = net.layers[list(
+                    net._layer_names).index(layerName)].type
                 shouldTranspose = True if layerType == 'InnerProduct' else False
-                save_tensor_csv(net.params[layerName][0].data, os.path.join(output_dir, layerName + '_weight.mtx'), shouldTranspose)
+                save_tensor_csv(
+                    net.params[layerName][0].data,
+                    os.path.join(
+                        output_dir,
+                        layerName +
+                        '_weight.mtx'),
+                    shouldTranspose)
             else:
-                raise ValueError('Unsupported number of parameters:' + str(num_parameters))
+                raise ValueError(
+                    'Unsupported number of parameters:' +
+                    str(num_parameters))
     else:
         createJavaObject(sc, 'dummy')
         utilObj = sc._jvm.org.apache.sysml.api.dl.Utils()
-        utilObj.saveCaffeModelFile(sc._jsc, deploy_file, caffemodel_file, output_dir, format)
+        utilObj.saveCaffeModelFile(
+            sc._jsc,
+            deploy_file,
+            caffemodel_file,
+            output_dir,
+            format)
 
 
 def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
@@ -121,7 +167,9 @@ def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
     output_dir: string
         Output directory for images (local filesystem)
     """
-    import lmdb, caffe, cv2
+    import lmdb
+    import caffe
+    import cv2
     lmdb_cursor = lmdb.open(lmdb_file, readonly=True).begin().cursor()
     datum = caffe.proto.caffe_pb2.Datum()
     i = 1
@@ -129,7 +177,7 @@ def convert_lmdb_to_jpeg(lmdb_img_file, output_dir):
         datum.ParseFromString(value)
         data = caffe.io.datum_to_array(datum)
         output_file_path = os.path.join(output_dir, 'file_' + str(i) + '.jpg')
-        image = np.transpose(data, (1,2,0)) # CxHxW to HxWxC in cv2
+        image = np.transpose(data, (1, 2, 0))  # CxHxW to HxWxC in cv2
         cv2.imwrite(output_file_path, image)
         i = i + 1
 
@@ -153,8 +201,9 @@ def convertToLabeledDF(sparkSession, X, y=None):
     else:
         return out.select('features')
 
+
 def _convertSPMatrixToMB(sc, src):
-    src = coo_matrix(src,  dtype=np.float64)
+    src = coo_matrix(src, dtype=np.float64)
     numRows = src.shape[0]
     numCols = src.shape[1]
     data = src.data
@@ -165,7 +214,9 @@ def _convertSPMatrixToMB(sc, src):
     buf2 = bytearray(row.tostring())
     buf3 = bytearray(col.tostring())
     createJavaObject(sc, 'dummy')
-    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(buf1, buf2, buf3, numRows, numCols, nnz)
+    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertSciPyCOOToMB(
+        buf1, buf2, buf3, numRows, numCols, nnz)
+
 
 def _convertDenseMatrixToMB(sc, src):
     numCols = getNumCols(src)
@@ -173,14 +224,24 @@ def _convertDenseMatrixToMB(sc, src):
     arr = src.ravel().astype(np.float64)
     buf = bytearray(arr.tostring())
     createJavaObject(sc, 'dummy')
-    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(buf, numRows, numCols)
+    return sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertPy4JArrayToMB(
+        buf, numRows, numCols)
 
-def _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen):
+
+def _copyRowBlock(i, sc, ret, src, numRowsPerBlock, rlen, clen):
     rowIndex = int(i / numRowsPerBlock)
-    tmp = src[i:min(i+numRowsPerBlock, rlen),]
-    mb = _convertSPMatrixToMB(sc, tmp) if isinstance(src, spmatrix) else _convertDenseMatrixToMB(sc, tmp)
-    sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
+    tmp = src[i:min(i + numRowsPerBlock, rlen), ]
+    mb = _convertSPMatrixToMB(
+        sc,
+        tmp) if isinstance(
+        src,
+        spmatrix) else _convertDenseMatrixToMB(
+            sc,
+        tmp)
+    sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.copyRowBlocks(
+        mb, rowIndex, ret, numRowsPerBlock, rlen, clen)
     return i
+
 
 def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     if not isinstance(sc, SparkContext):
@@ -189,33 +250,49 @@ def convertToMatrixBlock(sc, src, maxSizeBlockInMB=8):
     src = np.asarray(src, dtype=np.float64) if not isSparse else src
     if len(src.shape) != 2:
         src_type = str(type(src).__name__)
-        raise TypeError('Expected 2-dimensional ' + src_type + ', instead passed ' + str(len(src.shape)) + '-dimensional ' + src_type)
+        raise TypeError('Expected 2-dimensional ' +
+                        src_type +
+                        ', instead passed ' +
+                        str(len(src.shape)) +
+                        '-dimensional ' +
+                        src_type)
     # Ignoring sparsity for computing numRowsPerBlock for now
-    numRowsPerBlock = int(math.ceil((maxSizeBlockInMB*1000000) / (src.shape[1]*8)))
+    numRowsPerBlock = int(
+        math.ceil((maxSizeBlockInMB * 1000000) / (src.shape[1] * 8)))
     multiBlockTransfer = False if numRowsPerBlock >= src.shape[0] else True
     if not multiBlockTransfer:
-        return _convertSPMatrixToMB(sc, src) if isSparse else _convertDenseMatrixToMB(sc, src)
+        return _convertSPMatrixToMB(
+            sc, src) if isSparse else _convertDenseMatrixToMB(sc, src)
     else:
         # Since coo_matrix does not have range indexing
         src = csr_matrix(src) if isSparse else src
         rlen = int(src.shape[0])
         clen = int(src.shape[1])
-        ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(rlen, clen, isSparse)
-        [ _copyRowBlock(i, sc, ret, src, numRowsPerBlock,  rlen, clen) for i in range(0, src.shape[0], numRowsPerBlock) ]
-        sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.postProcessAfterCopying(ret)
+        ret = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.allocateDenseOrSparse(
+            rlen, clen, isSparse)
+        [_copyRowBlock(i, sc, ret, src, numRowsPerBlock, rlen, clen)
+         for i in range(0, src.shape[0], numRowsPerBlock)]
+        sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.postProcessAfterCopying(
+            ret)
         return ret
+
 
 def convertToNumPyArr(sc, mb):
     if isinstance(sc, SparkContext):
         numRows = mb.getNumRows()
         numCols = mb.getNumColumns()
         createJavaObject(sc, 'dummy')
-        buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(mb)
-        return np.frombuffer(buf, count=numRows*numCols, dtype=np.float64).reshape((numRows, numCols))
+        buf = sc._jvm.org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt.convertMBtoPy4JDenseArr(
+            mb)
+        return np.frombuffer(buf, count=numRows * numCols,
+                             dtype=np.float64).reshape((numRows, numCols))
     else:
-        raise TypeError('sc needs to be of type SparkContext') # TODO: We can generalize this by creating py4j gateway ourselves
+        # TODO: We can generalize this by creating py4j gateway ourselves
+        raise TypeError('sc needs to be of type SparkContext')
 
 # Returns the mean of a model if defined otherwise None
+
+
 def getDatasetMean(dataset_name):
     """
     Parameters
@@ -230,7 +307,7 @@ def getDatasetMean(dataset_name):
 
     try:
         mean = DATASET_MEAN[dataset_name.upper()]
-    except:
+    except BaseException:
         mean = None
     return mean
 
@@ -238,14 +315,15 @@ def getDatasetMean(dataset_name):
 # Example usage: convertImageToNumPyArr(im, img_shape=(3, 224, 224), add_rotated_images=True, add_mirrored_images=True)
 # The above call returns a numpy array of shape (6, 50176) in NCHW format
 def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mirrored_images=False,
-    color_mode = 'RGB', mean=None):
+                           color_mode='RGB', mean=None):
 
-    ## Input Parameters
+    # Input Parameters
 
     # color_mode: In case of VGG models which expect image data in BGR format instead of RGB for other most models,
     # color_mode parameter is used to process image data in BGR format.
 
-    # mean: mean value is used to subtract from input data from every pixel value. By default value is None, so mean value not subtracted.
+    # mean: mean value is used to subtract from input data from every pixel
+    # value. By default value is None, so mean value not subtracted.
 
     if img_shape is not None:
         num_channels = img_shape[0]
@@ -275,7 +353,7 @@ def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mir
 
             # RGB -> BGR
             if color_mode == 'BGR':
-                im = im[...,::-1]
+                im = im[..., ::-1]
 
             # Subtract Mean
             if mean is not None:
@@ -288,13 +366,23 @@ def convertImageToNumPyArr(im, img_shape=None, add_rotated_images=False, add_mir
     ret = _im2NumPy(im)
 
     if add_rotated_images:
-        ret = np.vstack((ret, _im2NumPy(im.rotate(90)), _im2NumPy(im.rotate(180)), _im2NumPy(im.rotate(270)) ))
+        ret = np.vstack(
+            (ret, _im2NumPy(
+                im.rotate(90)), _im2NumPy(
+                im.rotate(180)), _im2NumPy(
+                im.rotate(270))))
     if add_mirrored_images:
-        ret = np.vstack((ret, _im2NumPy(im.transpose(Image.FLIP_LEFT_RIGHT)), _im2NumPy(im.transpose(Image.FLIP_TOP_BOTTOM))))
+        ret = np.vstack(
+            (ret, _im2NumPy(
+                im.transpose(
+                    Image.FLIP_LEFT_RIGHT)), _im2NumPy(
+                im.transpose(
+                    Image.FLIP_TOP_BOTTOM))))
     return ret
 
 
 def convertToPandasDF(X):
     if not isinstance(X, pd.DataFrame):
-        return pd.DataFrame(X, columns=['C' + str(i) for i in range(getNumCols(X))])
+        return pd.DataFrame(X, columns=['C' + str(i)
+                                        for i in range(getNumCols(X))])
     return X

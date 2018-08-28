@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 __all__ = ['normal', 'uniform', 'poisson']
 
@@ -26,6 +26,7 @@ from ..defmatrix import *
 # Special object used internally to specify the placeholder which will be replaced by output ID
 # This helps to provide dml containing output ID in constructSamplingNode
 OUTPUT_ID = '$$OutputID$$'
+
 
 def constructSamplingNode(inputs, dml):
     """
@@ -38,31 +39,35 @@ def constructSamplingNode(inputs, dml):
     """
     dmlOp = DMLOp(inputs)
     out = matrix(None, op=dmlOp)
-    dmlOp.dml = [out.ID if x==OUTPUT_ID else x for x in dml]
+    dmlOp.dml = [out.ID if x == OUTPUT_ID else x for x in dml]
     return out
 
+
 INPUTS = []
+
+
 def asStr(arg):
     """
     Internal use only: Convenient utility to update inputs and return appropriate string value
     """
     if isinstance(arg, matrix):
-        INPUTS = INPUTS + [ arg ]
+        INPUTS = INPUTS + [arg]
         return arg.ID
     else:
         return str(arg)
-        
-def normal(loc=0.0, scale=1.0, size=(1,1), sparsity=1.0):
+
+
+def normal(loc=0.0, scale=1.0, size=(1, 1), sparsity=1.0):
     """
     Draw random samples from a normal (Gaussian) distribution.
-        
+
     Parameters
     ----------
     loc: Mean ("centre") of the distribution.
     scale: Standard deviation (spread or "width") of the distribution.
     size: Output shape (only tuple of length 2, i.e. (m, n), supported).
     sparsity: Sparsity (between 0.0 and 1.0).
-    
+
     Examples
     --------
 
@@ -75,7 +80,7 @@ def normal(loc=0.0, scale=1.0, size=(1,1), sparsity=1.0):
     array([[ 3.48857226,  6.17261819,  2.51167259],
            [ 3.60506708, -1.90266305,  3.97601633],
            [ 3.62245706,  5.9430881 ,  2.53070413]])
-    
+
     """
     if len(size) != 2:
         raise TypeError('Incorrect type for size. Expected tuple of length 2')
@@ -86,22 +91,24 @@ def normal(loc=0.0, scale=1.0, size=(1,1), sparsity=1.0):
     scale = asStr(scale)
     sparsity = asStr(sparsity)
     # loc + scale*standard normal
-    return constructSamplingNode(INPUTS, [OUTPUT_ID, ' = ',  loc,' + ',  scale,' * random.normal(', rows, ',', cols, ',',  sparsity, ')\n'])
+    return constructSamplingNode(INPUTS, [
+                                 OUTPUT_ID, ' = ', loc, ' + ', scale, ' * random.normal(', rows, ',', cols, ',', sparsity, ')\n'])
 
-def uniform(low=0.0, high=1.0, size=(1,1), sparsity=1.0):
+
+def uniform(low=0.0, high=1.0, size=(1, 1), sparsity=1.0):
     """
     Draw samples from a uniform distribution.
-        
+
     Parameters
     ----------
     low: Lower boundary of the output interval.
     high: Upper boundary of the output interval.
-    size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+    size: Output shape (only tuple of length 2, i.e. (m, n), supported).
     sparsity: Sparsity (between 0.0 and 1.0).
 
     Examples
     --------
-    
+
     >>> import systemml as sml
     >>> import numpy as np
     >>> sml.setSparkContext(sc)
@@ -121,22 +128,24 @@ def uniform(low=0.0, high=1.0, size=(1,1), sparsity=1.0):
     low = asStr(low)
     high = asStr(high)
     sparsity = asStr(sparsity)
-    return constructSamplingNode(INPUTS, [OUTPUT_ID, ' = random.uniform(', rows, ',', cols, ',',  sparsity, ',',  low, ',',  high, ')\n'])
+    return constructSamplingNode(INPUTS, [
+                                 OUTPUT_ID, ' = random.uniform(', rows, ',', cols, ',', sparsity, ',', low, ',', high, ')\n'])
 
-def poisson(lam=1.0, size=(1,1), sparsity=1.0):
+
+def poisson(lam=1.0, size=(1, 1), sparsity=1.0):
     """
     Draw samples from a Poisson distribution.
-    
+
     Parameters
     ----------
     lam: Expectation of interval, should be > 0.
-    size: Output shape (only tuple of length 2, i.e. (m, n), supported). 
+    size: Output shape (only tuple of length 2, i.e. (m, n), supported).
     sparsity: Sparsity (between 0.0 and 1.0).
-    
-    
+
+
     Examples
     --------
-    
+
     >>> import systemml as sml
     >>> import numpy as np
     >>> sml.setSparkContext(sc)
@@ -146,7 +155,7 @@ def poisson(lam=1.0, size=(1,1), sparsity=1.0):
     array([[ 1.,  0.,  2.],
            [ 1.,  0.,  0.],
            [ 0.,  0.,  0.]])
-           
+
     """
     if len(size) != 2:
         raise TypeError('Incorrect type for size. Expected tuple of length 2')
@@ -155,4 +164,5 @@ def poisson(lam=1.0, size=(1,1), sparsity=1.0):
     cols = asStr(size[1])
     lam = asStr(lam)
     sparsity = asStr(sparsity)
-    return constructSamplingNode(INPUTS, [OUTPUT_ID, ' = random.poisson(', rows, ',', cols, ',',  sparsity, ',',  lam, ')\n'])
+    return constructSamplingNode(INPUTS, [
+                                 OUTPUT_ID, ' = random.poisson(', rows, ',', cols, ',', sparsity, ',', lam, ')\n'])

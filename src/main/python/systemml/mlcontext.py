@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,19 +17,29 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 # Methods to create Script object
-script_factory_methods = [ 'dml', 'pydml', 'dmlFromResource', 'pydmlFromResource', 'dmlFromFile', 'pydmlFromFile', 'dmlFromUrl', 'pydmlFromUrl' ]
+script_factory_methods = [
+    'dml',
+    'pydml',
+    'dmlFromResource',
+    'pydmlFromResource',
+    'dmlFromFile',
+    'pydmlFromFile',
+    'dmlFromUrl',
+    'pydmlFromUrl']
 # Utility methods
-util_methods = [ '_java2py',  'getHopDAG' ]
-__all__ = ['MLResults', 'MLContext', 'Script', 'Matrix' ] + script_factory_methods + util_methods
+util_methods = ['_java2py', 'getHopDAG']
+__all__ = ['MLResults', 'MLContext', 'Script', 'Matrix'] + \
+    script_factory_methods + util_methods
 
 import os
 import numpy as np
 import pandas as pd
-import threading, time
-    
+import threading
+import time
+
 try:
     import py4j.java_gateway
     from py4j.java_gateway import JavaObject
@@ -38,12 +48,15 @@ try:
     import pyspark.mllib.common
     from pyspark.sql import SparkSession
 except ImportError:
-    raise ImportError('Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
+    raise ImportError(
+        'Unable to import `pyspark`. Hint: Make sure you are running with PySpark.')
 
 from .converters import *
 from .classloader import *
 
-def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgraph=False):
+
+def getHopDAG(ml, script, lines=None, conf=None,
+              apply_rewrites=True, with_subgraph=False):
     """
     Compile a DML / PyDML script.
 
@@ -51,38 +64,41 @@ def getHopDAG(ml, script, lines=None, conf=None, apply_rewrites=True, with_subgr
     ----------
     ml: MLContext instance
         MLContext instance.
-        
+
     script: Script instance
         Script instance defined with the appropriate input and output variables.
-    
+
     lines: list of integers
         Optional: only display the hops that have begin and end line number equals to the given integers.
-    
+
     conf: SparkConf instance
         Optional spark configuration
-        
+
     apply_rewrites: boolean
         If True, perform static rewrites, perform intra-/inter-procedural analysis to propagate size information into functions and apply dynamic rewrites
-    
+
     with_subgraph: boolean
-        If False, the dot graph will be created without subgraphs for statement blocks. 
-    
+        If False, the dot graph will be created without subgraphs for statement blocks.
+
     Returns
     -------
     hopDAG: string
-        hop DAG in dot format 
+        hop DAG in dot format
     """
     if not isinstance(script, Script):
         raise ValueError("Expected script to be an instance of Script")
     scriptString = script.scriptString
     script_java = script.script_java
-    lines = [ int(x) for x in lines ] if lines is not None else [int(-1)]
+    lines = [int(x) for x in lines] if lines is not None else [int(-1)]
     sc = get_spark_context()
     if conf is not None:
-        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(
+            ml._ml, script_java, lines, conf._jconf, apply_rewrites, with_subgraph)
     else:
-        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(ml._ml, script_java, lines, apply_rewrites, with_subgraph)
+        hopDAG = sc._jvm.org.apache.sysml.api.mlcontext.MLContextUtil.getHopDAG(
+            ml._ml, script_java, lines, apply_rewrites, with_subgraph)
     return hopDAG
+
 
 def dml(scriptString):
     """
@@ -99,8 +115,11 @@ def dml(scriptString):
         Instance of a script object.
     """
     if not isinstance(scriptString, str):
-        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+        raise ValueError(
+            "scriptString should be a string, got %s" %
+            type(scriptString))
     return Script(scriptString, scriptType="dml")
+
 
 def dmlFromResource(resourcePath):
     """
@@ -117,7 +136,9 @@ def dmlFromResource(resourcePath):
         Instance of a script object.
     """
     if not isinstance(resourcePath, str):
-        raise ValueError("resourcePath should be a string, got %s" % type(resourcePath))
+        raise ValueError(
+            "resourcePath should be a string, got %s" %
+            type(resourcePath))
     return Script(resourcePath, scriptType="dml", isResource=True)
 
 
@@ -136,8 +157,11 @@ def pydml(scriptString):
         Instance of a script object.
     """
     if not isinstance(scriptString, str):
-        raise ValueError("scriptString should be a string, got %s" % type(scriptString))
+        raise ValueError(
+            "scriptString should be a string, got %s" %
+            type(scriptString))
     return Script(scriptString, scriptType="pydml")
+
 
 def pydmlFromResource(resourcePath):
     """
@@ -154,8 +178,11 @@ def pydmlFromResource(resourcePath):
         Instance of a script object.
     """
     if not isinstance(resourcePath, str):
-        raise ValueError("resourcePath should be a string, got %s" % type(resourcePath))
+        raise ValueError(
+            "resourcePath should be a string, got %s" %
+            type(resourcePath))
     return Script(resourcePath, scriptType="pydml", isResource=True)
+
 
 def dmlFromFile(filePath):
     """
@@ -172,9 +199,13 @@ def dmlFromFile(filePath):
         Instance of a script object.
     """
     if not isinstance(filePath, str):
-        raise ValueError("filePath should be a string, got %s" % type(filePath))
-    return Script(filePath, scriptType="dml", isResource=False, scriptFormat="file")
-    
+        raise ValueError(
+            "filePath should be a string, got %s" %
+            type(filePath))
+    return Script(filePath, scriptType="dml",
+                  isResource=False, scriptFormat="file")
+
+
 def pydmlFromFile(filePath):
     """
     Create a pydml script object based on a file path.
@@ -190,9 +221,12 @@ def pydmlFromFile(filePath):
         Instance of a script object.
     """
     if not isinstance(filePath, str):
-        raise ValueError("filePath should be a string, got %s" % type(filePath))
-    return Script(filePath, scriptType="pydml", isResource=False, scriptFormat="file")
-    
+        raise ValueError(
+            "filePath should be a string, got %s" %
+            type(filePath))
+    return Script(filePath, scriptType="pydml",
+                  isResource=False, scriptFormat="file")
+
 
 def dmlFromUrl(url):
     """
@@ -212,6 +246,7 @@ def dmlFromUrl(url):
         raise ValueError("url should be a string, got %s" % type(url))
     return Script(url, scriptType="dml", isResource=False, scriptFormat="url")
 
+
 def pydmlFromUrl(url):
     """
     Create a pydml script object based on a url.
@@ -228,7 +263,9 @@ def pydmlFromUrl(url):
     """
     if not isinstance(url, str):
         raise ValueError("url should be a string, got %s" % type(url))
-    return Script(url, scriptType="pydml", isResource=False, scriptFormat="url")
+    return Script(url, scriptType="pydml",
+                  isResource=False, scriptFormat="url")
+
 
 def _java2py(sc, obj):
     """ Convert Java object to Python. """
@@ -265,6 +302,7 @@ class Matrix(object):
     sc: SparkContext
         SparkContext
     """
+
     def __init__(self, javaMatrix, sc):
         self._java_matrix = javaMatrix
         self._sc = sc
@@ -297,7 +335,8 @@ class Matrix(object):
         NumPy Array
             A NumPy Array representing the Matrix object.
         """
-        np_array = convertToNumPyArr(self._sc, self._java_matrix.toMatrixBlock())
+        np_array = convertToNumPyArr(
+            self._sc, self._java_matrix.toMatrixBlock())
         return np_array
 
 
@@ -313,6 +352,7 @@ class MLResults(object):
     sc: SparkContext
         SparkContext
     """
+
     def __init__(self, results, sc):
         self._java_results = results
         self._sc = sc
@@ -327,7 +367,8 @@ class MLResults(object):
         outputs: string, list of strings
             Output variables as defined inside the DML script.
         """
-        outs = [_java2py(self._sc, self._java_results.get(out)) for out in outputs]
+        outs = [_java2py(self._sc, self._java_results.get(out))
+                for out in outputs]
         if len(outs) == 1:
             return outs[0]
         return outs
@@ -347,70 +388,87 @@ class Script(object):
 
     isResource: boolean
         If true, scriptString is a path to a resource on the classpath
-    
+
     scriptFormat: string
         Optional script format, either "auto" or "url" or "file" or "resource" or "string"
     """
-    def __init__(self, scriptString, scriptType="dml", isResource=False, scriptFormat="auto"):
+
+    def __init__(self, scriptString, scriptType="dml",
+                 isResource=False, scriptFormat="auto"):
         self.sc = get_spark_context()
         self.scriptString = scriptString
         self.scriptType = scriptType
         self.isResource = isResource
         if scriptFormat != "auto":
             if scriptFormat == "url" and self.scriptType == "dml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(
+                    scriptString)
             elif scriptFormat == "url" and self.scriptType == "pydml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(
+                    scriptString)
             elif scriptFormat == "file" and self.scriptType == "dml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(
+                    scriptString)
             elif scriptFormat == "file" and self.scriptType == "pydml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(
+                    scriptString)
             elif isResource and self.scriptType == "dml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(
+                    scriptString)
             elif isResource and self.scriptType == "pydml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(
+                    scriptString)
             elif scriptFormat == "string" and self.scriptType == "dml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(
+                    scriptString)
             elif scriptFormat == "string" and self.scriptType == "pydml":
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(
+                    scriptString)
             else:
                 raise ValueError('Unsupported script format' + scriptFormat)
         elif self.scriptType == "dml":
             if scriptString.endswith(".dml"):
                 if scriptString.startswith("http"):
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl(
+                        scriptString)
                 elif os.path.exists(scriptString):
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile(
+                        scriptString)
                 elif self.isResource == True:
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromResource(
+                        scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)
             else:
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.dml(
+                    scriptString)
         elif self.scriptType == "pydml":
             if scriptString.endswith(".pydml"):
                 if scriptString.startswith("http"):
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl(
+                        scriptString)
                 elif os.path.exists(scriptString):
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile(
+                        scriptString)
                 elif self.isResource == True:
-                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(scriptString)
+                    self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromResource(
+                        scriptString)
                 else:
                     raise ValueError("path: %s does not exist" % scriptString)
             else:
-                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(scriptString)
+                self.script_java = self.sc._jvm.org.apache.sysml.api.mlcontext.ScriptFactory.pydml(
+                    scriptString)
 
-    
     def getScriptString(self):
         """
         Obtain the script string (in unicode).
         """
         return self.script_java.getScriptString()
-    
+
     def setScriptString(self, scriptString):
         """
         Set the script string.
-        
+
         Parameters
         ----------
         scriptString: string
@@ -438,80 +496,80 @@ class Script(object):
         """
         self.script_java.clearIOS()
         return self
-    
+
     def clearIO(self):
         """
         Clear the inputs and outputs, but not the symbol table.
         """
         self.script_java.clearIO()
         return self
-    
+
     def clearAll(self):
         """
         Clear the script string, inputs, outputs, and symbol table.
         """
         self.script_java.clearAll()
         return self
-    
+
     def clearInputs(self):
         """
         Clear the inputs.
         """
         self.script_java.clearInputs()
         return self
-    
+
     def clearOutputs(self):
         """
         Clear the outputs.
         """
         self.script_java.clearOutputs()
         return self
-    
+
     def clearSymbolTable(self):
         """
         Clear the symbol table.
         """
         self.script_java.clearSymbolTable()
         return self
-        
+
     def results(self):
         """
         Obtain the results of the script execution.
         """
         return MLResults(self.script_java.results(), self.sc)
-    
+
     def getResults(self):
         """
         Obtain the results of the script execution.
         """
         return MLResults(self.script_java.getResults(), self.sc)
-        
+
     def setResults(self, results):
         """
         Set the results of the script execution.
         """
         self.script_java.setResults(results._java_results)
         return self
-        
+
     def isDML(self):
         """
         Is the script type DML?
         """
         return self.script_java.isDML()
-    
+
     def isPYDML(self):
         """
         Is the script type DML?
         """
         return self.script_java.isPYDML()
-    
+
     def getScriptExecutionString(self):
         """
         Generate the script execution string, which adds read/load/write/save
         statements to the beginning and end of the script to execute.
         """
-        return self.script_java.getScriptExecutionString()    
-    
+        return self.script_java.getScriptExecutionString()
+
     def __repr__(self):
         return "Script"
 
@@ -528,56 +586,56 @@ class Script(object):
         Display the script inputs.
         """
         return self.script_java.displayInputs()
-    
+
     def displayOutputs(self):
         """
         Display the script outputs.
         """
         return self.script_java.displayOutputs()
-        
+
     def displayInputParameters(self):
         """
         Display the script input parameters.
         """
         return self.script_java.displayInputParameters()
-    
+
     def displayInputVariables(self):
         """
         Display the script input variables.
         """
         return self.script_java.displayInputVariables()
-        
+
     def displayOutputVariables(self):
         """
         Display the script output variables.
         """
         return self.script_java.displayOutputVariables()
-        
+
     def displaySymbolTable(self):
         """
         Display the script symbol table.
         """
         return self.script_java.displaySymbolTable()
-        
+
     def getName(self):
         """
         Obtain the script name.
         """
         return self.script_java.getName()
-        
+
     def setName(self, name):
         """
         Set the script name.
         """
         self.script_java.setName(name)
         return self
-        
+
     def getScriptType(self):
         """
         Obtain the script type.
         """
         return self.scriptType
-        
+
     def input(self, *args, **kwargs):
         """
         Parameters
@@ -606,9 +664,11 @@ class Script(object):
         if isinstance(val, py4j.java_gateway.JavaObject):
             py4j.java_gateway.get_method(self.script_java, "in")(key, val)
         else:
-            py4j.java_gateway.get_method(self.script_java, "in")(key, _py2java(self.sc, val))
-    
-    
+            py4j.java_gateway.get_method(
+                self.script_java, "in")(
+                key, _py2java(
+                    self.sc, val))
+
     def output(self, *names):
         """
         Parameters
@@ -630,17 +690,20 @@ class MLContext(object):
     sc: SparkContext or SparkSession
         An instance of pyspark.SparkContext or pyspark.sql.SparkSession.
     """
+
     def __init__(self, sc):
         if isinstance(sc, pyspark.sql.session.SparkSession):
             sc = sc._sc
         elif not isinstance(sc, SparkContext):
-            raise ValueError("Expected sc to be a SparkContext or SparkSession, got " % str(type(sc)))
+            raise ValueError(
+                "Expected sc to be a SparkContext or SparkSession, got " % str(
+                    type(sc)))
         self._sc = sc
         self._ml = createJavaObject(sc, 'mlcontext')
 
     def __repr__(self):
         return "MLContext"
-        
+
     def execute(self, script):
         """
         Execute a DML / PyDML script.
@@ -688,7 +751,7 @@ class MLContext(object):
         """
         self._ml.setGPU(bool(enable))
         return self
-    
+
     def setForceGPU(self, enable):
         """
         Whether or not to force the usage of GPU operators.
@@ -699,7 +762,7 @@ class MLContext(object):
         """
         self._ml.setForceGPU(bool(enable))
         return self
-        
+
     def setStatisticsMaxHeavyHitters(self, maxHeavyHitters):
         """
         The maximum number of heavy hitters that are printed as part of the statistics.

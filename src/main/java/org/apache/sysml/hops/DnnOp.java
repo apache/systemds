@@ -110,8 +110,6 @@ public class DnnOp extends MultiThreadedHop
 		if( getLops() != null )
 			return getLops();
 		
-		ExecType et = optFindExecType();
-		
 		ArrayList<Hop> inputs = getInput();
 		switch( op )
 		{
@@ -125,6 +123,7 @@ public class DnnOp extends MultiThreadedHop
 			case BIASADD:
 			case BIASMULT:
 			{	
+				ExecType et = optFindExecType();
 				if(et == ExecType.CP || et == ExecType.GPU) {
 					setLops(constructDnnLops(et, inputs));
 					break;
@@ -137,15 +136,15 @@ public class DnnOp extends MultiThreadedHop
 			case BATCH_NORM2D_TEST:
 			case CHANNEL_SUMS:
 			case UPDATE_NESTEROV_X:
+			case UPDATE_EMA_VAR:
+			case RESHAPE_COLMEANS:
+			case UPDATE_EMA:
+			case INV_VAR:
+			case BATCH_NORM2D_BACKWARD_DX:
 			{	
-				if(et == ExecType.GPU) {
-					setLops(constructDnnLops(et, inputs));
-					break;
-				}
-				else {
-					throw new HopsException("Unimplemented DnnOp for execution type: " + et.name());
-				}
-				// break;
+				// GPU-specific operators
+				setLops(constructDnnLops(ExecType.GPU, inputs));
+				break;
 			}
 			default: 
 				throw new HopsException("Unsupported lops construction for operation type '"+op+"'.");
@@ -171,10 +170,16 @@ public class DnnOp extends MultiThreadedHop
 				return 14;
 			case BIASADD:
 			case BIASMULT:
+			case INV_VAR:
 				return 2;
 			case BATCH_NORM2D_TEST:
 				return 6;
+			case UPDATE_EMA_VAR:
+			case BATCH_NORM2D_BACKWARD_DX:
+				return 5;
+			case RESHAPE_COLMEANS:
 			case CHANNEL_SUMS:
+			case UPDATE_EMA:
 				return 3;
 			case UPDATE_NESTEROV_X:
 				return 4;
@@ -532,7 +537,8 @@ public class DnnOp extends MultiThreadedHop
 		long[] ret = new long[3];
 		
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
-			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
 			// Same dimension as the first input
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
@@ -540,10 +546,18 @@ public class DnnOp extends MultiThreadedHop
 			ret[2] = -1;
 			return (ret[0]>=0 && ret[1]>=0) ? ret : null;
 		}
-		else if(op == OpOpDnn.CHANNEL_SUMS) {
+		else if(op == OpOpDnn.CHANNEL_SUMS || op == OpOpDnn.UPDATE_EMA_VAR) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
 			ret[0] = numChannels;
 			ret[1] = 1;
+			ret[2] = -1;
+			return ret;
+		}
+		else if(op == OpOpDnn.RESHAPE_COLMEANS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			long HW = Hop.computeSizeInformation(getInput().get(2));
+			ret[0] = numChannels;
+			ret[1] = HW;
 			ret[2] = -1;
 			return ret;
 		}
@@ -739,7 +753,9 @@ public class DnnOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.UPDATE_NESTEROV_X) {
+		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || 
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -747,10 +763,18 @@ public class DnnOp extends MultiThreadedHop
 			_nnz = -1; // cannot infer stats
 			return;
 		}
-		else if(op == OpOpDnn.CHANNEL_SUMS) {
+		else if(op == OpOpDnn.CHANNEL_SUMS || op == OpOpDnn.UPDATE_EMA_VAR) {
 			long numChannels = Hop.computeSizeInformation(getInput().get(1));
 			setDim1(numChannels);
 			setDim2(1);
+			_nnz = -1; // cannot infer stats
+			return;
+		}
+		else if(op == OpOpDnn.RESHAPE_COLMEANS) {
+			long numChannels = Hop.computeSizeInformation(getInput().get(1));
+			long HW = Hop.computeSizeInformation(getInput().get(2));
+			setDim1(numChannels);
+			setDim2(HW);
 			_nnz = -1; // cannot infer stats
 			return;
 		}
@@ -847,7 +871,9 @@ public class DnnOp extends MultiThreadedHop
 	 */
 	private long getDim(String dimString) {
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
-			op == OpOpDnn.UPDATE_NESTEROV_X) {
+			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.RESHAPE_COLMEANS ||
+			op == OpOpDnn.UPDATE_EMA_VAR || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {

@@ -2290,3 +2290,57 @@ extern "C" __global__ void update_nesterov_x_d(double *X, double *v, double *v_p
 extern "C" __global__ void update_nesterov_x_f(float *X, float *v, float *v_prev, double mu, float *out, unsigned int size) {
   update_nesterov_x(X, v, v_prev, mu, out, size);
 }
+
+// Performs the operation: C = a*X + b*C
+template <typename T>
+__device__ void aXplusbC(T *X, T *C, double a, double b, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = a*X[index] + b*C[index];
+  }
+}
+
+extern "C" __global__ void aXplusbC_d(double *X, double *C, double a, double b, unsigned int size) {
+  aXplusbC(X, C, a, b,size);
+}
+
+extern "C" __global__ void aXplusbC_f(float *X, float *C, double a, double b, unsigned int size) {
+  aXplusbC(X, C, a, b,size);;
+}
+
+
+// Performs the operation: C = a*X + b*Y
+template <typename T>
+__device__ void aXplusbY(T *X, T* Y, T *C, double a, double b, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = a*X[index] + b*Y[index];
+  }
+}
+
+extern "C" __global__ void aXplusbY_d(double *X, double* Y, double *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
+}
+
+extern "C" __global__ void aXplusbY_f(float *X, float* Y, float *C, double a, double b, unsigned int size) {
+  aXplusbY(X, Y, C, a, b, size);
+}
+
+
+// Performs the operation: C = 1 / sqrt(X + eps)
+template <typename T>
+__device__ void invVar(T *X, T *C, double eps, unsigned int size) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < size) {
+	C[index] = 1.0 / sqrt(X[index] + eps);
+  }
+}
+
+extern "C" __global__ void invVar_d(double *X, double *C, double eps, unsigned int size) {
+  invVar(X, C, eps, size);
+}
+
+extern "C" __global__ void invVar_f(float *X, float *C, double eps, unsigned int size) {
+  invVar(X, C, eps, size);
+}
+

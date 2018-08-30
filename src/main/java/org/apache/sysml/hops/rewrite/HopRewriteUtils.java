@@ -719,6 +719,26 @@ public class HopRewriteUtils
 		return ternOp;
 	}
 	
+	public static DnnOp createDnnOp(OpOpDnn op, Hop... hops) {
+		ArrayList<Hop> inHops = new ArrayList<Hop>();
+		for(Hop h : hops) {
+			inHops.add(h);
+		}
+		return  new DnnOp("tmp", DataType.MATRIX, ValueType.DOUBLE,
+				op, inHops);
+	}
+	
+	public static DnnOp createDnnOp(HopDagPatternMatcher matcher, OpOpDnn op, String... varNames) {
+		ArrayList<Hop> inHops = new ArrayList<Hop>();
+		for(String v : varNames) {
+			inHops.add(matcher.getMatchedHop(v));
+		}
+		return  new DnnOp("tmp", DataType.MATRIX, ValueType.DOUBLE,
+				op, inHops);
+	}
+	
+	
+	
 	public static void setOutputParameters( Hop hop, long rlen, long clen, int brlen, int bclen, long nnz ) {
 		hop.setDim1( rlen );
 		hop.setDim2( clen );

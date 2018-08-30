@@ -32,7 +32,8 @@ public class DnnTransform extends Lop
 		RELU_MAX_POOLING, RELU_MAX_POOLING_BACKWARD, RELU_BACKWARD,
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
-		UPDATE_NESTEROV_X
+		UPDATE_NESTEROV_X, RESHAPE_COLMEANS, UPDATE_EMA_VAR, UPDATE_EMA, INV_VAR,
+		BATCH_NORM2D_BACKWARD_DX
 	}
 	
 	private OperationTypes operation;
@@ -167,11 +168,26 @@ public class DnnTransform extends Lop
 		case CHANNEL_SUMS:
 			return "channel_sums";
 		
+		case INV_VAR:
+			return "inv_var";
+		
 		case UPDATE_NESTEROV_X:
 			return "update_nesterov_x";
 			
 		case BATCH_NORM2D_TEST:
 			return "batch_norm2d_test";
+		
+		case BATCH_NORM2D_BACKWARD_DX:
+			return "batch_norm2d_bwd_dx";
+			
+		case UPDATE_EMA_VAR:
+			return "update_ema_var";
+			
+		case UPDATE_EMA:
+			return "update_ema";
+			
+		case RESHAPE_COLMEANS:
+			return "reshape_colmeans";
 			
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
@@ -181,7 +197,8 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String bias, String output) {
-		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD) {
+		if(operation == OperationTypes.BIAS_ADD || operation == OperationTypes.BIAS_MULTIPLY || operation == OperationTypes.RELU_BACKWARD
+				|| operation == OperationTypes.INV_VAR) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
@@ -190,7 +207,7 @@ public class DnnTransform extends Lop
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(0).prepInputOperand(input));
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(0).prepInputOperand(bias));
+			sb.append( getInputs().get(1).prepInputOperand(bias));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));
@@ -212,7 +229,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input, String C, String HW, String output) {
-		if(operation == OperationTypes.CHANNEL_SUMS) {
+		if(operation == OperationTypes.CHANNEL_SUMS || operation == OperationTypes.RESHAPE_COLMEANS || operation == OperationTypes.UPDATE_EMA) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			
@@ -296,6 +313,34 @@ public class DnnTransform extends Lop
 			sb.append( getInputs().get(4).prepInputOperand(input5));
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( getInputs().get(5).prepInputOperand(input6));
+			//output
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( this.prepOutputOperand(output));
+			
+			return sb.toString();
+		}
+		else {
+			throw new LopsException("The operation is not supported with six operands:" + operation.name());
+		}
+	}
+	
+	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) {
+		if(operation == OperationTypes.UPDATE_EMA_VAR || operation == OperationTypes.BATCH_NORM2D_BACKWARD_DX) {
+			StringBuilder sb = new StringBuilder();
+			sb.append( getExecType() );
+			
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getOpcode() );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(0).prepInputOperand(input1));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(1).prepInputOperand(input2));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(2).prepInputOperand(input3));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(3).prepInputOperand(input4));
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( getInputs().get(4).prepInputOperand(input5));
 			//output
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( this.prepOutputOperand(output));

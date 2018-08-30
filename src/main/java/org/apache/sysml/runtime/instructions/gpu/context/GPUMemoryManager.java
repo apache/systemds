@@ -242,7 +242,7 @@ public class GPUMemoryManager {
 	 * @return allocated pointer
 	 */
 	public Pointer malloc(String opcode, long size) {
-		if(size < 0) {
+		if(size <= 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + byteCountToDisplaySize(size));
 		}
 		if(DEBUG_MEMORY_LEAK) {

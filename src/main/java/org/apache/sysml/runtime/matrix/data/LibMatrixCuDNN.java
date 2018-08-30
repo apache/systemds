@@ -1108,23 +1108,29 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				runningMeanPtr, runningVarPtr, epsilon));
 	}
 	
+	private static void validateDimensions(MatrixObject mo, long expectedRows, long expectedCols) {
+		if(mo.getNumRows() != expectedRows || mo.getNumColumns() != expectedCols) {
+			throw new DMLRuntimeException("Incorrect dimensions for the input matrix object. Expected [" + expectedRows + ", " +  expectedCols+ "], but found "
+					+ "[" + mo.getNumRows() + ", " + mo.getNumColumns() + "].");
+		}
+	}
+	
 	/**
-	 * This method computes the backpropagation errors for image, scale and bias of batch normalization layer
+	 * This method computes the backpropagation errors for image of batch normalization layer
 	 * @param gCtx   a valid {@link GPUContext}
 	 * @param instName name of the instruction
 	 * @param image input image
 	 * @param dout input errors of shape C, H, W
 	 * @param scale scale (as per CuDNN) and gamma as per original paper: shape [1, C, 1, 1]
 	 * @param dX (output) backpropagation errors for previous layer
-	 * @param dScale backpropagation error for scale
-	 * @param dBias backpropagation error for bias
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @param resultSaveMean (input) running mean accumulated during training phase: shape [1, C, 1, 1]
 	 * @param resultSaveInvVariance (input) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public static void batchNormalizationBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
-			MatrixObject scale, MatrixObject dX, MatrixObject dScale, MatrixObject dBias,
+	public static void batchNormalizationBackwardDX(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
+			MatrixObject scale, MatrixObject dX, 
+			// MatrixObject dScale, MatrixObject dBias,
 			double epsilon, MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : batchNormalizationBackward" + ", GPUContext=" + gCtx);
@@ -1133,7 +1139,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		int N = toInt(image.getNumRows());
 		int C = toInt(scale.getNumRows());
 		long CHW = image.getNumColumns();
-
+		
+		validateDimensions(scale, C, 1);
+		validateDimensions(dX, N, CHW);
+		validateDimensions(dout, N, CHW);
+		validateDimensions(resultSaveMean, C, 1);
+		validateDimensions(resultSaveInvVariance, C, 1);
+		
 		// Allocate descriptors
 		cudnnTensorDescriptor nCHWDescriptor = allocateNCHWDescriptors(gCtx, N, C, CHW,
 				new MatrixObject[] {image, dout},  new MatrixObject[] {dX});
@@ -1144,18 +1156,17 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		Pointer doutPtr = getDensePointerForCuDNN(gCtx, dout, instName);
 		Pointer scalePtr = getDensePointerForCuDNN(gCtx, scale, instName);
 		Pointer dXPtr = getDensePointerForCuDNN(gCtx, dX, instName);
-		Pointer dScalePtr = getDensePointerForCuDNN(gCtx, dScale, instName);
-		Pointer dBiasPtr = getDensePointerForCuDNN(gCtx, dBias, instName);
-		
+		Pointer dScalePtr = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType); // getDensePointerForCuDNN(gCtx, dScale, instName);
+		Pointer dBiasPtr = gCtx.allocate(instName, C*LibMatrixCUDA.sizeOfDataType); //getDensePointerForCuDNN(gCtx, dBias, instName);		
 		Pointer resultSaveMeanPtr = getDensePointerForCuDNN(gCtx, resultSaveMean, instName);
 		Pointer resultSaveInvVariancePtr = getDensePointerForCuDNN(gCtx, resultSaveInvVariance, instName);
 
-
-		// ignoring resultSaveMean and resultSaveVariance as it requires state management
-		checkStatus(cudnnBatchNormalizationBackward(getCudnnHandle(gCtx), 
+		cudnnBatchNormalizationBackward(getCudnnHandle(gCtx), 
 				jcuda.jcudnn.cudnnBatchNormMode.CUDNN_BATCHNORM_SPATIAL,  one(), zero(), one(), zero(),
 				nCHWDescriptor,  imagePtr, nCHWDescriptor, doutPtr, nCHWDescriptor, dXPtr,
-				scaleTensorDesc, scalePtr, dScalePtr, dBiasPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr));
+				scaleTensorDesc, scalePtr, dScalePtr, dBiasPtr, epsilon, resultSaveMeanPtr, resultSaveInvVariancePtr);
+		gCtx.cudaFreeHelper(instName, dScalePtr, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, dBiasPtr, gCtx.EAGER_CUDA_FREE);
 	}
 	
 	private static void validateBatchNormalizationDimensions(MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar, int C) throws DMLRuntimeException {

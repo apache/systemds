@@ -208,7 +208,7 @@ public class LibMatrixCUDA {
 		return gCtx.getCusparseHandle();
 	}
 
-	protected static cublasHandle getCublasHandle(GPUContext gCtx) {
+	public static cublasHandle getCublasHandle(GPUContext gCtx) {
 		return gCtx.getCublasHandle();
 	}
 
@@ -302,7 +302,7 @@ public class LibMatrixCUDA {
 		}
 	}
 	
-	protected static Pointer dataTypePointerTo(double value) {
+	public static Pointer dataTypePointerTo(double value) {
 		if(value == 1) {
 			return one();
 		}
@@ -313,7 +313,6 @@ public class LibMatrixCUDA {
 			return _dataTypePointerTo(value);
 		}
 	}
-	
 
 	/**
 	 * This method computes the backpropagation errors for previous layer of relu operation
@@ -753,11 +752,11 @@ public class LibMatrixCUDA {
 				break;
 			}
 			case REDUCTION_COL: {
-				reduceRow(gCtx, instName, "reduce_row_mean", in, out, rlen, clen);
+				rowMeans(gCtx, instName, in, out, rlen, clen);
 				break;
 			}
 			case REDUCTION_ROW: {
-				reduceCol(gCtx, instName, "reduce_col_mean", in, out, rlen, clen);
+				colMeans(gCtx, instName, in, out, rlen, clen);
 				break;
 			}
 			default:
@@ -818,13 +817,14 @@ public class LibMatrixCUDA {
 			break;
 		}
 		case OP_VARIANCE : {
-			// Temporary GPU array for
-			Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
-			Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+			
 
 			switch(reductionDirection) {
 
 			case REDUCTION_ALL: {
+				// Temporary GPU array for
+				Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
+				Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
 				double result = reduceAll(gCtx, instName, "reduce_sum", in, size);
 				double mean = result / size;
 
@@ -837,50 +837,21 @@ public class LibMatrixCUDA {
 				double result2 = reduceAll(gCtx, instName, "reduce_sum", tmp2, size);
 				double variance = result2 / (size - 1);
 				ec.setScalarOutput(output, new DoubleObject(variance));
-
+				gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, tmp2, gCtx.EAGER_CUDA_FREE);
 				break;
 			}
 			case REDUCTION_COL: {
-				reduceRow(gCtx, instName, "reduce_row_mean", in, out, rlen, clen);
-				// Subtract the row-wise mean from every element in the matrix
-				BinaryOperator minusOp = new BinaryOperator(Minus.getMinusFnObject());
-				matrixMatrixOp(gCtx, instName, in, out, rlen, clen, VectorShape.NONE.code(), VectorShape.COLUMN.code(), tmp, minusOp);
-
-				squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
-
-				Pointer tmpRow = gCtx.allocate(instName, rlen * sizeOfDataType);
-				reduceRow(gCtx, instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
-
-				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
-				matrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
-
-				gCtx.cudaFreeHelper(instName, tmpRow, gCtx.EAGER_CUDA_FREE);
-
+				rowVars(gCtx, instName, in, out, rlen, clen);
 				break;
 			}
 			case REDUCTION_ROW: {
-				reduceCol(gCtx, instName, "reduce_col_mean", in, out, rlen, clen);
-				// Subtract the columns-wise mean from every element in the matrix
-				BinaryOperator minusOp = new BinaryOperator(Minus.getMinusFnObject());
-				matrixMatrixOp(gCtx, instName, in, out, rlen, clen, VectorShape.NONE.code(), VectorShape.ROW.code(), tmp, minusOp);
-
-				squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
-
-				Pointer tmpCol = gCtx.allocate(instName, clen * sizeOfDataType);
-				reduceCol(gCtx, instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
-
-				ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
-				matrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
-
-				gCtx.cudaFreeHelper(instName, tmpCol, gCtx.EAGER_CUDA_FREE);
-
+				colVars(gCtx, instName, in, out, rlen, clen);
 				break;
 			}
 			default:
 				throw new DMLRuntimeException("Internal Error - Unsupported reduction direction for variance");
 			}
-			gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
-			gCtx.cudaFreeHelper(instName, tmp2, gCtx.EAGER_CUDA_FREE);
 			break;
 		}
 		case OP_MAXINDEX : {
@@ -903,6 +874,59 @@ public class LibMatrixCUDA {
 		}
 		default : throw new DMLRuntimeException("Internal Error - Invalid GPU Unary aggregate function!");
 		}
+	}
+	
+	public static void rowMeans(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
+		LibMatrixCUDA.reduceRow(gCtx, instName, "reduce_row_mean", in, out, rlen, clen);
+	}
+	
+	public static void colMeans(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
+		reduceCol(gCtx, instName, "reduce_col_mean", in, out, rlen, clen);
+	}
+	
+	public static void colVars(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
+		int size = rlen * clen;
+		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
+		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+		reduceCol(gCtx, instName, "reduce_col_mean", in, out, rlen, clen);
+		// Subtract the columns-wise mean from every element in the matrix
+		BinaryOperator minusOp = new BinaryOperator(Minus.getMinusFnObject());
+		matrixMatrixOp(gCtx, instName, in, out, rlen, clen, VectorShape.NONE.code(), VectorShape.ROW.code(), tmp, minusOp);
+
+		squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
+
+		Pointer tmpCol = gCtx.allocate(instName, clen * sizeOfDataType);
+		reduceCol(gCtx, instName, "reduce_col_sum", tmp2, tmpCol, rlen, clen);
+
+		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), rlen - 1);
+		matrixScalarOp(gCtx, instName, tmpCol, rlen - 1, 1, clen, out, divideOp);
+
+		gCtx.cudaFreeHelper(instName, tmpCol, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmp2, gCtx.EAGER_CUDA_FREE);
+	}
+	
+	public static void rowVars(GPUContext gCtx, String instName, Pointer in, Pointer out, int rlen, int clen) {
+		int size = rlen * clen;
+		Pointer tmp = gCtx.allocate(instName, size * sizeOfDataType);
+		Pointer tmp2 = gCtx.allocate(instName, size * sizeOfDataType);
+		
+		reduceRow(gCtx, instName, "reduce_row_mean", in, out, rlen, clen);
+		// Subtract the row-wise mean from every element in the matrix
+		BinaryOperator minusOp = new BinaryOperator(Minus.getMinusFnObject());
+		matrixMatrixOp(gCtx, instName, in, out, rlen, clen, VectorShape.NONE.code(), VectorShape.COLUMN.code(), tmp, minusOp);
+
+		squareMatrix(gCtx, instName, tmp, tmp2, rlen, clen);
+
+		Pointer tmpRow = gCtx.allocate(instName, rlen * sizeOfDataType);
+		reduceRow(gCtx, instName, "reduce_row_sum", tmp2, tmpRow, rlen, clen);
+
+		ScalarOperator divideOp = new RightScalarOperator(Divide.getDivideFnObject(), clen - 1);
+		matrixScalarOp(gCtx, instName, tmpRow, clen - 1, rlen, 1, out, divideOp);
+
+		gCtx.cudaFreeHelper(instName, tmpRow, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmp2, gCtx.EAGER_CUDA_FREE);
 	}
 
 	/**
@@ -970,7 +994,7 @@ public class LibMatrixCUDA {
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
 	 */
-	private static void reduceRow(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
+	public static void reduceRow(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceRow for " + kernelFunction + ", GPUContext=" + gCtx);
 		}
@@ -997,7 +1021,7 @@ public class LibMatrixCUDA {
 	 * @param rows						number of rows in input matrix
 	 * @param cols						number of columns in input matrix
 	 */
-	private static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
+	public static void reduceCol(GPUContext gCtx, String instName, String kernelFunction, Pointer in, Pointer out, int rows, int cols) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceCol for " + kernelFunction + ", GPUContext=" + gCtx);
 		}

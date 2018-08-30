@@ -83,8 +83,41 @@ forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
    *  - cache_inv_var: Cache of the inverse variance, of shape (C, 1).
    *      Note: This is used for performance during training.
    */
-  out = X; ema_mean_upd = ema_mean; ema_var_upd = ema_var;  cache_mean = ema_mean;  cache_inv_var = ema_var
-  [out, ema_mean_upd, ema_var_upd, cache_mean, cache_inv_var] = batch_norm2d(X, gamma, beta, ema_mean, ema_var, mode, epsilon, mu)
+  N = nrow(X)
+
+  if (mode == 'train') {
+    # Compute channel-wise mean and variance
+    # Since we don't have tensors, we will compute the means and variances in a piece-wise fashion.
+    #  - mean of total group is mean of subgroup means
+    #  - variance is the mean of the subgroup variances + the variance of the subgroup means
+    subgrp_means = matrix(colMeans(X), rows=C, cols=Hin*Win)
+    subgrp_vars = matrix(colVars(X) * ((N-1)/N), rows=C, cols=Hin*Win)  # uncorrected variances
+    mean = rowMeans(subgrp_means)  # shape (C, 1)
+    var = rowMeans(subgrp_vars) + rowVars(subgrp_means)*(((Hin*Win)-1)/(Hin*Win))  # shape (C, 1)
+    # Update moving averages
+    ema_mean_upd = mu*ema_mean + (1-mu)*mean
+    ema_var_upd = mu*ema_var + (1-mu)*var
+  }
+  else {
+    # Use moving averages of mean and variance during testing
+    mean = ema_mean
+    var = ema_var
+    ema_mean_upd = ema_mean
+    ema_var_upd = ema_var
+  }
+
+  # Save variable for backward pass
+  cache_mean = mean
+  cache_inv_var = 1/sqrt(var+epsilon)
+  
+  # Normalize, shift, and scale
+  # norm = (X-mean)*(var+epsilon)^(-1/2)
+  #      = (X-mean) / sqrt(var+epsilon)
+  centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
+  norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
+  # out = norm*gamma + beta
+  scaled = bias_multiply(norm, gamma)  # shape (N, C*Hin*Win)
+  out = bias_add(scaled, beta)  # shape (N, C*Hin*Win)
 }
 
 backward = function(matrix[double] dout, 
@@ -119,9 +152,27 @@ backward = function(matrix[double] dout,
    *  - dbeta: Gradient wrt `b`, of shape (C, 1).
    *
    */
+  N = nrow(X)
+  oneByN = 1/N
+  oneByHW = 1/(Hin*Win)
+  
+  mean = cache_mean
+  centered = bias_add(X, -mean)  # shape (N, C*Hin*Win)
+  norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
   # Compute gradients during training
-  dX = X; dgamma = gamma; dbeta = gamma;
-  [dX, dgamma, dbeta] = batch_norm2d_backward(X, dout, gamma, epsilon, cache_mean, cache_inv_var)
+  dgamma = util::channel_sums(dout*norm, C, Hin, Win)  # shape (C, 1)
+  dbeta = util::channel_sums(dout, C, Hin, Win)  # shape (C, 1)
+  dnorm = bias_multiply(dout, gamma)  # shape (N, C*Hin*Win)
+  dvar = util::channel_sums((-1/2) * bias_multiply(centered, cache_inv_var^3) * dnorm,
+                          C, Hin, Win)  # shape (C, 1)
+  dmean_norm_branch = util::channel_sums(bias_multiply(dnorm, -cache_inv_var), C, Hin, Win)
+  dmean_var_branch =  util::channel_sums((-2*oneByN*oneByHW) * centered, C, Hin, Win)
+  dmean_var_branch = dmean_var_branch * dvar  # we can't use a function within an expression yet
+  dmean = dmean_norm_branch + dmean_var_branch  # shape (C, 1)
+  dX_norm_branch = bias_multiply(dnorm, cache_inv_var)
+  dX_mean_branch = (oneByN*oneByHW) * bias_add(matrix(0, rows=1, cols=C*Hin*Win), dmean)
+  dX_var_branch = (2*oneByN*oneByHW) * bias_multiply(centered, dvar)
+  dX = dX_norm_branch + dX_mean_branch + dX_var_branch  # shape (N, C*Hin*Win)
 }
 
 init = function(int C)
@@ -149,3 +200,4 @@ init = function(int C)
    ema_mean = matrix(0, rows=C, cols=1)
    ema_var = matrix(1, rows=C, cols=1)
 }
+

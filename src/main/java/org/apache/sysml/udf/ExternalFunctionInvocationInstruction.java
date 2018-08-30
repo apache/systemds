@@ -33,6 +33,7 @@ import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -78,7 +79,6 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 		verifyAndAttachOutputs(ec, fun, outputs);
 	}
 	
-	@SuppressWarnings("incomplete-switch")
 	private ArrayList<FunctionParameter> getInputObjects(CPOperand[] inputs, LocalVariableMap vars) {
 		ArrayList<FunctionParameter> ret = new ArrayList<>();
 		for( CPOperand input : inputs ) {
@@ -94,6 +94,12 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 				case OBJECT:
 					ret.add(new BinaryObject(vars.get(input.getName())));
 					break;
+				case LIST:
+					ret.add(new List((ListObject) vars.get(input.getName())));
+					break;
+				default:
+					throw new DMLRuntimeException("Unsupported data type: "
+							+input.getDataType().name());
 			}
 		}
 		return ret;
@@ -125,11 +131,14 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 			CPOperand output = outputs[i];
 			switch( fun.getFunctionOutput(i).getType() ) {
 				case Matrix:
+				{
 					Matrix m = (Matrix) fun.getFunctionOutput(i);
 					MatrixObject newVar = createOutputMatrixObject( m );
 					ec.setVariable(output.getName(), newVar);
 					break;
+				}
 				case Scalar:
+				{
 					Scalar s = (Scalar) fun.getFunctionOutput(i);
 					ScalarObject scalarObject = null;
 					switch( s.getScalarType() ) {
@@ -151,6 +160,13 @@ public class ExternalFunctionInvocationInstruction extends Instruction
 					}
 					ec.setVariable(output.getName(), scalarObject);
 					break;
+				}
+				case List:
+				{
+					List l = (List) fun.getFunctionOutput(i);
+					ec.setVariable(output.getName(), l.getListObject());
+					break;
+				}
 				default:
 					throw new DMLRuntimeException("Unsupported data type: "
 						+fun.getFunctionOutput(i).getType().name());

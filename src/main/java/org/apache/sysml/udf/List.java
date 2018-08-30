@@ -16,50 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysml.udf;
 
-import java.io.Serializable;
+import org.apache.sysml.runtime.instructions.cp.ListObject;
 
-/**
- * abstract class to represent all input and output objects for package
- * functions.
- * 
- * 
- * 
- */
+public class List extends FunctionParameter {
+	private static final long serialVersionUID = -3230908817131624857L;
+	protected ListObject _lObj;
 
-public abstract class FunctionParameter implements Serializable
-{
-	
-
-	private static final long serialVersionUID = 1189133371204708466L;
-	
-	public enum FunctionParameterType{
-		Matrix, 
-		Scalar, 
-		Object,
-		List
+	public List(ListObject obj) {
+		super(FunctionParameterType.List);
+		_lObj = obj;
 	}
 	
-	private FunctionParameterType _type;
-
-	/**
-	 * Constructor to set type
-	 * 
-	 * @param type function parameter type
-	 */
-	public FunctionParameter(FunctionParameterType type) {
-		_type = type;
-	}
-
-	/**
-	 * Method to get type
-	 * 
-	 * @return function parameter type
-	 */
-	public FunctionParameterType getType() {
-		return _type;
+	public ListObject getListObject() {
+		return _lObj;
 	}
 
 }

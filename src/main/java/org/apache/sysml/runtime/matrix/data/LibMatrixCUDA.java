@@ -946,6 +946,7 @@ public class LibMatrixCUDA {
 	/**
 	 * Do a simple reduction, the output of which is a single value
 	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName		  instruction name
 	 * @param kernelFunction 	name of the kernel function to invoke
 	 * @param in							{@link Pointer} to matrix in device memory
 	 * @param n								size of array
@@ -988,6 +989,7 @@ public class LibMatrixCUDA {
 	 * Do a reduction by row. Data is reduced per row and the
 	 * resulting vector is calculated.
 	 * @param gCtx            a valid {@link GPUContext}
+	 * @param instName		  instruction name
 	 * @param kernelFunction 	name of the kernel function to invoke
 	 * @param in							{@link Pointer} to input matrix in device memory (size - rows * columns)
 	 * @param out							{@link Pointer} to output matrix in device memory (size - rows * 1)
@@ -1015,6 +1017,7 @@ public class LibMatrixCUDA {
 	 * Do a reduction by column. Data is reduced per column and the
 	 * resulting vector is calculated.
 	 * @param gCtx            a valid {@link GPUContext}
+	 * @param instName		  instruction name
 	 * @param kernelFunction 	name of the kernel function to invoke
 	 * @param in							{@link Pointer} to input matrix in device memory (size - rows * columns)
 	 * @param out							{@link Pointer} to output matrix in device memory (size - 1 * cols)

@@ -49,12 +49,11 @@ import org.apache.sysml.udf.Matrix.ValueType;
  * W = X*sum(X);
  * inL = list(Y, Z, W)
  * [outL, idx] = distinct(inL);
- * print(">>\n" + toString(idx));
+ * print(toString(idx));
  * </code>
  * </pre>
  * 
  * The above code prints:
- * >>
  * 1.000
  * 2.000
  * 1.000

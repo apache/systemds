@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
@@ -122,7 +121,7 @@ public class ProgramRewriter
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )
 		{
-			if ( DMLScript.USE_ACCELERATOR ){
+			if ( ConfigurationManager.isGPU() ){
 				_dagRuleSet.add( new RewriteGPUSpecificOps() );	// gpu-specific rewrites
 			}
 			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES) {

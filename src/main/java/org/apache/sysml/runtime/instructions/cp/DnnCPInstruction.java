@@ -22,7 +22,7 @@ package org.apache.sysml.runtime.instructions.cp;
 import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -589,7 +589,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	 * @param sparsity sparsity of intermediate matrix used per thread
 	 */
 	private void resetNumThreads(DnnParameters params, int numRows, int numCols, double sparsity) {
-		if(DMLScript.USE_ACCELERATOR) {
+		if(ConfigurationManager.isGPU()) {
 			double memBudget1Thread = OptimizerUtils.estimateSizeExactSparsity(numRows, numCols, sparsity);
 			int limitedDegreeOfParallelism = (int) Math.floor(_intermediateMemoryBudget / memBudget1Thread);
 			if(params.numThreads > limitedDegreeOfParallelism) {

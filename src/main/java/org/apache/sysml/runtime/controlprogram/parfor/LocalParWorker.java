@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.controlprogram.parfor;
 
 import java.util.Collection;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -79,7 +78,7 @@ public class LocalParWorker extends ParWorker implements Runnable
 		}
 
 		// Initialize this GPUContext to this thread
-		if (DMLScript.USE_ACCELERATOR) {
+		if (ConfigurationManager.isGPU()) {
 			try {
 				_ec.getGPUContext(0).initializeThread();
 			} catch(DMLRuntimeException e) {

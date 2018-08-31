@@ -21,7 +21,7 @@ package org.apache.sysml.hops.recompile;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
@@ -463,7 +463,7 @@ public class LiteralReplacement
 	private static double replaceUnaryAggregate( AggUnaryOp auop, MatrixBlock mb )
 	{
 		//setup stats reporting if necessary
-		boolean REPORT_STATS = (DMLScript.STATISTICS && REPORT_LITERAL_REPLACE_OPS_STATS); 
+		boolean REPORT_STATS = (ConfigurationManager.isStatistics() && REPORT_LITERAL_REPLACE_OPS_STATS); 
 		long t0 = REPORT_STATS ? System.nanoTime() : 0;
 		
 		//compute required unary aggregate 

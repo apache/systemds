@@ -340,7 +340,7 @@ public class SpoofCompiler
 		if( roots == null || roots.isEmpty() )
 			return roots;
 	
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		ArrayList<Hop> ret = roots;
 		
 		try
@@ -406,14 +406,14 @@ public class SpoofCompiler
 					if( PLAN_CACHE_POLICY!=PlanCachePolicy.NONE )
 						planCache.putPlan(tmp.getValue(), cla);
 				}
-				else if( DMLScript.STATISTICS ) {
+				else if( ConfigurationManager.isStatistics() ) {
 					Statistics.incrementCodegenOpCacheHits();
 				}
 				
 				//make class available and maintain hits
 				if(cla != null)
 					clas.put(cplan.getKey(), new Pair<Hop[],Class<?>>(tmp.getKey(),cla));
-				if( DMLScript.STATISTICS )
+				if( ConfigurationManager.isStatistics() )
 					Statistics.incrementCodegenOpCacheTotal();
 			}
 			
@@ -438,7 +438,7 @@ public class SpoofCompiler
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( DMLScript.STATISTICS ) {
+		if( ConfigurationManager.isStatistics() ) {
 			Statistics.incrementCodegenDAGCompile();
 			Statistics.incrementCodegenCompileTime(System.nanoTime()-t0);
 		}
@@ -559,7 +559,7 @@ public class SpoofCompiler
 			cplans.put(hop.getHopID(), TemplateUtils
 					.createTemplate(memo.getBest(hop.getHopID()).type)
 					.constructCplan(hop, memo, compileLiterals));
-			if (DMLScript.STATISTICS)
+			if (ConfigurationManager.isStatistics())
 				Statistics.incrementCodegenCPlanCompile(1);
 		}
 		
@@ -726,7 +726,7 @@ public class SpoofCompiler
 				}
 				else if( OptimizerUtils.isSparkExecutionMode() ) {
 					Hop hop = memo.getHopRefs().get(e.getKey());
-					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+					boolean isSpark = ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SPARK
 						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
 					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?

@@ -19,8 +19,8 @@
 
 package org.apache.sysml.runtime.controlprogram.context;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
@@ -45,7 +45,7 @@ public class ExecutionContextFactory
 	{
 		ExecutionContext ec = null;
 		
-		switch( DMLScript.rtplatform )
+		switch( ConfigurationManager.getExecutionMode() )
 		{
 			case SINGLE_NODE:
 				//NOTE: even in case of forced singlenode operations, users might still 

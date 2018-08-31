@@ -42,13 +42,13 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import scala.Tuple2;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.utils.Statistics;
+import org.apache.sysml.conf.ConfigurationManager;
 
 /**
  * This class serves two purposes: (1) isolating Spark imports to enable running in 
@@ -73,7 +73,7 @@ public class RemoteParForSpark
 		ExecutionContext ec, ArrayList<ResultVar> resultVars, boolean cpCaching, int numMappers, boolean topLevelPF)
 	{
 		String jobname = "ParFor-ESP";
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaSparkContext sc = sec.getSparkContext();
@@ -111,7 +111,7 @@ public class RemoteParForSpark
 		//maintain statistics
 		Statistics.incrementNoOfCompiledSPInst();
 		Statistics.incrementNoOfExecutedSPInst();
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.maintainCPHeavyHitters(jobname, System.nanoTime()-t0);
 		
 		return ret;

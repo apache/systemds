@@ -19,7 +19,7 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.DnnTransform.OperationTypes;
@@ -98,7 +98,7 @@ public class DnnOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(!DMLScript.USE_ACCELERATOR)
+		if(!ConfigurationManager.isGPU())
 			return false;
 		return true;
 	}
@@ -349,7 +349,7 @@ public class DnnOp extends MultiThreadedHop
 	{		
 		if(getOp() == OpOpDnn.BIASMULT) {
 			// in non-gpu mode, the worst case size of bias multiply operation is same as that of input.
-			if(DMLScript.USE_ACCELERATOR) 
+			if(ConfigurationManager.isGPU()) 
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 			else
 				return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, getInput().get(0).getSparsity());
@@ -436,7 +436,7 @@ public class DnnOp extends MultiThreadedHop
 			ArrayList<IntermediateDimensions> cpIntermediates) {
 		// Since CP operators use row-level parallelism by default
 		int numWorkers = (int) Math.min(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), Math.max(getDim("N"), 1));
-		if(DMLScript.USE_ACCELERATOR) {
+		if(ConfigurationManager.isGPU()) {
 			// Account for potential sparse-to-dense conversion
 			double gpuMemBudget = IntermediateDimensions.addEstimateSizes(gpuIntermediates, 1);
 			double cpMemoryBudget = IntermediateDimensions.addEstimateSizes(cpIntermediates, numWorkers);

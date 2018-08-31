@@ -51,17 +51,17 @@ public abstract class GPUTests extends AutomatedTestBase {
 
 	// To run the test until this issue is resolved
 	protected final static boolean IGNORE_CLEAR_MEMORY_BUG = true;
-	
+
 	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
 	protected static SparkSession spark;
 	protected final double DOUBLE_PRECISION_THRESHOLD = 1e-9;    // for relative error
 	private static final boolean PRINT_MAT_ERROR = false;
-	
-	// We will use this flag until lower precision is supported on CP. 
-	private final static String FLOATING_POINT_PRECISION = "double";  
+
+	// We will use this flag until lower precision is supported on CP.
+	private final static String FLOATING_POINT_PRECISION = "double";
 	protected final double SINGLE_PRECISION_THRESHOLD = 1e-3;    // for relative error
-	
-	
+
+
 	@BeforeClass
 	public static void beforeClass() {
 		spark = createSystemMLSparkSession("GPUTests", "local");
@@ -82,13 +82,13 @@ public abstract class GPUTests extends AutomatedTestBase {
 		else if(FLOATING_POINT_PRECISION.equals("single"))  return SINGLE_PRECISION_THRESHOLD;
 		else throw new RuntimeException("Unsupported precision:" + FLOATING_POINT_PRECISION);
 	}
-	
+
 	// force junit to run only 1 GPU test at a time to avoid cascading failures.
 	Lock sequential = new ReentrantLock();
 	@Override
 	public void setUp() {
-	    sequential.lock();
-	    
+		sequential.lock();
+
 	}
 	@After
 	public void tearDown() {
@@ -106,7 +106,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			int freeCount = GPUContextPool.getAvailableCount();
 			Assert.assertTrue("All GPUContexts have not been returned to the GPUContextPool", count == freeCount);
 
-			List<GPUContext> gCtxs = GPUContextPool.reserveAllGPUContexts();
+			List<GPUContext> gCtxs = GPUContextPool.getAllGPUContexts();
 			for (GPUContext gCtx : gCtxs) {
 				gCtx.initializeThread();
 				try {
@@ -116,7 +116,6 @@ public abstract class GPUTests extends AutomatedTestBase {
 						throw e;
 				}
 			}
-			GPUContextPool.freeAllGPUContexts();
 
 
 		} catch (DMLRuntimeException e) {
@@ -135,7 +134,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		MLContext genMLC = new MLContext(spark);
 		String scriptStr;
 		scriptStr = "temp = seq(1, " + (m*n) + ")" +
-				    "in1 = matrix(temp, rows=" + m + ", cols=" + n + ")";
+				"in1 = matrix(temp, rows=" + m + ", cols=" + n + ")";
 		Script generateScript = ScriptFactory.dmlFromString(scriptStr).out("in1");
 		Matrix in1 = genMLC.execute(generateScript).getMatrix("in1");
 		genMLC.close();
@@ -166,7 +165,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		genMLC.close();
 		return in1;
 	}
-	
+
 	/**
 	 * Generates a random input matrix with a given size and sparsity
 	 *
@@ -211,7 +210,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		genMLC.close();
 		return in1;
 	}
-	
+
 	private void printMatrixIfNotEqual(MatrixBlock expectedMB, MatrixBlock actualMB, double threshold) {
 		long rows = expectedMB.getNumRows();
 		long cols = expectedMB.getNumColumns();
@@ -235,7 +234,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 				for (int j = 0; j < cols; j++) {
 					double expectedDouble = expectedMB.quickGetValue(i, j);
 					double actualDouble = actualMB.quickGetValue(i, j);
-					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble)) 
+					if (expectedDouble != 0.0 && !Double.isNaN(expectedDouble) && Double.isFinite(expectedDouble))
 						System.out.print("(" + i + "," + j  + " : " + expectedDouble + " != " + actualDouble + ") ");
 				}
 			}
@@ -262,7 +261,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			cpuMLC.close();
 			if(num_mismatch == 0)
 				return;
-			
+
 			// If error, print the actual incorrect values
 			MatrixBlock expectedMB = expected.toMatrixObject().acquireRead();
 			MatrixBlock actualMB = actual.toMatrixObject().acquireRead();
@@ -273,7 +272,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			Assert.assertEquals(cols, actualMB.getNumColumns());
 
 			if(PRINT_MAT_ERROR) printMatrixIfNotEqual(expectedMB, actualMB, threshold);
-			
+
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
 					double expectedDouble = expectedMB.quickGetValue(i, j);
@@ -311,7 +310,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 		Set<String> heavyHitterOpCodes = Statistics.getCPHeavyHitterOpCodes();
 		Assert.assertTrue(heavyHitterOpCodes.contains(heavyHitterOpCode));
 	}
-	
+
 	/**
 	 * asserts that the expected op was executed
 	 *
@@ -332,7 +331,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return list of output objects in order of outStrs
 	 */
 	protected List<Object> runOnCPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
-			List<String> outStrs) {
+									List<String> outStrs) {
 		MLContext cpuMLC = new MLContext(spark);
 		List<Object> outputs = new ArrayList<>();
 		Script script = ScriptFactory.dmlFromString(scriptStr).in(inputs).out(outStrs);
@@ -355,7 +354,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * @return list of output objects in order of outStrs
 	 */
 	protected List<Object> runOnGPU(SparkSession spark, String scriptStr, Map<String, Object> inputs,
-			List<String> outStrs) {
+									List<String> outStrs) {
 		// Ensure that only one instance of ml.execute runs at a time to avoid incorrect memory estimates
 		// and other side effects.
 		synchronized(GPUTests.class) {
@@ -378,7 +377,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 			return outputs;
 		}
 	}
-	
+
 	/**
 	 * Assert that the two objects are equal. Supported types are Boolean, Integer, String, Double and Matrix
 	 *
@@ -393,7 +392,7 @@ public abstract class GPUTests extends AutomatedTestBase {
 	 * Assert that the two objects are equal. Supported types are Boolean, Integer, String, Double and Matrix
 	 *
 	 * @param expected expected value
-	 * @param actual actual value 
+	 * @param actual actual value
 	 * @param threshold relative error threshold
 	 */
 	protected void assertEqualObjects(Object expected, Object actual, double threshold) {

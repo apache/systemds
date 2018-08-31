@@ -32,7 +32,6 @@ import static jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT;
 import static jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
 import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
@@ -301,7 +300,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		}
 		if(sizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, workSpace, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, workSpace, gCtx.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}
@@ -309,7 +308,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		workSpace = null;
 		if(reserveSpaceSizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, reserveSpace, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, reserveSpace, gCtx.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}
@@ -317,7 +316,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		reserveSpace = null;
 		if(dropOutSizeInBytes != 0) {
 			try {
-				gCtx.cudaFreeHelper(instName, dropOutStateSpace, DMLScript.EAGER_CUDA_FREE);
+				gCtx.cudaFreeHelper(instName, dropOutStateSpace, gCtx.EAGER_CUDA_FREE);
 			} catch (DMLRuntimeException e) {
 				throw new RuntimeException(e);
 			}

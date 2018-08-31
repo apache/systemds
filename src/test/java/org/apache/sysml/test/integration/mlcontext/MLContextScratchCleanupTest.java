@@ -24,11 +24,11 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
 import java.io.File;
 
 import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.api.mlcontext.Script;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.After;
@@ -82,8 +82,8 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 
 	private static void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
 	{
-		RUNTIME_PLATFORM oldplatform = DMLScript.rtplatform;
-		DMLScript.rtplatform = platform;
+		RUNTIME_PLATFORM oldplatform = ConfigurationManager.getExecutionMode();
+		ConfigurationManager.getDMLOptions().setExecutionMode(platform);
 		
 		//create mlcontext
 		SparkSession spark = createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
@@ -98,9 +98,6 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 			Script script1 = dmlFromFile(dml1).in("$rows", rows).in("$cols", cols).out("X");
 			Matrix X = ml.execute(script1).getMatrix("X");
 			
-			//clear in-memory/cached data to emulate on-disk storage
-			X.toMatrixObject().clearData();
-			
 			Script script2 = dmlFromFile(dml2).in("X", X).out("z");
 			String z = ml.execute(script2).getString("z");
 			
@@ -110,7 +107,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			DMLScript.rtplatform = oldplatform;
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldplatform);
 			
 			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)

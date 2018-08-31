@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,6 +30,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -44,14 +47,13 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -68,18 +70,21 @@ import org.apache.sysml.utils.Statistics;
 public class PreparedScript implements ConfigurableAPI
 {
 	private static final Log LOG = LogFactory.getLog(PreparedScript.class.getName());
-	
+
 	//input/output specification
 	private final HashSet<String> _inVarnames;
 	private final HashSet<String> _outVarnames;
 	private final HashMap<String,Data> _inVarReuse;
-	
+
 	//internal state (reused)
 	private final Program _prog;
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
-	
+
+	private boolean _isStatisticsEnabled = false;
+	private boolean _gatherMemStats = false;
+
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
@@ -94,34 +99,52 @@ public class PreparedScript implements ConfigurableAPI
 		_dmlconf = that._dmlconf;
 		_cconf = that._cconf;
 	}
-	
+
 	/**
 	 * Meant to be invoked only from Connection.
-	 * 
+	 *
 	 * @param prog the DML/PyDML program
 	 * @param inputs input variables to register
 	 * @param outputs output variables to register
-	 * @param dmlconf dml configuration 
+	 * @param dmlconf dml configuration
 	 * @param cconf compiler configuration
 	 */
 	protected PreparedScript( Program prog, String[] inputs, String[] outputs, DMLConfig dmlconf, CompilerConfig cconf ) {
 		_prog = prog;
 		_vars = new LocalVariableMap();
-		
+
 		//populate input/output vars
 		_inVarnames = new HashSet<>();
 		Collections.addAll(_inVarnames, inputs);
 		_outVarnames = new HashSet<>();
 		Collections.addAll(_outVarnames, outputs);
 		_inVarReuse = new HashMap<>();
-		
+
 		//attach registered outputs (for dynamic recompile)
 		_vars.setRegisteredOutputs(_outVarnames);
-		
+
 		//keep dml and compiler configuration to be set as thread-local config
 		//on execute, which allows different threads creating/executing the script
 		_dmlconf = dmlconf;
 		_cconf = cconf;
+	}
+	
+	/**
+	 * Sets a boolean flag indicating if runtime statistics should be gathered
+	 * Same behavior as in "MLContext.setStatistics()"
+	 *
+	 * @param stats boolean value with true indicating statistics should be gathered
+	 */
+	public void setStatistics(boolean stats) { this._isStatisticsEnabled = stats; }
+
+	/**
+	 * Sets a boolean flag indicating if memory profiling statistics should be
+	 * gathered. The option is false by default.
+	 * @param stats boolean value with true indicating memory statistics should be gathered
+	 */
+	public void gatherMemStats(boolean stats) {
+		this._isStatisticsEnabled = this._isStatisticsEnabled || ConfigurationManager.isStatistics();
+		this._gatherMemStats = stats;
 	}
 	
 	@Override
@@ -133,45 +156,45 @@ public class PreparedScript implements ConfigurableAPI
 	public void setConfigProperty(String propertyName, String propertyValue) {
 		try {
 			_dmlconf.setTextValue(propertyName, propertyValue);
-		} 
+		}
 		catch( DMLRuntimeException e ) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
 	 * Get the dml configuration object associated with
 	 * the prepared script instance.
-	 * 
+	 *
 	 * @return dml configuration
 	 */
 	public DMLConfig getDMLConfig() {
 		return _dmlconf;
 	}
-	
+
 	/**
 	 * Get the compiler configuration object associated with
 	 * the prepared script instance.
-	 * 
+	 *
 	 * @return compiler configuration
 	 */
 	public CompilerConfig getCompilerConfig() {
 		return _cconf;
 	}
-	
+
 	/**
 	 * Binds a scalar boolean to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar boolean value
 	 */
 	public void setScalar(String varname, boolean scalar) {
 		setScalar(varname, scalar, false);
 	}
-	
+
 	/**
 	 * Binds a scalar boolean to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar boolean value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -179,20 +202,20 @@ public class PreparedScript implements ConfigurableAPI
 	public void setScalar(String varname, boolean scalar, boolean reuse) {
 		setScalar(varname, new BooleanObject(scalar), reuse);
 	}
-	
+
 	/**
 	 * Binds a scalar long to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar long value
 	 */
 	public void setScalar(String varname, long scalar) {
 		setScalar(varname, scalar, false);
 	}
-	
+
 	/**
 	 * Binds a scalar long to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar long value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -200,19 +223,19 @@ public class PreparedScript implements ConfigurableAPI
 	public void setScalar(String varname, long scalar, boolean reuse) {
 		setScalar(varname, new IntObject(scalar), reuse);
 	}
-	
+
 	/** Binds a scalar double to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar double value
 	 */
 	public void setScalar(String varname, double scalar) {
 		setScalar(varname, scalar, false);
 	}
-	
+
 	/**
 	 * Binds a scalar double to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar double value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -220,20 +243,20 @@ public class PreparedScript implements ConfigurableAPI
 	public void setScalar(String varname, double scalar, boolean reuse) {
 		setScalar(varname, new DoubleObject(scalar), reuse);
 	}
-	
+
 	/**
 	 * Binds a scalar string to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar string value
 	 */
 	public void setScalar(String varname, String scalar) {
 		setScalar(varname, scalar, false);
 	}
-	
+
 	/**
 	 * Binds a scalar string to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param scalar string value
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -243,10 +266,10 @@ public class PreparedScript implements ConfigurableAPI
 	}
 
 	/**
-	 * Binds a scalar object to a registered input variable. 
-	 * If reuse requested, then the input is guaranteed to be 
-	 * preserved over multiple <code>executeScript</code> calls. 
-	 * 
+	 * Binds a scalar object to a registered input variable.
+	 * If reuse requested, then the input is guaranteed to be
+	 * preserved over multiple <code>executeScript</code> calls.
+	 *
 	 * @param varname input variable name
 	 * @param scalar scalar object
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -259,17 +282,17 @@ public class PreparedScript implements ConfigurableAPI
 
 	/**
 	 * Binds a matrix object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
 	 */
 	public void setMatrix(String varname, double[][] matrix) {
 		setMatrix(varname, matrix, false);
 	}
-	
+
 	/**
 	 * Binds a matrix object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param matrix two-dimensional double array matrix representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -277,12 +300,12 @@ public class PreparedScript implements ConfigurableAPI
 	public void setMatrix(String varname, double[][] matrix, boolean reuse) {
 		setMatrix(varname, DataConverter.convertToMatrixBlock(matrix), reuse);
 	}
-	
+
 	/**
-	 * Binds a matrix object to a registered input variable. 
-	 * If reuse requested, then the input is guaranteed to be 
-	 * preserved over multiple <code>executeScript</code> calls. 
-	 * 
+	 * Binds a matrix object to a registered input variable.
+	 * If reuse requested, then the input is guaranteed to be
+	 * preserved over multiple <code>executeScript</code> calls.
+	 *
 	 * @param varname input variable name
 	 * @param matrix matrix represented as a MatrixBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -290,16 +313,16 @@ public class PreparedScript implements ConfigurableAPI
 	public void setMatrix(String varname, MatrixBlock matrix, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
-				
+
 		int blocksize = ConfigurationManager.getBlocksize();
-		
+
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
 		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
-		mo.acquireModify(matrix); 
+		mo.acquireModify(matrix);
 		mo.release();
-		
+
 		//put create matrix wrapper into symbol table
 		_vars.put(varname, mo);
 		if( reuse ) {
@@ -310,17 +333,17 @@ public class PreparedScript implements ConfigurableAPI
 
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 */
 	public void setFrame(String varname, String[][] frame) {
 		setFrame(varname, frame, false);
 	}
-	
+
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
@@ -328,10 +351,10 @@ public class PreparedScript implements ConfigurableAPI
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema) {
 		setFrame(varname, frame, schema, false);
 	}
-	
+
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
@@ -340,10 +363,10 @@ public class PreparedScript implements ConfigurableAPI
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames) {
 		setFrame(varname, frame, schema, colnames, false);
 	}
-	
+
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -351,10 +374,10 @@ public class PreparedScript implements ConfigurableAPI
 	public void setFrame(String varname, String[][] frame, boolean reuse) {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame), reuse);
 	}
-	
+
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
@@ -363,10 +386,10 @@ public class PreparedScript implements ConfigurableAPI
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, boolean reuse) {
 		setFrame(varname, DataConverter.convertToFrameBlock(frame, schema.toArray(new ValueType[0])), reuse);
 	}
-	
+
 	/**
 	 * Binds a frame object to a registered input variable.
-	 * 
+	 *
 	 * @param varname input variable name
 	 * @param frame two-dimensional string array frame representation
 	 * @param schema list representing the types of the frame columns
@@ -374,15 +397,15 @@ public class PreparedScript implements ConfigurableAPI
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
 	 */
 	public void setFrame(String varname, String[][] frame, List<ValueType> schema, List<String> colnames, boolean reuse) {
-		setFrame(varname, DataConverter.convertToFrameBlock( frame, 
+		setFrame(varname, DataConverter.convertToFrameBlock( frame,
 				schema.toArray(new ValueType[0]), colnames.toArray(new String[0])), reuse);
 	}
-	
+
 	/**
-	 * Binds a frame object to a registered input variable. 
-	 * If reuse requested, then the input is guaranteed to be 
-	 * preserved over multiple <code>executeScript</code> calls. 
-	 * 
+	 * Binds a frame object to a registered input variable.
+	 * If reuse requested, then the input is guaranteed to be
+	 * preserved over multiple <code>executeScript</code> calls.
+	 *
 	 * @param varname input variable name
 	 * @param frame frame represented as a FrameBlock
 	 * @param reuse if {@code true}, preserve value over multiple {@code executeScript} calls
@@ -390,14 +413,14 @@ public class PreparedScript implements ConfigurableAPI
 	public void setFrame(String varname, FrameBlock frame, boolean reuse) {
 		if( !_inVarnames.contains(varname) )
 			throw new DMLException("Unspecified input variable: "+varname);
-		
+
 		//create new frame object
 		MatrixCharacteristics mc = new MatrixCharacteristics(frame.getNumRows(), frame.getNumColumns(), -1, -1);
 		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryCellOutputInfo, InputInfo.BinaryCellInputInfo);
 		FrameObject fo = new FrameObject(OptimizerUtils.getUniqueTempFileName(), meta);
 		fo.acquireModify(frame);
 		fo.release();
-		
+
 		//put create matrix wrapper into symbol table
 		_vars.put(varname, fo);
 		if( reuse ) {
@@ -405,38 +428,47 @@ public class PreparedScript implements ConfigurableAPI
 			_inVarReuse.put(varname, fo);
 		}
 	}
-	
+
 	/**
 	 * Remove all current values bound to input or output variables.
-	 * 
+	 *
 	 */
 	public void clearParameters() {
 		_vars.removeAll();
 	}
-	
+
+	/**
+	 * GPU Context to use for execution
+	 */
+	List<GPUContext> _gpuCtx = null;
+
 	/**
 	 * Executes the prepared script over the bound inputs, creating the
 	 * result variables according to bound and registered outputs.
-	 * 
+	 *
 	 * @return ResultVariables object encapsulating output results
 	 */
 	public ResultVariables executeScript() {
 		//add reused variables
 		_vars.putAll(_inVarReuse);
-		
+
+		// clear prior thread local configurations (left over from previous run)
+		ConfigurationManager.clearLocalConfigs();
+		ConfigurationManager.resetStatistics();
+
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
-		
+		ConfigurationManager.setStatistics(_isStatisticsEnabled);
+		ConfigurationManager.setJMLCMemStats(_gatherMemStats);
+		ConfigurationManager.setFinegrainedStatistics(_gatherMemStats);
+
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
-		
-		//core execute runtime program
-		_prog.execute(ec);
-		
-		//cleanup unnecessary outputs
-		_vars.removeAllNotIn(_outVarnames);
-		
+		ScriptExecutorUtils.executeRuntimeProgram(
+				_prog, _dmlconf, ConfigurationManager.isStatistics() ?
+						ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
+				_vars, _outVarnames, SystemMLAPI.JMLC, _gpuCtx);
+
 		//construct results
 		ResultVariables rvars = new ResultVariables();
 		for( String ovar : _outVarnames ) {
@@ -444,16 +476,13 @@ public class PreparedScript implements ConfigurableAPI
 			if( tmpVar != null )
 				rvars.addResult(ovar, tmpVar);
 		}
-		
-		//clear thread-local configurations
-		ConfigurationManager.clearLocalConfigs();
 
 		return rvars;
 	}
-	
+
 	/**
 	 * Explain the DML/PyDML program and view result as a string.
-	 * 
+	 *
 	 * @return string results of explain
 	 */
 	public String explain() {
@@ -466,16 +495,16 @@ public class PreparedScript implements ConfigurableAPI
 	 * @return string containing statistics
 	 */
 	public String statistics() { return Statistics.display(); }
-	
+
 	/**
-	 * Enables function recompilation, selectively for the given functions. 
-	 * If dynamic recompilation is globally enabled this has no additional 
+	 * Enables function recompilation, selectively for the given functions.
+	 * If dynamic recompilation is globally enabled this has no additional
 	 * effect; otherwise the given functions are dynamically recompiled once
-	 * on every entry but not at the granularity of individually last-level 
+	 * on every entry but not at the granularity of individually last-level
 	 * program blocks. Use this fine-grained recompilation option for important
-	 * functions in small-data scenarios where dynamic recompilation overheads 
-	 * might not be amortized.  
-	 * 
+	 * functions in small-data scenarios where dynamic recompilation overheads
+	 * might not be amortized.
+	 *
 	 * @param fnamespace function namespace, null for default namespace
 	 * @param fnames function name
 	 */
@@ -483,17 +512,17 @@ public class PreparedScript implements ConfigurableAPI
 		//handle default name space
 		if( fnamespace == null )
 			fnamespace = DMLProgram.DEFAULT_NAMESPACE;
-		
+
 		//enable dynamic recompilation (note that this does not globally enable
 		//dynamic recompilation because the program has been compiled already)
 		CompilerConfig cconf = ConfigurationManager.getCompilerConfig();
 		cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, true);
 		ConfigurationManager.setLocalConfig(cconf);
-		
+
 		//build function call graph (to probe for recursive functions)
 		FunctionCallGraph fgraph = _prog.getProgramBlocks().isEmpty() ? null :
-			new FunctionCallGraph(_prog.getProgramBlocks().get(0).getStatementBlock().getDMLProg());
-		
+				new FunctionCallGraph(_prog.getProgramBlocks().get(0).getStatementBlock().getDMLProg());
+
 		//enable requested functions for recompile once
 		for( String fname : fnames ) {
 			String fkey = DMLProgram.constructFunctionKey(fnamespace, fname);
@@ -502,21 +531,21 @@ public class PreparedScript implements ConfigurableAPI
 				if( fpb != null )
 					fpb.setRecompileOnce(true);
 				else
-					LOG.warn("Failed to enable function recompile for non-existing '"+fkey+"'.");		
+					LOG.warn("Failed to enable function recompile for non-existing '"+fkey+"'.");
 			}
 			else if( fgraph != null ) {
 				LOG.warn("Failed to enable function recompile for recursive '"+fkey+"'.");
 			}
 		}
 	}
-	
+
 	/**
 	 * Creates a cloned instance of the prepared script, which
 	 * allows for concurrent execution without side effects.
-	 * 
+	 *
 	 * @param deep indicator if a deep copy needs to be created;
-	 *   if false, only a shallow (i.e., by reference) copy of the 
-	 *   program and read-only meta data is created. 
+	 *   if false, only a shallow (i.e., by reference) copy of the
+	 *   program and read-only meta data is created.
 	 * @return an equivalent prepared script
 	 */
 	public PreparedScript clone(boolean deep) {
@@ -524,7 +553,7 @@ public class PreparedScript implements ConfigurableAPI
 			throw new NotImplementedException();
 		return new PreparedScript(this);
 	}
-	
+
 	@Override
 	public Object clone() {
 		return clone(true);

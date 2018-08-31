@@ -27,7 +27,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Lop;
@@ -488,7 +487,7 @@ public class VariableCPInstruction extends CPInstruction {
 				mobj.enableCleanup(!getInput1().getName()
 					.startsWith(org.apache.sysml.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), mobj);
-				if(DMLScript.STATISTICS && _updateType.isInPlace())
+				if(ConfigurationManager.isStatistics() && _updateType.isInPlace())
 					Statistics.incrementTotalUIPVar();
 			}
 			else if( getInput1().getDataType() == DataType.FRAME ) {

@@ -688,7 +688,7 @@ public class ProgramConverter
 		builder.append(NEWLINE);
 
 		//handle additional configurations
-		builder.append(CONF_STATS + "=" + DMLScript.STATISTICS);
+		builder.append(CONF_STATS + "=" + ConfigurationManager.isStatistics());
 		builder.append(COMPONENTS_DELIM);
 		builder.append(NEWLINE);
 
@@ -753,7 +753,7 @@ public class ProgramConverter
 		sb.append( NEWLINE );
 		
 		//handle additional configurations
-		sb.append( CONF_STATS + "=" + DMLScript.STATISTICS );
+		sb.append( CONF_STATS + "=" + ConfigurationManager.isStatistics() );
 		sb.append( COMPONENTS_DELIM );
 		sb.append( NEWLINE );
 		
@@ -1727,7 +1727,7 @@ public class ProgramConverter
 	
 	private static void parseAndSetAdditionalConfigurations(String conf) {
 		String[] statsFlag = conf.split("=");
-		DMLScript.STATISTICS = Boolean.parseBoolean(statsFlag[1]);
+		ConfigurationManager.setStatistics(Boolean.parseBoolean(statsFlag[1]));
 	}
 
 	//////////

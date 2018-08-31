@@ -67,7 +67,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'SystemML'
-copyright = u'2017 The Apache Software Foundation.  All rights reserved'
+copyright = u'2018 The Apache Software Foundation.  All rights reserved'
 author = u''
 
 # The version info for the project you're documenting, acts as replacement for

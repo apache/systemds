@@ -25,7 +25,6 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.lib.NullOutputFormat;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -71,7 +70,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 	protected void partitionMatrix(MatrixObject in, String fnameNew, InputInfo ii, OutputInfo oi, long rlen, long clen, int brlen, int bclen)
 	{
 		String jobname = "ParFor-DPMR";
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		
 		JobConf job;
 		job = new JobConf( DataPartitionerRemoteMR.class );
@@ -199,7 +198,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			throw new DMLRuntimeException(ex);
 		}
 		
-		if( DMLScript.STATISTICS && _pfid >= 0 ){ 
+		if( ConfigurationManager.isStatistics() && _pfid >= 0 ){ 
 			long t1 = System.nanoTime(); //only for parfor 
 			Statistics.maintainCPHeavyHitters("MR-Job_"+jobname, t1-t0);
 		}

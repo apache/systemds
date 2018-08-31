@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
@@ -107,7 +107,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	}
 
 	private ListObject updateModel(ListObject globalParams, ListObject gradients, int i, int j, int batchIter) {
-		Timing tUpd = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tUpd = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 
 		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
 
@@ -167,7 +167,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		long end = Math.min((j + 1) * _batchSize, dataSize);
 
 		// Get batch features and labels
-		Timing tSlic = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tSlic = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		MatrixObject bFeatures = ParamservUtils.sliceMatrix(_features, begin, end);
 		MatrixObject bLabels = ParamservUtils.sliceMatrix(_labels, begin, end);
 		accBatchIndexingTime(tSlic);
@@ -183,7 +183,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		}
 
 		// Invoke the update function
-		Timing tGrad = DMLScript.STATISTICS ? new Timing(true) : null;
+		Timing tGrad = ConfigurationManager.isStatistics() ? new Timing(true) : null;
 		_inst.processInstruction(_ec);
 		accGradientComputeTime(tGrad);
 
@@ -197,25 +197,25 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	
 	@Override
 	protected void incWorkerNumber() {
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.incWorkerNumber();
 	}
 
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSLocalModelUpdateTime((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSBatchIndexingTime((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
-		if (DMLScript.STATISTICS)
+		if (ConfigurationManager.isStatistics())
 			Statistics.accPSGradientComputeTime((long) time.stop());
 	}
 }

@@ -19,8 +19,8 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -102,7 +102,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
 				if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 				{
-					if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+					if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE 
 						|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
 					{
 						if( OptimizerUtils.isHadoopExecutionMode() )

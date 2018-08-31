@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
@@ -75,7 +74,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+		if( ConfigurationManager.getExecutionMode() == RUNTIME_PLATFORM.SINGLE_NODE
 			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return Arrays.asList(sb);
 		

@@ -30,9 +30,9 @@ import java.util.concurrent.Future;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLException;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.utils.Statistics;
@@ -100,8 +100,9 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		int k = InfrastructureAnalyzer.getLocalParallelism();
 		
 		boolean failed = false;
+		
 		try( Connection conn = new Connection() ) {
-			DMLScript.STATISTICS = true;
+			ConfigurationManager.setStatistics(true);
 			Statistics.reset();
 			PreparedScript pscript = conn.prepareScript(
 				script, new String[]{}, new String[]{"out"}, false);
@@ -118,6 +119,9 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			failed = true;
+		}
+		finally {
+			ConfigurationManager.resetStatistics();
 		}
 		
 		//check expected failure

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.FunctionOp;
@@ -143,7 +143,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 	
 	private static boolean fitsOnGPU(Hop h, double multiplier) {
 		double memEst = multiplier*h.getMemEstimate();
-		return DMLScript.USE_ACCELERATOR && h.dimsKnown() && OptimizerUtils.isMemoryBasedOptLevel() &&
+		return ConfigurationManager.isGPU() && h.dimsKnown() && OptimizerUtils.isMemoryBasedOptLevel() &&
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
 	}
 	
@@ -167,7 +167,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRule {
 				memEst += est;
 			}
 		}
-		return DMLScript.USE_ACCELERATOR && OptimizerUtils.isMemoryBasedOptLevel() &&
+		return ConfigurationManager.isGPU() && OptimizerUtils.isMemoryBasedOptLevel() &&
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();
 	}
 	

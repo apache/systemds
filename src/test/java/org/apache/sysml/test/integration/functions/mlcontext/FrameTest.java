@@ -41,6 +41,7 @@ import org.apache.sysml.api.mlcontext.FrameSchema;
 import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.api.mlcontext.ScriptFactory;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.ParseException;
@@ -148,8 +149,8 @@ public class FrameTest extends MLContextTestBase
 		
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
-		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
+		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;
@@ -340,7 +341,7 @@ public class FrameTest extends MLContextTestBase
 			System.out.println("Frame MLContext test completed successfully.");
 		}
 		finally {
-			DMLScript.rtplatform = oldRT;
+			ConfigurationManager.getDMLOptions().setExecutionMode(oldRT);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}

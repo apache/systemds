@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.recompile.Recompiler;
 import org.apache.sysml.hops.recompile.Recompiler.ResetType;
@@ -95,7 +94,7 @@ public class FunctionProgramBlock extends ProgramBlock
 				&& isRecompileOnce() 
 				&& ParForProgramBlock.RESET_RECOMPILATION_FLAGs )
 			{
-				long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+				long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 				
 				//note: it is important to reset the recompilation flags here
 				// (1) it is safe to reset recompilation flags because a 'recompile_once'
@@ -105,7 +104,7 @@ public class FunctionProgramBlock extends ProgramBlock
 				ResetType reset = ConfigurationManager.isCodegenEnabled() ? ResetType.RESET_KNOWN_DIMS : ResetType.RESET;
 				Recompiler.recompileProgramBlockHierarchy(_childBlocks, tmp, _tid, reset);
 				
-				if( DMLScript.STATISTICS ){
+				if( ConfigurationManager.isStatistics() ){
 					long t1 = System.nanoTime();
 					Statistics.incrementFunRecompileTime(t1-t0);
 					Statistics.incrementFunRecompiles();

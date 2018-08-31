@@ -35,7 +35,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.BinaryOp;
@@ -106,7 +106,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			memo.setDistinct(e.getKey(), e.getValue());
 		
 		//maintain statistics
-		if( DMLScript.STATISTICS )
+		if( ConfigurationManager.isStatistics() )
 			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
 	}
 	
@@ -395,7 +395,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 				}
 			}
 			
-			if( DMLScript.STATISTICS ) {
+			if( ConfigurationManager.isStatistics() ) {
 				Statistics.incrementCodegenEnumAllP(len);
 				Statistics.incrementCodegenEnumEval(len);
 			}

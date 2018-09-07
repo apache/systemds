@@ -42,7 +42,6 @@ import org.apache.sysml.runtime.instructions.cp.CompressionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DnnCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.DataGenCPInstruction;
-import org.apache.sysml.runtime.instructions.cp.DataPartitionCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.MMChainCPInstruction;
@@ -414,9 +413,6 @@ public class CPInstructionParser extends InstructionParser
 			case MMChain:
 				return MMChainCPInstruction.parseInstruction(str);
 			
-			case Partition:
-				return DataPartitionCPInstruction.parseInstruction(str);
-		
 			case CentralMoment:
 				return CentralMomentCPInstruction.parseInstruction(str);
 	

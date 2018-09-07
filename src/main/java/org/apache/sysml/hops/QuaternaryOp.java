@@ -19,17 +19,10 @@
 
 package org.apache.sysml.hops;
 
-import org.apache.sysml.lops.Aggregate;
-import org.apache.sysml.lops.DataPartition;
-import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopsException;
-import org.apache.sysml.lops.RepMat;
-import org.apache.sysml.lops.Transform;
 import org.apache.sysml.lops.Unary;
-import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.WeightedCrossEntropy;
 import org.apache.sysml.lops.WeightedCrossEntropyR;
 import org.apache.sysml.lops.WeightedDivMM;
@@ -47,10 +40,8 @@ import org.apache.sysml.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysml.lops.WeightedUnaryMMR;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
@@ -197,8 +188,6 @@ public class QuaternaryOp extends MultiThreadedHop
 					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedSquaredLoss(wtype);
-					else if( et == ExecType.MR )
-						constructMRLopsWeightedSquaredLoss(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedSquaredLoss(wtype);
 					else
@@ -211,8 +200,6 @@ public class QuaternaryOp extends MultiThreadedHop
 					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedSigmoid(wtype);
-					else if( et == ExecType.MR )
-						constructMRLopsWeightedSigmoid(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedSigmoid(wtype);
 					else
@@ -224,8 +211,6 @@ public class QuaternaryOp extends MultiThreadedHop
 					WDivMMType wtype = checkWDivMMType();
 					if( et == ExecType.CP )
 						constructCPLopsWeightedDivMM(wtype);
-					else if( et == ExecType.MR )
-						constructMRLopsWeightedDivMM(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedDivMM(wtype);
 					else
@@ -238,8 +223,6 @@ public class QuaternaryOp extends MultiThreadedHop
 					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedCeMM(wtype);
-					else if( et == ExecType.MR )
-						constructMRLopsWeightedCeMM(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedCeMM(wtype);
 					else
@@ -252,8 +235,6 @@ public class QuaternaryOp extends MultiThreadedHop
 					
 					if( et == ExecType.CP )
 						constructCPLopsWeightedUMM(wtype);
-					else if( et == ExecType.MR )
-						constructMRLopsWeightedUMM(wtype);
 					else if( et == ExecType.SPARK )
 						constructSparkLopsWeightedUMM(wtype);
 					else
@@ -304,168 +285,6 @@ public class QuaternaryOp extends MultiThreadedHop
 		setOutputDimensions( wsloss );
 		setLineNumbers( wsloss );
 		setLops( wsloss );
-	}
-
-	private Lop constructLeftFactorMRLop(Hop U, Hop V, boolean cacheU, double m1Size) {
-		Lop lU = null;
-		if (cacheU) {
-			// partitioning of U for read through distributed cache
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			lU = U.constructLops();
-			if (needPartU) { // requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE,
-						(m1Size > OptimizerUtils.getLocalMemBudget()) ? ExecType.MR : ExecType.CP,
-						PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);
-			}
-		}
-		else {
-			// replication of U for shuffle to target block
-			Lop offset = createOffsetLop(V, false); // ncol of t(V) -> nrow of V determines num replicates
-			lU = new RepMat(U.constructLops(), offset, true, V.getDataType(), V.getValueType());
-			lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), U.getRowsInBlock(), U.getColsInBlock(), U.getNnz());
-			setLineNumbers(lU);
-			
-			Group grpU = new Group(lU, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), U.getRowsInBlock(), U.getColsInBlock(), -1);
-			setLineNumbers(grpU);
-			lU = grpU;
-		}
-		return lU;
-	}
-
-	private Lop constructRightFactorMRLop(Hop U, Hop V, boolean cacheV, double m2Size) {
-		Lop lV = null;
-		if (cacheV) {
-			// partitioning of V for read through distributed cache
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			lV = V.constructLops();
-			if (needPartV) { // requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE,
-						(m2Size > OptimizerUtils.getLocalMemBudget()) ? ExecType.MR : ExecType.CP,
-						PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);
-			}
-		} 
-		else {
-			// replication of t(V) for shuffle to target block
-			Transform ltV = new Transform(V.constructLops(), HopsTransf2Lops.get(ReOrgOp.TRANS), getDataType(),
-					getValueType(), ExecType.MR);
-			ltV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), V.getColsInBlock(), V.getRowsInBlock(), V.getNnz());
-			setLineNumbers(ltV);
-			
-			Lop offset = createOffsetLop(U, false); // nrow of U determines num replicates
-			lV = new RepMat(ltV, offset, false, V.getDataType(), V.getValueType());
-			lV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), V.getColsInBlock(), V.getRowsInBlock(), V.getNnz());
-			setLineNumbers(lV);
-			
-			Group grpV = new Group(lV, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpV.getOutputParameters().setDimensions(V.getDim2(), V.getDim1(), V.getColsInBlock(), V.getRowsInBlock(), -1);
-			setLineNumbers(grpV);
-			lV = grpV;
-		}
-		return lV;
-	}
-
-	private void constructMRLopsWeightedSquaredLoss(WeightsType wtype) 
-	{
-		//NOTE: the common case for wsloss are factors U/V with a rank of 10s to 100s; the current runtime only
-		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Squared Loss only if this constraint holds. 
-		
-		Hop X = getInput().get(0);
-		Hop U = getInput().get(1);
-		Hop V = getInput().get(2);
-		Hop W = getInput().get(3);
-		
-		//MR operator selection, part1
-		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
-		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsloss = (!wtype.hasFourInputs() && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		
-		if( !FORCE_REPLICATION && isMapWsloss ) //broadcast
-		{
-			//partitioning of U
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lU = U.constructLops();
-			if( needPartU ){ //requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);	
-			}
-			
-			//partitioning of V
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lV = V.constructLops();
-			if( needPartV ){ //requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);	
-			}
-			
-			//map-side wsloss always with broadcast
-			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), lU, lV, W.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
-			wsloss.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(wsloss);
-			
-			Group grp = new Group(wsloss, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grp.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grp);
-			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
-			agg1.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(agg1);
-			
-			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
-		else //general case
-		{
-			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
-					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
-			
-			Group grpX = new Group(X.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grpX);
-			
-			Lop grpW = W.constructLops();
-			if( grpW.getDataType()==DataType.MATRIX ) {
-				grpW = new Group(W.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-				grpW.getOutputParameters().setDimensions(W.getDim1(), W.getDim2(), W.getRowsInBlock(), W.getColsInBlock(), -1);
-				setLineNumbers(grpW);
-			}
-
-			Lop lU = constructLeftFactorMRLop(U, V, cacheU, m1Size);
-			Lop lV = constructRightFactorMRLop(U, V, cacheV, m2Size);
-
-			//reduce-side wsloss w/ or without broadcast
-			Lop wsloss = new WeightedSquaredLossR( 
-					grpX, lU, lV, grpW, DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
-			wsloss.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(wsloss);
-			
-			Group grp = new Group(wsloss, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grp.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grp);
-			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
-			agg1.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(agg1);
-			
-			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
 	}
 
 	private void constructSparkLopsWeightedSquaredLoss(WeightsType wtype) 
@@ -531,74 +350,6 @@ public class QuaternaryOp extends MultiThreadedHop
 		setOutputDimensions( wsig );
 		setLineNumbers( wsig );
 		setLops( wsig );
-	}
-
-	private void constructMRLopsWeightedSigmoid( WSigmoidType wtype ) {
-		//NOTE: the common case for wsigmoid are factors U/V with a rank of 10s to 100s; the current runtime only
-		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Sigmoid only if this constraint holds. 
-		
-		Hop X = getInput().get(0);
-		Hop U = getInput().get(1);
-		Hop V = getInput().get(2);
-		
-		//MR operator selection, part1
-		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
-		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWsig = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		
-		if( !FORCE_REPLICATION && isMapWsig ) //broadcast
-		{
-			//partitioning of U
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lU = U.constructLops();
-			if( needPartU ){ //requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);	
-			}
-			
-			//partitioning of V
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lV = V.constructLops();
-			if( needPartV ){ //requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);	
-			}
-			
-			//map-side wsig always with broadcast
-			Lop wsigmoid = new WeightedSigmoid( X.constructLops(), lU, lV,  
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
-			setOutputDimensions(wsigmoid);
-			setLineNumbers(wsigmoid);
-			setLops( wsigmoid );
-			
-			//in contrast to wsloss no aggregation required 
-		}
-		else //general case
-		{
-			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
-					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
-			
-			Group grpX = new Group(X.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), X.getNnz());
-			setLineNumbers(grpX);
-
-			Lop lU = constructLeftFactorMRLop(U, V, cacheU, m1Size);
-			Lop lV = constructRightFactorMRLop(U, V, cacheV, m2Size);
-
-			//reduce-side wsig w/ or without broadcast
-			Lop wsigmoid = new WeightedSigmoidR( 
-					grpX, lU, lV, DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
-			setOutputDimensions(wsigmoid);
-			setLineNumbers(wsigmoid);
-			setLops(wsigmoid);
-			
-			//in contrast to wsloss no aggregation required 	
-		}
 	}
 
 	private void constructSparkLopsWeightedSigmoid( WSigmoidType wtype ) 
@@ -667,92 +418,6 @@ public class QuaternaryOp extends MultiThreadedHop
 		setLops( wdiv );
 	}
 
-	private void constructMRLopsWeightedDivMM( WDivMMType wtype ) 
-	{
-		//NOTE: the common case for wdivmm are factors U/V with a rank of 10s to 100s; the current runtime only
-		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted DivMM only if this constraint holds. 
-		
-		Hop W = getInput().get(0);
-		Hop U = getInput().get(1);
-		Hop V = getInput().get(2);
-		Hop X = getInput().get(3);
-		
-		//MR operator selection, part1
-		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
-		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWdivmm = ((!wtype.hasFourInputs() || wtype.hasScalar()) &&
-				m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		
-		if( !FORCE_REPLICATION && isMapWdivmm ) //broadcast
-		{
-			//partitioning of U
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lU = U.constructLops();
-			if( needPartU ){ //requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);	
-			}
-			
-			//partitioning of V
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lV = V.constructLops();
-			if( needPartV ){ //requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);	
-			}
-			
-			//map-side wdivmm always with broadcast
-			Lop wdivmm = new WeightedDivMM( W.constructLops(), lU, lV, X.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
-			setOutputDimensions(wdivmm);
-			setLineNumbers(wdivmm);
-			setLops(wdivmm); 
-		}
-		else //general case
-		{
-			//MR operator selection part 2 (both cannot happen for wdivmm, otherwise mapwdivmm)
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
-					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
-			
-			Group grpW = new Group(W.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpW.getOutputParameters().setDimensions(W.getDim1(), W.getDim2(), W.getRowsInBlock(), W.getColsInBlock(), W.getNnz());
-			setLineNumbers(grpW);
-			
-			Lop grpX = X.constructLops();
-			if( wtype.hasFourInputs() && (X.getDataType() != DataType.SCALAR) )
-				grpX = new Group(grpX, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), X.getNnz());
-			setLineNumbers(grpX);
-
-			Lop lU = constructLeftFactorMRLop(U, V, cacheU, m1Size);
-			Lop lV = constructRightFactorMRLop(U, V, cacheV, m2Size);
-
-			//reduce-side wdivmm w/ or without broadcast
-			Lop wdivmm = new WeightedDivMMR( grpW, lU, lV, grpX, 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
-			setOutputDimensions(wdivmm);
-			setLineNumbers(wdivmm);
-			setLops(wdivmm);
-		}
-		
-		//in contrast to to wsloss/wsigmoid, wdivmm requires partial aggregation (for the final mm)
-		Group grp = new Group(getLops(), Group.OperationTypes.Sort, getDataType(), getValueType());
-		setOutputDimensions(grp);
-		setLineNumbers(grp);
-		
-		Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), getDataType(), getValueType(), ExecType.MR);
-		// aggregation uses kahanSum but the inputs do not have correction values
-		agg1.setupCorrectionLocation(CorrectionLocationType.NONE);  
-		setOutputDimensions(agg1);
-		setLineNumbers(agg1);
-		
-		setLops(agg1);
-	}
-
 	private void constructSparkLopsWeightedDivMM( WDivMMType wtype ) 
 	{
 		//NOTE: the common case for wdivmm are factors U/V with a rank of 10s to 100s; the current runtime only
@@ -818,98 +483,6 @@ public class QuaternaryOp extends MultiThreadedHop
 		setOutputDimensions( wcemm );
 		setLineNumbers( wcemm );
 		setLops( wcemm );
-	}
-
-	private void constructMRLopsWeightedCeMM(WCeMMType wtype) 
-	{
-		//NOTE: the common case for wcemm are factors U/V with a rank of 10s to 100s; the current runtime only
-		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted Cross Entropy only if this constraint holds. 
-		
-		Hop X = getInput().get(0);
-		Hop U = getInput().get(1);
-		Hop V = getInput().get(2);
-		Hop eps = getInput().get(3);
-		
-		//MR operator selection, part1
-		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
-		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWcemm = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		
-		if( !FORCE_REPLICATION && isMapWcemm ) //broadcast
-		{
-			//partitioning of U
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lU = U.constructLops();
-			if( needPartU ){ //requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);	
-			}
-			
-			//partitioning of V
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lV = V.constructLops();
-			if( needPartV ){ //requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);	
-			}
-			
-			//map-side wcemm always with broadcast
-			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), lU, lV, eps.constructLops(),
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.MR);
-			wcemm.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(wcemm);
-			
-			Group grp = new Group(wcemm, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grp.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grp);
-			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
-			agg1.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(agg1);
-			
-			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
-		else //general case
-		{
-			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
-					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
-			
-			Group grpX = new Group(X.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grpX);
-
-			Lop lU = constructLeftFactorMRLop(U, V, cacheU, m1Size);
-			Lop lV = constructRightFactorMRLop(U, V, cacheV, m2Size);
-
-			//reduce-side wcemm w/ or without broadcast
-			Lop wcemm = new WeightedCrossEntropyR( grpX, lU, lV, eps.constructLops(),
-					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.MR);
-			wcemm.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(wcemm);
-			
-			Group grp = new Group(wcemm, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grp.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(grp);
-			
-			Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-			agg1.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum 
-			agg1.getOutputParameters().setDimensions(1, 1, X.getRowsInBlock(), X.getColsInBlock(), -1);
-			setLineNumbers(agg1);
-			
-			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
 	}
 
 	private void constructSparkLopsWeightedCeMM(WCeMMType wtype) 
@@ -980,79 +553,6 @@ public class QuaternaryOp extends MultiThreadedHop
 		setOutputDimensions( wumm );
 		setLineNumbers( wumm );
 		setLops( wumm );
-	}
-
-	private void constructMRLopsWeightedUMM( WUMMType wtype ) 
-	{
-		//NOTE: the common case for wumm are factors U/V with a rank of 10s to 100s; the current runtime only
-		//supports single block outer products (U/V rank <= blocksize, i.e., 1000 by default); we enforce this
-		//by applying the hop rewrite for Weighted UnaryMM  only if this constraint holds. 
-		
-		Unary.OperationTypes uop = _uop!=null ? 
-				HopsOpOp1LopsU.get(_uop) : _sop==OpOp2.POW ? 
-				Unary.OperationTypes.POW2 : Unary.OperationTypes.MULTIPLY2;	
-		
-		Hop X = getInput().get(0);
-		Hop U = getInput().get(1);
-		Hop V = getInput().get(2);
-		
-		//MR operator selection, part1
-		double m1Size = OptimizerUtils.estimateSize(U.getDim1(), U.getDim2()); //size U
-		double m2Size = OptimizerUtils.estimateSize(V.getDim1(), V.getDim2()); //size V
-		boolean isMapWumm = (m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetMap(true)); 
-		
-		if( !FORCE_REPLICATION && isMapWumm ) //broadcast
-		{
-			//partitioning of U
-			boolean needPartU = !U.dimsKnown() || U.getDim1() * U.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lU = U.constructLops();
-			if( needPartU ){ //requires partitioning
-				lU = new DataPartition(lU, DataType.MATRIX, ValueType.DOUBLE, (m1Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lU.getOutputParameters().setDimensions(U.getDim1(), U.getDim2(), getRowsInBlock(), getColsInBlock(), U.getNnz());
-				setLineNumbers(lU);	
-			}
-			
-			//partitioning of V
-			boolean needPartV = !V.dimsKnown() || V.getDim1() * V.getDim2() > DistributedCacheInput.PARTITION_SIZE;
-			Lop lV = V.constructLops();
-			if( needPartV ){ //requires partitioning
-				lV = new DataPartition(lV, DataType.MATRIX, ValueType.DOUBLE, (m2Size>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-				lV.getOutputParameters().setDimensions(V.getDim1(), V.getDim2(), getRowsInBlock(), getColsInBlock(), V.getNnz());
-				setLineNumbers(lV);	
-			}
-			
-			//map-side wumm always with broadcast
-			Lop wumm = new WeightedUnaryMM( X.constructLops(), lU, lV,  
-					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, ExecType.MR);
-			setOutputDimensions(wumm);
-			setLineNumbers(wumm);
-			setLops( wumm );
-			
-			//in contrast to wsloss no aggregation required 
-		}
-		else //general case
-		{
-			//MR operator selection part 2
-			boolean cacheU = !FORCE_REPLICATION && (m1Size < OptimizerUtils.getRemoteMemBudgetReduce());
-			boolean cacheV = !FORCE_REPLICATION && ((!cacheU && m2Size < OptimizerUtils.getRemoteMemBudgetReduce()) 
-					        || (cacheU && m1Size+m2Size < OptimizerUtils.getRemoteMemBudgetReduce()));
-			
-			Group grpX = new Group(X.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE);
-			grpX.getOutputParameters().setDimensions(X.getDim1(), X.getDim2(), X.getRowsInBlock(), X.getColsInBlock(), X.getNnz());
-			setLineNumbers(grpX);
-
-			Lop lU = constructLeftFactorMRLop(U, V, cacheU, m1Size);
-			Lop lV = constructRightFactorMRLop(U, V, cacheV, m2Size);
-
-			//reduce-side wumm w/ or without broadcast
-			Lop wumm = new WeightedUnaryMMR( 
-					grpX, lU, lV, DataType.MATRIX, ValueType.DOUBLE, wtype, uop, cacheU, cacheV, ExecType.MR);
-			setOutputDimensions(wumm);
-			setLineNumbers(wumm);
-			setLops(wumm);
-			
-			//in contrast to wsloss no aggregation required 	
-		}
 	}
 
 	private void constructSparkLopsWeightedUMM( WUMMType wtype ) 

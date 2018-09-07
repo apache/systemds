@@ -19,20 +19,13 @@
 
 package org.apache.sysml.runtime.instructions.cp;
 
-import java.io.IOException;
-
 import org.apache.sysml.lops.PickByCount.OperationTypes;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.MetaData;
-import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class QuantilePickCPInstruction extends BinaryCPInstruction {
 
@@ -108,25 +101,6 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					}
 					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 				}
-				else //MR VALUEPICK
-				{
-					MatrixObject mat = ec.getMatrixObject(input1.getName());
-					String fname = mat.getFileName();
-					MetaData mdata = mat.getMetaData();
-					ScalarObject pickindex = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-					
-					if ( mdata != null ) {
-						try {
-							double picked = MapReduceTool.pickValue(fname, (MetaDataNumItemsByEachReducer) mdata, pickindex.getDoubleValue());
-							ec.setVariable(output.getName(), new DoubleObject(picked));
-						} catch (Exception e ) {
-							throw new DMLRuntimeException(e);
-						}
-					}
-					else {
-						throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname + ") not found." );
-					}
-				}
 				break;
 
 			case MEDIAN:
@@ -137,24 +111,6 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 					break;
 				}
-				else //MR MEDIAN
-				{
-					MatrixObject mat1 = (MatrixObject)ec.getVariable(input1.getName());
-					String fname1 = mat1.getFileName();
-					MetaData mdata1 = mat1.getMetaData();
-					
-					if ( mdata1 != null ) {
-						try {
-							double median = MapReduceTool.median(fname1, (MetaDataNumItemsByEachReducer) mdata1);
-							ec.setVariable(output.getName(), new DoubleObject(median));
-						} catch (Exception e ) {
-							throw new DMLRuntimeException(e);
-						}
-					}
-					else {
-						throw new DMLRuntimeException("Unexpected error while executing ValuePickCP: otherMetaData for file (" + fname1 + ") not found." );
-					}
-				}
 				break;
 				
 			case IQM:
@@ -164,35 +120,6 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					double iqm = matBlock1.interQuartileMean();
 					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
 					ec.setScalarOutput(output.getName(), new DoubleObject(iqm));
-				}
-				else //MR IQM
-				{
-					MatrixObject inputMatrix = (MatrixObject)ec.getVariable(input1.getName());
-					ScalarObject iqsum = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
-					
-					double[] q25 = null;
-					double[] q75 = null;
-					try {
-						q25 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (MetaDataNumItemsByEachReducer) inputMatrix.getMetaData(), 0.25, false);
-						q75 = MapReduceTool.pickValueWeight(inputMatrix.getFileName(), (MetaDataNumItemsByEachReducer) inputMatrix.getMetaData(), 0.75, false);
-					} catch (IOException e1) {
-						throw new DMLRuntimeException(e1);
-					}
-					
-					double sumwt = UtilFunctions.getTotalLength((MetaDataNumItemsByEachReducer) ec.getMetaData(input1.getName()));
-					double q25d = sumwt*0.25;
-					double q75d = sumwt*0.75;
-					
-					// iqsum = interQuartileSum that includes complete portions of q25 and q75
-					//   . exclude top portion of q25 and bottom portion of q75 
-					double q25entry_weight = q25[0]*q25[1];
-					double q25portion_include = (q25[2]-q25d)*q25[0];
-					double q25portion_exclude = q25entry_weight-q25portion_include;
-					double q75portion_exclude = (q75[2]-q75d)*q75[0];
-					
-					double mriqm = (iqsum.getDoubleValue() - q25portion_exclude - q75portion_exclude)/(sumwt*0.5);
-
-					ec.setScalarOutput(output.getName(), new DoubleObject(mriqm));
 				}
 				break;
 				

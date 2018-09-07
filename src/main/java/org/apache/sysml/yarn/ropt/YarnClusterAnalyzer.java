@@ -210,8 +210,8 @@ public class YarnClusterAnalyzer
 	 * @return total number of parallel tasks given max memory size
 	 */
 	public static int getRemoteParallelTasksGivenMem(long remoteTaskJvmMemory) {
-		long taskPhy = getYarnPhyAllocate(ResourceOptimizer.jvmToPhy(remoteTaskJvmMemory, false));
-		long cpPhy = getYarnPhyAllocate(ResourceOptimizer.jvmToPhy(getLocalMaxMemory(), false));
+		long taskPhy = getYarnPhyAllocate(jvmToPhy(remoteTaskJvmMemory, false));
+		long cpPhy = getYarnPhyAllocate(jvmToPhy(getLocalMaxMemory(), false));
 		long mrAMPhy = getYarnPhyAllocate(getMRARPhy());
 		
 		if (nodesMaxPhySorted == null)
@@ -251,7 +251,7 @@ public class YarnClusterAnalyzer
 		if (nodesMaxPhySorted == null)
 			analyzeYarnCluster(true);
 		if (!hasMRJob)
-			return nodesMaxPhySorted.get(0) >= getYarnPhyAllocate(ResourceOptimizer.jvmToPhy(getLocalMaxMemory(), false));
+			return nodesMaxPhySorted.get(0) >= getYarnPhyAllocate(jvmToPhy(getLocalMaxMemory(), false));
 		return getRemoteParallelTasksGivenMem(getMaximumRemoteMaxMemory()) > 0;
 	}
 	
@@ -353,7 +353,7 @@ public class YarnClusterAnalyzer
 	public static void setRemoteMaxMemPlan(HashMap<Long, Double> budgetMRPlan) {
 		remoteJVMMaxMemPlan.clear();
 		for (Map.Entry<Long, Double> entry : budgetMRPlan.entrySet()) {
-			long mapJvm = ResourceOptimizer.budgetToJvm(entry.getValue());
+			long mapJvm = budgetToJvm(entry.getValue());
 			remoteJVMMaxMemPlan.put(entry.getKey(), mapJvm);
 		}
 	}
@@ -645,7 +645,7 @@ public class YarnClusterAnalyzer
 			
 			nodesMaxBudgetSorted = new ArrayList<> (nodesMaxPhySorted.size());
 			for (int i = 0; i < nodesMaxPhySorted.size(); i++)
-				nodesMaxBudgetSorted.add(ResourceOptimizer.phyToBudget(nodesMaxPhySorted.get(i)));
+				nodesMaxBudgetSorted.add(phyToBudget(nodesMaxPhySorted.get(i)));
 			
 			_remotePar = nodesReport.size();
 			if (_remotePar == 0)
@@ -711,6 +711,25 @@ public class YarnClusterAnalyzer
 		yarnClient.init(conf);
 		yarnClient.start();
 		return yarnClient;
+	}
+	
+	public static long budgetToJvm(double budget) {
+		return (long) Math.ceil(budget / OptimizerUtils.MEM_UTIL_FACTOR);
+	}
+	
+
+	public static double phyToBudget(long physical) throws IOException {
+		return (double)physical / 1.0 * OptimizerUtils.MEM_UTIL_FACTOR;
+	}
+	
+	public static long jvmToPhy(long jvm, boolean mrRealRun) {
+		long ret = (long) Math.ceil((double)jvm * 1.0);
+		if (mrRealRun) {
+			long lowerBound = (long)YarnClusterAnalyzer.getMinMRContarinerPhyMB() * 1024 * 1024;
+			if (ret < lowerBound)
+				return lowerBound;
+		}
+		return ret;
 	}
 }
 

@@ -22,9 +22,6 @@ package org.apache.sysml.hops.cost;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.StringTokenizer;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -43,8 +40,6 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData.CacheStatus
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.MRInstructionParser;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.BinaryCPInstruction;
@@ -58,11 +53,9 @@ import org.apache.sysml.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.apache.sysml.runtime.instructions.cp.StringInitCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysml.runtime.util.UtilFunctions;
 
 public abstract class CostEstimator 
 {
@@ -180,30 +173,6 @@ public abstract class CostEstimator
 						}
 					}
 				}
-				else if(inst instanceof MRJobInstruction) //MR
-				{
-					//obtain stats for job
-					maintainMRJobInstVariableStatistics(inst, stats);
-					
-					//extract input statistics
-					Object[] o = extractMRJobInstStatistics(inst, stats);
-					VarStats[] vs = (VarStats[]) o[0];
-
-					//if(LOG.isDebugEnabled())
-					//	LOG.debug(inst);
-					
-					if(LOG.isDebugEnabled())
-						LOG.debug("Begin MRJob type="+((MRJobInstruction)inst).getJobType());
-					
-					//call time estimation for complex MR inst
-					ret += getMRJobInstTimeEstimate(inst, vs, null);
-					
-					if(LOG.isDebugEnabled())
-						LOG.debug("End MRJob");
-					
-					//cleanup stats for job
-					cleanupMRJobVariableStatistics(inst, stats);
-				}
 			}
 		}
 		
@@ -297,103 +266,6 @@ public abstract class CostEstimator
 			for( String varname : finst.getBoundOutputParamNames() )
 				stats.put(varname, _unknownStats);
 		}
-	}
-
-	private void maintainMRJobInstVariableStatistics( Instruction inst, HashMap<String, VarStats> stats ) {
-		MRJobInstruction jobinst = (MRJobInstruction)inst;
-		
-		//input sizes (varname, index mapping)
-		String[] inVars = jobinst.getInputVars();
-		int index = -1;
-		for( String varname : inVars )
-		{
-			VarStats vs = stats.get(varname);
-			if( vs==null )
-				vs = _unknownStats;
-			stats.put(String.valueOf(++index), vs);
-		}
-		
-		//rand output
-		String rdInst = jobinst.getIv_randInstructions();
-		if( rdInst != null && rdInst.length()>0 )
-		{
-			StringTokenizer st = new StringTokenizer(rdInst,Lop.INSTRUCTION_DELIMITOR);
-			while( st.hasMoreTokens() ) //foreach rand instruction
-			{				
-				String[] parts = InstructionUtils.getInstructionParts(st.nextToken());
-				byte outIndex = Byte.parseByte(parts[2]);
-				long rlen = parts[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[3]);
-				long clen = parts[4].contains(Lop.VARIABLE_NAME_PLACEHOLDER)?-1:UtilFunctions.parseToLong(parts[4]);
-				int brlen = Integer.parseInt(parts[5]);
-				int bclen = Integer.parseInt(parts[6]);
-				long nnz = (long) (Double.parseDouble(parts[9]) * rlen * clen);
-				VarStats vs = new VarStats(rlen, clen, brlen, bclen, nnz, false);
-				stats.put(String.valueOf(outIndex), vs);
-			}
-		}
-		
-		//compute intermediate result indices
-		HashMap<Byte,MatrixCharacteristics> dims = new HashMap<>();
-		//populate input indices
-		for( Entry<String,VarStats> e : stats.entrySet() )
-		{
-			if(UtilFunctions.isIntegerNumber(e.getKey()))
-			{
-				byte ix = Byte.parseByte(e.getKey());
-				VarStats vs = e.getValue();
-				if( vs !=null )
-				{
-					MatrixCharacteristics mc = new MatrixCharacteristics(vs._rlen, vs._clen, vs._brlen, vs._bclen, (long)vs._nnz);
-					dims.put(ix, mc);
-				}
-			}
-		}
-		//compute dims for all instructions
-		String[] instCat = new String[]{
-				jobinst.getIv_randInstructions(),
-				jobinst.getIv_recordReaderInstructions(),
-				jobinst.getIv_instructionsInMapper(),
-				jobinst.getIv_shuffleInstructions(),
-				jobinst.getIv_aggInstructions(),
-				jobinst.getIv_otherInstructions()};		
-		for( String linstCat : instCat )
-			if( linstCat !=null && linstCat.length()>0 )
-			{
-				String[] linst = linstCat.split(Instruction.INSTRUCTION_DELIM);
-				for( String instStr : linst )
-				{
-					String instStr2 = replaceInstructionPatch(instStr);
-					MRInstruction mrinst = MRInstructionParser.parseSingleInstruction(instStr2);
-					MatrixCharacteristics.computeDimension(dims, mrinst);
-				}
-			}
-		
-		//create varstats if necessary
-		for( Entry<Byte,MatrixCharacteristics> e : dims.entrySet() )
-		{
-			byte ix = e.getKey();
-			if( !stats.containsKey(String.valueOf(ix)) )
-			{
-				MatrixCharacteristics mc = e.getValue();
-				VarStats vs = new VarStats(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros(), false);
-				stats.put(String.valueOf(ix), vs);	
-			}
-		}
-		
-		//map result indexes
-		String[] outLabels = jobinst.getOutputVars();
-		byte[] resultIndexes = jobinst.getIv_resultIndices();
-		for( int i=0; i<resultIndexes.length; i++ )
-		{
-			String varname = outLabels[i];
-			VarStats varvs = stats.get(String.valueOf(resultIndexes[i]));
-			if( varvs==null )
-			{
-				varvs = stats.get(outLabels[i]);
-			}
-			varvs._inmem = false;
-			stats.put(varname, varvs);
-		}	
 	}
 
 	protected String replaceInstructionPatch( String inst )
@@ -562,65 +434,10 @@ public abstract class CostEstimator
 		vs[1] = _unknownStats;
 		vs[2] = _unknownStats;	
 	}
-	
-	private static Object[] extractMRJobInstStatistics( Instruction inst, HashMap<String, VarStats> stats )
-	{
-		Object[] ret = new Object[2]; //stats, attrs
-		VarStats[] vs = null;
-		String[] attr = null; 
 		
-		MRJobInstruction jinst = (MRJobInstruction)inst;
-		
-		//get number of indices 
-		byte[] indexes = jinst.getIv_resultIndices();
-		byte maxIx = -1;
-		for( int i=0; i<indexes.length; i++ )
-			if( maxIx < indexes[i] )
-				maxIx = indexes[i];
-		
-		vs = new VarStats[ maxIx+1 ];
-		
-		//get inputs, intermediates, and outputs
-		for( int i=0; i<vs.length; i++ ){
-			vs[i] = stats.get(String.valueOf(i));
-			if( vs[i]==null )
-			{
-				vs[i] = _unknownStats;
-			}
-		}
-		
-		//result preparation
-		ret[0] = vs;
-		ret[1] = attr;
-		
-		return ret;
-	}	
-	
-	private static void cleanupMRJobVariableStatistics( Instruction inst, HashMap<String, VarStats> stats )
-	{
-		MRJobInstruction jinst = (MRJobInstruction)inst;
-		
-		//get number of indices 
-		byte[] indexes = jinst.getIv_resultIndices();
-		byte maxIx = -1;
-		for( int i=0; i<indexes.length; i++ )
-			if( maxIx < indexes[i] )
-				maxIx = indexes[i];
-		
-		//remove all stats up to max index
-		for( int i=0; i<=maxIx; i++ )
-		{
-			VarStats tmp = stats.remove(String.valueOf(i));
-			if( tmp!=null )
-				tmp._inmem = false; //all MR job outptus on HDFS
-		}
-	}
-	
 	private static long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {
 		return OptimizerUtils.getNumIterations(pb, DEFAULT_NUMITER);
 	}
 
 	protected abstract double getCPInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args );
-
-	protected abstract double getMRJobInstTimeEstimate( Instruction inst, VarStats[] vs, String[] args );
 }

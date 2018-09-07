@@ -34,7 +34,6 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.matrix.MetaData;
-import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 @SuppressWarnings("rawtypes")
 public class InputInfo implements Serializable 
@@ -77,10 +76,6 @@ public class InputInfo implements Serializable
 	// Format that denotes the input of a SORT job
 	public static final InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 
 			DoubleWritable.class, IntWritable.class);
-	
-	// Format that denotes the output of a SORT job
-	public static final InputInfo InputInfoForSortOutput = new InputInfo(PickFromCompactInputFormat.class,
-			DoubleWritable.class, IntWritable.class);
 
 	public static final InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
@@ -99,8 +94,6 @@ public class InputInfo implements Serializable
 			return OutputInfo.TextCellOutputInfo;
 		else if ( ii == InputInfo.InputInfoForSort)
 			return OutputInfo.OutputInfoForSortInput;
-		else if ( ii == InputInfo.InputInfoForSortOutput)
-			return OutputInfo.OutputInfoForSortOutput;
 		else if ( ii == InputInfo.WeightedPairInputInfo)
 			return OutputInfo.WeightedPairOutputInfo;
 		else if ( ii == InputInfo.CSVInputInfo)
@@ -124,8 +117,6 @@ public class InputInfo implements Serializable
 		}
 		else if ( str.equalsIgnoreCase("sort_input"))
 			return InputInfoForSort;
-		else if ( str.equalsIgnoreCase("sort_output"))
-			return InputInfoForSortOutput;
 		else if ( str.equalsIgnoreCase("weightedpair"))
 			return WeightedPairInputInfo;
 		else if ( str.equalsIgnoreCase("csv"))
@@ -154,8 +145,6 @@ public class InputInfo implements Serializable
 			return "binaryblock";
 		else if ( ii == InputInfoForSort )
 			return "sort_input";
-		else if ( ii == InputInfoForSortOutput)
-			return "sort_output";
 		else if ( ii == WeightedPairInputInfo )
 			return "weightedpair";
 		else if ( ii == MatrixMarketInputInfo )

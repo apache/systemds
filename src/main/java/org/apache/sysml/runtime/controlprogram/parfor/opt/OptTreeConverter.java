@@ -59,7 +59,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
@@ -624,8 +623,8 @@ public class OptTreeConverter
 	}
 
 	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark ) {
-		return instSet.stream().anyMatch(inst -> inst instanceof MRJobInstruction
-			|| (inclSpark && inst instanceof SPInstruction)
+		return instSet.stream().anyMatch(inst -> 
+			(inclSpark && inst instanceof SPInstruction)
 			|| (inclCPFile && inst instanceof MatrixIndexingCPFileInstruction));
 	}
 

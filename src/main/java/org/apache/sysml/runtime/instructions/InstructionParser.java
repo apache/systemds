@@ -23,7 +23,6 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 
 
@@ -53,12 +52,6 @@ public class InstructionParser
 				if( gputype == null )
 					throw new DMLRuntimeException("Unknown GPU instruction: " + str);
 				return GPUInstructionParser.parseSingleInstruction (gputype, str);
-			}
-			case MR: {
-				MRType mrtype = InstructionUtils.getMRType(str);
-				if( mrtype == null )
-					throw new DMLRuntimeException("Unknown MR instruction: " + str);
-				return MRInstructionParser.parseSingleInstruction (mrtype, str);
 			}
 			default:
 				throw new DMLRuntimeException("Unknown execution type in instruction: " + str);

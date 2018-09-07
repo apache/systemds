@@ -21,7 +21,6 @@ package org.apache.sysml.runtime.controlprogram;
 
 import java.util.ArrayList;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.parser.WhileStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -31,7 +30,6 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 
 public class WhileProgramBlock extends ProgramBlock 
@@ -78,9 +76,6 @@ public class WhileProgramBlock extends ProgramBlock
 		{
 			if( _sb!=null )
 			{
-				if( DMLScript.isActiveAM() ) //set program block specific remote memory
-					DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
-				
 				WhileStatementBlock wsb = (WhileStatementBlock)_sb;
 				Hop predicateOp = wsb.getPredicateHops();
 				boolean recompile = wsb.requiresPredicateRecompilation();

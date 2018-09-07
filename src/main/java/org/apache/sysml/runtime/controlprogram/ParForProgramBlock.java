@@ -19,9 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,11 +32,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Level;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -60,22 +55,18 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.DataPartitioner;
 import org.apache.sysml.runtime.controlprogram.parfor.DataPartitionerLocal;
-import org.apache.sysml.runtime.controlprogram.parfor.DataPartitionerRemoteMR;
 import org.apache.sysml.runtime.controlprogram.parfor.DataPartitionerRemoteSpark;
 import org.apache.sysml.runtime.controlprogram.parfor.LocalParWorker;
 import org.apache.sysml.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysml.runtime.controlprogram.parfor.ParForBody;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.runtime.controlprogram.parfor.RemoteDPParForMR;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteDPParForSpark;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForJobReturn;
-import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForMR;
 import org.apache.sysml.runtime.controlprogram.parfor.RemoteParForSpark;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMerge;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeLocalMemory;
-import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeRemoteMR;
 import org.apache.sysml.runtime.controlprogram.parfor.ResultMergeRemoteSpark;
 import org.apache.sysml.runtime.controlprogram.parfor.Task;
 import org.apache.sysml.runtime.controlprogram.parfor.TaskPartitioner;
@@ -85,11 +76,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.TaskPartitionerFactoringCm
 import org.apache.sysml.runtime.controlprogram.parfor.TaskPartitionerFixedsize;
 import org.apache.sysml.runtime.controlprogram.parfor.TaskPartitionerNaive;
 import org.apache.sysml.runtime.controlprogram.parfor.TaskPartitionerStatic;
-import org.apache.sysml.runtime.controlprogram.parfor.mqo.RuntimePiggybacking;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimator.TestMeasure;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
-import org.apache.sysml.runtime.controlprogram.parfor.opt.OptTree;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizationWrapper;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
@@ -107,7 +93,6 @@ import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -645,14 +630,6 @@ public class ParForProgramBlock extends ForProgramBlock
 					executeLocalParFor(ec, iterVar, from, to, incr);
 					break;
 				
-				case REMOTE_MR: // create parworkers as MR tasks (one job per parfor)
-					executeRemoteMRParFor(ec, iterVar, from, to, incr);
-					break;
-				
-				case REMOTE_MR_DP: // create parworkers as MR tasks (one job per parfor)
-					executeRemoteMRParForDP(ec, iterVar, from, to, incr);
-					break;
-				
 				case REMOTE_SPARK: // create parworkers as Spark tasks (one job per parfor)
 					executeRemoteSparkParFor(ec, iterVar, from, to, incr);
 					break;
@@ -744,10 +721,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//restrict recompilation to thread local memory
 		setMemoryBudget();
-		
-		//enable runtime piggybacking if required
-		if( _enableRuntimePiggybacking )
-			RuntimePiggybacking.start( _numThreads ); //default piggybacking worker
 		
 		try
 		{
@@ -841,10 +814,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			//(in finally to prevent error side effects for multiple scripts in one jvm)
 			resetMemoryBudget();
 		
-			//disable runtime piggybacking
-			if( _enableRuntimePiggybacking )
-				RuntimePiggybacking.stop();
-			
 			if( _monitor )  {
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
 				StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
@@ -853,160 +822,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		}
 	}
 
-	private void executeRemoteMRParFor( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws IOException
-	{
-		/* Step 0) check and recompile MR inst
-		 * Step 1) serialize child PB and inst
-		 * Step 2) create and serialize tasks
-		 * Step 3) submit MR Jobs and wait for results
-		 * Step 4) collect results from each parallel worker
-		 */
-		
-		Timing time = ( _monitor ? new Timing(true) : null );
-		
-		// Step 0) check and compile to CP (if forced remote parfor)
-		boolean flagForced = false;
-		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE || (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_MR)) )
-		{
-			//tid = 0  because replaced in remote parworker
-			flagForced = checkMRAndRecompileToCP(0);
-		}
-		
-		// Step 1) init parallel workers (serialize PBs)
-		// NOTES: each mapper changes filenames with regard to his ID as we submit a single
-		// job, cannot reuse serialized string, since variables are serialized as well.
-		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
-		String program = ProgramConverter.serializeParForBody( body );
-		
-		if( _monitor ) 
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
-		
-		// Step 2) create tasks 
-		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
-		String taskFile = constructTaskFileName();
-		String resultFile = constructResultFileName();
-		
-		long numIterations = partitioner.getNumIterations();
-		int maxDigits = (int)Math.log10(to.getLongValue()) + 1;
-		long numCreatedTasks = -1;
-		if( USE_STREAMING_TASK_CREATION ) {
-			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
-			
-			//put tasks into queue and start writing to taskFile
-			numCreatedTasks = partitioner.createTasks(queue);
-			taskFile = writeTasksToFile( taskFile, queue, maxDigits );
-		}
-		else
-		{
-			//sequentially create tasks and write to disk
-			List<Task> tasks = partitioner.createTasks();
-			numCreatedTasks = tasks.size();
-			taskFile = writeTasksToFile( taskFile, tasks, maxDigits );
-		}
-		
-		if( _monitor )
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
-		
-		//write matrices to HDFS 
-		exportMatricesToHDFS(ec);
-		
-		// Step 3) submit MR job (wait for finished work)
-		MatrixObject colocatedDPMatrixObj = (_colocatedDPMatrix!=null)? ec.getMatrixObject(_colocatedDPMatrix) : null;
-		RemoteParForJobReturn ret = RemoteParForMR.runJob(_ID, program, taskFile, resultFile,
-			colocatedDPMatrixObj, _enableCPCaching,_numThreads, WRITE_REPLICATION_FACTOR, MAX_RETRYS_ON_ERROR, 
-			getMinMemory(ec), (ALLOW_REUSE_MR_JVMS & _jvmReuse) );
-		
-		if( _monitor ) 
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
-		
-		// Step 4) collecting results from each parallel worker
-		int numExecutedTasks = ret.getNumExecutedTasks();
-		int numExecutedIterations = ret.getNumExecutedIterations();
-		
-		//consolidate results into global symbol table
-		consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
-			numExecutedIterations , numExecutedTasks, ret.getVariables() );
-		if( flagForced ) //see step 0
-			releaseForcedRecompile(0);
-		
-		if( _monitor ) {
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
-		}
-	}
-
-	private void executeRemoteMRParForDP( ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr ) 
-		throws IOException
-	{
-		/* Step 0) check and recompile MR inst
-		 * Step 1) serialize child PB and inst
-		 * Step 2) create and serialize tasks
-		 * Step 3) submit MR Jobs and wait for results
-		 * Step 4) collect results from each parallel worker
-		 */
-		
-		Timing time = ( _monitor ? new Timing(true) : null );
-		
-		// Step 0) check and compile to CP (if forced remote parfor)
-		boolean flagForced = checkMRAndRecompileToCP(0);
-		
-		// Step 1) prepare partitioned input matrix (needs to happen before serializing the program)
-		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
-		MatrixObject inputMatrix = ec.getMatrixObject(_colocatedDPMatrix );
-		PartitionFormat inputDPF = sb.determineDataPartitionFormat( _colocatedDPMatrix );
-		inputMatrix.setPartitioned(inputDPF._dpf, inputDPF._N); //mark matrix var as partitioned  
-		
-		// Step 2) init parallel workers (serialize PBs)
-		// NOTES: each mapper changes filenames with regard to his ID as we submit a single
-		// job, cannot reuse serialized string, since variables are serialized as well.
-		ParForBody body = new ParForBody( _childBlocks, _resultVars, ec );
-		String program = ProgramConverter.serializeParForBody( body );
-		
-		if( _monitor ) 
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_PARWRK_T, time.stop());
-		
-		// Step 3) create tasks 
-		TaskPartitioner partitioner = createTaskPartitioner(from, to, incr);
-		String resultFile = constructResultFileName();
-		long numIterations = partitioner.getNumIterations();
-		long numCreatedTasks = numIterations;//partitioner.createTasks().size();
-		
-		if( _monitor )
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_INIT_TASKS_T, time.stop());
-		
-		//write matrices to HDFS 
-		exportMatricesToHDFS(ec);
-		
-		// Step 4) submit MR job (wait for finished work)
-		OutputInfo inputOI = ((inputMatrix.getSparsity()<0.1 && inputDPF==PartitionFormat.COLUMN_WISE)
-			|| (inputMatrix.getSparsity()<0.001 && inputDPF==PartitionFormat.ROW_WISE)) ?
-			OutputInfo.BinaryCellOutputInfo : OutputInfo.BinaryBlockOutputInfo;
-		RemoteParForJobReturn ret = RemoteDPParForMR.runJob(_ID, _iterPredVar, _colocatedDPMatrix, program, resultFile, 
-			inputMatrix, inputDPF, inputOI, _tSparseCol, _enableCPCaching, _numThreads, _replicationDP );
-		
-		if( _monitor )
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_EXEC_T, time.stop());
-		
-		// Step 5) collecting results from each parallel worker
-		int numExecutedTasks = ret.getNumExecutedTasks();
-		int numExecutedIterations = ret.getNumExecutedIterations();
-		
-		//consolidate results into global symbol table
-		consolidateAndCheckResults( ec, numIterations, numCreatedTasks,
-			numExecutedIterations, numExecutedTasks, ret.getVariables() );
-		
-		if( flagForced ) //see step 0
-			releaseForcedRecompile(0);
-		inputMatrix.unsetPartitioned();
-		
-		if( _monitor ) {
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_WAIT_RESULTS_T, time.stop());
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMTASKS, numExecutedTasks);
-			StatisticMonitor.putPFStat(_ID, Stat.PARFOR_NUMITERS, numExecutedIterations);
-		}
-	}
 
 	private void executeRemoteSparkParFor(ExecutionContext ec, IntObject itervar, IntObject from, IntObject to, IntObject incr) 
 	{
@@ -1462,10 +1277,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			case LOCAL:
 				dp = new DataPartitionerLocal(dpf, _numThreads);
 				break;
-			case REMOTE_MR:
-				dp = new DataPartitionerRemoteMR( dpf, _ID, numRed,
-					_replicationDP, ALLOW_REUSE_MR_JVMS, false );
-				break;
 			case REMOTE_SPARK:
 				dp = new DataPartitionerRemoteSpark( dpf, ec, numRed,
 					_replicationDP, false );
@@ -1513,11 +1324,6 @@ public class ParForProgramBlock extends ForProgramBlock
 			case LOCAL_AUTOMATIC:
 				rm = new ResultMergeLocalAutomatic( out, in, fname, accum );
 				break;
-			case REMOTE_MR:
-				rm = new ResultMergeRemoteMR( out, in, fname, accum, 
-					_ID, numMap, numRed, WRITE_REPLICATION_FACTOR,
-					MAX_RETRYS_ON_ERROR, ALLOW_REUSE_MR_JVMS );
-				break;
 			case REMOTE_SPARK:
 				rm = new ResultMergeRemoteSpark( out, in,
 					fname, accum, ec, numMap, numRed );
@@ -1559,66 +1365,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	private void releaseForcedRecompile(long tid) {
 		Recompiler.recompileProgramBlockHierarchy2Forced(
 			_childBlocks, tid, new HashSet<String>(), null);
-	}
-
-	private static String writeTasksToFile(String fname, List<Task> tasks, int maxDigits)
-		throws IOException
-	{
-		BufferedWriter br = null;
-		try
-		{
-			Path path = new Path(fname);
-			FileSystem fs = IOUtilFunctions.getFileSystem(path);
-			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
-			
-			boolean flagFirst = true; //workaround for keeping gen order
-			for( Task t : tasks ) {
-				br.write( createTaskFileLine( t, maxDigits, flagFirst ) );
-				if( flagFirst )
-					flagFirst = false;
-			}
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException("Error writing tasks to taskfile "+fname, ex);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(br);
-		}
-		
-		return fname;
-	}
-
-	private static String writeTasksToFile(String fname, LocalTaskQueue<Task> queue, int maxDigits)
-		throws IOException
-	{
-		BufferedWriter br = null;
-		try
-		{
-			Path path = new Path( fname );
-			FileSystem fs = IOUtilFunctions.getFileSystem(path);
-			br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
-			
-			Task t = null;
-			boolean flagFirst = true; //workaround for keeping gen order
-			while( (t = queue.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS ) {
-				br.write( createTaskFileLine( t, maxDigits, flagFirst ) );
-				if( flagFirst )
-					flagFirst = false;
-			}
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException("Error writing tasks to taskfile "+fname, ex);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(br);
-		}
-		
-		return fname;
-	}
-	
-	private static String createTaskFileLine( Task t, int maxDigits, boolean flagFirst ) {
-		//always pad to max digits in order to preserve task order	
-		return t.toCompactString(maxDigits) + (flagFirst?" ":"") + "\n";
 	}
 
 	private void consolidateAndCheckResults(ExecutionContext ec, long expIters, long expTasks, long numIters, long numTasks, LocalVariableMap [] results) 
@@ -1783,24 +1529,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	/**
 	 * NOTE: Only required for remote parfor. Hence, there is no need to transfer DMLConfig to
 	 * the remote workers (MR job) since nested remote parfor is not supported.
- 	 * 
-	 * @return task file name
-	 */
-	private String constructTaskFileName() {
-		String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
-		StringBuilder sb = new StringBuilder();
-		sb.append(scratchSpaceLoc);
-		sb.append(Lop.FILE_SEPARATOR);
-		sb.append(Lop.PROCESS_PREFIX);
-		sb.append(DMLScript.getUUID());
-		sb.append(PARFOR_MR_TASKS_TMP_FNAME.replaceAll("%ID%", String.valueOf(_ID)));
-		
-		return sb.toString();   
-	}
-	
-	/**
-	 * NOTE: Only required for remote parfor. Hence, there is no need to transfer DMLConfig to
-	 * the remote workers (MR job) since nested remote parfor is not supported.
 	 * 
 	 * @return result file name
 	 */
@@ -1846,33 +1574,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		sb.append(fname);
 		
 		return sb.toString();
-	}
-
-	private long getMinMemory(ExecutionContext ec)
-	{
-		long ret = -1;
-		
-		//if forced remote exec and single node
-		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
-			&& _execMode == PExecMode.REMOTE_MR
-			&& _optMode == POptMode.NONE      )
-		{
-			try 
-			{
-				ParForStatementBlock sb = (ParForStatementBlock)getStatementBlock();
-				OptTree tree = OptTreeConverter.createAbstractOptTree(-1, -1, sb, this, new HashSet<String>(), ec);
-				CostEstimator est = new CostEstimatorHops( OptTreeConverter.getAbstractPlanMapping() );
-				double mem = est.getEstimate(TestMeasure.MEMORY_USAGE, tree.getRoot());
-				
-				ret = (long) (mem * ( 1d/OptimizerUtils.MEM_UTIL_FACTOR  )); 
-			} 
-			catch(Exception e) 
-			{
-				LOG.error("Failed to analyze minmum memory requirements.", e);
-			} 
-		}
-		
-		return ret;
 	}
 
 	private void setMemoryBudget() {

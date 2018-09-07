@@ -25,24 +25,17 @@ import java.util.Map.Entry;
 
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
-import org.apache.sysml.lops.AppendR;
 import org.apache.sysml.lops.Data;
-import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.GroupedAggregate;
 import org.apache.sysml.lops.GroupedAggregateM;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.PMMJ;
-import org.apache.sysml.lops.PartialAggregate.CorrectionLocationType;
 import org.apache.sysml.lops.ParameterizedBuiltin;
-import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 import org.apache.sysml.runtime.util.UtilFunctions;
 
 
@@ -227,128 +220,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		}
 		
 		//construct lops
-		if ( et == ExecType.MR ) 
-		{
-			Lop grp_agg = null;
-			
-			// construct necessary lops: combineBinary/combineTertiary and groupedAgg
-			boolean isWeighted = (_paramIndexMap.get(Statement.GAGG_WEIGHTS) != null);
-			if (isWeighted) 
-			{
-				Lop append = BinaryOp.constructAppendLopChain(
-						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)), 
-						getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS)),
-						getInput().get(_paramIndexMap.get(Statement.GAGG_WEIGHTS)),
-						DataType.MATRIX, getValueType(), true,
-						getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET)));
-
-				// add the combine lop to parameter list, with a new name "combinedinput"
-				inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
-				inputlops.remove(Statement.GAGG_TARGET);
-				inputlops.remove(Statement.GAGG_GROUPS);
-				inputlops.remove(Statement.GAGG_WEIGHTS);
-
-				grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
-				grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
-				
-				setRequiresReblock( true );
-			} 
-			else 
-			{
-				Hop target = getInput().get(_paramIndexMap.get(Statement.GAGG_TARGET));
-				Hop groups = getInput().get(_paramIndexMap.get(Statement.GAGG_GROUPS));
-				Lop append = null;
-			
-				//physical operator selection
-				double groupsSizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(groups.getDim1(), groups.getDim2(), groups.getRowsInBlock(), groups.getColsInBlock(), groups.getNnz());
-			
-				if( groupsSizeP < OptimizerUtils.getRemoteMemBudgetMap(true) //mapgroupedagg
-					&& getParameterHop(Statement.GAGG_FN) instanceof LiteralOp
-					&& ((LiteralOp)getParameterHop(Statement.GAGG_FN)).getStringValue().equals("sum")
-					&& inputlops.get(Statement.GAGG_NUM_GROUPS) != null ) 
-				{
-					//pre partitioning
-					boolean needPart = (groups.dimsKnown() && groups.getDim1()*groups.getDim2() > DistributedCacheInput.PARTITION_SIZE);  
-					if( needPart ) {
-						ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(groups.getDim1(), groups.getDim2(), 1.0) 
-								          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
-						Lop dcinput = new DataPartition(groups.constructLops(), DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-						dcinput.getOutputParameters().setDimensions(groups.getDim1(), groups.getDim2(), target.getRowsInBlock(), target.getColsInBlock(), groups.getNnz());
-						setLineNumbers(dcinput);
-						
-						inputlops.put(Statement.GAGG_GROUPS, dcinput);
-					}
-					
-					Lop grp_agg_m = new GroupedAggregateM(inputlops, getDataType(), getValueType(), needPart, ExecType.MR);
-					grp_agg_m.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
-					setLineNumbers(grp_agg_m);
-					
-					//post aggregation 
-					Group grp = new Group(grp_agg_m, Group.OperationTypes.Sort, getDataType(), getValueType());
-					grp.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);
-					setLineNumbers(grp);
-					
-					Aggregate agg1 = new Aggregate(grp, HopsAgg2Lops.get(AggOp.SUM), getDataType(), getValueType(), ExecType.MR);
-					agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
-					agg1.getOutputParameters().setDimensions(outputDim1, outputDim2, target.getRowsInBlock(), target.getColsInBlock(), -1);			
-					grp_agg = agg1;
-					
-					//note: no reblock required
-				}
-				else //general case: groupedagg
-				{				
-					if(  target.getDim2()>=target.getColsInBlock()  // multi-column-block result matrix
-						|| target.getDim2()<=0  )                   // unkown
-					{
-						long m1_dim1 = target.getDim1();
-						long m1_dim2 = target.getDim2();
-						long m2_dim1 = groups.getDim1();
-						long m2_dim2 = groups.getDim2();
-						long m3_dim1 = m1_dim1; 
-						long m3_dim2 = ((m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1);
-						long m3_nnz = (target.getNnz()>0 && groups.getNnz()>0) ? (target.getNnz() + groups.getNnz()) : -1; 
-						long brlen = target.getRowsInBlock();
-						long bclen = target.getColsInBlock();
-						
-						Lop offset = createOffsetLop(target, true); 
-						Lop rep = new RepMat(groups.constructLops(), offset, true, groups.getDataType(), groups.getValueType());
-						setOutputDimensions(rep);
-						setLineNumbers(rep);
-						
-						Group group1 = new Group(target.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, target.getValueType());
-						group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, target.getNnz());
-						setLineNumbers(group1);
-						
-						Group group2 = new Group(rep, Group.OperationTypes.Sort, DataType.MATRIX, groups.getValueType());
-						group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, groups.getNnz());
-						setLineNumbers(group2);
-						
-						append = new AppendR(group1, group2, DataType.MATRIX, ValueType.DOUBLE, true, ExecType.MR);
-						append.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-						setLineNumbers(append);
-					}
-					else //single-column-block vector or matrix
-					{
-						append = BinaryOp.constructMRAppendLop(target, groups, 
-								DataType.MATRIX, getValueType(), true, target);
-					}
-					
-					// add the combine lop to parameter list, with a new name "combinedinput"
-					inputlops.put(GroupedAggregate.COMBINEDINPUT, append);
-					inputlops.remove(Statement.GAGG_TARGET);
-					inputlops.remove(Statement.GAGG_GROUPS);
-					
-					grp_agg = new GroupedAggregate(inputlops, isWeighted, getDataType(), getValueType());
-					grp_agg.getOutputParameters().setDimensions(outputDim1, outputDim2, getRowsInBlock(), getColsInBlock(), -1);
-
-					setRequiresReblock( true );
-				}
-			}
-			
-			setLineNumbers(grp_agg);
-			setLops(grp_agg);
-		}
-		else //CP/Spark 
+		//CP/Spark 
 		{
 			Lop grp_agg = null;
 			
@@ -394,7 +266,6 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		Hop targetHop = getTargetHop();
 		Hop marginHop = getParameterHop("margin");
 		Hop selectHop = getParameterHop("select");
-		Hop emptyRet = getParameterHop("empty.return");
 		
 		if( et == ExecType.CP )
 		{
@@ -457,199 +328,6 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				setLops(pbilop);
 			}
 			*/
-		}
-		else if( et == ExecType.MR )
-		{
-			//special compile for mr removeEmpty-diag 
-			if( isTargetDiagInput()
-				&& HopRewriteUtils.isLiteralOfValue(marginHop, "rows") )
-	 		{
-				//get input vector (without materializing diag())
-				Hop input = targetHop.getInput().get(0);
-				int brlen = input.getRowsInBlock();
-				int bclen = input.getColsInBlock();
-				MemoTable memo = new MemoTable();
-			
-				boolean isPPredInput = (input instanceof BinaryOp && ((BinaryOp)input).isPPredOperation());
-				
-				//step1: compute index vectors
-				Hop ppred0 = input;
-				if( !isPPredInput ) { //ppred only if required
-					ppred0 = HopRewriteUtils.createBinary(input, new LiteralOp(0), OpOp2.NOTEQUAL);
-					HopRewriteUtils.updateHopCharacteristics(ppred0, brlen, bclen, memo, this);
-				}
-				
-				UnaryOp cumsum = HopRewriteUtils.createUnary(ppred0, OpOp1.CUMSUM); 
-				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, memo, this);
-			
-				Lop loutput = null;
-				double mest = AggBinaryOp.getMapmmMemEstimate(input.getDim1(), 1, brlen, bclen, -1, brlen, bclen, brlen, bclen, -1, 1, true);
-				double mbudget = OptimizerUtils.getRemoteMemBudgetMap(true);
-				if( _outputPermutationMatrix && mest < mbudget ) //SPECIAL CASE: SELECTION VECTOR
-				{
-					BinaryOp sel = HopRewriteUtils.createBinary(ppred0, cumsum, OpOp2.MULT);
-					HopRewriteUtils.updateHopCharacteristics(sel, brlen, bclen, memo, this);
-					loutput = sel.constructLops();
-				}
-				else //GENERAL CASE: GENERAL PERMUTATION MATRIX
-				{
-					//max ensures non-zero entries and at least one output row
-					BinaryOp max = HopRewriteUtils.createBinary(cumsum, new LiteralOp(1), OpOp2.MAX);
-					HopRewriteUtils.updateHopCharacteristics(max, brlen, bclen, memo, this);
-					
-					DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(input);
-					seq.setName("tmp4");
-					HopRewriteUtils.updateHopCharacteristics(seq, brlen, bclen, memo, this);
-					
-					//step 2: compute removeEmpty(rows) output via table, seq guarantees right column dimension
-					//note: weights always the input (even if isPPredInput) because input also includes 0s
-					TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, max, seq, input);
-					table.setOutputBlocksizes(brlen, bclen);
-					table.refreshSizeInformation();
-					table.setForcedExecType(ExecType.MR); //force MR 
-					HopRewriteUtils.copyLineNumbers(this, table);
-					table.setDisjointInputs(true);
-					table.setOutputEmptyBlocks(_outputEmptyBlocks);
-					loutput = table.constructLops();
-					
-					HopRewriteUtils.removeChildReference(table, input);	
-				}
-				
-				//Step 4: cleanup hops (allow for garbage collection)
-				HopRewriteUtils.removeChildReference(ppred0, input);
-				
-				setLops( loutput );
-			}
-			//default mr remove empty
-			else if( et == ExecType.MR )
-			{
-				//TODO additional physical operator if offsets fit in memory
-				
-				if( !(marginHop instanceof LiteralOp) )
-					throw new HopsException("Parameter 'margin' must be a literal argument.");
-					
-				Hop input = targetHop;
-				long rlen = input.getDim1();
-				long clen = input.getDim2();
-				int brlen = input.getRowsInBlock();
-				int bclen = input.getColsInBlock();
-				long nnz = input.getNnz();
-				boolean rmRows = ((LiteralOp)marginHop).getStringValue().equals("rows");
-				
-				//construct lops via new partial hop dag and subsequent lops construction 
-				//in order to reuse of operator selection decisions
-				
-				BinaryOp ppred0 = null;
-				Hop emptyInd = null;
-				
-				if(selectHop == null) {
-					//Step1: compute row/col non-empty indicators 
-					ppred0 = HopRewriteUtils.createBinary(input, new LiteralOp(0), OpOp2.NOTEQUAL);
-					ppred0.setForcedExecType(ExecType.MR); //always MR 
-					
-					emptyInd = ppred0;
-					if( !((rmRows && clen == 1) || (!rmRows && rlen==1)) ){
-						emptyInd = HopRewriteUtils.createAggUnaryOp(ppred0, AggOp.MAX, rmRows?Direction.Row:Direction.Col);
-						emptyInd.setForcedExecType(ExecType.MR); //always MR
-						HopRewriteUtils.copyLineNumbers(this, emptyInd);
-					}
-				} 
-				else {
-					emptyInd = selectHop;
-				}
-				
-				//Step 2: compute row offsets for non-empty rows
-				Hop cumsumInput = emptyInd;
-				if( !rmRows ){
-					cumsumInput = HopRewriteUtils.createTranspose(emptyInd);
-					HopRewriteUtils.updateHopCharacteristics(cumsumInput, brlen, bclen, this);
-				}
-			
-				UnaryOp cumsum = HopRewriteUtils.createUnary(cumsumInput, OpOp1.CUMSUM); 
-				HopRewriteUtils.updateHopCharacteristics(cumsum, brlen, bclen, this);
-			
-				Hop cumsumOutput = cumsum;
-				if( !rmRows ){
-					cumsumOutput = HopRewriteUtils.createTranspose(cumsum);
-					HopRewriteUtils.updateHopCharacteristics(cumsumOutput, brlen, bclen, this);
-				}
-				
-				Hop maxDim = HopRewriteUtils.createAggUnaryOp(cumsumOutput, AggOp.MAX, Direction.RowCol); //alternative: right indexing
-				HopRewriteUtils.updateHopCharacteristics(maxDim, brlen, bclen, this);
-				
-				BinaryOp offsets = HopRewriteUtils.createBinary(cumsumOutput, emptyInd, OpOp2.MULT);
-				HopRewriteUtils.updateHopCharacteristics(offsets, brlen, bclen, this);
-				
-				//Step 3: gather non-empty rows/cols into final results 
-				Lop linput = input.constructLops();
-				Lop loffset = offsets.constructLops();
-				Lop lmaxdim = maxDim.constructLops();
-				
-				double mestPM = OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, 1, brlen, bclen, 1.0);
-				Lop rmEmpty = null;
-				
-				//a) broadcast-based PMM (permutation matrix mult)
-				if( rmRows && rlen >= 0 && mestPM < OptimizerUtils.getRemoteMemBudgetMap()
-					&& HopRewriteUtils.isLiteralOfValue(emptyRet, false))
-				{
-					boolean needPart = !offsets.dimsKnown() || offsets.getDim1() > DistributedCacheInput.PARTITION_SIZE;
-					if( needPart ){ //requires partitioning
-						loffset = new DataPartition(loffset, DataType.MATRIX, ValueType.DOUBLE, (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-						loffset.getOutputParameters().setDimensions(rlen, 1, brlen, bclen, rlen);
-						setLineNumbers(loffset);
-					}
-					
-					rmEmpty = new PMMJ(loffset, linput, lmaxdim, getDataType(), getValueType(), needPart, true, ExecType.MR);
-					setOutputDimensions(rmEmpty);
-					setLineNumbers(rmEmpty);
-				}
-				//b) general case: repartition-based rmempty
-				else
-				{
-					boolean requiresRep = ((clen>bclen || clen<=0) &&  rmRows)
-						|| ((rlen>brlen || rlen<=0) && !rmRows);
-					
-					if( requiresRep ) {
-						Lop pos = createOffsetLop(input, rmRows); //ncol of left input (determines num replicates)
-						loffset = new RepMat(loffset, pos, rmRows, DataType.MATRIX, ValueType.DOUBLE);
-						loffset.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-						setLineNumbers(loffset);
-					}
-					
-					Group group1 = new Group(linput, Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group1);
-					group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-				
-					Group group2 = new Group( loffset, Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group2);
-					group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, nnz);
-				
-					HashMap<String, Lop> inMap = new HashMap<>();
-					inMap.put("target", group1);
-					inMap.put("offset", group2);
-					inMap.put("maxdim", lmaxdim);
-					inMap.put("margin", inputlops.get("margin"));
-					inMap.put("empty.return", inputlops.get("empty.return"));
-					
-					rmEmpty = new ParameterizedBuiltin(inMap, HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);			
-					setOutputDimensions(rmEmpty);
-					setLineNumbers(rmEmpty);
-				}
-				
-				Group group3 = new Group( rmEmpty, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(group3);
-				group3.getOutputParameters().setDimensions(-1, -1, brlen, bclen, -1);
-				
-				Aggregate finalagg = new Aggregate(group3, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
-				setOutputDimensions(finalagg);
-				setLineNumbers(finalagg);
-				
-				//Step 4: cleanup hops (allow for garbage collection)
-				if(selectHop == null)
-					HopRewriteUtils.removeChildReference(ppred0, input);
-				
-				setLops(finalagg);
-			}
 		}
 		else if( et == ExecType.SPARK )
 		{

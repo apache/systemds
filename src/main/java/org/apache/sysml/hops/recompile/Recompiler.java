@@ -55,11 +55,8 @@ import org.apache.sysml.hops.UnaryOp;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.hops.rewrite.ProgramRewriter;
-import org.apache.sysml.lops.CSVReBlock;
-import org.apache.sysml.lops.DataGen;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.ReBlock;
 import org.apache.sysml.lops.compile.Dag;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DataExpression;
@@ -84,16 +81,11 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.controlprogram.parfor.opt.OptTreeConverter;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.runtime.instructions.mr.RandInstruction;
-import org.apache.sysml.runtime.instructions.mr.SeqInstruction;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
@@ -1458,132 +1450,6 @@ public class Recompiler
 	}
 
 	/**
-	 * Returns true iff (1) all instruction are reblock instructions and (2) all
-	 * individual reblock operations fit in the current memory budget.
-	 * 
-	 * @param inst instruction
-	 * @param inputs the inputs
-	 * @return return true if and only if all instructions are reblock instructions and all
-	 * individual reblock oeprations fir in the current memory budget.
-	 * @throws IOException if IOException occurs
-	 */
-	public static boolean checkCPReblock(MRJobInstruction inst, MatrixObject[] inputs) 
-		throws IOException 
-	{
-		boolean ret = true;
-		
-		boolean localMode = InfrastructureAnalyzer.isLocalMode();
-		
-		//check only shuffle inst
-		String rdInst = inst.getIv_randInstructions();
-		String rrInst = inst.getIv_recordReaderInstructions();
-		String mapInst = inst.getIv_instructionsInMapper();
-		String aggInst = inst.getIv_aggInstructions();
-		String otherInst = inst.getIv_otherInstructions();
-		if(    (rdInst != null && rdInst.length()>0)
-			|| (rrInst != null && rrInst.length()>0)
-			|| (mapInst != null && mapInst.length()>0)
-			|| (aggInst != null && aggInst.length()>0)
-			|| (otherInst != null && otherInst.length()>0)  )
-		{
-			ret = false;
-		}
-		
-		//check only reblock inst
-		if( ret ) {
-			String shuffleInst = inst.getIv_shuffleInstructions();
-			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
-			for( String rblk : instParts )
-				if(    !InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) 
-					&& !InstructionUtils.getOpCode(rblk).equals(CSVReBlock.OPCODE) )
-				{
-					ret = false;
-					break;
-				}
-		}
-		
-		//check output empty blocks (for outputEmptyBlocks=false, a CP reblock can be 
-		//counter-productive because any export from CP would reintroduce the empty blocks)
-		if( ret ){
-			String shuffleInst = inst.getIv_shuffleInstructions();
-			String[] instParts = shuffleInst.split( Lop.INSTRUCTION_DELIMITOR );
-			for( String rblk : instParts )
-				if(    InstructionUtils.getOpCode(rblk).equals(ReBlock.OPCODE) 
-				    && rblk.endsWith("false") ) //no output of empty blocks
-				{
-					ret = false;
-					break;
-				}
-		}
-		
-		//check recompile memory budget
-		if( ret ) {
-			for( MatrixObject mo : inputs )
-			{
-				long rows = mo.getNumRows();
-				long cols = mo.getNumColumns();
-				
-				// If the dimensions are unknown then reblock can not be recompiled into CP
-				// Note: unknown dimensions at this point can only happen for CSV files.
-				// however, we do a conservative check with the CSV filesize
-				if ( rows == -1 || cols == -1 ) 
-				{
-					Path path = new Path(mo.getFileName());
-					long size = MapReduceTool.getFilesizeOnHDFS(path);
-					if( size > CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE || CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE > OptimizerUtils.getLocalMemBudget() )
-					{
-						ret = false;
-						break;
-					}
-				}
-				//default case (known dimensions)
-				else
-				{
-					long nnz = mo.getNnz();
-					double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
-					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
-					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
-						|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
-						|| mem >= OptimizerUtils.getLocalMemBudget() ) 
-					{
-						ret = false;
-						break;
-					}
-				}
-			}
-		}
-		
-		//check in-memory reblock size threshold (prevent long single-threaded text read)
-		//NOTE: this does not apply to local mode because there text read single-threaded as well
-		if( ret && !localMode ) {
-			for( MatrixObject mo : inputs )
-			{
-				MetaDataFormat iimd = (MetaDataFormat) mo.getMetaData();
-				if((   iimd.getInputInfo()==InputInfo.TextCellInputInfo
-					|| iimd.getInputInfo()==InputInfo.MatrixMarketInputInfo
-					|| iimd.getInputInfo()==InputInfo.CSVInputInfo
-					|| iimd.getInputInfo()==InputInfo.BinaryCellInputInfo)
-					&& !mo.isDirty() )
-				{
-					//get file size on hdfs (as indicator for estimated read time)
-					Path path = new Path(mo.getFileName());
-					long fileSize = MapReduceTool.getFilesizeOnHDFS(path);
-					//compute cp reblock size threshold based on available parallelism
-					long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
-							           OptimizerUtils.getParallelTextReadParallelism();
-					
-					if( fileSize > cpThreshold ) {
-						ret = false;
-						break;
-					}
-				}
-			}
-		}
-	
-		return ret;
-	}
-	
-	/**
 	 * CP Reblock check for spark instructions; in contrast to MR, we can not
 	 * rely on the input file sizes because inputs might be passed via rdds. 
 	 * 
@@ -1646,73 +1512,7 @@ public class Recompiler
 		           OptimizerUtils.getParallelTextReadParallelism();
 		return (estFilesize < cpThreshold);
 	}
-	
-	public static boolean checkCPDataGen( MRJobInstruction inst, String updatedRandInst ) 
-	{
-		boolean ret = true;
 		
-		//check only shuffle inst
-		String shuffleInst = inst.getIv_shuffleInstructions();
-		String rrInst = inst.getIv_recordReaderInstructions();
-		String mapInst = inst.getIv_instructionsInMapper();
-		String aggInst = inst.getIv_aggInstructions();
-		String otherInst = inst.getIv_otherInstructions();
-		if(    (shuffleInst != null && shuffleInst.length()>0)
-			|| (rrInst != null && rrInst.length()>0)
-			|| (mapInst != null && mapInst.length()>0)
-			|| (aggInst != null && aggInst.length()>0)
-			|| (otherInst != null && otherInst.length()>0)  )
-		{
-			ret = false;
-		}
-		
-		//check only rand inst
-		if( ret ) {
-			String[] instParts = updatedRandInst.split( Lop.INSTRUCTION_DELIMITOR );
-			for( String lrandStr : instParts ) {
-				if( InstructionUtils.getOpCode(lrandStr).equals(DataGen.RAND_OPCODE) )
-				{
-					//check recompile memory budget
-					RandInstruction lrandInst = (RandInstruction) RandInstruction.parseInstruction(lrandStr);
-					long rows = lrandInst.getRows();
-					long cols = lrandInst.getCols();
-					double sparsity = lrandInst.getSparsity();
-					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sparsity);				
-					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
-						|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sparsity)	
-						|| mem >= OptimizerUtils.getLocalMemBudget() )
-					{
-						ret = false;
-						break;
-					}
-				}
-				else if( InstructionUtils.getOpCode(lrandStr).equals(DataGen.SEQ_OPCODE) )
-				{
-					//check recompile memory budget
-					//(don't account for sparsity because always dense)
-					SeqInstruction lrandInst = (SeqInstruction) SeqInstruction.parseInstruction(lrandStr);
-					long rows = lrandInst.getRows();
-					long cols = lrandInst.getCols();
-					double mem = MatrixBlock.estimateSizeInMemory(rows, cols, 1.0d);				
-					if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
-					    || !OptimizerUtils.isValidCPMatrixSize(rows, cols, 1.0d)	
-						|| mem >= OptimizerUtils.getLocalMemBudget() )
-					{
-						ret = false;
-						break;
-					}
-				}
-				else
-				{
-					ret = false;
-					break;
-				}
-			}
-		}
-		
-		return ret;
-	}
-	
 	public static void executeInMemoryMatrixReblock(ExecutionContext ec, String varin, String varout) {
 		MatrixObject in = ec.getMatrixObject(varin);
 		MatrixObject out = ec.getMatrixObject(varout);

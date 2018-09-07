@@ -34,16 +34,11 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.AggBinaryOp;
 import org.apache.sysml.hops.BinaryOp;
-import org.apache.sysml.hops.Hop.FileFormatTypes;
 import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.AppendM;
@@ -61,9 +56,7 @@ import org.apache.sysml.lops.MapMult;
 import org.apache.sysml.lops.OutputParameters;
 import org.apache.sysml.lops.OutputParameters.Format;
 import org.apache.sysml.lops.PMMJ;
-import org.apache.sysml.lops.PickByCount;
 import org.apache.sysml.lops.SortKeys;
-import org.apache.sysml.lops.Unary;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression;
 import org.apache.sysml.parser.Expression.DataType;
@@ -74,15 +67,12 @@ import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.Instruction.IType;
 import org.apache.sysml.runtime.instructions.InstructionParser;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.SPInstructionParser;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
 
 
 /**
@@ -106,7 +96,6 @@ public class Dag<N extends Lop>
 	private static IDSequence job_id = null;
 	private static IDSequence var_index = null;
 	
-	private int total_reducers = -1;
 	private String scratch = "";
 	private String scratchFilePath = null;
 
@@ -126,34 +115,18 @@ public class Dag<N extends Lop>
 	}
 
 	private static class NodeOutput {
-		String fileName;
-		String varName;
 		OutputInfo outInfo;
 		ArrayList<Instruction> preInstructions; // instructions added before a MR instruction
 		ArrayList<Instruction> postInstructions; // instructions added after a MR instruction
 		ArrayList<Instruction> lastInstructions;
 		
 		NodeOutput() {
-			fileName = null;
-			varName = null;
 			outInfo = null;
 			preInstructions = new ArrayList<>(); 
 			postInstructions = new ArrayList<>(); 
 			lastInstructions = new ArrayList<>();
 		}
 		
-		public String getFileName() {
-			return fileName;
-		}
-		public void setFileName(String fileName) {
-			this.fileName = fileName;
-		}
-		public String getVarName() {
-			return varName;
-		}
-		public void setVarName(String varName) {
-			this.varName = varName;
-		}
 		public OutputInfo getOutInfo() {
 			return outInfo;
 		}
@@ -165,9 +138,6 @@ public class Dag<N extends Lop>
 		}
 		public void addPreInstruction(Instruction inst) {
 			preInstructions.add(inst);
-		}
-		public ArrayList<Instruction> getPostInstructions() {
-			return postInstructions;
 		}
 		public void addPostInstruction(Instruction inst) {
 			postInstructions.add(inst);
@@ -184,9 +154,6 @@ public class Dag<N extends Lop>
 		//allocate internal data structures
 		nodes = new ArrayList<>();
 		IDMap = new HashMap<>();
-
-		// get number of reducers from dml config
-		total_reducers = ConfigurationManager.getNumReducers();
 	}
 	
 	///////
@@ -241,7 +208,6 @@ public class Dag<N extends Lop>
 	 */
 	public ArrayList<Instruction> getJobs(StatementBlock sb, DMLConfig config) {
 		if (config != null) {
-			total_reducers = config.getIntValue(DMLConfig.NUM_REDUCERS);
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
 		
@@ -757,8 +723,8 @@ public class Dag<N extends Lop>
 				}
 
 				// next generate MR instructions
-				if (!execNodes.isEmpty())
-					generateMRJobs(execNodes, inst, writeInst, deleteInst, jobNodes);
+				//if (!execNodes.isEmpty())
+				//	generateMRJobs(execNodes, inst, writeInst, deleteInst, jobNodes);
 				handleSingleOutputJobs(execNodes, jobNodes, finishedNodes);
 			}
 		}
@@ -1983,192 +1949,6 @@ public class Dag<N extends Lop>
 	}
 
 	/**
-	 * Method to print the lops grouped by job type
-	 * 
-	 * @param jobNodes list of lists of low-level operators
-	 */
-	private static void printJobNodes(List<List<Lop>> jobNodes) {
-		if( !LOG.isTraceEnabled() )
-			return;
-		for ( JobType jt : JobType.values() ) {
-			int i = jt.getId();
-			if (i > 0 && jobNodes.get(i) != null && !jobNodes.get(i).isEmpty() ) {
-				LOG.trace(jt.getName() + " Job Nodes:");
-				
-				for (int j = 0; j < jobNodes.get(i).size(); j++) {
-					LOG.trace("    "
-							+ jobNodes.get(i).get(j).getID() + ") "
-							+ jobNodes.get(i).get(j).toString());
-				}
-			}
-		}
-	}
-
-	/**
-	 * Method to check if there exists any lops with ExecLocation=RecordReader
-	 * 
-	 * @param nodes list of low-level operators
-	 * @param loc exec location
-	 * @return true if there is a node with RecordReader exec location
-	 */
-	private static boolean hasANode(List<Lop> nodes, ExecLocation loc) {
-		for ( Lop n : nodes ) {
-			if (n.getExecLocation() == ExecLocation.RecordReader)
-				return true;
-		}
-		return false;
-	}
-
-	private List<List<Lop>> splitGMRNodesByRecordReader(List<Lop> gmrnodes) 
-	{
-		// obtain the list of record reader nodes
-		ArrayList<Lop> rrnodes = new ArrayList<>();
-		for (Lop gmrnode : gmrnodes ) {
-			if (gmrnode.getExecLocation() == ExecLocation.RecordReader)
-				rrnodes.add(gmrnode);
-		}
-
-		// We allocate one extra vector to hold lops that do not depend on any
-		// recordreader lops
-		List<List<Lop>> splitGMR = createNodeVectors(rrnodes.size() + 1);
-
-		// flags to indicate whether a lop has been added to one of the node vectors
-		boolean[] flags = new boolean[gmrnodes.size()];
-		Arrays.fill(flags, false);
-		
-		// first, obtain all ancestors of recordreader lops
-		for (int rrid = 0; rrid < rrnodes.size(); rrid++) {
-			// prepare node list for i^th record reader lop
-
-			// add record reader lop
-			splitGMR.get(rrid).add(rrnodes.get(rrid));
-
-			for (int j = 0; j < gmrnodes.size(); j++) {
-				if (rrnodes.get(rrid).equals(gmrnodes.get(j)))
-					flags[j] = true;
-				else if (isChild(rrnodes.get(rrid), gmrnodes.get(j), IDMap)) {
-					splitGMR.get(rrid).add(gmrnodes.get(j));
-					flags[j] = true;
-				}
-			}
-		}
-
-		// add all remaining lops to a separate job
-		int jobindex = rrnodes.size(); // the last node vector
-		for (int i = 0; i < gmrnodes.size(); i++) {
-			if (!flags[i]) {
-				splitGMR.get(jobindex).add(gmrnodes.get(i));
-				flags[i] = true;
-			}
-		}
-
-		return splitGMR;
-	}
-
-	/**
-	 * Method to generate hadoop jobs. Exec nodes can contains a mixture of node
-	 * types requiring different mr jobs. This method breaks the job into
-	 * sub-types and then invokes the appropriate method to generate
-	 * instructions.
-	 * 
-	 * @param execNodes list of exec nodes
-	 * @param inst list of instructions
-	 * @param writeinst list of write instructions
-	 * @param deleteinst list of delete instructions
-	 * @param jobNodes list of list of low-level operators
-	 */
-	private void generateMRJobs(List<Lop> execNodes, List<Instruction> inst,
-		List<Instruction> writeinst, List<Instruction> deleteinst, List<List<Lop>> jobNodes)
-	{
-		printJobNodes(jobNodes);
-		
-		ArrayList<Instruction> rmvarinst = new ArrayList<>();
-		for (JobType jt : JobType.values()) { 
-			
-			// do nothing, if jt = INVALID or ANY
-			if ( jt == JobType.INVALID || jt == JobType.ANY )
-				continue;
-			
-			int index = jt.getId(); // job id is used as an index into jobNodes
-			List<Lop> currNodes = jobNodes.get(index);
-			
-			// generate MR job
-			if (currNodes != null && !currNodes.isEmpty() ) {
-
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Generating " + jt.getName() + " job");
-
-				if (jt.allowsRecordReaderInstructions() && hasANode(jobNodes.get(index), ExecLocation.RecordReader)) {
-					// split the nodes by recordReader lops
-					List<List<Lop>> rrlist = splitGMRNodesByRecordReader(jobNodes.get(index));
-					for (int i = 0; i < rrlist.size(); i++) {
-						generateMapReduceInstructions(rrlist.get(i), inst, writeinst, deleteinst, rmvarinst, jt);
-					}
-				}
-				else if ( jt.allowsSingleShuffleInstruction() ) {
-					// These jobs allow a single shuffle instruction. 
-					// We should split the nodes so that a separate job is produced for each shuffle instruction.
-					Lop.Type splittingLopType = jt.getShuffleLopType();
-					
-					ArrayList<Lop> nodesForASingleJob = new ArrayList<>();
-					for (int i = 0; i < jobNodes.get(index).size(); i++) {
-						if (jobNodes.get(index).get(i).getType() == splittingLopType) {
-							nodesForASingleJob.clear();
-							
-							// Add the lop that defines the split 
-							nodesForASingleJob.add(jobNodes.get(index).get(i));
-							
-							/*
-							 * Add the splitting lop's children. This call is redundant when jt=SORT
-							 * because a sort job ALWAYS has a SINGLE lop in the entire job
-							 * i.e., there are no children to add when jt=SORT. 
-							 */
-							addChildren(jobNodes.get(index).get(i), nodesForASingleJob, jobNodes.get(index));
-							
-							if ( jt.isCompatibleWithParentNodes() ) {
-								/*
-								 * If the splitting lop is compatible with parent nodes 
-								 * then they must be added to the job. For example, MMRJ lop 
-								 * may have a Data(Write) lop as its parent, which can be 
-								 * executed along with MMRJ.
-								 */
-								addParents(jobNodes.get(index).get(i), nodesForASingleJob, jobNodes.get(index));
-							}
-							
-							generateMapReduceInstructions(nodesForASingleJob, inst, writeinst, deleteinst, rmvarinst, jt);
-						}
-					}
-				}
-				else {
-					// the default case
-					generateMapReduceInstructions(jobNodes.get(index), inst, writeinst, deleteinst, rmvarinst, jt);
-				}
-			}
-		}
-		inst.addAll(rmvarinst);
-
-	}
-
-	/**
-	 * Method to add all parents of "node" in exec_n to node_v.
-	 * 
-	 * @param node low-level operator
-	 * @param node_v list of nodes
-	 * @param exec_n list of nodes
-	 */
-	private void addParents(Lop node, List<Lop> node_v, List<Lop> exec_n) {
-		for (Lop enode : exec_n ) {
-			if (isChild(node, enode, IDMap)) {
-				if (!node_v.contains(enode)) {
-					if( LOG.isTraceEnabled() )
-						LOG.trace("Adding parent - " + enode.toString());
-					node_v.add(enode);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Method to add all relevant data nodes for set of exec nodes.
 	 * 
 	 * @param node low-level operator
@@ -2245,8 +2025,6 @@ public class Dag<N extends Lop>
 		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {
 			if( ((SortKeys)node).getOpType() == SortKeys.OperationTypes.Indexes)
 				oinfo = OutputInfo.BinaryBlockOutputInfo;
-			else
-				oinfo = OutputInfo.OutputInfoForSortOutput; 
 		} else if (node.getType() == Type.CombineBinary) {
 			// Output format of CombineBinary (CB) depends on how the output is consumed
 			CombineBinary combine = (CombineBinary) node;
@@ -2315,7 +2093,6 @@ public class Dag<N extends Lop>
 		{
 			if (node.getDataType() == DataType.SCALAR || node.getDataType() == DataType.LIST) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
-				out.setVarName(oparams.getLabel());
 				Instruction currInstr = VariableCPInstruction.prepareRemoveInstruction(oparams.getLabel());
 				
 				currInstr.setLocation(node);
@@ -2353,10 +2130,6 @@ public class Dag<N extends Lop>
 				currInstr.setLocation(node);
 				
 				out.addLastInstruction(currInstr);
-
-				// finally, add the generated filename and variable name to the list of outputs
-				out.setFileName(oparams.getFile_name());
-				out.setVarName(oparams.getLabel());
 			}
 			else {
 				// If the function call is set with output lops (e.g., multi return builtin),
@@ -2422,11 +2195,9 @@ public class Dag<N extends Lop>
 						// If transient matrix write is in CP then its input MUST be executed in CP as well.
 						
 						// get variable and filename associated with the input
-						String inputFileName = node.getInputs().get(0).getOutputParameters().getFile_name();
 						String inputVarName = node.getInputs().get(0).getOutputParameters().getLabel();
 						
 						String constVarName = oparams.getLabel();
-						String constFileName = inputFileName + constVarName;
 						
 						/*
 						 * Symbol Table state must change as follows:
@@ -2443,7 +2214,6 @@ public class Dag<N extends Lop>
 						currInstr.setLocation(node);
 						
 						out.addLastInstruction(currInstr);
-						out.setFileName(constFileName);
 					}
 					else {
 						if(copyTWrite) {
@@ -2521,10 +2291,6 @@ public class Dag<N extends Lop>
 						currInstr.setLocation(node);
 						
 						out.addLastInstruction(currInstr);
-
-						// finally, add the temporary filename and variable name to the list of outputs 
-						out.setFileName(tempFileName);
-						out.setVarName(tempVarName);
 					}
 				} 
 				// rootNode is not a transient write. It is a persistent write.
@@ -2620,13 +2386,7 @@ public class Dag<N extends Lop>
 						}
 						
 						createvarInst.setLocation(node);
-						
 						out.addPreInstruction(createvarInst);
-						
-
-						// finally, add the filename and variable name to the list of outputs 
-						out.setFileName(oparams.getFile_name()); 
-						out.setVarName(oparams.getLabel());
 					}
 					else { //CP PERSISTENT WRITE
 						// generate a write instruction that writes matrix to HDFS
@@ -2649,868 +2409,7 @@ public class Dag<N extends Lop>
 		
 		return out;
 	}
-	
-	/**
-	 * Method to generate MapReduce job instructions from a given set of nodes.
-	 * 
-	 * @param execNodes list of exec nodes
-	 * @param inst list of instructions
-	 * @param writeinst list of write instructions
-	 * @param deleteinst list of delete instructions
-	 * @param rmvarinst list of rmvar instructions
-	 * @param jt job type
-	 */
-	private void generateMapReduceInstructions(List<Lop> execNodes, List<Instruction> inst,
-		List<Instruction> writeinst, List<Instruction> deleteinst, List<Instruction> rmvarinst, JobType jt)
-	{
-		ArrayList<Byte> resultIndices = new ArrayList<>();
-		ArrayList<String> inputs = new ArrayList<>();
-		ArrayList<String> outputs = new ArrayList<>();
-		ArrayList<InputInfo> inputInfos = new ArrayList<>();
-		ArrayList<OutputInfo> outputInfos = new ArrayList<>();
-		ArrayList<Long> numRows = new ArrayList<>();
-		ArrayList<Long> numCols = new ArrayList<>();
-		ArrayList<Long> numRowsPerBlock = new ArrayList<>();
-		ArrayList<Long> numColsPerBlock = new ArrayList<>();
-		ArrayList<String> mapperInstructions = new ArrayList<>();
-		ArrayList<String> randInstructions = new ArrayList<>();
-		ArrayList<String> recordReaderInstructions = new ArrayList<>();
-		int numReducers = 0;
-		int replication = 1;
-		ArrayList<String> inputLabels = new ArrayList<>();
-		ArrayList<String> outputLabels = new ArrayList<>();
-		ArrayList<Instruction> renameInstructions = new ArrayList<>();
-		ArrayList<Instruction> variableInstructions = new ArrayList<>();
-		ArrayList<Instruction> postInstructions = new ArrayList<>();
-		ArrayList<Integer> MRJobLineNumbers = null;		
-		ArrayList<Lop> inputLops = new ArrayList<>();
-		
-		boolean cellModeOverride = false;
-		
-		/* Find the nodes that produce an output */
-		ArrayList<Lop> rootNodes = new ArrayList<>();
-		getOutputNodes(execNodes, rootNodes, jt);
-		if( LOG.isTraceEnabled() )
-			LOG.trace("# of root nodes = " + rootNodes.size());
-		
-		
-		/* Remove transient writes that are simple copy of transient reads */
-		if (jt == JobType.GMR || jt == JobType.GMRCELL) {
-			ArrayList<Lop> markedNodes = new ArrayList<>();
-			// only keep data nodes that are results of some computation.
-			for ( Lop rnode : rootNodes ) {
-				if (rnode.getExecLocation() == ExecLocation.Data
-						&& ((Data) rnode).isTransient()
-						&& ((Data) rnode).getOperationType() == OperationTypes.WRITE
-						&& ((Data) rnode).getDataType() == DataType.MATRIX) {
-					// no computation, just a copy
-					if (rnode.getInputs().get(0).getExecLocation() == ExecLocation.Data
-							&& ((Data) rnode.getInputs().get(0)).isTransient()
-							&& rnode.getOutputParameters().getLabel().equals(
-								rnode.getInputs().get(0).getOutputParameters().getLabel())) 
-					{
-						markedNodes.add(rnode);
-					}
-				}
-			}
-			// delete marked nodes
-			rootNodes.removeAll(markedNodes);
-			markedNodes.clear();
-			if ( rootNodes.isEmpty() )
-				return;
-		}
-		
-		// structure that maps node to their indices that will be used in the instructions
-		HashMap<Lop, Integer> nodeIndexMapping = new HashMap<>();
-		
-		/* Determine all input data files */
-		
-		for ( Lop rnode : rootNodes ) {
-			getInputPathsAndParameters(rnode, execNodes, inputs, inputInfos, numRows, numCols, 
-				numRowsPerBlock, numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
-		}
-		
-		// In case of RAND job, instructions are defined in the input file
-		if (jt == JobType.DATAGEN)
-			randInstructions = inputs;
-		
-		int[] start_index = new int[1];
-		start_index[0] = inputs.size();
-		
-		/* Get RecordReader Instructions */
-		
-		// currently, recordreader instructions are allowed only in GMR jobs
-		if (jt == JobType.GMR || jt == JobType.GMRCELL) {
-			for ( Lop rnode : rootNodes ) {
-				getRecordReaderInstructions(rnode, execNodes, inputs, recordReaderInstructions, 
-					nodeIndexMapping, start_index, inputLabels, inputLops, MRJobLineNumbers);
-				if ( recordReaderInstructions.size() > 1 )
-					throw new LopsException("MapReduce job can only have a single recordreader instruction: " + recordReaderInstructions.toString());
-			}
-		}
-		
-		/*
-		 * Handle cases when job's output is FORCED to be cell format.
-		 * - If there exist a cell input, then output can not be blocked. 
-		 *   Only exception is when jobType = REBLOCK/CSVREBLOCK (for obvisous reason)
-		 *   or when jobType = RAND since RandJob takes a special input file, 
-		 *   whose format should not be used to dictate the output format.
-		 * - If there exists a recordReader instruction
-		 * - If jobtype = GroupedAgg. This job can only run in cell mode.
-		 */
-		
-		// 
-		if ( jt != JobType.REBLOCK && jt != JobType.CSV_REBLOCK && jt != JobType.DATAGEN ) {
-			for (int i=0; i < inputInfos.size(); i++)
-				if ( inputInfos.get(i) == InputInfo.BinaryCellInputInfo || inputInfos.get(i) == InputInfo.TextCellInputInfo )
-					cellModeOverride = true;
-		}
-		
-		if ( !recordReaderInstructions.isEmpty() || jt == JobType.GROUPED_AGG )
-			cellModeOverride = true;
-		
-		
-		/* Get Mapper Instructions */
-	
-		for (int i = 0; i < rootNodes.size(); i++) {
-			getMapperInstructions(rootNodes.get(i), execNodes, inputs,
-					mapperInstructions, nodeIndexMapping, start_index,
-					inputLabels, inputLops, MRJobLineNumbers);
-		}
-		
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("    Input strings: " + inputs.toString());
-			if (jt == JobType.DATAGEN)
-				LOG.trace("    Rand instructions: " + getCSVString(randInstructions));
-			if (jt == JobType.GMR)
-				LOG.trace("    RecordReader instructions: " + getCSVString(recordReaderInstructions));
-			LOG.trace("    Mapper instructions: " + getCSVString(mapperInstructions));
-		}
 
-		/* Get Shuffle and Reducer Instructions */
-		
-		ArrayList<String> shuffleInstructions = new ArrayList<>();
-		ArrayList<String> aggInstructionsReducer = new ArrayList<>();
-		ArrayList<String> otherInstructionsReducer = new ArrayList<>();
-
-		for( Lop rn : rootNodes ) {
-			int resultIndex = getAggAndOtherInstructions(
-					rn, execNodes, shuffleInstructions, aggInstructionsReducer,
-					otherInstructionsReducer, nodeIndexMapping, start_index,
-					inputLabels, inputLops, MRJobLineNumbers);
-			if ( resultIndex == -1)
-				throw new LopsException("Unexpected error in piggybacking!");
-			
-			if ( rn.getExecLocation() == ExecLocation.Data 
-					&& ((Data)rn).getOperationType() == Data.OperationTypes.WRITE && ((Data)rn).isTransient() 
-					&& rootNodes.contains(rn.getInputs().get(0))
-					) {
-				// Both rn (a transient write) and its input are root nodes.
-				// Instead of creating two copies of the data, simply generate a cpvar instruction 
-				NodeOutput out = setupNodeOutputs(rn, ExecType.MR, cellModeOverride, true);
-				writeinst.addAll(out.getLastInstructions());
-			}
-			else {
-				resultIndices.add(Byte.valueOf((byte)resultIndex));
-			
-				// setup output filenames and outputInfos and generate related instructions
-				NodeOutput out = setupNodeOutputs(rn, ExecType.MR, cellModeOverride, false);
-				outputLabels.add(out.getVarName());
-				outputs.add(out.getFileName());
-				outputInfos.add(out.getOutInfo());
-				if (LOG.isTraceEnabled()) {
-					LOG.trace("    Output Info: " + out.getFileName() + ";" + OutputInfo.outputInfoToString(out.getOutInfo()) + ";" + out.getVarName());
-				}
-				renameInstructions.addAll(out.getLastInstructions());
-				variableInstructions.addAll(out.getPreInstructions());
-				postInstructions.addAll(out.getPostInstructions());
-			}			
-		}
-		
-		/* Determine if the output dimensions are known */
-		
-		byte[] resultIndicesByte = new byte[resultIndices.size()];
-		for (int i = 0; i < resultIndicesByte.length; i++) {
-			resultIndicesByte[i] = resultIndices.get(i).byteValue();
-		}
-		
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("    Shuffle Instructions: " + getCSVString(shuffleInstructions));
-			LOG.trace("    Aggregate Instructions: " + getCSVString(aggInstructionsReducer));
-			LOG.trace("    Other instructions =" + getCSVString(otherInstructionsReducer));
-			LOG.trace("    Output strings: " + outputs.toString());
-			LOG.trace("    ResultIndices = " + resultIndices.toString());
-		}
-		
-		/* Prepare the MapReduce job instruction */
-		
-		MRJobInstruction mr = new MRJobInstruction(jt);
-		
-		// check if this is a map-only job. If not, set the number of reducers
-		if ( !shuffleInstructions.isEmpty() || !aggInstructionsReducer.isEmpty() || !otherInstructionsReducer.isEmpty() )
-			numReducers = total_reducers;
-		
-		// set inputs, outputs, and other other properties for the job 
-		mr.setInputOutputLabels(inputLabels.toArray(new String[0]), outputLabels.toArray(new String[0]));
-		mr.setOutputs(resultIndicesByte);
-		mr.setDimsUnknownFilePrefix(getFilePath());
-		
-		mr.setNumberOfReducers(numReducers);
-		mr.setReplication(replication);
-		
-		// set instructions for recordReader and mapper
-		mr.setRecordReaderInstructions(getCSVString(recordReaderInstructions));
-		mr.setMapperInstructions(getCSVString(mapperInstructions));
-		
-		//compute and set mapper memory requirements (for consistency of runtime piggybacking)
-		if( jt == JobType.GMR ) {
-			double mem = 0;
-			for( Lop n : execNodes )
-				mem += computeFootprintInMapper(n);
-			mr.setMemoryRequirements(mem);
-		}
-			
-		if ( jt == JobType.DATAGEN )
-			mr.setRandInstructions(getCSVString(randInstructions));
-		
-		// set shuffle instructions
-		mr.setShuffleInstructions(getCSVString(shuffleInstructions));
-		
-		// set reducer instruction
-		mr.setAggregateInstructionsInReducer(getCSVString(aggInstructionsReducer));
-		mr.setOtherInstructionsInReducer(getCSVString(otherInstructionsReducer));
-
-		/* Add the prepared instructions to output set */
-		inst.addAll(variableInstructions);
-		inst.add(mr);
-		inst.addAll(postInstructions);
-		deleteinst.addAll(renameInstructions);
-		
-		for (Lop l : inputLops)
-			processConsumers(l, rmvarinst, deleteinst, null);
-	}
-
-	/**
-	 * converts an array list into a Lop.INSTRUCTION_DELIMITOR separated string
-	 * 
-	 * @param inputStrings list of input strings
-	 * @return Lop.INSTRUCTION_DELIMITOR separated string
-	 */
-	private static String getCSVString(List<String> inputStrings) {
-		StringBuilder sb = new StringBuilder();
-		for ( String str : inputStrings ) {
-			if( str != null ) {
-				if( sb.length()>0 )
-					sb.append(Lop.INSTRUCTION_DELIMITOR);
-				sb.append( str ); 
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Method to populate aggregate and other instructions in reducer.
-	 * 
-	 * @param node low-level operator
-	 * @param execNodes list of exec nodes
-	 * @param shuffleInstructions list of shuffle instructions
-	 * @param aggInstructionsReducer ?
-	 * @param otherInstructionsReducer ?
-	 * @param nodeIndexMapping node index mapping
-	 * @param start_index start index
-	 * @param inputLabels list of input labels
-	 * @param inputLops list of input lops
-	 * @param MRJobLineNumbers MR job line numbers
-	 * @return -1 if problem
-	 */
-	private int getAggAndOtherInstructions(Lop node, List<Lop> execNodes, List<String> shuffleInstructions,
-		List<String> aggInstructionsReducer, List<String> otherInstructionsReducer, Map<Lop, Integer> nodeIndexMapping,
-		int[] start_index,List<String> inputLabels, List<Lop> inputLops, List<Integer> MRJobLineNumbers)
-	{
-		int ret_val = -1;
-
-		if (nodeIndexMapping.containsKey(node))
-			return nodeIndexMapping.get(node);
-
-		// if not an input source and not in exec nodes, return.
-		if (!execNodes.contains(node))
-			return ret_val;
-
-		ArrayList<Integer> inputIndices = new ArrayList<>();
-
-		// recurse
-		// For WRITE, since the first element from input is the real input (the other elements
-		// are parameters for the WRITE operation), so we only need to take care of the
-		// first element.
-		if (node.getType() == Lop.Type.Data && ((Data)node).getOperationType() == Data.OperationTypes.WRITE) {
-			ret_val = getAggAndOtherInstructions(node.getInputs().get(0),
-					execNodes, shuffleInstructions, aggInstructionsReducer,
-					otherInstructionsReducer, nodeIndexMapping, start_index,
-					inputLabels, inputLops, MRJobLineNumbers);
-			inputIndices.add(ret_val);
-		}
-		else {
-			for ( Lop cnode : node.getInputs() ) {
-				ret_val = getAggAndOtherInstructions(cnode,
-						execNodes, shuffleInstructions, aggInstructionsReducer,
-						otherInstructionsReducer, nodeIndexMapping, start_index,
-						inputLabels, inputLops, MRJobLineNumbers);
-				inputIndices.add(ret_val);
-			}
-		}
-
-		if (node.getExecLocation() == ExecLocation.Data ) {
-			if ( ((Data)node).getFileFormatType() == FileFormatTypes.CSV ) {
-				// Generate write instruction, which goes into CSV_WRITE Job
-				int output_index = start_index[0];
-				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
-				nodeIndexMapping.put(node, output_index);
-				start_index[0]++; 
-				return output_index;
-			}
-			else {
-				return ret_val;
-			}
-		}
-
-		if (node.getExecLocation() == ExecLocation.MapAndReduce) {
-			
-			/* Generate Shuffle Instruction for "node", and return the index associated with produced output */
-			
-			boolean instGenerated = true;
-			int output_index = start_index[0];
-	
-			switch(node.getType()) {
-			
-			/* Lop types that take a single input */
-			case ReBlock:
-			case CSVReBlock:
-			case SortKeys:
-			case CentralMoment:
-			case CoVariance:
-			case GroupedAgg:
-			case DataPartition:
-				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), output_index));
-				break;
-				
-			case ParameterizedBuiltin:
-				break;
-				
-			/* Lop types that take two inputs */
-			case MMCJ:
-			case MMRJ:
-			case CombineBinary:
-				shuffleInstructions.add(node.getInstructions(inputIndices.get(0), inputIndices.get(1), output_index));
-				break;
-
-			/* Lop types that take three inputs */
-			case CombineTernary:
-				shuffleInstructions.add(node.getInstructions(inputIndices
-						.get(0), inputIndices.get(1), inputIndices.get(2), output_index));
-				break;
-			
-			default:
-				instGenerated = false;
-				break;
-			}
-			
-			if ( instGenerated ) { 
-				nodeIndexMapping.put(node, output_index);
-				start_index[0]++;
-				return output_index;
-			}
-			else {
-				return inputIndices.get(0);
-			}
-		}
-
-		/* Get instructions for aligned reduce and other lops below the reduce. */
-		if (node.getExecLocation() == ExecLocation.Reduce
-				|| node.getExecLocation() == ExecLocation.MapOrReduce
-				|| hasChildNode(node, execNodes, ExecLocation.MapAndReduce)) {
-			
-			if (inputIndices.size() == 1) {
-				int output_index = start_index[0];
-				start_index[0]++;
-				
-				if (node.getType() == Type.Aggregate) {
-					aggInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), output_index));
-				}
-				else {
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), output_index));
-				}
-				nodeIndexMapping.put(node, output_index);
-
-				return output_index;
-			} else if (inputIndices.size() == 2) {
-				int output_index = start_index[0];
-				start_index[0]++;
-
-				otherInstructionsReducer.add(node.getInstructions(inputIndices
-						.get(0), inputIndices.get(1), output_index));
-				nodeIndexMapping.put(node, output_index);
-
-				// populate list of input labels.
-				// only Unary lops can contribute to labels
-
-				if (node instanceof Unary && node.getInputs().size() > 1) {
-					int index = 0;
-					for (int i = 0; i < node.getInputs().size(); i++) {
-						if (node.getInputs().get(i).getDataType() == DataType.SCALAR) {
-							index = i;
-							break;
-						}
-					}
-
-					if (node.getInputs().get(index).getExecLocation() == ExecLocation.Data
-							&& !((Data) (node.getInputs().get(index))).isLiteral()) {
-						inputLabels.add(node.getInputs().get(index).getOutputParameters().getLabel());
-						inputLops.add(node.getInputs().get(index));
-					}
-
-					if (node.getInputs().get(index).getExecLocation() != ExecLocation.Data) {
-						inputLabels.add(node.getInputs().get(index).getOutputParameters().getLabel());
-						inputLops.add(node.getInputs().get(index));
-					}
-
-				}
-
-				return output_index;
-			} else if (inputIndices.size() == 3 || node.getType() == Type.Ctable) {
-				int output_index = start_index[0];
-				start_index[0]++;
-
-				if (node.getType() == Type.Ctable ) {
-					// in case of CTABLE_TRANSFORM_SCALAR_WEIGHT: inputIndices.get(2) would be -1
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), inputIndices.get(1),
-							inputIndices.get(2), output_index));
-					nodeIndexMapping.put(node, output_index);
-				}
-				else if( node.getType() == Type.ParameterizedBuiltin ){
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), inputIndices.get(1),
-							inputIndices.get(2), output_index));
-					nodeIndexMapping.put(node, output_index);
-				}
-				else
-				{
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), inputIndices.get(1),
-							inputIndices.get(2), output_index));
-					nodeIndexMapping.put(node, output_index);
-				}
-
-				return output_index;
-			}
-			else if (inputIndices.size() == 4 || inputIndices.size() == 5) {
-				int output_index = start_index[0];
-				start_index[0]++;
-				if( inputIndices.size() == 4 )
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), inputIndices.get(1),
-							inputIndices.get(2), inputIndices.get(3), output_index));
-				else
-					otherInstructionsReducer.add(node.getInstructions(
-							inputIndices.get(0), inputIndices.get(1), inputIndices.get(2), 
-							inputIndices.get(3), inputIndices.get(4), output_index));
-				nodeIndexMapping.put(node, output_index);
-				return output_index;
-			}
-			else
-				throw new LopsException("Invalid number of inputs to a lop: "
-						+ inputIndices.size());
-		}
-
-		return -1;
-	}
-
-	/**
-	 * Method to get record reader instructions for a MR job.
-	 * 
-	 * @param node low-level operator
-	 * @param execNodes list of exec nodes
-	 * @param inputStrings list of input strings
-	 * @param recordReaderInstructions list of record reader instructions
-	 * @param nodeIndexMapping node index mapping
-	 * @param start_index start index
-	 * @param inputLabels list of input labels
-	 * @param inputLops list of input lops
-	 * @param MRJobLineNumbers MR job line numbers
-	 * @return -1 if problem
-	 */
-	private static int getRecordReaderInstructions(Lop node, List<Lop> execNodes, List<String> inputStrings,
-		List<String> recordReaderInstructions, Map<Lop, Integer> nodeIndexMapping, int[] start_index,
-		List<String> inputLabels, List<Lop> inputLops, List<Integer> MRJobLineNumbers)
-	{
-		// if input source, return index
-		if (nodeIndexMapping.containsKey(node))
-			return nodeIndexMapping.get(node);
-
-		// not input source and not in exec nodes, then return.
-		if (!execNodes.contains(node))
-			return -1;
-
-		ArrayList<Integer> inputIndices = new ArrayList<>();
-		int max_input_index = -1;
-		//N child_for_max_input_index = null;
-
-		// get mapper instructions
-		for (int i = 0; i < node.getInputs().size(); i++) {
-			// recurse
-			Lop childNode = node.getInputs().get(i);
-			int ret_val = getRecordReaderInstructions(childNode, execNodes,
-					inputStrings, recordReaderInstructions, nodeIndexMapping,
-					start_index, inputLabels, inputLops, MRJobLineNumbers);
-
-			inputIndices.add(ret_val);
-
-			if (ret_val > max_input_index) {
-				max_input_index = ret_val;
-				//child_for_max_input_index = childNode;
-			}
-		}
-
-		// only lops with execLocation as RecordReader can contribute
-		// instructions
-		if ((node.getExecLocation() == ExecLocation.RecordReader)) {
-			int output_index = max_input_index;
-
-			// cannot reuse index if this is true
-			// need to add better indexing schemes
-			output_index = start_index[0];
-			start_index[0]++;
-
-			nodeIndexMapping.put(node, output_index);
-
-			// populate list of input labels.
-			// only Ranagepick lop can contribute to labels
-			if (node.getType() == Type.PickValues) {
-				PickByCount pbc = (PickByCount) node;
-				if (pbc.getOperationType() == PickByCount.OperationTypes.RANGEPICK) {
-					int scalarIndex = 1; // always the second input is a scalar
-
-					// if data lop not a literal -- add label
-					if (node.getInputs().get(scalarIndex).getExecLocation() == ExecLocation.Data
-							&& !((Data) (node.getInputs().get(scalarIndex))).isLiteral()) {
-						inputLabels.add(node.getInputs().get(scalarIndex).getOutputParameters().getLabel());
-						inputLops.add(node.getInputs().get(scalarIndex));
-					}
-
-					// if not data lop, then this is an intermediate variable.
-					if (node.getInputs().get(scalarIndex).getExecLocation() != ExecLocation.Data) {
-						inputLabels.add(node.getInputs().get(scalarIndex).getOutputParameters().getLabel());
-						inputLops.add(node.getInputs().get(scalarIndex));
-					}
-				}
-			}
-
-			// get recordreader instruction.
-			if (node.getInputs().size() == 2) {
-				recordReaderInstructions.add(node.getInstructions(inputIndices
-						.get(0), inputIndices.get(1), output_index));
-			}
-			else
-				throw new LopsException(
-						"Unexpected number of inputs while generating a RecordReader Instruction");
-
-			return output_index;
-		}
-
-		return -1;
-	}
-
-	/**
-	 * Method to get mapper instructions for a MR job.
-	 * 
-	 * @param node low-level operator
-	 * @param execNodes list of exec nodes
-	 * @param inputStrings list of input strings
-	 * @param instructionsInMapper list of instructions in mapper
-	 * @param nodeIndexMapping ?
-	 * @param start_index starting index
-	 * @param inputLabels input labels
-	 * @param MRJoblineNumbers MR job line numbers
-	 * @return -1 if problem
-	 */
-	private int getMapperInstructions(Lop node, List<Lop> execNodes, List<String> inputStrings,
-		List<String> instructionsInMapper, Map<Lop, Integer> nodeIndexMapping, int[] start_index,
-		List<String> inputLabels, List<Lop> inputLops, List<Integer> MRJobLineNumbers)
-	{
-		// if input source, return index
-		if (nodeIndexMapping.containsKey(node))
-			return nodeIndexMapping.get(node);
-
-		// not input source and not in exec nodes, then return.
-		if (!execNodes.contains(node))
-			return -1;
-
-		ArrayList<Integer> inputIndices = new ArrayList<>();
-		int max_input_index = -1;
-		// get mapper instructions
-		for( Lop childNode : node.getInputs()) {
-			int ret_val = getMapperInstructions(childNode, execNodes,
-					inputStrings, instructionsInMapper, nodeIndexMapping,
-					start_index, inputLabels, inputLops, MRJobLineNumbers);
-
-			inputIndices.add(ret_val);
-
-			if (ret_val > max_input_index) {
-				max_input_index = ret_val;
-			}
-		}
-
-		// only map and map-or-reduce without a reduce child node can contribute
-		// to mapper instructions.
-		if ((node.getExecLocation() == ExecLocation.Map || node
-				.getExecLocation() == ExecLocation.MapOrReduce)
-				&& !hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
-				&& !hasChildNode(node, execNodes, ExecLocation.Reduce)
-				) {
-			int output_index = max_input_index;
-
-			// cannot reuse index if this is true
-			// need to add better indexing schemes
-			output_index = start_index[0];
-			start_index[0]++;
-			
-			nodeIndexMapping.put(node, output_index);
-
-			// populate list of input labels.
-			// only Unary lops can contribute to labels
-
-			if (node instanceof Unary && node.getInputs().size() > 1) {
-				// Following code must be executed only for those Unary
-				// operators that have more than one input
-				// It should not be executed for "true" unary operators like
-				// cos(A).
-
-				int index = 0;
-				for (int i1 = 0; i1 < node.getInputs().size(); i1++) {
-					if (node.getInputs().get(i1).getDataType() == DataType.SCALAR) {
-						index = i1;
-						break;
-					}
-				}
-
-				// if data lop not a literal -- add label
-				if (node.getInputs().get(index).getExecLocation() == ExecLocation.Data
-						&& !((Data) (node.getInputs().get(index))).isLiteral()) {
-					inputLabels.add(node.getInputs().get(index).getOutputParameters().getLabel());
-					inputLops.add(node.getInputs().get(index));
-				}
-
-				// if not data lop, then this is an intermediate variable.
-				if (node.getInputs().get(index).getExecLocation() != ExecLocation.Data) {
-					inputLabels.add(node.getInputs().get(index).getOutputParameters().getLabel());
-					inputLops.add(node.getInputs().get(index));
-				}
-
-			}
-
-			// get mapper instruction.
-			if (node.getInputs().size() == 1)
-				instructionsInMapper.add(node.getInstructions(inputIndices
-						.get(0), output_index));
-			else if (node.getInputs().size() == 2) {
-				instructionsInMapper.add(node.getInstructions(inputIndices
-						.get(0), inputIndices.get(1), output_index));
-			}
-			else if (node.getInputs().size() == 3)
-				instructionsInMapper.add(node.getInstructions(inputIndices.get(0), 
-															  inputIndices.get(1), 
-															  inputIndices.get(2), 
-															  output_index));
-			else if ( node.getInputs().size() == 4) {
-				// Example: Reshape
-				instructionsInMapper.add(node.getInstructions(
-						inputIndices.get(0),
-						inputIndices.get(1),
-						inputIndices.get(2),
-						inputIndices.get(3),
-						output_index ));
-			}			
-			else if ( node.getInputs().size() == 5) {
-				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u]
-				instructionsInMapper.add(node.getInstructions(
-						inputIndices.get(0),
-						inputIndices.get(1),
-						inputIndices.get(2),
-						inputIndices.get(3),
-						inputIndices.get(4),
-						output_index ));
-			}
-			else if ( node.getInputs().size() == 7 ) {
-				// Example: RangeBasedReIndex A[row_l:row_u, col_l:col_u] = B
-				instructionsInMapper.add(node.getInstructions(
-						inputIndices.get(0),
-						inputIndices.get(1),
-						inputIndices.get(2),
-						inputIndices.get(3),
-						inputIndices.get(4),
-						inputIndices.get(5),
-						inputIndices.get(6),
-						output_index ));
-			}
-			else
-				throw new LopsException("Node with " + node.getInputs().size() + " inputs is not supported in dag.java.");
-			
-			return output_index;
-		}
-
-		return -1;
-	}
-
-	// Method to populate inputs and also populates node index mapping.
-	private static void getInputPathsAndParameters(Lop node, List<Lop> execNodes,
-			List<String> inputStrings, List<InputInfo> inputInfos, List<Long> numRows, List<Long> numCols,
-			List<Long> numRowsPerBlock, List<Long> numColsPerBlock, Map<Lop, Integer> nodeIndexMapping,
-			List<String> inputLabels, List<Lop> inputLops, List<Integer> MRJobLineNumbers) {
-		// treat rand as an input.
-		if (node.getType() == Type.DataGen && execNodes.contains(node)
-				&& !nodeIndexMapping.containsKey(node)) {
-			numRows.add(node.getOutputParameters().getNumRows());
-			numCols.add(node.getOutputParameters().getNumCols());
-			numRowsPerBlock.add(node.getOutputParameters().getRowsInBlock());
-			numColsPerBlock.add(node.getOutputParameters().getColsInBlock());
-			inputStrings.add(node.getInstructions(inputStrings.size(), inputStrings.size()));
-			inputInfos.add(InputInfo.TextCellInputInfo);
-			nodeIndexMapping.put(node, inputStrings.size() - 1);
-			
-			return;
-		}
-
-		// get input file names
-		if (!execNodes.contains(node)
-				&& !nodeIndexMapping.containsKey(node)
-				&& !(node.getExecLocation() == ExecLocation.Data)
-				&& (!(node.getExecLocation() == ExecLocation.ControlProgram && node
-						.getDataType() == DataType.SCALAR))
-				|| (!execNodes.contains(node)
-						&& node.getExecLocation() == ExecLocation.Data
-						&& ((Data) node).getOperationType() == Data.OperationTypes.READ
-						&& ((Data) node).getDataType() != DataType.SCALAR && !nodeIndexMapping
-						.containsKey(node))) {
-			if (node.getOutputParameters().getFile_name() != null) {
-				inputStrings.add(node.getOutputParameters().getFile_name());
-			} else {
-				// use label name
-				inputStrings.add(Lop.VARIABLE_NAME_PLACEHOLDER + node.getOutputParameters().getLabel()
-						               + Lop.VARIABLE_NAME_PLACEHOLDER);
-			}
-			
-			inputLabels.add(node.getOutputParameters().getLabel());
-			inputLops.add(node);
-
-			numRows.add(node.getOutputParameters().getNumRows());
-			numCols.add(node.getOutputParameters().getNumCols());
-			numRowsPerBlock.add(node.getOutputParameters().getRowsInBlock());
-			numColsPerBlock.add(node.getOutputParameters().getColsInBlock());
-
-			InputInfo nodeInputInfo = null;
-			// Check if file format type is binary or text and update infos
-			if (node.getOutputParameters().isBlocked()) {
-				if (node.getOutputParameters().getFormat() == Format.BINARY)
-					nodeInputInfo = InputInfo.BinaryBlockInputInfo;
-				else 
-					throw new LopsException("Invalid format (" + node.getOutputParameters().getFormat() + ") encountered for a node/lop (ID=" + node.getID() + ") with blocked output.");
-			} 
-			else {
-				if (node.getOutputParameters().getFormat() == Format.TEXT)
-					nodeInputInfo = InputInfo.TextCellInputInfo;
-				else
-					nodeInputInfo = InputInfo.BinaryCellInputInfo;
-			}
-
-			/*
-			 * Hardcode output Key and Value Classes for SortKeys
-			 */
-			// TODO: statiko -- remove this hardcoding -- i.e., lops must encode
-			// the information on key/value classes
-			if (node.getType() == Type.SortKeys) {
-				// SortKeys is the input to some other lop (say, L)
-				// InputInfo of L is the ouputInfo of SortKeys, which is
-				// (compactformat, doubleWriteable, IntWritable)
-				nodeInputInfo = new InputInfo(PickFromCompactInputFormat.class,
-						DoubleWritable.class, IntWritable.class);
-			} else if (node.getType() == Type.CombineBinary) {
-				
-				// CombineBinary is the input to some other lop (say, L)
-				// InputInfo of L is the ouputInfo of CombineBinary
-				// And, the outputInfo of CombineBinary depends on the operation!
-				CombineBinary combine = (CombineBinary) node;
-				if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreSort ) {
-					nodeInputInfo = new InputInfo(SequenceFileInputFormat.class,
-							DoubleWritable.class, IntWritable.class);
-				}
-				else if ( combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCentralMoment 
-						  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreCovUnweighted
-						  || combine.getOperation() == org.apache.sysml.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
-					nodeInputInfo = InputInfo.WeightedPairInputInfo;
-				}
-			} else if ( node.getType() == Type.CombineTernary ) {
-				nodeInputInfo = InputInfo.WeightedPairInputInfo;
-			}
-
-			inputInfos.add(nodeInputInfo);
-			nodeIndexMapping.put(node, inputStrings.size() - 1);
-			return;
-
-		}
-
-		// if exec nodes does not contain node at this point, return.
-		if (!execNodes.contains(node))
-			return;
-
-		// process children recursively
-		for ( Lop lop : node.getInputs() ) {
-			getInputPathsAndParameters(lop, execNodes, inputStrings,
-					inputInfos, numRows, numCols, numRowsPerBlock,
-					numColsPerBlock, nodeIndexMapping, inputLabels, inputLops, MRJobLineNumbers);
-		}
-
-	}
-
-	/**
-	 * Method to find all terminal nodes.
-	 * 
-	 * @param execNodes list of exec nodes
-	 * @param rootNodes list of root nodes
-	 * @param jt job type
-	 */
-	private static void getOutputNodes(List<Lop> execNodes, List<Lop> rootNodes, JobType jt) {
-		for ( Lop node : execNodes ) {
-			// terminal node
-			if (node.getOutputs().isEmpty() && !rootNodes.contains(node)) {
-				rootNodes.add(node);
-			} 
-			else {
-				// check for nodes with at least one child outside execnodes
-				int cnt = 0;
-				for (Lop lop : node.getOutputs() ) {
-					cnt += (!execNodes.contains(lop)) ? 1 : 0; 
-				}
-
-				if (cnt > 0 && !rootNodes.contains(node) // not already a rootnode
-					&& !(node.getExecLocation() == ExecLocation.Data
-					&& ((Data) node).getOperationType() == OperationTypes.READ 
-					&& ((Data) node).getDataType() == DataType.MATRIX) ) // Not a matrix Data READ 
-				{
-					if ( jt.allowsSingleShuffleInstruction() && node.getExecLocation() != ExecLocation.MapAndReduce)
-						continue;
-					
-					if (cnt < node.getOutputs().size()) {
-						if(!node.getProducesIntermediateOutput())	
-							rootNodes.add(node);
-					} 
-					else
-						rootNodes.add(node);
-				}
-			}
-		}
-	}
 
 	/**
 	 * check to see if a is the child of b (i.e., there is a directed path from a to b)

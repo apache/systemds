@@ -134,7 +134,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			//Step 1: construct input rdd from all result files of parfor workers
 			//a) construct job conf with all files
 			InputInfo ii = InputInfo.BinaryBlockInputInfo;
-			JobConf job = new JobConf( ResultMergeRemoteMR.class );
+			JobConf job = new JobConf( "test" );
 			job.setJobName(jobname);
 			job.setInputFormat(ii.inputFormatClass);
 			Path[] paths = new Path[ inputs.length ];

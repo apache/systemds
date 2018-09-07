@@ -63,13 +63,11 @@ import org.apache.sysml.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
-import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 public class Explain 
 {	
@@ -177,21 +175,6 @@ public class Explain
 			else { //default
 				sb.append( SparkExecutionContext.getDefaultParallelism(false) );	
 			}
-		}
-		else //MR
-		{
-			int rk = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-			int rk2 = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-			
-			//correction max number of mappers/reducers on yarn clusters
-			if( InfrastructureAnalyzer.isYarnEnabled() ){
-				rk = (int)Math.max(rk, YarnClusterAnalyzer.getNumCores());
-				rk2 = (int)Math.max(rk2, YarnClusterAnalyzer.getNumCores()/2);
-			}
-			
-			sb.append( rk );
-			sb.append( "/" );
-			sb.append( rk2 );
 		}
 		
 		return sb.toString();
@@ -1027,9 +1010,7 @@ public class Explain
 	private static String explainGenericInstruction( Instruction inst, int level )
 	{
 		String tmp = null;
-		if( inst instanceof MRJobInstruction )
-			tmp = explainMRJobInstruction((MRJobInstruction)inst, level+1);
-		else if ( inst instanceof SPInstruction || inst instanceof CPInstruction || inst instanceof GPUInstruction)
+		if ( inst instanceof SPInstruction || inst instanceof CPInstruction || inst instanceof GPUInstruction)
 			tmp = inst.toString();
 		
 		if( REPLACE_SPECIAL_CHARACTERS ){
@@ -1039,28 +1020,6 @@ public class Explain
 		}
 		
 		return tmp;
-	}
-
-	private static String explainMRJobInstruction( MRJobInstruction inst, int level )
-	{		
-		String instruction = "MR-Job[\n";
-		String offset = createOffset(level+1);
-		instruction += offset+"  jobtype        = " + inst.getJobType() + " \n";
-		instruction += offset+"  input labels   = " + Arrays.toString(inst.getInputVars()) + " \n";
-		instruction += offset+"  recReader inst = " + inst.getIv_recordReaderInstructions() + " \n";
-		instruction += offset+"  rand inst      = " + inst.getIv_randInstructions() + " \n";
-		instruction += offset+"  mapper inst    = " + inst.getIv_instructionsInMapper() + " \n";
-		instruction += offset+"  shuffle inst   = " + inst.getIv_shuffleInstructions() + " \n";
-		instruction += offset+"  agg inst       = " + inst.getIv_aggInstructions() + " \n";
-		instruction += offset+"  other inst     = " + inst.getIv_otherInstructions() + " \n";
-		instruction += offset+"  output labels  = " + Arrays.toString(inst.getOutputVars()) + " \n";
-		instruction += offset+"  result indices = " + inst.getString(inst.getIv_resultIndices()) + " \n";
-		//instruction += offset+"result dims unknown " + getString(iv_resultDimsUnknown) + " \n";
-		instruction += offset+"  num reducers   = " + inst.getIv_numReducers() + " \n";
-		instruction += offset+"  replication    = " + inst.getIv_replication() + " ]";
-		//instruction += offset+"]\n";
-		
-		return instruction;
 	}
 
 	@SuppressWarnings("unused")
@@ -1161,9 +1120,7 @@ public class Explain
 	{
 		for( Instruction inst : instSet )
 		{
-			if( MR && inst instanceof MRJobInstruction ) 
-				counts.numJobs++;
-			else if( CP && inst instanceof CPInstruction )
+			if( CP && inst instanceof CPInstruction )
 				counts.numCPInst++;
 			else if( SP && inst instanceof SPInstruction )
 				counts.numJobs++;

@@ -19,10 +19,10 @@
 
 package org.apache.sysml.runtime.instructions.spark;
 
-import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.SPInstructionParser;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.Statistics;
 
@@ -85,7 +85,7 @@ public abstract class SPInstruction extends Instruction {
 		if( tmp.requiresLabelUpdate() ) //update labels only if required
 		{
 			//note: no exchange of updated instruction as labels might change in the general case
-			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
+			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = SPInstructionParser.parseSingleInstruction(updInst);
 		}
 		

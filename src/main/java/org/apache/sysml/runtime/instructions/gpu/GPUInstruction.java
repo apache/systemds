@@ -22,11 +22,11 @@ package org.apache.sysml.runtime.instructions.gpu;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.lops.runtime.RunMRJobs;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.GPUInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
+import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -190,7 +190,7 @@ public abstract class GPUInstruction extends Instruction {
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
-			String updInst = RunMRJobs.updateLabels(tmp.toString(), ec.getVariables());
+			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = GPUInstructionParser.parseSingleInstruction(updInst);
 		}
 		return tmp;

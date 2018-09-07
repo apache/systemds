@@ -68,7 +68,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.matrix.CleanupMR;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
@@ -78,8 +77,6 @@ import org.apache.sysml.utils.NativeHelper;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
-import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
@@ -385,11 +382,6 @@ public class DMLScript
 		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 		
 		setGlobalFlags(dmlconf);
-
-		//Step 2: set local/remote memory if requested (for compile in AM context) 
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
-		}
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
@@ -419,14 +411,6 @@ public class DMLScript
 		
 		//Step 7: generate runtime program, incl codegen
 		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
-		
-		//launch SystemML appmaster (if requested and not already in launched AM)
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, dmlconf, allArgs, rtprog) )
-				return; //if AM launch unsuccessful, fall back to normal execute
-			if( isActiveAM() ) //in AM context (not failed AM launch)
-				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
-		}
 		
 		//Step 9: prepare statistics [and optional explain output]
 		//count number compiled MR jobs / SP instructions	
@@ -651,9 +635,6 @@ public class DMLScript
 		try {
 			//read the default config
 			DMLConfig conf = DMLConfig.readConfigurationFile(null);
-			
-			//run cleanup job to clean remote local tmp dirs
-			CleanupMR.runJob(conf);
 			
 			//cleanup scratch space (on HDFS)
 			String scratch = conf.getTextValue(DMLConfig.SCRATCH_SPACE);

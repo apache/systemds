@@ -32,15 +32,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -48,18 +45,15 @@ import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysml.runtime.io.FileFormatProperties;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.io.MatrixReader;
 import org.apache.sysml.runtime.io.MatrixReaderFactory;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
-import org.apache.sysml.runtime.matrix.sort.ReadWithZeros;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
 
@@ -483,13 +477,7 @@ public class MapReduceTool
 			
 		//handle format type and additional arguments	
 		mtd.put(DataExpression.FORMAT_TYPE, OutputInfo.outputInfoToStringExternal(outinfo));
-		if (outinfo == OutputInfo.CSVOutputInfo) {
-			FileFormatPropertiesCSV csvProperties = (formatProperties==null) ?
-				new FileFormatPropertiesCSV() : (FileFormatPropertiesCSV)formatProperties;
-			mtd.put(DataExpression.DELIM_HAS_HEADER_ROW, csvProperties.hasHeader());
-			mtd.put(DataExpression.DELIM_DELIMITER, csvProperties.getDelim());
-		}
-
+		
 		if (formatProperties != null) {
 			String description = formatProperties.getDescription();
 			if (StringUtils.isNotEmpty(description)) {
@@ -529,104 +517,6 @@ public class MapReduceTool
 		return DataConverter.convertToDoubleVector(mb, false);
 	}
 	
-	public static double median(String dir, MetaDataNumItemsByEachReducer metadata) throws IOException {
-		long[] counts=metadata.getNumItemsArray();
-		long[] ranges=new long[counts.length];
-		ranges[0]=counts[0];
-		for(int i=1; i<counts.length; i++)
-			ranges[i]=ranges[i-1]+counts[i];
-		
-		long total=ranges[ranges.length-1];
-		
-		return pickValueWeight(dir, metadata, 0.5, total%2==0)[0];
-	}
-	
-
-	public static double pickValue(String dir, MetaDataNumItemsByEachReducer metadata, double p) throws IOException {
-		return pickValueWeight(dir, metadata, p, false)[0];
-	}
-	
-	public static double[] pickValueWeight(String dir, MetaDataNumItemsByEachReducer metadata, double p, boolean average) 
-	throws IOException
-	{
-		long[] counts=metadata.getNumItemsArray();
-		long[] ranges=new long[counts.length];
-		ranges[0]=counts[0];
-		for(int i=1; i<counts.length; i++)
-			ranges[i]=ranges[i-1]+counts[i];
-		
-		long total=ranges[ranges.length-1];
-		
-		// do averaging only if it is asked for; and sum_wt is even
-		average = average && (total%2 == 0);
-
-		int currentPart=0;
-		double cum_weight = 0;
-		long pos=(long)Math.ceil(total*p);
-		while(ranges[currentPart]<pos) {
-			currentPart++;
-			cum_weight += ranges[currentPart];
-		}
-		int offset;
-		if(currentPart>0)
-			offset=(int)(pos-ranges[currentPart-1]-1);
-		else
-			offset=(int)pos-1;
-		
-		Path path=new Path(dir);
-		FileSystem fs=IOUtilFunctions.getFileSystem(path);
-		FileStatus[] files=fs.listStatus(path);
-		Path fileToRead=null;
-		for(FileStatus file: files)
-			if(file.getPath().toString().endsWith(Integer.toString(currentPart)))
-			{
-				fileToRead=file.getPath();
-				break;
-			}
-		
-		if(fileToRead==null)
-			throw new RuntimeException("cannot read partition "+currentPart);
-		
-		int buffsz = 64 * 1024;
-		DoubleWritable readKey=new DoubleWritable();
-	    IntWritable readValue=new IntWritable();
-	    FSDataInputStream currentStream = null;
-		double ret = -1;
-	    try {
-			currentStream = fs.open(fileToRead, buffsz);
-		    
-			boolean contain0s=false;
-			long numZeros=0;
-			if(currentPart==metadata.getPartitionOfZero())
-			{
-				contain0s=true;
-				numZeros=metadata.getNumberOfZero();
-			}
-		    ReadWithZeros reader=new ReadWithZeros(currentStream, contain0s, numZeros);
-	
-		    int numRead=0;
-		    while(numRead<=offset)
-			{
-		    	reader.readNextKeyValuePairs(readKey, readValue);
-				numRead+=readValue.get();
-				cum_weight += readValue.get();
-			}
-		    
-		    ret = readKey.get();
-		    if(average) {
-		    	if(numRead<=offset+1) {
-		    		reader.readNextKeyValuePairs(readKey, readValue);
-					cum_weight += readValue.get();
-					ret = (ret+readKey.get())/2;
-		    	}
-		    }
-		}
-		finally {
-			IOUtilFunctions.closeSilently(currentStream);
-		}
-	    return new double[] {ret, (average ? -1 : readValue.get()), (average ? -1 : cum_weight)};
-	}
-
 	public static void createDirIfNotExistOnHDFS(String dir, String permissions) 
 		throws IOException 
 	{

@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.utils.Statistics;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 
 public class ProgramBlock implements ParseInfo
@@ -134,9 +133,6 @@ public class ProgramBlock implements ParseInfo
 		//dynamically recompile instructions if enabled and required
 		try
 		{
-			if( DMLScript.isActiveAM() ) //set program block specific remote memory
-				DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
-
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(    ConfigurationManager.isDynamicRecompilation()
 				&& _sb != null

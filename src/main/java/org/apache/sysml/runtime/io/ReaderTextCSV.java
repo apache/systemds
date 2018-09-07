@@ -36,7 +36,6 @@ import org.apache.hadoop.mapred.JobConf;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -103,7 +102,7 @@ public class ReaderTextCSV extends MatrixReader
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files=new ArrayList<>();
 		if(fs.isDirectory(path)) {
-			for(FileStatus stat: fs.listStatus(path, CSVReblockMR.hiddenFileFilter))
+			for(FileStatus stat: fs.listStatus(path, IOUtilFunctions.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);
 		}

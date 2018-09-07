@@ -35,7 +35,6 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.CSVReblockMR;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.MapReduceTool;
@@ -286,7 +285,7 @@ public class WriterTextCSV extends MatrixWriter
 
 			// compute sorted order among part files
 			ArrayList<Path> files=new ArrayList<>();
-			for(FileStatus stat: fs.listStatus(srcFilePath, CSVReblockMR.hiddenFileFilter))
+			for(FileStatus stat: fs.listStatus(srcFilePath, IOUtilFunctions.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);
 		

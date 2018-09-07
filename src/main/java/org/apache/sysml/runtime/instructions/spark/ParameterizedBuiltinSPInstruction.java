@@ -47,7 +47,6 @@ import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
-import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.instructions.spark.functions.ExtractGroup.ExtractGroupBroadcast;
@@ -151,7 +150,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					if ( paramsMap.get("order") == null )
 						throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 				}
-				Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+				Operator op = null; //GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
 			} 
 			else if (opcode.equalsIgnoreCase("rmempty")) {

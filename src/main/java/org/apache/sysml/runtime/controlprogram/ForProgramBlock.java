@@ -22,7 +22,6 @@ package org.apache.sysml.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.parser.ForStatementBlock;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -33,7 +32,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -160,9 +158,6 @@ public class ForProgramBlock extends ProgramBlock
 		{
 			if( _sb != null )
 			{
-				if( DMLScript.isActiveAM() ) //set program block specific remote memory
-					DMLAppMasterUtils.setupProgramBlockRemoteMaxMemory(this);
-				
 				ForStatementBlock fsb = (ForStatementBlock)_sb;
 				Hop predHops = null;
 				boolean recompile = false;

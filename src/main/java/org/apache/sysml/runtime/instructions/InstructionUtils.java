@@ -84,7 +84,6 @@ import org.apache.sysml.runtime.functionobjects.Xor;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction.MRType;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysml.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
@@ -198,10 +197,6 @@ public class InstructionUtils
 		int ix1 = str.indexOf(Instruction.OPERAND_DELIM);
 		int ix2 = str.indexOf(Instruction.OPERAND_DELIM, ix1+1);
 		return str.substring(ix1+1, ix2);
-	}
-
-	public static MRType getMRType( String str ) {
-		return MRInstructionParser.String2MRInstructionType.get( getOpCode(str) ); 
 	}
 
 	public static SPType getSPType( String str ) {

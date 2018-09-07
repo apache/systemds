@@ -39,7 +39,6 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN;
@@ -577,12 +576,7 @@ public class Statistics
 	{
 		String opcode = null;
 		
-		if( inst instanceof MRJobInstruction )
-		{
-			MRJobInstruction mrinst = (MRJobInstruction) inst;
-			opcode = "MR-Job_"+mrinst.getJobType();
-		}
-		else if( inst instanceof SPInstruction )
+		if( inst instanceof SPInstruction )
 		{
 			opcode = "SP_"+InstructionUtils.getOpCode(inst.toString());
 			if( inst instanceof FunctionCallCPInstruction ) {

@@ -90,11 +90,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParReadCSVSparseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.CSVOutputInfo, false, false);
-	}
-
-	@Test
 	public void testParReadTextcellSparseSmall() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, false, false);
 	}
@@ -102,11 +97,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	@Test
 	public void testParReadMMSparseSmall() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, false);
-	}
-	
-	@Test
-	public void testSeqReadCSVDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.CSVOutputInfo, true, false);
 	}
 
 	@Test
@@ -120,11 +110,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParReadCSVDenseSmall() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.CSVOutputInfo, true, false);
-	}
-
-	@Test
 	public void testParReadTextcellDenseSmall() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, true, false);
 	}
@@ -132,11 +117,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	@Test
 	public void testParReadMMDenseSmall() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, false);
-	}
-	
-	@Test
-	public void testSeqReadCSVSparseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.CSVOutputInfo, false, true);
 	}
 
 	@Test
@@ -150,11 +130,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParReadCSVSparseBig() {
-		runReadTypeFormatSparsitySizeTest(true, OutputInfo.CSVOutputInfo, false, true);
-	}
-
-	@Test
 	public void testParReadTextcellSparseBig() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.TextCellOutputInfo, false, true);
 	}
@@ -162,11 +137,6 @@ public class SeqParReadTest extends AutomatedTestBase {
 	@Test
 	public void testParReadMMSparseBig() {
 		runReadTypeFormatSparsitySizeTest(true, OutputInfo.MatrixMarketOutputInfo, false, true);
-	}
-	
-	@Test
-	public void testSeqReadCSVDenseBig() {
-		runReadTypeFormatSparsitySizeTest(false, OutputInfo.CSVOutputInfo, true, true);
 	}
 
 	@Test

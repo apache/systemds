@@ -28,8 +28,6 @@ import java.io.Serializable;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Partitioner;
 
 import org.apache.sysml.runtime.util.UtilFunctions;
 
@@ -138,23 +136,4 @@ public class TripleIndexes implements WritableComparable<TripleIndexes>, Seriali
 			return m1.compareTo(m2);
 		}	
 	}
-	
-	 /**
-	   * Partition based on the first and second index.
-	   */
-	  public static class FirstTwoIndexesPartitioner implements Partitioner<TripleIndexes, TaggedMatrixValue>{
-	    @Override
-	    public int getPartition(TripleIndexes key, TaggedMatrixValue value, 
-	                            int numPartitions) {
-	   
-	    	return UtilFunctions.longHashCode((key.getFirstIndex()*127)
-	    			+key.getSecondIndex()+UtilFunctions.ADD_PRIME1)
-	    			%UtilFunctions.DIVIDE_PRIME%numPartitions;
-	    }
-
-		@Override
-		public void configure(JobConf arg0) {
-			
-		}
-	  }
 }

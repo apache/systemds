@@ -22,12 +22,8 @@ package org.apache.sysml.runtime.matrix.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.filecache.DistributedCache;
@@ -36,39 +32,16 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.lib.CombineSequenceFileInputFormat;
-import org.apache.hadoop.mapred.lib.MultipleOutputs;
-import org.apache.hadoop.mapred.lib.NullOutputFormat;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.instructions.MRInstructionParser;
-import org.apache.sysml.runtime.instructions.mr.AggregateBinaryInstruction;
-import org.apache.sysml.runtime.instructions.mr.AggregateInstruction;
-import org.apache.sysml.runtime.instructions.mr.AppendGInstruction;
-import org.apache.sysml.runtime.instructions.mr.AppendMInstruction;
-import org.apache.sysml.runtime.instructions.mr.BinaryMInstruction;
-import org.apache.sysml.runtime.instructions.mr.CM_N_COVInstruction;
-import org.apache.sysml.runtime.instructions.mr.CSVReblockInstruction;
-import org.apache.sysml.runtime.instructions.mr.CSVWriteInstruction;
-import org.apache.sysml.runtime.instructions.mr.DataGenMRInstruction;
-import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction;
-import org.apache.sysml.runtime.instructions.mr.MapMultChainInstruction;
-import org.apache.sysml.runtime.instructions.mr.PMMJMRInstruction;
-import org.apache.sysml.runtime.instructions.mr.ReblockInstruction;
-import org.apache.sysml.runtime.instructions.mr.RemoveEmptyMRInstruction;
-import org.apache.sysml.runtime.instructions.mr.UnaryMRInstructionBase;
 import org.apache.sysml.runtime.io.BinaryBlockSerialization;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
@@ -84,16 +57,11 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixCell;
 import org.apache.sysml.runtime.matrix.data.MatrixValue;
-import org.apache.sysml.runtime.matrix.data.MultipleOutputCommitter;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.TextCellToRowBlockConverter;
 import org.apache.sysml.runtime.matrix.data.TextToBinaryCellConverter;
 import org.apache.sysml.runtime.matrix.data.WeightedCellToSortInputConverter;
 import org.apache.sysml.runtime.matrix.data.WeightedPair;
-import org.apache.sysml.runtime.matrix.data.hadoopfix.MultipleInputs;
-import org.apache.sysml.runtime.matrix.sort.SamplingSortMRInputFormat;
-import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 @SuppressWarnings({ "rawtypes", "deprecation" })
 public class MRJobConfiguration 
@@ -166,8 +134,6 @@ public class MRJobConfiguration
 	private static final String RESULTMERGE_MATRIX_NUM_COLUMN_CONFIG="resultmerge.matrix.num.column";
 	private static final String RESULTMERGE_BLOCK_NUM_ROW_CONFIG="resultmerge.block.num.row";
 	private static final String RESULTMERGE_BLOCK_NUM_COLUMN_CONFIG="resultmerge.block.num.column";
-	
-	private static final String SORT_PARTITION_FILENAME = "sort.partition.filename";
 	
 	//operations performed in the reduer
 	private static final String AGGREGATE_INSTRUCTIONS_CONFIG="aggregate.instructions.after.groupby.at";
@@ -451,48 +417,6 @@ public class MRJobConfiguration
 		} 
 		return outputConverter;
 	}
-
-	public static MRInstruction[] getInstructionsInReducer(JobConf job) {
-		String str=job.get(INSTRUCTIONS_IN_REDUCER_CONFIG);
-		MRInstruction[] mixed_ops = MRInstructionParser.parseMixedInstructions(str);
-		return mixed_ops;
-	}
-	
-	public static ReblockInstruction[] getReblockInstructions(JobConf job) {
-		String str=job.get(REBLOCK_INSTRUCTIONS_CONFIG);
-		ReblockInstruction[] reblock_instructions = MRInstructionParser.parseReblockInstructions(str);
-		return reblock_instructions;
-	}
-	
-	public static CSVReblockInstruction[] getCSVReblockInstructions(JobConf job) {
-		String str=job.get(CSV_REBLOCK_INSTRUCTIONS_CONFIG);
-		CSVReblockInstruction[] reblock_instructions = MRInstructionParser.parseCSVReblockInstructions(str);
-		return reblock_instructions;
-	}
-	
-	public static CSVWriteInstruction[] getCSVWriteInstructions(JobConf job) {
-		String str=job.get(CSV_WRITE_INSTRUCTIONS_CONFIG);
-		CSVWriteInstruction[] reblock_instructions = MRInstructionParser.parseCSVWriteInstructions(str);
-		return reblock_instructions;
-	}
-	
-	public static AggregateInstruction[] getAggregateInstructions(JobConf job) {
-		String str=job.get(AGGREGATE_INSTRUCTIONS_CONFIG);
-		AggregateInstruction[] agg_instructions = MRInstructionParser.parseAggregateInstructions(str);
-		return agg_instructions;
-	}
-	
-	public static MRInstruction[] getCombineInstruction(JobConf job) {
-		String str=job.get(COMBINE_INSTRUCTIONS_CONFIG);
-		MRInstruction[] comb_instructions = MRInstructionParser.parseCombineInstructions(str);
-		return comb_instructions;
-	}
-	
-	public static MRInstruction[] getInstructionsInMapper(JobConf job) {
-		String str=job.get(INSTRUCTIONS_IN_MAPPER_CONFIG);
-		MRInstruction[] instructions = MRInstructionParser.parseMixedInstructions(str);
-		return instructions;
-	}
 	
 	//parfor configurations
 	public static void setProgramBlocks(JobConf job, String sProgramBlocks) 
@@ -768,36 +692,7 @@ public class MRJobConfiguration
 	{
 		job.set(RAND_INSTRUCTIONS_CONFIG, randInstrctions);
 	}
-	
-	public static DataGenMRInstruction[] getDataGenInstructions(JobConf job) {
-		String str=job.get(RAND_INSTRUCTIONS_CONFIG);
-		return MRInstructionParser.parseDataGenInstructions(str);
-	}
-	
-	public static AggregateBinaryInstruction[] getAggregateBinaryInstructions(JobConf job) {
-		String str=job.get(AGGREGATE_BINARY_INSTRUCTIONS_CONFIG);
-		return MRInstructionParser.parseAggregateBinaryInstructions(str);
-	}
-	
-	public static CM_N_COVInstruction[] getCM_N_COVInstructions(JobConf job) {
-		String str=job.get(CM_N_COV_INSTRUCTIONS_CONFIG);
-		return MRInstructionParser.parseCM_N_COVInstructions(str);
-	}
 
-	public static GroupedAggregateInstruction[] getGroupedAggregateInstructions(JobConf job) {
-		//parse all grouped aggregate instructions
-		String str=job.get(GROUPEDAGG_INSTRUCTIONS_CONFIG);
-		GroupedAggregateInstruction[] tmp = MRInstructionParser.parseGroupedAggInstructions(str);
-		
-		//obtain bclen for all instructions
-		for( int i=0; i< tmp.length; i++ ) {
-			byte tag = tmp[i].input;
-			tmp[i].setBclen(getMatrixCharacteristicsForInput(job, tag).getColsPerBlock());
-		}
-		
-		return tmp;
-	}
-	
 	public static String[] getOutputs(JobConf job) {
 		return job.getStrings(OUTPUT_MATRICES_DIRS_CONFIG);
 	}
@@ -828,11 +723,6 @@ public class MRJobConfiguration
 			return null;
 		String[] istrs=str.split(Instruction.INSTRUCTION_DELIM);
 		return stringArrayToByteArray(istrs);
-	}
-	
-	public static void setIntermediateMatrixIndexes(JobConf job, HashSet<Byte> indexes)
-	{
-		job.set(INTERMEDIATE_INDEXES_CONFIG, getIndexesString(indexes));
 	}
 
 	public static void setDimsUnknownFilePrefix(JobConf job, String prefix) {
@@ -959,221 +849,6 @@ public class MRJobConfiguration
 		return MRJobConfiguration.csv2PFormat(job.get(PARTITIONING_OUTPUT_FORMAT_CONFIG));
 	}
 	
-	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-			int[] brlens, int[] bclens, boolean setConverter, ConvertTarget target) 
-	throws Exception
-	{
-		//conservative initialize (all jobs except GMR)
-		boolean[] distCacheOnly = new boolean[inputIndexes.length];
-		Arrays.fill(distCacheOnly, false);
-		
-		setUpMultipleInputs(job, inputIndexes, inputs, inputInfos, brlens, bclens, distCacheOnly, setConverter, target);
-	}
-
-	public static void setUpMultipleInputs(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-			int[] brlens, int[] bclens, boolean[] distCacheOnly, boolean setConverter, ConvertTarget target) 
-		throws Exception
-	{
-		if(inputs.length!=inputInfos.length)
-			throw new Exception("number of inputs and inputInfos does not match");
-		
-		//set up names of the input matrices and their inputformat information
-		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
-		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, inputIndexes);
-		
-		//set up converter infos (converter determined implicitly)
-		if(setConverter) {
-			for(int i=0; i<inputs.length; i++)
-				setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
-		}
-		
-		//remove redundant inputs and pure broadcast variables
-		ArrayList<Path> lpaths = new ArrayList<>();
-		ArrayList<InputInfo> liinfos = new ArrayList<>();
-		for(int i=0; i<inputs.length; i++)
-		{
-			Path p = new Path(inputs[i]);
-			
-			//check and skip redundant inputs
-			if(   lpaths.contains(p) //path already included
-			   || distCacheOnly[i] ) //input only required in dist cache
-			{
-				continue;
-			}
-			
-			lpaths.add(p);
-			liinfos.add(inputInfos[i]);
-		}
-		
-		boolean combineInputFormat = false;
-		if( OptimizerUtils.ALLOW_COMBINE_FILE_INPUT_FORMAT ) 
-		{
-			//determine total input sizes
-			double totalInputSize = 0;
-			for(int i=0; i<inputs.length; i++)
-				totalInputSize += MapReduceTool.getFilesizeOnHDFS(new Path(inputs[i]));
-				
-			//set max split size (default blocksize) to 2x blocksize if (1) sort buffer large enough, 
-			//(2) degree of parallelism not hurt, and only a single input (except broadcasts)
-			//(the sort buffer size is relevant for pass-through of, potentially modified, inputs to the reducers)
-			//(the single input constraint stems from internal runtime assumptions used to relate meta data to inputs)
-			long sizeSortBuff = InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer();
-			long sizeHDFSBlk = InfrastructureAnalyzer.getHDFSBlockSize();
-			long newSplitSize = sizeHDFSBlk * 2; //use generic config api for backwards compatibility
-			double spillPercent = Double.parseDouble(job.get(MRConfigurationNames.MR_MAP_SORT_SPILL_PERCENT, "1.0"));
-			int numPMap = OptimizerUtils.getNumMappers();
-			if( numPMap < totalInputSize/newSplitSize && sizeSortBuff*spillPercent >= newSplitSize && lpaths.size()==1 ) {
-				job.setLong(MRConfigurationNames.MR_INPUT_FILEINPUTFORMAT_SPLIT_MAXSIZE, newSplitSize);
-				combineInputFormat = true;
-			}
-		}
-		
-		//add inputs to jobs input (incl input format configuration)
-		for(int i=0; i<lpaths.size(); i++)
-		{
-			//add input to job inputs (for binaryblock we use CombineSequenceFileInputFormat to reduce task latency)
-			if( combineInputFormat && liinfos.get(i) == InputInfo.BinaryBlockInputInfo )
-				MultipleInputs.addInputPath(job, lpaths.get(i), CombineSequenceFileInputFormat.class);
-			else
-				MultipleInputs.addInputPath(job, lpaths.get(i), liinfos.get(i).inputFormatClass);
-		}
-	}
-	
-	/**
-	 * Specific method because we need to set the input converter class according to the 
-	 * input infos. Note that any mapper instruction before reblock can work on binary block
-	 * if it can work on binary cell as well.
-	 * 
-	 * @param job job configuration
-	 * @param inputIndexes array of byte indexes
-	 * @param inputs array of input string
-	 * @param inputInfos array of input infos
-	 * @param brlens array of block row lengths
-	 * @param bclens array of block column lengths
-	 * @throws Exception if Exception occurs
-	 */
-	public static void setUpMultipleInputsReblock(JobConf job, byte[] inputIndexes, String[] inputs, InputInfo[] inputInfos, 
-												  int[] brlens, int[] bclens) 
-		throws Exception
-	{
-		if(inputs.length!=inputInfos.length)
-			throw new Exception("number of inputs and inputInfos does not match");
-		
-		//set up names of the input matrices and their inputformat information
-		job.setStrings(INPUT_MATRICIES_DIRS_CONFIG, inputs);
-		MRJobConfiguration.setMapFunctionInputMatrixIndexes(job, inputIndexes);
-		
-		for(int i=0; i<inputs.length; i++)
-		{
-			ConvertTarget target=ConvertTarget.CELL;
-			if(inputInfos[i]==InputInfo.BinaryBlockInputInfo)
-				target=ConvertTarget.BLOCK;
-			setInputInfo(job, inputIndexes[i], inputInfos[i], brlens[i], bclens[i], target);
-		}
-		
-		//remove redundant input files
-		ArrayList<Path> paths=new ArrayList<>();
-		for(int i=0; i<inputs.length; i++)
-		{
-			String name=inputs[i];
-			Path p=new Path(name);
-			boolean redundant=false;
-			for(Path ep: paths)
-				if(ep.equals(p))
-				{
-					redundant=true;
-					break;
-				}
-			if(redundant)
-				continue;
-			MultipleInputs.addInputPath(job, p, inputInfos[i].inputFormatClass);
-			paths.add(p);
-		}
-	}
-
-	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknown, String[] outputs, 
-			OutputInfo[] outputInfos, boolean inBlockRepresentation, boolean mayContainCtable) 
-	throws Exception
-	{
-		if(resultIndexes.length!=outputs.length)
-			throw new Exception("number of outputs and result indexes does not match");
-		if(outputs.length!=outputInfos.length)
-			throw new Exception("number of outputs and outputInfos indexes does not match");
-		
-		job.set(RESULT_INDEXES_CONFIG, MRJobConfiguration.getIndexesString(resultIndexes));
-		job.set(RESULT_DIMS_UNKNOWN_CONFIG, MRJobConfiguration.getIndexesString(resultDimsUnknown));
-		job.setStrings(OUTPUT_MATRICES_DIRS_CONFIG, outputs);
-		job.setOutputCommitter(MultipleOutputCommitter.class);
-		
-		for(int i=0; i<outputs.length; i++)
-		{
-			MapReduceTool.deleteFileIfExistOnHDFS(new Path(outputs[i]), job);
-			if ( mayContainCtable && resultDimsUnknown[i] == (byte) 1 )  {
-				setOutputInfo(job, i, outputInfos[i], false);
-			}
-			else {
-				setOutputInfo(job, i, outputInfos[i], inBlockRepresentation);
-			}
-			MultipleOutputs.addNamedOutput(job, Integer.toString(i), 
-					outputInfos[i].outputFormatClass, outputInfos[i].outputKeyClass, 
-					outputInfos[i].outputValueClass);
-		}
-		job.setOutputFormat(NullOutputFormat.class);
-		
-		// configure temp output
-		Path tempOutputPath = new Path( constructTempOutputFilename() );
-		FileOutputFormat.setOutputPath(job, tempOutputPath);
-		MapReduceTool.deleteFileIfExistOnHDFS(tempOutputPath, job);
-	}
-	
-	public static void setUpMultipleOutputs(JobConf job, byte[] resultIndexes, byte[] resultDimsUnknwon, String[] outputs, 
-			OutputInfo[] outputInfos, boolean inBlockRepresentation) 
-	throws Exception
-	{
-		setUpMultipleOutputs(job, resultIndexes, resultDimsUnknwon, outputs, 
-				outputInfos, inBlockRepresentation, false);
-	}
-
-	public static String setUpSortPartitionFilename( JobConf job ) {
-		String pfname = constructPartitionFilename();
-		job.set( SORT_PARTITION_FILENAME, pfname );
-		return pfname;
-	}
-
-	public static String getSortPartitionFilename( JobConf job ) {
-		return job.get( SORT_PARTITION_FILENAME );
-	}
-	
-	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
-			String instructionsInMapper, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
-	{
-		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, null, aggInstructionsInReducer, 
-				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
-	}
-	
-	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, 
-			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
-	{
-		return computeMatrixCharacteristics(job, inputIndexes, null, instructionsInMapper, reblockInstructions, aggInstructionsInReducer, 
-				aggBinInstructions, otherInstructionsInReducer, resultIndexes, mapOutputIndexes, forMMCJ);
-	}
-	
-	public static void setNumReducers(JobConf job, long numReducerGroups, int numFromCompiler) throws IOException
-	{
-		JobClient client=new JobClient(job);
-		int n=client.getClusterStatus().getMaxReduceTasks();
-		//correction max number of reducers on yarn clusters
-		if( InfrastructureAnalyzer.isYarnEnabled() )
-			n = (int)Math.max( n, YarnClusterAnalyzer.getNumCores()/2 );
-		n=Math.min(n, ConfigurationManager.getNumReducers());
-		n=Math.min(n, numFromCompiler);
-		if(numReducerGroups>0)
-			n=(int) Math.min(n, numReducerGroups);
-		job.setNumReduceTasks(n); 
-	}
-	
 	public static class MatrixChar_N_ReducerGroups
 	{
 		public MatrixCharacteristics[] stats;
@@ -1186,250 +861,6 @@ public class MRJobConfiguration
 		}
 	}
 	
-	/**
-	 * NOTE: this method needs to be in-sync with MRBaseForCommonInstructions.processOneInstruction,
-	 * otherwise, the latter will potentially fail with missing dimension information.
-	 * 
-	 * @param job job configuration
-	 * @param inputIndexes array of byte indexes
-	 * @param dataGenInstructions data gen instructions as a string
-	 * @param instructionsInMapper instruction in mapper as a string
-	 * @param reblockInstructions reblock instructions as a string
-	 * @param aggInstructionsInReducer aggregate instructions in reducer as a string
-	 * @param aggBinInstructions binary aggregate instructions as a string
-	 * @param otherInstructionsInReducer other instructions in reducer as a string
-	 * @param resultIndexes array of byte result indexes
-	 * @param mapOutputIndexes set of map output indexes
-	 * @param forMMCJ ?
-	 * @return reducer groups
-	 */
-	public static MatrixChar_N_ReducerGroups computeMatrixCharacteristics(JobConf job, byte[] inputIndexes, String dataGenInstructions,
-			String instructionsInMapper, String reblockInstructions, String aggInstructionsInReducer, String aggBinInstructions, 
-			String otherInstructionsInReducer, byte[] resultIndexes, HashSet<Byte> mapOutputIndexes, boolean forMMCJ)
-	{
-		HashSet<Byte> intermediateMatrixIndexes=new HashSet<>();
-		HashMap<Byte, MatrixCharacteristics> dims=new HashMap<>();
-		for(byte i: inputIndexes){
-			MatrixCharacteristics dim=new MatrixCharacteristics(getNumRows(job, i), getNumColumns(job, i), 
-					getNumRowsPerBlock(job, i), getNumColumnsPerBlock(job, i), getNumNonZero(job, i));
-			dims.put(i, dim);
-		}
-		DataGenMRInstruction[] dataGenIns = null;
-		dataGenIns = MRInstructionParser.parseDataGenInstructions(dataGenInstructions);
-		if(dataGenIns!=null)
-		{
-			for(DataGenMRInstruction ins: dataGenIns)
-			{
-				MatrixCharacteristics.computeDimension(dims, ins);
-			}
-		}
-		
-		MRInstruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
-		if(insMapper!=null)
-		{
-			for(MRInstruction ins: insMapper)
-			{
-				MatrixCharacteristics.computeDimension(dims, ins);
-				
-				if( ins instanceof UnaryMRInstructionBase )
-				{
-					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input, 
-							dims.get(tempIns.input));
-					intermediateMatrixIndexes.add(tempIns.input);
-				}
-				else if(ins instanceof AppendMInstruction)
-				{
-					AppendMInstruction tempIns=(AppendMInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, 
-							dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1);
-				}
-				else if(ins instanceof AppendGInstruction)
-				{
-					AppendGInstruction tempIns=(AppendGInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, 
-							dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1);
-				}
-				else if(ins instanceof BinaryMInstruction)
-				{
-					BinaryMInstruction tempIns=(BinaryMInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, 
-							dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1);
-				}
-				else if(ins instanceof AggregateBinaryInstruction)
-				{
-					AggregateBinaryInstruction tempIns=(AggregateBinaryInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1); //TODO
-				}
-				else if(ins instanceof MapMultChainInstruction)
-				{
-					MapMultChainInstruction tempIns=(MapMultChainInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.getInput1(), dims.get(tempIns.getInput2()));	
-					intermediateMatrixIndexes.add(tempIns.getInput1());
-				}
-				else if(ins instanceof PMMJMRInstruction)
-				{
-					PMMJMRInstruction tempIns=(PMMJMRInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input2, dims.get(tempIns.input2));	
-					intermediateMatrixIndexes.add(tempIns.input2);
-				}
-			}
-		}
-		
-		ReblockInstruction[] reblockIns = MRInstructionParser.parseReblockInstructions(reblockInstructions);
-		if(reblockIns!=null)
-		{
-			for(ReblockInstruction ins: reblockIns)
-			{
-				MatrixCharacteristics.computeDimension(dims, ins);
-				setMatrixCharactristicsForReblock(job, ins.output, dims.get(ins.output));
-			}
-		}
-		
-		Instruction[] aggIns = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
-		if(aggIns!=null)
-		{
-			for(Instruction ins: aggIns) {
-				MatrixCharacteristics.computeDimension(dims, (MRInstruction) ins);
-			
-				// if instruction's output is not in resultIndexes, then add its dimensions to jobconf
-				MRInstruction mrins = (MRInstruction)ins;
-				boolean found = false;
-				for(byte b : resultIndexes) {
-					if(b==mrins.output) {
-						found = true;
-						break;
-					}
-				}
-				if(!found) {
-					setIntermediateMatrixCharactristics(job, mrins.output, dims.get(mrins.output));
-					intermediateMatrixIndexes.add(mrins.output);	
-				}
-			}
-		}
-		
-		long numReduceGroups=0;
-		AggregateBinaryInstruction[] aggBinIns = getAggregateBinaryInstructions(job);
-		if(aggBinIns!=null)
-		{
-			for(AggregateBinaryInstruction ins: aggBinIns)
-			{
-				MatrixCharacteristics dim1=dims.get(ins.input1);
-				MatrixCharacteristics dim2=dims.get(ins.input2);
-				setMatrixCharactristicsForBinAgg(job, ins.input1, dim1);
-				setMatrixCharactristicsForBinAgg(job, ins.input2, dim2);
-				MatrixCharacteristics.computeDimension(dims, ins);
-				if(forMMCJ)//there will be only one aggbin operation for MMCJ
-					numReduceGroups=(long) Math.ceil((double)dim1.getCols()/(double)dim1.getColsPerBlock());
-			}
-		}
-		if(!forMMCJ)
-		{
-			//store the skylines
-			ArrayList<Long> xs=new ArrayList<>(mapOutputIndexes.size());
-			ArrayList<Long> ys=new ArrayList<>(mapOutputIndexes.size());
-			for(byte idx: mapOutputIndexes)
-			{
-				MatrixCharacteristics dim=dims.get(idx);
-				long x=(long)Math.ceil((double)dim.getRows()/(double)dim.getRowsPerBlock());
-				long y=(long)Math.ceil((double)dim.getCols()/(double)dim.getColsPerBlock());
-				
-				int i=0; 
-				boolean toadd=true;
-				while(i<xs.size())
-				{
-					if( (x>=xs.get(i)&&y>ys.get(i)) || (x>xs.get(i)&&y>=ys.get(i)))
-					{
-						//remove any included x's and y's
-						xs.remove(i);
-						ys.remove(i);
-					}else if(x<=xs.get(i) && y<=ys.get(i))//if included in others, stop
-					{
-						toadd=false;
-						break;
-					}
-					else
-						i++;
-				}
-				
-				if(toadd)
-				{
-					xs.add(x);
-					ys.add(y);
-				}
-			}
-			//sort by x
-			TreeMap<Long, Long> map=new TreeMap<>();
-			for(int i=0; i<xs.size(); i++)
-				map.put(xs.get(i), ys.get(i));
-			numReduceGroups=0;
-			//compute area
-			long prev=0;
-			for(Entry<Long, Long> e: map.entrySet())
-			{
-				numReduceGroups+=(e.getKey()-prev)*e.getValue();
-				prev=e.getKey();
-			}
-		}
-		
-		
-		MRInstruction[] insReducer = MRInstructionParser.parseMixedInstructions(otherInstructionsInReducer);
-		if(insReducer!=null)
-		{
-			for(MRInstruction ins: insReducer)
-			{
-				MatrixCharacteristics.computeDimension(dims, ins);
-				if( ins instanceof UnaryMRInstructionBase )
-				{
-					UnaryMRInstructionBase tempIns=(UnaryMRInstructionBase) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input, 
-							dims.get(tempIns.input));
-					intermediateMatrixIndexes.add(tempIns.input);
-				}
-				else if( ins instanceof RemoveEmptyMRInstruction )
-				{
-					RemoveEmptyMRInstruction tempIns = (RemoveEmptyMRInstruction) ins;
-					setIntermediateMatrixCharactristics(job, tempIns.input1, 
-							dims.get(tempIns.input1));
-					intermediateMatrixIndexes.add(tempIns.input1);	
-				}
-				
-				// if instruction's output is not in resultIndexes, then add its dimensions to jobconf
-				boolean found = false;
-				for(byte b : resultIndexes) {
-					if(b==ins.output) {
-						found = true;
-						break;
-					}
-				}
-				if(!found) {
-					setIntermediateMatrixCharactristics(job, ins.output, 
-							dims.get(ins.output));
-					intermediateMatrixIndexes.add(ins.output);	
-				}
-			}
-		}
-		
-		setIntermediateMatrixIndexes(job, intermediateMatrixIndexes);
-		
-		for (byte tag : mapOutputIndexes)
-			setMatrixCharactristicsForMapperOutput(job, tag, dims.get(tag));
-		
-		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
-		MatrixCharacteristics resultDims;
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			resultDims = dims.get(resultIndexes[i]);
-			stats[i]=resultDims;
-			setMatrixCharactristicsForOutput(job, resultIndexes[i], stats[i]);
-		}
-		
-		return new MatrixChar_N_ReducerGroups(stats, numReduceGroups);
-	}
 	
 	public static void setIntermediateMatrixCharactristics(JobConf job,
 			byte tag, MatrixCharacteristics dim) {
@@ -1540,124 +971,6 @@ public class MRJobConfiguration
 		                  job.getInt(AGGBIN_BLOCK_NUM_COLUMN_PREFIX_CONFIG+tag, 1) );
 		return dim;
 	}
-	
-	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
-			String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
-		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
-				null, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
-	}
-	
-	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String instructionsInMapper, 
-			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
-		return setUpOutputIndexesForMapper(job, inputIndexes, null, instructionsInMapper, 
-				reblockInstructions, aggInstructionsInReducer, otherInstructionsInReducer, resultIndexes);
-	}
-	public static HashSet<Byte> setUpOutputIndexesForMapper(JobConf job, byte[] inputIndexes, String randInstructions, String instructionsInMapper, 
-			String reblockInstructions, String aggInstructionsInReducer, String otherInstructionsInReducer, byte[] resultIndexes) {
-		//find out what results are needed to send to reducers
-		
-		HashSet<Byte> indexesInMapper=new HashSet<>();
-		for(byte b: inputIndexes)
-			indexesInMapper.add(b);
-		
-		DataGenMRInstruction[] dataGenIns = null;
-		dataGenIns = MRInstructionParser.parseDataGenInstructions(randInstructions);
-		getIndexes(dataGenIns, indexesInMapper);
-		
-		MRInstruction[] insMapper = MRInstructionParser.parseMixedInstructions(instructionsInMapper);
-		getIndexes(insMapper, indexesInMapper);
-		
-		ReblockInstruction[] reblockIns = null;
-		reblockIns = MRInstructionParser.parseReblockInstructions(reblockInstructions);
-		getIndexes(reblockIns, indexesInMapper);
-		
-		MRInstruction[] insReducer = MRInstructionParser.parseAggregateInstructions(aggInstructionsInReducer);
-		HashSet<Byte> indexesInReducer=new HashSet<>();
-		getIndexes(insReducer, indexesInReducer);
-		
-		insReducer = MRInstructionParser.parseMixedInstructions(otherInstructionsInReducer);
-		getIndexes(insReducer, indexesInReducer);
-	
-		for(byte ind: resultIndexes)
-			indexesInReducer.add(ind);
-		
-		indexesInMapper.retainAll(indexesInReducer);
-		
-		job.set(OUTPUT_INDEXES_IN_MAPPER_CONFIG, getIndexesString(indexesInMapper));
-		return indexesInMapper;
-	}
-	
-	public static CollectMultipleConvertedOutputs getMultipleConvertedOutputs(JobConf job)
-	{		
-		byte[] resultIndexes=MRJobConfiguration.getResultIndexes(job);
-		Converter[] outputConverters=new Converter[resultIndexes.length];
-		MatrixCharacteristics[] stats=new MatrixCharacteristics[resultIndexes.length];
-		HashMap<Byte, ArrayList<Integer>> tagMapping=new HashMap<>();
-		for(int i=0; i<resultIndexes.length; i++)
-		{
-			byte output=resultIndexes[i];
-			ArrayList<Integer> vec=tagMapping.get(output);
-			if(vec==null)
-			{
-				vec=new ArrayList<>();
-				tagMapping.put(output, vec);
-			}
-			vec.add(i);
-			
-			outputConverters[i]=getOuputConverter(job, i);
-			stats[i]=MRJobConfiguration.getMatrixCharacteristicsForOutput(job, output);
-		}
-		
-		MultipleOutputs multipleOutputs=new MultipleOutputs(job);
-		
-		return new CollectMultipleConvertedOutputs(outputConverters, stats, multipleOutputs);
-		
-	}
-	
-	private static void getIndexes(MRInstruction[] instructions, HashSet<Byte> indexes) {
-		if(instructions==null)
-			return;
-		for(MRInstruction ins: instructions)
-		{
-			for(byte i: ins.getAllIndexes())
-				indexes.add(i);
-		}
-	}
-	
-	private static String getIndexesString(HashSet<Byte> indexes)
-	{
-		if(indexes==null || indexes.isEmpty())
-			return "";
-		
-		StringBuilder sb = new StringBuilder();
-		for(Byte ind: indexes) {
-			sb.append(ind);
-			sb.append(Instruction.INSTRUCTION_DELIM);
-		}
-		
-		//return string without last character
-		return sb.substring(0, sb.length()-1);
-	}
-	
-	private static String getIndexesString(byte[] indexes)
-	{
-		if(indexes==null || indexes.length==0)
-			return "";
-		
-		StringBuilder sb = new StringBuilder();
-		for(Byte ind: indexes) {
-			sb.append(ind);
-			sb.append(Instruction.INSTRUCTION_DELIM);
-		}
-		
-		//return string without last character
-		return sb.substring(0, sb.length()-1);
-	}
-
-	public static void setMapFunctionInputMatrixIndexes(JobConf job, byte[] realIndexes) 
-	{
-		job.set(MAPFUNC_INPUT_MATRICIES_INDEXES_CONFIG, getIndexesString(realIndexes));	
-	}
 
 	public static boolean deriveRepresentation(InputInfo[] inputInfos) {
 		for(InputInfo input: inputInfos)
@@ -1680,23 +993,6 @@ public class MRJobConfiguration
 		sb.append(Lop.FILE_SEPARATOR);
 		
 		sb.append("TmpOutput"+seq.getNextID());
-		
-		//old unique dir (no guarantees): 
-		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 
-		
-		return sb.toString(); 
-	}
-	
-	private static String constructPartitionFilename() 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append(ConfigurationManager.getScratchSpace());
-		sb.append(Lop.FILE_SEPARATOR);
-		sb.append(Lop.PROCESS_PREFIX);
-		sb.append(DMLScript.getUUID());
-		sb.append(Lop.FILE_SEPARATOR);
-		
-		sb.append(SamplingSortMRInputFormat.PARTITION_FILENAME+seq.getNextID());
 		
 		//old unique dir (no guarantees): 
 		//sb.append(Integer.toHexString(new Random().nextInt(Integer.MAX_VALUE))); 

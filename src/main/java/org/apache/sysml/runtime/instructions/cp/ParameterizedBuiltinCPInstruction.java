@@ -38,7 +38,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysml.runtime.functionobjects.ValueFunction;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.instructions.mr.GroupedAggregateInstruction;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
@@ -125,8 +124,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 			}
 			
-			Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
+			//Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		} else if (opcode.equalsIgnoreCase("rmempty")
 				|| opcode.equalsIgnoreCase("replace")
 				|| opcode.equalsIgnoreCase("rexpand")

@@ -75,7 +75,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.instructions.CPInstructionParser;
 import org.apache.sysml.runtime.instructions.Instruction;
 import org.apache.sysml.runtime.instructions.InstructionParser;
-import org.apache.sysml.runtime.instructions.MRJobInstruction;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.CPInstruction;
 import org.apache.sysml.runtime.instructions.cp.Data;
@@ -88,7 +87,6 @@ import org.apache.sysml.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
-import org.apache.sysml.runtime.instructions.mr.MRInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
@@ -468,7 +466,7 @@ public class ProgramConverter
 		
 		try
 		{
-			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction || oInst instanceof MRInstruction 
+			if( oInst instanceof CPInstruction || oInst instanceof SPInstruction 
 				|| oInst instanceof GPUInstruction ) {
 				if( oInst instanceof FunctionCallCPInstruction && cpFunctions ) {
 					FunctionCallCPInstruction tmp = (FunctionCallCPInstruction) oInst;
@@ -480,10 +478,6 @@ public class ProgramConverter
 					//otherwise: preserve function name
 				}
 				inst = InstructionParser.parseSingleInstruction(tmpString);
-			}
-			else if( oInst instanceof MRJobInstruction ) {
-				//clone via copy constructor
-				inst = new MRJobInstruction( (MRJobInstruction)oInst );
 			}
 			else
 				throw new DMLRuntimeException("Failed to clone instruction: "+oInst);
@@ -1742,13 +1736,7 @@ public class ProgramConverter
 	 * @return instruction
 	 */
 	private static Instruction saveReplaceThreadID( Instruction inst, String pattern, String replacement ) {
-		//currently known, relevant instructions: createvar, rand, seq, extfunct, 
-		if( inst instanceof MRJobInstruction ) {
-			//update dims file, and internal string representations of rand/seq instructions
-			MRJobInstruction mrinst = (MRJobInstruction)inst;
-			mrinst.updateInstructionThreadID(pattern, replacement);
-		}
-		else if ( inst instanceof VariableCPInstruction ) { //createvar, setfilename
+		if ( inst instanceof VariableCPInstruction ) { //createvar, setfilename
 			//update in-memory representation
 			inst.updateInstructionThreadID(pattern, replacement);
 		}

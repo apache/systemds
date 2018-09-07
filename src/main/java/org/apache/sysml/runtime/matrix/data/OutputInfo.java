@@ -34,8 +34,6 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.mapred.CSVWriteReducer.RowBlockForTextOutput;
-import org.apache.sysml.runtime.matrix.sort.CompactOutputFormat;
 
 @SuppressWarnings("rawtypes")
 public class OutputInfo implements Serializable 
@@ -64,13 +62,11 @@ public class OutputInfo implements Serializable
 			SequenceFileOutputFormat.class, LongWritable.class, FrameBlock.class);
 	public static final OutputInfo OutputInfoForSortInput=new OutputInfo(SequenceFileOutputFormat.class, 
 			DoubleWritable.class, IntWritable.class);
-	public static final OutputInfo OutputInfoForSortOutput = new OutputInfo(CompactOutputFormat.class,
-			DoubleWritable.class, IntWritable.class);
 	public static final OutputInfo WeightedPairOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
 			MatrixIndexes.class, WeightedPair.class);
-	public static final OutputInfo CSVOutputInfo=new OutputInfo(UnPaddedOutputFormat.class, 
-			NullWritable.class, RowBlockForTextOutput.class);
 
+	public static final OutputInfo CSVOutputInfo = null;
+	
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
 			return InputInfo.BinaryBlockInputInfo;
@@ -82,12 +78,8 @@ public class OutputInfo implements Serializable
 			return InputInfo.TextCellInputInfo;
 		else if ( oi == OutputInfo.OutputInfoForSortInput)
 			return InputInfo.InputInfoForSort;
-		else if ( oi == OutputInfo.OutputInfoForSortOutput)
-			return InputInfo.InputInfoForSortOutput;
 		else if ( oi == OutputInfo.WeightedPairOutputInfo)
 			return InputInfo.WeightedPairInputInfo;
-		else if ( oi == OutputInfo.CSVOutputInfo)
-			return InputInfo.CSVInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
@@ -107,12 +99,8 @@ public class OutputInfo implements Serializable
 		}
 		else if ( str.equalsIgnoreCase("sort_input") )
 			return OutputInfoForSortInput;
-		else if ( str.equalsIgnoreCase("sort_output"))
-			return OutputInfoForSortOutput;
 		else if ( str.equalsIgnoreCase("weightedpair") )
 			return WeightedPairOutputInfo;
-		else if ( str.equalsIgnoreCase("csv") )
-			return CSVOutputInfo;
 		return null;
 	}
 	
@@ -127,12 +115,8 @@ public class OutputInfo implements Serializable
 			return "binaryblock";
 		else if ( oi == OutputInfoForSortInput )
 			return "sort_input";
-		else if ( oi == OutputInfoForSortOutput )
-			return "sort_output";
 		else if ( oi == WeightedPairOutputInfo )
 			return "weightedpair";
-		else if ( oi == CSVOutputInfo )
-			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}
@@ -143,8 +127,6 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_TEXT;
 		else if( oinfo == OutputInfo.MatrixMarketOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
-		else if( oinfo == OutputInfo.CSVOutputInfo )
-			return DataExpression.FORMAT_TYPE_VALUE_CSV;
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo 
 				|| oinfo == OutputInfo.BinaryCellOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;

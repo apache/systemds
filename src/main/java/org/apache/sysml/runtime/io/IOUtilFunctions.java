@@ -41,6 +41,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileSplit;
@@ -59,6 +60,14 @@ public class IOUtilFunctions
 {
 	private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
 
+
+	public static final PathFilter hiddenFileFilter = new PathFilter(){
+	      public boolean accept(Path p){
+	        String name = p.getName(); 
+	        return !name.startsWith("_") && !name.startsWith("."); 
+	      }
+	    }; 
+	
 	//for empty text lines we use 0-0 despite for 1-based indexing in order
 	//to allow matrices with zero rows and columns (consistent with R)
 	public static final String EMPTY_TEXT_LINE = "0 0 0\n";

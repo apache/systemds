@@ -92,8 +92,6 @@ public class CostEstimationWrapper
 	private static CostEstimator createCostEstimator( CostType type ) {
 		switch( type )
 		{
-			case NUM_MRJOBS:
-				return new CostEstimatorNumMRJobs();
 			case STATIC:
 				return new CostEstimatorStaticRuntime();
 			default:

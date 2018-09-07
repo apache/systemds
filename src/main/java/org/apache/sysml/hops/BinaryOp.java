@@ -39,21 +39,17 @@ import org.apache.sysml.lops.CombineBinary.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
 import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.Data;
-import org.apache.sysml.lops.DataPartition;
 import org.apache.sysml.lops.Group;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.lops.PartialAggregate;
 import org.apache.sysml.lops.PickByCount;
-import org.apache.sysml.lops.RepMat;
 import org.apache.sysml.lops.SortKeys;
 import org.apache.sysml.lops.Unary;
 import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.mapred.DistributedCacheInput;
 
 
 /* Binary (cell operations): aij + bij
@@ -557,11 +553,7 @@ public class BinaryOp extends MultiThreadedHop
 			long clen = cbind ? ((getInput().get(0).dimsKnown() && getInput().get(1).dimsKnown()) ?
 				getInput().get(0).getDim2()+getInput().get(1).getDim2() : -1) : getInput().get(0).getDim2();			
 		
-			if( et == ExecType.MR )
-			{
-				append = constructMRAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);				
-			}
-			else if(et == ExecType.SPARK) 
+			if(et == ExecType.SPARK) 
 			{
 				append = constructSPAppendLop(getInput().get(0), getInput().get(1), getDataType(), getValueType(), cbind, this);
 				append.getOutputParameters().setDimensions(rlen, clen, getRowsInBlock(), getColsInBlock(), getNnz());
@@ -693,104 +685,6 @@ public class BinaryOp extends MultiThreadedHop
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);
-			}
-			else //MR
-			{
-				Hop left = getInput().get(0);
-				Hop right = getInput().get(1);
-				MMBinaryMethod mbin = optFindMMBinaryMethod(left, right);
-				
-				if( mbin == MMBinaryMethod.MR_BINARY_M )
-				{
-					boolean needPart = requiresPartitioning(right);
-					Lop dcInput = right.constructLops();
-					if( needPart ) {
-						//right side in distributed cache
-						ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(right.getDim1(), right.getDim2(), OptimizerUtils.getSparsity(right.getDim1(), right.getDim2(), right.getNnz())) 
-						          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
-						dcInput = new DataPartition(dcInput, DataType.MATRIX, ValueType.DOUBLE, etPart, (right.getDim2()==1)?PDataPartitionFormat.ROW_BLOCK_WISE_N:PDataPartitionFormat.COLUMN_BLOCK_WISE_N);
-						dcInput.getOutputParameters().setDimensions(right.getDim1(), right.getDim2(), right.getRowsInBlock(), right.getColsInBlock(), right.getNnz());
-						dcInput.setAllPositions(right.getFilename(), right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
-					}					
-					
-					BinaryM binary = new BinaryM(left.constructLops(), dcInput, HopsOpOp2LopsB.get(op),
-							getDataType(), getValueType(), ExecType.MR, needPart, (right.getDim2()==1 && left.getDim1()==right.getDim1()));
-					setOutputDimensions(binary);
-					setLineNumbers(binary);
-					setLops(binary);
-				}
-				else if( mbin == MMBinaryMethod.MR_BINARY_UAGG_CHAIN )
-				{
-					AggUnaryOp uRight = (AggUnaryOp)right;
-					BinaryUAggChain bin = new BinaryUAggChain(left.constructLops(), HopsOpOp2LopsB.get(op),
-							HopsAgg2Lops.get(uRight.getOp()), HopsDirection2Lops.get(uRight.getDirection()),
-							getDataType(), getValueType(), et);
-					setOutputDimensions(bin);
-					setLineNumbers(bin);
-					setLops(bin);
-				}
-				else if( mbin == MMBinaryMethod.MR_BINARY_OUTER_R )
-				{
-					boolean requiresRepLeft = (!right.dimsKnown() || right.getDim2() > right.getColsInBlock());
-					boolean requiresRepRight = (!left.dimsKnown() || left.getDim1() > right.getRowsInBlock());
-					
-					Lop leftLop = left.constructLops();
-					Lop rightLop = right.constructLops();
-					
-					if( requiresRepLeft ) {
-						Lop offset = createOffsetLop(right, true); //ncol of right determines rep of left
-						leftLop = new RepMat(leftLop, offset, true, left.getDataType(), left.getValueType());
-						setOutputDimensions(leftLop);
-						setLineNumbers(leftLop);
-					}
-					
-					if( requiresRepRight ) {
-						Lop offset = createOffsetLop(left, false); //nrow of right determines rep of right
-						rightLop = new RepMat(rightLop, offset, false, right.getDataType(), right.getValueType());
-						setOutputDimensions(rightLop);
-						setLineNumbers(rightLop);
-					}
-				
-					Group group1 = new Group( leftLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group1);
-					setOutputDimensions(group1);
-					
-					Group group2 = new Group( rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group2);
-					setOutputDimensions(group2);
-					
-					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
-					setOutputDimensions(binary);
-					setLineNumbers(binary);
-					
-					setLops(binary);
-				}
-				else //MMBinaryMethod.MR_BINARY_R
-				{
-					boolean requiresRep = requiresReplication(left, right);
-					
-					Lop rightLop = right.constructLops();
-					if( requiresRep ) {
-						Lop offset = createOffsetLop(left, (right.getDim2()<=1)); //ncol of left input (determines num replicates)
-						rightLop = new RepMat(rightLop, offset, (right.getDim2()<=1), right.getDataType(), right.getValueType());
-						setOutputDimensions(rightLop);
-						setLineNumbers(rightLop);	
-					}
-				
-					Group group1 = new Group(getInput().get(0).constructLops(), Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group1);
-					setOutputDimensions(group1);
-				
-					Group group2 = new Group( rightLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-					setLineNumbers(group2);
-					setOutputDimensions(group2);
-				
-					Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(op), getDataType(), getValueType(), et);
-					setLineNumbers(binary);
-					setOutputDimensions(binary);
-					
-					setLops(binary);
-				}
 			}
 		}
 	}
@@ -1069,102 +963,6 @@ public class BinaryOp extends MultiThreadedHop
 		return _etype;
 	}
 	
-	/**
-	 * General case binary append.
-	 * 
-	 * @param left high-level operator left
-	 * @param right high-level operator right
-	 * @param dt data type
-	 * @param vt value type
-	 * @param cbind true if cbind
-	 * @param current current high-level operator
-	 * @return low-level operator
-	 */
-	public static Lop constructMRAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current )
-	{
-		Lop ret = null;
-		
-		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();
-		long m2_dim1 = right.getDim1();
-		long m2_dim2 = right.getDim2();
-		long m3_dim1 = cbind ? m1_dim1 : ((m1_dim1>=0 && m2_dim1>=0) ? (m1_dim1 + m2_dim1) : -1); //output rows
-		long m3_dim2 = cbind ? ((m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1): m1_dim2; //output cols
-		long m3_nnz = (left.getNnz()>0 && right.getNnz()>0) ? (left.getNnz() + right.getNnz()) : -1; //output nnz
-		long brlen = left.getRowsInBlock();
-		long bclen = left.getColsInBlock();
-		
-		Lop offset = createOffsetLop( left, cbind ); //offset 1st input
-		AppendMethod am = optFindAppendMethod(m1_dim1, m1_dim2, m2_dim1, m2_dim2, brlen, bclen, cbind);
-	
-		switch( am )
-		{
-			case MR_MAPPEND: //special case map-only append
-			{
-				boolean needPart = requiresPartitioning(right);
-				//pre partitioning 
-				Lop dcInput = right.constructLops();
-				if( needPart ) {
-					//right side in distributed cache
-					ExecType etPart = (OptimizerUtils.estimateSizeExactSparsity(right.getDim1(), right.getDim2(), OptimizerUtils.getSparsity(right.getDim1(), right.getDim2(), right.getNnz())) 
-					          < OptimizerUtils.getLocalMemBudget()) ? ExecType.CP : ExecType.MR; //operator selection
-					dcInput = new DataPartition(dcInput, DataType.MATRIX, ValueType.DOUBLE, etPart, PDataPartitionFormat.ROW_BLOCK_WISE_N);
-					dcInput.getOutputParameters().setDimensions(right.getDim1(), right.getDim2(), right.getRowsInBlock(), right.getColsInBlock(), right.getNnz());
-					dcInput.setAllPositions(right.getFilename(), right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
-				}					
-				
-				AppendM appM = new AppendM(left.constructLops(), dcInput, offset, dt, vt, cbind, needPart, ExecType.MR);
-				appM.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				appM.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-				ret = appM;
-				break;
-			}
-			case MR_RAPPEND: //special case reduce append w/ one column block
-			{
-				//group
-				Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
-				group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, left.getNnz());
-				group1.setAllPositions(left.getFilename(), left.getBeginLine(), left.getBeginColumn(), left.getEndLine(), left.getEndColumn());
-				
-				Group group2 = new Group(right.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
-				group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right.getNnz());
-				group1.setAllPositions(right.getFilename(), right.getBeginLine(), right.getBeginColumn(), right.getEndLine(), right.getEndColumn());
-				
-				AppendR appR = new AppendR(group1, group2, dt, vt, cbind, ExecType.MR);
-				appR.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-				appR.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				
-				ret = appR;
-				break;
-			}	
-			case MR_GAPPEND:
-			{
-				//general case: map expand append, reduce aggregate
-				Lop offset2 = createOffsetLop( right, cbind ); //offset second input
-				
-				AppendG appG = new AppendG(left.constructLops(), right.constructLops(),	offset, offset2, dt, vt, cbind, ExecType.MR);
-				appG.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-				appG.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				
-				//group
-				Group group1 = new Group(appG, Group.OperationTypes.Sort, DataType.MATRIX, vt);
-				group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-				group1.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				
-				//aggregate
-				Aggregate agg1 = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX, vt, ExecType.MR);
-				agg1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, m3_nnz);
-				agg1.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-				ret = agg1;
-				break;
-			}	
-			default:
-				throw new HopsException("Invalid MR append method: "+am);
-		}
-		
-		return ret;
-	}
-
 	public static Lop constructSPAppendLop( Hop left, Hop right, DataType dt, ValueType vt, boolean cbind, Hop current ) 
 	{
 		Lop ret = null;
@@ -1295,36 +1093,7 @@ public class BinaryOp extends MultiThreadedHop
 		
 		return footprint;
 	}
-	
-	private static AppendMethod optFindAppendMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, boolean cbind )
-	{
-		if(FORCED_APPEND_METHOD != null) {
-			return FORCED_APPEND_METHOD;
-		}
 		
-		//check for best case (map-only)		
-		if(    m2_dim1 >= 1 && m2_dim2 >= 1   //rhs dims known 				
-			&& (cbind && m2_dim2 <= m1_cpb    //rhs is smaller than column block 
-			|| !cbind && m2_dim1 <= m1_rpb) ) //rhs is smaller than row block
-		{
-			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			if ( footprint < APPEND_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true) )
-				return AppendMethod.MR_MAPPEND;
-		}
-		
-		//check for in-block append (reduce-only)
-		if( cbind && m1_dim2 >= 1 && m2_dim2 >= 0  //column dims known
-			&& m1_dim2+m2_dim2 <= m1_cpb   //output has one column block
-		  ||!cbind && m1_dim1 >= 1 && m2_dim1 >= 0 //row dims known
-			&& m1_dim1+m2_dim1 <= m1_rpb ) //output has one column block
-		{
-			return AppendMethod.MR_RAPPEND;
-		}
-		
-		//general case (map and reduce)
-		return AppendMethod.MR_GAPPEND; 	
-	}
-	
 	private static AppendMethod optFindAppendSPMethod( long m1_dim1, long m1_dim2, long m2_dim1, long m2_dim2, long m1_rpb, long m1_cpb, long m2_nnz, boolean cbind, DataType dt )
 	{
 		if(FORCED_APPEND_METHOD != null) {
@@ -1363,12 +1132,6 @@ public class BinaryOp extends MultiThreadedHop
 		
 		//general case (map and reduce)
 		return AppendMethod.MR_GAPPEND; 	
-	}
-
-	private static boolean requiresPartitioning( Hop rightInput )
-	{
-		return ( rightInput.dimsKnown() //known input size 
-			&& rightInput.getDim1()*rightInput.getDim2() > DistributedCacheInput.PARTITION_SIZE);
 	}
 	
 	public static boolean requiresReplication( Hop left, Hop right )
@@ -1409,46 +1172,7 @@ public class BinaryOp extends MultiThreadedHop
 		//MR_BINARY_R as robust fallback strategy
 		return MMBinaryMethod.MR_BINARY_R;
 	}
-	
-	private MMBinaryMethod optFindMMBinaryMethod(Hop left, Hop right)
-	{
-		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();
-		long m2_dim1 =  right.getDim1();
-		long m2_dim2 = right.getDim2();
-		long m1_rpb = left.getRowsInBlock();
-		long m1_cpb = left.getColsInBlock();
 		
-		//MR_BINARY_OUTER only applied if outer vector operation 
-		if( outer ) {
-			return MMBinaryMethod.MR_BINARY_OUTER_R;
-		}
-		
-		//MR_BINARY_UAGG_CHAIN only applied if result is column/row vector of MV binary operation.
-		if( OptimizerUtils.ALLOW_OPERATOR_FUSION
-			&& right instanceof AggUnaryOp && right.getInput().get(0) == left  //e.g., P / rowSums(P)
-			&& ((((AggUnaryOp) right).getDirection() == Direction.Row && m1_dim2 > 1 && m1_dim2 <= m1_cpb ) //single column block
-			|| (((AggUnaryOp) right).getDirection() == Direction.Col && m1_dim1 > 1 && m1_dim1 <= m1_rpb ))) //single row block
-		{
-			return MMBinaryMethod.MR_BINARY_UAGG_CHAIN;
-		}
-		
-		//MR_BINARY_M currently only applied for MV because potential partitioning job may cause additional latency for VV.
-		if( m2_dim1 >= 1 && m2_dim2 >= 1 // rhs dims known 
-			&& ((m1_dim2 >1 && m2_dim2 == 1)  //rhs column vector	
-			  ||(m1_dim1 >1 && m2_dim1 == 1 )) ) //rhs row vector
-		{
-			double footprint = BinaryOp.footprintInMapper(m1_dim1, m1_dim2, m2_dim1, m2_dim2, m1_rpb, m1_cpb);
-			if ( footprint < OptimizerUtils.getRemoteMemBudgetMap(true) )
-				return MMBinaryMethod.MR_BINARY_M;		
-		}
-		
-		//MR_BINARY_R as robust fallback strategy
-		return MMBinaryMethod.MR_BINARY_R;
-	}
-	
-	
-	
 	@Override
 	public void refreshSizeInformation()
 	{

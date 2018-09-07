@@ -248,7 +248,7 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
-		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+		DMLScript.SCRIPT_TYPE = ScriptType.DML;
 		
 		//check for valid names of passed arguments
 		String[] invalidArgs = args.keySet().stream()
@@ -268,8 +268,7 @@ public class Connection implements Closeable
 		Program rtprog = null;
 		try {
 			//parsing
-			ParserWrapper parser = ParserFactory.createParser(
-				parsePyDML ? ScriptType.PYDML : ScriptType.DML, nsscripts);
+			ParserWrapper parser = ParserFactory.createParser(ScriptType.DML, nsscripts);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

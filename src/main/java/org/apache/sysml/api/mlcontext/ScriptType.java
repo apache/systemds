@@ -28,13 +28,8 @@ public enum ScriptType {
 	/**
 	 * R-like syntax.
 	 */
-	DML,
-
-	/**
-	 * Python-like syntax.
-	 */
-	PYDML;
-
+	DML;
+	
 	/**
 	 * Obtain script type as a lowercase string ("dml" or "pydml").
 	 *
@@ -52,14 +47,4 @@ public enum ScriptType {
 	public boolean isDML() {
 		return (this == ScriptType.DML);
 	}
-
-	/**
-	 * Is the script type PYDML?
-	 *
-	 * @return {@code true} if the script type is PYDML, {@code false} otherwise
-	 */
-	public boolean isPYDML() {
-		return (this == ScriptType.PYDML);
-	}
-
 }

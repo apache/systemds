@@ -59,7 +59,6 @@ import org.apache.sysml.parser.RelationalExpression;
 import org.apache.sysml.parser.Statement;
 import org.apache.sysml.parser.StringIdentifier;
 import org.apache.sysml.parser.dml.DmlSyntacticValidator;
-import org.apache.sysml.parser.pydml.PydmlSyntacticValidator;
 import org.apache.sysml.parser.BuiltinConstant;
 
 /**

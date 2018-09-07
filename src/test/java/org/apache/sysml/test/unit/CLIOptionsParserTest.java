@@ -141,14 +141,6 @@ public class CLIOptionsParserTest {
 	}
 
 	@Test
-	public void testPython() throws Exception {
-		String cl = "systemml -f test.dml -python";
-		String[] args = cl.split(" ");
-		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(ScriptType.PYDML, o.scriptType);
-	}
-
-	@Test
 	public void testHelp() throws Exception {
 		String cl = "systemml -help";
 		String[] args = cl.split(" ");

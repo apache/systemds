@@ -102,7 +102,7 @@ public class DMLOptions {
 
 		DMLOptions dmlOptions = new DMLOptions(options);
 		dmlOptions.help = line.hasOption("help");
-		dmlOptions.scriptType = line.hasOption("python") ? ScriptType.PYDML : ScriptType.DML;
+		dmlOptions.scriptType = ScriptType.DML;
 		dmlOptions.debug = line.hasOption("debug");
 		dmlOptions.gpu = line.hasOption("gpu");
 		if (dmlOptions.gpu) {

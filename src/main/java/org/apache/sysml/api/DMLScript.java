@@ -37,7 +37,6 @@ import java.util.Scanner;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -256,11 +255,6 @@ public class DMLScript
 			//set log level
 			if (!ENABLE_DEBUG_MODE)
 				setLoggingProperties( conf );
-		
-			//Step 2: prepare script invocation
-			if (isFile && StringUtils.endsWithIgnoreCase(fileOrScript, ".pydml")) {
-				SCRIPT_TYPE = ScriptType.PYDML;
-			}
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;

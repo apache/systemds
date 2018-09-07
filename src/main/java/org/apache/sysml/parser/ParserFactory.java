@@ -25,7 +25,6 @@ import java.util.Map;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.parser.common.CommonSyntacticValidator;
 import org.apache.sysml.parser.dml.DMLParserWrapper;
-import org.apache.sysml.parser.pydml.PyDMLParserWrapper;
 
 public class ParserFactory {
 
@@ -45,7 +44,6 @@ public class ParserFactory {
 		// create the parser instance
 		switch (scriptType) {
 			case DML: ret = new DMLParserWrapper(); break;
-			case PYDML: ret = new PyDMLParserWrapper(); break;
 		}
 		CommonSyntacticValidator.init(nsscripts);
 		return ret;

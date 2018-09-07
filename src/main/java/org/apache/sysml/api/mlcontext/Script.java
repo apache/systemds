@@ -515,15 +515,6 @@ public class Script {
 	}
 
 	/**
-	 * Is the script type PYDML?
-	 *
-	 * @return {@code true} if the script type is PYDML, {@code false} otherwise
-	 */
-	public boolean isPYDML() {
-		return scriptType.isPYDML();
-	}
-
-	/**
 	 * Generate the script execution string, which adds read/load/write/save
 	 * statements to the beginning and end of the script to execute.
 	 *
@@ -548,20 +539,7 @@ public class Script {
 				} else {
 					sb.append(" = read('');\n");
 				}
-			} else if (isPYDML()) {
-				if (inValue instanceof String) {
-					String quotedString = MLContextUtil.quotedString((String) inValue);
-					sb.append(" = " + quotedString + "\n");
-				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = load('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue)
-							+ "')\n");
-				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
-					sb.append(" = load('', data_type='frame')\n");
-				} else {
-					sb.append(" = load('')\n");
-				}
-			}
-
+			} 
 		}
 
 		sb.append(getScriptString());
@@ -575,10 +553,6 @@ public class Script {
 				sb.append("write(");
 				sb.append(out);
 				sb.append(", '');\n");
-			} else if (isPYDML()) {
-				sb.append("save(");
-				sb.append(out);
-				sb.append(", '')\n");
 			}
 		}
 

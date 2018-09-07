@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.mlcontext;
 
 import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
-import static org.apache.sysml.api.mlcontext.ScriptFactory.pydml;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ import scala.collection.Iterator;
 public class MLContextFrameTest extends MLContextTestBase {
 
 	public static enum SCRIPT_TYPE {
-		DML, PYDML
+		DML
 	}
 
 	public static enum IO_TYPE {
@@ -82,21 +81,6 @@ public class MLContextFrameTest extends MLContextTestBase {
 	}
 
 	@Test
-	public void testFrameJavaRDD_CSV_PYDML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.ANY);
-	}
-
-	@Test
-	public void testFrameRDD_CSV_PYDML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.RDD_STR_CSV, IO_TYPE.ANY);
-	}
-
-	@Test
-	public void testFrameJavaRDD_CSV_PYDML_OutRddIJV() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.RDD_STR_IJV);
-	}
-
-	@Test
 	public void testFrameJavaRDD_IJV_DML() {
 		testFrame(FrameFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.ANY);
 	}
@@ -112,23 +96,8 @@ public class MLContextFrameTest extends MLContextTestBase {
 	}
 
 	@Test
-	public void testFrameJavaRDD_IJV_PYDML() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.ANY);
-	}
-
-	@Test
-	public void testFrameJavaRDD_IJV_PYDML_OutJavaRddIJV() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.JAVA_RDD_STR_IJV);
-	}
-
-	@Test
 	public void testFrameFile_CSV_DML() {
 		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.FILE, IO_TYPE.ANY);
-	}
-
-	@Test
-	public void testFrameFile_CSV_PYDML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.FILE, IO_TYPE.ANY);
 	}
 
 	@Test
@@ -137,18 +106,8 @@ public class MLContextFrameTest extends MLContextTestBase {
 	}
 
 	@Test
-	public void testFrameFile_IJV_PYDML() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.PYDML, IO_TYPE.FILE, IO_TYPE.ANY);
-	}
-
-	@Test
 	public void testFrameDataFrame_CSV_DML() {
 		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.DATAFRAME, IO_TYPE.ANY);
-	}
-
-	@Test
-	public void testFrameDataFrame_CSV_PYDML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.PYDML, IO_TYPE.DATAFRAME, IO_TYPE.ANY);
 	}
 
 	@Test
@@ -221,28 +180,11 @@ public class MLContextFrameTest extends MLContextTestBase {
 				if (script_type == SCRIPT_TYPE.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
 							.out("C");
-				else if (script_type == SCRIPT_TYPE.PYDML)
-					// DO NOT USE ; at the end of any statment, it throws NPE
-					script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", dataFrameA, fmA)
-							.in("B", dataFrameB, fmB)
-							// Value for ROW index gets incremented at script
-							// level to adjust index in PyDML, but not for
-							// Column Index
-							.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
 			} else {
 				if (inputType == IO_TYPE.JAVA_RDD_STR_CSV || inputType == IO_TYPE.JAVA_RDD_STR_IJV) {
 					if (script_type == SCRIPT_TYPE.DML)
 						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", javaRDDA, fmA).in("B", javaRDDB, fmB).out("A")
 								.out("C");
-					else if (script_type == SCRIPT_TYPE.PYDML)
-						// DO NOT USE ; at the end of any statment, it throws
-						// NPE
-						script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", javaRDDA, fmA)
-								.in("B", javaRDDB, fmB)
-								// Value for ROW index gets incremented at
-								// script level to adjust index in PyDML, but
-								// not for Column Index
-								.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
 				} else if (inputType == IO_TYPE.RDD_STR_CSV || inputType == IO_TYPE.RDD_STR_IJV) {
 					RDD<String> rddA = JavaRDD.toRDD(javaRDDA);
 					RDD<String> rddB = JavaRDD.toRDD(javaRDDB);
@@ -250,14 +192,6 @@ public class MLContextFrameTest extends MLContextTestBase {
 					if (script_type == SCRIPT_TYPE.DML)
 						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", rddA, fmA).in("B", rddB, fmB).out("A")
 								.out("C");
-					else if (script_type == SCRIPT_TYPE.PYDML)
-						// DO NOT USE ; at the end of any statment, it throws
-						// NPE
-						script = pydml("A[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("A", rddA, fmA).in("B", rddB, fmB)
-								// Value for ROW index gets incremented at
-								// script level to adjust index in PyDML, but
-								// not for Column Index
-								.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
 				}
 
 			}
@@ -275,13 +209,6 @@ public class MLContextFrameTest extends MLContextTestBase {
 			if (script_type == SCRIPT_TYPE.DML)
 				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3];A[1,1]=234").in("$A", fileA, fmA)
 						.in("$B", fileB, fmB).out("A").out("C");
-			else if (script_type == SCRIPT_TYPE.PYDML)
-				// DO NOT USE ; at the end of any statment, it throws NPE
-				script = pydml("A=load($A)\nB=load($B)\nA[$X:$Y,$X:$Z]=B\nC=A[$X:$Y,$X:$Y]").in("$A", fileA)
-						.in("$B", fileB)
-						// Value for ROW index gets incremented at script level
-						// to adjust index in PyDML, but not for Column Index
-						.in("$X", 1).in("$Y", 3).in("$Z", 4).out("A").out("C");
 		}
 
 		MLResults mlResults = ml.execute(script);
@@ -427,20 +354,6 @@ public class MLContextFrameTest extends MLContextTestBase {
 		String s = "M = read($Min, data_type='frame', format='csv');";
 		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
 		Script script = dml(s).in("$Min", csvFile).out("M");
-		String[][] frame = ml.execute(script).getFrameAs2DStringArray("M");
-		Assert.assertEquals("one", frame[0][0]);
-		Assert.assertEquals("two", frame[0][1]);
-		Assert.assertEquals("three", frame[1][0]);
-		Assert.assertEquals("four", frame[1][1]);
-	}
-
-	@Test
-	public void testOutputFramePYDML() {
-		System.out.println("MLContextFrameTest - output frame PYDML");
-
-		String s = "M = load($Min, data_type='frame', format='csv')";
-		String csvFile = baseDirectory + File.separator + "one-two-three-four.csv";
-		Script script = pydml(s).in("$Min", csvFile).out("M");
 		String[][] frame = ml.execute(script).getFrameAs2DStringArray("M");
 		Assert.assertEquals("one", frame[0][0]);
 		Assert.assertEquals("two", frame[0][1]);

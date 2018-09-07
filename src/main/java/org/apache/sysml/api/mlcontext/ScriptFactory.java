@@ -119,85 +119,6 @@ public class ScriptFactory {
 	}
 
 	/**
-	 * Create a PYDML Script object based on a string path to a file.
-	 *
-	 * @param scriptFilePath
-	 *            path to PYDML script file (local or HDFS)
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromFile(String scriptFilePath) {
-		return scriptFromFile(scriptFilePath, ScriptType.PYDML);
-	}
-
-	/**
-	 * Create a PYDML Script object based on an input stream.
-	 *
-	 * @param inputStream
-	 *            input stream to PYDML
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromInputStream(InputStream inputStream) {
-		return scriptFromInputStream(inputStream, ScriptType.PYDML);
-	}
-
-	/**
-	 * Creates a PYDML Script object based on a file in the local file system.
-	 * To create a PYDML Script object from a local file or HDFS, please use
-	 * {@link #pydmlFromFile(String)}.
-	 *
-	 * @param localScriptFile
-	 *            the local PYDML file
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromLocalFile(File localScriptFile) {
-		return scriptFromLocalFile(localScriptFile, ScriptType.PYDML);
-	}
-
-	/**
-	 * Create a PYDML Script object based on a string.
-	 *
-	 * @param scriptString
-	 *            string of PYDML
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromString(String scriptString) {
-		return scriptFromString(scriptString, ScriptType.PYDML);
-	}
-
-	/**
-	 * Creat a PYDML Script object based on a URL path.
-	 *
-	 * @param scriptUrlPath
-	 *            URL path to PYDML script
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromUrl(String scriptUrlPath) {
-		return scriptFromUrl(scriptUrlPath, ScriptType.PYDML);
-	}
-
-	/**
-	 * Create a PYDML Script object based on a URL.
-	 *
-	 * @param scriptUrl
-	 *            URL to PYDML script
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromUrl(URL scriptUrl) {
-		return scriptFromUrl(scriptUrl, ScriptType.PYDML);
-	}
-
-	/**
-	 * Create a PYDML Script object based on a resource path.
-	 *
-	 * @param resourcePath
-	 *            path to a resource on the classpath
-	 * @return PYDML Script object
-	 */
-	public static Script pydmlFromResource(String resourcePath) {
-		return scriptFromResource(resourcePath, ScriptType.PYDML);
-	}
-
-	/**
 	 * Create a DML or PYDML Script object based on a string path to a file.
 	 *
 	 * @param scriptFilePath
@@ -433,16 +354,5 @@ public class ScriptFactory {
 		} catch (IOException e) {
 			throw new MLContextException("Error trying to read script string from URL: " + url, e);
 		}
-	}
-
-	/**
-	 * Create a PYDML script object based on a string.
-	 *
-	 * @param scriptString
-	 *            string of PYDML
-	 * @return PYDML Script object
-	 */
-	public static Script pydml(String scriptString) {
-		return pydmlFromString(scriptString);
 	}
 }

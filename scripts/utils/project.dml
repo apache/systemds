@@ -1,0 +1,80 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Utility script to project columns from input matrix.
+#
+# Parameters:
+#    X       : (input)  filename of data matrix
+#    P       : (input)  filename of 1-column projection matrix containing columnIDs
+#    o       : (output) filename of output matrix with projected columns
+#    exclude : (default FALSE) TRUE means P contains columnIds to be projected
+#                              FALSE means P contains columnsIDS to be excluded
+#    ofmt    : (default binary) format of output matrix
+#
+# Example:
+#   hadoop jar SystemML.jar -f algorithms/utils/project.dml -nvargs X="/tmp/M.mtx" P="/tmp/P.mtx" o="/tmp/PX.mtx" 
+#
+# Assumptions:
+# The order of colIDs in P is preserved. Order of columns in result is same as order of columns in P.
+#      i.e. projecting columns 4 and 2 of X results in a matrix with columns 4 and 2.
+# If P specifies the exclude list, then projected columns are order preserved.
+
+exclude = ifdef ($exclude, FALSE);
+ofmt = ifdef ($ofmt, "binary");
+
+X = read ($X)
+P = read ($P)
+
+# create projection matrix using projection list and sequence matrix, and pad with 0s. The size of
+# PP is nbrOfColsInX x nbrOfColsToKeep
+
+if (exclude==FALSE)
+{
+   # create projection matrix using projection list and sequence matrix, and pad with 0s. The size
+   # of PP is nbrOfColsInX x nbrOfColsToKeep
+   PP = table(P, seq(1, nrow(P), 1), ncol(X), nrow(P)) 
+
+ } else {
+   # create new vector P with list of columns to keep using original vector P containing exclude
+   # columns. These are all small vector operations.
+   C = table(P, seq(1, nrow(P), 1))
+   E = rowSums(C);
+      
+   # Row pad w/ 0s
+   EE = matrix (0, rows=ncol(X), cols=1)
+   EE[1:nrow(E),1] = E
+
+   # Convert exclude column list to include column list, and create column indices
+   EE = (EE == 0)
+   EE = EE * seq(1, ncol(X), 1)
+   P = removeEmpty(target=EE, margin="rows")
+
+   PP = table(P, seq(1, nrow(P), 1), ncol(X), nrow(P))
+
+}
+
+# Perform projection using permutation matrix
+PX = X %*% PP
+
+# Write output
+write (PX, $o, format=ofmt)
+
+

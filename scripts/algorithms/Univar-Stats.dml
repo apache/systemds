@@ -1,0 +1,141 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# DML Script to compute univariate statistics for all attributes in a given data set
+#
+# INPUT PARAMETERS:
+# -------------------------------------------------------------------------------------------------
+# NAME           TYPE     DEFAULT  MEANING
+# -------------------------------------------------------------------------------------------------
+# X              String   ---      Location of INPUT data matrix
+# TYPES          String   ---      Location of INPUT matrix that lists the types of the features:
+#                                     1 for scale, 2 for nominal, 3 for ordinal
+# CONSOLE_OUTPUT Boolean  FALSE    If TRUE, print summary statistics to console
+# STATS          String   ---      Location of OUTPUT matrix with summary statistics computed for
+#                                  all features (17 statistics - 14 scale, 3 categorical)
+# -------------------------------------------------------------------------------------------------
+# OUTPUT: Matrix of summary statistics
+#
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemML.jar -f Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv
+#    STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+#
+
+consoleOutput = ifdef($CONSOLE_OUTPUT, FALSE);
+
+A = read($X);      # data file
+K = read($TYPES);  # attribute kind file
+n = ncol(A);       # number of features/attributes
+m = nrow(A);       # number of data records
+numBaseStats = 17; # number of statistics (14 scale, 3 categorical)
+max_kind = max(K);
+
+# matrices to store computed statistics
+baseStats = matrix(0, rows=numBaseStats, cols=n);
+
+# Compute max domain size among all categorical attributes
+maxDomain = as.integer(max((K > 1) * colMaxs(A)));
+
+parfor(i in 1:n, check=0) {
+  # project out the i^th column
+  F = A[,i];
+
+  kind = as.scalar(K[1,i]);
+  minF = min(F);
+  maxF = max(F);
+
+  if ( kind == 1 ) {
+    # compute SCALE statistics on the projected column
+    rng = maxF - minF;
+
+    mu = mean(F);
+    m2 = moment(F, 2);
+    m3 = moment(F, 3);
+    m4 = moment(F, 4);
+
+    var = m/(m-1.0)*m2;
+    std_dev = sqrt(var);
+    se = std_dev/sqrt(m);
+    cv = std_dev/mu;
+
+    g1 = m3/(std_dev^3);
+    g2 = m4/(std_dev^4) - 3;
+    se_g1=sqrt( (6/(m-2.0)) * (m/(m+1.0)) * ((m-1.0)/(m+3.0)) );
+    se_g2=sqrt( (4/(m+5.0)) * ((m^2-1)/(m-3.0)) * se_g1^2 );
+
+    md = median(F);
+    iqm = interQuartileMean(F);
+
+    baseStats[1:14,i] = as.matrix(list(minF, maxF, rng,
+    mu, var, std_dev, se, cv, g1, g2, se_g1, se_g2, md, iqm));
+  }
+  else {
+    if (kind == 2 | kind == 3) {
+      # check if the categorical column has valid values
+      if( minF <= 0 ) {
+        print("ERROR: Categorical attributes can only take values starting from 1. Encountered a value " + minF + " in attribute " + i);
+      }
+      else {
+        # compute CATEGORICAL statistics on the projected column
+        cat_counts = table(F,1, maxDomain, 1);  # counts for each category
+        mode = as.scalar(rowIndexMax(t(cat_counts)));
+        numModes = sum(cat_counts == max(cat_counts));
+
+        baseStats[15:17,i] = as.matrix(list(maxF, mode, numModes));
+      }
+    }
+  }
+}
+
+if (consoleOutput == TRUE) {
+  for(i in 1:n) {
+    print("-------------------------------------------------");
+    kind = as.scalar(K[1,i]);
+    if (kind == 1) {
+      print("Feature [" + i + "]: Scale");
+      print(" (01) Minimum             | " + as.scalar(baseStats[1,i]));
+      print(" (02) Maximum             | " + as.scalar(baseStats[2,i]));
+      print(" (03) Range               | " + as.scalar(baseStats[3,i]));
+      print(" (04) Mean                | " + as.scalar(baseStats[4,i]));
+      print(" (05) Variance            | " + as.scalar(baseStats[5,i]));
+      print(" (06) Std deviation       | " + as.scalar(baseStats[6,i]));
+      print(" (07) Std err of mean     | " + as.scalar(baseStats[7,i]));
+      print(" (08) Coeff of variation  | " + as.scalar(baseStats[8,i]));
+      print(" (09) Skewness            | " + as.scalar(baseStats[9,i]));
+      print(" (10) Kurtosis            | " + as.scalar(baseStats[10,i]));
+      print(" (11) Std err of skewness | " + as.scalar(baseStats[11,i]));
+      print(" (12) Std err of kurtosis | " + as.scalar(baseStats[12,i]));
+      print(" (13) Median              | " + as.scalar(baseStats[13,i]));
+      print(" (14) Interquartile mean  | " + as.scalar(baseStats[14,i]));
+    }
+    else if (kind == 2 | kind == 3) {
+      print(ifelse(kind == 2,
+        "Feature [" + i + "]: Categorical (Nominal)",
+        "Feature [" + i + "]: Categorical (Ordinal)"));
+      print(" (15) Num of categories   | " + as.integer(as.scalar(baseStats[15,i])));
+      print(" (16) Mode                | " + as.integer(as.scalar(baseStats[16,i])));
+      print(" (17) Num of modes        | " + as.integer(as.scalar(baseStats[17,i])));
+    }
+  }
+}
+
+write(baseStats, $STATS);

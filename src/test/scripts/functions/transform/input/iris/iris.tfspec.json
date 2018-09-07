@@ -1,0 +1,10 @@
+{
+    "recode": [ "Species" ]
+    
+    ,"bin": [
+                 { "name": "Petal.Length", "method": "equi-width", "numbins": 2 }
+                ,{ "name": "Sepal.Length", "method": "equi-width", "numbins": 2 }
+            ]
+
+    ,"dummycode": [ "Species" ]
+}

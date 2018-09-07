@@ -1,0 +1,110 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+/**
+ * Gets sklearn.metrics.classification_report-like output that can be used by DML user.
+ * y_true: row or column vector, Ground truth (correct) target values.
+ * y_pred: row or column vector, Estimated targets as returned by a classifier.
+ * labels: column vector, list of label to include in the report.
+ *
+ * PySpark example:
+ * from sklearn import datasets, neighbors
+ * from systemml.mllearn import LogisticRegression
+ * from pyspark.sql import SQLContext
+ * sqlCtx = SQLContext(sc)
+ * digits = datasets.load_digits()
+ * X_digits = digits.data
+ * y_digits = digits.target + 1
+ * n_samples = len(X_digits)
+ * X_train = X_digits[:int(.9 * n_samples)]
+ * y_train = y_digits[:int(.9 * n_samples)]
+ * X_test = X_digits[int(.9 * n_samples):]
+ * y_test = y_digits[int(.9 * n_samples):]
+ * logistic = LogisticRegression(sqlCtx)
+ * logistic.fit(X_train, y_train)
+ * y_predicted = logistic.predict(X_test)
+ *
+ * script = """
+ * classification_report = function(matrix[double] y_true, matrix[double] y_pred, matrix[double] labels) return (string out) {
+ *      num_rows_error_measures = nrow(labels)
+ *      error_measures = matrix(0, rows=num_rows_error_measures, cols=5)
+ *      for(i in 1:num_rows_error_measures) {
+ *              class_i = labels[i,1]
+ *         tp = sum( (y_true == y_pred) * (y_true == class_i) )
+ *         tp_plus_fp = sum( (y_pred == class_i) )
+ *         tp_plus_fn = sum( (y_true == class_i) )
+ *         precision = tp / tp_plus_fp
+ *         recall = tp / tp_plus_fn
+ *         f1Score = 2*precision*recall / (precision+recall)
+ *         error_measures[i,1] = class_i
+ *         error_measures[i,2] = precision
+ *         error_measures[i,3] = recall
+ *         error_measures[i,4] = f1Score
+ *         error_measures[i,5] = tp_plus_fn
+ *      }
+ *      # Added num_true_labels to debug whether the input data was randomized or now, which is common requirement of SGD-style algorithms.
+ *      # Also, helps debug class-skew related problems.
+ *      out = "class    \tprecision\trecall  \tf1-score\tnum_true_labels\n" + toString(error_measures, decimal=7, sep="\t")
+ * }
+ * out = classification_report(y_true, y_pred, seq(1, 10))
+ * print(out)
+ * """
+ * from systemml import MLContext, dml
+ * ml = MLContext(sc)
+ * script = dml(script).input(y_true=y_test, y_pred=y_predicted)
+ * ml.execute(script)
+ *
+ * This outputs:
+ * class           precision       recall          f1-score        num_true_labels
+ * 1.0000000       1.0000000       1.0000000       1.0000000       16.0000000
+ * 2.0000000       0.9444444       0.8947368       0.9189189       19.0000000
+ * 3.0000000       1.0000000       1.0000000       1.0000000       17.0000000
+ * 4.0000000       0.9166667       0.6111111       0.7333333       18.0000000
+ * 5.0000000       0.9047619       0.9500000       0.9268293       20.0000000
+ * 6.0000000       0.9000000       1.0000000       0.9473684       18.0000000
+ * 7.0000000       1.0000000       1.0000000       1.0000000       18.0000000
+ * 8.0000000       1.0000000       1.0000000       1.0000000       19.0000000
+ * 9.0000000       0.7272727       0.9411765       0.8205128       17.0000000
+ * 10.0000000      0.9411765       0.8888889       0.9142857       18.0000000
+ *
+ */
+classification_report = function(matrix[double] y_true, matrix[double] y_pred, matrix[double] labels) return (string out) {
+	num_rows_error_measures = nrow(labels)
+	error_measures = matrix(0, rows=num_rows_error_measures, cols=5)
+	for(i in 1:num_rows_error_measures) {
+		class_i = labels[i,1]
+        tp = sum( (y_true == y_pred) * (y_true == class_i) )
+        tp_plus_fp = sum( (y_pred == class_i) )
+        tp_plus_fn = sum( (y_true == class_i) )
+        precision = tp / tp_plus_fp
+        recall = tp / tp_plus_fn
+        f1Score = 2*precision*recall / (precision+recall)
+        error_measures[i,1] = class_i
+        error_measures[i,2] = precision
+        error_measures[i,3] = recall
+        error_measures[i,4] = f1Score
+        error_measures[i,5] = tp_plus_fn
+	}
+	# Added num_true_labels to debug whether the input data was randomized or now, which is common requirement of SGD-style algorithms.
+	# Also, helps debug class-skew related problems.
+	out = "class    \tprecision\trecall  \tf1-score\tnum_true_labels\n" + toString(error_measures, decimal=7, sep="\t")
+}

@@ -1,0 +1,55 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+pnmf = function(matrix[double] V, integer max_iteration, integer rank) return (matrix[double] W, matrix[double] H) {
+    n = nrow(V)
+    m = ncol(V)
+    
+    range = 0.1
+    W = Rand(rows=n, cols=rank, min=0, max=range, pdf="uniform")
+    H = Rand(rows=rank, cols=m, min=0, max=range, pdf="uniform")
+    
+    i=0
+    while(i < max_iteration) {
+      H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W)) 
+      W = (W * ((V/(W%*%H)) %*% t(H)))/t(rowSums(H))
+      i = i + 1;
+      print("at iteration: "+i)
+    }
+}
+
+negloglikfunc = function(matrix[double] V, matrix[double] W, matrix[double] H) return (double negloglik) {
+    negloglik = -1 * (sum(V*log(W%*%H)) - as.scalar(colSums(W)%*%rowSums(H)))
+}
+
+# data & args
+X = rand(rows=2000,cols=2000, sparsity=0.001)
+max_iteration = 5
+rank = as.integer($1)
+
+# run PNMF and evaluate
+[W, H] = pnmf(X, max_iteration, rank)
+negloglik_temp = negloglikfunc(X, W, H)
+
+# write outputs
+negloglik = matrix(negloglik_temp, rows=1, cols=1)
+print(sum(negloglik)+" "+sum(W)+" "+sum(H));

@@ -1,0 +1,77 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Adagrad optimizer.
+ */
+
+update = function(matrix[double] X, matrix[double] dX, double lr, double epsilon,
+                  matrix[double] cache)
+    return (matrix[double] X, matrix[double] cache) {
+  /*
+   * Performs an Adagrad update.
+   *
+   * This is an adaptive learning rate optimizer that maintains the
+   * sum of squared gradients to automatically adjust the effective
+   * learning rate.
+   *
+   * Reference:
+   *  - Adaptive Subgradient Methods for Online Learning and Stochastic
+   *    Optimization, Duchi et al.
+   *      - http://jmlr.org/papers/v12/duchi11a.html
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient wrt `X` of a loss function being optimized, of
+   *      same shape as `X`.
+   *  - lr: Learning rate.
+   *  - epsilon: Smoothing term to avoid divide by zero errors.
+   *      Typical values are in the range of [1e-8, 1e-4].
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as `X`.
+   *
+   * Outputs:
+   *  - X: Updated parameters `X`, of same shape as input `X`.
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as `X`.
+   */
+  cache = cache + dX^2
+  X = X - (lr * dX / (sqrt(cache)+epsilon))
+}
+
+init = function(matrix[double] X)
+    return (matrix[double] cache) {
+  /*
+   * Initialize the state for this optimizer.
+   *
+   * Note: This is just a convenience function, and state
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *
+   * Outputs:
+   *  - cache: State that maintains per-parameter sum of squared
+   *      gradients, of same shape as `X`.
+   */
+  cache = matrix(0, rows=nrow(X), cols=ncol(X))
+}
+

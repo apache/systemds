@@ -1,0 +1,95 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# generates random data for F-test
+#
+# $1 is number of groups (some of 
+#		which may share a gaussian)
+# $2 is number of actual groups 
+# $3 is number of points
+# $4 is mean of the gaussian means
+# $5 is mean of the gaussian std. deviations
+# $6 is file to store computed f-statistic
+# $7 is file to store generated data
+
+numGroups = $1
+numActualGroups = $2
+numSamples = $3
+meanOfMeans = $4
+meanOfStddevs = $5
+
+cntProbs = Rand(rows=numGroups, cols=1, min=0.0, max=1.0, pdf="uniform", seed=0)
+cntProbs = cntProbs/sum(cntProbs)
+cntArr = round(cntProbs * numSamples)
+last_cnt = cntArr[numGroups,1]
+cntArr[numGroups,1] = numSamples - (sum(cntArr) - last_cnt)
+
+permut = Rand(rows=numActualGroups, cols=numGroups, min=0.0, max=0.0, pdf="uniform")
+ones = Rand(rows=numActualGroups, cols=1, min=1.0, max=1.0, pdf="uniform")
+permut[,1:numActualGroups] = diag(ones)
+
+one = Rand(rows=1, cols=1, min=1.0, max=1.0, pdf="uniform")
+copy_start_index = numActualGroups+1
+parfor(i in copy_start_index:numGroups){
+	r = Rand(rows=1, cols=1, min=1.0, max=numActualGroups, pdf="uniform", seed=0)
+	j = as.scalar(round(r))
+	permut[j,i] = one
+}
+
+means_std = Rand(rows=numActualGroups, cols=1, pdf="normal", seed=0)
+abs_means = means_std + meanOfMeans
+means = t(t(abs_means) %*% permut)
+
+stddevs_std = Rand(rows=numActualGroups, cols=1, pdf="normal", seed=0)
+abs_stddevs = stddevs_std + meanOfStddevs
+stddevs = t(t(abs_stddevs) %*% permut)
+
+overall_mean = sum(means*cntArr)/numSamples
+
+explained_variance = sum(cntArr * (means - overall_mean)^2) / (numGroups-1.0)
+unexplained_variance = sum(cntArr * stddevs^2) / (numSamples - numGroups)
+f = explained_variance / unexplained_variance
+write(f, $6, format="binary")
+
+cntCDFs = cntProbs
+for(i in 2:numGroups){
+	cntCDFs[i,1] = cntCDFs[i-1,1] + cntProbs[i,1]
+}
+
+data = Rand(rows=numSamples, cols=1, min=0.0, max=0.0, pdf="uniform")
+parfor(i in 1:numSamples){
+	r_mat = Rand(rows=1, cols=1, min=0.0, max=1.0, pdf="uniform", seed=0)
+	r1 = as.scalar(r_mat)
+
+	g = -1
+	continue = 1
+	for(k in 1:numGroups){
+		cdf = as.scalar(cntCDFs[k,1])
+		if(continue==1 & r1<=cdf){
+			g = k
+			continue=0
+		}	
+	}
+	
+	point = Rand(rows=1, cols=1, pdf="normal", seed=0)
+	data[i,1] = point*stddevs[g,1] + means[g,1]
+}
+write(data, $7, format="binary")

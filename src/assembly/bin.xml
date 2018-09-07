@@ -1,0 +1,136 @@
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<assembly
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+	<!-- Assembly file for the binary tgz and zip SystemML artifacts. -->
+	<!-- The binary artifacts can be used for both standalone and cluster deployments using Spark and Hadoop. -->
+	<id>bin</id>
+
+	<formats>
+		<format>tgz</format>
+		<format>zip</format>
+	</formats>
+
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<baseDirectory>${artifactId}-${version}-bin</baseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}/scripts</directory>
+			<excludes>
+				<exclude>algorithms/obsolete/*</exclude>
+				<exclude>algorithms/obsolete</exclude>
+				<exclude>perftest/*</exclude>
+				<exclude>perftest</exclude>
+				<exclude>staging/**/*</exclude>
+				<exclude>staging</exclude>
+				<exclude>sparkDML.sh</exclude>
+			</excludes>
+			<outputDirectory>scripts</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/target/scripts</directory>
+			<includes>
+				<include>sparkDML.sh</include>
+			</includes>
+			<outputDirectory>scripts</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>log4j.properties</include>
+				<include>README.txt</include>
+				<include>SystemML-config.xml</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/test/config/hadoop_bin_windows/bin</directory>
+			<includes>
+				<include>*.*</include>
+			</includes>
+			<outputDirectory>./lib/hadoop/bin</outputDirectory>
+		</fileSet>
+
+		<!--  Make scripts executable. -->
+		<fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>*.bat</include>
+				<include>*.sh</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+			<fileMode>0755</fileMode>
+		</fileSet>
+
+		<fileSet>
+			<directory>${basedir}/src/assembly/bin</directory>
+			<includes>
+				<include>LICENSE</include>
+				<include>NOTICE</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+	</fileSets>
+
+	<!-- Include all the libraries needed to run in standalone mode. -->
+	<dependencySets>
+		<dependencySet>
+			<includes>
+				<include>*:${artifactId}*</include>
+				<include>*:avro*</include>
+				<include>*:commons-cli*</include>
+				<include>*:commons-collections*</include>
+				<include>*:commons-configuration*</include>
+				<include>*:commons-httpclient*</include>
+				<include>*:commons-io*</include>
+				<include>*:commons-lang</include>
+				<include>*:commons-logging*</include>
+				<include>*:commons-math3*</include>
+				<include>*:guava*</include>
+				<include>*:hadoop-auth*</include>
+				<include>*:hadoop-client*</include>
+				<include>*:hadoop-common*</include>
+				<include>*:hadoop-hdfs*</include>
+				<include>*:hadoop-mapreduce-client*</include>
+				<include>*:hadoop-yarn*</include>
+				<include>*:jackson-core-asl*</include>
+				<include>*:jackson-mapper-asl*</include>
+				<include>*:log4j*</include>
+				<include>*:protobuf-java*</include>
+				<include>*:slf4j-api*</include>
+				<include>*:slf4j-log4j*</include>
+			</includes>
+			<outputDirectory>./lib</outputDirectory>
+			<scope>compile</scope>
+		</dependencySet>
+	</dependencySets>
+
+	<files>
+		<file>
+			<source>target/${artifactId}-${project.version}.jar</source>
+			<outputDirectory>.</outputDirectory>
+			<destName>SystemML.jar</destName>
+		</file>
+	</files>
+</assembly>

@@ -1,0 +1,13 @@
+{
+    "omit": ["zipcode","district","sqft","numbedrooms","numbathrooms","floors","view","saleprice","askingprice"]
+    
+    ,"recode": [ "zipcode", "district", "numbedrooms", "numbathrooms", "floors", "view" ]
+    
+    ,"bin": [
+                 { "name": "saleprice"  , "method": "equi-width", "numbins": 3 }
+                ,{ "name": "sqft"       , "method": "equi-width", "numbins": 4 }
+            ]
+
+    ,"dummycode": [ "district", "numbathrooms", "floors", "view", "saleprice", "sqft" ]
+    
+}

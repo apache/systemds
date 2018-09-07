@@ -1,0 +1,113 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * 2D Softmax classifier layer.
+ */
+ source("nn/util.dml") as util
+ source("nn/layers/softmax.dml") as softmax
+
+ forward = function(matrix[double] scores, int C)
+    return (matrix[double] probs) {
+  /*
+   * Computes the forward pass for a softmax2d classifier.  The input
+   * has four dimensions (N, C, Hin, Win), that means it has N
+   * 2d-examples with a shape (Hin, Win), each pixel in the 2d
+   * example has C values that are interpreted as unnormalized,
+   * log-probabilities for each of C classes.  The softmax function
+   * transforms these values to normalized probabilities across the C
+   * classes, for every example.
+   *
+   * This can be interpreted as a generalization of the sigmoid
+   * function to multiple classes.
+   *
+   *   `probs_ijk = e^scores_ijk / sum(e^scores_ijk)`
+   *
+   * In these equations, `probs_ijk` is the C-dimensional vector of the
+   * normalized probabilities for the pixel `j, k` in the example `i`
+   *
+   * Inputs:
+   *  - scores: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - probs: Outputs, of shape (N, C*Hin*Win).
+   */
+  # For numerical stability, we subtract the max score of an example from all scores for that
+  # example.  This is equivalent to the original formulation:
+  # e^scores_ijk / sum(e^scores_ijk) == C*e^scores_ijk / C*sum(e^scores_ijk)
+  #                              == e^(scores_ijk+log(C)) / sum(e^(scores_ijk+log(C))
+  # set log(C) = -max(scores_ijk):
+  #                              == e^(scores_ijk-max(scores_ijk)) / sum(e^(scores_ijk-max(scores_ijk))
+
+  N = nrow(scores)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  scores_C_NHW = util::transpose_NCHW_to_CNHW(scores, C)
+  scores_NHW_C = t(scores_C_NHW)
+
+  probs_NHW_C = softmax::forward(scores_NHW_C)
+
+  #Transpose the matrix from (N*H*W, C) to (N, C*H*W)
+  probs_C_NHW = t(probs_NHW_C)
+  probs = util::transpose_NCHW_to_CNHW(probs_C_NHW, N)
+}
+
+backward = function(matrix[double] dprobs, matrix[double] scores, int C)
+    return (matrix[double] dscores) {
+  /*
+   * Computes the backward pass for a softmax2d classifier.
+   *
+   * Note that dscores_ij has multiple source branches:
+   *
+   *   ```
+   *   dprobs_ij/dscores_ij = probs_ij * (1 - probs_ij)
+   *   dprobs_ik/dscores_ij = -probs_ik * probs_ij, for all k != j
+   *
+   *   dloss/dscores_ij =
+   *      (dloss/dprobs_ij * dprobs_ij/dscores_ij)
+   *      + sum_{k!=j}(dloss/dprobs_ik * dprobs_ik/dscores_ij)
+   *   ```
+   *
+   * Inputs:
+   *  - dprobs: Gradient wrt `probs` from upstream, of shape (N, C*Hin*Win).
+   *  - scores: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *
+   * Outputs:
+   *  - dscores: Gradient wrt `scores`, of shape (N, C*Win*Hin).
+   */
+  N = nrow(scores)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  dprobs_C_NHW = util::transpose_NCHW_to_CNHW(dprobs, C)
+  dprobs_NHW_C = t(dprobs_C_NHW)
+
+  #Transpose the matrix from (N, C*H*W) to (N*H*W, C)
+  scores_C_NHW = util::transpose_NCHW_to_CNHW(scores, C)
+  scores_NHW_C = t(scores_C_NHW)
+
+  dscores_NHW_C = softmax::backward(dprobs_NHW_C, scores_NHW_C)
+
+  #Transpose the matrix from (N*H*W, C) to (N, C*H*W)
+  dscores_C_NHW = t(dscores_NHW_C)
+  dscores = util::transpose_NCHW_to_CNHW(dscores_C_NHW, N)
+}

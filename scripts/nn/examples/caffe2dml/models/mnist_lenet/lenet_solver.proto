@@ -1,0 +1,19 @@
+# The train/test net protocol buffer definition
+net: "lenet.proto"
+# The base learning rate, momentum and the weight decay of the network.
+base_lr: 0.01
+momentum: 0.9
+weight_decay: 5e-4
+# The learning rate policy
+lr_policy: "exp"
+gamma: 0.95
+# Display every 100 iterations
+display: 100
+# solver mode: CPU or GPU
+solver_mode: CPU
+type: "SGD"
+# The maximum number of iterations
+max_iter: 2000
+# Carry out testing every 500 training iterations.
+test_iter: 10
+test_interval: 500

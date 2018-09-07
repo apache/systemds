@@ -127,7 +127,6 @@ public class ForProgramBlock extends ProgramBlock
 				
 				//execute all child blocks
 				for(int i=0 ; i < this._childBlocks.size() ; i++) {
-					ec.updateDebugState( i );
 					_childBlocks.get(i).execute(ec);
 				}
 			}

@@ -110,7 +110,6 @@ public class WhileProgramBlock extends ProgramBlock
 			while( executePredicate(ec).getBooleanValue() ) {
 				//execute all child blocks
 				for (int i=0 ; i < _childBlocks.size() ; i++) {
-					ec.updateDebugState(i);
 					_childBlocks.get(i).execute(ec);
 				}
 			}

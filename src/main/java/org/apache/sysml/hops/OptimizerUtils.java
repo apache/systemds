@@ -282,13 +282,6 @@ public class OptimizerUtils
 		if( optlevel < 0 || optlevel > 7 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
 	
-		// This overrides any optimization level that is present in the configuration file.
-		// Why ? This simplifies the calling logic: User doesnot have to maintain two config file or worse
-		// edit config file everytime he/she is trying to call the debugger.
-		if(DMLScript.ENABLE_DEBUG_MODE) {
-			optlevel = 5;
-		}
-		
 		switch( optlevel )
 		{
 			// opt level 0: static dimensionality

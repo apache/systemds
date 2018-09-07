@@ -206,16 +206,13 @@ public class ProgramBlock implements ParseInfo
 			//indexed access required due to dynamic add
 			Instruction currInst = inst.get(i);
 			//execute instruction
-			ec.updateDebugState(i);
 			executeSingleInstruction(currInst, ec);
 		}
 	}
 
 	protected ScalarObject executePredicateInstructions(ArrayList<Instruction> inst, ValueType retType, ExecutionContext ec) {
 		//execute all instructions (indexed access required due to debug mode)
-		int pos = 0;
 		for( Instruction currInst : inst ) {
-			ec.updateDebugState(pos++);
 			executeSingleInstruction(currInst, ec);
 		}
 		
@@ -275,17 +272,11 @@ public class ProgramBlock implements ParseInfo
 				checkSparsity( tmp, ec.getVariables() );
 			}
 		}
-		catch (Exception e)
-		{
-			if (!DMLScript.ENABLE_DEBUG_MODE) {
-				if ( e instanceof DMLScriptException)
-					throw (DMLScriptException)e;
-				else
-					throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
-			}
-			else {
-				ec.handleDebugException(e);
-			}
+		catch (Exception e) {
+			if ( e instanceof DMLScriptException)
+				throw (DMLScriptException)e;
+			else
+				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 		}
 	}
 

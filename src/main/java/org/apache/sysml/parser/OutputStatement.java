@@ -22,8 +22,6 @@ package org.apache.sysml.parser;
 import java.util.HashMap;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.debug.DMLBreakpointManager;
 import org.apache.sysml.parser.Expression.DataOp;
 
 public class OutputStatement extends Statement
@@ -155,16 +153,7 @@ public class OutputStatement extends Statement
 	
 	@Override
 	public boolean controlStatement() {
-		// ensure that breakpoints end up in own statement block 
-		if (DMLScript.ENABLE_DEBUG_MODE) {
-			DMLBreakpointManager.insertBreakpoint(_paramsExpr.getBeginLine());
-			return true;
-		}
-
 		Expression fmt = _paramsExpr.getVarParam(DataExpression.FORMAT_TYPE);
-		if ( fmt != null && fmt.toString().equalsIgnoreCase("csv")) {
-			return true;
-		}
-		return false;
+		return (fmt != null && fmt.toString().equalsIgnoreCase("csv"));
 	}
 }

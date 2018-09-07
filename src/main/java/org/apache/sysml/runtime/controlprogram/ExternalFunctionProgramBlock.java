@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.TreeMap;
 
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -326,18 +325,11 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		{
 			c2binst = new ArrayList<>();
 			MRJobInstruction reblkInst = new MRJobInstruction(JobType.REBLOCK);
-			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
-			if(DMLScript.ENABLE_DEBUG_MODE) {
-				MRJobLineNumbers = new TreeMap<>();
-			}
-			
 			ArrayList<String> inLabels = new ArrayList<>();
 			ArrayList<String> outLabels = new ArrayList<>();
 			String[] outputs = new String[matrices.size()];
 			byte[] resultIndex = new byte[matrices.size()];
 			String reblock = "";
-			String reblockStr = ""; //Keep a copy of a single MR reblock instruction
-	
 			String scratchSpaceLoc = ConfigurationManager.getScratchSpace();
 			
 			try {
@@ -359,18 +351,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 									i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
 									ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + "true";
 					
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						//Create a copy of reblock instruction but as a single instruction (FOR DEBUGGER)
-						reblockStr = "MR" + Lop.OPERAND_DELIMITOR + "rblk" + Lop.OPERAND_DELIMITOR + 
-										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
-										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
-										ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize()  + Lop.OPERAND_DELIMITOR + "true";					
-						//Set MR reblock instruction line number (FOR DEBUGGER)
-						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
-							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
-						}
-						MRJobLineNumbers.get(matrices.get(i).getBeginLine()).add(reblockStr);					
-					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold blocked matrices
 					Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.BinaryBlockOutputInfo));
@@ -447,11 +427,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 		{
 			b2cinst = new ArrayList<>();
 			MRJobInstruction gmrInst = new MRJobInstruction(JobType.GMR);
-			TreeMap<Integer, ArrayList<String>> MRJobLineNumbers = null;
-			if(DMLScript.ENABLE_DEBUG_MODE) {
-				MRJobLineNumbers = new TreeMap<>();
-			}
-			String gmrStr="";
 			ArrayList<String> inLabels = new ArrayList<>();
 			ArrayList<String> outLabels = new ArrayList<>();
 			String[] outputs = new String[matrices.size()];
@@ -473,19 +448,6 @@ public class ExternalFunctionProgramBlock extends FunctionProgramBlock
 									_otherParams.get(ExternalFunctionStatement.CLASS_NAME) + _runID + "_" + i + "Input";
 					unBlockedFileNames.put(matrices.get(i).getName(), outputs[i]);
 	
-					if(DMLScript.ENABLE_DEBUG_MODE) {
-						//Create a dummy gmr instruction (FOR DEBUGGER)
-						gmrStr = "MR" + Lop.OPERAND_DELIMITOR + "gmr" + Lop.OPERAND_DELIMITOR + 
-										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
-										i + Lop.DATATYPE_PREFIX + matrices.get(i).getDataType() + Lop.VALUETYPE_PREFIX + matrices.get(i).getValueType() + Lop.OPERAND_DELIMITOR + 
-										ConfigurationManager.getBlocksize() + Lop.OPERAND_DELIMITOR + ConfigurationManager.getBlocksize();
-						
-						//Set MR gmr instruction line number (FOR DEBUGGER)
-						if (!MRJobLineNumbers.containsKey(matrices.get(i).getBeginLine())) {
-							MRJobLineNumbers.put(matrices.get(i).getBeginLine(), new ArrayList<String>()); 
-						}
-						MRJobLineNumbers.get(matrices.get(i).getBeginLine()).add(gmrStr);
-					}
 					// create metadata instructions to populate symbol table 
 					// with variables that hold unblocked matrices
 				 	Instruction createInst = VariableCPInstruction.prepareCreateMatrixVariableInstruction(outLabels.get(i), outputs[i], false, OutputInfo.outputInfoToString(OutputInfo.TextCellOutputInfo));			 		

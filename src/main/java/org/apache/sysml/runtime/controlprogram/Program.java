@@ -107,14 +107,9 @@ public class Program
 	}
 
 	public void execute(ExecutionContext ec) {
-		ec.initDebugProgramCounters();
-		
-		try
-		{
-			for (int i=0 ; i<_programBlocks.size() ; i++) {
-				ec.updateDebugState(i);
+		try{
+			for (int i=0; i<_programBlocks.size(); i++)
 				_programBlocks.get(i).execute(ec);
-			}
 		}
 		catch(DMLScriptException e) {
 			throw e;
@@ -122,8 +117,6 @@ public class Program
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);
 		}
-		
-		ec.clearDebugProgramCounters();
 	}
 
 	public Program clone(boolean deep) {

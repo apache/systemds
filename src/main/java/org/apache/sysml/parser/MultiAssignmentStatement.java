@@ -22,11 +22,6 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.debug.DMLBreakpointManager;
-
-
-
 public class MultiAssignmentStatement extends Statement
 {
 	private ArrayList<DataIdentifier> _targetList;
@@ -74,10 +69,6 @@ public class MultiAssignmentStatement extends Statement
 	@Override
 	// conservative assignment to separate statement block; will merge later if possible
 	public boolean controlStatement() {
-		// ensure that breakpoints end up in own statement block 
-		if (DMLScript.ENABLE_DEBUG_MODE) {
-			DMLBreakpointManager.insertBreakpoint(_source.getBeginLine());
-		}
 		return true;
 	}
 	

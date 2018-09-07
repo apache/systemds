@@ -45,14 +45,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.debug.DMLDebugger;
-import org.apache.sysml.debug.DMLDebuggerProgramInfo;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
 import org.apache.sysml.parser.DMLProgram;
@@ -116,7 +112,6 @@ public class DMLScript
 	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
 	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
 	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
-	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
 	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
 	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
 	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
@@ -231,7 +226,6 @@ public class DMLScript
 			USE_ACCELERATOR     = dmlOptions.gpu;
 			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
-			ENABLE_DEBUG_MODE   = dmlOptions.debug;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
 			rtplatform          = dmlOptions.execMode;
 
@@ -252,10 +246,6 @@ public class DMLScript
 				return true;
 			}
 
-			//set log level
-			if (!ENABLE_DEBUG_MODE)
-				setLoggingProperties( conf );
-
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;
 
@@ -263,13 +253,7 @@ public class DMLScript
 			
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
-			if (ENABLE_DEBUG_MODE) {
-				// inner try loop is just to isolate the debug exception, which will allow to manage the bugs from debugger v/s runtime
-				launchDebugger(dmlScriptStr, fnameOptConfig, argVals, SCRIPT_TYPE);
-			}
-			else {
-				execute(dmlScriptStr, fnameOptConfig, argVals, args, SCRIPT_TYPE);
-			}
+			execute(dmlScriptStr, fnameOptConfig, argVals, args, SCRIPT_TYPE);
 		}
 		catch(AlreadySelectedException e) {
 			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
@@ -367,19 +351,6 @@ public class DMLScript
 		}
 		
 		return dmlScriptStr;
-	}
-
-	
-	private static void setLoggingProperties( Configuration conf ) {
-		String debug = conf.get("systemml.logging");
-		if (debug == null)
-			debug = System.getProperty("systemml.logging");
-		if (debug != null){
-			if (debug.equalsIgnoreCase("debug"))
-				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.DEBUG);
-			else if (debug.equalsIgnoreCase("trace"))
-				Logger.getLogger("org.apache.sysml").setLevel((Level) Level.TRACE);
-		}
 	}
 	
 	///////////////////////////////
@@ -542,60 +513,6 @@ public class DMLScript
 		}
 	}
 	
-	/**
-	 * Launcher for DML debugger. This method should be called after 
-	 * execution and debug properties have been correctly set, and customized parameters
-	 * 
-	 * @param dmlScriptStr DML script contents (including new lines)
-	 * @param fnameOptConfig Full path of configuration file for SystemML
-	 * @param argVals Key-value pairs defining arguments of DML script
-	 * @param scriptType type of script (DML or PyDML)
-	 * @throws IOException if IOException occurs
-	 */
-	private static void launchDebugger(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, ScriptType scriptType)
-		throws IOException
-	{		
-		DMLDebuggerProgramInfo dbprog = new DMLDebuggerProgramInfo();
-		
-		//Step 1: parse configuration files
-		DMLConfig conf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(conf);
-
-		//Step 2: parse dml script
-
-		ParserWrapper parser = ParserFactory.createParser(scriptType);
-		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		
-		//Step 3: construct HOP DAGs (incl LVA and validate)
-		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.liveVariableAnalysis(prog);
-		dmlt.validateParseTree(prog);
-		dmlt.constructHops(prog);
-
-		//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)
-		dmlt.rewriteHopsDAG(prog);
-
-		//Step 5: construct LOP DAGs
-		dmlt.constructLops(prog);
-	
-		//Step 6: generate runtime program
-		dbprog.rtprog = dmlt.getRuntimeProgram(prog, conf);
-		
-		try {
-			//set execution environment
-			initHadoopExecution(conf);
-		
-			//initialize an instance of SystemML debugger
-			DMLDebugger SystemMLdb = new DMLDebugger(dbprog, dmlScriptStr);
-			//run SystemML debugger
-			SystemMLdb.runSystemMLDebugger();
-		}
-		finally {
-			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution(conf);
-		}
-	}
-
 	public static void initHadoopExecution( DMLConfig config ) 
 		throws IOException, ParseException, DMLRuntimeException
 	{

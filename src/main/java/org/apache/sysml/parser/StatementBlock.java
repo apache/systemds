@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.hops.recompile.Recompiler;
@@ -166,11 +165,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
     public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
-
-//    	if (DMLScript.ENABLE_DEBUG_MODE && !DMLScript.ENABLE_DEBUG_OPTIMIZER)
-    	if (DMLScript.ENABLE_DEBUG_MODE)
-			return false;
-
 		// check whether targetIndex stmt block is for a mergable function call
 		Statement stmt = this.getStatement(0);
 

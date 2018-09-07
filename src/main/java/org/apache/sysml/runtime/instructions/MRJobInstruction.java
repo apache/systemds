@@ -414,10 +414,6 @@ public class MRJobInstruction extends Instruction
 	 * @return Return true if found, otherwise return false 
 	 */
 	public boolean findMRInstructions(int lineNum) {
-		if (!DMLScript.ENABLE_DEBUG_MODE) {
-			System.err.println("Error: Expecting debug mode to be enabled for this functionality");
-			return false;
-		}
 		for (Integer lineNumber : MRJobInstructionsLineNumbers) {
 			if (lineNum == lineNumber)
 				return true;
@@ -464,11 +460,6 @@ public class MRJobInstruction extends Instruction
 	 */
 	public String getMRString(boolean debug)
 	{
-		if (!DMLScript.ENABLE_DEBUG_MODE) {
-			System.err.println("Error: Expecting debug mode to be enabled for this functionality");
-			return "";
-		}
-		
 		StringBuilder sb = new StringBuilder();
 		sb.append("MR-Job[\n");
 		sb.append("\t\t\t\tjobtype        = " + jobType + " \n");

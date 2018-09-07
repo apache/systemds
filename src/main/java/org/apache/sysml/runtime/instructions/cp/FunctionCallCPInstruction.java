@@ -91,11 +91,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default pre-process behavior
-		Instruction tmp = super.preprocessInstruction(ec);
-		//maintain debug state (function call stack) 
-		if( DMLScript.ENABLE_DEBUG_MODE )
-			ec.handleDebugFunctionEntry((FunctionCallCPInstruction) tmp);
-		return tmp;
+		return super.preprocessInstruction(ec);
 	}
 
 	@Override
@@ -207,9 +203,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
-		//maintain debug state (function call stack) 
-		if (DMLScript.ENABLE_DEBUG_MODE )
-			ec.handleDebugFunctionExit( this );
 		//default post-process behavior
 		super.postprocessInstruction(ec);
 	}

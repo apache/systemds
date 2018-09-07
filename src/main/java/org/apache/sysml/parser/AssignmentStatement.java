@@ -22,9 +22,6 @@ package org.apache.sysml.parser;
 import java.util.ArrayList;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.debug.DMLBreakpointManager;
-
 
 public class AssignmentStatement extends Statement
 {
@@ -95,12 +92,6 @@ public class AssignmentStatement extends Statement
 	
 	@Override
 	public boolean controlStatement() {
-		// ensure that breakpoints end up in own statement block 
-		if (DMLScript.ENABLE_DEBUG_MODE) {
-			DMLBreakpointManager.insertBreakpoint(_source.getBeginLine());
-			return true;
-		}
-
 		// for now, ensure that function call ends up in different statement block
 		if (_source instanceof FunctionCallIdentifier)
 			return true;

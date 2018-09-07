@@ -216,9 +216,6 @@ public abstract class Instruction
 	 * @return instruction
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec){
-		//update debug status
-		ec.updateDebugState( this );
-		
 		//return instruction ifself
 		return this;
 	}

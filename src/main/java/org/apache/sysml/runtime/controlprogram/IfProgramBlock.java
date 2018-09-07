@@ -106,7 +106,6 @@ public class IfProgramBlock extends ProgramBlock
 			try 
 			{	
 				for (int i=0 ; i < _childBlocksIfBody.size() ; i++) {
-					ec.updateDebugState(i);
 					_childBlocksIfBody.get(i).execute(ec);
 				}
 			}
@@ -123,7 +122,6 @@ public class IfProgramBlock extends ProgramBlock
 			try 
 			{	
 				for (int i=0 ; i < _childBlocksElseBody.size() ; i++) {
-					ec.updateDebugState(i);
 					_childBlocksElseBody.get(i).execute(ec);
 				}
 			}

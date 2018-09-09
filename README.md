@@ -17,19 +17,13 @@ limitations under the License.
 {% endcomment %}
 -->
 
-# SystemML
+# Apache SystemML Project
 
-**Documentation:** [SystemML Documentation](http://systemml.apache.org/documentation)<br/>
-**Mailing List:** [Dev Mailing List](mailto:dev@systemml.apache.org)<br/>
-**Build Status:** [![Build Status](https://travis-ci.org/apache/systemml.svg?branch=master)](https://travis-ci.org/apache/systemml)<br/>
-**Issue Tracker:** [JIRA](https://issues.apache.org/jira/browse/SYSTEMML)<br/>
-**Download:** [Download SystemML](http://systemml.apache.org/download.html)<br/>
+|**`Launch Online`**|**`Documentation`**|**`Issue tracker`**|**` Download `**|**`Build`**|**`mailing list`**|
+|-------------------|-------------------|-------------------|----------------|-----------|------------------|
+| [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/apache/systemml/master?filepath=.%2Fsamples) | [![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](http://systemml.apache.org/documentation)|[![Jira](https://img.shields.io/badge/Issues-Jira-red.svg)](https://issues.apache.org/jira/browse/SYSTEMML) | [![Download](https://img.shields.io/badge/Download-SHA512-brightgreen.svg)](http://systemml.apache.org/download)|[![Build Status](https://travis-ci.org/apache/systemml.svg?branch=master)](https://travis-ci.org/apache/systemml) | [![Mailing list : Dev](https://img.shields.io/badge/Mail-Dev-orange.svg)](mailto:dev@systemml.apache.org) |
 
-**SystemML** is now an **Apache Top Level Project**! Please see the [**Apache SystemML**](http://systemml.apache.org/)
-website for more information.
-
-SystemML is a flexible, scalable machine learning system.
-SystemML's distinguishing characteristics are:
+SystemML is a flexible, scalable machine learning system. SystemML's distinguishing characteristics are:
 
   1. **Algorithm customizability via R-like and Python-like languages**.
   2. **Multiple execution modes**, including Spark MLContext API, Spark Batch, Hadoop Batch, Standalone, and JMLC.
@@ -84,14 +78,8 @@ Before you get started on SystemML, make sure that your environment is set up an
 
   1. **If you’re on OS X, we recommend installing [Homebrew](http://brew.sh) if you haven’t already.  For Linux users, the [Linuxbrew project](http://linuxbrew.sh/) is equivalent.**
 
-  OS X:
-  ```
-  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-  ```
-  Linux:
-  ```
-  ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install)"
-  ```
+  **OS X:** `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`<br/>
+  **Linux:** `ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install)"`
 
   2. **Install Java (need Java 8).**
   ```

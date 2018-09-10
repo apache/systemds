@@ -79,7 +79,8 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 		GPUContext gCtx = ec.getGPUContext(0); 
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
 		if(rows*cols != mat.getNumRows()*mat.getNumColumns()) {
-			throw new DMLRuntimeException("Incorrect number of rows and cols in rshape instruction");
+			throw new DMLRuntimeException("Cannot reshape a matrix of dimensions: [" + mat.getNumRows() + ", " + mat.getNumColumns() + "] to a matrix of"
+					+ " dimensions [" + rows + ", " + cols + "]");
 		}
 		// We currently support only dense rshape
 		Pointer inPtr = LibMatrixCUDA.getDensePointer(gCtx, mat, instName);

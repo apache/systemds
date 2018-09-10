@@ -20,7 +20,6 @@ package org.apache.sysml.runtime.instructions.gpu;
 
 import java.util.HashMap;
 
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;

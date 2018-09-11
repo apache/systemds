@@ -1018,7 +1018,7 @@ class Keras2DML(Caffe2DML):
         regularization_type: regularization type (default: "L2")
         """
         from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver
-        import tempfile
+        import tempfile, keras
         if isinstance(keras_model, keras.models.Sequential):
             # Convert the sequential model to functional model
             if keras_model.model is None:

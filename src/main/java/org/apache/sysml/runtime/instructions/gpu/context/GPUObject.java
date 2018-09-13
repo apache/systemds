@@ -91,11 +91,6 @@ public class GPUObject {
 	AtomicLong timestamp = new AtomicLong();
 
 	/**
-	 * Whether this block is in sparse format
-	 */
-	protected boolean isSparse = false;
-
-	/**
 	 * Enclosing {@link MatrixObject} instance
 	 */
 	MatrixObject mat = null;
@@ -131,10 +126,29 @@ public class GPUObject {
 	
 	/**
 	 * Removes the dense pointer and potential soft reference
+	 * 
+	 * @param opcode opcode of the instruction
+	 * @param eager whether to delete eagerly
 	 */
-	public void clearDensePointer() {
-		jcudaDenseMatrixPtr = null;
+	public void clearDensePointer(String opcode, boolean eager) {
+		if (!isDensePointerNull()) {
+			getGPUContext().cudaFreeHelper(opcode, getDensePointer(), eager);
+		}
 		shadowBuffer.clearShadowPointer();
+		jcudaDenseMatrixPtr = null;
+	}
+	
+	/**
+	 * Removes the sparse pointer
+	 * 
+	 * @param opcode opcode of the instruction
+	 * @param eager whether to delete eagerly
+	 */
+	public void clearSparsePointer(String opcode, boolean eager) {
+		if (getJcudaSparseMatrixPtr() != null) {
+			getJcudaSparseMatrixPtr().deallocate(eager);
+		}
+		jcudaSparseMatrixPtr = null;
 	}
 	
 	
@@ -147,14 +161,14 @@ public class GPUObject {
 		if (!this.isDensePointerNull()) {
 			throw new DMLRuntimeException("jcudaDenseMatrixPtr was already allocated for " + this + ", this will cause a memory leak on the GPU");
 		}
+		clearSparsePointer(null, true);
 		this.jcudaDenseMatrixPtr = densePtr;
-		this.isSparse = false;
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("Setting dense pointer of size " + getGPUContext().getMemoryManager().getSizeAllocatedGPUPointer(densePtr));
 		}
-		if (getJcudaSparseMatrixPtr() != null) {
-			getJcudaSparseMatrixPtr().deallocate();
-			jcudaSparseMatrixPtr = null;
+		if(!gpuContext.getMemoryManager().getGPUMatrixMemoryManager().gpuObjects.contains(this)) {
+			// Double-check if the matrix manager still has the current GPU object in case of eviction.
+			gpuContext.getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(this);
 		}
 	}
 	// ----------------------------------------------------------------------
@@ -170,7 +184,6 @@ public class GPUObject {
 		that.writeLock = false;
 		
 		that.timestamp = new AtomicLong(me.timestamp.get());
-		that.isSparse = me.isSparse;
 
 		try {
 			if (!me.isDensePointerNull()) {
@@ -195,10 +208,6 @@ public class GPUObject {
 
 	private Pointer allocate(long size) {
 		return getGPUContext().allocate(null, size);
-	}
-
-	private void cudaFreeHelper(Pointer toFree) throws DMLRuntimeException {
-		getGPUContext().cudaFreeHelper(null, toFree, gpuContext.EAGER_CUDA_FREE);
 	}
 
 	public GPUContext getGPUContext() {
@@ -300,11 +309,11 @@ public class GPUObject {
 		if (this.jcudaSparseMatrixPtr != null) {
 			throw new DMLRuntimeException("jcudaSparseMatrixPtr was already allocated for " + this + ", this will cause a memory leak on the GPU");
 		}
+		clearDensePointer(null, true);
 		this.jcudaSparseMatrixPtr = sparseMatrixPtr;
-		this.isSparse = true;
-		if (!isDensePointerNull() && !shadowBuffer.isBuffered()) {
-			cudaFreeHelper(getDensePointer());
-			clearDensePointer();
+		if(!gpuContext.getMemoryManager().getGPUMatrixMemoryManager().gpuObjects.contains(this)) {
+			// Double-check if the matrix manager still has the current GPU object in case of eviction.
+			gpuContext.getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(this);
 		}
 	}
 	
@@ -354,8 +363,7 @@ public class GPUObject {
 		}
 
 		Pointer tmp = transpose(getGPUContext(), getDensePointer(), m, n, lda, ldc);
-		cudaFreeHelper(getDensePointer());
-		clearDensePointer();
+		clearDensePointer(null, true);
 		setDensePointer(tmp);
 	}
 
@@ -376,8 +384,7 @@ public class GPUObject {
 		}
 
 		Pointer tmp = transpose(getGPUContext(), getDensePointer(), m, n, lda, ldc);
-		cudaFreeHelper(getDensePointer());
-		clearDensePointer();
+		clearDensePointer(null, true);
 		setDensePointer(tmp);
 	}
 
@@ -446,7 +453,7 @@ public class GPUObject {
 	}
 
 	public boolean isSparse() {
-		return isSparse;
+		return jcudaSparseMatrixPtr != null;
 	}
 	
 	private static long getDatatypeSizeOf(long numElems) {
@@ -602,7 +609,6 @@ public class GPUObject {
 			LOG.trace("GPU : acquireDeviceModifySparse on " + this + ", GPUContext=" + getGPUContext());
 		}
 		boolean allocated = false;
-		isSparse = true;
 		if (!isAllocated()) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : data is not allocated, allocating a sparse block, on " + this);
@@ -995,22 +1001,15 @@ public class GPUObject {
 	 * Clears the data associated with this {@link GPUObject} instance
 	 *
 	 * @param opcode opcode of the instruction
-	 * @param eager whether to be done synchronously or asynchronously
+	 * @param eager whether to delete eagerly
 	 * @throws DMLRuntimeException if error occurs
 	 */
 	public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : clearData on " + this + ", GPUContext=" + getGPUContext());
 		}
-		if (!isDensePointerNull()) {
-			getGPUContext().cudaFreeHelper(opcode, getDensePointer(), eager);
-		}
-		if (getJcudaSparseMatrixPtr() != null) {
-			getJcudaSparseMatrixPtr().deallocate(eager);
-		}
-		clearDensePointer();
-		shadowBuffer.clearShadowPointer();
-		jcudaSparseMatrixPtr = null;
+		clearDensePointer(opcode, eager);
+		clearSparsePointer(opcode, eager);
 		resetReadWriteLock();
 		getGPUContext().getMemoryManager().removeGPUObject(this);
 	}
@@ -1039,7 +1038,6 @@ public class GPUObject {
 		sb.append(", dirty=").append(dirty);
 		sb.append(", readLocks=").append(readLocks.longValue());
 		sb.append(", writeLock=").append(writeLock);
-		sb.append(", sparse? ").append(isSparse);
 		sb.append(", dims=[").append(mat.getNumRows()).append(",").append(mat.getNumColumns()).append("]");
 		if(!isDensePointerNull())
 			sb.append(", densePtr=").append(getDensePointer());

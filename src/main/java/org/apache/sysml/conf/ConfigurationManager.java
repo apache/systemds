@@ -258,7 +258,7 @@ public class ConfigurationManager
 	 * @return true if GPU is enabled in forced mode
 	 */
 	public static boolean isForcedGPU() {
-		return _ldmlOptions.get().isGPU();
+		return _ldmlOptions.get().isForceGPU();
 	}
 	
 	/**

@@ -595,18 +595,18 @@ public class DnnGPUInstruction extends GPUInstruction {
 	
 	private void processLstmBackwardInstruction(ExecutionContext ec) throws DMLRuntimeException {
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
-		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
+		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
-		int D = toInt(numRowsW) - M; // since W:(D+M, 4M) ... numFeatures 
+		long D = numRowsW - M; // since W:(D+M, 4M) ... numFeatures 
 		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
-				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt((D+M+2)*(4*M))),
 				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
@@ -619,7 +619,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		Pointer cudnnInput = gCtx.allocate(instName, (N*T*D)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_input",
-				ExecutionConfig.getConfigForSimpleVectorOperations(N*T*D),
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*T*D)),
 				xPointer, cudnnInput, N, D, T*D, N*T*D);
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
@@ -656,18 +656,19 @@ public class DnnGPUInstruction extends GPUInstruction {
 		// previous output out0 (also represented by hx) and cell state c0 (also represented by cx): (N, M) ==> (1, M, N)
 		// out: (N, T*M) or (N, M) ==> (T, M, N)
 		MatrixObject out0 = getMatrixInputForGPUInstruction(ec, _input4.getName());
-		int M = toInt(out0.getNumColumns()); // hiddenSize .. since out0: (N, M)
+		long M = out0.getNumColumns(); // hiddenSize .. since out0: (N, M)
 		Pointer out0Pointer =  LibMatrixCUDA.getDensePointer(gCtx, out0, instName);
 		
 		MatrixObject W = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
-		int D = toInt(numRowsW) - M; // since W:(D+M, 4M) ... numFeatures 
+		long D = numRowsW - M; // since W:(D+M, 4M) ... numFeatures
+		
 		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
 		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
-				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt((D+M+2)*(4*M))),
 				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
@@ -682,13 +683,14 @@ public class DnnGPUInstruction extends GPUInstruction {
 		int T = toInt(numColsX/ D); // since X:(N, T*D) ... seqLength
 		Pointer cudnnInput = gCtx.allocate(instName, (N*T*D)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_input",
-				ExecutionConfig.getConfigForSimpleVectorOperations(N*T*D),
+				ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*T*D)),
 				xPointer, cudnnInput, N, D, T*D, N*T*D);
 		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
 		Pointer c0Pointer = LibMatrixCUDA.getDensePointer(gCtx, getMatrixInputForGPUInstruction(ec, _input5.getName()), instName); 
 		
-		LibMatrixCuDNN.lstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), N, M, D, T);
+		LibMatrixCuDNN.lstm(ec, gCtx, instName, cudnnInput, cudnnWPointer, out0Pointer, c0Pointer, return_sequences, _output.getName(), _output2.getName(), 
+				toInt(N), toInt(M), toInt(D), toInt(T));
 		gCtx.cudaFreeHelper(instName, cudnnWPointer, gCtx.EAGER_CUDA_FREE);
 		gCtx.cudaFreeHelper(instName, cudnnInput, gCtx.EAGER_CUDA_FREE);
 		

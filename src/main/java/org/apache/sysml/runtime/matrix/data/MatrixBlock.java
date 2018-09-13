@@ -516,7 +516,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//this method is used as a short-hand for all operations that
 		//guaranteed only deal with dense blocks of a single block.
 		if( denseBlock != null && denseBlock.numBlocks() > 1 ) {
-			throw new RuntimeException("Large dense in-memory block (with numblocks="+denseBlock.numBlocks()+") "
+			throw new RuntimeException("Large dense in-memory block (with numblocks="+denseBlock.numBlocks()+ ") with "
+				+ "dimensions [" + getNumRows() + ", " + getNumColumns() + "] "
 				+ "allocated but operation access to first block only, which might cause incorrect results.");
 		}
 		return (denseBlock != null) ? denseBlock.valuesAt(0) : null;

@@ -53,7 +53,7 @@ public class GPUMemoryManager {
 	// Developer flag: Use this flag to check for GPU memory leak in SystemML.  
 	// This has an additional overhead of maintaining stack trace of all the allocated GPU pointers via PointerInfo class.
 	private static final boolean DEBUG_MEMORY_LEAK = false;
-	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10}; // Avoids printing too much text while debuggin
+	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10, 11}; // Avoids printing too much text while debugging
 	
 	private final boolean PRINT_GPU_MEMORY_INFO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
 	
@@ -86,7 +86,15 @@ public class GPUMemoryManager {
 	private Set<Pointer> getNonMatrixLockedPointers() {
 		Set<Pointer> managedPointers = matrixMemoryManager.getPointers();
 		managedPointers.addAll(lazyCudaFreeMemoryManager.getAllPointers());
-		return nonIn(allPointers.keySet(), managedPointers);
+		Set<Pointer> superSet = allPointers.keySet();
+		Set<Pointer> ret = nonIn(superSet, managedPointers);
+		if(DEBUG_MEMORY_LEAK) {
+			System.out.println(
+				ret.stream().map(p -> p.toString()).collect(Collectors.joining(",")) + " = notIn(>>>" + 
+				superSet.stream().map(p -> p.toString()).collect(Collectors.joining(",")) + ">>>, <<<" + 
+				managedPointers.stream().map(p -> p.toString()).collect(Collectors.joining(",")) + ">>>)");
+		}
+		return ret;
 	}
 	
 	

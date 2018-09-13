@@ -476,14 +476,6 @@ public class CSRPointer {
 	}
 
 	/**
-	 * Calls cudaFree lazily on the allocated {@link Pointer} instances
-	 *
-	 */
-	public void deallocate() {
-		deallocate(getGPUContext().EAGER_CUDA_FREE);
-	}
-
-	/**
 	 * Calls cudaFree lazily or eagerly on the allocated {@link Pointer} instances
 	 *
 	 * @param eager whether to do eager or lazy cudaFrees

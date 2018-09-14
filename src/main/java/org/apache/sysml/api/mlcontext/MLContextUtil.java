@@ -21,6 +21,7 @@ package org.apache.sysml.api.mlcontext;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -74,6 +75,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -118,6 +120,35 @@ public final class MLContextUtil {
 	@SuppressWarnings("rawtypes")
 	public static final Class[] ALL_SUPPORTED_DATA_TYPES = (Class[]) ArrayUtils.addAll(BASIC_DATA_TYPES,
 			COMPLEX_DATA_TYPES);
+	
+	/**
+	 * Utility method to write an output as rectangular blocked RDD
+	 *  
+	 * @param spark spark session
+	 * @param dmlScript script that generates the outVariable
+	 * @param outVariable variable name
+	 * @param outFilePath output file path
+	 * @param rowsPerBlock number of rows per block
+	 * @param colsPerBlock number of columns per block 
+	 * @throws IOException if error occurs
+	 */
+	public static void reblockAndWrite(SparkSession spark, String dmlScript, String outVariable, String outFilePath, int rowsPerBlock, int colsPerBlock) throws IOException {
+		MLContext ml = new MLContext(spark);
+		Script helloScript = org.apache.sysml.api.mlcontext.ScriptFactory.dml(dmlScript).out(outVariable);
+		MLResults res = ml.execute(helloScript);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = res.getMatrix(outVariable).toBinaryBlocks();
+		MatrixCharacteristics mc = res.getMatrix(outVariable).getMatrixMetadata().asMatrixCharacteristics();
+		MatrixCharacteristics mcOut = new MatrixCharacteristics(mc);
+		mcOut.setRowsPerBlock(rowsPerBlock);
+		mcOut.setColsPerBlock(colsPerBlock);
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils.mergeByKey(rdd.flatMapToPair(
+				new org.apache.sysml.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock(mc, mcOut)), false);
+		out.saveAsHadoopFile(outFilePath, MatrixIndexes.class, MatrixBlock.class, org.apache.hadoop.mapred.SequenceFileOutputFormat.class);
+		org.apache.sysml.runtime.util.MapReduceTool.writeMetaDataFile(outFilePath + ".mtd", 
+				org.apache.sysml.parser.Expression.ValueType.DOUBLE, mcOut, 
+				org.apache.sysml.runtime.matrix.data.OutputInfo.BinaryBlockOutputInfo, 
+				new org.apache.sysml.runtime.io.FileFormatProperties());
+	}
 
 	/**
 	 * Compare two version strings (ie, "1.4.0" and "1.4.1").

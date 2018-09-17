@@ -570,6 +570,7 @@ public class GPUObject {
 			LOG.trace("GPU : acquireDeviceRead on " + this);
 		}
 		boolean transferred = false;
+		addReadLock();
 		if (!isAllocated()) {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("GPU : in acquireDeviceRead, data is not allocated, copying from host, on " + this + ", GPUContext="
@@ -578,7 +579,6 @@ public class GPUObject {
 			copyFromHostToDevice(opcode);
 			transferred = true;
 		}
-		addReadLock();
 		if (!isAllocated())
 			throw new DMLRuntimeException("Expected device data to be allocated");
 		return transferred;

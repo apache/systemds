@@ -27,6 +27,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -87,6 +88,7 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	private final long _maxNumBytes;
 	Random _rand = new Random();
 	boolean isInReadOnlyMode;
+	HashSet<String> persistedKeys = new HashSet<>();
 	
 	public static void main(String [] args) throws IOException {
 		org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
@@ -132,6 +134,8 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	}
 	
 	private ValueWrapper putImplm(String key, ValueWrapper value, long sizeInBytes) throws FileNotFoundException, IOException {
+		if(key == null)
+			throw new IOException("Null keys are not supported by PersistentLRUCache");
 		ValueWrapper prev = null;
 		if(containsKey(key))
 			prev = remove(key);
@@ -237,6 +241,10 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	}
 	
 	public double [] getAsDoubleArray(String key) throws FileNotFoundException, IOException {
+		if(key == null)
+			throw new IOException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
@@ -254,6 +262,10 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	}
 	
 	public float [] getAsFloatArray(String key) throws FileNotFoundException, IOException {
+		if(key == null)
+			throw new DMLRuntimeException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
@@ -271,6 +283,10 @@ public class PersistentLRUCache extends LinkedHashMap<String, ValueWrapper> {
 	}
 	
 	public MatrixBlock getAsMatrixBlock(String key) throws FileNotFoundException, IOException {
+		if(key == null)
+			throw new DMLRuntimeException("Null keys are not supported by PersistentLRUCache");
+		if(!containsKey(key))
+			throw new DMLRuntimeException("The map doesnot contains the given key:" + key);
 		ValueWrapper value = super.get(key);
 		if(!value.isAvailable()) {
 			// Fine-grained synchronization: only one read per key, but will allow parallel loading
@@ -360,6 +376,7 @@ class DataWrapper {
 						os.writeDouble(_dArr[i]);
 					}
 				}
+				_cache.persistedKeys.add(_key);
 				if(PersistentLRUCache.LOG.isDebugEnabled())
 					PersistentLRUCache.LOG.debug("Writing value (double[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 			}
@@ -370,6 +387,7 @@ class DataWrapper {
 						os.writeFloat(_fArr[i]);
 					}
 				}
+				_cache.persistedKeys.add(_key);
 				if(PersistentLRUCache.LOG.isDebugEnabled())
 					PersistentLRUCache.LOG.debug("Writing value (float[] of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 			}
@@ -378,6 +396,7 @@ class DataWrapper {
 					os.writeLong(_mb.getInMemorySize());
 					_mb.write(os);
 				}
+				_cache.persistedKeys.add(_key);
 				if(PersistentLRUCache.LOG.isDebugEnabled())
 					PersistentLRUCache.LOG.debug("Writing value (MatrixBlock of size " + getSize() + " bytes) for the key " + _key + " to disk" + debugSuffix);
 			}
@@ -385,16 +404,24 @@ class DataWrapper {
 				throw new DMLRuntimeException("Not implemented");
 			}
 			else {
-				if(PersistentLRUCache.LOG.isDebugEnabled())
+				if(_cache.persistedKeys.contains(_key) && PersistentLRUCache.LOG.isDebugEnabled())
 					PersistentLRUCache.LOG.debug("Skipping writing of the key " + _key + " to disk as the value is already written" + debugSuffix);
+				else
+					throw new DMLRuntimeException("None of the container objects (double[], float[], MatrixBlock, ...) is not null and the key has not yet been persisted");
 			}
 		}
 		_dArr = null; _fArr = null; _mb = null; _mo = null;
 	}
 	
+	boolean isAvailable() {
+		return _dArr != null || _fArr != null || _mb != null || _mo != null;
+	}
+	
 	static DataWrapper loadDoubleArr(String key, PersistentLRUCache cache) throws FileNotFoundException, IOException {
 		if(cache.isInReadOnlyMode)
-			throw new IOException("Read-only mode is only supported for MatrixBlock.");
+			throw new DMLRuntimeException("Read-only mode is only supported for MatrixBlock.");
+		if(!cache.persistedKeys.contains(key))
+			throw new DMLRuntimeException("Cannot load the key that has not been persisted: " + key);
 		if(PersistentLRUCache.LOG.isDebugEnabled())
 			PersistentLRUCache.LOG.debug("Loading double array the key " + key + " from the disk.");
 		double [] ret;
@@ -411,7 +438,9 @@ class DataWrapper {
 	
 	static DataWrapper loadFloatArr(String key, PersistentLRUCache cache) throws FileNotFoundException, IOException {
 		if(cache.isInReadOnlyMode)
-			throw new IOException("Read-only mode is only supported for MatrixBlock.");
+			throw new DMLRuntimeException("Read-only mode is only supported for MatrixBlock.");
+		if(!cache.persistedKeys.contains(key))
+			throw new DMLRuntimeException("Cannot load the key that has not been persisted: " + key);
 		if(PersistentLRUCache.LOG.isDebugEnabled())
 			PersistentLRUCache.LOG.debug("Loading float array the key " + key + " from the disk.");
 		float [] ret;
@@ -430,6 +459,8 @@ class DataWrapper {
 			PersistentLRUCache cache, long rlen, long clen, long nnz) throws FileNotFoundException, IOException {
 		if(PersistentLRUCache.LOG.isDebugEnabled())
 			PersistentLRUCache.LOG.debug("Loading matrix block array the key " + key + " from the disk.");
+		if(!cache.persistedKeys.contains(key))
+			throw new DMLRuntimeException("Cannot load the key that has not been persisted: " + key);
 		MatrixBlock ret = null;
 		if(cache.isInReadOnlyMode) {
 			// Read from the filesystem in the read-only mode assuming binary-blocked format.
@@ -453,6 +484,7 @@ class DataWrapper {
 	void remove() {
 		File file = new File(_cache.getFilePath(_key));
 		if(file.exists()) {
+			_cache.persistedKeys.remove(_key);
 			file.delete();
 		}
 	}
@@ -496,7 +528,8 @@ class ValueWrapper {
 		}
 	}
 	boolean isAvailable() {
-		return _ref.get() != null;
+		DataWrapper data = _ref.get();
+		return data != null && data.isAvailable();
 	}
 	DataWrapper get() {
 		return _ref.get();
@@ -515,4 +548,3 @@ class ValueWrapper {
 		}
 	}
 }
-

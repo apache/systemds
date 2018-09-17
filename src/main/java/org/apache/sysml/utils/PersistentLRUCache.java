@@ -462,7 +462,7 @@ class DataWrapper {
 			return _dArr.length*Double.BYTES;
 		else if(_fArr != null)
 			return _fArr.length*Float.BYTES;
-		else if(_fArr != null)
+		else if(_mb != null)
 			return _mb.getInMemorySize();
 		else
 			throw new DMLRuntimeException("Not implemented");

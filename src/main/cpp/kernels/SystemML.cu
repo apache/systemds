@@ -772,6 +772,47 @@ extern "C" __global__ void matrix_scalar_op_f(float *A, double scalar, float *C,
   matrix_scalar_op(A, (float)scalar, C, size, op, isLeftScalar);
 }
 
+
+/**
+ * Performs sparse-dense arithmetic operation between a matrix and a scalar.
+ * C = s op A or C = A op s (where A is the matrix, s is the scalar and op is
+ * the operation)
+ * @param cooRowPtrA    row pointers for input matrix allocated on GPU in coo format
+ * @param colPtrA       col index pointers for input matrix allocated on GPU
+ * @param valA          val array for input matrix allocated on GPU
+ * @param scalar        scalar input
+ * @param C             output matrix allocated on GPU
+ * @param nnz           number of non-zero elements in matrix A
+ * @param colsA         number of columns in matrix A
+ * @param op            number code of the arithmetic operation to perform
+ * @param isLeftScalar  whether the scalar is on the left side
+ */
+template <typename T>
+__device__ void sparse_dense_matrix_scalar_op(int* cooRowPtrA, int* colPtrA, T *valA, T scalar, T *C, int nnz, int colsA, int op,
+                                 int isLeftScalar) {
+  int index = blockIdx.x * blockDim.x + threadIdx.x;
+  if (index < nnz) {
+    T inputVal = valA[index];
+    int outIndex = cooRowPtrA[index]*colsA + colPtrA[index];
+    if (isLeftScalar) {
+      C[outIndex] = binaryOp(scalar, inputVal, op);
+    } else {
+      C[outIndex] = binaryOp(inputVal, scalar, op);
+    }
+  }
+  __syncthreads();
+}
+
+extern "C" __global__ void sparse_dense_matrix_scalar_op_d(int* cooRowPtrA, int* colPtrA, double *valA, double scalar, double *C, 
+	int nnz, int colsA, int op, int isLeftScalar) {
+  sparse_dense_matrix_scalar_op(cooRowPtrA, colPtrA, valA, scalar, C, nnz, colsA, op, isLeftScalar);
+}
+
+extern "C" __global__ void sparse_dense_matrix_scalar_op_f(int* cooRowPtrA, int* colPtrA, float *valA, double scalar, float *C, 
+	int nnz, int colsA, int op, int isLeftScalar) {
+  sparse_dense_matrix_scalar_op(cooRowPtrA, colPtrA, valA, (float) scalar, C, nnz, colsA, op, isLeftScalar);
+}
+
 /**
  * Sets all elements (fills) of a double array of given length with a given
  * scalar value

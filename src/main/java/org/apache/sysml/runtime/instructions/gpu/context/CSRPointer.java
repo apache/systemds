@@ -25,6 +25,8 @@ import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
 import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
 import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
+import static jcuda.jcusparse.JCusparse.cusparseXcsr2coo;
+
 import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.cudaMemcpy;
@@ -110,6 +112,24 @@ public class CSRPointer {
 		rowPtr = new Pointer();
 		colInd = new Pointer();
 		allocateMatDescrPointer();
+	}
+	
+	/**
+	 * Note: the user is expected to free the returned pointer.
+	 * 
+	 * @param handle cusparse handle
+	 * @param rows number of rows of the CSR pointer
+	 * @return integer array of nnz uncompressed row indices (with index base 0).
+	 */
+	public Pointer getCooRowPointer(cusparseHandle handle, int rows) {
+		if(nnz > 0) {
+			Pointer cooRowInd = gpuContext.allocate(null, getIntSizeOf(nnz));
+			cusparseXcsr2coo(handle, rowPtr, LibMatrixCUDA.toInt(nnz), rows, cooRowInd, CUSPARSE_INDEX_BASE_ZERO);
+			return cooRowInd;
+		}
+		else {
+			throw new DMLRuntimeException("csr2coo only support when nnz > 0, but instead found " +  nnz);
+		}
 	}
 
 	private static long getDataTypeSizeOf(long numElems) {

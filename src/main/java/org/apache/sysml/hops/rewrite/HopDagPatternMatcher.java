@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.AggUnaryOp;
 import org.apache.sysml.hops.Hop;

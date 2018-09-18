@@ -531,7 +531,7 @@ public class TemplateUtils
 	
 	public static void getAllParents(CNode node, Map<Long, Set<Long>> parents) {
 		for( CNode c : node.getInput() ) {
-			if( !parents.containsKey(c) )
+			if( !parents.containsKey(c.getID()) )
 				parents.put(c.getID(), new HashSet<>());
 			parents.get(c.getID()).add(node.getID());
 			getAllParents(c, parents);

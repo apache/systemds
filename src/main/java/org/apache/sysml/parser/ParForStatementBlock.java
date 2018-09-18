@@ -1849,6 +1849,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		public String toString() {
 			return _name;
 		}
+		@SuppressWarnings("unlikely-arg-type")
 		public static boolean contains(Collection<ResultVar> list, String varName) {
 			//helper function which is necessary because list.contains checks
 			//varName.equals(rvar) which always returns false because it not a string

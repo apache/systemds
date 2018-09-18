@@ -59,7 +59,6 @@ public class DenseBlockLDRB extends DenseBlock
 		reset(rlen, clen, blen, v);
 	}
 	
-	@SuppressWarnings("resource")
 	private void reset(int rlen, int clen, int blen, double v) {
 		long llen = (long) rlen * clen;
 		int numPart = (int)Math.ceil((double)rlen / blen);

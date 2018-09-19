@@ -55,7 +55,6 @@ import jcuda.Pointer;
  * 3. During SystemML initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysml.dataType.
  */
 public interface CudaSupportFunctions {
-	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;
 	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k, 
 			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, 
 			cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, 

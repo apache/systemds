@@ -45,6 +45,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 */
 	private HashMap<Long, Set<Pointer>> rmvarGPUPointers = new HashMap<Long, Set<Pointer>>();
 	
+	
 	/**
 	 * Get any pointer of the given size from rmvar-ed pointers (applicable if eager cudaFree is set to false)
 	 * 
@@ -85,10 +86,17 @@ public class GPULazyCudaFreeMemoryManager {
 			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
 	}
 	
+	/**
+	 * 
+	 * @return set of all pointers managed by this memory manager.
+	 */
 	public Set<Pointer> getAllPointers() {
 		return rmvarGPUPointers.values().stream().flatMap(ptrs -> ptrs.stream()).collect(Collectors.toSet());
 	}
 	
+	/**
+	 * Frees up all the cached rmvar-ed pointers
+	 */
 	public void clearAll() {
 		Set<Pointer> toFree = new HashSet<Pointer>();
 		for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
@@ -100,9 +108,16 @@ public class GPULazyCudaFreeMemoryManager {
 		}
 	}
 	
+	/**
+	 * Helper method to get the rmvar pointer that is greater than equal to min size
+	 * 
+	 * @param opcode instruction name
+	 * @param minSize size in bytes
+	 * @return the rmvar pointer that is greater than equal to min size
+	 * @throws DMLRuntimeException if error
+	 */
 	public Pointer getRmvarPointerMinSize(String opcode, long minSize) throws DMLRuntimeException {
-		Optional<Long> toClear = rmvarGPUPointers.entrySet().stream().filter(e -> e.getValue().size() > 0).map(e -> e.getKey())
-				.filter(size -> size >= minSize).min((s1, s2) -> s1 < s2 ? -1 : 1);
+		Optional<Long> toClear = getRmvarSize(minSize);
 		if(toClear.isPresent()) {
 			boolean measureTime = opcode != null && ConfigurationManager.isFinegrainedStatistics();
 			long t0 = measureTime ?  System.nanoTime() : 0;
@@ -118,6 +133,38 @@ public class GPULazyCudaFreeMemoryManager {
 		return null;
 	}
 	
+	/**
+	 * Helper method to check if the lazy memory manager contains a pointer of the given size
+	 * 
+	 * @param opcode instruction name
+	 * @param size size in bytes
+	 * @return true if the lazy memory manager contains a pointer of the given size
+	 */
+	boolean contains(String opcode, long size) {
+		return rmvarGPUPointers.containsKey(size);
+	}
+	
+	/**
+	 * Helper method to check if the lazy memory manager contains a pointer >= minSize
+	 * 
+	 * @param opcode instruction name
+	 * @param minSize size in bytes
+	 * @return true if the lazy memory manager contains a pointer >= minSize
+	 */
+	boolean containsRmvarPointerMinSize(String opcode, long minSize) {
+		return getRmvarSize(minSize).isPresent();
+	}
+	
+	/**
+	 * Helper method to get the size of rmvar pointer that is greater than equal to min size
+	 *  
+	 * @param minSize size in bytes
+	 * @return size of rmvar pointer that is >= minSize
+	 */
+	private Optional<Long> getRmvarSize(long minSize) {
+		return rmvarGPUPointers.entrySet().stream().filter(e -> e.getValue().size() > 0).map(e -> e.getKey())
+				.filter(size -> size >= minSize).min((s1, s2) -> s1 < s2 ? -1 : 1);
+	}
 	
 	/**
 	 * Remove any pointer in the given hashmap

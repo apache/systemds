@@ -241,6 +241,10 @@ public class GPUMemoryManager {
 	    }
 	}
 	
+	public boolean canAllocateWithoutEviction(String opcode, long size) {
+		return lazyCudaFreeMemoryManager.contains(opcode, size) || allocator.canAllocate(size) ||
+			lazyCudaFreeMemoryManager.containsRmvarPointerMinSize(opcode, size) ;
+	}
 	
 	/**
 	 * Allocate pointer of the given size in bytes.

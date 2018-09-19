@@ -74,8 +74,8 @@ public class ShadowBuffer {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		int numElems = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 		shadowPointer = new float[numElems];
-		EVICTION_SHADOW_BUFFER_CURR_BYTES += shadowPointer.length*Sizeof.FLOAT;
-		cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, numElems*LibMatrixCUDA.sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+		EVICTION_SHADOW_BUFFER_CURR_BYTES += getSizeOfFloat(shadowPointer.length);
+		cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, getSizeOfDataType(numElems), jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 		gpuObj.getGPUContext().cudaFreeHelper(instName, gpuObj.jcudaDenseMatrixPtr, true);
 		gpuObj.jcudaDenseMatrixPtr = null;
 		if (ConfigurationManager.isStatistics()) {
@@ -85,6 +85,14 @@ public class ShadowBuffer {
 			GPUStatistics.cudaFromDevToShadowCount.increment();
 			
 		}
+	}
+	
+	private long getSizeOfFloat(long numElems) {
+		return numElems*Sizeof.FLOAT;
+	}
+	
+	private long getSizeOfDataType(long numElems) {
+		return numElems*LibMatrixCUDA.sizeOfDataType;
 	}
 	
 	/**
@@ -117,7 +125,7 @@ public class ShadowBuffer {
 	 */
 	public void moveToDevice() {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
-		long numBytes = shadowPointer.length*LibMatrixCUDA.sizeOfDataType;
+		long numBytes = getSizeOfDataType(shadowPointer.length);
 		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes);
 		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, Pointer.to(shadowPointer), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 		clearShadowPointer();
@@ -137,7 +145,7 @@ public class ShadowBuffer {
 	 */
 	public boolean isEligibleForBuffering(boolean isEviction, boolean eagerDelete) {
 		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
-			int numBytes = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns())*Sizeof.FLOAT;
+			long numBytes = getSizeOfFloat(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
 			boolean ret = EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= EVICTION_SHADOW_BUFFER_MAX_BYTES;
 			if(!ret && !_warnedAboutShadowBuffer) {
 				LOG.warn("Shadow buffer is full, so using CP bufferpool instead. Consider increasing sysml.gpu.eviction.shadow.bufferSize.");
@@ -155,7 +163,7 @@ public class ShadowBuffer {
 	 */
 	public void clearShadowPointer() {
 		if(shadowPointer != null) {
-			EVICTION_SHADOW_BUFFER_CURR_BYTES -= shadowPointer.length*Sizeof.FLOAT;
+			EVICTION_SHADOW_BUFFER_CURR_BYTES -= getSizeOfFloat(shadowPointer.length);
 		}
 		shadowPointer = null;
 	}

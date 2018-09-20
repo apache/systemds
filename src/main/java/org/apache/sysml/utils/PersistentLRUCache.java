@@ -519,10 +519,6 @@ class ValueWrapper {
 	long _clen;
 	long _nnz;
 	
-	// This is only used in write-mode until the writing to the disk is completed.
-	// It also prevents the _softRef from being garbage collected while it is written.
-	volatile DataWrapper _strongRef; 
-	
 	ValueWrapper(DataWrapper data, boolean isInReadOnlyMode) {
 		_lock = new Object();
 		_isInReadOnlyMode = isInReadOnlyMode;
@@ -530,12 +526,10 @@ class ValueWrapper {
 		if(!_isInReadOnlyMode && !isDummyValue) {
 			// Aggressive write to disk when the cache is used in the write-mode.
 			// This avoids the need to depend on finalize to perform writing.
-			_strongRef = data;
 			Thread t = new Thread() {
 			    public void run() {
 			    	try {
-						_strongRef.write(true);
-						_strongRef = null; // Reset the strong reference after aggresive writing
+			    		data.write(true);
 					} catch (IOException e) {
 						throw new DMLRuntimeException("Error occured while aggressively writing the value to disk.", e);
 					}

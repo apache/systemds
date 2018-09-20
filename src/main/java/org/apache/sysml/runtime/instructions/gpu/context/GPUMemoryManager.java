@@ -191,7 +191,7 @@ public class GPUMemoryManager {
 				GPUStatistics.cudaAllocCount.increment();
 			}
 			if(printDebugMessage != null && (PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
-				LOG.info("Success: " + printDebugMessage + ":" + byteCountToDisplaySize(size));
+				LOG.info("Success: " + printDebugMessage + ":" + GPUStatistics.byteCountToDisplaySize(size));
 			}
 			return A;
 		} catch(jcuda.CudaException e) {
@@ -203,7 +203,7 @@ public class GPUMemoryManager {
 				GPUStatistics.cudaAllocCount.increment();
 			}
 			if(printDebugMessage != null && (PRINT_GPU_MEMORY_INFO || LOG.isTraceEnabled()) )  {
-				LOG.info("Failed: " + printDebugMessage + ":" + byteCountToDisplaySize(size));
+				LOG.info("Failed: " + printDebugMessage + ":" + GPUStatistics.byteCountToDisplaySize(size));
 				LOG.info("GPU Memory info " + printDebugMessage + ":" + toString());
 			}
 			return null;
@@ -224,27 +224,14 @@ public class GPUMemoryManager {
 			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
 	}
 	
-	/**
-	 * Pretty printing utility to print bytes
-	 * 
-	 * @param numBytes number of bytes
-	 * @return a human-readable display value
-	 */
-	private String byteCountToDisplaySize(long numBytes) {
-		// return org.apache.commons.io.FileUtils.byteCountToDisplaySize(bytes); // performs rounding
-	    if (numBytes < 1024) { 
-	    	return numBytes + " bytes";
-	    }
-	    else {
-		    int exp = (int) (Math.log(numBytes) / 6.931471805599453);
-		    return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
-	    }
-	}
 	
 	public boolean canAllocateWithoutEviction(String opcode, long size) {
 		return lazyCudaFreeMemoryManager.contains(opcode, size) || allocator.canAllocate(size) ||
 			lazyCudaFreeMemoryManager.containsRmvarPointerMinSize(opcode, size) ;
 	}
+	
+	long peakSize = 0;
+	long currentSize = 0;
 	
 	/**
 	 * Allocate pointer of the given size in bytes.
@@ -255,10 +242,17 @@ public class GPUMemoryManager {
 	 */
 	public Pointer malloc(String opcode, long size) {
 		if(size <= 0) {
-			throw new DMLRuntimeException("Cannot allocate memory of size " + byteCountToDisplaySize(size));
+			throw new DMLRuntimeException("Cannot allocate memory of size " + GPUStatistics.byteCountToDisplaySize(size));
 		}
 		if(DEBUG_MEMORY_LEAK) {
 			LOG.info("GPU Memory info during malloc:" + toString());
+		}
+		
+		if(ConfigurationManager.isStatistics()) {
+			GPUStatistics.cudaAllocAggSize.add(size);
+			currentSize += size;
+			peakSize = Math.max(currentSize, peakSize);
+			GPUStatistics.cudaAllocPeakSize.set(peakSize);
 		}
 		
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
@@ -358,7 +352,7 @@ public class GPUMemoryManager {
 		}
 		
 		if(A == null) {
-			throw new DMLRuntimeException("There is not enough memory on device for this matrix, requested = " + byteCountToDisplaySize(size) + ". \n "
+			throw new DMLRuntimeException("There is not enough memory on device for this matrix, requested = " + GPUStatistics.byteCountToDisplaySize(size) + ". \n "
 					+ toString());
 		}
 		
@@ -377,6 +371,10 @@ public class GPUMemoryManager {
 		boolean eagerDelete = true;
 		if(gpuObj.isDirty()) {
 			// Eviction
+			if(ConfigurationManager.isStatistics()) {
+				long size = gpuObj.getSizeOnDevice();
+				GPUStatistics.cudaEvictAggSize.add(size);
+			}
 			gpuObj.copyFromDeviceToHost(opcode, true, eagerDelete);
 		}
 		else {
@@ -416,7 +414,7 @@ public class GPUMemoryManager {
 		if(allPointers.containsKey(toFree)) {
 			long size = allPointers.get(toFree).getSizeInBytes();
 			if(LOG.isTraceEnabled()) {
-				LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
+				LOG.trace("Free-ing up the pointer of size " +  GPUStatistics.byteCountToDisplaySize(size));
 			}
 			allPointers.remove(toFree);
 			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
@@ -441,6 +439,10 @@ public class GPUMemoryManager {
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
+		long size = allPointers.get(toFree).getSizeInBytes();
+		if(ConfigurationManager.isStatistics()) {
+			currentSize -= size;
+		}
 		if (eager) {
 			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			guardedCudaFree(toFree);
@@ -451,7 +453,6 @@ public class GPUMemoryManager {
 				LOG.info("GPU memory info before failure:" + toString());
 				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
 			}
-			long size = allPointers.get(toFree).getSizeInBytes();
 			lazyCudaFreeMemoryManager.add(size, toFree);
 		}
 	}
@@ -604,24 +605,24 @@ public class GPUMemoryManager {
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "", 
 				"Num Objects", "Num Pointers", "Size"));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked Dirty GPU objects", 
-				numUnlockedDirtyGPUObjects, numUnlockedDirtyPointers, byteCountToDisplaySize(sizeOfUnlockedDirtyGPUObjects)));
+				numUnlockedDirtyGPUObjects, numUnlockedDirtyPointers, GPUStatistics.byteCountToDisplaySize(sizeOfUnlockedDirtyGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked NonDirty GPU objects", 
-				numUnlockedNonDirtyGPUObjects, numUnlockedNonDirtyPointers, byteCountToDisplaySize(sizeOfUnlockedNonDirtyGPUObjects)));
+				numUnlockedNonDirtyGPUObjects, numUnlockedNonDirtyPointers, GPUStatistics.byteCountToDisplaySize(sizeOfUnlockedNonDirtyGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Locked GPU objects", 
-				numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+				numLockedGPUObjects, numLockedPointers, GPUStatistics.byteCountToDisplaySize(sizeOfLockedGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Cached rmvar-ed pointers", 
-				"-", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
+				"-", lazyCudaFreeMemoryManager.getNumPointers(), GPUStatistics.byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Non-matrix/non-cached pointers", 
-				"-", potentiallyLeakyPointers.size(), byteCountToDisplaySize(totalSizePotentiallyLeakyPointers)));
+				"-", potentiallyLeakyPointers.size(), GPUStatistics.byteCountToDisplaySize(totalSizePotentiallyLeakyPointers)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "All pointers", 
-				"-", allPointers.size(), byteCountToDisplaySize(totalMemoryAllocated)));
+				"-", allPointers.size(), GPUStatistics.byteCountToDisplaySize(totalMemoryAllocated)));
 		long free[] = { 0 };
 		long total[] = { 0 };
 		cudaMemGetInfo(free, total);
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Free mem (from cudaMemGetInfo)", 
-				"-", "-", byteCountToDisplaySize(free[0])));
+				"-", "-", GPUStatistics.byteCountToDisplaySize(free[0])));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Total mem (from cudaMemGetInfo)", 
-				"-", "-", byteCountToDisplaySize(total[0])));
+				"-", "-", GPUStatistics.byteCountToDisplaySize(total[0])));
 		ret.append("====================================================\n");
 		return ret.toString();
 	}

@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
 import org.apache.sysml.conf.ConfigurationManager;
@@ -78,6 +79,10 @@ public class GPUStatistics {
 	public static LongAdder cudaAllocSuccessCount = new LongAdder();
 	public static LongAdder cudaAllocFailedCount = new LongAdder();
 	public static LongAdder cudaAllocReuseCount = new LongAdder();
+	
+	public static LongAdder cudaAllocAggSize = new LongAdder();
+	public static AtomicLong cudaAllocPeakSize = new AtomicLong();
+	public static LongAdder cudaEvictAggSize = new LongAdder();
 
 	// Per instruction miscellaneous timers.
 	// Used to record events in a CP Heavy Hitter instruction and
@@ -116,6 +121,9 @@ public class GPUStatistics {
 		cudaDouble2FloatCount.reset();
 		cudaForcedClearLazyFreedEvictTime.reset();
 		cudaForcedClearUnpinnedEvictTime.reset();
+		cudaAllocAggSize.reset();
+		cudaAllocPeakSize.set(0);
+		cudaEvictAggSize.reset();
 		cudaAllocCount.reset();
 		cudaDeAllocCount.reset();
 		cudaToDevCount.reset();
@@ -218,6 +226,23 @@ public class GPUStatistics {
 		}
 		return sb.toString();
 	}
+	
+	/**
+	 * Pretty printing utility to print bytes
+	 * 
+	 * @param numBytes number of bytes
+	 * @return a human-readable display value
+	 */
+	public static String byteCountToDisplaySize(long numBytes) {
+		// return org.apache.commons.io.FileUtils.byteCountToDisplaySize(bytes); // performs rounding
+	    if (numBytes < 1024) { 
+	    	return numBytes + " bytes";
+	    }
+	    else {
+		    int exp = (int) (Math.log(numBytes) / 6.931471805599453);
+		    return String.format("%.3f %sB", ((double)numBytes) / Math.pow(1024, exp), "KMGTP".charAt(exp-1));
+	    }
+	}
 
 	/**
 	 * Used to print out cuda timers & counters
@@ -242,6 +267,10 @@ public class GPUStatistics {
 				+ cudaAllocReuseCount.longValue() +") / "
 				+ cudaDeAllocCount.longValue() + " / "
 				+ cudaMemSet0Count.longValue() + ".\n");
+		sb.append("GPU mem size (alloc (peak) / evict):\t"
+				+ byteCountToDisplaySize(cudaAllocAggSize.longValue()) + "("
+				+ byteCountToDisplaySize(cudaAllocPeakSize.longValue()) + ") / "
+				+ byteCountToDisplaySize(cudaEvictAggSize.longValue()) + ".\n");
 		sb.append("GPU mem tx time  (toDev(d2f/s2d) / fromDev(f2d/s2h) / evict(d2s/size)):\t"
 				+ String.format("%.3f", cudaToDevTime.longValue()*1e-9) + "("
 				+ String.format("%.3f", cudaDouble2FloatTime.longValue()*1e-9)+ "/"

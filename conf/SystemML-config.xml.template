@@ -105,9 +105,11 @@
    <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
    <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
    
-   <!-- Advanced optimization: fraction of driver memory to use for GPU shadow buffer. This optimization is ignored for double precision. 
-   By default, it is disabled (hence set to 0.0). If you intend to train network larger than GPU memory size, consider using single precision and setting this to 0.1 -->
-   <sysml.gpu.eviction.shadow.bufferSize>0.0</sysml.gpu.eviction.shadow.bufferSize>
+   <!-- Advanced optimization: maximum fraction of driver memory to use for GPU shadow buffer. 
+   Shadow buffer is cleared eagerly on garbage collection to avoid OOM and is backed by org.apache.sysml.utils.PersistentLRUCache.
+   Setting this to zero disables shadow buffering. If you intend to train network larger than GPU memory size, 
+   consider using large driver memory and setting this to a value greater than 0. -->
+   <sysml.gpu.eviction.shadow.bufferSize>0.5</sysml.gpu.eviction.shadow.bufferSize>
    
    <!-- Fraction of available GPU memory to use. This is similar to TensorFlow's per_process_gpu_memory_fraction configuration property. (default: 0.9) -->
    <sysml.gpu.memory.util.factor>0.9</sysml.gpu.memory.util.factor>

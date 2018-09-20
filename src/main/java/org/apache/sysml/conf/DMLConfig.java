@@ -138,7 +138,7 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
-		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
+		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.5" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
 		_defaultVals.put(GPU_MEMORY_ALLOCATOR,	 "cuda");

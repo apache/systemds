@@ -24,6 +24,7 @@ import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -110,7 +111,11 @@ public class GPUObject {
 	 */
 	public Pointer getDensePointer() {
 		if(jcudaDenseMatrixPtr == null && shadowBuffer.isBuffered() && getJcudaSparseMatrixPtr() == null) {
-			shadowBuffer.moveToDevice();
+			try {
+				shadowBuffer.moveToDevice();
+			} catch (IOException e) {
+				throw new DMLRuntimeException("Error moving the data from shadow buffer to the device", e);
+			}
 		}
 		return jcudaDenseMatrixPtr;
 	}
@@ -934,13 +939,21 @@ public class GPUObject {
 			else {
 				// If already copied to shadow buffer as part of previous eviction and this is not an eviction (i.e. bufferpool call for subsequent CP/Spark instruction),
 				// then copy from shadow buffer to MatrixObject.
-				shadowBuffer.moveToHost();
+				try {
+					shadowBuffer.moveToHost();
+				} catch (IOException e) {
+					throw new DMLRuntimeException("Error moving the data from shadow buffer to the host memory", e);
+				}
 				return;
 			}
 		}
 		else if(shadowBuffer.isEligibleForBuffering(isEviction, eagerDelete)) {
 			// Perform shadow buffering if (1) single precision, (2) during eviction, (3) for dense matrices, and (4) if the given matrix can fit into the shadow buffer. 
-			shadowBuffer.moveFromDevice(instName);
+			try {
+				shadowBuffer.moveFromDevice(instName);
+			} catch (IOException e) {
+				throw new DMLRuntimeException("Error moving the data from the device to the shadow buffer", e);
+			}
 			return;
 		}
 		else if (isDensePointerNull() && getJcudaSparseMatrixPtr() == null) {

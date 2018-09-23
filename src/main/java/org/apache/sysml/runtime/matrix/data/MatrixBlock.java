@@ -1564,7 +1564,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//no need to clear for awareDestNZ since overwritten 
 		allocateDenseBlock(false);
 		
-		if( awareDestNZ )
+		if( awareDestNZ && (nonZeros!=getLength() || src.nonZeros!=src.getLength()) )
 			nonZeros = nonZeros - recomputeNonZeros(rl, ru, cl, cu) + src.nonZeros;
 		
 		//copy values

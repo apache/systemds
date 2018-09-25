@@ -32,8 +32,8 @@ public final class ScalarAppendCPInstruction extends AppendCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//get input strings (vars or literals)
-		ScalarObject so1 = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
-		ScalarObject so2 = ec.getScalarInput( input2.getName(), input2.getValueType(), input2.isLiteral() );
+		ScalarObject so1 = ec.getScalarInput(input1);
+		ScalarObject so2 = ec.getScalarInput(input2);
 		//pre-checks
 		String val1 = so1.getStringValue();
 		String val2 = so2.getStringValue();

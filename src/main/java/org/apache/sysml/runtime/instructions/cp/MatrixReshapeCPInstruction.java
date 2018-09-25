@@ -60,8 +60,8 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		int rows = (int)ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue(); //save cast
-		int cols = (int)ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue(); //save cast
+		int rows = (int)ec.getScalarInput(_opRows).getLongValue(); //save cast
+		int cols = (int)ec.getScalarInput(_opCols).getLongValue(); //save cast
 		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 
 		//execute operations 

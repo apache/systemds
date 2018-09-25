@@ -101,6 +101,9 @@ public class VariableCPInstruction extends CPInstruction {
 	
 	private static final IDSequence _uniqueVarID = new IDSequence(true);
 	private static final int CREATEVAR_FILE_NAME_VAR_POS=3;
+	private static ThreadLocal<StringBuilder> _varNameBuilders = new ThreadLocal<StringBuilder>() {
+		@Override protected StringBuilder initialValue() { return new StringBuilder(64); }
+	};
 	
 	private final VariableOperationCode opcode;
 	private final List<CPOperand> inputs;
@@ -475,8 +478,9 @@ public class VariableCPInstruction extends CPInstruction {
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
 				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = new StringBuilder(fname.length()+16).append(fname)
-						.append('_').append(_uniqueVarID.getNextID()).toString();
+					StringBuilder sb = _varNameBuilders.get();
+					fname = sb.append(fname).append('_').append(_uniqueVarID.getNextID()).toString();
+					sb.setLength(0); //reset for next use
 				}
 				MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
 				//clone meta data because it is updated on copy-on-write, otherwise there
@@ -591,8 +595,7 @@ public class VariableCPInstruction extends CPInstruction {
 				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
 			else if( getInput1().getDataType().isScalar() ) {
-				ScalarObject scalarInput = ec.getScalarInput(
-					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
+				ScalarObject scalarInput = ec.getScalarInput(getInput1());
 				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
 				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
@@ -924,8 +927,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 */
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) {
 		try {
-			ScalarObject scalar = ec.getScalarInput(getInput1().getName(), 
-				getInput1().getValueType(), getInput1().isLiteral());
+			ScalarObject scalar = ec.getScalarInput(getInput1());
 			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
 			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
 

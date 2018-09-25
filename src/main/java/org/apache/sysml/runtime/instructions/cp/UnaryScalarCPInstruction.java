@@ -39,7 +39,7 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 		ScalarObject so = null;
 		
 		//get the scalar input 
-		so = ec.getScalarInput( input1.getName(), input1.getValueType(), input1.isLiteral() );
+		so = ec.getScalarInput(input1);
 		
 		//core execution
 		if ( opcode.equalsIgnoreCase("print") ) {

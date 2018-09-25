@@ -130,9 +130,9 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		if( r_op.fn instanceof SortIndex ) {
 			//additional attributes for sort
 			int[] cols = _col.getDataType().isMatrix() ? DataConverter.convertToIntVector(ec.getMatrixInput(_col.getName())) :
-				new int[]{(int)ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue()};
-			boolean desc = ec.getScalarInput(_desc.getName(), _desc.getValueType(), _desc.isLiteral()).getBooleanValue();
-			boolean ixret = ec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
+				new int[]{(int)ec.getScalarInput(_col).getLongValue()};
+			boolean desc = ec.getScalarInput(_desc).getBooleanValue();
+			boolean ixret = ec.getScalarInput(_ixret).getBooleanValue();
 			r_op = r_op.setFn(new SortIndex(cols, desc, ixret));
 		}
 		

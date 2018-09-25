@@ -48,7 +48,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 		if( "printf".equals(getOpcode()) ) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
-				ScalarObject so = ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral());
+				ScalarObject so = ec.getScalarInput(input);
 				scalarObjects.add(so);
 			}
 

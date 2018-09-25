@@ -34,8 +34,8 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		ScalarObject so1 = ec.getScalarInput(input1.getName(), input1.getValueType(), input1.isLiteral());
-		ScalarObject so2 = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral() );
+		ScalarObject so1 = ec.getScalarInput(input1);
+		ScalarObject so2 = ec.getScalarInput(input2);
 		
 		String opcode = getOpcode();
 		BinaryOperator dop = (BinaryOperator) _optr;

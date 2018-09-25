@@ -69,7 +69,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 			else { //FRAME<-SCALAR 
 				if(!ixrange.isScalar())
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
-				ScalarObject scalar = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+				ScalarObject scalar = ec.getScalarInput(input2);
 				out = new FrameBlock(lin);
 				out.set((int)ixrange.rowStart, (int)ixrange.colStart, scalar.getStringValue());
 			}

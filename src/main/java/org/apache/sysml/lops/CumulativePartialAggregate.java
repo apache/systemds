@@ -27,7 +27,6 @@ import org.apache.sysml.parser.Expression.*;
 
 public class CumulativePartialAggregate extends Lop 
 {
-	
 	private OperationTypes _op;
 	
 	public CumulativePartialAggregate(Lop input, DataType dt, ValueType vt, OperationTypes op, ExecType et) {

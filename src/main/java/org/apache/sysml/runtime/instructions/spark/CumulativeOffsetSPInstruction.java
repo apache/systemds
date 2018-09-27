@@ -25,6 +25,7 @@ import java.util.Iterator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.PairFunction;
 
 import scala.Tuple2;
 
@@ -36,19 +37,22 @@ import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
+import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private BinaryOperator _bop = null;
 	private UnaryOperator _uop = null;
-	private double _initValue = 0;
+	private final double _initValue ;
+	private final boolean _broadcast;
 
-	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, String opcode, String istr) {
+	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, boolean broadcast, String opcode, String istr) {
 		super(SPType.CumsumOffset, op, in1, in2, out, opcode, istr);
 
 		if ("bcumoffk+".equals(opcode)) {
@@ -73,17 +77,19 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		}
 
 		_initValue = init;
+		_broadcast = broadcast;
 	}
 
 	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
-		InstructionUtils.checkNumFields ( parts, 4 );
+		InstructionUtils.checkNumFields(parts, 5);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 		double init = Double.parseDouble(parts[4]);
-		return new CumulativeOffsetSPInstruction(null, in1, in2, out, init, opcode, str);
+		boolean broadcast = Boolean.parseBoolean(parts[5]);
+		return new CumulativeOffsetSPInstruction(null, in1, in2, out, init, broadcast, opcode, str);
 	}
 
 	@Override
@@ -94,16 +100,25 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		long rlen = mc2.getRows();
 		int brlen = mc2.getRowsPerBlock();
 		
-		//get inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inAgg = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		//get and join inputs
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>> joined = null;
 		
-		//prepare aggregates (cumsplit of offsets)
-		inAgg = inAgg.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, brlen));
+		if( _broadcast ) {
+			//broadcast offsets and broadcast join with data
+			PartitionedBroadcast<MatrixBlock> inAgg = sec.getBroadcastForVariable(input2.getName());
+			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, brlen));
+		}
+		else {
+			//prepare aggregates (cumsplit of offsets) and repartition join with data
+			joined = inData.join(sec
+				.getBinaryBlockRDDHandleForVariable(input2.getName())
+				.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, brlen)));
+		}
 		
 		//execute cumulative offset (apply cumulative op w/ offsets)
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = inData
-			.join( inAgg ).mapValues(new RDDCumOffsetFunction(_uop, _bop));
+		JavaPairRDD<MatrixIndexes,MatrixBlock> out = joined
+			.mapValues(new RDDCumOffsetFunction(_uop, _bop));
 		
 		//put output handle in symbol table
 		if( _bop.fn instanceof PlusMultiply )
@@ -111,9 +126,9 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 				.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		else //general case
 			updateUnaryOutputMatrixCharacteristics(sec);
-		sec.setRDDHandleForVariable(output.getName(), out);	
+		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineageRDD(output.getName(), input2.getName());
+		sec.addLineage(output.getName(), input2.getName(), _broadcast);
 	}
 
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
@@ -166,6 +181,36 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 				}
 			
 			return ret.iterator();
+		}
+	}
+	
+	private static class RDDCumSplitLookupFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>> 
+	{
+		private static final long serialVersionUID = -2785629043886477479L;
+		
+		private final PartitionedBroadcast<MatrixBlock> _pbc;
+		private final double _initValue;
+		private final int _brlen;
+		
+		public RDDCumSplitLookupFunction(PartitionedBroadcast<MatrixBlock> pbc, double initValue, long rlen, int brlen) {
+			_pbc = pbc;
+			_initValue = initValue;
+			_brlen = brlen;
+		}
+		
+		@Override
+		public Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> arg0) throws Exception {
+			MatrixIndexes ixIn = arg0._1();
+			MatrixBlock blkIn = arg0._2();
+			
+			//compute block and row indexes
+			long brix = UtilFunctions.computeBlockIndex(ixIn.getRowIndex()-1, _brlen);
+			int rix = UtilFunctions.computeCellInBlock(ixIn.getRowIndex()-1, _brlen);
+			
+			//lookup offset row and return joined output
+			MatrixBlock off = (ixIn.getRowIndex() == 1) ? new MatrixBlock(1, blkIn.getNumColumns(), _initValue) :
+				_pbc.getBlock((int)brix, (int)ixIn.getColumnIndex()).slice(rix, rix);
+			return new Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>(ixIn, new Tuple2<>(blkIn,off));
 		}
 	}
 

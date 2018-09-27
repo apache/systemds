@@ -27,9 +27,11 @@ import org.apache.sysml.parser.Expression.*;
 
 public class CumulativeOffsetBinary extends Lop 
 {
+	private static final boolean ALLOW_BROADCAST = true;
 	
 	private OperationTypes _op;
 	private double _initValue = 0;
+	private boolean _broadcast = false;
 	
 	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, OperationTypes op, ExecType et) 
 	{
@@ -40,7 +42,7 @@ public class CumulativeOffsetBinary extends Lop
 		init(data, offsets, dt, vt, et);
 	}
 	
-	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, OperationTypes op, ExecType et)
+	public CumulativeOffsetBinary(Lop data, Lop offsets, DataType dt, ValueType vt, double init, boolean broadcast, OperationTypes op, ExecType et)
 	{
 		super(Lop.Type.CumulativeOffsetBinary, dt, vt);
 		checkSupportedOperations(op);
@@ -48,6 +50,7 @@ public class CumulativeOffsetBinary extends Lop
 		
 		//in case of Spark, CumulativeOffset includes CumulativeSplit and hence needs the init value
 		_initValue = init;
+		_broadcast = ALLOW_BROADCAST && broadcast;
 		
 		init(data, offsets, dt, vt, et);
 	}
@@ -129,7 +132,9 @@ public class CumulativeOffsetBinary extends Lop
 		
 		if( getExecType() == ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( _initValue );	
+			sb.append( _initValue );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _broadcast );
 		}
 		
 		return sb.toString();

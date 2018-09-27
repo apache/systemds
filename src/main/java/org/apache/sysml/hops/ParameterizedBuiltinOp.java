@@ -53,7 +53,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 public class ParameterizedBuiltinOp extends MultiThreadedHop
 {
 	public static boolean FORCE_DIST_RM_EMPTY = false;
-
+	
 	//operator type
 	private ParamBuiltinOp _op;
 

@@ -474,7 +474,7 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
-			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
 			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
@@ -486,8 +486,11 @@ public class UnaryOp extends MultiThreadedHop
 			//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
 			//the subsequent offset binary apply of split aggregates against the original data)
 			double initValue = getCumulativeInitValue();
+			boolean broadcast = OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
+				TEMP.getOutputParameters().getNumRows(), TEMP.getOutputParameters().getNumCols()));
+			
 			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP, 
-					DataType.MATRIX, ValueType.DOUBLE, initValue, aggtype, ExecType.SPARK);
+					DataType.MATRIX, ValueType.DOUBLE, initValue, broadcast, aggtype, ExecType.SPARK);
 			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
 			setLineNumbers(binary);
 			TEMP = binary;

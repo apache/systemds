@@ -32,6 +32,7 @@ import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
+import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
@@ -59,9 +60,11 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		MatrixCharacteristics mcOut = new MatrixCharacteristics(mc);
 		long rlen = mc.getRows();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
+		mcOut.setRows((long)(Math.ceil((double)rlen/brlen)));
 		
 		//get input
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
@@ -69,12 +72,17 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		//execute unary aggregate (w/ implicit drop correction)
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-				in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen));
-		out = RDDAggregateUtils.mergeByKey(out, false);
+			in.mapToPair(new RDDCumAggFunction(auop, rlen, brlen, bclen));
+		//merge partial aggregates, adjusting for correct number of partitions
+		//as size can significant shrink (1K) but also grow (sparse-dense)
+		int numParts = SparkUtils.getNumPreferredPartitions(mcOut);
+		int minPar = (int)Math.min(SparkExecutionContext.getDefaultParallelism(true), mcOut.getNumBlocks());
+		out = RDDAggregateUtils.mergeByKey(out, Math.max(numParts, minPar), false);
 		
 		//put output handle in symbol table
-		sec.setRDDHandleForVariable(output.getName(), out);	
+		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.getMatrixCharacteristics(output.getName()).set(mcOut);
 	}
 
 	private static class RDDCumAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

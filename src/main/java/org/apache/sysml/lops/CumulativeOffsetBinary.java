@@ -27,8 +27,6 @@ import org.apache.sysml.parser.Expression.*;
 
 public class CumulativeOffsetBinary extends Lop 
 {
-	private static final boolean ALLOW_BROADCAST = true;
-	
 	private OperationTypes _op;
 	private double _initValue = 0;
 	private boolean _broadcast = false;
@@ -50,7 +48,7 @@ public class CumulativeOffsetBinary extends Lop
 		
 		//in case of Spark, CumulativeOffset includes CumulativeSplit and hence needs the init value
 		_initValue = init;
-		_broadcast = ALLOW_BROADCAST && broadcast;
+		_broadcast = broadcast;
 		
 		init(data, offsets, dt, vt, et);
 	}

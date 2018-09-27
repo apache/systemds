@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.Aggregate;
+import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
 import org.apache.sysml.lops.CombineUnary;
 import org.apache.sysml.lops.CumulativeOffsetBinary;
@@ -49,6 +50,9 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 
 public class UnaryOp extends MultiThreadedHop
 {
+	private static final boolean ALLOW_CUMAGG_BROADCAST = true;
+	private static final boolean ALLOW_CUMAGG_CACHING = false;
+	
 	private OpOp1 _op = null;
 	
 	private UnaryOp() {
@@ -439,6 +443,7 @@ public class UnaryOp extends MultiThreadedHop
 		return TEMP;
 	}
 
+	@SuppressWarnings("unused")
 	private Lop constructLopsSparkCumulativeUnary() 
 	{
 		Hop input = getInput().get(0);
@@ -458,6 +463,13 @@ public class UnaryOp extends MultiThreadedHop
 		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
 			> OptimizerUtils.getLocalMemBudget() && TEMP.getOutputParameters().getNumRows()>1) || force )
 		{
+			//caching within multi-level cascades
+			if( ALLOW_CUMAGG_CACHING && level > 0 ) {
+				Lop oldTEMP = TEMP;
+				TEMP = new Checkpoint(oldTEMP, getDataType(), getValueType(), Checkpoint.getDefaultStorageLevelString());
+				TEMP.getOutputParameters().setDimensions(oldTEMP.getOutputParameters());
+				setLineNumbers(TEMP);
+			}
 			DATA.add(TEMP);
 	
 			//preaggregation per block (for spark, the CumulativePartialAggregate subsumes both
@@ -486,7 +498,8 @@ public class UnaryOp extends MultiThreadedHop
 			//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
 			//the subsequent offset binary apply of split aggregates against the original data)
 			double initValue = getCumulativeInitValue();
-			boolean broadcast = OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
+			boolean broadcast = ALLOW_CUMAGG_BROADCAST
+				&& OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
 				TEMP.getOutputParameters().getNumRows(), TEMP.getOutputParameters().getNumCols()));
 			
 			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP, 

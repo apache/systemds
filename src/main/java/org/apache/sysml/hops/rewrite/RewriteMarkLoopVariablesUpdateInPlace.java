@@ -27,6 +27,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
+import org.apache.sysml.hops.Hop.DataOpTypes;
 import org.apache.sysml.hops.Hop.OpOp1;
 import org.apache.sysml.hops.LeftIndexingOp;
 import org.apache.sysml.hops.UnaryOp;
@@ -117,8 +118,9 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 			}
 			else {
 				if( sb.getHops() != null )
-					for( Hop hop : sb.getHops() ) 
-						ret &= isApplicableForUpdateInPlace(hop, varname);
+					if( !isApplicableForUpdateInPlace(sb.getHops(), varname) )
+						for( Hop hop : sb.getHops() ) 
+							ret &= isApplicableForUpdateInPlace(hop, varname);
 			}
 			
 			//early abort if not applicable
@@ -128,18 +130,14 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		return ret;
 	}
 	
-	private static boolean isApplicableForUpdateInPlace( Hop hop, String varname )
-	{
+	private static boolean isApplicableForUpdateInPlace(Hop hop, String varname) {
+		//NOTE: single-root-level validity check
 		if( !hop.getName().equals(varname) )
 			return true;
 	
 		//valid if read/updated by leftindexing 
 		//CP exec type not evaluated here as no lops generated yet 
-		boolean validLix = hop instanceof DataOp 
-			&& hop.isMatrix() && hop.getInput().get(0).isMatrix()
-			&& hop.getInput().get(0) instanceof LeftIndexingOp
-			&& hop.getInput().get(0).getInput().get(0) instanceof DataOp
-			&& hop.getInput().get(0).getInput().get(0).getName().equals(varname);
+		boolean validLix = probeLixRoot(hop, varname);
 		
 		//valid if only safe consumers of left indexing input
 		if( validLix ) {
@@ -151,6 +149,48 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 		}
 		
 		return validLix;
+	}
+	
+	private static boolean isApplicableForUpdateInPlace(ArrayList<Hop> hops, String varname) {
+		//NOTE: additional DAG-level validity check
+		
+		// check single LIX update which is direct root-child to varname assignment
+		Hop bLix = null;
+		for( Hop hop : hops ) {
+			if( probeLixRoot(hop, varname) ) {
+				if( bLix != null ) return false; //invalid
+				bLix = hop.getInput().get(0);
+			}
+		}
+		
+		// check all other roots independent of varname
+		boolean valid = true;
+		Hop.resetVisitStatus(hops);
+		for( Hop hop : hops )
+			if( hop.getInput().get(0) != bLix )
+				valid &= rProbeOtherRoot(hop, varname);
+		Hop.resetVisitStatus(hops);
+		
+		return valid;
+	}
+	
+	private static boolean probeLixRoot(Hop root, String varname) {
+		return root instanceof DataOp 
+			&& root.isMatrix() && root.getInput().get(0).isMatrix()
+			&& root.getInput().get(0) instanceof LeftIndexingOp
+			&& root.getInput().get(0).getInput().get(0) instanceof DataOp
+			&& root.getInput().get(0).getInput().get(0).getName().equals(varname);
+	}
+	
+	private static boolean rProbeOtherRoot(Hop hop, String varname) {
+		if( hop.isVisited() )
+			return false;
+		boolean valid = !(hop instanceof LeftIndexingOp)
+			&& !(HopRewriteUtils.isData(hop, DataOpTypes.TRANSIENTREAD) && hop.getName().equals(varname));
+		for( Hop c : hop.getInput() )
+			valid &= rProbeOtherRoot(c, varname);
+		hop.setVisited();
+		return valid;
 	}
 	
 	@Override

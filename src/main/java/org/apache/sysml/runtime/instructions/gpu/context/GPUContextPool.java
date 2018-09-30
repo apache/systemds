@@ -204,7 +204,7 @@ public class GPUContextPool {
 	}
 
 	/**
-	 * Ggets an initialized list of GPUContexts
+	 * Gets an initialized list of GPUContexts
 	 *
 	 * @return null if no GPUContexts in pool, otherwise a valid list of GPUContext
 	 */

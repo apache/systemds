@@ -155,7 +155,7 @@ public class ConfigurationManager
 	/**
 	 * Sets the current thread-local dml configuration to the given options.
 	 * 
-	 * @param conf the configuration
+	 * @param opts the configuration
 	 */
 	public static void setLocalOptions( DMLOptions opts ) {
 		_dmlOptions = opts;
@@ -275,6 +275,7 @@ public class ConfigurationManager
 	// _dmlconf.getBooleanValue(DMLConfig.EXTRA_FINEGRAINED_STATS);
 	private static boolean STATISTICS = false;
 	private static boolean FINEGRAINED_STATISTICS = false;
+	private static boolean JMLC_MEM_STATISTICS = false;
 	
 	/**
 	 * @return true if statistics is enabled
@@ -289,7 +290,12 @@ public class ConfigurationManager
 	public static boolean isFinegrainedStatistics() {
 		return FINEGRAINED_STATISTICS;
 	}
-	
+
+	/**
+	 * @return true if JMLC memory statistics are enabled
+	 */
+	public static boolean isJMLCMemStatistics() { return JMLC_MEM_STATISTICS; }
+
 	/**
 	 * Whether or not statistics about the DML/PYDML program should be output to
 	 * standard output.
@@ -301,7 +307,31 @@ public class ConfigurationManager
 	public static void setStatistics(boolean enabled) {
 		STATISTICS = enabled;
 	}
-	
+
+	/**
+	 * Whether or not detailed statistics about program memory use should be output
+	 * to standard output when running under JMLC
+	 *
+	 * @param enabled
+	 *            {@code true} if statistics should be output, {@code false}
+	 *            otherwise
+	 */
+	public static void setJMLCMemStats(boolean enabled) {
+		JMLC_MEM_STATISTICS = enabled;
+	}
+
+
+	/**
+	 * Whether or not finegrained statistics should be enabled
+	 *
+	 * @param enabled
+	 *            {@code true} if statistics should be output, {@code false}
+	 *            otherwise
+	 */
+	public static void setFinegrainedStatistics(boolean enabled) {
+		FINEGRAINED_STATISTICS = enabled;
+	}
+
 	/**
 	 * Reset the statistics flag.
 	 */

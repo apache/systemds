@@ -42,6 +42,7 @@ import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextUtil;
@@ -1100,7 +1101,7 @@ public class SparkExecutionContext extends ExecutionContext
 		//and hence is transparently used by rmvar instructions and other users. The
 		//core difference is the lineage-based cleanup of RDD and broadcast variables.
 
-		if (DMLScript.JMLC_MEM_STATISTICS)
+		if (ConfigurationManager.isJMLCMemStatistics())
 			Statistics.removeCPMemObject(System.identityHashCode(mo));
 
 		if( !mo.isCleanupEnabled() )

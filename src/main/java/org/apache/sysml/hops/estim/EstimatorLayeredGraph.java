@@ -54,7 +54,10 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		throw new NotImplementedException();
+		List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
+		long nnz = new LayeredGraph(leafs, _rounds).estimateNnz();
+		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+			leafs.get(0).getNumRows(), leafs.get(leafs.size()-1).getNumColumns(), nnz));
 	}
 
 	@Override
@@ -69,20 +72,30 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
-		LayeredGraph graph = new LayeredGraph(m1, m2, _rounds);
-		return OptimizerUtils.getSparsity(m1.getNumRows(),
-			m2.getNumColumns(), graph.estimateNnz());
+		LayeredGraph graph = new LayeredGraph(Arrays.asList(m1,m2), _rounds);
+		return OptimizerUtils.getSparsity(
+			m1.getNumRows(), m2.getNumColumns(), graph.estimateNnz());
+	}
+	
+	private List<MatrixBlock> getMatrices(MMNode node, List<MatrixBlock> leafs) {
+		//NOTE: this extraction is only correct and efficient for chains, no DAGs
+		if( node.isLeaf() )
+			leafs.add(node.getData());
+		else {
+			getMatrices(node.getLeft(), leafs);
+			getMatrices(node.getRight(), leafs);
+		}
+		return leafs;
 	}
 
 	private static class LayeredGraph {
 		private final List<Node[]> _nodes; //nodes partitioned by graph level
 		private final int _rounds;         //length of propagated r-vectors 
 		
-		public LayeredGraph(MatrixBlock m1, MatrixBlock m2, int r) {
+		public LayeredGraph(List<MatrixBlock> chain, int r) {
 			_nodes = new ArrayList<>();
 			_rounds = r;
-			buildNext(m1);
-			buildNext(m2);
+			chain.forEach(i -> buildNext(i));
 		}
 		
 		public void buildNext(MatrixBlock mb) {

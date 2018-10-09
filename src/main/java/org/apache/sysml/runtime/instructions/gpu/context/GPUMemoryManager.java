@@ -292,7 +292,7 @@ public class GPUMemoryManager {
 		if(A == null) {
 			long t0 =  ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 			Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-						.filter(gpuObj -> !gpuObj.isLocked() && matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
+						.filter(gpuObj -> !gpuObj.isLocked() && gpuObj.getWorstCaseContiguousMemorySize() >= size)
 						.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
 			if(sizeBasedUnlockedGPUObjects.isPresent()) {
 				evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
@@ -363,7 +363,7 @@ public class GPUMemoryManager {
 	}
 	
 	private int worstCaseContiguousMemorySizeCompare(GPUObject o1, GPUObject o2) {
-		long ret = matrixMemoryManager.getWorstCaseContiguousMemorySize(o1) - matrixMemoryManager.getWorstCaseContiguousMemorySize(o2);
+		long ret = o1.getWorstCaseContiguousMemorySize() - o2.getWorstCaseContiguousMemorySize();
 		return ret < 0 ? -1 : (ret == 0 ? 0 : 1);
 	}
 	
@@ -423,7 +423,7 @@ public class GPUMemoryManager {
 				jcuda.runtime.JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
 		}
 		else {
-			throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
+			throw new RuntimeException("ERROR : Internal state corrupted, attempting to free an unaccounted pointer:" + toFree);
 		}
 
 	}
@@ -439,6 +439,12 @@ public class GPUMemoryManager {
 	public void free(String opcode, Pointer toFree, boolean eager) throws DMLRuntimeException {
 		if(LOG.isTraceEnabled())
 			LOG.trace("Free-ing the pointer with eager=" + eager);
+		if(toFree == null)
+			throw new DMLRuntimeException("Attempting to free a null pointer");
+		else if (!allPointers.containsKey(toFree)) {
+			LOG.info("GPU memory info before failure:" + toString());
+			throw new RuntimeException("ERROR : Internal state corrupted, attempting to free an unaccounted pointer:" + toFree);
+		}
 		long size = allPointers.get(toFree).getSizeInBytes();
 		if(ConfigurationManager.isStatistics()) {
 			currentSize -= size;
@@ -449,10 +455,6 @@ public class GPUMemoryManager {
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
-			if (!allPointers.containsKey(toFree)) {
-				LOG.info("GPU memory info before failure:" + toString());
-				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
-			}
 			lazyCudaFreeMemoryManager.add(size, toFree);
 		}
 	}

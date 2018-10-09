@@ -1017,7 +1017,7 @@ class Keras2DML(Caffe2DML):
         weight_decay: regularation strength (default: 5e-4)
         regularization_type: regularization type (default: "L2")
         """
-        from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver
+        from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver, convertKerasToSystemMLModel
         import tempfile, keras
         if isinstance(keras_model, keras.models.Sequential):
             # Convert the sequential model to functional model

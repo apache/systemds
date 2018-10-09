@@ -127,7 +127,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 	public DnnGPUInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String istr, 
 			double intermediateMemoryBudget) throws DMLRuntimeException {
 		super(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), opcode, istr);
-		if( !( opcode.equals("update_nesterov_x")) ) {
+		if( !( opcode.equals("update_nesterov_x") || opcode.equals("batch_norm2d_bwd_dgamma")) ) {
 			throw new DMLRuntimeException("Incorrect opcode: " + opcode);
 		}
 		_input1 = in1;
@@ -331,6 +331,15 @@ public class DnnGPUInstruction extends GPUInstruction {
 			return new DnnGPUInstruction(in, in2, in3, out, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("update_nesterov_x")) {
+			InstructionUtils.checkNumFields(parts, 5);
+			CPOperand in = new CPOperand(parts[1]);
+			CPOperand in2 = new CPOperand(parts[2]);
+			CPOperand in3 = new CPOperand(parts[3]);
+			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand out = new CPOperand(parts[5]);
+			return new DnnGPUInstruction(in, in2, in3, in4, out, opcode, str, 0);
+		}
+		else if (opcode.equalsIgnoreCase("batch_norm2d_bwd_dgamma")) {
 			InstructionUtils.checkNumFields(parts, 5);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -586,6 +595,42 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 	}
 	
+	// "ema_mean", "dout", "X", "ema_var"
+		private void processBatchNorm2dBackwardDGammaInstruction(ExecutionContext ec) {
+			try(GPUDenseInputPointerFetcher fetcher = new GPUDenseInputPointerFetcher(ec, gCtx, instName, _output)) {
+				fetcher.add("ema_mean", _input1).add("dout", _input2).add("X", _input3)
+				.add("ema_var", _input4);
+				MatrixObject ema_mean = fetcher.getInputMatrixObject("ema_mean");
+				MatrixObject dout = fetcher.getInputMatrixObject("dout");
+				long C = ema_mean.getNumRows();
+				long N = dout.getNumRows();
+				long CHW = dout.getNumColumns();
+				fetcher.validateDimensions("ema_mean", C, 1);
+				fetcher.validateDimensions("dout", N, CHW);
+				fetcher.validateDimensions("X", N, CHW);
+				fetcher.validateDimensions("ema_var", C, 1);
+				if(CHW % C != 0) {
+					throw new DMLRuntimeException("Incorrect dimensions: C=" + C + ", CHW=" + CHW);
+				}
+				long HW = CHW / C;
+				Pointer tmp = gCtx.allocate(instName, N*CHW*LibMatrixCUDA.sizeOfDataType);
+				// jcuda.runtime.JCuda.cudaDeviceSynchronize();
+				LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("backward_dgamma_tmp", 
+						ExecutionConfig.getConfigForSimpleVectorOperations(LibMatrixCUDA.toInt(N*CHW)),
+						fetcher.getInputPointer("ema_mean"), 
+						fetcher.getInputPointer("dout"),
+						fetcher.getInputPointer("X"),
+						fetcher.getInputPointer("ema_var"),
+						tmp,
+						// N, C, HW, CHW, NCHW
+						toInt(N), toInt(C), toInt(HW), toInt(CHW), N*CHW);
+				
+				LibMatrixCUDA.channelSums(gCtx, instName, 
+						tmp, fetcher.getOutputPointer(C, 1), N, C, HW);
+				gCtx.cudaFreeHelper(instName, tmp, gCtx.EAGER_CUDA_FREE);
+			}
+		}
+	
 	private static int toInt(long num) throws DMLRuntimeException {
 		if(num >= Integer.MAX_VALUE || num <= Integer.MIN_VALUE) {
 			throw new DMLRuntimeException("GPU : Exceeded supported size " + num);
@@ -732,6 +777,10 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("update_nesterov_x")) {
 			processNesterovUpdateInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("batch_norm2d_bwd_dgamma")) {
+			processBatchNorm2dBackwardDGammaInstruction(ec);
 			return;
 		}
 		else if (instOpcode.equalsIgnoreCase("update_ema_var")) {

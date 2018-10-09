@@ -94,10 +94,10 @@ public class GPUDenseInputPointerFetcher implements java.lang.AutoCloseable {
 	public void validateDimensions(String var, long numRows, long numCols) {
 		MatrixObject mo = getInputMatrixObject(var);
 		if(numRows > 0 && mo.getNumRows() != numRows) {
-			throw new DMLRuntimeException("Expected number of rows of subgrp_means to be " + numRows + ", but found " + mo.getNumRows());
+			throw new DMLRuntimeException("Expected number of rows of " + var + " to be " + numRows + ", but found " + mo.getNumRows());
 		}
 		else if(numCols > 0 && mo.getNumColumns() != numCols) {
-			throw new DMLRuntimeException("Expected number of columns of subgrp_means to be " + numCols + ", but found " + mo.getNumColumns());
+			throw new DMLRuntimeException("Expected number of columns of " + var + " to be " + numCols + ", but found " + mo.getNumColumns());
 		}
 	}
 	@Override

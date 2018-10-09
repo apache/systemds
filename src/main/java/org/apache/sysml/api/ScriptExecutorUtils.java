@@ -75,6 +75,7 @@ public class ScriptExecutorUtils {
 		boolean exceptionThrown = false;
 		
 		Statistics.startRunTimer();
+		Exception finalizeException = null;
 		try {
 			// run execute (w/ exception handling to ensure proper shutdown)
 			if (ConfigurationManager.isGPU() && ec != null) {
@@ -92,29 +93,34 @@ public class ScriptExecutorUtils {
 			throw e;
 		} finally { // ensure cleanup/shutdown
 			if (ConfigurationManager.isGPU() && !ec.getGPUContexts().isEmpty()) {
-				// -----------------------------------------------------------------
-				// The below code pulls the output variables on the GPU to the host. This is required especially when:
-				// The output variable was generated as part of a MLContext session with GPU enabled
-				// and was passed to another MLContext with GPU disabled
-				// The above scenario occurs in our gpu test suite (eg: BatchNormTest).
-				if(outputVariables != null) {
-					for(String outVar : outputVariables) {
-						Data data = ec.getVariable(outVar);
-						if(data != null && data instanceof MatrixObject) {
-							for(GPUContext gCtx : ec.getGPUContexts()) {
-								GPUObject gpuObj = ((MatrixObject)data).getGPUObject(gCtx);
-								if(gpuObj != null && gpuObj.isDirty()) {
-									gpuObj.acquireHostRead(null);
+				try {
+					// -----------------------------------------------------------------
+					// The below code pulls the output variables on the GPU to the host. This is required especially when:
+					// The output variable was generated as part of a MLContext session with GPU enabled
+					// and was passed to another MLContext with GPU disabled
+					// The above scenario occurs in our gpu test suite (eg: BatchNormTest).
+					if(outputVariables != null) {
+						for(String outVar : outputVariables) {
+							Data data = ec.getVariable(outVar);
+							if(data != null && data instanceof MatrixObject) {
+								for(GPUContext gCtx : ec.getGPUContexts()) {
+									GPUObject gpuObj = ((MatrixObject)data).getGPUObject(gCtx);
+									if(gpuObj != null && gpuObj.isDirty()) {
+										gpuObj.acquireHostRead(null);
+									}
 								}
 							}
 						}
 					}
+					// -----------------------------------------------------------------
+					for(GPUContext gCtx : ec.getGPUContexts()) {
+						gCtx.clearTemporaryMemory();
+					}
+					GPUContextPool.freeAllGPUContexts();
+				} catch (Exception e1) {
+					exceptionThrown = true;
+					finalizeException = e1; // do not throw exception while cleanup
 				}
-				// -----------------------------------------------------------------
-				for(GPUContext gCtx : ec.getGPUContexts()) {
-					gCtx.clearTemporaryMemory();
-				}
-				GPUContextPool.freeAllGPUContexts();
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();
@@ -125,6 +131,9 @@ public class ScriptExecutorUtils {
 				.println(Statistics.display(statisticsMaxHeavyHitters > 0 ?
 					statisticsMaxHeavyHitters : ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters()));
 			ConfigurationManager.resetStatistics();
+		}
+		if(finalizeException != null) {
+			throw new DMLRuntimeException("Error occured while GPU memory cleanup.", finalizeException);
 		}
 	}
 

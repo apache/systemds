@@ -294,6 +294,19 @@ public class HopDagPatternMatcher {
 		return new HopDagPatternMatcher().addPredicate("sqrt", h -> HopRewriteUtils.isUnary(h, OpOp1.SQRT))
 				.addChildMatcher(child);
 	}
+	public static HopDagPatternMatcher inv_var(HopDagPatternMatcher var, HopDagPatternMatcher eps) {
+		return new HopDagPatternMatcher().addPredicate("sqrt", h ->  {
+			if(HopRewriteUtils.isDnn(h, OpOpDnn.INV_VAR)) {
+				return true;
+			}
+			else {
+				return HopRewriteUtils.isBinary(h, OpOp2.DIV) && HopRewriteUtils.isLiteralOfValue(h.getInput().get(0), 1.0) &&
+				HopRewriteUtils.isUnary(h.getInput().get(1), OpOp1.SQRT) && 
+				HopRewriteUtils.isBinary(h.getInput().get(1).getInput().get(0), OpOp2.PLUS);
+			}
+		})
+				.addChildMatcher(var, eps);
+	}
 	public static HopDagPatternMatcher div(HopDagPatternMatcher child1, HopDagPatternMatcher child2) {
 		return new HopDagPatternMatcher().addPredicate("div", h -> HopRewriteUtils.isBinary(h, OpOp2.DIV))
 				.addChildMatcher(child1, child2);
@@ -370,6 +383,8 @@ public class HopDagPatternMatcher {
 				.addChildMatcher(child1, dummy);
 	}
 	private static boolean _fitsOnGPU(Hop h, double multiplier) {
+		if(ConfigurationManager.isForcedGPU())
+			return true;
 		double memEst = multiplier*h.getMemEstimate();
 		return ConfigurationManager.isGPU() && h.dimsKnown() && OptimizerUtils.isMemoryBasedOptLevel() &&
 				memEst < OptimizerUtils.getLocalMemBudget() && memEst < GPUContextPool.initialGPUMemBudget();

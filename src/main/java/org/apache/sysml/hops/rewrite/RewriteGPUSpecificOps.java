@@ -178,7 +178,7 @@ public class RewriteGPUSpecificOps extends HopRewriteRuleWithPatternMatcher {
 		HopDagPatternMatcher norm = 
 			bias_multiply(
 					bias_add(leaf("X", MATRIX), unaryMinus(leaf("mean", MATRIX))), // bias_add(X, -mean)
-					div(1, sqrt(plus(leaf("var", MATRIX), leaf("eps", SCALAR))))); // 1/sqrt(var+eps)
+					inv_var(leaf("var", MATRIX), leaf("eps", SCALAR))); // 1/sqrt(var+eps)
 		// hi = bias_add(bias_multiply(norm, gamma), beta)
 		_batchNormTest = 
 			bias_add(

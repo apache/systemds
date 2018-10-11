@@ -297,7 +297,7 @@ public class ScriptExecutor {
 				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
 		runtimeProgram = ScriptExecutorUtils.compileRuntimeProgram(script.getScriptExecutionString(), Collections.emptyMap(),
 				args, null, symbolTable, inputs, outputs, script.getScriptType(), config, SystemMLAPI.MLContext,
-				performHOPRewrites, isMaintainSymbolTable());
+				performHOPRewrites, isMaintainSymbolTable(), init);
 		gCtxs = ConfigurationManager.isGPU() ? GPUContextPool.getAllGPUContexts() : null;
 	}
 

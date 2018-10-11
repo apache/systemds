@@ -80,13 +80,13 @@ public class ScriptExecutorUtils {
 	public static Program compileRuntimeProgram(String script, Map<String,String> nsscripts, Map<String, String> args,
 												String[] inputs, String[] outputs, ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api) {
 		return compileRuntimeProgram(script, nsscripts, args, null, null, inputs, outputs,
-				scriptType, dmlconf, api, true, false);
+				scriptType, dmlconf, api, true, false, false);
 	}
 
 	public static Program compileRuntimeProgram(String script, Map<String, String> args, String[] allArgs,
 												ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api) {
 		return compileRuntimeProgram(script, Collections.emptyMap(), args, allArgs, null, null, null,
-				scriptType, dmlconf, api, true, false);
+				scriptType, dmlconf, api, true, false, false);
 	}
 
 	/**
@@ -111,7 +111,8 @@ public class ScriptExecutorUtils {
 												LocalVariableMap symbolTable, String[] inputs, String[] outputs,
 												ScriptType scriptType, DMLConfig dmlconf, SystemMLAPI api,
 												// MLContext-specific flags
-												boolean performHOPRewrites, boolean maintainSymbolTable) {
+												boolean performHOPRewrites, boolean maintainSymbolTable,
+												boolean init) {
 		DMLScript.SCRIPT_TYPE = scriptType;
 
 		Program rtprog = null;
@@ -159,7 +160,8 @@ public class ScriptExecutorUtils {
 
 			//init working directories (before usage by following compilation steps)
 			if(api != SystemMLAPI.JMLC)
-				DMLScript.initHadoopExecution( dmlconf );
+				if (api == SystemMLAPI.MLContext && init)
+					DMLScript.initHadoopExecution( dmlconf );
 
 
 			//Step 4: rewrite HOP DAGs (incl IPA and memory estimates)

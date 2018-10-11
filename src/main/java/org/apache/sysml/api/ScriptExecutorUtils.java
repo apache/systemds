@@ -160,7 +160,7 @@ public class ScriptExecutorUtils {
 
 			//init working directories (before usage by following compilation steps)
 			if(api != SystemMLAPI.JMLC)
-				if (api == SystemMLAPI.MLContext && init)
+				if ((api == SystemMLAPI.MLContext && init) || api != SystemMLAPI.MLContext)
 					DMLScript.initHadoopExecution( dmlconf );
 
 

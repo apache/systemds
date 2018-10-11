@@ -889,6 +889,10 @@ public class GPUObject {
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
+			if(((long)tmp.getNumRows())*((long)tmp.getNumColumns()) > Integer.MAX_VALUE) {
+				throw new DMLRuntimeException("Cannot allocate a dense double array on the GPU for a matrix with "
+						+ "dimensions [" + tmp.getNumRows() + "," + tmp.getNumColumns() + "]");  
+			}
 			double[] data = tmp.getDenseBlockValues();
 
 			if (data == null && tmp.getSparseBlock() != null)
@@ -982,6 +986,7 @@ public class GPUObject {
 		if (!isDensePointerNull()) {
 			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
+			// No need to double-check if tmp.getDenseBlockValues() is valid here. 
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getDensePointer(), tmp.getDenseBlockValues(), instName, isEviction);
 			if(eagerDelete)

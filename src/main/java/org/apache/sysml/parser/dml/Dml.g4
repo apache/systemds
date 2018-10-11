@@ -216,6 +216,6 @@ COMMANDLINE_POSITION_ID: '$' DIGIT+;
 STRING: '"' ( ESC | ~[\\"] )*? '"' | '\'' ( ESC | ~[\\'] )*? '\'';
 fragment ESC : '\\' [btnfr"'\\] ;
 // Comments, whitespaces and new line
-LINE_COMMENT : '#' .*? '\r'? '\n' -> skip ;
-MULTILINE_BLOCK_COMMENT : '/*' .*? '*/' -> skip ;
-WHITESPACE : (' ' | '\t' | '\r' | '\n')+ -> skip ;
+LINE_COMMENT : '#' .*? '\r'? '\n' -> channel(HIDDEN) ;
+MULTILINE_BLOCK_COMMENT : '/*' .*? '*/' -> channel(HIDDEN) ;
+WHITESPACE : (' ' | '\t' | '\r' | '\n')+ -> channel(HIDDEN) ;

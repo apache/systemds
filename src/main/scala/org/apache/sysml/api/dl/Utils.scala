@@ -39,6 +39,11 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock
 import org.apache.sysml.api.mlcontext.MLContext
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
+import org.apache.sysml.parser.ParserWrapper
+import org.apache.sysml.parser.dml.DMLParserWrapper
+import org.apache.sysml.parser.dml.InlineableMethods
+import java.util.ArrayList
+import scala.collection.JavaConverters._
 
 object Utils {
   // ---------------------------------------------------------------------------------------------
@@ -63,6 +68,57 @@ object Utils {
       lineNum = lineNum + 1
       line = bufReader.readLine()
     }
+  }
+  
+  def readDMLScript(fileName:String):String = ParserWrapper.readDMLScript(fileName, Caffe2DML.LOG)
+  val inlineableMethods = new java.util.HashMap[String, java.util.HashMap[String, InlineableMethods]]()
+  def getInlineableMethod(sourceFilePath:String, namespace:String, fnName:String):InlineableMethods = {
+    if(inlineableMethods.contains(namespace))
+      return inlineableMethods.get(namespace).get(fnName)
+    else {
+      val ret = new DMLParserWrapper().getInlineableMethods(sourceFilePath, null, namespace, null)
+      inlineableMethods.put(namespace, ret)
+      return ret.get(fnName)
+    }
+  }
+  
+  def invoke(dir:String, dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
+    if(Caffe2DML.INLINE_NN_LIBRARY) {
+      // Caffe2DML.layerDir
+      // For now, donot inline recursively
+      val sourceFileName = if(namespace1.endsWith("::")) namespace1.substring(0, namespace1.length() - 2) else namespace1
+      val method = getInlineableMethod(dir + sourceFileName + ".dml", namespace1, functionName)
+      val generatedDML = method.getInlinedDML(new ArrayList[String](arguments.asJava), new ArrayList[String](returnVariables.asJava))
+      dmlScript.append(generatedDML)
+      dmlScript.append("\n")
+      //System.out.println(generatedDML)
+      return
+    }
+    if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
+    if (returnVariables.length > 1) dmlScript.append("[")
+    dmlScript.append(returnVariables(0))
+    if (returnVariables.length > 1) {
+      for (i <- 1 until returnVariables.length) {
+        dmlScript.append(",").append(returnVariables(i))
+      }
+      dmlScript.append("]")
+    }
+    dmlScript.append(" = ")
+    dmlScript.append(namespace1)
+    dmlScript.append(functionName)
+    dmlScript.append("(")
+    if (arguments != null) {
+      if (arguments.length != 0)
+        dmlScript.append(arguments(0))
+      if (arguments.length > 1) {
+        for (i <- 1 until arguments.length) {
+          dmlScript.append(",").append(arguments(i))
+        }
+      }
+    }
+    dmlScript.append(")")
+    if (appendNewLine)
+      dmlScript.append("\n")
   }
 
   // ---------------------------------------------------------------------------------------------

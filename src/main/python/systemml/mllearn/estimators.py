@@ -924,7 +924,7 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setWeightsToIgnore(ignore_weights)
 
     def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None,
-            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None):
+            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None):
         """
         Set input to Caffe2DML
 
@@ -937,9 +937,12 @@ class Caffe2DML(BaseSystemMLClassifier):
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
+        inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
+        if inline_nn_library is not None:
+            self.estimator.setInput("$inline_nn_library", str(inline_nn_library).upper())
         if train_algo is not None:
             self.estimator.setInput("$train_algo", str(train_algo).lower())
         if test_algo is not None:

@@ -29,6 +29,7 @@ import caffe.Caffe.EltwiseParameter.EltwiseOp
 import org.apache.sysml.runtime.DMLRuntimeException;
 import java.util.ArrayList
 import caffe.Caffe.PoolingParameter.PoolMethod
+import scala.collection.JavaConverters._
 
 trait CaffeLayer extends BaseDMLGenerator {
   // -------------------------------------------------
@@ -125,7 +126,7 @@ trait CaffeLayer extends BaseDMLGenerator {
   // The layers that have a corresponding dml script call this method.
   // Assumption: the first variable of resultVariables is always dX
   def invokeBackward(dmlScript: StringBuilder, outSuffix: String, resultVariables: List[String], arguments: String*): Unit = {
-    invoke(dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, sourceFileName + "::", resultVariables.map(_ + outSuffix), "backward", arguments.toList, false)
     val bottomLayerIDs = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l).id)
     dmlScript.append("; ")
     bottomLayerIDs.map(bottomLayerID => dmlScript.append(dX(bottomLayerID) + outSuffix + " = " + resultVariables(0) + outSuffix + "; "))
@@ -140,6 +141,13 @@ trait CaffeLayer extends BaseDMLGenerator {
     dmlScript.append("\n")
   }
   // --------------------------------------------------------------------------------------
+  
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String]): Unit =
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments, true)
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, appendNewLine: Boolean, arguments: String*): Unit =
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
+  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: String*): Unit =
+    Utils.invoke(Caffe2DML.layerDir, dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
 }
 
 trait IsLossLayer extends CaffeLayer {

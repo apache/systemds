@@ -307,7 +307,14 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics() {
-		return _metaData.getMatrixCharacteristics();
+		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
+		if(mc.getRowsPerBlock() == -1) {
+			mc.setRowsPerBlock(OptimizerUtils.DEFAULT_BLOCKSIZE);
+		}
+		if(mc.getColsPerBlock() == -1) {
+			mc.setColsPerBlock(OptimizerUtils.DEFAULT_BLOCKSIZE);
+		}
+		return mc;
 	}
 
 	public abstract void refreshMetaData();

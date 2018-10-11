@@ -298,7 +298,7 @@ public class GPUMemoryManager {
 				evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
 				A = cudaMallocNoWarn(tmpA, size, null);
 				if(A == null)
-					LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
+					LOG.debug("cudaMalloc failed after clearing/evicting based on size.");
 				if(ConfigurationManager.isStatistics()) {
 					long totalTime = System.nanoTime() - t0;
 					GPUStatistics.cudaEvictTime.add(totalTime);

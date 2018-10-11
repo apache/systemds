@@ -67,10 +67,12 @@ trait CaffeSolver {
       val hasDecayMult = layer.param.getParamList != null && layer.param.getParamList.size >= 1 && layer.param.getParamList.get(0).hasDecayMult
       val newLambda = if(hasDecayMult) layer.param.getParamList.get(0).getDecayMult * lambda else lambda
       
-      dmlScript.append("\t").append(layer.dWeight + "_reg = " + regularizationSource + "::backward(" + layer.weight + ", " + newLambda + ")\n")
+      Utils.invoke(Caffe2DML.layerDir, dmlScript, regularizationSource + "::", List[String](layer.dWeight + "_reg"), "backward", 
+          List[String](layer.weight, "" + newLambda), true)
       dmlScript.append("\t").append(layer.dWeight + " = " + layer.dWeight + " + " + layer.dWeight + "_reg\n")
       if(layer.shouldUpdateExtraWeight) {
-        dmlScript.append("\t").append(layer.dExtraWeight + "_reg = " + regularizationSource + "::backward(" + layer.extraWeight + ", " + newLambda + ")\n")
+        Utils.invoke(Caffe2DML.layerDir, dmlScript, regularizationSource + "::", List[String](layer.dExtraWeight + "_reg"), "backward", 
+          List[String](layer.extraWeight, "" + newLambda), true)
         dmlScript.append("\t").append(layer.dExtraWeight + " = " + layer.dExtraWeight + " + " + layer.dExtraWeight + "_reg\n")
       }
     }
@@ -339,32 +341,19 @@ class Nesterov(regularizationType:String = "L2", lambda: Double = 5e-04, momentu
    *      input v.
    */
   def update(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
-    val fn            = if (Caffe2DML.USE_NESTEROV_UDF) "update_nesterov" else "sgd_nesterov::update"
-    val lastParameter = if (Caffe2DML.USE_NESTEROV_UDF) (", " + lambda) else ""
+    
     if (!Caffe2DML.USE_NESTEROV_UDF) {
       regularization_update(regularizationType, lambda, dmlScript, layer)
     }
     if (layer.shouldUpdateWeight)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.weight, layer.weight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v") + lastParameter + ")\n"
-        )
+      Utils.invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.weight, layer.weight + "_v"), "update", 
+          List[String](layer.weight, layer.dWeight, getWeightLr(layer), momentum.toString, layer.weight + "_v"), true)
     if (layer.shouldUpdateExtraWeight)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.extraWeight, layer.extraWeight + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v") + lastParameter + ")\n"
-        )
+      Utils.invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.extraWeight, layer.extraWeight + "_v"), "update", 
+          List[String](layer.extraWeight, layer.dExtraWeight, getWeightLr(layer), momentum.toString, layer.extraWeight + "_v"), true)
     if (layer.shouldUpdateBias)
-      dmlScript
-        .append("\t")
-        .append(
-          "[" + commaSep(layer.bias, layer.bias + "_v") + "] " +
-          "= " + fn + "(" + commaSep(layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v") + lastParameter + ")\n"
-        )
+      Utils.invoke(Caffe2DML.optimDir, dmlScript, "sgd_nesterov::", List[String](layer.bias, layer.bias + "_v"), "update", 
+          List[String](layer.bias, layer.dBias, getBiasLr(layer), momentum.toString, layer.bias + "_v"), true)
   }
   def init(dmlScript: StringBuilder, layer: CaffeLayer): Unit = {
     if (layer.shouldUpdateWeight) dmlScript.append(layer.weight + "_v = sgd_nesterov::init(" + layer.weight + ")\n")

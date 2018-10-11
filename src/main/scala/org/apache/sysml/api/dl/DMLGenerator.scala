@@ -75,39 +75,6 @@ trait BaseDMLGenerator {
     sum(dmlScript, rhsVars)
     dmlScript.append("\n")
   }
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String]): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments, true)
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: List[String], appendNewLine: Boolean): Unit = {
-    if (returnVariables.length == 0) throw new DMLRuntimeException("User-defined functions should have atleast one return value")
-    if (returnVariables.length > 1) dmlScript.append("[")
-    dmlScript.append(returnVariables(0))
-    if (returnVariables.length > 1) {
-      for (i <- 1 until returnVariables.length) {
-        dmlScript.append(",").append(returnVariables(i))
-      }
-      dmlScript.append("]")
-    }
-    dmlScript.append(" = ")
-    dmlScript.append(namespace1)
-    dmlScript.append(functionName)
-    dmlScript.append("(")
-    if (arguments != null) {
-      if (arguments.length != 0)
-        dmlScript.append(arguments(0))
-      if (arguments.length > 1) {
-        for (i <- 1 until arguments.length) {
-          dmlScript.append(",").append(arguments(i))
-        }
-      }
-    }
-    dmlScript.append(")")
-    if (appendNewLine)
-      dmlScript.append("\n")
-  }
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, appendNewLine: Boolean, arguments: String*): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, appendNewLine)
-  def invoke(dmlScript: StringBuilder, namespace1: String, returnVariables: List[String], functionName: String, arguments: String*): Unit =
-    invoke(dmlScript, namespace1, returnVariables, functionName, arguments.toList, true)
   def rightIndexing(dmlScript: StringBuilder, lhsVar:String, rhsVar: String, rl: String, ru: String, cl: String=null, cu: String=null): StringBuilder = {
     dmlScript.append(lhsVar).append(" = ").append(rhsVar).append("[")
     if (rl != null && ru != null) dmlScript.append(rl).append(":").append(ru)
@@ -279,6 +246,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     // Append source statements for layers as well as solver
     source(net, solver, if (isTraining) Array[String]("l1_reg") else null)
     source(net, solver, if (isTraining) Array[String]("l2_reg") else null)
+    source(dmlScript, numTabs, "util", Caffe2DML.nnDir)
 
     if (isTraining) {
       // Append external built-in function headers:

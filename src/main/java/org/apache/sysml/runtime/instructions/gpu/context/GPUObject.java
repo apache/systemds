@@ -774,17 +774,34 @@ public class GPUObject {
 	}
 
 	protected long getSizeOnDevice() {
-		long GPUSize = 0;
 		long rlen = mat.getNumRows();
 		long clen = mat.getNumColumns();
 		long nnz = mat.getNnz();
-
-		if (LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat)) {
-			GPUSize = CSRPointer.estimateSize(nnz, rlen);
-		} else {
-			GPUSize = getDatatypeSizeOf(rlen * clen);
-		}
-		return GPUSize;
+		
+		if(jcudaDenseMatrixPtr != null)
+			return getDatatypeSizeOf(rlen * clen); // allocated in dense format
+		else if(jcudaSparseMatrixPtr != null || LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat))
+			return CSRPointer.estimateSize(nnz, rlen); // either allocated in sparse format or matrix object is in sparse format
+		else 
+			return getDatatypeSizeOf(rlen * clen); // not allocated and matrix object is in dense format
+	}
+	
+	/**
+	 * Returns worst-case contiguous memory size
+	 * 
+	 * @return memory size in bytes
+	 */
+	long getWorstCaseContiguousMemorySize() {
+		long rlen = mat.getNumRows();
+		long clen = mat.getNumColumns();
+		long nnz = mat.getNnz();
+		
+		if(jcudaDenseMatrixPtr != null)
+			return getDatatypeSizeOf(rlen * clen); // allocated in dense format
+		else if(jcudaSparseMatrixPtr != null || LibMatrixCUDA.isInSparseFormat(getGPUContext(), mat))
+			return Math.max(getDatatypeSizeOf(nnz), getIntSizeOf(Math.max(Math.max(rlen+1, clen), 4))); // either allocated in sparse format or matrix object is in sparse format
+		else 
+			return getDatatypeSizeOf(rlen * clen); // not allocated and matrix object is in dense format
 	}
 
 	void copyFromHostToDevice(String opcode) {
@@ -872,6 +889,10 @@ public class GPUObject {
 					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
 			}
 		} else {
+			if(((long)tmp.getNumRows())*((long)tmp.getNumColumns()) > Integer.MAX_VALUE) {
+				throw new DMLRuntimeException("Cannot allocate a dense double array on the GPU for a matrix with "
+						+ "dimensions [" + tmp.getNumRows() + "," + tmp.getNumColumns() + "]");  
+			}
 			double[] data = tmp.getDenseBlockValues();
 
 			if (data == null && tmp.getSparseBlock() != null)
@@ -965,6 +986,7 @@ public class GPUObject {
 		if (!isDensePointerNull()) {
 			tmp = new MatrixBlock(toIntExact(mat.getNumRows()), toIntExact(mat.getNumColumns()), false);
 			tmp.allocateDenseBlock();
+			// No need to double-check if tmp.getDenseBlockValues() is valid here. 
 			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(getGPUContext(),
 						getDensePointer(), tmp.getDenseBlockValues(), instName, isEviction);
 			if(eagerDelete)

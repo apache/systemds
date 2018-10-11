@@ -33,7 +33,7 @@ public class DnnTransform extends Lop
 		CONV2D, CONV2D_BACKWARD_FILTER, CONV2D_BACKWARD_DATA,
 		BIAS_ADD, CONV2D_BIAS_ADD, BIAS_MULTIPLY, CHANNEL_SUMS, BATCH_NORM2D_TEST, 
 		UPDATE_NESTEROV_X, RESHAPE_COLMEANS, UPDATE_EMA_VAR, UPDATE_EMA, INV_VAR,
-		BATCH_NORM2D_BACKWARD_DX
+		BATCH_NORM2D_BACKWARD_DX, BATCH_NORM2D_BACKWARD_DGAMMA
 	}
 	
 	private OperationTypes operation;
@@ -174,6 +174,9 @@ public class DnnTransform extends Lop
 		case UPDATE_NESTEROV_X:
 			return "update_nesterov_x";
 			
+		case BATCH_NORM2D_BACKWARD_DGAMMA:
+			return "batch_norm2d_bwd_dgamma";
+			
 		case BATCH_NORM2D_TEST:
 			return "batch_norm2d_test";
 		
@@ -254,7 +257,7 @@ public class DnnTransform extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
-		if(operation == OperationTypes.UPDATE_NESTEROV_X) {
+		if(operation == OperationTypes.UPDATE_NESTEROV_X || operation == OperationTypes.BATCH_NORM2D_BACKWARD_DGAMMA) {
 			StringBuilder sb = new StringBuilder();
 			sb.append( getExecType() );
 			

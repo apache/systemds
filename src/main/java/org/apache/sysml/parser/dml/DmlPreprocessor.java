@@ -20,7 +20,6 @@
 package org.apache.sysml.parser.dml;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -84,16 +83,10 @@ import org.apache.sysml.parser.dml.DmlParser.WhileStatementContext;
 public class DmlPreprocessor implements DmlListener {
 
 	protected final CustomErrorListener errorListener;
-	// Names of user internal and external functions definitions
-	protected Set<String> functions;
 
 	public DmlPreprocessor(CustomErrorListener errorListener) {
 		this.errorListener = errorListener;
-		functions = new HashSet<>();
-	}
-
-	public Set<String> getFunctionDefs() {
-		return functions;
+		this.errorListener.functions = new HashSet<>();
 	}
 	
 	@Override
@@ -113,8 +106,8 @@ public class DmlPreprocessor implements DmlListener {
 	public void exitInternalFunctionDefExpression(InternalFunctionDefExpressionContext ctx) {}
 
 	protected void validateFunctionName(String name, ParserRuleContext ctx) {
-		if (!functions.contains(name)) {
-			functions.add(name);
+		if (!errorListener.functions.contains(name)) {
+			errorListener.functions.add(name);
 		}
 		else {
 			notifyErrorListeners("Function Name Conflict: '" + name + "' already defined in " + errorListener.getCurrentFileName(), ctx.start);

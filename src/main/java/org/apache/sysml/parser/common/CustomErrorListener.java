@@ -22,6 +22,7 @@ package org.apache.sysml.parser.common;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
@@ -38,6 +39,9 @@ public class CustomErrorListener extends BaseErrorListener {
 	private boolean atLeastOneError = false;
 	private boolean atLeastOneWarning = false;
 	private String currentFileName = null;
+	
+	// Names of user internal and external functions definitions
+	public Set<String> functions;
 
 	/**
 	 * List of parse issues.
@@ -54,6 +58,10 @@ public class CustomErrorListener extends BaseErrorListener {
 
 	public void unsetCurrentFileName() {
 		currentFileName = null;
+	}
+	
+	public Set<String> getFunctionDefs() {
+		return functions;
 	}
 
 	/**

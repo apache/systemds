@@ -141,6 +141,7 @@ public class DnnOp extends MultiThreadedHop
 			case UPDATE_EMA:
 			case INV_VAR:
 			case BATCH_NORM2D_BACKWARD_DX:
+			case BATCH_NORM2D_BACKWARD_DGAMMA:
 			{	
 				// GPU-specific operators
 				setLops(constructDnnLops(ExecType.GPU, inputs));
@@ -181,6 +182,7 @@ public class DnnOp extends MultiThreadedHop
 			case CHANNEL_SUMS:
 			case UPDATE_EMA:
 				return 3;
+			case BATCH_NORM2D_BACKWARD_DGAMMA:
 			case UPDATE_NESTEROV_X:
 				return 4;
 			default:
@@ -538,7 +540,7 @@ public class DnnOp extends MultiThreadedHop
 		
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
 			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
-			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX || op == OpOpDnn.BATCH_NORM2D_BACKWARD_DGAMMA) {
 			// Same dimension as the first input
 			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
@@ -755,7 +757,7 @@ public class DnnOp extends MultiThreadedHop
 	{
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || 
 			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
-			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX || op == OpOpDnn.BATCH_NORM2D_BACKWARD_DGAMMA) {
 			// Same dimension as the first input
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
@@ -873,7 +875,7 @@ public class DnnOp extends MultiThreadedHop
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST || op == OpOpDnn.CHANNEL_SUMS ||
 			op == OpOpDnn.UPDATE_NESTEROV_X || op == OpOpDnn.RESHAPE_COLMEANS ||
 			op == OpOpDnn.UPDATE_EMA_VAR || op == OpOpDnn.UPDATE_EMA || op == OpOpDnn.INV_VAR ||
-			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX) {
+			op == OpOpDnn.BATCH_NORM2D_BACKWARD_DX || op == OpOpDnn.BATCH_NORM2D_BACKWARD_DGAMMA) {
 			throw new RuntimeException("getDim method should not be invoked for " + op.name());
 		}
 		try {

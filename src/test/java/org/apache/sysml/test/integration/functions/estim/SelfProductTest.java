@@ -71,13 +71,13 @@ public class SelfProductTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDensityMap7Case1() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, sparsity1);
+	public void testDensityMap8Case1() {
+		runSparsityEstimateTest(new EstimatorDensityMap(8), m, sparsity1);
 	}
 	
 	@Test
-	public void testDensityMap7Case2() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, sparsity2);
+	public void testDensityMap8Case2() {
+		runSparsityEstimateTest(new EstimatorDensityMap(8), m, sparsity2);
 	}
 	
 	@Test

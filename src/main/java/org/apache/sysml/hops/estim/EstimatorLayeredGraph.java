@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class EstimatorLayeredGraph extends SparsityEstimator {
 
-	private static final int ROUNDS = 128;
+	private static final int ROUNDS = 32;
 	private final int _rounds;
 	
 	public EstimatorLayeredGraph() {

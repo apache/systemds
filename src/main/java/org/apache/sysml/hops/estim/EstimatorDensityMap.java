@@ -193,6 +193,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_b = b;
 			_map = init(in);
 			_scaled = false;
+			if( !isPow2(_b) )
+				throw new RuntimeException("Invalid block size: "+_b);
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
@@ -201,6 +203,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_b = b;
 			_map = map;
 			_scaled = scaled;
+			if( !isPow2(_b) )
+				throw new RuntimeException("Invalid block size: "+_b);
 		}
 		
 		public int getNumRows() {
@@ -312,6 +316,11 @@ public class EstimatorDensityMap extends SparsityEstimator
 			}
 			out.recomputeNonZeros();
 			return out;
+		}
+		
+		private boolean isPow2(int value) {
+			double tmp = (Math.log(value) / Math.log(2));
+			return Math.floor(tmp) == Math.ceil(tmp);
 		}
 	}
 }

@@ -80,13 +80,13 @@ public class OuterProductTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDensityMap7Case1() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, k, n, case1);
+	public void testDensityMap8Case1() {
+		runSparsityEstimateTest(new EstimatorDensityMap(8), m, k, n, case1);
 	}
 	
 	@Test
-	public void testDensityMap7Case2() {
-		runSparsityEstimateTest(new EstimatorDensityMap(7), m, k, n, case2);
+	public void testDensityMap8Case2() {
+		runSparsityEstimateTest(new EstimatorDensityMap(8), m, k, n, case2);
 	}
 	
 	@Test

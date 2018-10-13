@@ -88,7 +88,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		return leafs;
 	}
 
-	private static class LayeredGraph {
+	public static class LayeredGraph {
 		private final List<Node[]> _nodes; //nodes partitioned by graph level
 		private final int _rounds;         //length of propagated r-vectors 
 		

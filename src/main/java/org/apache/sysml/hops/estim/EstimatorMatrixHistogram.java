@@ -19,6 +19,7 @@
 
 package org.apache.sysml.hops.estim;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
@@ -195,7 +196,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			h1.getRows(), h2.getCols(), nnz);
 	}
 	
-	private static class MatrixHistogram {
+	public static class MatrixHistogram {
 		// count vectors (the histogram)
 		private final int[] rNnz;    //nnz per row
 		private int[] rNnz1e = null; //nnz per row for cols w/ <= 1 non-zeros
@@ -218,7 +219,12 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				&& in.getNumRows() == in.getNumColumns();
 			
 			// 2) compute basic synopsis details
-			if( !in.isEmpty() ) {
+			if( in.getLength() == in.getNonZeros() ) {
+				//fully dense: constant row/column counts
+				Arrays.fill(rNnz, n);
+				Arrays.fill(cNnz, m);
+			}
+			else if( !in.isEmpty() ) {
 				if( in.isInSparseFormat() ) {
 					SparseBlock a = in.getSparseBlock();
 					for( int i=0; i<m; i++ ) {
@@ -250,7 +256,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			rNdiv2 = rSummary[3]; cNdiv2 = cSummary[3];
 			
 			// 4) compute exception details if necessary (optional)
-			if( useExcepts & !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) ) {
+			if( useExcepts && !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) 
+				&& in.getLength() != in.getNonZeros() ) { //not fully dense
 				rNnz1e = new int[in.getNumRows()];
 				cNnz1e = new int[in.getNumColumns()];
 				

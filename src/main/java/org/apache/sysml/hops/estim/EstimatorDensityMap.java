@@ -180,7 +180,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumColumnsOrig(), _b, true);
 	}
 	
-	private static class DensityMap {
+	public static class DensityMap {
 		private final MatrixBlock _map;
 		private final int _rlen;
 		private final int _clen;

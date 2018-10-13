@@ -108,7 +108,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 
-	private abstract static class BitsetMatrix {
+	public abstract static class BitsetMatrix {
 		protected final int _rlen;
 		protected final int _clen;
 		protected long _nonZeros;
@@ -207,7 +207,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	 * not allow for range ORs). However, this implies a maximum size of 16GB.
 	 * 
 	 */
-	private static class BitsetMatrix1 extends BitsetMatrix {
+	public static class BitsetMatrix1 extends BitsetMatrix {
 		//linearized and padded data array in row-major order, where each long
 		//represents 64 boolean values, all rows are aligned at 64 for simple access
 		private final int _rowLen;
@@ -407,7 +407,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	}
 	
 	@SuppressWarnings("unused")
-	private static class BitsetMatrix2 extends BitsetMatrix {
+	public static class BitsetMatrix2 extends BitsetMatrix {
 		private BitSet[] _data;
 
 		public BitsetMatrix2(int rlen, int clen) {

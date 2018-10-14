@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -48,6 +49,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -65,13 +67,14 @@ import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.DMLScriptException;
+import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.controlprogram.parfor.util.IDHandler;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.CleanupMR;
@@ -79,13 +82,9 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.NativeHelper;
-import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
-import org.apache.sysml.yarn.DMLAppMasterUtils;
-import org.apache.sysml.yarn.DMLYarnClientProxy;
 
 
 public class DMLScript 
@@ -111,10 +110,9 @@ public class DMLScript
 		// ARC, // https://dbs.uni-leipzig.de/file/ARC.pdf
 		// LOOP_AWARE 		// different policies for operations in for/while/parfor loop vs out-side the loop
 	}
-	
-	// TODO: Anthony
-	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
-	
+
+	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
+
 	// debug mode is deprecated and will be removed soon.
 	public static boolean           ENABLE_DEBUG_MODE   = DMLOptions.defaultOptions.debug;       // debug mode
 	
@@ -141,7 +139,7 @@ public class DMLScript
 	public static boolean VALIDATOR_IGNORE_ISSUES = false;
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
-	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
+	static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 	
 	///////////////////////////////
 	// public external interface
@@ -195,6 +193,7 @@ public class DMLScript
 		}
 	}
 
+
 	/**
 	 * Single entry point for all public invocation alternatives (e.g.,
 	 * main, executeScript, JaqlUdf etc)
@@ -215,8 +214,7 @@ public class DMLScript
 		{
 			dmlOptions = DMLOptions.parseCLArguments(args);
 			ConfigurationManager.setGlobalOptions(dmlOptions);
-			
-			JMLC_MEM_STATISTICS = dmlOptions.memStats;
+
 			EXPLAIN             = dmlOptions.explainType;
 			ENABLE_DEBUG_MODE   = dmlOptions.debug;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
@@ -378,104 +376,56 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
-	/**
-	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
-	 * and customized parameters have been put into _argVals
-	 * 
-	 * @param dmlScriptStr DML script string
-	 * @param fnameOptConfig configuration file
-	 * @param argVals map of argument values
-	 * @param allArgs arguments
-	 * @param scriptType type of script (DML or PyDML)
-	 * @throws IOException if IOException occurs
-	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
-		throws IOException
-	{	
-		SCRIPT_TYPE = scriptType;
+    /**
+     * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
+     * and customized parameters have been put into _argVals
+     *
+     * @param dmlScriptStr DML script string
+     * @param fnameOptConfig configuration file
+     * @param argVals map of argument values
+     * @param allArgs arguments
+     * @param scriptType type of script (DML or PyDML)
+     * @throws IOException if IOException occurs
+     */
+    private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
+            throws IOException
+    {
+        SCRIPT_TYPE = scriptType;
 
-		//print basic time and environment info
-		printStartExecInfo( dmlScriptStr );
-		
-		//Step 1: parse configuration files & write any configuration specific global variables
-		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-		ConfigurationManager.setGlobalConfig(dmlconf);
-		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
-		ConfigurationManager.setGlobalConfig(cconf);
-		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
-		
-		setGlobalFlags(dmlconf);
+        //print basic time and environment info
+        printStartExecInfo( dmlScriptStr );
 
-		//Step 2: set local/remote memory if requested (for compile in AM context) 
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			DMLAppMasterUtils.setupConfigRemoteMaxMemory(dmlconf); 
-		}
-		
-		//Step 3: parse dml script
-		Statistics.startCompileTimer();
-		ParserWrapper parser = ParserFactory.createParser(scriptType);
-		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
-		
-		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)
-		DMLTranslator dmlt = new DMLTranslator(prog);
-		dmlt.liveVariableAnalysis(prog);
-		dmlt.validateParseTree(prog);
-		dmlt.constructHops(prog);
-		
-		//init working directories (before usage by following compilation steps)
-		initHadoopExecution( dmlconf );
-	
-		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
-		dmlt.rewriteHopsDAG(prog);
-		
-		//Step 6: construct lops (incl exec type and op selection)
-		dmlt.constructLops(prog);
+        //Step 1: parse configuration files & write any configuration specific global variables
+        DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
+        ConfigurationManager.setGlobalConfig(dmlconf);
+        CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+        ConfigurationManager.setGlobalConfig(cconf);
+        LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** LOPS DAG *******************");
-			dmlt.printLops(prog);
-			dmlt.resetLopsDAGVisitStatus(prog);
-		}
-		
-		//Step 7: generate runtime program, incl codegen
-		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);
-		
-		//launch SystemML appmaster (if requested and not already in launched AM)
-		if( dmlconf.getBooleanValue(DMLConfig.YARN_APPMASTER) ){
-			if( !isActiveAM() && DMLYarnClientProxy.launchDMLYarnAppmaster(dmlScriptStr, dmlconf, allArgs, rtprog) )
-				return; //if AM launch unsuccessful, fall back to normal execute
-			if( isActiveAM() ) //in AM context (not failed AM launch)
-				DMLAppMasterUtils.setupProgramMappingRemoteMaxMemory(rtprog);
-		}
-		
-		//Step 9: prepare statistics [and optional explain output]
-		//count number compiled MR jobs / SP instructions	
-		ExplainCounts counts = Explain.countDistributedOperations(rtprog);
-		Statistics.resetNoOfCompiledJobs( counts.numJobs );
-		
-		//explain plan of program (hops or runtime)
-		if( EXPLAIN != ExplainType.NONE )
-			System.out.println(Explain.display(prog, rtprog, EXPLAIN, counts));
-		
-		Statistics.stopCompileTimer();
-		
-		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
-		//System.out.println("Estimated costs: "+costs);
-		
-		//Step 10: execute runtime program
-		ExecutionContext ec = null;
-		try {
-			ec = ExecutionContextFactory.createContext(rtprog);
-			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, dmlconf, ConfigurationManager.isStatistics() ? ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0, null);
-		}
-		finally {
-			if(ec != null && ec instanceof SparkExecutionContext)
-				((SparkExecutionContext) ec).close();
-			LOG.info("END DML run " + getDateTime() );
-			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( dmlconf );
-		}
-	}
+        setGlobalFlags(dmlconf);
+        Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(dmlScriptStr, argVals, allArgs,
+                scriptType, dmlconf, SystemMLAPI.DMLScript);
+        List<GPUContext> gCtxs = ConfigurationManager.getDMLOptions().gpu ? GPUContextPool.getAllGPUContexts() : null;
+
+        //double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
+        //System.out.println("Estimated costs: "+costs);
+
+        //Step 10: execute runtime program
+        ExecutionContext ec = null;
+        try {
+            ec = ScriptExecutorUtils.executeRuntimeProgram(
+                    rtprog, dmlconf, ConfigurationManager.isStatistics() ?
+                            ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
+                    new LocalVariableMap(), null, SystemMLAPI.DMLScript, gCtxs);
+        }
+        finally {
+            if(ec != null && ec instanceof SparkExecutionContext)
+                ((SparkExecutionContext) ec).close();
+            LOG.info("END DML run " + getDateTime() );
+            //cleanup scratch_space and all working dirs
+            cleanupHadoopExecution( dmlconf );
+        }
+    }
 	
 	/**
 	 * Sets the global flags in DMLScript based on user provided configuration

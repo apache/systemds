@@ -25,15 +25,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.mlcontext.ScriptType;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.CompilerConfig.ConfigType;
@@ -41,18 +43,13 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
-import org.apache.sysml.hops.rewrite.ProgramRewriter;
-import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.parser.DMLProgram;
-import org.apache.sysml.parser.DMLTranslator;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.LanguageException;
-import org.apache.sysml.parser.ParseException;
-import org.apache.sysml.parser.ParserFactory;
-import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.io.FrameReader;
 import org.apache.sysml.runtime.io.FrameReaderFactory;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
@@ -151,6 +148,8 @@ public class Connection implements Closeable
 	 * @param dmlconfig a dml configuration.
 	 */
 	public Connection(DMLConfig dmlconfig) {
+		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)
 		CompilerConfig cconf = new CompilerConfig();
@@ -193,7 +192,25 @@ public class Connection implements Closeable
 	
 	/**
 	 * Prepares (precompiles) a script and registers input and output variables.
-	 * 
+	 *
+	 * @param script string representing the DML or PyDML script
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param useGpu {@code true} if prepare the script with GPU support, {@code false}
+	 * @param forceGpu {@code true} if prepare the script with forced GPU support, {@code false}
+	 * @param gpuIndex the GPU to use to execute the given prepared script
+	 * @return PreparedScript object representing the precompiled script
+	 */
+	public PreparedScript prepareScript(
+			String script, String[] inputs, String[] outputs, boolean useGpu, boolean forceGpu, int gpuIndex) {
+		return prepareScript(
+				script, Collections.emptyMap(), Collections.emptyMap(),
+				inputs, outputs, false, useGpu, forceGpu, gpuIndex);
+	}
+
+	/**
+	 * Prepares (precompiles) a script and registers input and output variables.
+	 *
 	 * @param script string representing the DML or PyDML script
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register
@@ -230,67 +247,72 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
-		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+		return prepareScript(script, nsscripts, args, inputs, outputs, parsePyDML, false, false, -1);
+	}
 
-		// Set DML Options here:
-		boolean gpu = false; boolean forceGPU = false;
-		ConfigurationManager.setLocalOptions(new DMLOptions(args, 
-				false, 10, false, Explain.ExplainType.NONE, RUNTIME_PLATFORM.SINGLE_NODE, gpu, forceGPU, 
+	/**
+	 * List of available GPU contexts:
+	 */
+	static GPUContext [] AVAILABLE_GPU_CONTEXTS;
+
+
+	/**
+	 * Prepares (precompiles) a script, sets input parameter values, and registers input and output variables.
+	 *
+	 * @param script string representing of the DML or PyDML script
+	 * @param nsscripts map (name, script) of the DML or PyDML namespace scripts
+	 * @param args map of input parameters ($) and their values
+	 * @param inputs string array of input variables to register
+	 * @param outputs string array of output variables to register
+	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
+	 * @param useGPU {@code true} if prepare the script with GPU support, {@code false}
+	 * @param forceGPU {@code true} if prepare the script with forced GPU support, {@code false}
+	 * @param gpuIndex the GPU to use to execute the given prepared script
+	 * @return PreparedScript object representing the precompiled script
+	 */
+	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs,
+										boolean parsePyDML, boolean useGPU, boolean forceGPU, int gpuIndex) {
+
+		DMLScript.SCRIPT_TYPE = parsePyDML ? ScriptType.PYDML : ScriptType.DML;
+		ConfigurationManager.setLocalOptions(new DMLOptions(args,
+				false, 10, false,
+				Explain.ExplainType.NONE, RUNTIME_PLATFORM.SINGLE_NODE, useGPU, forceGPU,
 				parsePyDML ? ScriptType.PYDML : ScriptType.DML, null, script));
-		
-		//check for valid names of passed arguments
-		String[] invalidArgs = args.keySet().stream()
-			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
-		if( invalidArgs.length > 0 )
-			throw new LanguageException("Invalid argument names: "+Arrays.toString(invalidArgs));
-		
-		//check for valid names of input and output variables
-		String[] invalidVars = UtilFunctions.asSet(inputs, outputs).stream()
-			.filter(k -> k==null || k.startsWith("$")).toArray(String[]::new);
-		if( invalidVars.length > 0 )
-			throw new LanguageException("Invalid variable names: "+Arrays.toString(invalidVars));
-		
 		setLocalConfigs();
-		
-		//simplified compilation chain
-		Program rtprog = null;
-		try {
-			//parsing
-			ParserWrapper parser = ParserFactory.createParser(
-				parsePyDML ? ScriptType.PYDML : ScriptType.DML, nsscripts);
-			DMLProgram prog = parser.parse(null, script, args);
-			
-			//language validate
-			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.liveVariableAnalysis(prog);
-			dmlt.validateParseTree(prog);
-			
-			//hop construct/rewrite
-			dmlt.constructHops(prog);
-			dmlt.rewriteHopsDAG(prog);
-			
-			//rewrite persistent reads/writes
-			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs);
-			ProgramRewriter rewriter2 = new ProgramRewriter(rewrite);
-			rewriter2.rewriteProgramHopDAGs(prog);
-			
-			//lop construct and runtime prog generation
-			dmlt.constructLops(prog);
-			rtprog = dmlt.getRuntimeProgram(prog, _dmlconf);
-			
-			//final cleanup runtime prog
-			JMLCUtils.cleanupRuntimeProgram(rtprog, outputs);
+
+		List<GPUContext> _gpuCtx = new ArrayList<>();
+		if (useGPU) {
+			if (AVAILABLE_GPU_CONTEXTS == null) {
+				synchronized (Connection.class) {
+					if (AVAILABLE_GPU_CONTEXTS == null) {
+						// Initialize the GPUs if not already
+						String oldAvailableGpus = GPUContextPool.AVAILABLE_GPUS;
+						GPUContextPool.AVAILABLE_GPUS = "-1"; // use all the GPUs in JMLC mode
+						List<GPUContext> availableCtx = GPUContextPool.getAllGPUContexts();
+						AVAILABLE_GPU_CONTEXTS = availableCtx.toArray(new GPUContext[availableCtx.size()]);
+						GPUContextPool.AVAILABLE_GPUS = oldAvailableGpus;
+					}
+				}
+			}
+			if (AVAILABLE_GPU_CONTEXTS.length == 0)
+				throw new DMLRuntimeException("No GPU Context in available");
+			else if (gpuIndex < 0 || gpuIndex >= AVAILABLE_GPU_CONTEXTS.length)
+				throw new DMLRuntimeException("Cannot use the GPU " + gpuIndex +
+						". Valid values: [0, " + (AVAILABLE_GPU_CONTEXTS.length - 1) + "]");
+			// For simplicity of the API, the initial version statically associates a GPU to the prepared script.
+			// We can revisit this assumption if it turns out to be the overhead.
+			_gpuCtx.add(AVAILABLE_GPU_CONTEXTS[gpuIndex]);
 		}
-		catch(ParseException pe) {
-			// don't chain ParseException (for cleaner error output)
-			throw pe;
-		}
-		catch(Exception ex) {
-			throw new DMLException(ex);
-		}
-		
-		//return newly create precompiled script 
-		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
+
+		Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(script, nsscripts, args, inputs, outputs,
+				parsePyDML ? ScriptType.PYDML : ScriptType.DML, _dmlconf, SystemMLAPI.JMLC);
+
+
+		//return newly create precompiled script
+		PreparedScript ret = new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
+
+		if (useGPU) ret._gpuCtx = _gpuCtx;
+		return ret;
 	}
 	
 	/**

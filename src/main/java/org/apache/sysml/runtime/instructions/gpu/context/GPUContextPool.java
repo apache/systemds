@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.utils.GPUStatistics;
 
@@ -71,9 +72,9 @@ public class GPUContextPool {
 	static List<GPUContext> pool = new LinkedList<>();
 
 	/**
-	 * Whether the pool of GPUs is reserved or not
+	 * Used to throw an error in case of incorrect usage
 	 */
-	static boolean reserved = false;
+	private static String oldAvailableGpus;
 
 	/**
 	 * Static initialization of the number of devices
@@ -99,6 +100,7 @@ public class GPUContextPool {
 
 		try {
 			ArrayList<Integer> listOfGPUs = parseListString(AVAILABLE_GPUS, deviceCount);
+			oldAvailableGpus = AVAILABLE_GPUS;
 
 			// Initialize the list of devices & the pool of GPUContexts
 			for (int i : listOfGPUs) {
@@ -202,17 +204,17 @@ public class GPUContextPool {
 	}
 
 	/**
-	 * Reserves and gets an initialized list of GPUContexts
+	 * Gets an initialized list of GPUContexts
 	 *
 	 * @return null if no GPUContexts in pool, otherwise a valid list of GPUContext
 	 */
-	public static synchronized List<GPUContext> reserveAllGPUContexts() {
-		if (reserved)
-			throw new DMLRuntimeException("Trying to re-reserve GPUs");
+	public static synchronized List<GPUContext> getAllGPUContexts() {
 		if (!initialized)
 			initializeGPU();
-		reserved = true;
-		LOG.trace("GPU : Reserved all GPUs");
+		if(!oldAvailableGpus.equals(AVAILABLE_GPUS)) {
+			LOG.warn("GPUContextPool was already initialized with " + DMLConfig.AVAILABLE_GPUS + "=" + oldAvailableGpus
+					+ ". Cannot reinitialize it with " + DMLConfig.AVAILABLE_GPUS + "=" + AVAILABLE_GPUS);
+		}
 		return pool;
 	}
 
@@ -247,17 +249,6 @@ public class GPUContextPool {
 		if (!initialized)
 			initializeGPU();
 		return deviceCount;
-	}
-
-	/**
-	 * Unreserves all GPUContexts
-	 */
-	public static synchronized void freeAllGPUContexts() {
-		if (!reserved)
-			throw new DMLRuntimeException("Trying to free unreserved GPUs");
-		reserved = false;
-		LOG.trace("GPU : Unreserved all GPUs");
-
 	}
 
 	/**

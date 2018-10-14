@@ -20,7 +20,9 @@
 package org.apache.sysml.api.mlcontext;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
@@ -50,7 +53,8 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
 import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
@@ -113,6 +117,7 @@ public class ScriptExecutor {
 	protected ExecutionType executionType;
 	protected int statisticsMaxHeavyHitters = 10;
 	protected boolean maintainSymbolTable = false;
+	protected List<GPUContext> gCtxs = null;
 
 	/**
 	 * ScriptExecutor constructor.
@@ -208,20 +213,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Create an execution context and set its variables to be the symbol table
-	 * of the script.
-	 */
-	protected void createAndInitializeExecutionContext() {
-		executionContext = ExecutionContextFactory.createContext(runtimeProgram);
-		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null)
-			executionContext.setVariables(symbolTable);
-		//attach registered outputs (for dynamic recompile)
-		executionContext.getVariables().setRegisteredOutputs(
-			new HashSet<String>(script.getOutputVariables()));
-	}
-
-	/**
 	 * Set the global flags (for example: statistics, gpu, etc).
 	 */
 	protected void setGlobalFlags() {
@@ -291,27 +282,23 @@ public class ScriptExecutor {
 	 */
 	public void compile(Script script, boolean performHOPRewrites) {
 
-		// main steps in script execution
 		setup(script);
-		if (statistics) {
-			Statistics.startCompileTimer();
+
+		LocalVariableMap symbolTable = script.getSymbolTable();
+		String[] inputs = null; String[] outputs = null;
+		if (symbolTable != null) {
+			inputs = (script.getInputVariables() == null) ? new String[0]
+					: script.getInputVariables().toArray(new String[0]);
+			outputs = (script.getOutputVariables() == null) ? new String[0]
+					: script.getOutputVariables().toArray(new String[0]);
 		}
-		parseScript();
-		liveVariableAnalysis();
-		validateScript();
-		constructHops();
-		if(performHOPRewrites)
-			rewriteHops();
-		rewritePersistentReadsAndWrites();
-		constructLops();
-		generateRuntimeProgram();
-		showExplanation();
-		countCompiledMRJobsAndSparkInstructions();
-		initializeCachingAndScratchSpace();
-		cleanupRuntimeProgram();
-		if (statistics) {
-			Statistics.stopCompileTimer();
-		}
+
+		Map<String, String> args = MLContextUtil
+				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+		runtimeProgram = ScriptExecutorUtils.compileRuntimeProgram(script.getScriptExecutionString(), Collections.emptyMap(),
+				args, null, symbolTable, inputs, outputs, script.getScriptType(), config, SystemMLAPI.MLContext,
+				performHOPRewrites, isMaintainSymbolTable(), init);
+		gCtxs = ConfigurationManager.isGPU() ? GPUContextPool.getAllGPUContexts() : null;
 	}
 
 
@@ -321,8 +308,6 @@ public class ScriptExecutor {
 	 *
 	 * <ol>
 	 * <li>{@link #compile(Script)}</li>
-	 * <li>{@link #createAndInitializeExecutionContext()}</li>
-	 * <li>{@link #executeRuntimeProgram()}</li>
 	 * <li>{@link #cleanupAfterExecution()}</li>
 	 * </ol>
 	 *
@@ -352,8 +337,11 @@ public class ScriptExecutor {
 		compile(script);
 
 		try {
-			createAndInitializeExecutionContext();
-			executeRuntimeProgram();
+			executionContext = ScriptExecutorUtils.executeRuntimeProgram(getRuntimeProgram(), getConfig(),
+					statistics ? statisticsMaxHeavyHitters : 0, script.getSymbolTable(),
+					new HashSet<String>(getScript().getOutputVariables()), SystemMLAPI.MLContext, gCtxs);
+		} catch (DMLRuntimeException e) {
+			throw new MLContextException("Exception occurred while executing runtime program", e);
 		} finally {
 			cleanupAfterExecution();
 		}
@@ -376,8 +364,17 @@ public class ScriptExecutor {
 	 */
 	protected void setup(Script script) {
 		this.script = script;
-		checkScriptHasTypeAndString();
+		if (script == null) {
+			throw new MLContextException("Script is null");
+		} else if (script.getScriptType() == null) {
+			throw new MLContextException("ScriptType (DML or PYDML) needs to be specified");
+		} else if (script.getScriptString() == null) {
+			throw new MLContextException("Script string is null");
+		} else if (StringUtils.isBlank(script.getScriptString())) {
+			throw new MLContextException("Script string is blank");
+		}
 		script.setScriptExecutor(this);
+
 		// Set global variable indicating the script type
 		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
@@ -385,6 +382,7 @@ public class ScriptExecutor {
 		Statistics.resetNoOfExecutedJobs();
 		if (statistics)
 			Statistics.reset();
+		DMLScript.EXPLAIN = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.NONE;
 	}
 
 	/**
@@ -429,19 +427,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Execute the runtime program. This involves execution of the program
-	 * blocks that make up the runtime program and may involve dynamic
-	 * recompilation.
-	 */
-	protected void executeRuntimeProgram() {
-		try {
-			ScriptExecutorUtils.executeRuntimeProgram(this, statistics ? statisticsMaxHeavyHitters : 0);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred while executing runtime program", e);
-		}
-	}
-
-	/**
 	 * Check security, create scratch space, cleanup working directories,
 	 * initialize caching, and reset statistics.
 	 */
@@ -467,12 +452,9 @@ public class ScriptExecutor {
 	protected void parseScript() {
 		try {
 			ParserWrapper parser = ParserFactory.createParser(script.getScriptType());
-			Map<String, Object> inputParameters = script.getInputParameters();
-			Map<String, String> inputParametersStringMaps = MLContextUtil
-					.convertInputParametersForParser(inputParameters, script.getScriptType());
-
-			String scriptExecutionString = script.getScriptExecutionString();
-			dmlProgram = parser.parse(null, scriptExecutionString, inputParametersStringMaps);
+			Map<String, String> args = MLContextUtil
+					.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
+			dmlProgram = parser.parse(null, script.getScriptExecutionString(), args);
 		} catch (ParseException e) {
 			throw new MLContextException("Exception occurred while parsing script", e);
 		}

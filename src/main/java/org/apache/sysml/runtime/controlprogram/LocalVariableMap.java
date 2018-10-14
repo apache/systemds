@@ -115,11 +115,8 @@ public class LocalVariableMap implements Cloneable
 	}
 
 	public boolean hasReferences( Data d ) {
-		//perf: avoid java streams here for reduced overhead in rmvar
-		for( Data o : localMap.values() )
-			if( o instanceof ListObject ? ((ListObject)o).getData().contains(d) : o == d )
-				return true;
-		return false;
+		return localMap.values().stream().anyMatch(e -> (e instanceof ListObject) ?
+			((ListObject)e).getData().contains(d) : e == d);
 	}
 	
 	public void setRegisteredOutputs(HashSet<String> outputs) {
@@ -143,7 +140,7 @@ public class LocalVariableMap implements Cloneable
 			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData ) {
 				dict.put(hash, e.getValue());
 				double size = ((CacheableData<?>) e.getValue()).getDataSize();
-				if (DMLScript.JMLC_MEM_STATISTICS && ConfigurationManager.isFinegrainedStatistics())
+				if (ConfigurationManager.isJMLCMemStatistics() && ConfigurationManager.isFinegrainedStatistics())
 					Statistics.maintainCPHeavyHittersMem(e.getKey(), size);
 				total += size;
 			}

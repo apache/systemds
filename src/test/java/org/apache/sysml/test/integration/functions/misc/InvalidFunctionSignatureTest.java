@@ -57,6 +57,9 @@ public class InvalidFunctionSignatureTest extends AutomatedTestBase
 	 */
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		

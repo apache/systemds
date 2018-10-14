@@ -66,7 +66,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testConstConst() {
-
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = availableTestConfigurations.get("ConstConstTest");
 		
 		config.addVariable("intintvardeclaration", "");
@@ -98,6 +100,9 @@ public class ModulusTest extends AutomatedTestBase
 	@Test
 	public void testVarConst() {
 
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = availableTestConfigurations.get("VarConstTest");
 		config.addVariable("intintvardeclaration", "IntIntVar = " + intIntValue1 + ";");
 		config.addVariable("intintop1", "IntIntVar");
@@ -127,6 +132,8 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testConstVar() {
+		if(shouldSkipTest())
+			return;
 
 		TestConfiguration config = availableTestConfigurations.get("ConstVarTest");
 		config.addVariable("intintvardeclaration", "IntIntVar = " + intIntValue2 + ";");
@@ -158,6 +165,9 @@ public class ModulusTest extends AutomatedTestBase
 	@Test
 	public void testVarVar() {
 
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = availableTestConfigurations.get("VarVarTest");
 		config.addVariable("intintvardeclaration", "IntIntVar1 = " + intIntValue1 + ";" + "IntIntVar2 = "
 				+ intIntValue2 + ";");
@@ -191,6 +201,9 @@ public class ModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositiveIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 5;
 		double op2 = 0;
 
@@ -211,6 +224,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testPositiveDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 5;
 		double op2 = 0;
 
@@ -231,6 +247,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = -5;
 		double op2 = 0;
 
@@ -251,6 +270,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = -5;
 		double op2 = 0;
 
@@ -271,6 +293,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testZeroDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 0;
 		double op2 = 0;
 
@@ -291,6 +316,9 @@ public class ModulusTest extends AutomatedTestBase
 
 	@Test
 	public void testZeroIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 0;
 		double op2 = 0;
 

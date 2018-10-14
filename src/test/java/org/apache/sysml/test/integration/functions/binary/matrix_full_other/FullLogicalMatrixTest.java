@@ -522,20 +522,14 @@ public class FullLogicalMatrixTest extends AutomatedTestBase
 
 	private void runLogicalTest( Type type, boolean sp1, boolean sp2, ExecType et )
 	{
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = TEST_NAME1;
 		int rows = rows1;
 		int cols = cols1;
-
-	    RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		double sparsityLeft = sp1 ? sparsity2 : sparsity1;
 		double sparsityRight = sp2 ? sparsity2 : sparsity1;

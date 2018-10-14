@@ -26,7 +26,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameCastingTest extends AutomatedTestBase
@@ -84,6 +83,9 @@ public class FrameCastingTest extends AutomatedTestBase
 	 */
 	private void runFrameCastingTest( ValueType[] schema, CastType ctype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -123,7 +125,7 @@ public class FrameCastingTest extends AutomatedTestBase
 			
 			//check basic meta data
 			if( frame.getNumRows() != rows )
-				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
+				fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
 		
 			//check correct values
 			ValueType[] lschema = frame.getSchema();
@@ -131,7 +133,7 @@ public class FrameCastingTest extends AutomatedTestBase
 				for( int j=0; j<lschema.length; j++ )	{
 					double tmp = UtilFunctions.objectToDouble(lschema[j], frame.get(i, j));
 					if( tmp != A[i][j] )
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
+						fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
 		}
 		catch(Exception ex) {

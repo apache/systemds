@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.append;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -135,8 +134,11 @@ public class AppendChainTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM prevPlfm= setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
+		
 		
 		try
 		{
@@ -177,7 +179,7 @@ public class AppendChainTest extends AutomatedTestBase
 			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2+((cols3>1)?1:0) : 0; 
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
+			assertEquals("Wrong number of executed MR jobs.",
 					             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
 			
 			//compare result data

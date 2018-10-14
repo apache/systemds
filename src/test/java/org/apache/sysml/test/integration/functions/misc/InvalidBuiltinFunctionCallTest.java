@@ -45,6 +45,9 @@ public class InvalidBuiltinFunctionCallTest extends AutomatedTestBase
 	
 	private void runTest( String testName, boolean expected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		

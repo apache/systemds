@@ -30,7 +30,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -98,6 +97,9 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	 */
 	private void runFrameCastingTest( String testname, ValueType vt)
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -133,7 +135,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 					.readFrameFromHDFS(output("B"), new ValueType[]{vt}, 1, 1)
 					.get(0, 0);
 			}
-			Assert.assertEquals("Wrong output: "+retval+" (expected: "+inval+")", inval, retval);
+			assertEquals("Wrong output: "+retval+" (expected: "+inval+")", inval, retval);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

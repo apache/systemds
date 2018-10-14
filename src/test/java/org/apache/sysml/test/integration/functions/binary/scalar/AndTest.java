@@ -40,6 +40,9 @@ public class AndTest extends AutomatedTestBase
 	
 	@Test
 	public void testAnd() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("AndTest");
 		loadTestConfiguration(config);
 		

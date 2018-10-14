@@ -128,6 +128,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	private void formatChangeTest() {
+		if(shouldSkipTest())
+			return;
 
 		int rows = _rows;
 		int cols = _cols;
@@ -203,6 +205,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	private void compareFiles(int rows, int cols, double sparsity, String dmlFile, String dmlFormat, String csvFile) {
+		if(shouldSkipTest())
+			return;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		
 		// backup old DML and R script files

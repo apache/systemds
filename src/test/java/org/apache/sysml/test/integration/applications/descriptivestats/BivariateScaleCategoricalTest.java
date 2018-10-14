@@ -58,6 +58,8 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase
 	
 	@Test
 	public void testScaleCategorical() {
+		if(shouldSkipTest())
+			return;
 		
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_NOMINAL);
 		config.addVariable("rows", rows);
@@ -105,6 +107,9 @@ public class BivariateScaleCategoricalTest extends AutomatedTestBase
 
 	@Test
 	public void testScaleCategoricalWithWeights() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_NOMINAL_WEIGHTS);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);

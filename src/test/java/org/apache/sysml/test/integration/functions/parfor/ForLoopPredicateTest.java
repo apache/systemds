@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -148,6 +148,8 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 	 */
 	private void runForPredicateTest( int testNum, boolean intScalar )
 	{
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
+		
 		String TEST_NAME = null;
 		switch( testNum )
 		{

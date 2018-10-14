@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -188,17 +187,12 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType  )
 	{			
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+	
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
 		{
@@ -223,13 +217,13 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			if( testname.equals(TEST_NAME8) )
-				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(!(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP")));
 			else if( !rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP"));
 				if( testname.equals(TEST_NAME9) )
-					Assert.assertTrue(!heavyHittersContainsSubString("!="));
+					assertTrue(!heavyHittersContainsSubString("!="));
 			}
 		}
 		finally {
@@ -289,10 +283,10 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			}
 			
 			if( testname.equals(TEST_NAME8) )
-				Assert.assertTrue(!(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(!(heavyHittersContainsSubString("spoofOP") 
 						|| heavyHittersContainsSubString("sp_spoofOP")));
 			else if( !rewrites )
-				Assert.assertTrue(heavyHittersContainsSubString("spoofOP") 
+				assertTrue(heavyHittersContainsSubString("spoofOP") 
 					|| heavyHittersContainsSubString("sp_spoofOP"));
 		}
 		finally {

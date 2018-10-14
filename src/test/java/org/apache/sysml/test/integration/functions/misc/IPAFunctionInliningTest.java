@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -116,6 +115,8 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 	private void runIPAFunInlineTest( String testName, boolean IPA )
 	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -137,17 +138,17 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 			//compare results
 			if( !testName.equals(TEST_NAME6) ) {
 				double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-				Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
+				assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -14));
 			}
 			
 			//compare inlined functions
 			boolean inlined = ( IPA && ArrayUtils.contains(
 				new String[]{TEST_NAME1, TEST_NAME2, TEST_NAME3, TEST_NAME6}, testName));
-			Assert.assertTrue("Unexpected function call: "+inlined, !heavyHittersContainsSubString("foo")==inlined);
+			assertTrue("Unexpected function call: "+inlined, !heavyHittersContainsSubString("foo")==inlined);
 		
 			//check for incorrect operation replication
 			if( testName.equals(TEST_NAME6) )
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")==1);
+				assertTrue(Statistics.getCPHeavyHitterCount("print")==1);
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

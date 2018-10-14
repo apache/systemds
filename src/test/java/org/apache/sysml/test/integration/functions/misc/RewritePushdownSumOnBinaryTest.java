@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -67,6 +66,9 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 	 */
 	private void testRewritePushdownSumOnBinary( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {
@@ -85,9 +87,9 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 			//compare matrices 
 			long expect = Math.round(0.5*rows);
 			HashMap<CellIndex, Double> dmlfile1 = readDMLScalarFromHDFS("R1");
-			Assert.assertEquals("Wrong result R1, expected: "+expect, expect, Math.round(dmlfile1.get(new CellIndex(1,1))));
+			assertEquals("Wrong result R1, expected: "+expect, expect, Math.round(dmlfile1.get(new CellIndex(1,1))));
 			HashMap<CellIndex, Double> dmlfile2 = readDMLScalarFromHDFS("R2");
-			Assert.assertEquals("Wrong result R2, expected: "+expect, expect, Math.round(dmlfile2.get(new CellIndex(1,1))));
+			assertEquals("Wrong result R2, expected: "+expect, expect, Math.round(dmlfile2.get(new CellIndex(1,1))));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

@@ -21,8 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 
-import org.junit.Assert;
-
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
@@ -108,7 +106,10 @@ public class SizePropagationTest extends AutomatedTestBase
 	
 	private void testSizePropagation( String testname, boolean rewrites, int expect ) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);
@@ -118,17 +119,15 @@ public class SizePropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "hops", "-stats","-args", String.valueOf(N), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			runTest(true, false, null, -1); 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
+			assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
-			rtplatform = oldPlatform;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			rtplatform = platformOld;
 		}
 	}
 }

@@ -36,7 +36,6 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameReadWriteTest extends AutomatedTestBase
@@ -156,6 +155,9 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	 */
 	private void runFrameReadWriteTest( OutputInfo oinfo, ValueType[] schema1, ValueType[] schema2, boolean parallel)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldParText = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		boolean oldParBin = CompilerConfig.FLAG_PARREADWRITE_BINARY;
 		
@@ -213,7 +215,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		for ( int i=0; i<frame1.getNumRows(); i++ )
 			for( int j=0; j<lschema.length; j++ )	{
 				if( UtilFunctions.compareTo(lschema[j], frame1.get(i, j), frame2.get(i, j)) != 0)
-					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
+					fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
 							", is not same as original value " + frame2.get(i, j));
 			}
 	}

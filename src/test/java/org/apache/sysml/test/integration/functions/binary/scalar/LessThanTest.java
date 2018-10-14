@@ -43,6 +43,9 @@ public class LessThanTest extends AutomatedTestBase
 	
 	@Test
 	public void testLessThan() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("LessThanTest");
 		loadTestConfiguration(config);
 		

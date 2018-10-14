@@ -58,6 +58,9 @@ public class IOTest3 extends AutomatedTestBase
 
 	@Test
 	public void testSimple() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 

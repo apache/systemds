@@ -61,6 +61,9 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
 
     protected void testCsplineDS(ScriptType scriptType)
     {
+    	if(shouldSkipTest())
+			return;
+    	
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + numRecords + ", " + numDim
 				+ "} ------------");
 		this.scriptType = scriptType;

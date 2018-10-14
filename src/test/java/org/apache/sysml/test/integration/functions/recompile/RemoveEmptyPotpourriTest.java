@@ -21,9 +21,7 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -119,6 +117,9 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 	private void runRemoveEmptyTest( String TEST_NAME, boolean rewrite )
 	{	
 		getAndLoadTestConfiguration(TEST_NAME);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
@@ -141,8 +142,8 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
 			if( TEST_NAME.equals(TEST_NAME5) ) {
-				Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
-				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
+				assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
+				assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 			}
 		}
 		finally

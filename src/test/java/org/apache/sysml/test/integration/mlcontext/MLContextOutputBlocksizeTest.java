@@ -33,7 +33,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class MLContextOutputBlocksizeTest extends MLContextTestBase
@@ -90,8 +89,8 @@ public class MLContextOutputBlocksizeTest extends MLContextTestBase
 			//compare output matrix characteristics
 			MatrixCharacteristics mcOut = results.getMatrix("R")
 				.getMatrixMetadata().asMatrixCharacteristics();
-			Assert.assertEquals(blksz, mcOut.getRowsPerBlock());
-			Assert.assertEquals(blksz, mcOut.getColsPerBlock());
+			assertEquals(blksz, mcOut.getRowsPerBlock());
+			assertEquals(blksz, mcOut.getColsPerBlock());
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

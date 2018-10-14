@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -71,16 +70,10 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 
 	private void testRewriteFoldMinMax( String testname, boolean rewrites, ExecType et )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
@@ -99,11 +92,11 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			Assert.assertEquals("Wrong result", new Double(5*rows*cols), ret);
+			assertEquals("Wrong result", new Double(5*rows*cols), ret);
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
+				assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
 					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount("nmin") == 1)
 					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount("nmax") == 1));
 			}

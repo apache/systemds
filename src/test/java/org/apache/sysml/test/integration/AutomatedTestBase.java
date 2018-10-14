@@ -19,11 +19,6 @@
 
 package org.apache.sysml.test.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,6 +37,7 @@ import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Lop;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.DataExpression;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -65,6 +61,7 @@ import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.internal.ArrayComparisonFailure;
 
 
 /**
@@ -90,6 +87,16 @@ public abstract class AutomatedTestBase
 		public String lowerCase() {
 			return super.toString().toLowerCase();
 		}
+	}
+	
+	// Since MR backend is in the maintenance mode, the MR tests can be skipped to reduce the time
+	// taken for running the entire test suite. This will also help continuous integration process.
+	public static final boolean TEST_MR_BACKEND = false;
+	public boolean shouldSkipTest() {
+		if(rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK || rtplatform == RUNTIME_PLATFORM.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		// Let's skip first HADOOP tests. In the subsequent commits, we can visit HYBRID
+		return !TEST_MR_BACKEND && rtplatform == RUNTIME_PLATFORM.HADOOP;
 	}
 
 	public static final boolean EXCEPTION_EXPECTED = true;
@@ -193,7 +200,34 @@ public abstract class AutomatedTestBase
 	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test
 	 * suite in spark mode
 	 */
-	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	protected RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+	
+	protected RUNTIME_PLATFORM setRuntimePlatform(RUNTIME_PLATFORM platform) {
+		RUNTIME_PLATFORM platformOld = rtplatform;
+		if(platform == RUNTIME_PLATFORM.SPARK || platform == RUNTIME_PLATFORM.HYBRID_SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true; // Always use local config for junit tests
+		}
+		rtplatform = platform;
+		return platformOld;
+	}
+	
+	protected RUNTIME_PLATFORM setRuntimePlatform(ExecType et) {
+		RUNTIME_PLATFORM platformOld = rtplatform;
+        switch (et) {
+            case MR:
+                rtplatform = RUNTIME_PLATFORM.HADOOP;
+                break;
+            case SPARK: {
+                rtplatform = RUNTIME_PLATFORM.SPARK;
+                DMLScript.USE_LOCAL_SPARK_CONFIG = true; // Always use local config for junit tests
+                break;
+            }
+            default:
+                rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+                break;
+        }
+		return platformOld;
+	}
 
 	protected static final boolean DEBUG = false;
 
@@ -705,7 +739,7 @@ public abstract class AutomatedTestBase
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
+	protected HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
@@ -714,12 +748,12 @@ public abstract class AutomatedTestBase
 		return TestUtils.readRMatrixFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
-	protected static HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
+	protected HashMap<CellIndex, Double> readDMLScalarFromHDFS(String fileName) {
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
+	protected FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -729,7 +763,7 @@ public abstract class AutomatedTestBase
 	}
 
 
-	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
+	protected FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + OUTPUT_DIR + fileName;
 		FrameReader reader = FrameReaderFactory.createFrameReader(iinfo);
@@ -737,7 +771,7 @@ public abstract class AutomatedTestBase
 		return reader.readFrameFromHDFS(strFrameFileName, md.getRows(), md.getCols());
 	}
 
-	protected static FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
+	protected FrameBlock readRFrameFromHDFS(String fileName, InputInfo iinfo, MatrixCharacteristics md) throws IOException {
 		//read frame data from hdfs
 		String strFrameFileName = baseDirectory + EXPECTED_DIR + fileName;
 
@@ -755,10 +789,10 @@ public abstract class AutomatedTestBase
 		return TestUtils.readRScalarFromFS(baseDirectory + EXPECTED_DIR + cacheDir + fileName);
 	}
 
-	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc) {
+	public void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc) {
 		MatrixCharacteristics rmc = readDMLMetaDataFile(fileName);
-		Assert.assertEquals(mc.getRows(), rmc.getRows());
-		Assert.assertEquals(mc.getCols(), rmc.getCols());
+		assertEquals(mc.getRows(), rmc.getRows());
+		assertEquals(mc.getCols(), rmc.getCols());
 	}
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName)
@@ -920,13 +954,107 @@ public abstract class AutomatedTestBase
 	 */
 	protected void runRScript() {
 		runRScript(false);
-
 	}
+	
+	public void assertNotEquals(Object expected, Object actual) {
+		Assert.assertNotEquals(expected, actual);
+    }
+	
+	public void assertNotEquals(double expected, double actual) {
+		Assert.assertNotEquals(expected, actual);
+    }
+	
+	public void assertNotEquals(int expected, int actual) {
+		Assert.assertNotEquals(expected, actual);
+    }
+	
+	public void assertNotEquals(long expected, long actual) {
+		Assert.assertNotEquals(expected, actual);
+    }
+	
+	public void assertNotEquals(String message, double expected, double actual) {
+		Assert.assertNotEquals(message, expected, actual);
+    }
+	
+	public void assertNotEquals(String message, Long expected, Long actual) {
+		Assert.assertNotEquals(message, expected, actual);
+    }
+	
+	public void assertNotEquals(String message, long expected, long actual) {
+		Assert.assertNotEquals(message, expected, actual);
+    }
+	
+	public void assertArrayEquals(double[] expecteds,
+            double[] actuals, double delta) throws ArrayComparisonFailure {
+		Assert.assertArrayEquals(expecteds, actuals, delta);
+	}
+	
+	public void assertArrayEquals(double[] expecteds,
+            double[] actuals, int delta) throws ArrayComparisonFailure {
+		Assert.assertArrayEquals(expecteds, actuals, delta);
+	}
+	
+	public void assertEquals(double expected, double actual, double delta) {
+		Assert.assertEquals(expected, actual, delta);
+    }
+	
+	public void assertEquals(String message, double expected, double actual) {
+		Assert.assertEquals(message, expected, actual);
+    }
+	
+	public void assertEquals(String message, long expected, long actual) {
+		Assert.assertEquals(message, expected, actual);
+    }
+	
+	public void assertEquals(int expected, int actual) {
+		Assert.assertEquals(expected, actual);
+    }
+	
+	public void assertEquals(Object expected, Object actual) {
+		Assert.assertEquals(expected, actual);
+    }
+	
+	public void assertEquals(Integer expected, Long actual) {
+		Assert.assertEquals((long)expected, (long)actual);
+    }
+	
+	public void assertEquals(Long expected, Integer actual) {
+		Assert.assertEquals((long)expected, (long)actual);
+    }
+	
+	public void assertEquals(boolean expected, boolean actual) {
+		Assert.assertEquals(expected, actual);
+    }
+	
+	public void assertFalse(boolean condition) {
+		Assert.assertFalse(condition);
+	}
+	
+	public void assertFalse(String message, boolean condition) {
+		Assert.assertFalse(message, condition);
+	}
+	
+	public void assertTrue(String message, boolean condition) {
+		Assert.assertTrue(message, condition);
+    }
+
+	public void assertTrue(boolean condition) {
+		Assert.assertTrue(condition);
+    }
+	
+	public void assertEquals(String message, Object expected,
+            Object actual) {
+		Assert.assertEquals(message, expected, actual);
+	}
+	
+	public void fail(String message) {
+		Assert.fail(message);
+	}
+	
 	/**
 	 * Runs an R script in the old or the new way
 	 */
 	protected void runRScript(boolean newWay) {
-
 		String executionFile = sourceDirectory + selectedTest + ".R";
 
 		// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
@@ -1148,7 +1276,6 @@ public abstract class AutomatedTestBase
 	 *            -1 there is no limit.
 	 */
 	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxMRJobs) {
-
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 
 		if( !newWay ) {
@@ -1420,7 +1547,7 @@ public abstract class AutomatedTestBase
 			// Skip MapReduce-related checks when running in Spark mode.
 			return;
 		}
-
+		
 		assertEquals("Unexpected number of compiled MR jobs.",
 				expectedNumCompiled, Statistics.getNoOfCompiledMRJobs());
 	}

@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -39,6 +38,10 @@ public class ScalarMatrixUnaryBinaryTermTest extends AutomatedTestBase
 
 	@Test
 	public void testTerm1() {
+		if(shouldSkipTest())
+			return;
+		
+		
 		int rows = 5, cols = 5;
 
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

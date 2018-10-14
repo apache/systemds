@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -102,6 +101,9 @@ public class SparseBlockScan extends AutomatedTestBase
 	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -125,12 +127,12 @@ public class SparseBlockScan extends AutomatedTestBase
 				nnz += rnnz[i];
 			}
 			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
 		
 			//check correct values	
 			int count = 0;
@@ -141,12 +143,12 @@ public class SparseBlockScan extends AutomatedTestBase
 				double[] avals = sblock.values(i);
 				for( int j=0; j<alen; j++ ) {
 					if( avals[apos+j] != A[i][aix[apos+j]] )
-						Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);	
+						fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);	
 					count++;		
 				}
 			}
 			if( count != nnz )
-				Assert.fail("Wrong number of values returned by scan: "+count+", expected: "+nnz);
+				fail("Wrong number of values returned by scan: "+count+", expected: "+nnz);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

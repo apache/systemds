@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.jmlc.Connection;
@@ -125,7 +124,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		}
 		
 		//check expected failure
-		Assert.assertTrue(failed==!clone || k==1);
+		assertTrue(failed==!clone || k==1);
 	}
 	
 	private static class JMLCTask implements Callable<Double> 

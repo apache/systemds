@@ -132,22 +132,15 @@ public class Conv2DBackwardDataTest extends AutomatedTestBase
 	public void runConv2DTest( ExecType et, int imgSize, int numImg, int numChannels, int numFilters, 
 			int filterSize, int stride, int pad, boolean sparse1, boolean sparse2) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
-	    TestConfiguration config = getTestConfiguration(TEST_NAME);
-	    if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-	    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
+	    	
 			loadTestConfiguration(config);
 	        
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */

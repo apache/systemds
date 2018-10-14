@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysml.api.jmlc.Connection;
@@ -141,7 +140,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<cols; j++ ) 
 					if( RC[j] != null ) {
-						Assert.assertEquals("Wrong result: "+F[i][j]+".", 
+						assertEquals("Wrong result: "+F[i][j]+".", 
 								Double.valueOf(X[i][j]), 
 								Double.valueOf(RC[j].get(F[i][j]).toString()));
 					}	

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -69,6 +68,9 @@ public class RewriteIndexingVectorizationTest extends AutomatedTestBase
 	
 	private void testRewriteIndexingVectorization(String testname, boolean vectorize)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_AUTO_VECTORIZATION;
 		
 		try
@@ -91,12 +93,12 @@ public class RewriteIndexingVectorizationTest extends AutomatedTestBase
 			
 			//compare output 
 			double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-			Assert.assertTrue(ret == (711*5));
+			assertTrue(ret == (711*5));
 			
 			//check for applied rewrite
 			int expected = vectorize ? 1 : 5;
-			Assert.assertTrue(Statistics.getCPHeavyHitterCount("rightIndex")==expected+1);
-			Assert.assertTrue(Statistics.getCPHeavyHitterCount("leftIndex")==expected);
+			assertTrue(Statistics.getCPHeavyHitterCount("rightIndex")==expected+1);
+			assertTrue(Statistics.getCPHeavyHitterCount("leftIndex")==expected);
 		}
 		finally {
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = oldFlag;

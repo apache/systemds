@@ -55,6 +55,9 @@ public abstract class PageRankTest extends AutomatedTestBase {
 	}
 
 	protected void testPageRank(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRows + ", "
 				+ numCols + "} ------------");
 		this.scriptType = scriptType;

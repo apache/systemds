@@ -40,6 +40,9 @@ public class GreaterThanOrEqualTest extends AutomatedTestBase
 	
 	@Test
 	public void testGreaterThanOrEqual() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("GreaterThanOrEqualTest");
 		loadTestConfiguration(config);
 		

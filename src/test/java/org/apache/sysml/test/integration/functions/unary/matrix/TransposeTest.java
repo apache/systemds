@@ -42,6 +42,9 @@ public class TransposeTest extends AutomatedTestBase
 	
 	@Test
 	public void testTranspose() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		

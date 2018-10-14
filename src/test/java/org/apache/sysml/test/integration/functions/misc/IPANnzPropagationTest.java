@@ -56,7 +56,9 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 	{
 		// Save old settings
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -66,8 +68,6 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
 			
 			runTest(true, false, null, -1);
 			

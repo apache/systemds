@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -112,6 +112,7 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	 */
 	private void runParForDataPartitionLeftindexingTest( boolean colwise, boolean sparse, ExecType et )
 	{
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		//force MR leftindexing via very small memory budget
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		if(et==ExecType.MR) {

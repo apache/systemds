@@ -52,6 +52,9 @@ public class FunctionNotFoundTest extends AutomatedTestBase
 	}
 	
 	private void runFunctionNotFoundTest(String testName, boolean error) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		

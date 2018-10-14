@@ -31,7 +31,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameEncodeTest extends AutomatedTestBase 
@@ -93,7 +92,7 @@ public class FrameEncodeTest extends AutomatedTestBase
 		for( String[][] data : F2set )
 			for( int i=0; i<F1s.length; i++ )
 				for( int j=0; j<F1s[i].length; j++ )
-					Assert.assertEquals("Wrong result: "+data[i][j]+".", data[i][j], F1s[i][j]);
+					assertEquals("Wrong result: "+data[i][j]+".", data[i][j], F1s[i][j]);
 	}
 
 	private static ArrayList<String[][]> execDMLScriptviaJMLC( String testname, String[][] F1, boolean modelReuse) 

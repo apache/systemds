@@ -67,6 +67,9 @@ public class AdditionTest extends AutomatedTestBase
 	
 	@Test
 	public void testConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -110,6 +113,9 @@ public class AdditionTest extends AutomatedTestBase
 	
 	@Test
 	public void testVarConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -153,6 +159,9 @@ public class AdditionTest extends AutomatedTestBase
 	
 	@Test
 	public void testConstVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -196,6 +205,9 @@ public class AdditionTest extends AutomatedTestBase
 	
 	@Test
 	public void testVarVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -243,6 +255,9 @@ public class AdditionTest extends AutomatedTestBase
 	
 	@Test
 	public void testBoolean() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = availableTestConfigurations.get("BooleanTest");
 		config.addVariable("op1", "true");
 		config.addVariable("op2", 1);

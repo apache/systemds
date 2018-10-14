@@ -63,6 +63,9 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
     }
     
     protected void testLinearRegression(ScriptType scriptType) {
+    	if(shouldSkipTest())
+			return;
+    	
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + numRecords + ", " + numFeatures
 				+ ", " + sparsity + "} ------------");
 		this.scriptType = scriptType;

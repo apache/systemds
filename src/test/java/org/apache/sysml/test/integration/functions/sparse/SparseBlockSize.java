@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -106,6 +105,9 @@ public class SparseBlockSize extends AutomatedTestBase
 	 */
 	private void runSparseBlockSizeTest( SparseBlock.Type btype, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -135,25 +137,25 @@ public class SparseBlockSize extends AutomatedTestBase
 			
 			//check full block nnz
 			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check row nnz
 			for( int i=0; i<rows; i++ )
 				if( sblock.size(i) != rnnz[i] ) {
-					Assert.fail("Wrong number of row non-zeros ("+i+"): " +
+					fail("Wrong number of row non-zeros ("+i+"): " +
 							sblock.size(i)+", expected: "+rnnz[i]);
 				}
 			
 			//check two row nnz 
 			for( int i=1; i<rows; i++ )
 				if( sblock.size(i-1,i+1) != rnnz[i-1]+rnnz[i] ) {
-					Assert.fail("Wrong number of row block non-zeros ("+(i-1)+","+(i+1)+"): " +
+					fail("Wrong number of row block non-zeros ("+(i-1)+","+(i+1)+"): " +
 							sblock.size(i-1,i+1)+", expected: "+rnnz[i-1]+rnnz[i]);
 				}
 			
 			//check index range nnz
 			if( sblock.size(rl, ru, cl, cu) != nnz2 )
-				Assert.fail("Wrong number of range non-zeros: " +
+				fail("Wrong number of range non-zeros: " +
 						sblock.size(rl, ru, cl, cu)+", expected: "+nnz2);		
 		}
 		catch(Exception ex) {

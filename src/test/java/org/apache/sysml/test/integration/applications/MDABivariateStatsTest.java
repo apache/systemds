@@ -62,6 +62,9 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 	}
 	
 	protected void testMDABivariateStats(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + n + ", " + m
 				+ ", " + label_index + ", " + label_measurement_level + "} ------------");
 		this.scriptType = scriptType;

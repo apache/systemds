@@ -70,6 +70,9 @@ public class DynReadWriteTest extends AutomatedTestBase
 	
 	private void runDynReadWriteTest( String format )
 	{		
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

@@ -136,8 +136,11 @@ public class BasicMatrixTransposeSelfMultTest extends AutomatedTestBase
 		runTransposeSelfMatrixMultTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 
-	private static void runTransposeSelfMatrixMultTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private void runTransposeSelfMatrixMultTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.quaternary;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -234,16 +233,10 @@ public class WeightedUnaryMatrixMultTest extends AutomatedTestBase
 	 */
 	private void runWeightedUnaryMMTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
 	{		
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean forceOld = QuaternaryOp.FORCE_REPLICATION;
@@ -294,11 +287,11 @@ public class WeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 			//check statistics for right operator in cp and spark
 			if( instType == ExecType.CP && rewrites ) {
-				Assert.assertTrue("Missing opcode wumm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedUnaryMM.OPCODE_CP));
+				assertTrue("Missing opcode wumm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedUnaryMM.OPCODE_CP));
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
 				String opcode = Instruction.SP_INST_PREFIX + ((rep)?WeightedUnaryMMR.OPCODE:WeightedUnaryMM.OPCODE);
-				Assert.assertTrue("Missing opcode sp_wumm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
+				assertTrue("Missing opcode sp_wumm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally

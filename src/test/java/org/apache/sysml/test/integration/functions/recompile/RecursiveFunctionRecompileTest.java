@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.recompile;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -110,6 +109,9 @@ public class RecursiveFunctionRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -136,11 +138,11 @@ public class RecursiveFunctionRecompileTest extends AutomatedTestBase
 			//check number of recompiled functions (recompile_once is not applicable for recursive functions
 			//because the single recompilation on entry would implicitly change the remaining plan of the caller;
 			//if not not handled correctly, TEST_NAME1 and TEST_NAME2 would have show with IPA 1111 function recompilations. 
-			Assert.assertEquals(testname.equals(TEST_NAME4) && IPA ? 1 : 0, Statistics.getFunRecompiles());
+			assertEquals(testname.equals(TEST_NAME4) && IPA ? 1 : 0, Statistics.getFunRecompiles());
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
-			Assert.fail("Failed to run test: "+ex.getMessage());
+			fail("Failed to run test: "+ex.getMessage());
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

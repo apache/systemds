@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -84,6 +84,7 @@ public class ParForNaNResultMergeTest extends AutomatedTestBase
 	 */
 	private void runParForNaNResultMergeTest( String test, boolean sparse )
 	{	
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		//script
 		String TEST_NAME = test;
 		int xrow = sparse ? 1 : rows;

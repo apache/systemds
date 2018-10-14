@@ -43,6 +43,9 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 	@Test
 	public void testScalarRecursion() 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = TEST_NAME1;
 		
 		try

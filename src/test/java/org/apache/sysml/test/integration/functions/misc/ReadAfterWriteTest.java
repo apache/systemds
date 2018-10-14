@@ -107,6 +107,8 @@ public class ReadAfterWriteTest extends AutomatedTestBase
 	private void runReadAfterWriteTest( String testName, boolean positive ) 
 	{
 		String TEST_NAME = testName;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{	

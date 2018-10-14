@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -65,6 +66,7 @@ public class ParForReplaceThreadIDRecompileTest extends AutomatedTestBase
 	 */
 	private void runThreadIDReplaceTest( String TEST_NAME, boolean recompile )
 	{
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		boolean flag = CompilerConfig.FLAG_DYN_RECOMPILE;
 		
 		try

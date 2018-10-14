@@ -75,6 +75,9 @@ public class RewritePushdownSumBinaryMult extends AutomatedTestBase
 	 */
 	private void testRewritePushdownSumBinaryMult( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try

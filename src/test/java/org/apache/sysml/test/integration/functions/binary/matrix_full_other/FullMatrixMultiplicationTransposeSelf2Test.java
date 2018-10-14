@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix_full_other;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -147,16 +146,10 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 	 */
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		if( instType == ExecType.SPARK ) //force tsmm2 to prevent mapmm
 			AggBinaryOp.FORCED_MMULT_METHOD = MMultMethod.TSMM2;
@@ -201,7 +194,7 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 			//check for compiled tsmm instructions
 			if( instType == ExecType.SPARK || instType == ExecType.CP ) {
 				String opcode = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX + "tsmm2" : "tsmm";
-				Assert.assertTrue("Missing opcode: "+opcode, Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
+				assertTrue("Missing opcode: "+opcode, Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally {

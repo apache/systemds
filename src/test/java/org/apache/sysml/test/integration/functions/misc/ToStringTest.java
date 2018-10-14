@@ -244,12 +244,11 @@ public class ToStringTest extends AutomatedTestBase {
 	}
 
 	protected void toStringTestHelper(RUNTIME_PLATFORM platform, String testName, String expectedOutput) {
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		
-		rtplatform = platform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
+        
         try {
             // Create and load test configuration
         	getAndLoadTestConfiguration(testName);

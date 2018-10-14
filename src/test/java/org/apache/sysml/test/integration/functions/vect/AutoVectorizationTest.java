@@ -222,6 +222,9 @@ public class AutoVectorizationTest extends AutomatedTestBase
 	private void runVectorizationTest( String testName ) 
 	{
 		String TEST_NAME = testName;
+		if(shouldSkipTest())
+			return;
+
 		
 		try
 		{		

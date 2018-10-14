@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -63,6 +62,8 @@ public class ExistsVariableTest extends AutomatedTestBase
 	}
 	
 	private void runExistsTest(String testName, boolean pos) {
+		if(shouldSkipTest())
+			return;
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -76,7 +77,7 @@ public class ExistsVariableTest extends AutomatedTestBase
 		//compare results
 		Double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
 		val = (val!=null) ? val : 0;
-		Assert.assertTrue("Wrong result: "+param+" vs "+val,
+		assertTrue("Wrong result: "+param+" vs "+val,
 			val==Double.parseDouble(param));
 	}
 }

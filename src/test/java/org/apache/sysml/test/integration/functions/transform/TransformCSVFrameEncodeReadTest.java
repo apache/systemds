@@ -117,13 +117,10 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	 */
 	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, boolean subset, boolean parRead )
 	{
-		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 
 		if( !ofmt.equals("csv") )
 			throw new RuntimeException("Unsupported test output format");

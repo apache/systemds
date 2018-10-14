@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -315,9 +314,9 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	 */
 	private void runStringInitializeTest( InputType intype, ValueType vt, boolean sparse, ErrorType errtype, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -371,7 +370,7 @@ public class FullStringInitializeTest extends AutomatedTestBase
 		catch(Exception ex)
 		{
 			ex.printStackTrace();
-			Assert.fail(ex.getMessage());
+			fail(ex.getMessage());
 		}
 		finally
 		{

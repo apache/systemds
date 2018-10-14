@@ -66,22 +66,16 @@ public class ReluBackwardTest extends AutomatedTestBase
 	 * @param sparse
 	 */
 	public void runReluBackwardTest( ExecType et, int M, int N) 
-	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-			
+	{	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			loadTestConfiguration(config);
 	        

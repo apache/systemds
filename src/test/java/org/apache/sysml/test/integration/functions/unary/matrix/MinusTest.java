@@ -101,16 +101,10 @@ public class MinusTest extends AutomatedTestBase
 	
 	private void runTestMinus( boolean sparse, ExecType et )
 	{		
-		//handle rows and cols
-		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( et == ExecType.SPARK ) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-	    }
-		else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-	    }
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 	
 		try
 		{

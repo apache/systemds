@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.codegen;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.DataOp;
 import org.apache.sysml.hops.Hop;
@@ -58,140 +57,168 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqualLiteral() {
+		if(shouldSkipTest())
+			return;
 		CNodeData c1 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
 		CNodeData c2 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
-		Assert.assertEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertEquals(c1, c2);
+		assertEquals(c1.hashCode(), c2.hashCode());
+		assertEquals(c1, c2);
 		c1.setLiteral(true);
 		c2.setLiteral(true);
-		Assert.assertEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertEquals(c1, c2);
+		assertEquals(c1.hashCode(), c2.hashCode());
+		assertEquals(c1, c2);
 		c1.setStrictEquals(true);
 		c2.setStrictEquals(true);
-		Assert.assertEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertEquals(c1, c2);
+		assertEquals(c1.hashCode(), c2.hashCode());
+		assertEquals(c1, c2);
 	}
 	
 	@Test
 	public void testNotEqualLiteral() {
+		if(shouldSkipTest())
+			return;
 		CNodeData c1 = new CNodeData(new LiteralOp(7), 0, 0, DataType.SCALAR);
 		CNodeData c2 = new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR);
-		Assert.assertNotEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertNotEquals(c1, c2);
+		assertNotEquals(c1.hashCode(), c2.hashCode());
+		assertNotEquals(c1, c2);
 		c1.setLiteral(true);
 		c2.setLiteral(true);
-		Assert.assertNotEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertNotEquals(c1, c2);
+		assertNotEquals(c1.hashCode(), c2.hashCode());
+		assertNotEquals(c1, c2);
 		c1.setStrictEquals(true);
 		c2.setStrictEquals(true);
-		Assert.assertNotEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertNotEquals(c1, c2);
+		assertNotEquals(c1.hashCode(), c2.hashCode());
+		assertNotEquals(c1, c2);
 	}
 	
 	@Test
 	public void testEqualMatrixDataNode() {
+		if(shouldSkipTest())
+			return;
 		Hop data = createDataOp(DataType.MATRIX);
 		CNode c1 = new CNodeData(data);
 		CNode c2 = new CNodeData(data);
-		Assert.assertEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertEquals(c1, c2);
+		assertEquals(c1.hashCode(), c2.hashCode());
+		assertEquals(c1, c2);
 	}
 	
 	@Test
 	public void testNotEqualDataTypeDataNode() {
-		Assert.assertNotEquals(
+		if(shouldSkipTest())
+			return;
+		assertNotEquals(
 			createCNodeData(DataType.MATRIX),
 			createCNodeData(DataType.SCALAR));
 	}
 	
 	@Test
 	public void testEqualUnaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c0 = createCNodeData(DataType.MATRIX);
 		CNode c1 = new CNodeUnary(c0, UnaryType.EXP);
 		CNode c2 = new CNodeUnary(c0, UnaryType.EXP);
-		Assert.assertEquals(c1.hashCode(), c2.hashCode());
-		Assert.assertEquals(c1, c2);
+		assertEquals(c1.hashCode(), c2.hashCode());
+		assertEquals(c1, c2);
 	}
 	
 	@Test
 	public void testNotEqualUnaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c0 = createCNodeData(DataType.MATRIX);
 		CNode c1 = new CNodeUnary(c0, UnaryType.EXP);
 		CNode c2 = new CNodeUnary(c0, UnaryType.LOG);
-		Assert.assertNotEquals(c1, c2);
+		assertNotEquals(c1, c2);
 	}
 	
 	@Test
 	public void testEqualBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode bin1 = new CNodeBinary(c1, c2, BinType.PLUS);
 		CNode bin2 = new CNodeBinary(c1, c2, BinType.PLUS);
-		Assert.assertEquals(bin1.hashCode(), bin2.hashCode());
-		Assert.assertEquals(bin1, bin2);
+		assertEquals(bin1.hashCode(), bin2.hashCode());
+		assertEquals(bin1, bin2);
 	}
 	
 	@Test
 	public void testNotEqualBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
-		Assert.assertNotEquals(
+		assertNotEquals(
 			new CNodeBinary(c1, c2, BinType.PLUS),
 			new CNodeBinary(c1, c2, BinType.MULT));
 	}
 	
 	@Test
 	public void testEqualTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
 		CNode ter1 = new CNodeTernary(c1, c2, c3, TernaryType.MINUS_MULT);
 		CNode ter2 = new CNodeTernary(c1, c2, c3, TernaryType.MINUS_MULT);
-		Assert.assertEquals(ter1.hashCode(), ter2.hashCode());
-		Assert.assertEquals(ter1, ter2);
+		assertEquals(ter1.hashCode(), ter2.hashCode());
+		assertEquals(ter1, ter2);
 	}
 	
 	@Test
 	public void testNotEqualTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
 		CNode ter1 = new CNodeTernary(c1, c2, c3, TernaryType.MINUS_MULT);
 		CNode ter2 = new CNodeTernary(c1, c2, c3, TernaryType.PLUS_MULT);
-		Assert.assertNotEquals(ter1, ter2);
+		assertNotEquals(ter1, ter2);
 	}
 
 	@Test
 	public void testNotEqualUnaryBinaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode un1 = new CNodeUnary(c1, UnaryType.ABS);
 		CNode bin2 = new CNodeBinary(c1, c2, BinType.DIV);
-		Assert.assertNotEquals(un1, bin2);
+		assertNotEquals(un1, bin2);
 	}
 	
 	@Test
 	public void testNotEqualUnaryTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
 		CNode un1 = new CNodeUnary(c1, UnaryType.ABS);
 		CNode ter2 = new CNodeTernary(c1, c2, c3, TernaryType.PLUS_MULT);
-		Assert.assertNotEquals(un1, ter2);
+		assertNotEquals(un1, ter2);
 	}
 	
 	@Test
 	public void testNotEqualBinaryTernaryNodes() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.SCALAR);
 		CNode c3 = createCNodeData(DataType.MATRIX);
 		CNode un1 = new CNodeBinary(c1, c2, BinType.EQUAL);
 		CNode ter2 = new CNodeTernary(c1, c2, c3, TernaryType.PLUS_MULT);
-		Assert.assertNotEquals(un1, ter2);
+		assertNotEquals(un1, ter2);
 	}
 	
 	@Test
 	public void testNotEqualBinaryDAG1() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.SCALAR);
@@ -201,11 +228,13 @@ public class CPlanComparisonTest extends AutomatedTestBase
 		//DAG 1b: (c1*c2)*c1
 		CNode b1b = new CNodeBinary(c1, c2, BinType.MULT);
 		CNode b2b = new CNodeBinary(b1b, c1, BinType.MULT);
-		Assert.assertNotEquals(b2a, b2b);
+		assertNotEquals(b2a, b2b);
 	}
 	
 	@Test
 	public void testNotEqualBinaryDAG2() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -215,11 +244,13 @@ public class CPlanComparisonTest extends AutomatedTestBase
 		//DAG 2b: (c1*c2)*c1
 		CNode b1b = new CNodeBinary(c1, c2, BinType.MULT);
 		CNode b2b = new CNodeBinary(b1b, c1, BinType.MULT);
-		Assert.assertNotEquals(b2a, b2b);
+		assertNotEquals(b2a, b2b);
 	}
 	
 	@Test
 	public void testNotEqualBinaryDAG3() {
+		if(shouldSkipTest())
+			return;
 		CNode c1 = createCNodeData(DataType.MATRIX);
 		CNode c2 = createCNodeData(DataType.MATRIX);
 		CNode c3 = createCNodeData(DataType.MATRIX);
@@ -231,7 +262,7 @@ public class CPlanComparisonTest extends AutomatedTestBase
 		CNode b1b = new CNodeBinary(c1, c2, BinType.PLUS);
 		CNode b2b = new CNodeBinary(c3, c3, BinType.PLUS);
 		CNode b3b = new CNodeBinary(b1b, b2b, BinType.MULT);
-		Assert.assertNotEquals(b3a, b3b);
+		assertNotEquals(b3a, b3b);
 	}
 	
 	private CNode createCNodeData(DataType dt) {

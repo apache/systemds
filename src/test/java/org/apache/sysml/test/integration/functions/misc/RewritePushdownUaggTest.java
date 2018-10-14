@@ -21,9 +21,7 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -103,6 +101,9 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 
 	private void testRewritePushdownUagg( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
@@ -144,7 +145,7 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 			String gpuCheck = "gpu_" + check;
 			boolean containsOpcode = Statistics.getCPHeavyHitterOpCodes().contains(check) || Statistics.getCPHeavyHitterOpCodes().contains(gpuCheck);
 
-			Assert.assertTrue( "Missing opcode: "+check, containsOpcode);
+			assertTrue( "Missing opcode: "+check, containsOpcode);
 		}
 		finally
 		{

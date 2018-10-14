@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.LopProperties.ExecType;
@@ -84,7 +83,9 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 	 */
 	private void runMultipleReadsTest( ExecType et, boolean IPA )
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try

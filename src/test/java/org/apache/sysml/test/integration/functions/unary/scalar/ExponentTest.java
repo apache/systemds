@@ -70,6 +70,9 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = 2;
 		double doubleValue = 2.5;
 		
@@ -95,6 +98,9 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = 2;
 		double doubleValue = 2.5;
 		
@@ -121,6 +127,9 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandomConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = TestUtils.getRandomInt();
 		double doubleValue = TestUtils.getRandomDouble();
 		
@@ -146,6 +155,9 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandomVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = TestUtils.getRandomInt();
 		double doubleValue = TestUtils.getRandomDouble();
 		
@@ -172,6 +184,9 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegative() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = -2;
 		double doubleValue = -2.5;
 		
@@ -197,6 +212,8 @@ public class ExponentTest extends AutomatedTestBase
 	
 	@Test
 	public void testTwoParameters() {
+		if(shouldSkipTest())
+			return;
 		TestConfiguration config = availableTestConfigurations.get("TwoParametersTest");
 		config.addVariable("vardeclaration", "");
 		config.addVariable("op1", 1);

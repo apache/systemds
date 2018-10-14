@@ -203,11 +203,12 @@ public class FrameConverterTest extends AutomatedTestBase
 	 */
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.SPARK);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(RUNTIME_PLATFORM.SPARK);
+		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.SPARK);
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

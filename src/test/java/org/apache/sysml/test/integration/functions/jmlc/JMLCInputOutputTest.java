@@ -27,7 +27,6 @@ import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -147,7 +146,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outInteger" }, false);
 
 		long result = script.executeScript().getLong("outInteger");
-		Assert.assertEquals(5, result);
+		assertEquals(5, result);
 		conn.close();
 	}
 
@@ -158,7 +157,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" }, false);
 
 		double result = script.executeScript().getDouble("outDouble");
-		Assert.assertEquals(1.23, result, 0);
+		assertEquals(1.23, result, 0);
 		conn.close();
 	}
 
@@ -169,7 +168,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outString" }, false);
 
 		String result = script.executeScript().getString("outString");
-		Assert.assertEquals("hello", result);
+		assertEquals("hello", result);
 		conn.close();
 	}
 
@@ -180,7 +179,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outBoolean" }, false);
 
 		boolean result = script.executeScript().getBoolean("outBoolean");
-		Assert.assertEquals(false, result);
+		assertEquals(false, result);
 		conn.close();
 	}
 
@@ -192,7 +191,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 
 		ScalarObject so = script.executeScript().getScalarObject("outDouble");
 		double result = so.getDoubleValue();
-		Assert.assertEquals(1.23, result, 0);
+		assertEquals(1.23, result, 0);
 		conn.close();
 	}
 

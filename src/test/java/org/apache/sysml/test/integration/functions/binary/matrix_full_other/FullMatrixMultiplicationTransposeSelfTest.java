@@ -162,6 +162,10 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		//setup exec type, rows, cols
 		int rows = -1, cols = -1;
 		String TEST_NAME = null;
@@ -194,10 +198,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		if (TEST_CACHE_ENABLED) {
 			TEST_CACHE_DIR = rows + "_" + cols + "_" + sparsity + "/";
 		}
-
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		
 	
 		try
 		{

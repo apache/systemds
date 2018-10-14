@@ -29,7 +29,6 @@ import static org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromFile;
 import static org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromInputStream;
 import static org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromLocalFile;
 import static org.apache.sysml.api.mlcontext.ScriptFactory.pydmlFromUrl;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -94,7 +93,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - basic builtin constants test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "builtin-constants-test.dml");
 		ml.execute(script);
-		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
+		assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
 	
 	@Test
@@ -110,7 +109,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - eval rewrite test");
 		Script script = dmlFromFile(baseDirectory + File.separator + "eval2-test.dml");
 		ml.execute(script);
-		Assert.assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
+		assertTrue(Statistics.getNoOfExecutedSPInst() == 0);
 	}
 
 	@Test
@@ -1052,10 +1051,10 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output double array matrix DML");
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		double[][] matrix = ml.execute(dml(s).out("M")).getMatrixAs2DDoubleArray("M");
-		Assert.assertEquals(1.0, matrix[0][0], 0);
-		Assert.assertEquals(2.0, matrix[0][1], 0);
-		Assert.assertEquals(3.0, matrix[1][0], 0);
-		Assert.assertEquals(4.0, matrix[1][1], 0);
+		assertEquals(1.0, matrix[0][0], 0);
+		assertEquals(2.0, matrix[0][1], 0);
+		assertEquals(3.0, matrix[1][0], 0);
+		assertEquals(4.0, matrix[1][1], 0);
 	}
 
 	@Test
@@ -1063,10 +1062,10 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output double array matrix PYDML");
 		String s = "M = full('1 2 3 4', rows=2, cols=2)";
 		double[][] matrix = ml.execute(pydml(s).out("M")).getMatrixAs2DDoubleArray("M");
-		Assert.assertEquals(1.0, matrix[0][0], 0);
-		Assert.assertEquals(2.0, matrix[0][1], 0);
-		Assert.assertEquals(3.0, matrix[1][0], 0);
-		Assert.assertEquals(4.0, matrix[1][1], 0);
+		assertEquals(1.0, matrix[0][0], 0);
+		assertEquals(2.0, matrix[0][1], 0);
+		assertEquals(3.0, matrix[1][0], 0);
+		assertEquals(4.0, matrix[1][1], 0);
 	}
 
 	@Test
@@ -1074,7 +1073,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar long DML");
 		String s = "m = 5;";
 		long result = ml.execute(dml(s).out("m")).getLong("m");
-		Assert.assertEquals(5, result);
+		assertEquals(5, result);
 	}
 
 	@Test
@@ -1082,7 +1081,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar long PYDML");
 		String s = "m = 5";
 		long result = ml.execute(pydml(s).out("m")).getLong("m");
-		Assert.assertEquals(5, result);
+		assertEquals(5, result);
 	}
 
 	@Test
@@ -1090,7 +1089,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar double DML");
 		String s = "m = 1.23";
 		double result = ml.execute(dml(s).out("m")).getDouble("m");
-		Assert.assertEquals(1.23, result, 0);
+		assertEquals(1.23, result, 0);
 	}
 
 	@Test
@@ -1098,7 +1097,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar double PYDML");
 		String s = "m = 1.23";
 		double result = ml.execute(pydml(s).out("m")).getDouble("m");
-		Assert.assertEquals(1.23, result, 0);
+		assertEquals(1.23, result, 0);
 	}
 
 	@Test
@@ -1106,7 +1105,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar boolean DML");
 		String s = "m = FALSE;";
 		boolean result = ml.execute(dml(s).out("m")).getBoolean("m");
-		Assert.assertEquals(false, result);
+		assertEquals(false, result);
 	}
 
 	@Test
@@ -1114,7 +1113,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar boolean PYDML");
 		String s = "m = False";
 		boolean result = ml.execute(pydml(s).out("m")).getBoolean("m");
-		Assert.assertEquals(false, result);
+		assertEquals(false, result);
 	}
 
 	@Test
@@ -1122,7 +1121,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar string DML");
 		String s = "m = 'hello';";
 		String result = ml.execute(dml(s).out("m")).getString("m");
-		Assert.assertEquals("hello", result);
+		assertEquals("hello", result);
 	}
 
 	@Test
@@ -1130,7 +1129,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - output scalar string PYDML");
 		String s = "m = 'hello'";
 		String result = ml.execute(pydml(s).out("m")).getString("m");
-		Assert.assertEquals("hello", result);
+		assertEquals("hello", result);
 	}
 
 	@Test
@@ -1164,10 +1163,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
 		List<String> lines = javaRDDStringIJV.collect();
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1179,10 +1178,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
 		List<String> lines = javaRDDStringIJV.collect();
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1194,8 +1193,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1207,8 +1206,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	/**
@@ -1224,8 +1223,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	/**
@@ -1241,8 +1240,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringCSV = results.getJavaRDDStringCSV("M");
 		List<String> lines = javaRDDStringCSV.collect();
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1254,10 +1253,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringIJV = results.getRDDStringIJV("M");
 		Iterator<String> iterator = rddStringIJV.toLocalIterator();
-		Assert.assertEquals("1 1 1.0", iterator.next());
-		Assert.assertEquals("1 2 2.0", iterator.next());
-		Assert.assertEquals("2 1 3.0", iterator.next());
-		Assert.assertEquals("2 2 4.0", iterator.next());
+		assertEquals("1 1 1.0", iterator.next());
+		assertEquals("1 2 2.0", iterator.next());
+		assertEquals("2 1 3.0", iterator.next());
+		assertEquals("2 2 4.0", iterator.next());
 	}
 
 	@Test
@@ -1269,10 +1268,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringIJV = results.getRDDStringIJV("M");
 		Iterator<String> iterator = rddStringIJV.toLocalIterator();
-		Assert.assertEquals("1 1 1.0", iterator.next());
-		Assert.assertEquals("1 2 2.0", iterator.next());
-		Assert.assertEquals("2 1 3.0", iterator.next());
-		Assert.assertEquals("2 2 4.0", iterator.next());
+		assertEquals("1 1 1.0", iterator.next());
+		assertEquals("1 2 2.0", iterator.next());
+		assertEquals("2 1 3.0", iterator.next());
+		assertEquals("2 2 4.0", iterator.next());
 	}
 
 	@Test
@@ -1284,8 +1283,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1297,8 +1296,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1310,8 +1309,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1323,8 +1322,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		RDD<String> rddStringCSV = results.getRDDStringCSV("M");
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1337,14 +1336,14 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = results.getDataFrame("M");
 		List<Row> list = dataFrame.collectAsList();
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -1357,14 +1356,14 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> dataFrame = results.getDataFrame("M");
 		List<Row> list = dataFrame.collectAsList();
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -1378,12 +1377,12 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(1)).toArray(), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(1)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(1)).toArray(), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(1)).toArray(), 0.0);
 	}
 
 	@Test
@@ -1397,12 +1396,12 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(1)).toArray(), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(1)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(1)).toArray(), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(1)).toArray(), 0.0);
 	}
 
 	@Test
@@ -1419,7 +1418,7 @@ public class MLContextTest extends MLContextTestBase {
 		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(0)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(0)).toArray(), 0.0);
+		assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(0)).toArray(), 0.0);
 	}
 
 	@Test
@@ -1433,10 +1432,10 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(0)).toArray(), 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0 }, ((Vector) row1.get(0)).toArray(), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(0)).toArray(), 0.0);
+		assertArrayEquals(new double[] { 3.0, 4.0 }, ((Vector) row2.get(0)).toArray(), 0.0);
 	}
 
 	@Test
@@ -1450,14 +1449,14 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -1471,14 +1470,14 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -1492,12 +1491,12 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(1), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(2.0, row1.getDouble(1), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(3.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(1), 0.0);
+		assertEquals(3.0, row2.getDouble(0), 0.0);
+		assertEquals(4.0, row2.getDouble(1), 0.0);
 	}
 
 	@Test
@@ -1511,12 +1510,12 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = dataFrame.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(1), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(2.0, row1.getDouble(1), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(3.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(1), 0.0);
+		assertEquals(3.0, row2.getDouble(0), 0.0);
+		assertEquals(4.0, row2.getDouble(1), 0.0);
 	}
 
 	@Test
@@ -1526,12 +1525,12 @@ public class MLContextTest extends MLContextTestBase {
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		String s1 = "sum1 = sum(m1);";
 		double sum1 = ml.execute(dml(s1).in("m1", m1).out("sum1")).getDouble("sum1");
-		Assert.assertEquals(10.0, sum1, 0.0);
+		assertEquals(10.0, sum1, 0.0);
 
 		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
 		String s2 = "sum2 = sum(m2);";
 		double sum2 = ml.execute(dml(s2).in("m2", m2).out("sum2")).getDouble("sum2");
-		Assert.assertEquals(26.0, sum2, 0.0);
+		assertEquals(26.0, sum2, 0.0);
 	}
 
 	@Test
@@ -1541,12 +1540,12 @@ public class MLContextTest extends MLContextTestBase {
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		String s1 = "sum1 = sum(m1)";
 		double sum1 = ml.execute(pydml(s1).in("m1", m1).out("sum1")).getDouble("sum1");
-		Assert.assertEquals(10.0, sum1, 0.0);
+		assertEquals(10.0, sum1, 0.0);
 
 		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
 		String s2 = "sum2 = sum(m2)";
 		double sum2 = ml.execute(pydml(s2).in("m2", m2).out("sum2")).getDouble("sum2");
-		Assert.assertEquals(26.0, sum2, 0.0);
+		assertEquals(26.0, sum2, 0.0);
 	}
 
 	@Test
@@ -1558,14 +1557,14 @@ public class MLContextTest extends MLContextTestBase {
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1);").in("m1", m1).out("sum1");
 		ml.execute(script);
-		Assert.assertEquals(10.0, script.results().getDouble("sum1"), 0.0);
+		assertEquals(10.0, script.results().getDouble("sum1"), 0.0);
 
 		script.clearAll();
 
 		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
 		script.setScriptString("sum2 = sum(m2);").in("m2", m2).out("sum2");
 		ml.execute(script);
-		Assert.assertEquals(26.0, script.results().getDouble("sum2"), 0.0);
+		assertEquals(26.0, script.results().getDouble("sum2"), 0.0);
 	}
 
 	@Test
@@ -1577,14 +1576,14 @@ public class MLContextTest extends MLContextTestBase {
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1)").in("m1", m1).out("sum1");
 		ml.execute(script);
-		Assert.assertEquals(10.0, script.results().getDouble("sum1"), 0.0);
+		assertEquals(10.0, script.results().getDouble("sum1"), 0.0);
 
 		script.clearAll();
 
 		double[][] m2 = new double[][] { { 5.0, 6.0 }, { 7.0, 8.0 } };
 		script.setScriptString("sum2 = sum(m2)").in("m2", m2).out("sum2");
 		ml.execute(script);
-		Assert.assertEquals(26.0, script.results().getDouble("sum2"), 0.0);
+		assertEquals(26.0, script.results().getDouble("sum2"), 0.0);
 	}
 
 	@Test
@@ -1616,11 +1615,11 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(dml(s).out("M", "N"));
 		double[][] matrix = results.getMatrixAs2DDoubleArray("M");
 		double sum = results.getDouble("N");
-		Assert.assertEquals(1.0, matrix[0][0], 0);
-		Assert.assertEquals(2.0, matrix[0][1], 0);
-		Assert.assertEquals(3.0, matrix[1][0], 0);
-		Assert.assertEquals(4.0, matrix[1][1], 0);
-		Assert.assertEquals(10.0, sum, 0);
+		assertEquals(1.0, matrix[0][0], 0);
+		assertEquals(2.0, matrix[0][1], 0);
+		assertEquals(3.0, matrix[1][0], 0);
+		assertEquals(4.0, matrix[1][1], 0);
+		assertEquals(10.0, sum, 0);
 	}
 
 	@Test
@@ -1632,11 +1631,11 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(pydml(s).out("M", "N"));
 		double[][] matrix = results.getMatrixAs2DDoubleArray("M");
 		double sum = results.getDouble("N");
-		Assert.assertEquals(1.0, matrix[0][0], 0);
-		Assert.assertEquals(2.0, matrix[0][1], 0);
-		Assert.assertEquals(3.0, matrix[1][0], 0);
-		Assert.assertEquals(4.0, matrix[1][1], 0);
-		Assert.assertEquals(10.0, sum, 0);
+		assertEquals(1.0, matrix[0][0], 0);
+		assertEquals(2.0, matrix[0][1], 0);
+		assertEquals(3.0, matrix[1][0], 0);
+		assertEquals(4.0, matrix[1][1], 0);
+		assertEquals(10.0, sum, 0);
 	}
 
 	@Test
@@ -1646,8 +1645,8 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixObject mo = ml.execute(dml(s).out("M")).getMatrixObject("M");
 		RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1657,8 +1656,8 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixObject mo = ml.execute(pydml(s).out("M")).getMatrixObject("M");
 		RDD<String> rddStringCSV = MLContextConversionUtil.matrixObjectToRDDStringCSV(mo);
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0", iterator.next());
-		Assert.assertEquals("3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0", iterator.next());
+		assertEquals("3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -1683,7 +1682,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixBlock matrixBlock = m.toMatrixBlock();
 		Script script = dml("avg = avg(M);").in("M", matrixBlock).out("avg");
 		double avg = ml.execute(script).getDouble("avg");
-		Assert.assertEquals(50.0, avg, 0.0);
+		assertEquals(50.0, avg, 0.0);
 	}
 
 	@Test
@@ -1708,7 +1707,7 @@ public class MLContextTest extends MLContextTestBase {
 		MatrixBlock matrixBlock = m.toMatrixBlock();
 		Script script = pydml("avg = avg(M)").in("M", matrixBlock).out("avg");
 		double avg = ml.execute(script).getDouble("avg");
-		Assert.assertEquals(50.0, avg, 0.0);
+		assertEquals(50.0, avg, 0.0);
 	}
 
 	@Test
@@ -1723,10 +1722,10 @@ public class MLContextTest extends MLContextTestBase {
 		JavaRDD<String> javaRDDStringIJV = RDDConverterUtils.binaryBlockToTextCell(binaryBlocks, mc);
 
 		List<String> lines = javaRDDStringIJV.collect();
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1741,10 +1740,10 @@ public class MLContextTest extends MLContextTestBase {
 		JavaRDD<String> javaRDDStringIJV = RDDConverterUtils.binaryBlockToTextCell(binaryBlocks, mc);
 
 		List<String> lines = javaRDDStringIJV.collect();
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1756,8 +1755,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1769,8 +1768,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1782,8 +1781,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1795,8 +1794,8 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringCSV(mo);
-		Assert.assertEquals("1.0,2.0", lines.get(0));
-		Assert.assertEquals("3.0,4.0", lines.get(1));
+		assertEquals("1.0,2.0", lines.get(0));
+		assertEquals("3.0,4.0", lines.get(1));
 	}
 
 	@Test
@@ -1808,10 +1807,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1823,10 +1822,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1838,10 +1837,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -1853,10 +1852,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		MatrixObject mo = results.getMatrixObject("M");
 		List<String> lines = MLContextConversionUtil.matrixObjectToListStringIJV(mo);
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -2744,8 +2743,8 @@ public class MLContextTest extends MLContextTestBase {
 		List<String> outputs = Arrays.asList("x", "y");
 		Script script = dml("a=1;x=a+1;y=x+1").out(outputs);
 		MLResults results = ml.execute(script);
-		Assert.assertEquals(2, results.getLong("x"));
-		Assert.assertEquals(3, results.getLong("y"));
+		assertEquals(2, results.getLong("x"));
+		assertEquals(3, results.getLong("y"));
 	}
 
 	@Test
@@ -2755,8 +2754,8 @@ public class MLContextTest extends MLContextTestBase {
 		List<String> outputs = Arrays.asList("x", "y");
 		Script script = pydml("a=1\nx=a+1\ny=x+1").out(outputs);
 		MLResults results = ml.execute(script);
-		Assert.assertEquals(2, results.getLong("x"));
-		Assert.assertEquals(3, results.getLong("y"));
+		assertEquals(2, results.getLong("x"));
+		assertEquals(3, results.getLong("y"));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -2768,8 +2767,8 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
 		Script script = dml("a=1;x=a+1;y=x+1").out(seq);
 		MLResults results = ml.execute(script);
-		Assert.assertEquals(2, results.getLong("x"));
-		Assert.assertEquals(3, results.getLong("y"));
+		assertEquals(2, results.getLong("x"));
+		assertEquals(3, results.getLong("y"));
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -2781,8 +2780,8 @@ public class MLContextTest extends MLContextTestBase {
 		Seq seq = JavaConversions.asScalaBuffer(outputs).toSeq();
 		Script script = pydml("a=1\nx=a+1\ny=x+1").out(seq);
 		MLResults results = ml.execute(script);
-		Assert.assertEquals(2, results.getLong("x"));
-		Assert.assertEquals(3, results.getLong("y"));
+		assertEquals(2, results.getLong("x"));
+		assertEquals(3, results.getLong("y"));
 	}
 
 	@Test
@@ -2800,22 +2799,22 @@ public class MLContextTest extends MLContextTestBase {
 		StructField[] fields = schema.fields();
 		StructField idColumn = fields[0];
 		StructField vectorColumn = fields[1];
-		Assert.assertTrue(idColumn.dataType() instanceof DoubleType);
-		Assert.assertTrue(vectorColumn.dataType() instanceof VectorUDT);
+		assertTrue(idColumn.dataType() instanceof DoubleType);
+		assertTrue(vectorColumn.dataType() instanceof VectorUDT);
 
 		List<Row> list = sortedDF.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
 		Vector v1 = (DenseVector) row1.get(1);
 		double[] arr1 = v1.toArray();
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0 }, arr1, 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0 }, arr1, 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
 		Vector v2 = (DenseVector) row2.get(1);
 		double[] arr2 = v2.toArray();
-		Assert.assertArrayEquals(new double[] { 3.0, 4.0 }, arr2, 0.0);
+		assertArrayEquals(new double[] { 3.0, 4.0 }, arr2, 0.0);
 	}
 
 	@Test
@@ -2824,10 +2823,10 @@ public class MLContextTest extends MLContextTestBase {
 
 		String s = "M = matrix('1 2 3 4', rows=2, cols=2);";
 		double[][] matrix = ml.execute(dml(s).out("M")).getMatrix("M").to2DDoubleArray();
-		Assert.assertEquals(1.0, matrix[0][0], 0);
-		Assert.assertEquals(2.0, matrix[0][1], 0);
-		Assert.assertEquals(3.0, matrix[1][0], 0);
-		Assert.assertEquals(4.0, matrix[1][1], 0);
+		assertEquals(1.0, matrix[0][0], 0);
+		assertEquals(2.0, matrix[0][1], 0);
+		assertEquals(3.0, matrix[1][0], 0);
+		assertEquals(4.0, matrix[1][1], 0);
 	}
 
 	@Test
@@ -2840,14 +2839,14 @@ public class MLContextTest extends MLContextTestBase {
 		Dataset<Row> sortedDF = df.sort(RDDConverterUtils.DF_ID_COLUMN);
 		List<Row> list = sortedDF.collectAsList();
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -2860,10 +2859,10 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
-		Assert.assertEquals(1.0, row.getDouble(0), 0.0);
-		Assert.assertEquals(2.0, row.getDouble(1), 0.0);
-		Assert.assertEquals(3.0, row.getDouble(2), 0.0);
-		Assert.assertEquals(4.0, row.getDouble(3), 0.0);
+		assertEquals(1.0, row.getDouble(0), 0.0);
+		assertEquals(2.0, row.getDouble(1), 0.0);
+		assertEquals(3.0, row.getDouble(2), 0.0);
+		assertEquals(4.0, row.getDouble(3), 0.0);
 	}
 
 	@Test
@@ -2877,14 +2876,14 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = sortedDF.collectAsList();
 
 		Row row1 = list.get(0);
-		Assert.assertEquals(1.0, row1.getDouble(0), 0.0);
-		Assert.assertEquals(1.0, row1.getDouble(1), 0.0);
-		Assert.assertEquals(2.0, row1.getDouble(2), 0.0);
+		assertEquals(1.0, row1.getDouble(0), 0.0);
+		assertEquals(1.0, row1.getDouble(1), 0.0);
+		assertEquals(2.0, row1.getDouble(2), 0.0);
 
 		Row row2 = list.get(1);
-		Assert.assertEquals(2.0, row2.getDouble(0), 0.0);
-		Assert.assertEquals(3.0, row2.getDouble(1), 0.0);
-		Assert.assertEquals(4.0, row2.getDouble(2), 0.0);
+		assertEquals(2.0, row2.getDouble(0), 0.0);
+		assertEquals(3.0, row2.getDouble(1), 0.0);
+		assertEquals(4.0, row2.getDouble(2), 0.0);
 	}
 
 	@Test
@@ -2897,7 +2896,7 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(0)).toArray(), 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(0)).toArray(), 0.0);
 	}
 
 	@Test
@@ -2910,8 +2909,8 @@ public class MLContextTest extends MLContextTestBase {
 		List<Row> list = df.collectAsList();
 
 		Row row = list.get(0);
-		Assert.assertEquals(1.0, row.getDouble(0), 0.0);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(1)).toArray(), 0.0);
+		assertEquals(1.0, row.getDouble(0), 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0, 3.0, 4.0 }, ((Vector) row.get(1)).toArray(), 0.0);
 	}
 
 	@Test
@@ -2922,7 +2921,7 @@ public class MLContextTest extends MLContextTestBase {
 		Script script = dml(s).out("M");
 		JavaRDD<String> javaRDDStringCSV = ml.execute(script).getMatrix("M").toJavaRDDStringCSV();
 		List<String> lines = javaRDDStringCSV.collect();
-		Assert.assertEquals("1.0,2.0,3.0,4.0", lines.get(0));
+		assertEquals("1.0,2.0,3.0,4.0", lines.get(0));
 	}
 
 	@Test
@@ -2934,10 +2933,10 @@ public class MLContextTest extends MLContextTestBase {
 		MLResults results = ml.execute(script);
 		JavaRDD<String> javaRDDStringIJV = results.getJavaRDDStringIJV("M");
 		List<String> lines = javaRDDStringIJV.sortBy(row -> row, true, 1).collect();
-		Assert.assertEquals("1 1 1.0", lines.get(0));
-		Assert.assertEquals("1 2 2.0", lines.get(1));
-		Assert.assertEquals("2 1 3.0", lines.get(2));
-		Assert.assertEquals("2 2 4.0", lines.get(3));
+		assertEquals("1 1 1.0", lines.get(0));
+		assertEquals("1 2 2.0", lines.get(1));
+		assertEquals("2 1 3.0", lines.get(2));
+		assertEquals("2 2 4.0", lines.get(3));
 	}
 
 	@Test
@@ -2948,7 +2947,7 @@ public class MLContextTest extends MLContextTestBase {
 		Script script = dml(s).out("M");
 		RDD<String> rddStringCSV = ml.execute(script).getMatrix("M").toRDDStringCSV();
 		Iterator<String> iterator = rddStringCSV.toLocalIterator();
-		Assert.assertEquals("1.0,2.0,3.0,4.0", iterator.next());
+		assertEquals("1.0,2.0,3.0,4.0", iterator.next());
 	}
 
 	@Test
@@ -2960,10 +2959,10 @@ public class MLContextTest extends MLContextTestBase {
 		RDD<String> rddStringIJV = ml.execute(script).getMatrix("M").toRDDStringIJV();
 		String[] rows = (String[]) rddStringIJV.collect();
 		Arrays.sort(rows);
-		Assert.assertEquals("1 1 1.0", rows[0]);
-		Assert.assertEquals("1 2 2.0", rows[1]);
-		Assert.assertEquals("2 1 3.0", rows[2]);
-		Assert.assertEquals("2 2 4.0", rows[3]);
+		assertEquals("1 1 1.0", rows[0]);
+		assertEquals("1 2 2.0", rows[1]);
+		assertEquals("2 1 3.0", rows[2]);
+		assertEquals("2 2 4.0", rows[3]);
 	}
 
 	@Test
@@ -2972,7 +2971,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String version = ml.version();
 		// not available until jar built
-		Assert.assertEquals(MLContextUtil.VERSION_NOT_AVAILABLE, version);
+		assertEquals(MLContextUtil.VERSION_NOT_AVAILABLE, version);
 	}
 
 	@Test
@@ -2981,7 +2980,7 @@ public class MLContextTest extends MLContextTestBase {
 
 		String buildTime = ml.buildTime();
 		// not available until jar built
-		Assert.assertEquals(MLContextUtil.BUILD_TIME_NOT_AVAILABLE, buildTime);
+		assertEquals(MLContextUtil.BUILD_TIME_NOT_AVAILABLE, buildTime);
 	}
 
 	@Test
@@ -3014,9 +3013,9 @@ public class MLContextTest extends MLContextTestBase {
 		Tuple2<MatrixIndexes, MatrixBlock> first = binaryBlocks.first();
 		MatrixBlock mb = first._2();
 		double[][] matrix = DataConverter.convertToDoubleMatrix(mb);
-		Assert.assertArrayEquals(new double[] { 1.0, 2.0, 3.0 }, matrix[0], 0.0);
-		Assert.assertArrayEquals(new double[] { 4.0, 5.0, 6.0 }, matrix[1], 0.0);
-		Assert.assertArrayEquals(new double[] { 7.0, 8.0, 9.0 }, matrix[2], 0.0);
+		assertArrayEquals(new double[] { 1.0, 2.0, 3.0 }, matrix[0], 0.0);
+		assertArrayEquals(new double[] { 4.0, 5.0, 6.0 }, matrix[1], 0.0);
+		assertArrayEquals(new double[] { 7.0, 8.0, 9.0 }, matrix[2], 0.0);
 	}
 
 	@Test
@@ -3035,15 +3034,15 @@ public class MLContextTest extends MLContextTestBase {
 		Script script = dml("N=M*2").in("M", df).out("N");
 		Tuple1<Matrix> tuple = ml.execute(script).getTuple("N");
 		double[][] n = tuple._1().to2DDoubleArray();
-		Assert.assertEquals(2.0, n[0][0], 0);
-		Assert.assertEquals(4.0, n[0][1], 0);
-		Assert.assertEquals(6.0, n[0][2], 0);
-		Assert.assertEquals(8.0, n[1][0], 0);
-		Assert.assertEquals(10.0, n[1][1], 0);
-		Assert.assertEquals(12.0, n[1][2], 0);
-		Assert.assertEquals(14.0, n[2][0], 0);
-		Assert.assertEquals(16.0, n[2][1], 0);
-		Assert.assertEquals(18.0, n[2][2], 0);
+		assertEquals(2.0, n[0][0], 0);
+		assertEquals(4.0, n[0][1], 0);
+		assertEquals(6.0, n[0][2], 0);
+		assertEquals(8.0, n[1][0], 0);
+		assertEquals(10.0, n[1][1], 0);
+		assertEquals(12.0, n[1][2], 0);
+		assertEquals(14.0, n[2][0], 0);
+		assertEquals(16.0, n[2][1], 0);
+		assertEquals(18.0, n[2][2], 0);
 	}
 
 	@Test
@@ -3056,9 +3055,9 @@ public class MLContextTest extends MLContextTestBase {
 		Tuple2<Matrix, Double> tuple = ml.execute(script).getTuple("N", "s");
 		double[][] n = tuple._1().to2DDoubleArray();
 		double s = tuple._2();
-		Assert.assertArrayEquals(new double[] { 2, 4 }, n[0], 0.0);
-		Assert.assertArrayEquals(new double[] { 6, 8 }, n[1], 0.0);
-		Assert.assertEquals(20.0, s, 0.0);
+		assertArrayEquals(new double[] { 2, 4 }, n[0], 0.0);
+		assertArrayEquals(new double[] { 6, 8 }, n[1], 0.0);
+		assertEquals(20.0, s, 0.0);
 	}
 
 	@Test
@@ -3070,9 +3069,9 @@ public class MLContextTest extends MLContextTestBase {
 		long a = tuple._1();
 		double b = tuple._2();
 		boolean c = tuple._3();
-		Assert.assertEquals(3, a);
-		Assert.assertEquals(3.5, b, 0.0);
-		Assert.assertEquals(true, c);
+		assertEquals(3, a);
+		assertEquals(3.5, b, 0.0);
+		assertEquals(true, c);
 	}
 
 	@Test
@@ -3085,10 +3084,10 @@ public class MLContextTest extends MLContextTestBase {
 		double b = tuple._2();
 		boolean c = tuple._3();
 		String d = tuple._4();
-		Assert.assertEquals(3, a);
-		Assert.assertEquals(3.5, b, 0.0);
-		Assert.assertEquals(true, c);
-		Assert.assertEquals("yes it's TRUE", d);
+		assertEquals(3, a);
+		assertEquals(3.5, b, 0.0);
+		assertEquals(true, c);
+		assertEquals("yes it's TRUE", d);
 	}
 
 }

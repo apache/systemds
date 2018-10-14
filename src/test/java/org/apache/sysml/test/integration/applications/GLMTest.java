@@ -197,6 +197,9 @@ public abstract class GLMTest extends AutomatedTestBase
     
     protected void testGLM(ScriptType scriptType)
     {
+    	if(shouldSkipTest())
+			return;
+    	
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + 
 				numRecords + ", " +
 				numFeatures + ", " +

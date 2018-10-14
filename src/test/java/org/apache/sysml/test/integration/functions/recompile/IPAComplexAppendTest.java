@@ -74,6 +74,9 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	
 	private void runIPAAppendTest( boolean IPA, boolean rewrites ) throws IOException
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

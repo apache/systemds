@@ -82,12 +82,10 @@ public class MatrixInverseTest extends AutomatedTestBase
 	
 	private void runTestMatrixInverse( RUNTIME_PLATFORM rt )
 	{
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			boolean exceptionExpected = false;

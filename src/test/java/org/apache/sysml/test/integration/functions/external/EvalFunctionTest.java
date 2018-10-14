@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.external;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -57,6 +56,9 @@ public class EvalFunctionTest extends AutomatedTestBase
 	}
 	
 	private void runEvalFunctionTest(String testname) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testname);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
@@ -75,7 +77,7 @@ public class EvalFunctionTest extends AutomatedTestBase
 			for( int i=0; i<rows; i++ )
 				for( int j=0; j<cols; j++ )
 					if( Math.abs(X[i][j]-Y[i][j]+7) > eps )
-						Assert.fail("Wrong results: "+X[i][j]+" vs "+Y[i][j]);
+						fail("Wrong results: "+X[i][j]+" vs "+Y[i][j]);
 		} 
 		catch (Exception e)  {
 			e.printStackTrace();

@@ -137,8 +137,11 @@ public class BasicGetValueTest extends AutomatedTestBase
 		runGetValueTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	private static void runGetValueTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private void runGetValueTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

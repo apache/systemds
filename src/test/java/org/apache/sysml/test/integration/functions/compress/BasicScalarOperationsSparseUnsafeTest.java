@@ -138,8 +138,11 @@ public class BasicScalarOperationsSparseUnsafeTest extends AutomatedTestBase
 		runScalarOperationsTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	private static void runScalarOperationsTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private void runScalarOperationsTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

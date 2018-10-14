@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
@@ -43,6 +42,9 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 	
 	@Test
 	public void testTransformApplyEmptyRecodeMap() {
+		if(shouldSkipTest())
+			return;
+		
 		try {
 			//generate input data
 			FrameBlock data = DataConverter.convertToFrameBlock(
@@ -55,11 +57,11 @@ public class TransformApplyEmptyRecodeMapTest extends AutomatedTestBase
 			MatrixBlock out = encoder.apply(data, new MatrixBlock(rows, cols, true));
 			
 			//check outputs
-			Assert.assertEquals(rows, out.getNumRows());
-			Assert.assertEquals(cols, out.getNumColumns());
+			assertEquals(rows, out.getNumRows());
+			assertEquals(cols, out.getNumColumns());
 			for(int i=0; i<rows; i++)
 				for(int j=0; j<cols; j++)
-					Assert.assertTrue(Double.isNaN(out.quickGetValue(i, j)));
+					assertTrue(Double.isNaN(out.quickGetValue(i, j)));
 		} 
 		catch (DMLRuntimeException e) {
 			throw new RuntimeException(e);

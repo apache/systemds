@@ -19,10 +19,10 @@
 
 package org.apache.sysml.test.integration.functions.binary.matrix;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -57,8 +57,9 @@ public class MapMultLimitTest extends AutomatedTestBase
 	public void testMapMultLimit()
 	{
 
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(ExecType.MR);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{
@@ -91,7 +92,7 @@ public class MapMultLimitTest extends AutomatedTestBase
 			// Expected 3 jobs: 1 Reblock, 2 MapMults
 			runTest(true, exceptionExpected, null, 3); 
 			//System.out.println("#Jobs: " + Statistics.getNoOfExecutedMRJobs() + ", " + Statistics.getNoOfCompiledMRJobs());
-			Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
+			assertTrue(Statistics.getNoOfExecutedMRJobs()==3);
 		}
 		finally
 		{

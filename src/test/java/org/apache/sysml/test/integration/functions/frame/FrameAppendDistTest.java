@@ -124,7 +124,9 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		RUNTIME_PLATFORM prevPlfm=setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -134,9 +136,6 @@ public class FrameAppendDistTest extends AutomatedTestBase
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-			rtplatform = platform;
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 			config.addVariable("rows", rows1);
 			config.addVariable("cols", cols1);

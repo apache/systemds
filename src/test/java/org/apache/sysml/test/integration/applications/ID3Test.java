@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Assert;
 import org.junit.runners.Parameterized.Parameters;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -63,6 +62,9 @@ public abstract class ID3Test extends AutomatedTestBase
     
     protected void testID3(ScriptType scriptType) 
     {
+    	if(shouldSkipTest())
+			return;
+    	
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRecords + ", "
 				+ numFeatures + "} ------------");
 		this.scriptType = scriptType;    	
@@ -101,9 +103,9 @@ public abstract class ID3Test extends AutomatedTestBase
 		runRScript(true);
         
 		//check also num actually executed jobs
-		if(AutomatedTestBase.rtplatform != RUNTIME_PLATFORM.SPARK) {
+		if(rtplatform != RUNTIME_PLATFORM.SPARK) {
 			long actualMR = Statistics.getNoOfExecutedMRJobs();
-			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
+			assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
 		}
 				
 		//compare results

@@ -52,6 +52,9 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int subtrahend = 2;
@@ -97,6 +100,9 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int subtrahend = 2;
@@ -142,6 +148,9 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double subtrahend = 2;
@@ -187,6 +196,9 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double subtrahend = 2;
@@ -232,6 +244,9 @@ public class ScalarSubtractionTest extends AutomatedTestBase
 	
 	@Test
 	public void testSparse() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 100;
 		int cols = 50;
 		int subtrahend = 2;

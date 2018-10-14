@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -101,7 +100,9 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	}
 
 	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) throws IOException {
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -126,11 +125,10 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	private void runFrameScalarCastingTest(ValueType vtIn, RUNTIME_PLATFORM et) 
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = et;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{		
@@ -154,10 +152,10 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 
 			//compare output 
-			Assert.assertEquals(readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)), Double.valueOf(1));
+			assertEquals(readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)), Double.valueOf(1));
 			if( et != RUNTIME_PLATFORM.SPARK ) {
-				Assert.assertTrue(Statistics.getNoOfCompiledSPInst()==0);
-				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
+				assertTrue(Statistics.getNoOfCompiledSPInst()==0);
+				assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 			}
 		}
 		catch(Exception ex) {

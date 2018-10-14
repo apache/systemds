@@ -60,6 +60,9 @@ public class LengthTest extends AutomatedTestBase
 
     @Test
     public void testGeneral() {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
 
@@ -85,6 +88,9 @@ public class LengthTest extends AutomatedTestBase
 
     @Test
     public void testScalar() {
+    	if(shouldSkipTest())
+			return;
+    	
         int scalar = 12;
 
         TestConfiguration config = getTestConfiguration(TEST_SCALAR);

@@ -75,6 +75,9 @@ public class RewriteLoopVectorization extends AutomatedTestBase
 	 */
 	private void testRewriteLoopVectorizationSum( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try

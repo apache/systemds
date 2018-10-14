@@ -30,7 +30,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
@@ -76,16 +75,10 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 
 	private void testRewriteCodeMotion(String testname, boolean rewrites, ExecType et)
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_CODE_MOTION;
 		OptimizerUtils.ALLOW_CODE_MOTION = rewrites;
@@ -115,8 +108,8 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check applied code motion rewrites (moved sum and - from 10 to 1)
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("uak+"));
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
+			assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("uak+"));
+			assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_CODE_MOTION = rewritesOld;

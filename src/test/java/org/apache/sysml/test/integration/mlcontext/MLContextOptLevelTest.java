@@ -26,7 +26,6 @@ import org.apache.sysml.api.mlcontext.MLResults;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class MLContextOptLevelTest extends MLContextTestBase
@@ -61,7 +60,7 @@ public class MLContextOptLevelTest extends MLContextTestBase
 			TestUtils.compareScalars(results.getDouble("R"), rows*cols*7, 0.000001);
 		
 			//check correct opt level
-			Assert.assertTrue(heavyHittersContainsString("+") == (optLevel==1));
+			assertTrue(heavyHittersContainsString("+") == (optLevel==1));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

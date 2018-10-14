@@ -58,6 +58,8 @@ public class DiagTest extends AutomatedTestBase
 	
 	@Test
 	public void testDiag() {
+		if(shouldSkipTest())
+			return;
 		int rowsCols = 10;
 		
 		TestConfiguration config = availableTestConfigurations.get("DiagTest");
@@ -91,6 +93,8 @@ public class DiagTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensions() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 9;
 		

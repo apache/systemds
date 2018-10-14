@@ -64,6 +64,9 @@ public class VariableTest extends AutomatedTestBase
     @Test
     public void testVariablePassing1()
     {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
 
@@ -114,6 +117,9 @@ public class VariableTest extends AutomatedTestBase
     
     @Test
     public void testVariablePassing2() {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
         int factor = 5;
@@ -148,6 +154,9 @@ public class VariableTest extends AutomatedTestBase
     @Test
     public void testVariableAnalysis1()
     {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
 

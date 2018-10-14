@@ -226,8 +226,11 @@ public class BasicMatrixMultChainTest extends AutomatedTestBase
 		runMatrixMultChainTest(SparsityType.SPARSE, ValueType.CONST, ChainType.XtwXv, false);
 	}
 	
-	private static void runMatrixMultChainTest(SparsityType sptype, ValueType vtype, ChainType ctype, boolean compress)
+	private void runMatrixMultChainTest(SparsityType sptype, ValueType vtype, ChainType ctype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

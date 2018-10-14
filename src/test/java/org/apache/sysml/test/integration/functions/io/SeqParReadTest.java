@@ -210,6 +210,8 @@ public class SeqParReadTest extends AutomatedTestBase {
 	private void runReadTypeFormatSparsitySizeTest(boolean parallel, OutputInfo fmt, boolean dense, boolean big ) {
 		
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

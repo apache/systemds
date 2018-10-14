@@ -1032,8 +1032,11 @@ public class BasicUnaryAggregateTest extends AutomatedTestBase
 		runUnaryAggregateTest(SparsityType.SPARSE, ValueType.CONST, AggType.MIN, false);
 	}
 	
-	private static void runUnaryAggregateTest(SparsityType sptype, ValueType vtype, AggType aggtype, boolean compress)
+	private void runUnaryAggregateTest(SparsityType sptype, ValueType vtype, AggType aggtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

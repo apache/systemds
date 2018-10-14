@@ -223,8 +223,11 @@ public class LargeMatrixMatrixMultTest extends AutomatedTestBase
 		runMatrixVectorMultTest(MultType.LEFT, SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	private static void runMatrixVectorMultTest(MultType mtype, SparsityType sptype, ValueType vtype, boolean compress)
+	private void runMatrixVectorMultTest(MultType mtype, SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

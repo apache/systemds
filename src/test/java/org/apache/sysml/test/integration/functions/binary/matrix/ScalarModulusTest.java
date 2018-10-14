@@ -56,6 +56,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 20;
@@ -102,6 +105,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 20;
@@ -148,6 +154,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 20;
@@ -194,6 +203,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 20;
@@ -240,6 +252,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testSparse() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 100;
 		int cols = 50;
 		int divisor = 20;
@@ -286,6 +301,9 @@ public class ScalarModulusTest extends AutomatedTestBase
 	
 	@Test
 	public void testDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 0;

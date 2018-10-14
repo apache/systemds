@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -64,6 +63,9 @@ public class IPAUnknownRecursionTest extends AutomatedTestBase
 	 */
 	private void runIPAUnknownRecursionTest( boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try

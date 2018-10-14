@@ -126,6 +126,9 @@ public class PyDMLImplicitSlicingBounds extends AutomatedTestBase {
      * @param testName The name of this test case.
      */
     private void testPyDMLImplicitSlicingBounds(String testName) {
+    	if(shouldSkipTest())
+			return;
+    	
         // Create and load test configuration
         getAndLoadTestConfiguration(testName);
         String HOME = SCRIPT_DIR + TEST_DIR;

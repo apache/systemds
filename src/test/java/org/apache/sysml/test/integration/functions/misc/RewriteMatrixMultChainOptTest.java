@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -70,16 +69,10 @@ public class RewriteMatrixMultChainOptTest extends AutomatedTestBase
 
 	private void testRewriteMatrixMultChainOp(String testname, boolean rewrites, ExecType et)
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
@@ -113,7 +106,7 @@ public class RewriteMatrixMultChainOptTest extends AutomatedTestBase
 			//check for correct matrix multiplication order, which also allows
 			//the compilation of mmchain operators
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("mmchain")
+				assertTrue(heavyHittersContainsSubString("mmchain")
 					|| heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}

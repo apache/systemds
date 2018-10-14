@@ -232,6 +232,9 @@ public class OpSingleTest extends AutomatedTestBase
 //	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
+		if(shouldSkipTest())
+			return;
+		
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
 		MatrixBlock m2 = new MatrixBlock();
 		double est = 0;

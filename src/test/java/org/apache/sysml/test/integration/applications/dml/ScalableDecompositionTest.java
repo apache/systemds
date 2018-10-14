@@ -160,16 +160,14 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 	
 	private void runKMeansTest(String testname, DecompType type, boolean rewrites, ExecType instType)
 	{
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean oldFlag2 = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		
 		
 		try
 		{

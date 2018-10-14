@@ -135,8 +135,11 @@ public class BasicCompressionTest extends AutomatedTestBase
 		runCompressionTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	private static void runCompressionTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private void runCompressionTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

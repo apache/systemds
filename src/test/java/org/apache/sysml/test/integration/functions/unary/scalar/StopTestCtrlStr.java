@@ -92,8 +92,9 @@ public class StopTestCtrlStr extends AutomatedTestBase
 	
 	private void testLoop(String loop, RUNTIME_PLATFORM rt) {
 		
-		RUNTIME_PLATFORM oldRT = rtplatform;
-		rtplatform = rt;
+		RUNTIME_PLATFORM oldRT = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 		String STOP_HOME = SCRIPT_DIR + TEST_DIR;

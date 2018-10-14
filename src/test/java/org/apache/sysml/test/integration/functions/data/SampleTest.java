@@ -115,6 +115,9 @@ public class SampleTest extends AutomatedTestBase
 	}
 	
 	private void runSampleTest() {
+		if(shouldSkipTest())
+			return;
+		
 		getAndLoadTestConfiguration(TEST_NAME);
 
 	 	String HOME = SCRIPT_DIR + TEST_DIR;

@@ -95,8 +95,9 @@ public class WriteCSVTest extends AutomatedTestBase
 	
 	private void runCSVWriteTest(RUNTIME_PLATFORM platform, boolean header, String sep, boolean sparse) throws IOException {
 		
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = platform;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);

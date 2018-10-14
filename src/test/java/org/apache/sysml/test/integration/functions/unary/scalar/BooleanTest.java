@@ -43,6 +43,9 @@ public class BooleanTest extends AutomatedTestBase
 	
 	@Test
 	public void testWhile() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("WhileTest");
 		loadTestConfiguration(config);
 		

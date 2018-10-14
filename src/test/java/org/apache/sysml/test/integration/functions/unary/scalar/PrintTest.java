@@ -44,6 +44,9 @@ public class PrintTest extends AutomatedTestBase
 
 	@Test
 	public void testInt() {
+		if(shouldSkipTest())
+			return;
+		
 		int value = 0;
 
 		TestConfiguration config = availableTestConfigurations.get("PrintTest");
@@ -57,6 +60,9 @@ public class PrintTest extends AutomatedTestBase
 	
 	@Test
 	public void testDouble() {
+		if(shouldSkipTest())
+			return;
+		
 		double value = 1337.3;
 
 		TestConfiguration config = availableTestConfigurations.get("PrintTest");
@@ -70,6 +76,9 @@ public class PrintTest extends AutomatedTestBase
 	
 	@Test
 	public void testBoolean() {
+		if(shouldSkipTest())
+			return;
+		
 		String value = "TRUE";
 
 		TestConfiguration config = availableTestConfigurations.get("PrintTest");
@@ -83,6 +92,9 @@ public class PrintTest extends AutomatedTestBase
 	
 	@Test
 	public void testString() {
+		if(shouldSkipTest())
+			return;
+		
 		String value = "\"Hello World!\"";
 
 		TestConfiguration config = availableTestConfigurations.get("PrintTest");
@@ -96,6 +108,9 @@ public class PrintTest extends AutomatedTestBase
 	
 	@Test
 	public void testStringWithoutMsg() {
+		if(shouldSkipTest())
+			return;
+		
 		String value = "\"Hello World!\"";
 
 		TestConfiguration config = availableTestConfigurations.get("PrintTest2");
@@ -109,6 +124,9 @@ public class PrintTest extends AutomatedTestBase
 
 	@Test
 	public void testPrint() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = availableTestConfigurations.get("PrintTest3");
 
 		loadTestConfiguration(config);

@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -75,19 +74,11 @@ public class OuterProductTest extends AutomatedTestBase
 	{
 		//setup exec type, rows, cols
 
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-	
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME);
@@ -116,7 +107,7 @@ public class OuterProductTest extends AutomatedTestBase
 			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			Double dmlret = dmlfile.get(new CellIndex(1,1));
 			Double compare = computeMinOuterProduct(A, B, rows, cols);
-			Assert.assertEquals("Wrong result value.", compare, dmlret);
+			assertEquals("Wrong result value.", compare, dmlret);
 			
 			int expectedNumCompiled = 4; //REBLOCK, MMRJ, GMR, GMR write
 			int expectedNumExecuted = 4; //REBLOCK, MMRJ, GMR, GMR write

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.data;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -175,16 +174,10 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 		int rows = (type == Type.Zero_Rows) ? 0 : rowsM;
 		int cols = (type == Type.Zero_Cols) ? 0 : colsM;
 		
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			//run write into format
@@ -205,7 +198,7 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 				
 				//check overall result
 				double expected = ((type == Type.Zero_Rows) ? colsM : rowsM) * 7;
-				Assert.assertEquals(new Double(expected),
+				assertEquals(new Double(expected),
 					readDMLMatrixFromHDFS("R2").get(new CellIndex(1,1)));
 			}
 		}

@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.piggybacking;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -82,8 +81,9 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	@Test
 	public void testDistCacheBug_mvmult()
 	{		
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(RUNTIME_PLATFORM.HADOOP);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -123,7 +123,9 @@ public class PiggybackingTest1 extends AutomatedTestBase
 	@Test
 	public void testDistCacheBug_append()
 	{		
-
+		if(shouldSkipTest())
+			return;
+		
 		RUNTIME_PLATFORM rtold = rtplatform;
 		rtplatform = RUNTIME_PLATFORM.HADOOP;
 		
@@ -140,8 +142,10 @@ public class PiggybackingTest1 extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, numMRJobs);
 	
 		Double expected = 1120.0;
-		Double output = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1));
-		Assert.assertEquals("Values not equal: " + output + "!=" + expected, output, expected);
+		if(!shouldSkipTest()) {
+			Double output = TestUtils.readDMLScalarFromHDFS(OUT_FILE).get(new CellIndex(1,1));
+			assertEquals("Values not equal: " + output + "!=" + expected, output, expected);
+		}
 		
 		rtplatform = rtold;
 	}

@@ -55,6 +55,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testTwoMinusOne() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 1;
 		int intDoubleValue1 = 2;
@@ -98,6 +101,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 3;
 		int intIntValue2 = 2;
 		int intDoubleValue1 = 3;
@@ -141,6 +147,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testVarConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 3;
 		int intIntValue2 = 2;
 		int intDoubleValue1 = 3;
@@ -184,6 +193,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testConstVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 3;
 		int intIntValue2 = 2;
 		int intDoubleValue1 = 3;
@@ -227,6 +239,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testVarVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 3;
 		int intIntValue2 = 2;
 		int intDoubleValue1 = 3;
@@ -274,6 +289,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -317,6 +335,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeVarConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -360,6 +381,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeConstVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -403,6 +427,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeVarVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;
@@ -450,6 +477,9 @@ public class SubtractionTest extends AutomatedTestBase
 
 	@Test
 	public void testConstConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntIntValue1 = 3;
 		int intIntIntValue2 = 4;
 		int intIntIntValue3 = 5;

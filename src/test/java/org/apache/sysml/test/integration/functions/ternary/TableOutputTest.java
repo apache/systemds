@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.ternary;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -114,18 +113,10 @@ public class TableOutputTest extends AutomatedTestBase
 	 */
 	private void runTableOutputTest( ExecType et, int delta)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -177,7 +168,7 @@ public class TableOutputTest extends AutomatedTestBase
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
-			Assert.assertEquals(0, numErrors);
+			assertEquals(0, numErrors);
 
 			numErrors = 0;
 			if ( delta > 0 ) {
@@ -193,7 +184,7 @@ public class TableOutputTest extends AutomatedTestBase
 					}
 				}
 			}
-			Assert.assertEquals(0, numErrors);
+			assertEquals(0, numErrors);
 		}
 		finally
 		{

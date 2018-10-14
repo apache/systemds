@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -463,21 +462,15 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
-	{
+	{	
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		String oldTestConf = TEST_CONF;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-		
+			
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
 		
@@ -514,24 +507,24 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			
 			if( !(rewrites && (testname.equals(TEST_NAME2)
 				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
-				Assert.assertTrue(heavyHittersContainsSubString(
+				assertTrue(heavyHittersContainsSubString(
 						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
+				assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("uamin","uamax"));
+				assertTrue(!heavyHittersContainsSubString("uamin","uamax"));
 			else if( testname.equals(TEST_NAME11) ) //ensure replace is fused
-				Assert.assertTrue(!heavyHittersContainsSubString("replace"));
+				assertTrue(!heavyHittersContainsSubString("replace"));
 			else if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uacmin"));
+				assertTrue(!heavyHittersContainsSubString("uacmin"));
 			else if( testname.equals(TEST_NAME16) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uack+"));
+				assertTrue(!heavyHittersContainsSubString("uack+"));
 			else if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+				assertTrue(!heavyHittersContainsSubString("xor"));
 			else if( testname.equals(TEST_NAME22) )
-				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+				assertTrue(!heavyHittersContainsSubString("seq"));
 			else if( testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24) )
-				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin"));
+				assertTrue(!heavyHittersContainsSubString("min","nmin"));
 		}
 		finally {
 			rtplatform = platformOld;

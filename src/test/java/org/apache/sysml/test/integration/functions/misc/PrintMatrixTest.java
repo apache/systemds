@@ -50,6 +50,9 @@ public class PrintMatrixTest extends AutomatedTestBase
 	 */
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME1);
 		loadTestConfiguration(config);
 		

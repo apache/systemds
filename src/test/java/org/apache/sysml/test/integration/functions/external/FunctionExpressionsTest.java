@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.external;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -66,6 +65,9 @@ public class FunctionExpressionsTest extends AutomatedTestBase
 
 	private void runFunctionExpressionsTest( String TEST_NAME )
 	{		
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
@@ -89,9 +91,9 @@ public class FunctionExpressionsTest extends AutomatedTestBase
 		
 			double sx = sum(X,rows,cols);
 			double sy = sum(Y,rows,cols);
-			Assert.assertEquals(sx, sy, eps);
+			assertEquals(sx, sy, eps);
 			
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 					             0, Statistics.getNoOfExecutedMRJobs());
 		} 
 		catch (Exception e) 

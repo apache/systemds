@@ -544,12 +544,10 @@ public class RoundTest extends AutomatedTestBase
 	// -----------------------------------------------------------------------------
 	
 	private void runTest(RUNTIME_PLATFORM rt, TEST_TYPE test, int rows, int cols, double sparsity) {
-		RUNTIME_PLATFORM rtOld = rtplatform;
-		rtplatform = rt;
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtOld = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 	
 		try
 		{

@@ -138,8 +138,11 @@ public class BasicMatrixCentralMomentTest extends AutomatedTestBase
 		runMatrixAppendTest(SparsityType.SPARSE, ValueType.CONST, false);
 	}
 	
-	private static void runMatrixAppendTest(SparsityType sptype, ValueType vtype, boolean compress)
+	private void runMatrixAppendTest(SparsityType sptype, ValueType vtype, boolean compress)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//prepare sparsity for input data

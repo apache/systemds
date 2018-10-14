@@ -89,12 +89,13 @@ public class ReadMMTest extends AutomatedTestBase
 	
 	private void runMMTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) {
 		
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(platform);
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
-			rtplatform = platform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

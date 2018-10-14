@@ -29,7 +29,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -200,26 +199,15 @@ public class RowSumsSqTest extends AutomatedTestBase {
      */
     private void testRowSumsSquared(String testName, boolean sparse, boolean vector,
                                     boolean rewrites, ExecType platform) {
+        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+        RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
+        if(shouldSkipTest())
+			return;
+
+        
         // Configure settings for this test case
         boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
         OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
-        RUNTIME_PLATFORM platformOld = rtplatform;
-        switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
-            case SPARK:
-                rtplatform = RUNTIME_PLATFORM.SPARK;
-                break;
-            default:
-                rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-                break;
-        }
-
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
         try {
             // Create and load test configuration
@@ -253,9 +241,9 @@ public class RowSumsSqTest extends AutomatedTestBase {
                 String opcode = prefix + op;
                 boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                 if (vector)
-                    Assert.assertFalse("Rewrite applied to vector case.", rewriteApplied);
+                    assertFalse("Rewrite applied to vector case.", rewriteApplied);
                 else
-                    Assert.assertTrue("Rewrite not applied to matrix case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to matrix case.", rewriteApplied);
             }
         }
         finally {

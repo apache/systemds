@@ -71,6 +71,9 @@ public class PrintExpressionTest extends AutomatedTestBase
 	 */
 	private void runPrintExpressionTest( String testname, boolean rewrites )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);

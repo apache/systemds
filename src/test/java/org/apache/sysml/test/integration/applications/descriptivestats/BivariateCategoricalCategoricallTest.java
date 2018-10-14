@@ -69,6 +69,9 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 
 	@Test
 	public void testCategoricalCategorical() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NOMINAL_NOMINAL);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
@@ -123,6 +126,9 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 	
 	@Test
 	public void testCategoricalCategoricalWithWeights() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NOMINAL_NOMINAL_WEIGHTS);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
@@ -181,6 +187,9 @@ public class BivariateCategoricalCategoricallTest extends AutomatedTestBase
 	
 	@Test
 	public void testOddsRatio() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_ODDS_RATIO);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);

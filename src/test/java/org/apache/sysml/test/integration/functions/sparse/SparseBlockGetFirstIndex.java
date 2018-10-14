@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -198,6 +197,9 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 	 */
 	private void runSparseBlockGetFirstIndexTest( SparseBlock.Type btype, double sparsity, IndexType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -221,12 +223,12 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 				nnz += rnnz[i];
 			}
 			if( nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check correct isEmpty return
 			for( int i=0; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
 		
 			//check correct index values
 			for( int i=0; i<rows; i++ ) {
@@ -240,7 +242,7 @@ public class SparseBlockGetFirstIndex extends AutomatedTestBase
 				int six = (sixpos>=0) ? 
 					sblock.indexes(i)[sblock.pos(i)+sixpos] : -1;
 				if( six != ix ) {
-					Assert.fail("Wrong index returned by index probe ("+
+					fail("Wrong index returned by index probe ("+
 							itype.toString()+","+i+"): "+six+", expected: "+ix);
 				}
 			}

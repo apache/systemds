@@ -29,8 +29,22 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.internal.ArrayComparisonFailure;
 
 public class SerializationTest {
+	
+	public static void assertArrayEquals(double[] expecteds,
+			double[] actuals, double delta) throws ArrayComparisonFailure {
+		Assert.assertArrayEquals(expecteds, actuals, delta);
+	}
+	
+	public static void assertEquals(Object expected, Object actual) {
+		Assert.assertEquals(expected, actual);
+    }
+	
+	public static void assertEquals(long expected, long actual) {
+		Assert.assertEquals(expected, actual);
+    }
 
 	@Test
 	public void serializeUnnamedListObject() {
@@ -44,9 +58,9 @@ public class SerializationTest {
 		MatrixObject actualMO1 = (MatrixObject) actualLO.slice(0);
 		MatrixObject actualMO2 = (MatrixObject) actualLO.slice(1);
 		IntObject actualIO = (IntObject) actualLO.slice(2);
-		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());
+		assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
+		assertEquals(io.getLongValue(), actualIO.getLongValue());
 	}
 
 	@Test
@@ -62,10 +76,10 @@ public class SerializationTest {
 		MatrixObject actualMO1 = (MatrixObject) actualLO.slice(0);
 		MatrixObject actualMO2 = (MatrixObject) actualLO.slice(1);
 		IntObject actualIO = (IntObject) actualLO.slice(2);
-		Assert.assertEquals(lo.getNames(), actualLO.getNames());
-		Assert.assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
-		Assert.assertEquals(io.getLongValue(), actualIO.getLongValue());
+		assertEquals(lo.getNames(), actualLO.getNames());
+		assertArrayEquals(mo1.acquireRead().getDenseBlockValues(), actualMO1.acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(mo2.acquireRead().getDenseBlockValues(), actualMO2.acquireRead().getDenseBlockValues(), 0);
+		assertEquals(io.getLongValue(), actualIO.getLongValue());
 	}
 
 	public static MatrixObject generateDummyMatrix(int size) {

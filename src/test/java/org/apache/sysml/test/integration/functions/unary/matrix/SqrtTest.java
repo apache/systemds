@@ -47,6 +47,10 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
+		
+		
 		int rows = 10;
 		int cols = 10;
 		
@@ -81,6 +85,10 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegativeVector() {
+		if(shouldSkipTest())
+			return;
+		
+		
 		int rows = 10;
 		int cols = 1;
 		
@@ -97,6 +105,10 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegativeMatrix() {
+		if(shouldSkipTest())
+			return;
+		
+		
 		int rows = 10;
 		int cols = 10;
 		

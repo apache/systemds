@@ -53,6 +53,9 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testMatrixMultiplication() {
+		if(shouldSkipTest())
+			return;
+		
 		int m = 20;
 		int n = 20;
 		int k = 20;
@@ -80,6 +83,9 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 	
 	@Test
 	public void testSparseMatrixMultiplication() {
+		if(shouldSkipTest())
+			return;
+		
 		int m = 40;
 		int n = 10;
 		int k = 30;
@@ -107,6 +113,9 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testWrongDimensions() {
+		if(shouldSkipTest())
+			return;
+		
 		int m = 6;
 		int n1 = 8;
 		int n2 = 10;
@@ -128,6 +137,9 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testAMultASpecial1() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 
@@ -151,6 +163,9 @@ public class MatrixMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testAMultBSpecial2() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 

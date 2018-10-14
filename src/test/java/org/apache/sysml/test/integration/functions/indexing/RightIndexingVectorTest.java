@@ -73,21 +73,14 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 	
 	public void runRightIndexingTest( ExecType et ) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-				
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		    
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);

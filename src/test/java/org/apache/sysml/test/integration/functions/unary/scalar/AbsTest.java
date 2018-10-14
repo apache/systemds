@@ -61,6 +61,9 @@ public class AbsTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = 5;
 		double doubleValue = 5.0;
 		
@@ -84,6 +87,9 @@ public class AbsTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegative() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = -5;
 		double doubleValue = -5.0;
 		
@@ -107,6 +113,9 @@ public class AbsTest extends AutomatedTestBase
 	
 	@Test
 	public void testZero() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = 0;
 		double doubleValue = 0.0;
 		
@@ -130,6 +139,9 @@ public class AbsTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandom() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = TestUtils.getRandomInt();
 		double doubleValue = TestUtils.getRandomDouble();
 		

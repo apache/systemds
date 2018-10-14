@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix_full_other;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -72,6 +71,10 @@ public class MatrixMultShortLhsTest extends AutomatedTestBase
 
 	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType)
 	{	
+		setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		double sparsityA = sparseM1?sparsity2:sparsity1; 
 		double sparsityB = sparseM2?sparsity2:sparsity1; 

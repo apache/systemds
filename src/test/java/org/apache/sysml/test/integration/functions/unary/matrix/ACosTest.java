@@ -47,6 +47,8 @@ public class ACosTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		
@@ -81,6 +83,8 @@ public class ACosTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegative() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		
@@ -115,6 +119,8 @@ public class ACosTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandom() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		

@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class ReuseModelVariablesTest extends AutomatedTestBase 
@@ -110,7 +109,7 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		ArrayList<double[][]> Yset = execDMLScriptviaJMLC( TEST_NAME, Xset, modelReuse );
 		
 		//check non-empty y
-		Assert.assertEquals(Xset.size(), Yset.size());
+		assertEquals(Xset.size(), Yset.size());
 	}
 
 	private static ArrayList<double[][]> execDMLScriptviaJMLC( String testname, ArrayList<double[][]> X, boolean modelReuse) 

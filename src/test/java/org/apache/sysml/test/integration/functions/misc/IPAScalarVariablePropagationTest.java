@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.WeightedCrossEntropy;
@@ -62,6 +61,8 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 	private void runIPAScalarVariablePropagationTest( String testname, boolean IPA )
 	{	
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
@@ -79,8 +80,8 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 			//check for applied rewrites (in both cases, we expect the rewrites to happen:
 			// - without IPA it should be marked for recompilation and recompiled per iteration
 			// - with IPA the scalar rank should be directly propagated into the function
-			Assert.assertTrue("Missing opcode wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
-			Assert.assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
+			assertTrue("Missing opcode wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
+			assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

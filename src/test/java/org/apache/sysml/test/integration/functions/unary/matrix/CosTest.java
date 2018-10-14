@@ -45,6 +45,8 @@ public class CosTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		
@@ -79,6 +81,8 @@ public class CosTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegative() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		
@@ -113,6 +117,8 @@ public class CosTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandom() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		

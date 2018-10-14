@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.aggregate;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -109,6 +108,9 @@ public class AggregateNaNTest extends AutomatedTestBase
 	}
 	
 	private void runNaNAggregateTest(int type, boolean sparse) {
+		if(shouldSkipTest())
+			return;
+		
 		//generate input
 		double sparsity = sparse ? sparsity1 : sparsity2;
 		double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7); 
@@ -123,10 +125,13 @@ public class AggregateNaNTest extends AutomatedTestBase
 			case 3: ret = mb.max();
 		}
 		
-		Assert.assertTrue(Double.isNaN(ret));
+		assertTrue(Double.isNaN(ret));
 	}
 	
 	private void runNaNRowIndexMxxTest(String type, boolean sparse) {
+		if(shouldSkipTest())
+			return;
+		
 		//generate input
 		double sparsity = sparse ? sparsity1 : sparsity2;
 		double[][] A = getRandomMatrix(rows, cols, -0.05, 1, sparsity, 7);
@@ -137,6 +142,6 @@ public class AggregateNaNTest extends AutomatedTestBase
 		InstructionUtils.parseBasicAggregateUnaryOperator(type),
 		new MatrixBlock(), -1, -1, new MatrixIndexes(1, 1), true).getValue(7, 0);
 
-		Assert.assertTrue(ret == 1);
+		assertTrue(ret == 1);
 	}
 }

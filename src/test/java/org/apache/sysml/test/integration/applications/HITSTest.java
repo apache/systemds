@@ -40,6 +40,8 @@ public abstract class HITSTest extends AutomatedTestBase
 	}
 	
 	protected void testHits(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST ------------");
 		this.scriptType = scriptType;
 		

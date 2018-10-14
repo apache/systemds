@@ -53,6 +53,8 @@ public class VariableTest extends AutomatedTestBase
 	
 	@Test
 	public void testCopyVariable() {
+		if(shouldSkipTest())
+			return;
 		int rows = 10;
 		int cols = 10;
 		

@@ -58,6 +58,9 @@ public abstract class GNMFTest extends AutomatedTestBase
 	}
 	
 	protected void testGNMF(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + m + ", "
 				+ n + ", " + k + "} ------------");
 		this.scriptType = scriptType;

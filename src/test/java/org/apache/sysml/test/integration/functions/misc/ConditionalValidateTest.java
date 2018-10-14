@@ -113,6 +113,8 @@ public class ConditionalValidateTest extends AutomatedTestBase
 	private void runTest( String testName, boolean exceptionExpected, boolean fileExists ) 
 	{
 		String TEST_NAME = testName;
+		if(shouldSkipTest())
+			return;
 
 		try
 		{		

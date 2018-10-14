@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -148,16 +147,10 @@ public class FullSelectPosTest extends AutomatedTestBase
 	 */
 	private void runSelPosTest( boolean sparse, ExecType instType, boolean rewrites)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -202,7 +195,7 @@ public class FullSelectPosTest extends AutomatedTestBase
 			if( rewrites ) {
 				String expected_op = (instType == ExecType.SPARK) ? Instruction.SP_INST_PREFIX+"max" : "max";
 				if(instType == ExecType.CP || instType == ExecType.SPARK)
-					Assert.assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op)
+					assertTrue("Missing opcode: " + expected_op , Statistics.getCPHeavyHitterOpCodes().contains(expected_op)
 						|| Statistics.getCPHeavyHitterOpCodes().contains("gpu_max"));
 			}
 		}

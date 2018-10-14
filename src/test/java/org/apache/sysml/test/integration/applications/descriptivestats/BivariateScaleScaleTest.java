@@ -55,7 +55,9 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 	
 	@Test
 	public void testPearsonR() {
-
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
@@ -105,7 +107,9 @@ public class BivariateScaleScaleTest extends AutomatedTestBase
 	
 	@Test
 	public void testPearsonRWithWeights() {
-
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE_WEIGHTS);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);

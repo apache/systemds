@@ -94,6 +94,8 @@ public class LongOverflowTest extends AutomatedTestBase
 	private void runOverflowTest( String testscript, boolean error ) 
 	{
 		String TEST_NAME = testscript;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{		

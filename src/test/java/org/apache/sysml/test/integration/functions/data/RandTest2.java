@@ -56,6 +56,9 @@ public class RandTest2 extends AutomatedTestBase
 
 	@Test
 	public void testMatrix() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		double cols = 10.4;
 		double min = -1;

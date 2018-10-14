@@ -129,6 +129,9 @@ public class OpElemWTest extends AutomatedTestBase
 	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int n, double[] sp, OpCode op) {
+		if(shouldSkipTest())
+			return;
+		
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp[0], 1, 1, "uniform", 3);
 		MatrixBlock m2 = MatrixBlock.randOperations(m, n, sp[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = new MatrixBlock();

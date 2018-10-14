@@ -51,6 +51,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		double intIntValue1 = 2;
 		double intIntValue2 = 3;
 		double intDoubleValue1 = 2;
@@ -94,6 +97,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testVarConst() {
+		if(shouldSkipTest())
+			return;
+		
 		double intIntValue1 = 2;
 		double intIntValue2 = 3;
 		double intDoubleValue1 = 2;
@@ -137,6 +143,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testConstVar() {
+		if(shouldSkipTest())
+			return;
+		
 		double intIntValue1 = 2;
 		double intIntValue2 = 3;
 		double intDoubleValue1 = 2;
@@ -180,6 +189,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testVarVar() {
+		if(shouldSkipTest())
+			return;
+		
 		double intIntValue1 = 2;
 		double intIntValue2 = 3;
 		double intDoubleValue1 = 2;
@@ -227,6 +239,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testPositiveIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 5;
 		double op2 = 0;
 
@@ -247,6 +262,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testPositiveDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 5;
 		double op2 = 0;
 
@@ -267,6 +285,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = -5;
 		double op2 = 0;
 
@@ -287,6 +308,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testNegativeIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = -5;
 		double op2 = 0;
 
@@ -307,6 +331,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testZeroDoubleDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 0;
 		double op2 = 0;
 
@@ -327,6 +354,9 @@ public class DivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testZeroIntegerDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		double op1 = 0;
 		double op2 = 0;
 

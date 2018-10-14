@@ -36,7 +36,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.utils.Statistics;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -67,6 +66,9 @@ public class APICodegenTest extends AutomatedTestBase
 
 	private void runMLContextParforDatasetTest(boolean jmlc) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try {
 			double[][] X = getRandomMatrix(rows, cols, -10, 10, sparsity, 76543); 
 			MatrixBlock mX = DataConverter.convertToMatrixBlock(X); 
@@ -107,7 +109,7 @@ public class APICodegenTest extends AutomatedTestBase
 			}
 			
 			//check for generated operator
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA"));
+			assertTrue(heavyHittersContainsSubString("spoofRA"));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

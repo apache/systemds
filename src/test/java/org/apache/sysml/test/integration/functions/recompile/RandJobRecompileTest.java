@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -70,6 +69,9 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	 */
 	private void runRandJobRecompileTest( boolean estSizeEval )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagSizeEval = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
 		
 		try

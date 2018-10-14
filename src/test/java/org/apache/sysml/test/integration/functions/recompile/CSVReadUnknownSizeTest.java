@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
@@ -93,6 +92,9 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 	 */
 	private void runCSVReadUnknownSizeTest( boolean splitDags, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagSplit = OptimizerUtils.ALLOW_SPLIT_HOP_DAGS;
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		

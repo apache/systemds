@@ -70,6 +70,9 @@ public abstract class NaiveBayesParforTest  extends AutomatedTestBase{
 	 
 	 protected void testNaiveBayes(ScriptType scriptType)
 	 {
+		 if(shouldSkipTest())
+				return;
+		 
 		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRecords + ", "
 					+ numFeatures + ", " + numClasses + ", " + sparsity + "} ------------");
 		 this.scriptType = scriptType;

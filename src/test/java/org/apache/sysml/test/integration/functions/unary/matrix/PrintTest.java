@@ -49,6 +49,9 @@ public class PrintTest extends AutomatedTestBase
 	
 	private void runPrintTest()
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		//register test configuration
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

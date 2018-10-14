@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RowConv2DOperationsTest extends AutomatedTestBase
@@ -72,20 +71,17 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 	public void runConv2DTest(String testname, boolean rewrites, int imgSize, int numImg, int numChannels,
 		int numFilters, int filterSize, int stride, int pad, boolean sparse1, boolean sparse2, ExecType et)
 	{
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ) {
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		
 		try
 		{
+			
+			
 			String sparseVal1 = String.valueOf(sparse1).toUpperCase();
 			String sparseVal2 = String.valueOf(sparse2).toUpperCase();
 			TestConfiguration config = getTestConfiguration(testname);
@@ -112,7 +108,7 @@ public class RowConv2DOperationsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+			assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {

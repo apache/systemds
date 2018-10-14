@@ -71,19 +71,11 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	
 	private void runLeftIndexingTest( ExecType instType ) 
 	{		
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
-	
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

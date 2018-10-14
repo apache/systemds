@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.external;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -83,6 +82,9 @@ public class DynProjectTest extends AutomatedTestBase
 	 */
 	private void runDynProjectTest( boolean vector, boolean sparse )
 	{		
+		if(shouldSkipTest())
+			return;
+		
 		double sparsity = sparse ? sparsity2 : sparsity1;
 		int cols = vector ? 1 : rows;
 		

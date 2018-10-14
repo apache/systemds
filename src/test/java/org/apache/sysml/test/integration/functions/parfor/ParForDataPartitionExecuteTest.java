@@ -92,6 +92,7 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 	
 	private void runFusedDataPartitionExecuteTest(boolean sparse, boolean row, ExecType et)
 	{
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;

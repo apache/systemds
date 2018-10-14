@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.sparse;
 
 import java.util.Iterator;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.IJV;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -152,6 +151,9 @@ public class SparseBlockIterator extends AutomatedTestBase
 	 */
 	private void runSparseBlockIteratorTest( SparseBlock.Type btype, double sparsity, boolean partial)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -176,12 +178,12 @@ public class SparseBlockIterator extends AutomatedTestBase
 				nnz += rnnz[i];
 			}
 			if( !partial && nnz != sblock.size() )
-				Assert.fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+sblock.size()+", expected: "+nnz);
 		
 			//check correct isEmpty return
 			for( int i=rl; i<rows; i++ )
 				if( sblock.isEmpty(i) != (rnnz[i]==0) )
-					Assert.fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
+					fail("Wrong isEmpty(row) result for row nnz: "+rnnz[i]);
 		
 			//check correct values	
 			Iterator<IJV> iter = !partial ? sblock.getIterator() :
@@ -190,11 +192,11 @@ public class SparseBlockIterator extends AutomatedTestBase
 			while( iter.hasNext() ) {
 				IJV cell = iter.next();
 				if( cell.getV() != A[cell.getI()][cell.getJ()] )
-					Assert.fail("Wrong value returned by iterator: "+cell.getV()+", expected: "+A[cell.getI()][cell.getJ()]);	
+					fail("Wrong value returned by iterator: "+cell.getV()+", expected: "+A[cell.getI()][cell.getJ()]);	
 				count++;
 			}
 			if( count != nnz )
-				Assert.fail("Wrong number of values returned by iterator: "+count+", expected: "+nnz);
+				fail("Wrong number of values returned by iterator: "+count+", expected: "+nnz);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

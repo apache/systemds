@@ -54,6 +54,9 @@ public class ReblockTest extends AutomatedTestBase
 	
 	@Test
 	public void testReblock() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("ReblockTest");
 		loadTestConfiguration(config);
 		

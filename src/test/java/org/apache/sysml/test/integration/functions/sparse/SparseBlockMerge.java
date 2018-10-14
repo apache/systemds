@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -224,6 +223,9 @@ public class SparseBlockMerge extends AutomatedTestBase
 	
 	private void runSparseBlockMergeTest( SparseBlock.Type btype1, SparseBlock.Type btype2, double sparsity)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -253,7 +255,7 @@ public class SparseBlockMerge extends AutomatedTestBase
 			
 			//check for correct number of non-zeros
 			if( nnz != mb1.getNonZeros() )
-				Assert.fail("Wrong number of non-zeros: "+mb1.getNonZeros()+", expected: "+nnz);
+				fail("Wrong number of non-zeros: "+mb1.getNonZeros()+", expected: "+nnz);
 			
 			//check correct values
 			long count = 0;
@@ -267,13 +269,13 @@ public class SparseBlockMerge extends AutomatedTestBase
 					double[] avals = sblock.values(i);
 					for( int j=0; j<alen; j++ ) {
 						if( avals[apos+j] != A[i][aix[apos+j]] )
-							Assert.fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
+							fail("Wrong value returned by scan: "+avals[apos+j]+", expected: "+A[i][apos+aix[j]]);
 						count++;
 					}
 				}
 			}
 			if( count != nnz )
-				Assert.fail("Wrong number of values returned by merge: "+count+", expected: "+nnz);
+				fail("Wrong number of values returned by merge: "+count+", expected: "+nnz);
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

@@ -138,8 +138,9 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	 *            backend platform to test
 	 */
 	protected void testScaleWithR(SIZE sz, RANGE rng, SPARSITY sp, RUNTIME_PLATFORM rt) {
-		RUNTIME_PLATFORM oldrt = rtplatform;
-		rtplatform = rt;
+		RUNTIME_PLATFORM oldrt = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 
 		try {
 			TestConfiguration config = getTestConfiguration("Scale");
@@ -215,8 +216,9 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	protected void testWeightedScaleWithR(SIZE sz, RANGE rng, SPARSITY sp,
 			RUNTIME_PLATFORM rt) {
 
-		RUNTIME_PLATFORM oldrt = rtplatform;
-		rtplatform = rt;
+		RUNTIME_PLATFORM oldrt = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 
 		try {
 			TestConfiguration config = getTestConfiguration("WeightedScaleTest");

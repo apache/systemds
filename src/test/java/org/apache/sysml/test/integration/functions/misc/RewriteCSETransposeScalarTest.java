@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -76,6 +75,9 @@ public class RewriteCSETransposeScalarTest extends AutomatedTestBase
 	 */
 	private void testRewriteCSETransposeScalar( String testname, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		
@@ -94,8 +96,8 @@ public class RewriteCSETransposeScalarTest extends AutomatedTestBase
 			
 			//compare output  
 			double ret = TestUtils.readDMLScalar(output("R"));
-			Assert.assertEquals("Wrong result, expected: "+(rows*cols), new Double(rows*cols), new Double(ret));
-			Assert.assertEquals(new Long(rewrites?1:2), new Long(Statistics.getCPHeavyHitterCount("r'")));
+			assertEquals("Wrong result, expected: "+(rows*cols), new Double(rows*cols), new Double(ret));
+			assertEquals(new Long(rewrites?1:2), new Long(Statistics.getCPHeavyHitterCount("r'")));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;

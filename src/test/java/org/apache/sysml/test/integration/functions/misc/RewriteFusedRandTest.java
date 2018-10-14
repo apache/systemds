@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -102,6 +101,9 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 	
 	private void testRewriteFusedRand( String testname, String pdf, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {
@@ -120,16 +122,16 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			//compare matrices 
 			Double ret = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
 			if( testname.equals(TEST_NAME1) )
-				Assert.assertEquals("Wrong result", new Double(rows), ret);
+				assertEquals("Wrong result", new Double(rows), ret);
 			else if( testname.equals(TEST_NAME2) )
-				Assert.assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
+				assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
 			else if( testname.equals(TEST_NAME3) )
-				Assert.assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
+				assertEquals("Wrong result", new Double(Math.pow(rows*cols, 2)), ret);
 			
 			//check for applied rewrites
 			if( rewrites ) {
 				boolean expected = testname.equals(TEST_NAME2) || pdf.equals("uniform");
-				Assert.assertTrue(expected == (!heavyHittersContainsString("+")
+				assertTrue(expected == (!heavyHittersContainsString("+")
 					&& !heavyHittersContainsString("*")));
 			}
 		}

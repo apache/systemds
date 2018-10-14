@@ -141,6 +141,9 @@ public class SelfProductTest extends AutomatedTestBase
 	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {
+		if(shouldSkipTest())
+			return;
+		
 		MatrixBlock m1 = MatrixBlock.randOperations(m, n, sp, 1, 1, "uniform", 3);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m1, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));

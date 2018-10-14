@@ -199,11 +199,12 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 
 	private void testDataFrameConversion(ValueType vt, boolean singleColBlock, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = ConfigurationManager.getExecutionMode();
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata

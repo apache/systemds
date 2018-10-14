@@ -33,7 +33,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameTransformTest extends AutomatedTestBase 
@@ -95,7 +94,7 @@ public class FrameTransformTest extends AutomatedTestBase
 		
 		//check correct result (nnz 7 + 0 -> 8 distinct vals)
 		for( double[][] data : Yset )
-			Assert.assertEquals("Wrong result: "+data[0][0]+".", new Double(8), new Double(data[0][0]));
+			assertEquals("Wrong result: "+data[0][0]+".", new Double(8), new Double(data[0][0]));
 	}
 
 	private static ArrayList<double[][]> execDMLScriptviaJMLC( String testname, String[][] X, String[][] M, boolean modelReuse) 

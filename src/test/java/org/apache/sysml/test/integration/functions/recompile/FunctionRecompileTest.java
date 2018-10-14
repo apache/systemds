@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -71,6 +70,9 @@ public class FunctionRecompileTest extends AutomatedTestBase
 
 	private void runFunctionTest( boolean recompile, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
@@ -105,7 +107,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			int expectNumCompiled = -1;
 			if( IPA ) expectNumCompiled = 1; //reblock
 			else      expectNumCompiled = 5; //reblock, GMR,GMR,GMR,GMR (last two should piggybacked)
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			assertEquals("Unexpected number of compiled MR jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//CHECK executed MR jobs
@@ -113,7 +115,7 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			if( recompile ) expectNumExecuted = 0;
 			else if( IPA )  expectNumExecuted = 1; //reblock
 			else            expectNumExecuted = 41; //reblock, 10*(GMR,GMR,GMR, GMR) (last two should piggybacked)
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
 			
 			//compare matrices

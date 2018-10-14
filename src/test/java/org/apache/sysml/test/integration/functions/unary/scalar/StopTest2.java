@@ -49,6 +49,8 @@ public class StopTest2 extends AutomatedTestBase
 	}
 	
 	public void runStopTest(int test_num) {
+		if(shouldSkipTest())
+			return;
 		
 		TestConfiguration config = availableTestConfigurations.get("StopTest");
 		

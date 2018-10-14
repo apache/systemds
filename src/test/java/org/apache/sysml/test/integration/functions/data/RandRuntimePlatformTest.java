@@ -214,26 +214,42 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 			programArgs[programArgs.length-1] = output("A_SN"); // data file generated from CP
-			runTest(true, exceptionExpected, null, -1); 
+			boolean snResults = false;
+			if(!shouldSkipTest()) {
+				snResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 						
 			
 			// Generate Data in CP
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			programArgs[programArgs.length-1] = output("A_CP"); // data file generated from CP
-			runTest(true, exceptionExpected, null, -1); 
+			boolean cpResults = false;
+			if(!shouldSkipTest()) {
+				cpResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 			
 			// Generate Data in MR
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
 			programArgs[programArgs.length-1] = output("A_MR"); // data file generated from MR
-			runTest(true, exceptionExpected, null, -1); 
+			boolean mrResults = false;
+			if(!shouldSkipTest()) {
+				mrResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 			
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+			boolean sparkResults = false;
 			try {
 				// Generate Data in Spark
 				rtplatform = RUNTIME_PLATFORM.SPARK;
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 				programArgs[programArgs.length-1] = output("A_SPARK"); // data file generated from MR
-				runTest(true, exceptionExpected, null, -1); 
+				if(!shouldSkipTest()) {
+					sparkResults = true;
+					runTest(true, exceptionExpected, null, -1);
+				}
 			}
 			finally {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
@@ -242,13 +258,15 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			//compare matrices (1-2, 2-3 -> transitively 1-3)
 			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
 			HashMap<CellIndex, Double> mrfile = readDMLMatrixFromHDFS("A_MR");
-			TestUtils.compareMatrices(cpfile, mrfile, eps, "CPFile", "MRFile");
+			if(cpResults && mrResults)
+				TestUtils.compareMatrices(cpfile, mrfile, eps, "CPFile", "MRFile");
 			cpfile = null;
 			HashMap<CellIndex, Double> snfile = readDMLMatrixFromHDFS("A_SN");
-			TestUtils.compareMatrices(snfile, mrfile, eps, "SNFile", "MRFile");		
-			
+			if(snResults && mrResults)
+				TestUtils.compareMatrices(snfile, mrfile, eps, "SNFile", "MRFile");
 			HashMap<CellIndex, Double> spfile = readDMLMatrixFromHDFS("A_SPARK");
-			TestUtils.compareMatrices(spfile, mrfile, eps, "SPFile", "MRFile");	
+			if(sparkResults && snResults)
+				TestUtils.compareMatrices(spfile, snfile, eps, "SPFile", "SNFile");	
 			
 		}
 		finally

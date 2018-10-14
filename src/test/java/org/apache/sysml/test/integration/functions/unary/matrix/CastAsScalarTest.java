@@ -42,6 +42,8 @@ public class CastAsScalarTest extends AutomatedTestBase
     
     @Test
     public void testGeneral() {
+    	if(shouldSkipTest())
+			return;
     	TestConfiguration config = getTestConfiguration(TEST_GENERAL);
         loadTestConfiguration(config);
         

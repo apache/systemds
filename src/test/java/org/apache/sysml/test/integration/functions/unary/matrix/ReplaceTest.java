@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -295,19 +294,13 @@ public class ReplaceTest extends AutomatedTestBase
 	 */
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )
 	{		
-		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(etype);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{
-			if(etype == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (etype==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			double sparsity = (sparse)? sparsity2 : sparsity1;
 				
@@ -335,7 +328,7 @@ public class ReplaceTest extends AutomatedTestBase
 			runRScript(true); 
 		
 			int numMRExpect = (etype==ExecType.MR)?(test.equals(TEST_NAME1)?1:test.equals(TEST_NAME5)?3:2):0; 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		           numMRExpect, Statistics.getNoOfExecutedMRJobs()); //reblock in test1, reblock+GMR in test2-4
 		
 			//compare matrices 

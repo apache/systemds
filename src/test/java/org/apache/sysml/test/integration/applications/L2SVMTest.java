@@ -64,6 +64,9 @@ public abstract class L2SVMTest extends AutomatedTestBase
 	
 	protected void testL2SVM(ScriptType scriptType)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType 
 			+ " TEST WITH {" + numRecords + ", " + numFeatures
 			+ ", " + sparsity + ", " + intercept + "} ------------");

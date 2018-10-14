@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix_full_cellwise;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -110,16 +109,10 @@ public class FullMinus1MultTest extends AutomatedTestBase
 	 */
 	private void runMinus1MultTest( int posScalar, ExecType instType, boolean rewrites)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
 		//rewrites
 		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -156,9 +149,9 @@ public class FullMinus1MultTest extends AutomatedTestBase
 			//check generated opcode
 			if( rewrites ){
 				if( instType == ExecType.CP )
-					Assert.assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*"));
+					assertTrue("Missing opcode: 1-*", Statistics.getCPHeavyHitterOpCodes().contains("1-*"));
 				else if( instType == ExecType.SPARK )
-					Assert.assertTrue("Missing opcode: sp_1-* | sp_map1-*", 
+					assertTrue("Missing opcode: sp_1-* | sp_map1-*", 
 							Statistics.getCPHeavyHitterOpCodes().contains("sp_1-*") || 
 							Statistics.getCPHeavyHitterOpCodes().contains("sp_map1-*"));
 			}

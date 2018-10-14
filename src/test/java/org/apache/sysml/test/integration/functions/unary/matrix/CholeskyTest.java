@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -97,12 +96,10 @@ public class CholeskyTest extends AutomatedTestBase
 	}
 
 	private void runTestCholesky( int rows, int cols, RUNTIME_PLATFORM rt) {
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 		
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
@@ -117,7 +114,7 @@ public class CholeskyTest extends AutomatedTestBase
 			
 			//run tests and compare results
 			runTest(true, false, null, -1);
-			Assert.assertEquals(0, readDMLMatrixFromHDFS("D")
+			assertEquals(0, readDMLMatrixFromHDFS("D")
 				.get(new CellIndex(1,1)), 1e-5);
 		}
 		finally {

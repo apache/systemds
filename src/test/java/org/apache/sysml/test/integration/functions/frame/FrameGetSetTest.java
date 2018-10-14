@@ -24,7 +24,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameGetSetTest extends AutomatedTestBase
@@ -83,6 +82,9 @@ public class FrameGetSetTest extends AutomatedTestBase
 	 */
 	private void runFrameGetSetTest( ValueType[] schema, InitType itype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -156,14 +158,14 @@ public class FrameGetSetTest extends AutomatedTestBase
 			
 			//check basic meta data
 			if( frame.getNumRows() != rows )
-				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
+				fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
 		
 			//check correct values			
 			for( int i=0; i<rows; i++ ) 
 				for( int j=0; j<schema.length; j++ )	{
 					double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
 					if( tmp != A[i][j] )
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
+						fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
 				}		
 		}
 		catch(Exception ex) {

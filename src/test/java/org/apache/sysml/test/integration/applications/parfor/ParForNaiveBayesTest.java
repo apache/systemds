@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -148,11 +147,12 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 	 */
 	private void runParForNaiveBayesTest( PExecMode outer, ExecType instType, boolean smallMem, boolean sparse )
 	{
-		int cols = (instType==ExecType.MR)? cols2 : cols1;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
-		//inst exec type, influenced via rows
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = (instType==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		
+		int cols = (instType==ExecType.MR)? cols2 : cols1;
 		
 		//determine the script
 		int scriptNum = -1;

@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.hops.OptimizerUtils;
@@ -63,6 +62,9 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 	
 	private void runRandTest( String testName, boolean evalExpr, boolean constFold )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		boolean oldFlagRand1 = OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE;
@@ -93,15 +95,15 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			
 			//check correct propagated size via final results
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals("Unexpected results.", Double.valueOf(rows*cols*3.0), dmlfile.get(new CellIndex(1,1)));
+			assertEquals("Unexpected results.", Double.valueOf(rows*cols*3.0), dmlfile.get(new CellIndex(1,1)));
 			
 			//check expected number of compiled and executed MR jobs
 			if( evalExpr || constFold ) {
-				Assert.assertEquals("Unexpected number of executed MR jobs.",
+				assertEquals("Unexpected number of executed MR jobs.",
 					0, Statistics.getNoOfExecutedMRJobs());
 			}
 			else {
-				Assert.assertEquals("Unexpected number of executed MR jobs.",
+				assertEquals("Unexpected number of executed MR jobs.",
 					2, Statistics.getNoOfExecutedMRJobs()); //Rand, GMR (sum)
 			}
 		}

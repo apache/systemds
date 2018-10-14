@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -308,17 +307,13 @@ public class AlgorithmKMeans extends AutomatedTestBase
 	private void runKMeansTest( String testname, boolean rewrites, boolean sparse, int centroids, int runs, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
+		currentTestType = testType;
+		
 		try
 		{
 			String TEST_NAME = testname;
@@ -341,8 +336,8 @@ public class AlgorithmKMeans extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoofCell") || heavyHittersContainsSubString("sp_spoofCell"));
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") || heavyHittersContainsSubString("sp_spoofRA"));
+			assertTrue(heavyHittersContainsSubString("spoofCell") || heavyHittersContainsSubString("sp_spoofCell"));
+			assertTrue(heavyHittersContainsSubString("spoofRA") || heavyHittersContainsSubString("sp_spoofRA"));
 		}
 		finally {
 			rtplatform = platformOld;

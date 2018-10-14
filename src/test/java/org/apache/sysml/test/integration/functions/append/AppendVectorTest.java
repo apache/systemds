@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.append;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -88,12 +87,10 @@ public class AppendVectorTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
-		
-	    rtplatform = platform;
 	    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+	    RUNTIME_PLATFORM prevPlfm = setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 
 	    try {
 	        config.addVariable("rows", rows);
@@ -122,7 +119,7 @@ public class AppendVectorTest extends AutomatedTestBase
 	        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
 			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
+			assertEquals("Wrong number of executed MR jobs.",
 					             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
 		
 			runRScript(true);

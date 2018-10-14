@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -83,6 +82,9 @@ public class RewriteSlicedMatrixMultTest extends AutomatedTestBase
 	 */
 	private void testRewriteSlicedMatrixMult( String testname, boolean sparse, boolean rewrites )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try

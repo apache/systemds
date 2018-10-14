@@ -71,6 +71,9 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = 5;
 		double doubleValue = 5.0;
 		
@@ -94,6 +97,9 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandomInt() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = TestUtils.getRandomInt();
 		
 		TestConfiguration config = availableTestConfigurations.get("RandomIntTest");
@@ -111,6 +117,9 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandomDouble() {
+		if(shouldSkipTest())
+			return;
+		
 		double doubleValue = TestUtils.getRandomDouble();
 		
 		TestConfiguration config = availableTestConfigurations.get("RandomDoubleTest");
@@ -128,6 +137,9 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegativeInt() {
+		if(shouldSkipTest())
+			return;
+		
 		int intValue = -5;
 		
 		TestConfiguration config = availableTestConfigurations.get("NegativeIntTest");
@@ -142,6 +154,9 @@ public class SqrtTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegativeDouble() {
+		if(shouldSkipTest())
+			return;
+		
 		double doubleValue = -5.0;
 		
 		TestConfiguration config = availableTestConfigurations.get("NegativeDoubleTest");

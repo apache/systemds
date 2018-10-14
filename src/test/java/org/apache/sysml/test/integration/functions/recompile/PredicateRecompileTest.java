@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -239,6 +238,9 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	
 	private void runRecompileTest( String testname, boolean recompile, boolean evalExpr, boolean constFold, boolean IPA )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagEval = OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION;
 		boolean oldFlagFold = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
@@ -277,7 +279,7 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed MR jobs
 			if( recompile ) {
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 
+				assertEquals("Unexpected number of executed MR jobs.", 
 					1 - ((evalExpr || constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand
 			}
 			else
@@ -285,26 +287,26 @@ public class PredicateRecompileTest extends AutomatedTestBase
 				if( IPA ) {
 					//old expected numbers before IPA
 					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
+						assertEquals("Unexpected number of executed MR jobs.", 
 							4 - ((evalExpr||constFold)?4:0), Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body
 					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
+						assertEquals("Unexpected number of executed MR jobs.", 
 							3 - ((evalExpr||constFold)?3:0), Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
 				}
 				else {
 					//old expected numbers before IPA
 					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
+						assertEquals("Unexpected number of executed MR jobs.", 
 							4 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body
 					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
+						assertEquals("Unexpected number of executed MR jobs.", 
 							3 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
 				}
 			}
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			Assert.assertEquals(Double.valueOf((double)val), dmlfile.get(new CellIndex(1,1)));
+			assertEquals(Double.valueOf((double)val), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally
 		{

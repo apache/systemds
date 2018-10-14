@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.reorg;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -133,16 +132,10 @@ public class FullReverseTest extends AutomatedTestBase
 	 */
 	private void runReverseTest(String testname, boolean matrix, boolean sparse, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 		
 		String TEST_NAME = testname;
 		
@@ -174,9 +167,9 @@ public class FullReverseTest extends AutomatedTestBase
 			
 			//check generated opcode
 			if( instType == ExecType.CP )
-				Assert.assertTrue("Missing opcode: rev", Statistics.getCPHeavyHitterOpCodes().contains("rev"));
+				assertTrue("Missing opcode: rev", Statistics.getCPHeavyHitterOpCodes().contains("rev"));
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"rev", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"rev"));	
+				assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"rev", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"rev"));	
 		}
 		finally
 		{

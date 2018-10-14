@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -82,6 +81,9 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	
 	private void runFunInExpressionTest( String testName )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
@@ -97,6 +99,6 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		
 		//compare results
 		double val = readDMLMatrixFromHDFS("R").get(new CellIndex(1,1));
-		Assert.assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
+		assertTrue("Wrong result: 7 vs "+val, Math.abs(val-7)<Math.pow(10, -13));
 	}
 }

@@ -54,7 +54,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -88,6 +87,11 @@ public class GNMFTest extends MLContextTestBase
 	
 	@Test
 	public void testGNMFWithRDMLAndJava() throws IOException, DMLException, ParseException {
+		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
+		RUNTIME_PLATFORM oldRT = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRegisteredInputs + ", "
 				+ numRegisteredOutputs + "} ------------");
 		this.scriptType = ScriptType.DML;
@@ -143,13 +147,8 @@ public class GNMFTest extends MLContextTestBase
 			}
 		}
 		
-		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
-		
 		try 
 		{
-			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			// set positional argument values
@@ -191,7 +190,7 @@ public class GNMFTest extends MLContextTestBase
 			if(numRegisteredOutputs >= 2) {
 				String configStr = ConfigurationManager.getDMLConfig().getConfigInfo();
 				if(configStr.contains("cp.parallel.ops: true"))
-					Assert.fail("Configuration not updated via setConfig");
+					fail("Configuration not updated via setConfig");
 			}
 			
 			if(numRegisteredOutputs >= 1) {

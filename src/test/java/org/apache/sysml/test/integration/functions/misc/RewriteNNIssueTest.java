@@ -56,6 +56,9 @@ public class RewriteNNIssueTest extends AutomatedTestBase
 	
 	private void runNNIssueTest(boolean rewrites)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try {

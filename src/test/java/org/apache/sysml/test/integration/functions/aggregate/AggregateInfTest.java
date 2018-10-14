@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.aggregate;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -111,9 +110,9 @@ public class AggregateInfTest extends AutomatedTestBase
 	 */
 	private void runInfAggregateOperationTest( boolean pos, boolean sparse, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 	
 		try
 		{

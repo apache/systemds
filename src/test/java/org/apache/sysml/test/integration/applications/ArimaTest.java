@@ -71,6 +71,9 @@ public abstract class ArimaTest extends AutomatedTestBase {
 	}
 	
 	protected void testArima(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME1 + " " + scriptType + " TEST WITH {" +
 			max_func_invoc + ", " + 
 			p + ", " + 

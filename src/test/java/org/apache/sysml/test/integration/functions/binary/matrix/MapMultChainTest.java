@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -308,18 +307,11 @@ public class MapMultChainTest extends AutomatedTestBase
 	 */
 	private void runMapMultChainTest( String testname, boolean sparse, boolean sumProductRewrites, ExecType instType)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+			
 		//rewrite
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = sumProductRewrites;
@@ -372,7 +364,7 @@ public class MapMultChainTest extends AutomatedTestBase
 			//check compiled mmchain instructions (cp/spark)
 			if( instType != ExecType.MR ){
 				String opcode = (instType==ExecType.CP)?MapMultChain.OPCODE_CP:"sp_"+MapMultChain.OPCODE;
-				Assert.assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
+				assertEquals(sumProductRewrites, Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}
 		finally

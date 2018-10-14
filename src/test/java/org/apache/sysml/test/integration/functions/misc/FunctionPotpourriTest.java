@@ -20,7 +20,6 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -182,6 +181,9 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	private void runFunctionTest(String testName, boolean error) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
@@ -193,6 +195,6 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		//run script and compare output
 		runTest(true, error, DMLException.class, -1);
 		if( testName.equals(TEST_NAME18) )
-			Assert.assertTrue(heavyHittersContainsString("print"));
+			assertTrue(heavyHittersContainsString("print"));
 	}
 }

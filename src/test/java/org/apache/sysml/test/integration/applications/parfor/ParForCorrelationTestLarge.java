@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -94,6 +93,9 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 	 */
 	private void runParForCorrelationTest( PExecMode outer, PExecMode inner )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		//script
 		int scriptNum = -1;
 		if( inner == PExecMode.REMOTE_MR )      scriptNum=2;

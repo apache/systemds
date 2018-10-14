@@ -226,6 +226,8 @@ public class UpdateInPlaceTest extends AutomatedTestBase
 	private void runUpdateInPlaceTest( String TEST_NAME, int iTestNumber, List<String> listUIPExp, long lTotalUIPVar, long lTotalLixUIP, long lTotalLix)
 	{
 		boolean oldinplace =  OptimizerUtils.ALLOW_LOOP_UPDATE_IN_PLACE;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

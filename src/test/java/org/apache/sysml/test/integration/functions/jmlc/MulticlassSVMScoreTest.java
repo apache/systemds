@@ -81,6 +81,9 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 	private void runJMLCMulticlassTest( boolean sparse, boolean flags ) 
 		throws IOException
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 	

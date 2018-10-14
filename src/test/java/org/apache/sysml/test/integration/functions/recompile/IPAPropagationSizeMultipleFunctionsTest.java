@@ -108,6 +108,9 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 	
 	private void runIPASizePropagationMultipleFunctionsTest( String TEST_NAME, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try

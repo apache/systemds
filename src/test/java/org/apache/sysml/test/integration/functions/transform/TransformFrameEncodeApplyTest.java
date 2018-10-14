@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -252,13 +251,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type, boolean colnames )
 	{
-		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 
 		//set transform specification
 		String SPEC = null; String DATASET = null;
@@ -299,7 +295,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);		
 			
 			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
-				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
+				assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}
 		}

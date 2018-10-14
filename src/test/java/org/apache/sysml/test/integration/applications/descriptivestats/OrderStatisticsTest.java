@@ -120,6 +120,9 @@ public class OrderStatisticsTest extends AutomatedTestBase
 	@Test
 	public void testQuantile()
 	{
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 10;
 		int rows2 = 5;
 

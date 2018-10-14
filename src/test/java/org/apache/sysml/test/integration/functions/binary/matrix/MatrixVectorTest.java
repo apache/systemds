@@ -122,9 +122,10 @@ public class MatrixVectorTest extends AutomatedTestBase
 	
 	private void runMatrixVectorMultiplicationTest( int cols, RUNTIME_PLATFORM rt, boolean sparse )
 	{
-
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
+		
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{

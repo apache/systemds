@@ -193,7 +193,9 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	
 	private void testDataFrameConversion(boolean vector, int cols, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = ConfigurationManager.getExecutionMode();
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{
@@ -235,11 +237,12 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 
 	private void testDataFrameConversionUltraSparse(boolean vector, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = ConfigurationManager.getExecutionMode();
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 
 		try
 		{
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
 			
 			//generate input data and setup metadata

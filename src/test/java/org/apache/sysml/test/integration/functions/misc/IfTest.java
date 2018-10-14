@@ -85,6 +85,9 @@ public class IfTest extends AutomatedTestBase
 
 	private void runTest( String testName, int val )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 

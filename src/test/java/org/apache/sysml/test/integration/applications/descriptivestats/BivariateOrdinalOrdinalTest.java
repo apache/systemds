@@ -55,6 +55,9 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 	
 	@Test
 	public void testOrdinalOrdinal() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
@@ -99,6 +102,9 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 	
 	@Test
 	public void testOrdinalOrdinalWithWeights() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);

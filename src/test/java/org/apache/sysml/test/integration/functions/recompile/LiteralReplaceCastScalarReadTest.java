@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.recompile;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.UnaryCP;
@@ -59,6 +58,9 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 	}
 	
 	private void runScalarCastTest( ValueType vt ) {
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldCF = OptimizerUtils.ALLOW_CONSTANT_FOLDING;
 		
 		try {
@@ -84,10 +86,10 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 		
 			//CHECK cast replacement and sum replacement
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_INT_OPCODE));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_DOUBLE_OPCODE));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_BOOLEAN_OPCODE));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains("uak+")); //sum
+			assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_INT_OPCODE));
+			assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_DOUBLE_OPCODE));
+			assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(UnaryCP.CAST_AS_BOOLEAN_OPCODE));
+			assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains("uak+")); //sum
 		}
 		finally {
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldCF;

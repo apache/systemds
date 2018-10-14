@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -379,6 +378,10 @@ public class FullLogicalScalarLeftTest extends AutomatedTestBase
 
 	private void runLogicalTest( Type type, boolean zero, boolean sparse, ExecType et )
 	{
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = TEST_NAME1;
 		int rows = rows1;
 		int cols = cols1;
@@ -389,11 +392,7 @@ public class FullLogicalScalarLeftTest extends AutomatedTestBase
 		if (TEST_CACHE_ENABLED) {
 			TEST_CACHE_DIR = type.ordinal() + "_" + constant + "_" + sparsity + "/";
 		}
-
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

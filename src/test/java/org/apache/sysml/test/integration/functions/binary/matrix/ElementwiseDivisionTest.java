@@ -67,6 +67,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testDense() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		
@@ -96,6 +99,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 
 	@Test
 	public void testSparse() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 50;
 		int cols = 50;
 		
@@ -125,6 +131,8 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsLessRows() {
+		if(shouldSkipTest())
+			return;
 		int rows1 = 8;
 		int cols1 = 10;
 		int rows2 = 10;
@@ -143,6 +151,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsMoreRows() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 12;
 		int cols1 = 10;
 		int rows2 = 10;
@@ -161,6 +172,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsLessCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 10;
 		int cols1 = 8;
 		int rows2 = 10;
@@ -179,6 +193,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsMoreCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 10;
 		int cols1 = 12;
 		int rows2 = 10;
@@ -197,6 +214,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsLessRowsLessCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 8;
 		int cols1 = 8;
 		int rows2 = 10;
@@ -215,6 +235,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsMoreRowsMoreCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 12;
 		int cols1 = 12;
 		int rows2 = 10;
@@ -233,6 +256,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsLessRowsMoreCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 8;
 		int cols1 = 12;
 		int rows2 = 10;
@@ -251,6 +277,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testWrongDimensionsMoreRowsLessCols() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows1 = 12;
 		int cols1 = 8;
 		int rows2 = 10;
@@ -269,6 +298,9 @@ public class ElementwiseDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		

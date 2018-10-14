@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.sparse;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
@@ -147,6 +146,9 @@ public class SparseBlockAlignment extends AutomatedTestBase
 	 */
 	private void runSparseBlockScanTest( SparseBlock.Type btype, double sparsity, boolean positive)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -179,7 +181,7 @@ public class SparseBlockAlignment extends AutomatedTestBase
 			//check for block comparison
 			boolean blockAligned = sblock.isAligned(sblock2);
 			if( blockAligned != positive )
-				Assert.fail("Wrong block alignment indicated: "+blockAligned+", expected: "+positive);
+				fail("Wrong block alignment indicated: "+blockAligned+", expected: "+positive);
 			
 			//check for row comparison
 			boolean rowsAligned37 = true;
@@ -191,9 +193,9 @@ public class SparseBlockAlignment extends AutomatedTestBase
 					rowsAlignedRest &= sblock.isAligned(i, sblock2);
 			}
 			if( rowsAligned37 != positive )
-				Assert.fail("Wrong row alignment indicated: "+rowsAligned37+", expected: "+positive);
+				fail("Wrong row alignment indicated: "+rowsAligned37+", expected: "+positive);
 			if( !rowsAlignedRest )
-				Assert.fail("Wrong row alignment rest indicated: false.");
+				fail("Wrong row alignment rest indicated: false.");
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

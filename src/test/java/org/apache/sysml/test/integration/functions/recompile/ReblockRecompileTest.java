@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.recompile;
 import java.io.IOException;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -92,6 +91,9 @@ public class ReblockRecompileTest extends AutomatedTestBase
 	 */
 	private void runReblockTest(int scriptNum, long seed)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch(scriptNum) 
 		{
@@ -124,7 +126,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, -1); //0 due to recompile 
 		runRScript(true);
 		
-		Assert.assertEquals("Unexpected number of executed MR jobs.", 
+		assertEquals("Unexpected number of executed MR jobs.", 
 				  			0, Statistics.getNoOfExecutedMRJobs());
 		
 		//compare matrices		
@@ -142,7 +144,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 				System.out.println("Matrix compare found differences for input data generated with seed="+seed);
 		} 
 		catch (IOException e) {
-			Assert.fail(e.getMessage());
+			fail(e.getMessage());
 		}
 	}
 }

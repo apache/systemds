@@ -25,7 +25,6 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameCopyTest extends AutomatedTestBase
@@ -78,6 +77,9 @@ public class FrameCopyTest extends AutomatedTestBase
 	 */
 	private void runFrameCopyTest( ValueType[] schema1, ValueType[] schema2, AppendType atype)
 	{
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//data generation
@@ -152,13 +154,13 @@ public class FrameCopyTest extends AutomatedTestBase
 			if(!bEqual)
 			{
 				if( UtilFunctions.compareTo(lschema[j], frame1.get(updateRow, j), frame2.get(updateRow, j)) == 0)
-					Assert.fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
+					fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
 							", same as original value "+frame2.get(updateRow, j));
 			}
 			else
 			{
 				if( UtilFunctions.compareTo(lschema[j], frame1.get(updateRow, j), frame2.get(updateRow, j)) != 0)
-					Assert.fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
+					fail("Updated value for cell ("+ updateRow + "," + j + ") is " + frame1.get(updateRow,  j) + 
 							", not same as original value "+frame2.get(updateRow, j));
 			}
 		}
@@ -170,7 +172,7 @@ public class FrameCopyTest extends AutomatedTestBase
 		for ( int i=0; i<frame1.getNumRows(); i++ )
 			for( int j=0; j<lschema.length; j++ )	{
 				if( UtilFunctions.compareTo(lschema[j], frame1.get(i, j), frame2.get(i, j)) != 0)
-					Assert.fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
+					fail("Target value for cell ("+ i + "," + j + ") is " + frame1.get(i,  j) + 
 							", is not same as original value " + frame2.get(i, j));
 			}
 	}

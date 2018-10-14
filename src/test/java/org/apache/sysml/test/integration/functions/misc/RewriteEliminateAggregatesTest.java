@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -93,6 +92,9 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 	
 	private void testRewriteEliminateAggregate(int type, boolean rewrites)
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
 		try
@@ -125,7 +127,7 @@ public class RewriteEliminateAggregatesTest extends AutomatedTestBase
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertEquals(type==5, 
+				assertEquals(type==5, 
 					heavyHittersContainsSubString("uar", "uac"));
 			} 
 		}

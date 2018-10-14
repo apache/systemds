@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.recompile;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -113,6 +112,9 @@ public class RandRecompileTest extends AutomatedTestBase
 	
 	private void runRandTest( String testName, boolean recompile, boolean IPA )
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
@@ -147,7 +149,7 @@ public class RandRecompileTest extends AutomatedTestBase
 			int expectNumCompiled = -1;
 			if( IPA ) expectNumCompiled = 0; 
 			else      expectNumCompiled = 2;//rand, GMR
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			assertEquals("Unexpected number of compiled MR jobs.", 
 					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
 		
 			//CHECK executed MR jobs
@@ -155,7 +157,7 @@ public class RandRecompileTest extends AutomatedTestBase
 			if( recompile ) expectNumExecuted = 0;
 			else if( IPA )  expectNumExecuted = 0; 
 			else            expectNumExecuted = 2; //rand, GMR
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			assertEquals("Unexpected number of executed MR jobs.", 
 		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());		
 		}
 		finally

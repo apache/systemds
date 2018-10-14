@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -115,18 +114,11 @@ public class RemoveEmptySelTest extends AutomatedTestBase
 	 * @param empty
 	 */
 	private void runTestRemoveEmptySel( String margin, ExecType et, boolean empty )
-	{		
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
+	{	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{	
@@ -148,8 +140,8 @@ public class RemoveEmptySelTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			Double expectedRows = (double) (margin.equals("rows") ? rows/2 : rows);
 			Double expectedCols = (double) (margin.equals("cols") ? cols/2 : cols);
-			Assert.assertEquals("Wrong output nrow.", expectedRows, dmlfile.get(new CellIndex(1,1)));
-			Assert.assertEquals("Wrong output ncol.", expectedCols, dmlfile.get(new CellIndex(2,1)));			
+			assertEquals("Wrong output nrow.", expectedRows, dmlfile.get(new CellIndex(1,1)));
+			assertEquals("Wrong output ncol.", expectedCols, dmlfile.get(new CellIndex(2,1)));			
 		}
 		finally
 		{

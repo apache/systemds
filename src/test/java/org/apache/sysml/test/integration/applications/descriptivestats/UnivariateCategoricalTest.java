@@ -40,6 +40,9 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 	@Test
 	public void testCategoricalWithR() {
 	
+		if(shouldSkipTest())
+			return;
+		
         TestConfiguration config = getTestConfiguration("Categorical");
         config.addVariable("rows1", rows1);
 		loadTestConfiguration(config);
@@ -92,6 +95,9 @@ public class UnivariateCategoricalTest extends UnivariateStatsBase
 	@Test
 	public void testWeightedCategoricalWithR() {
 	
+		if(shouldSkipTest())
+			return;
+		
         TestConfiguration config = getTestConfiguration("WeightedCategoricalTest");
         config.addVariable("rows1", rows1);
 		loadTestConfiguration(config);

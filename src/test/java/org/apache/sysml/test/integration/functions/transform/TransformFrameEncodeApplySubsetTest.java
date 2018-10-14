@@ -19,7 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -85,14 +84,11 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	 */
 	private void runTransformTest(String testname, RUNTIME_PLATFORM rt, String ofmt, boolean colnames)
 	{
-		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
-		rtplatform = rt;
-
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		RUNTIME_PLATFORM rtold = setRuntimePlatform(rt);
+		if(shouldSkipTest())
+			return;
+		
 		if( !ofmt.equals("csv") )
 			throw new RuntimeException("Unsupported test output format");
 		
@@ -108,7 +104,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//check output 
-			Assert.assertEquals(Double.valueOf(148), 
+			assertEquals(Double.valueOf(148), 
 				readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)));
 		}
 		finally {

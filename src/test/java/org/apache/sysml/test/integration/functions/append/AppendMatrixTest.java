@@ -22,9 +22,7 @@ package org.apache.sysml.test.integration.functions.append;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.hops.BinaryOp;
 import org.apache.sysml.hops.OptimizerUtils;
@@ -216,19 +214,16 @@ public class AppendMatrixTest extends AutomatedTestBase
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		RUNTIME_PLATFORM prevPlfm= setRuntimePlatform(platform);
+		if(shouldSkipTest())
+			return;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		
 		try
 		{
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-		    rtplatform = platform;
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 	        config.addVariable("rows", rows);
 	        config.addVariable("cols", cols1);
@@ -258,7 +253,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
+			assertEquals("Wrong number of executed MR jobs.",
 					            expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
 	
 			for(String file: config.getOutputFiles())
@@ -272,7 +267,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 		{
 			//reset execution platform
 			rtplatform = prevPlfm;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			BinaryOp.FORCED_APPEND_METHOD = null;
 		}
 	}

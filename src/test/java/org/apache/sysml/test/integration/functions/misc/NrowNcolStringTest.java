@@ -71,6 +71,8 @@ public class NrowNcolStringTest extends AutomatedTestBase
 	private void runNxxStringTest( String testName ) 
 	{
 		String TEST_NAME = testName;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{	

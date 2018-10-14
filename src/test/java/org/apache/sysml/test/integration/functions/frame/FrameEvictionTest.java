@@ -181,6 +181,8 @@ public class FrameEvictionTest extends AutomatedTestBase
 	 */
 	private void runFrameEvictionTest( ValueType[] schema, boolean sparse, boolean defaultMeta, boolean force)
 	{
+		if(shouldSkipTest())
+			return;
 		try
 		{
 			//data generation

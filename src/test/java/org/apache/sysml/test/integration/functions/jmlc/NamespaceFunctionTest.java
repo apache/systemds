@@ -31,7 +31,6 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class NamespaceFunctionTest extends AutomatedTestBase 
@@ -114,7 +113,7 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 		//compare results
 		for(int i=0; i<rows; i++)
 			for(int j=0; j<cols; j++)
-				Assert.assertEquals(X.quickGetValue(i, j)+10,
+				assertEquals(X.quickGetValue(i, j)+10,
 					Z.quickGetValue(i, j), 1e-10);
 	}
 }

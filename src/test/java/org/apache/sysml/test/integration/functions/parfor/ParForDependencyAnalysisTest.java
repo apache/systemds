@@ -24,6 +24,7 @@ import java.io.FileReader;
 import java.util.HashMap;
 
 import org.apache.sysml.api.DMLScript;
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.parser.DMLProgram;
@@ -329,6 +330,7 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
 	
 	private void runTest( String scriptFilename, boolean expectedException ) {
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		boolean raisedException = false;
 		try
 		{

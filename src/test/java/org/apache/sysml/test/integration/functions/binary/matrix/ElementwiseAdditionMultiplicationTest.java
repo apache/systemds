@@ -47,6 +47,9 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testTerm1() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 5;
 		int cols = 4;
 		TestConfiguration config = availableTestConfigurations.get("Term1");
@@ -79,6 +82,9 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testTerm2() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 5;
 		int cols = 4;
 		TestConfiguration config = availableTestConfigurations.get("Term2");
@@ -109,6 +115,9 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 
 	@Test
 	public void testTerm3() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 5;
 		int cols = 4;
 		TestConfiguration config = availableTestConfigurations.get("Term3");

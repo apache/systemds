@@ -151,6 +151,8 @@ public class FrameTest extends MLContextTestBase
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		RUNTIME_PLATFORM oldRT = ConfigurationManager.getExecutionMode();
 		ConfigurationManager.getDMLOptions().setExecutionMode(RUNTIME_PLATFORM.HYBRID_SPARK);
+		if(shouldSkipTest())
+			return;
 
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;

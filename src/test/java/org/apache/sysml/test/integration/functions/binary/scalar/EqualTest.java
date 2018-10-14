@@ -40,6 +40,9 @@ public class EqualTest extends AutomatedTestBase
 	
 	@Test
 	public void testEqual() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("EqualTest");
 		loadTestConfiguration(config);
 		

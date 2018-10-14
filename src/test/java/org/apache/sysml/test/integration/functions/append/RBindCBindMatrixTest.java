@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.append;
 
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysml.api.DMLScript;
@@ -133,16 +132,10 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 	 */
 	public void runRBindTest(String testname, boolean sparse, ExecType et)
 	{		
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -179,7 +172,7 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 			//check applied rewrite t(cbind(t(A),t(B)) --> rbind(A,B)
 			if( testname.equals(TEST_NAME2) ){
 				String opcode = ((et==ExecType.SPARK)?Instruction.SP_INST_PREFIX:"")+"r'";
-				Assert.assertTrue("Rewrite not applied", !Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
+				assertTrue("Rewrite not applied", !Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
 		finally

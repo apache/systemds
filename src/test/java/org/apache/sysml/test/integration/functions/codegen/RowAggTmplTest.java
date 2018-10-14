@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.codegen;
 import java.io.File;
 import java.util.HashMap;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -789,19 +788,14 @@ public class RowAggTmplTest extends AutomatedTestBase
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
-	{
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ) {
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-
+	{	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 
+		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -823,37 +817,37 @@ public class RowAggTmplTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoofRA") 
+			assertTrue(heavyHittersContainsSubString("spoofRA") 
 				|| heavyHittersContainsSubString("sp_spoofRA"));
 			
 			//ensure full aggregates for certain patterns
 			if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString("uark+"));
+				assertTrue(!heavyHittersContainsSubString("uark+"));
 			if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
+				assertTrue(!heavyHittersContainsSubString(RightIndex.OPCODE));
 			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
+				assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
+				assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString(RightIndex.OPCODE));
 			if( testname.equals(TEST_NAME31) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
+				assertTrue(!heavyHittersContainsSubString("spoofRA", 2));
 			if( testname.equals(TEST_NAME35) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
+				assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("cbind"));
 			if( testname.equals(TEST_NAME36) )
-				Assert.assertTrue(!heavyHittersContainsSubString("xor"));
+				assertTrue(!heavyHittersContainsSubString("xor"));
 			if( testname.equals(TEST_NAME41) )
-				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
+				assertTrue(!heavyHittersContainsSubString("seq"));
 			if( testname.equals(TEST_NAME42) )
-				Assert.assertTrue(!heavyHittersContainsSubString("min","nmin") 
+				assertTrue(!heavyHittersContainsSubString("min","nmin") 
 					&& !heavyHittersContainsSubString("spoof", 2));
 			if( testname.equals(TEST_NAME44) )
-				Assert.assertTrue(!heavyHittersContainsSubString("maxpooling") 
+				assertTrue(!heavyHittersContainsSubString("maxpooling") 
 					&& !heavyHittersContainsSubString("spoof", 2));
 			if( testname.equals(TEST_NAME46) )
-				Assert.assertTrue(!heavyHittersContainsSubString("conv2d") 
+				assertTrue(!heavyHittersContainsSubString("conv2d") 
 					&& !heavyHittersContainsSubString("spoof", 2));
 			
 		}

@@ -81,12 +81,12 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 	private void runNxxUnkownCSVTest( String testName ) 
 	{
 		String TEST_NAME = testName;
-		RUNTIME_PLATFORM oldplatform = rtplatform;
+		RUNTIME_PLATFORM oldplatform = setRuntimePlatform(RUNTIME_PLATFORM.SINGLE_NODE);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{	
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-			
 			//test configuration
 			getAndLoadTestConfiguration(TEST_NAME);
 		    String HOME = SCRIPT_DIR + TEST_DIR;

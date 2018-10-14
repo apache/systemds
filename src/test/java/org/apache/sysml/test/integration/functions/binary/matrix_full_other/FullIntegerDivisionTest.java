@@ -296,8 +296,9 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	private void runIntegerDivisionTest( OpType type, DataType dt1, DataType dt2, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
 	
 		double sparsity = sparse?sparsity2:sparsity1;				
 		

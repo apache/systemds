@@ -123,6 +123,9 @@ public class JMLCInputStreamReadTest extends AutomatedTestBase
 	private void runJMLCInputStreamReadTest(DataType dt, boolean sparse, String format, boolean metaData ) 
 		throws IOException
 	{	
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 	

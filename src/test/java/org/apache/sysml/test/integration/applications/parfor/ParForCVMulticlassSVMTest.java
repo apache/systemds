@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
@@ -119,6 +118,10 @@ public class ParForCVMulticlassSVMTest extends AutomatedTestBase
 	 */
 	private void runParForMulticlassSVMTest( int scriptNum, boolean sparse )
 	{	
+		if(shouldSkipTest())
+			return;
+		
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);

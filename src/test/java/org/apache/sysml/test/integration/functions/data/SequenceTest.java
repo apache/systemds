@@ -116,7 +116,11 @@ public class SequenceTest extends AutomatedTestBase
 	@Test
 	public void testSequence() {
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		
+
+		boolean snResults = false;
+		boolean hadoopResults = false;
+		boolean hybridResults = false;
+		boolean sparkResults = false;
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME);
@@ -161,22 +165,34 @@ public class SequenceTest extends AutomatedTestBase
 	
 			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 			programArgs[outputIndex] = output("A_CP");
-			runTest(true, exceptionExpected, null, -1); 
+			if(!shouldSkipTest()) {
+				snResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 			
 			rtplatform = RUNTIME_PLATFORM.HADOOP;
 			programArgs[outputIndex] = output("A_HADOOP");
-			runTest(true, exceptionExpected, null, -1); 
+			if(!shouldSkipTest()) {
+				hadoopResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 			
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			programArgs[outputIndex] = output("A_HYBRID");
-			runTest(true, exceptionExpected, null, -1);
+			if(!shouldSkipTest()) {
+				hybridResults = true;
+				runTest(true, exceptionExpected, null, -1);
+			}
 			
 			rtplatform = RUNTIME_PLATFORM.SPARK;
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 			try {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 				programArgs[outputIndex] = output("A_SPARK");
-				runTest(true, exceptionExpected, null, -1);
+				if(!shouldSkipTest()) {
+					sparkResults = true;
+					runTest(true, exceptionExpected, null, -1);
+				}
 			}
 			finally {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
@@ -185,18 +201,28 @@ public class SequenceTest extends AutomatedTestBase
 			
 			if ( !exceptionExpected ) {
 				runRScript(true);
-				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("A_CP");
+				HashMap<CellIndex, Double> dmlfile = null;
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS("A");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-CP", "A-R");
+				if(snResults) {
+					dmlfile = readDMLMatrixFromHDFS("A_CP");
+					TestUtils.compareMatrices(dmlfile, rfile, eps, "A-CP", "A-R");
+				}
 				
-				dmlfile = readDMLMatrixFromHDFS("A_HYBRID");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HYBRID", "A-R");
+				
+				if(hybridResults) {
+					dmlfile = readDMLMatrixFromHDFS("A_HYBRID");
+					TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HYBRID", "A-R");
+				}
 			
-				dmlfile = readDMLMatrixFromHDFS("A_HADOOP");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HADOOP", "A-R");
+				if(hadoopResults) {
+					dmlfile = readDMLMatrixFromHDFS("A_HADOOP");
+					TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HADOOP", "A-R");
+				}
 				
-				dmlfile = readDMLMatrixFromHDFS("A_SPARK");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-SPARK", "A-R");
+				if(sparkResults) {
+					dmlfile = readDMLMatrixFromHDFS("A_SPARK");
+					TestUtils.compareMatrices(dmlfile, rfile, eps, "A-SPARK", "A-R");
+				}
 			}
 		}
 		finally

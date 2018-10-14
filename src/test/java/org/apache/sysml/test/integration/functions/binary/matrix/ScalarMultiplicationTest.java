@@ -55,6 +55,9 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int factor = 2;
@@ -94,6 +97,9 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int factor = 2;
@@ -133,6 +139,9 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double factor = 2;
@@ -172,6 +181,9 @@ public class ScalarMultiplicationTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double factor = 2;

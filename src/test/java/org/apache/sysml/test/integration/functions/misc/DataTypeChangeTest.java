@@ -34,7 +34,6 @@ import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -151,6 +150,9 @@ public class DataTypeChangeTest extends AutomatedTestBase
 
 	private void runTest( String testName, boolean exceptionExpected ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
         String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{};
@@ -205,10 +207,10 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		{
 			ex2.printStackTrace();
 			throw new RuntimeException(ex2);
-			//Assert.fail( "Unexpected exception occured during test run." );
+			//fail( "Unexpected exception occured during test run." );
 		}
 		
 		//check correctness
-		Assert.assertEquals(expectedException, raisedException);
+		assertEquals(expectedException, raisedException);
 	}
 }

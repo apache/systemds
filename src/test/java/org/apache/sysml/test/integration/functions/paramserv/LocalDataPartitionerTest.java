@@ -27,7 +27,6 @@ import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalSc
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.junit.Assert;
 import org.junit.Test;
 
 import scala.Tuple2;
@@ -38,16 +37,16 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 	public void testLocalDataPartitionerDC() {
 		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDC();
 
-		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
-		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		assertEquals(WORKER_NUM, result.pFeatures.size());
+		assertEquals(WORKER_NUM, result.pLabels.size());
 		for (int i = 0; i < WORKER_NUM; i++) {
 			assertDCResult(result, i);
 		}
 	}
 
 	private void assertDCResult(DataPartitionLocalScheme.Result result, int workerID) {
-		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM) * COL_SIZE, (workerID + 1) * (ROW_SIZE / WORKER_NUM) * COL_SIZE), result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
-		Assert.assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM), (workerID + 1) * (ROW_SIZE / WORKER_NUM)), result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM) * COL_SIZE, (workerID + 1) * (ROW_SIZE / WORKER_NUM) * COL_SIZE), result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(generateExpectedData(workerID * (ROW_SIZE / WORKER_NUM), (workerID + 1) * (ROW_SIZE / WORKER_NUM)), result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
 	}
 
 	@Test
@@ -55,8 +54,8 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		MatrixBlock[] mbs = generateData();
 		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDR(mbs);
 
-		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
-		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		assertEquals(WORKER_NUM, result.pFeatures.size());
+		assertEquals(WORKER_NUM, result.pLabels.size());
 
 		// Generate the expected data
 		MatrixBlock perm = ParamservUtils.generatePermutation(ROW_SIZE, ParamservUtils.SEED);
@@ -64,8 +63,8 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		List<MatrixBlock> els = generateExpectedDataDR(mbs[1], perm);
 
 		for (int i = 0; i < WORKER_NUM; i++) {
-			Assert.assertArrayEquals(efs.get(i).getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
-			Assert.assertArrayEquals(els.get(i).getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
+			assertArrayEquals(efs.get(i).getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
+			assertArrayEquals(els.get(i).getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
 		}
 	}
 
@@ -84,8 +83,8 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 	public void testLocalDataPartitionerDRR() {
 		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerDRR();
 
-		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
-		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		assertEquals(WORKER_NUM, result.pFeatures.size());
+		assertEquals(WORKER_NUM, result.pLabels.size());
 		for (int i = 0; i < WORKER_NUM; i++) {
 			assertDRRResult(result, i);
 		}
@@ -93,8 +92,8 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 
 	private void assertDRRResult(DataPartitionLocalScheme.Result result, int workerID) {
 		Tuple2<double[], double[]> expected = generateExpectedData(workerID, WORKER_NUM, ROW_SIZE / WORKER_NUM);
-		Assert.assertArrayEquals(expected._1, result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
-		Assert.assertArrayEquals(expected._2, result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(expected._1, result.pFeatures.get(workerID).acquireRead().getDenseBlockValues(), 0);
+		assertArrayEquals(expected._2, result.pLabels.get(workerID).acquireRead().getDenseBlockValues(), 0);
 	}
 
 	private Tuple2<double[], double[]> generateExpectedData(int start, int step, int rowSize) {
@@ -116,12 +115,12 @@ public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 		ParamservUtils.SEED = System.nanoTime();
 		DataPartitionLocalScheme.Result result = launchLocalDataPartitionerOR();
 
-		Assert.assertEquals(WORKER_NUM, result.pFeatures.size());
-		Assert.assertEquals(WORKER_NUM, result.pLabels.size());
+		assertEquals(WORKER_NUM, result.pFeatures.size());
+		assertEquals(WORKER_NUM, result.pLabels.size());
 		for (int i = 0; i < WORKER_NUM; i++) {
 			Tuple2<MatrixBlock, MatrixBlock> expected = generateExpectedDataOR(i);
-			Assert.assertArrayEquals(expected._1.getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
-			Assert.assertArrayEquals(expected._2.getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
+			assertArrayEquals(expected._1.getDenseBlockValues(), result.pFeatures.get(i).acquireRead().getDenseBlockValues(), 0);
+			assertArrayEquals(expected._2.getDenseBlockValues(), result.pLabels.get(i).acquireRead().getDenseBlockValues(), 0);
 		}
 	}
 

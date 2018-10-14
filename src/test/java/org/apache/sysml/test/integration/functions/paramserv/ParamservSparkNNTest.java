@@ -79,9 +79,9 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private void internalRunDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException,
 			String errMessage) {
-		DMLScript.RUNTIME_PLATFORM oldRtplatform = AutomatedTestBase.rtplatform;
+		DMLScript.RUNTIME_PLATFORM oldRtplatform = rtplatform;
 		boolean oldUseLocalSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
+		rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {
@@ -91,7 +91,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + testname + ".dml";
 			runTest(true, exceptionExpected, expectedException, errMessage, -1);
 		} finally {
-			AutomatedTestBase.rtplatform = oldRtplatform;
+			rtplatform = oldRtplatform;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseLocalSparkConfig;
 		}
 	}

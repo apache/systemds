@@ -43,6 +43,9 @@ public class RoundTest extends AutomatedTestBase
 	
 	@Test
 	public void testRound() {
+		if(shouldSkipTest())
+			return;
+		
 		getAndLoadTestConfiguration(TEST_NAME);
 
 		double scalar = 10.7;

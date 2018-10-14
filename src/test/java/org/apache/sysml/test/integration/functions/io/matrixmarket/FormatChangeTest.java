@@ -48,6 +48,9 @@ public class FormatChangeTest extends AutomatedTestBase
 	
 	@Test
 	public void testFormatChange() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);
 		config.addVariable("cols", cols);
@@ -123,6 +126,9 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	private void verifyDMLandMMFiles(int rows, int cols, double sparsity, String dmlFile, String dmlFormat, String mmFile) {
+		if(shouldSkipTest())
+			return;
+		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		
 		// backup old DML and R script files

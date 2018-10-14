@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.functions.aggregate;
 import java.util.HashMap;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
@@ -107,17 +106,11 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 	 */
 	private void runPushdownSumOnBinaryTest( String testname, boolean equiDims, ExecType instType) 
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
 			
 		try
 		{
@@ -152,7 +145,7 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 			
 			String lopcode = TEST_NAME.equals(TEST_NAME1) ? "+" : "-";
 			String opcode = equiDims ? lopcode : Instruction.SP_INST_PREFIX+"map"+lopcode;
-			Assert.assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(opcode));	
+			assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(opcode));	
 		}
 		finally
 		{

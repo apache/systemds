@@ -21,7 +21,7 @@ package org.apache.sysml.test.integration.functions.parfor;
 
 import org.junit.Assert;
 import org.junit.Test;
-
+import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -49,6 +49,7 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 	}
 	
 	private void runListResultVarTest(String testName, int rows, int cols) {
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;

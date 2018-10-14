@@ -22,7 +22,6 @@ package org.apache.sysml.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
 import org.apache.sysml.hops.Hop;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -100,6 +99,9 @@ public class ParForUnivariateStatsTest extends AutomatedTestBase
 	 */
 	private void runParForUnivariateStatsTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType )
 	{
+		if(shouldSkipTest())
+			return;
+		
 		//inst exec type, influenced via rows
 		int rows = -1;
 		if( instType == ExecType.CP )

@@ -61,6 +61,9 @@ public abstract class WelchTTest extends AutomatedTestBase {
 	}
 	
 	protected void testWelchTTest(ScriptType scriptType) {
+		if(shouldSkipTest())
+			return;
+		
 		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
 		this.scriptType = scriptType;
 		

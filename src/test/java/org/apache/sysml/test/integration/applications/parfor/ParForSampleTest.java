@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -97,18 +96,11 @@ public class ParForSampleTest extends AutomatedTestBase
 	@SuppressWarnings({ "unchecked" })
 	private void runParForSampleTest( boolean sparse, ExecType et )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
-
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 		try
 		{
 			//invocation arguments
@@ -136,11 +128,11 @@ public class ParForSampleTest extends AutomatedTestBase
 			MatrixCharacteristics B2mc = readDMLMetaDataFile("B2"); 
 			
 			//compare meta data
-			Assert.assertEquals(new Long(rows), new Long(B1mc.getRows()+B2mc.getRows())); //join full coverage rows
-			Assert.assertEquals(new Long(cols), new Long(B1mc.getCols())); //full coverage cols
-			Assert.assertEquals(new Long(cols), new Long(B2mc.getCols())); //full coverage cols
-			Assert.assertNotEquals(new Long(rows), new Long(B1mc.getRows())); //no sample contains all rows
-			Assert.assertNotEquals(new Long(rows), new Long(B2mc.getRows())); //no sample contains all rows
+			assertEquals(new Long(rows), new Long(B1mc.getRows()+B2mc.getRows())); //join full coverage rows
+			assertEquals(new Long(cols), new Long(B1mc.getCols())); //full coverage cols
+			assertEquals(new Long(cols), new Long(B2mc.getCols())); //full coverage cols
+			assertNotEquals(new Long(rows), new Long(B1mc.getRows())); //no sample contains all rows
+			assertNotEquals(new Long(rows), new Long(B2mc.getRows())); //no sample contains all rows
 				
 			//compare data
 			HashSet<Integer> probe = new HashSet<Integer>(rows);
@@ -150,7 +142,7 @@ public class ParForSampleTest extends AutomatedTestBase
 				for( Entry<CellIndex,Double> e : B.entrySet() )
 					if( e.getKey().column == 1 ) {
 						boolean flag = probe.remove(e.getValue().intValue());
-						Assert.assertTrue("Wrong return value for "+e.getKey()+": "+e.getValue(), flag);
+						assertTrue("Wrong return value for "+e.getKey()+": "+e.getValue(), flag);
 					}
 		}
 		finally

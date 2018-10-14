@@ -40,6 +40,9 @@ public class LessThanOrEqualTest extends AutomatedTestBase
 	
 	@Test
 	public void testLessThanOrEqual() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("LessThanOrEqualTest");
 		loadTestConfiguration(config);
 		

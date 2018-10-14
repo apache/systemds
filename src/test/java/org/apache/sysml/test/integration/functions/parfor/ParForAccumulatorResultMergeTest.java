@@ -113,6 +113,7 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 
 	private void runParForAccumulatorResultMergeTest( String test, boolean init, boolean sparse, ExecType et )
 	{
+		rtplatform = RUNTIME_PLATFORM.HYBRID; // Set hybrid as the default rtplaform for the parfor package
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ) {
 			case CP: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;

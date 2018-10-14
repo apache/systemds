@@ -65,6 +65,9 @@ public class InvalidFunctionAssignmentTest extends AutomatedTestBase
 	}
 	
 	private void runTest( String testName, boolean exceptionExpected ) {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		String HOME = SCRIPT_DIR + TEST_DIR;

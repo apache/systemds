@@ -39,6 +39,9 @@ public class OrTest extends AutomatedTestBase
 	
 	@Test
 	public void testOr() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("OrTest");
 		loadTestConfiguration(config);
 		

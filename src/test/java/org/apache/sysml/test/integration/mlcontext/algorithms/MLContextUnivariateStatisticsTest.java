@@ -26,7 +26,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.log4j.Logger;
 import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class MLContextUnivariateStatisticsTest extends MLContextTestBase {
@@ -63,10 +62,10 @@ public class MLContextUnivariateStatisticsTest extends MLContextTestBase {
 		univarStats.in("A", matrix).in("K", types).out("baseStats");
 		double[][] stats = ml.execute(univarStats).getMatrix("baseStats").to2DDoubleArray();
 		log.debug("Stats for scale column:\n" + getMatrixAsString(stats));
-		Assert.assertEquals(1.0, stats[0][0], 0); // minimum
-		Assert.assertEquals(4.0, stats[1][0], 0); // maximum
-		Assert.assertEquals(2.4, stats[3][0], 0); // average
-		Assert.assertEquals(2.0, stats[12][0], 0); // mean
+		assertEquals(1.0, stats[0][0], 0); // minimum
+		assertEquals(4.0, stats[1][0], 0); // maximum
+		assertEquals(2.4, stats[3][0], 0); // average
+		assertEquals(2.0, stats[12][0], 0); // mean
 	}
 
 	@Test
@@ -77,9 +76,9 @@ public class MLContextUnivariateStatisticsTest extends MLContextTestBase {
 		univarStats.in("A", matrix).in("K", types).out("baseStats");
 		double[][] stats = ml.execute(univarStats).getMatrix("baseStats").to2DDoubleArray();
 		log.debug("Stats for categorical column:\n" + getMatrixAsString(stats));
-		Assert.assertEquals(4.0, stats[14][0], 0); // number of categories
-		Assert.assertEquals(2.0, stats[15][0], 0); // mode
-		Assert.assertEquals(1.0, stats[16][0], 0); // number of modes
+		assertEquals(4.0, stats[14][0], 0); // number of categories
+		assertEquals(2.0, stats[15][0], 0); // mode
+		assertEquals(1.0, stats[16][0], 0); // number of modes
 	}
 
 	private static void replaceColumnWithRandomInts(double[][] matrix, int whichColumn, int lowValue, int highValue) {

@@ -46,6 +46,9 @@ public class LogarithmTest extends AutomatedTestBase
 	
 	@Test
 	public void testConstConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int intIntValue1 = 2;
 		int intIntValue2 = 3;
 		int intDoubleValue1 = 2;

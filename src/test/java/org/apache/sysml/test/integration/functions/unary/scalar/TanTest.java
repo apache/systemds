@@ -60,6 +60,10 @@ public class TanTest extends AutomatedTestBase
 	
 	@Test
 	public void testPositive() {
+		if(shouldSkipTest())
+			return;
+
+		
 		int intValue = 5;
 		double doubleValue = 5.0;
 		
@@ -83,6 +87,10 @@ public class TanTest extends AutomatedTestBase
 	
 	@Test
 	public void testNegative() {
+		if(shouldSkipTest())
+			return;
+
+		
 		int intValue = -5;
 		double doubleValue = -5.0;
 		
@@ -106,6 +114,9 @@ public class TanTest extends AutomatedTestBase
 	
 	@Test
 	public void testRandom() {
+		if(shouldSkipTest())
+			return;
+
 		int intValue = TestUtils.getRandomInt();
 		double doubleValue = TestUtils.getRandomDouble();
 		

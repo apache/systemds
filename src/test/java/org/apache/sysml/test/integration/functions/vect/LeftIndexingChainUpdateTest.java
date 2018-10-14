@@ -74,6 +74,9 @@ public class LeftIndexingChainUpdateTest extends AutomatedTestBase
 	{
 		String TEST_NAME = testName;
 		boolean flag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		if(shouldSkipTest())
+			return;
+
 		
 		try
 		{		

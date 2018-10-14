@@ -29,7 +29,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -365,26 +364,15 @@ public class ColVariancesTest extends AutomatedTestBase {
      */
     private void testColVariances(String testName, Sparsity sparsity, DataType dataType,
                                   boolean rewrites, ExecType platform) {
+    	
+    	boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+    	RUNTIME_PLATFORM platformOld = setRuntimePlatform(platform);
+    	if(shouldSkipTest())
+			return;
+    	
         // Configure settings for this test case
         boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
         OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
-        RUNTIME_PLATFORM platformOld = rtplatform;
-        switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
-            case SPARK:
-                rtplatform = RUNTIME_PLATFORM.SPARK;
-                break;
-            default:
-                rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
-                break;
-        }
-
-        boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
-            DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
         try {
             // Create and load test configuration
@@ -451,12 +439,12 @@ public class ColVariancesTest extends AutomatedTestBase {
                 if (dataType == DataType.ROWVECTOR) {
                     String opcode = prefix + colVarOp;
                     boolean rewriteApplied = !Statistics.getCPHeavyHitterOpCodes().contains(opcode);
-                    Assert.assertTrue("Rewrite not applied to row vector case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to row vector case.", rewriteApplied);
 
                 } else if (dataType == DataType.COLUMNVECTOR) {
                     String opcode = prefix + varOp;
                     boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
-                    Assert.assertTrue("Rewrite not applied to column vector case.", rewriteApplied);
+                    assertTrue("Rewrite not applied to column vector case.", rewriteApplied);
                 }
             }
         }

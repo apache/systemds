@@ -42,6 +42,9 @@ public class GreaterThanTest extends AutomatedTestBase
 	
 	@Test
 	public void testGreater() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("GreaterThanTest");
 		loadTestConfiguration(config);
 		

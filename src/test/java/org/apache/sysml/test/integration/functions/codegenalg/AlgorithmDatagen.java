@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -228,15 +227,12 @@ public class AlgorithmDatagen extends AutomatedTestBase
 	private void runStepwiseTest( DatagenType type, boolean sparse, boolean rewrites, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(instType);
+		if(shouldSkipTest())
+			return;
+		
+		currentTestType = testType;
 		
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 		
@@ -263,7 +259,7 @@ public class AlgorithmDatagen extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 
-			Assert.assertTrue(heavyHittersContainsSubString("spoof")
+			assertTrue(heavyHittersContainsSubString("spoof")
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

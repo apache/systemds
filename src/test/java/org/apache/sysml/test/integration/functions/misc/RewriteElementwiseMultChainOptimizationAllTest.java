@@ -29,7 +29,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -74,16 +73,10 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 
 	private void testRewriteMatrixMultChainOp(String testname, boolean rewrites, ExecType et)
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
@@ -122,7 +115,7 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("^2"));
+				assertTrue(heavyHittersContainsSubString("^2"));
 			}
 		}
 		finally {

@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.jmlc;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.jmlc.Connection;
 import org.apache.sysml.api.jmlc.PreparedScript;
@@ -68,10 +67,10 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 			conn.close();
 
 			//check for existing or non-existing parfor
-			Assert.assertTrue("INCORRECT PARFOR COUNT", Statistics.getParforOptCount()==(par?1:0));
+			assertTrue(Statistics.getParforOptCount()==(par?1:0));
 		}
 		catch(Exception ex) {
-			Assert.fail("JMLC parfor test failed: "+ex.getMessage());
+			fail("JMLC parfor test failed: "+ex.getMessage());
 		} finally {
 			ConfigurationManager.resetStatistics();
 		}

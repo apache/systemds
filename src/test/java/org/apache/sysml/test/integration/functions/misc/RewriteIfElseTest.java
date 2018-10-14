@@ -32,7 +32,6 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RewriteIfElseTest extends AutomatedTestBase
@@ -135,16 +134,10 @@ public class RewriteIfElseTest extends AutomatedTestBase
 
 	private void testRewriteIfElse(String testname, boolean pred, boolean rewrites, ExecType et)
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
-		}
-		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
@@ -175,12 +168,12 @@ public class RewriteIfElseTest extends AutomatedTestBase
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, Math.pow(10,-10), "Stat-DML", "Stat-R"));
+			assertTrue(TestUtils.compareMatrices(dmlfile, rfile, Math.pow(10,-10), "Stat-DML", "Stat-R"));
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
 				String opcode = et==ExecType.SPARK ? Instruction.SP_INST_PREFIX + "rand" : "rand";
-				Assert.assertTrue(heavyHittersContainsString(opcode) && Statistics.getCPHeavyHitterCount(opcode)==1);
+				assertTrue(heavyHittersContainsString(opcode) && Statistics.getCPHeavyHitterCount(opcode)==1);
 			}
 		}
 		finally {

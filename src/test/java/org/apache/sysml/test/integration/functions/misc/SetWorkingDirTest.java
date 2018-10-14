@@ -19,8 +19,6 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import static org.junit.Assert.fail;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +94,10 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 	 */
 	private void runTest(String testName, boolean fileMissingTest, ScriptType scriptType) {
 
+		if(shouldSkipTest())
+			return;
+		
+		
 		// construct source filenames of dml scripts
 		String dir = SCRIPT_DIR + TEST_DIR;
 		String nameCall = testName + "." + scriptType.lowerCase();

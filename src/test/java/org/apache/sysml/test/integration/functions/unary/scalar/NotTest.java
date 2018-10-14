@@ -51,6 +51,9 @@ public class NotTest extends AutomatedTestBase
 	
 	@Test
 	public void testNot() {
+		if(shouldSkipTest())
+			return;
+		
 		TestConfiguration config = getTestConfiguration("NotTest");
 		loadTestConfiguration(config);
 		

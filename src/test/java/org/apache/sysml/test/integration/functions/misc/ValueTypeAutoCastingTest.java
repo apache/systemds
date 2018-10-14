@@ -149,6 +149,8 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	private void runTest( String testName, ValueType vt, boolean exceptionExpected ) 
 	{
 		String TEST_NAME = testName;
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{		

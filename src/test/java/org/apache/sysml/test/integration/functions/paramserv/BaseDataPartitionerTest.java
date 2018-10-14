@@ -27,12 +27,25 @@ import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DataConverter;
+import org.junit.Assert;
+import org.junit.internal.ArrayComparisonFailure;
 
 public abstract class BaseDataPartitionerTest {
 
 	protected static final int ROW_SIZE = 4000;
 	protected static final int COL_SIZE = 2000;
 	protected static final int WORKER_NUM = 4;
+	
+
+	public static void assertArrayEquals(double[] expecteds,
+			double[] actuals, double delta) throws ArrayComparisonFailure {
+		Assert.assertArrayEquals(expecteds, actuals, delta);
+	}
+	
+	public static void assertEquals(int expected, int actual) {
+		Assert.assertEquals(expected, actual);
+    }
+	
 
 	protected MatrixBlock[] generateData() {
 		double[][] df = new double[BaseDataPartitionerTest.ROW_SIZE][BaseDataPartitionerTest.COL_SIZE];

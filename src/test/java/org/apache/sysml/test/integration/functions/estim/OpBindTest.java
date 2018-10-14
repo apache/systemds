@@ -134,6 +134,9 @@ public class OpBindTest extends AutomatedTestBase
 	
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {
+		if(shouldSkipTest())
+			return;
+		
 		MatrixBlock m1;
 		MatrixBlock m2;
 		MatrixBlock m3 = new MatrixBlock();

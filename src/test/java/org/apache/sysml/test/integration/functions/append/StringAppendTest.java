@@ -106,18 +106,11 @@ public class StringAppendTest extends AutomatedTestBase
 	 * @param cols3
 	 */
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
-	{
-		RUNTIME_PLATFORM oldPlatform = rtplatform;		
-
-	    if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
-	    }
-	    else {
-			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-	    }
+	{		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM oldPlatform = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 		
 		try
 		{

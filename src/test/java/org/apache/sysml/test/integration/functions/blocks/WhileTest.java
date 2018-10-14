@@ -21,7 +21,6 @@ package org.apache.sysml.test.integration.functions.blocks;
 
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.junit.Assert;
 import org.junit.Test;
 
 
@@ -53,6 +52,9 @@ public class WhileTest extends AutomatedTestBase
     
     @Test
     public void testComputation() {
+    	if(shouldSkipTest())
+			return;
+    	
     	int rows = 10;
     	int cols = 10;
         int maxIterations = 3;
@@ -82,6 +84,9 @@ public class WhileTest extends AutomatedTestBase
 
     @Test
     public void testCleanUp() {
+    	if(shouldSkipTest())
+			return;
+    	
         int rows = 10;
         int cols = 10;
         int maxIterations = 3;
@@ -97,7 +102,7 @@ public class WhileTest extends AutomatedTestBase
 
         runTest();
 
-        Assert.assertFalse("This process's temp directory was not removed",
+        assertFalse("This process's temp directory was not removed",
                 checkForProcessLocalTemporaryDir());
     }
 }

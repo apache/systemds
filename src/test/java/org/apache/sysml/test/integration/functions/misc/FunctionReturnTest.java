@@ -59,6 +59,9 @@ public class FunctionReturnTest extends AutomatedTestBase
 	}
 
 	private void runFunctionReturnTest( String testname, boolean IPA ) {
+		if(shouldSkipTest())
+			return;
+		
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 		try {

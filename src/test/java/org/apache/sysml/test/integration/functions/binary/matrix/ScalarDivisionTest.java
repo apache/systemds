@@ -58,6 +58,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 2;
@@ -103,6 +106,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testIntVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		int divisor = 2;
@@ -148,6 +154,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleConst() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double divisor = 2;
@@ -193,6 +202,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleVar() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double divisor = 2;
@@ -238,6 +250,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testSparse() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 100;
 		int cols = 50;
 		double divisor = 2;
@@ -283,6 +298,9 @@ public class ScalarDivisionTest extends AutomatedTestBase
 	
 	@Test
 	public void testDivisionByZero() {
+		if(shouldSkipTest())
+			return;
+		
 		int rows = 10;
 		int cols = 10;
 		double divisor = 0;

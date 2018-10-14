@@ -157,6 +157,9 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	 */
 	public void runScalarAssignmentTest( ControlFlowConstruct cfc, ValueType vt ) 
 	{
+		if(shouldSkipTest())
+			return;
+		
 		String TEST_NAME = null;
 		switch( cfc )
 		{

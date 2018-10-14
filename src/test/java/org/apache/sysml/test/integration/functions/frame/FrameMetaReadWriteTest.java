@@ -31,7 +31,6 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class FrameMetaReadWriteTest extends AutomatedTestBase
@@ -87,17 +86,10 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 	 */
 	private void runFrameReadWriteTest( OutputInfo oinfo, ExecType et)
 	{
-		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-		}
-	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		RUNTIME_PLATFORM platformOld = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
 	
 		String ofmt = OutputInfo.outputInfoToStringExternal(oinfo);
 		
@@ -130,9 +122,9 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 					.createFrameReader(OutputInfo.getMatchingInputInfo(oinfo))
 					.readFrameFromHDFS(output("B"), rows, cols);
 			for( int j=0; j<cols; j++ ) {
-				Assert.assertEquals("MV meta data wrong!",
+				assertEquals("MV meta data wrong!",
 						fA.getColumnMetadata(j).getMvValue(), fB.getColumnMetadata(j).getMvValue());
-				Assert.assertEquals("Distinct meta data wrong!",
+				assertEquals("Distinct meta data wrong!",
 						fA.getColumnMetadata(j).getNumDistinct(), fB.getColumnMetadata(j).getNumDistinct());
 			}
 		}

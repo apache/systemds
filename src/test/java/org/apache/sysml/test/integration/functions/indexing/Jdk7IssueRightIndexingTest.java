@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
@@ -128,20 +127,15 @@ public class Jdk7IssueRightIndexingTest extends AutomatedTestBase
 	 */
 	public void runIndexingTest( boolean sparse, ExecType et ) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
+		RUNTIME_PLATFORM oldRTP = setRuntimePlatform(et);
+		if(shouldSkipTest())
+			return;
+		
 				
 		try
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
 		    
-		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
-		    }
-		    else {
-		    	rtplatform = (et==null) ? RUNTIME_PLATFORM.HYBRID : 
-		    	         	(et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-		    }
-			
 		    config.addVariable("rows", rows);
 	        config.addVariable("cols", cols);
 			

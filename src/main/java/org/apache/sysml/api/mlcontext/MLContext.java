@@ -242,8 +242,7 @@ public class MLContext implements ConfigurableAPI
 	 * execution mode, set MLContextProxy, set default config, set compiler
 	 * config.
 	 *
-	 * @param sc
-	 *            SparkContext object.
+	 * @param spark SparkContext object.
 	 */
 	private void initMLContext(SparkSession spark) {
 

@@ -30,6 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
+import org.apache.sysml.api.ScriptExecutorUtils;
+import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
@@ -53,6 +55,7 @@ import org.apache.sysml.runtime.instructions.cp.DoubleObject;
 import org.apache.sysml.runtime.instructions.cp.IntObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
+import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.MetaDataFormat;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
@@ -80,8 +83,10 @@ public class PreparedScript implements ConfigurableAPI
 	private final LocalVariableMap _vars;
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
+
 	private boolean _isStatisticsEnabled = false;
-	
+	private boolean _gatherMemStats = false;
+
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
@@ -141,7 +146,7 @@ public class PreparedScript implements ConfigurableAPI
 	 */
 	public void gatherMemStats(boolean stats) {
 		this._isStatisticsEnabled = this._isStatisticsEnabled || ConfigurationManager.isStatistics();
-		DMLScript.JMLC_MEM_STATISTICS = stats;
+		this._gatherMemStats = stats;
 	}
 	
 	@Override
@@ -433,7 +438,12 @@ public class PreparedScript implements ConfigurableAPI
 	public void clearParameters() {
 		_vars.removeAll();
 	}
-	
+
+	/**
+	 * GPU Context to use for execution
+	 */
+	List<GPUContext> _gpuCtx = null;
+
 	/**
 	 * Executes the prepared script over the bound inputs, creating the
 	 * result variables according to bound and registered outputs.
@@ -443,20 +453,20 @@ public class PreparedScript implements ConfigurableAPI
 	public ResultVariables executeScript() {
 		//add reused variables
 		_vars.putAll(_inVarReuse);
-		
+
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
-		
+		ConfigurationManager.setStatistics(_isStatisticsEnabled);
+		ConfigurationManager.setJMLCMemStats(_gatherMemStats);
+		ConfigurationManager.setFinegrainedStatistics(_gatherMemStats);
+
 		//create and populate execution context
-		ExecutionContext ec = ExecutionContextFactory.createContext(_vars, _prog);
-		
-		//core execute runtime program
-		_prog.execute(ec);
-		
-		//cleanup unnecessary outputs
-		_vars.removeAllNotIn(_outVarnames);
-		
+		ScriptExecutorUtils.executeRuntimeProgram(
+				_prog, _dmlconf, ConfigurationManager.isStatistics() ?
+						ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
+				_vars, _outVarnames, SystemMLAPI.JMLC, _gpuCtx);
+
 		//construct results
 		ResultVariables rvars = new ResultVariables();
 		for( String ovar : _outVarnames ) {
@@ -464,10 +474,9 @@ public class PreparedScript implements ConfigurableAPI
 			if( tmpVar != null )
 				rvars.addResult(ovar, tmpVar);
 		}
-		
-		//clear thread-local configurations
+
+		// clear prior thread local configurations (for subsequent run)
 		ConfigurationManager.clearLocalConfigs();
-		
 		ConfigurationManager.resetStatistics();
 
 		return rvars;

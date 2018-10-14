@@ -500,7 +500,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if( ConfigurationManager.isStatistics() ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementAcquireMTime(t1-t0);
-			if (DMLScript.JMLC_MEM_STATISTICS)
+			if (ConfigurationManager.isJMLCMemStatistics())
 				Statistics.addCPMemObject(System.identityHashCode(this), getDataSize());
 		}
 		

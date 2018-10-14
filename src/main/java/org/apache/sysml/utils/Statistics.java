@@ -975,7 +975,7 @@ public class Statistics
 			sb.append("Cache hits (Mem, WB, FS, HDFS):\t" + CacheStatistics.displayHits() + ".\n");
 			sb.append("Cache writes (WB, FS, HDFS):\t" + CacheStatistics.displayWrites() + ".\n");
 			sb.append("Cache times (ACQr/m, RLS, EXP):\t" + CacheStatistics.displayTime() + " sec.\n");
-			if (DMLScript.JMLC_MEM_STATISTICS)
+			if (ConfigurationManager.isJMLCMemStatistics())
 				sb.append("Max size of live objects:\t" + byteCountToDisplaySize(getSizeofPinnedObjects()) + " ("  + getNumPinnedObjects() + " total objects)" + "\n");
 			sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
 			sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
@@ -1029,7 +1029,7 @@ public class Statistics
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
 			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
-			if (DMLScript.JMLC_MEM_STATISTICS && ConfigurationManager.isFinegrainedStatistics())
+			if (ConfigurationManager.isJMLCMemStatistics() && ConfigurationManager.isFinegrainedStatistics())
 				sb.append("Heavy hitter objects:\n" + getCPHeavyHittersMem(maxHeavyHitters));
 		}
 

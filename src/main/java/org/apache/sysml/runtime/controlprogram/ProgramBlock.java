@@ -259,7 +259,7 @@ public class ProgramBlock implements ParseInfo
 				Statistics.maintainCPHeavyHitters(
 					tmp.getExtendedOpcode(), System.nanoTime()-t0);
 			}
-			if (DMLScript.JMLC_MEM_STATISTICS && ConfigurationManager.isFinegrainedStatistics())
+			if (ConfigurationManager.isJMLCMemStatistics() && ConfigurationManager.isFinegrainedStatistics())
 				ec.getVariables().getPinnedDataSize();
 
 			// optional trace information (instruction and runtime)

@@ -54,6 +54,7 @@ public class GPUMemoryManager {
 	// This has an additional overhead of maintaining stack trace of all the allocated GPU pointers via PointerInfo class.
 	private static final boolean DEBUG_MEMORY_LEAK = false;
 	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10, 11}; // Avoids printing too much text while debugging
+	private HashMap<Pointer, StackTraceElement[]> stackTraceFreedPointers = new HashMap<>();
 	
 	private final boolean PRINT_GPU_MEMORY_INFO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
 	
@@ -416,6 +417,9 @@ public class GPUMemoryManager {
 			if(LOG.isTraceEnabled()) {
 				LOG.trace("Free-ing up the pointer of size " +  GPUStatistics.byteCountToDisplaySize(size));
 			}
+			if(DEBUG_MEMORY_LEAK) {
+				stackTraceFreedPointers.put(toFree, Thread.currentThread().getStackTrace());
+			}
 			allPointers.remove(toFree);
 			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
 			allocator.free(toFree);
@@ -442,6 +446,17 @@ public class GPUMemoryManager {
 		if(toFree == null)
 			throw new DMLRuntimeException("Attempting to free a null pointer");
 		else if (!allPointers.containsKey(toFree)) {
+			if(DEBUG_MEMORY_LEAK) {
+				if(stackTraceFreedPointers.containsKey(toFree)) {
+					System.out.println("The pointer was freed earlier at:");
+					Throwable t = new Throwable();
+					t.setStackTrace(stackTraceFreedPointers.get(toFree));
+					t.printStackTrace();
+				}
+				else {
+					System.out.println("The pointer was not freed earlier.");
+				}
+			}
 			LOG.info("GPU memory info before failure:" + toString());
 			throw new RuntimeException("ERROR : Internal state corrupted, attempting to free an unaccounted pointer:" + toFree);
 		}

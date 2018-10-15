@@ -94,10 +94,12 @@ public class GPUMatrixMemoryManager {
 	 * Get pointers from the first memory sections "Matrix Memory"
 	 * @param locked return locked pointers if true
 	 * @param dirty return dirty pointers if true
+	 * @param isCleanupEnabled return pointers marked for cleanup if true
 	 * @return set of pointers
 	 */
-	Set<Pointer> getPointers(boolean locked, boolean dirty) {
-		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
+	Set<Pointer> getPointers(boolean locked, boolean dirty, boolean isCleanupEnabled) {
+		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty
+				&& gObj.mat.isCleanupEnabled() == isCleanupEnabled).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
 	}
 	
 	/**

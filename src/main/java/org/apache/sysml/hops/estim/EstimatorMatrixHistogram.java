@@ -152,19 +152,19 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		//dot(h1.cNnz,h2rNnz) gives the exact number of non-zeros in the output
 		if( h1.rMaxNnz <= 1 || h2.cMaxNnz <= 1 ) {
 			for( int j=0; j<h1.getCols(); j++ )
-				nnz += h1.cNnz[j] * h2.rNnz[j];
+				nnz += (long)h1.cNnz[j] * h2.rNnz[j];
 		}
 		//special case, with hybrid exact and approximate output
 		else if(h1.cNnz1e!=null && h2.rNnz1e != null) {
 			//note: normally h1.getRows()*h2.getCols() would define mnOut
 			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
 			//that exact and approximate fractions touch different areas
-			long mnOut = (h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
+			long mnOut = (long)(h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				//exact fractions, w/o double counting
-				nnz += h1.cNnz1e[j] * h2.rNnz[j];
-				nnz += (h1.cNnz[j]-h1.cNnz1e[j]) * h2.rNnz1e[j];
+				nnz += (long)h1.cNnz1e[j] * h2.rNnz[j];
+				nnz += (long)(h1.cNnz[j]-h1.cNnz1e[j]) * h2.rNnz1e[j];
 				//approximate fraction, w/o double counting
 				double lsp = (double)(h1.cNnz[j]-h1.cNnz1e[j]) 
 					* (h2.rNnz[j]-h2.rNnz1e[j]) / mnOut;
@@ -174,7 +174,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		//general case with approximate output
 		else {
-			long mnOut = h1.getRows()*h2.getCols();
+			long mnOut = (long)h1.getRows()*h2.getCols();
 			double spOut = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				double lsp = (double) h1.cNnz[j] * h2.rNnz[j] / mnOut;

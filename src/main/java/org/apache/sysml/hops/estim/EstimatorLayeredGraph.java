@@ -156,8 +156,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			}
 			
 			//step 2: propagate vectors bottom-up and aggregate nnz
-			return (long) Arrays.stream(_nodes.get(_nodes.size()-1))
-				.mapToDouble(n -> calcNNZ(n.computeVector(_rounds), _rounds)).sum();
+			return (long) Math.round(Arrays.stream(_nodes.get(_nodes.size()-1))
+				.mapToDouble(n -> calcNNZ(n.computeVector(_rounds), _rounds)).sum());
 		}
 		
 		private static double calcNNZ(double[] inpvec, int rounds) {

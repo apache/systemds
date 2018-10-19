@@ -32,7 +32,6 @@ import org.apache.sysml.api.ConfigurableAPI;
 import org.apache.sysml.api.DMLException;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
@@ -47,8 +46,6 @@ import org.apache.sysml.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysml.runtime.instructions.cp.BooleanObject;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.DoubleObject;
@@ -100,6 +97,9 @@ public class PreparedScript implements ConfigurableAPI
 		_inVarReuse = new HashMap<>(that._inVarReuse);
 		_dmlconf = that._dmlconf;
 		_cconf = that._cconf;
+		_isStatisticsEnabled = that._isStatisticsEnabled;
+		_gatherMemStats = that._gatherMemStats;
+		_gpuCtx = that._gpuCtx;
 	}
 	
 	/**
@@ -463,7 +463,7 @@ public class PreparedScript implements ConfigurableAPI
 
 		//create and populate execution context
 		ScriptExecutorUtils.executeRuntimeProgram(
-				_prog, _dmlconf, ConfigurationManager.isStatistics() ?
+				_prog, ConfigurationManager.isStatistics() ?
 						ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
 				_vars, _outVarnames, SystemMLAPI.JMLC, _gpuCtx);
 

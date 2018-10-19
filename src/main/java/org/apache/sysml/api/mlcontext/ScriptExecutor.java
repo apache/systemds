@@ -19,7 +19,6 @@
 
 package org.apache.sysml.api.mlcontext;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,21 +30,15 @@ import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.ScriptExecutorUtils;
 import org.apache.sysml.api.ScriptExecutorUtils.SystemMLAPI;
-import org.apache.sysml.api.jmlc.JMLCUtils;
 import org.apache.sysml.api.mlcontext.MLContext.ExecutionType;
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
 import org.apache.sysml.conf.CompilerConfig;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.DMLOptions;
-import org.apache.sysml.hops.HopsException;
 import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.hops.rewrite.ProgramRewriter;
-import org.apache.sysml.hops.rewrite.RewriteRemovePersistentReadWrite;
-import org.apache.sysml.lops.LopsException;
 import org.apache.sysml.parser.DMLProgram;
 import org.apache.sysml.parser.DMLTranslator;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.parser.ParseException;
 import org.apache.sysml.parser.ParserFactory;
 import org.apache.sysml.parser.ParserWrapper;
@@ -56,7 +49,6 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.utils.Explain;
-import org.apache.sysml.utils.Explain.ExplainCounts;
 import org.apache.sysml.utils.Explain.ExplainType;
 import org.apache.sysml.utils.Statistics;
 
@@ -102,7 +94,6 @@ public class ScriptExecutor {
 
 	protected DMLConfig config;
 	protected DMLProgram dmlProgram;
-	protected DMLTranslator dmlTranslator;
 	protected Program runtimeProgram;
 	protected ExecutionContext executionContext;
 	protected Script script;
@@ -136,80 +127,6 @@ public class ScriptExecutor {
 	public ScriptExecutor(DMLConfig config) {
 		this.config = config;
 		ConfigurationManager.setGlobalConfig(config);
-	}
-
-	/**
-	 * Construct DAGs of high-level operators (HOPs) for each block of
-	 * statements.
-	 */
-	protected void constructHops() {
-		try {
-			dmlTranslator.constructHops(dmlProgram);
-		} catch (LanguageException | ParseException e) {
-			throw new MLContextException("Exception occurred while constructing HOPS (high-level operators)", e);
-		}
-	}
-
-	/**
-	 * Apply static rewrites, perform intra-/inter-procedural analysis to
-	 * propagate size information into functions, apply dynamic rewrites, and
-	 * compute memory estimates for all HOPs.
-	 */
-	protected void rewriteHops() {
-		try {
-			dmlTranslator.rewriteHopsDAG(dmlProgram);
-		} catch (LanguageException | HopsException | ParseException | DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred while rewriting HOPS (high-level operators)", e);
-		}
-	}
-
-	/**
-	 * Output a description of the program to standard output.
-	 */
-	protected void showExplanation() {
-		if (!explain)
-			return;
-
-		try {
-			ExplainType explainType = (explainLevel != null) ? explainLevel.getExplainType() : ExplainType.RUNTIME;
-			System.out.println(Explain.display(dmlProgram, runtimeProgram, explainType, null));
-		} catch (Exception e) {
-			throw new MLContextException("Exception occurred while explaining dml program", e);
-		}
-	}
-
-	/**
-	 * Construct DAGs of low-level operators (LOPs) based on the DAGs of
-	 * high-level operators (HOPs).
-	 */
-	protected void constructLops() {
-		try {
-			dmlTranslator.constructLops(dmlProgram);
-		} catch (ParseException | LanguageException | HopsException | LopsException e) {
-			throw new MLContextException("Exception occurred while constructing LOPS (low-level operators)", e);
-		}
-	}
-
-	/**
-	 * Create runtime program. For each namespace, translate function statement
-	 * blocks into function program blocks and add these to the runtime program.
-	 * For each top-level block, add the program block to the runtime program.
-	 */
-	protected void generateRuntimeProgram() {
-		try {
-			runtimeProgram = dmlTranslator.getRuntimeProgram(dmlProgram, config);
-		} catch (LanguageException | DMLRuntimeException | LopsException | IOException | HopsException e) {
-			throw new MLContextException("Exception occurred while generating runtime program", e);
-		}
-	}
-
-	/**
-	 * Count the number of compiled MR Jobs/Spark Instructions in the runtime
-	 * program and set this value in the statistics.
-	 */
-	protected void countCompiledMRJobsAndSparkInstructions() {
-		ExplainCounts counts = Explain.countDistributedOperations(runtimeProgram);
-		Statistics.resetNoOfCompiledJobs(counts.numJobs);
 	}
 
 	/**
@@ -255,25 +172,6 @@ public class ScriptExecutor {
 	/**
 	 * Compile a DML or PYDML script. This will help analysis of DML programs
 	 * that have dynamic recompilation flag set to false without actually executing it. 
-	 * 
-	 * This is broken down into the following
-	 * primary methods:
-	 *
-	 * <ol>
-	 * <li>{@link #setup(Script)}</li>
-	 * <li>{@link #parseScript()}</li>
-	 * <li>{@link #liveVariableAnalysis()}</li>
-	 * <li>{@link #validateScript()}</li>
-	 * <li>{@link #constructHops()}</li>
-	 * <li>{@link #rewriteHops()}</li>
-	 * <li>{@link #rewritePersistentReadsAndWrites()}</li>
-	 * <li>{@link #constructLops()}</li>
-	 * <li>{@link #generateRuntimeProgram()}</li>
-	 * <li>{@link #showExplanation()}</li>
-	 * <li>{@link #countCompiledMRJobsAndSparkInstructions()}</li>
-	 * <li>{@link #initializeCachingAndScratchSpace()}</li>
-	 * <li>{@link #cleanupRuntimeProgram()}</li>
-	 * </ol>
 	 *
 	 * @param script
 	 *            the DML or PYDML script to compile
@@ -321,8 +219,8 @@ public class ScriptExecutor {
 				.convertInputParametersForParser(script.getInputParameters(), script.getScriptType());
 		
 		Explain.ExplainType explainType = Explain.ExplainType.NONE;
-		if(explain && explainLevel != null) {
-			explainType = explainLevel.getExplainType();
+		if(explain) {
+			explainType = (explainLevel == null) ? Explain.ExplainType.RUNTIME : explainLevel.getExplainType();
 		}
 		RUNTIME_PLATFORM rtplatform = DMLOptions.defaultOptions.execMode;
 		if(executionType != null) {
@@ -332,14 +230,14 @@ public class ScriptExecutor {
 				statistics, statisticsMaxHeavyHitters, false, explainType, 
 				rtplatform, gpu, forceGPU, script.getScriptType(), DMLScript.DML_FILE_PATH_ANTLR_PARSER, 
 				script.getScriptExecutionString()));
-		
+
 		// main steps in script execution
 		compile(script);
 
 		try {
-			executionContext = ScriptExecutorUtils.executeRuntimeProgram(getRuntimeProgram(), getConfig(),
+			executionContext = ScriptExecutorUtils.executeRuntimeProgram(getRuntimeProgram(),
 					statistics ? statisticsMaxHeavyHitters : 0, script.getSymbolTable(),
-					new HashSet<String>(getScript().getOutputVariables()), SystemMLAPI.MLContext, gCtxs);
+					new HashSet<>(getScript().getOutputVariables()), SystemMLAPI.MLContext, gCtxs);
 		} catch (DMLRuntimeException e) {
 			throw new MLContextException("Exception occurred while executing runtime program", e);
 		} finally {
@@ -411,41 +309,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * If {@code maintainSymbolTable} is true, delete all 'remove variable'
-	 * instructions so as to maintain the values in the symbol table, which are
-	 * useful when working interactively in an environment such as the Spark
-	 * Shell. Otherwise, only delete 'remove variable' instructions for
-	 * registered outputs.
-	 */
-	protected void cleanupRuntimeProgram() {
-		if (maintainSymbolTable) {
-			MLContextUtil.deleteRemoveVariableInstructions(runtimeProgram);
-		} else {
-			JMLCUtils.cleanupRuntimeProgram(runtimeProgram, (script.getOutputVariables() == null) ? new String[0]
-					: script.getOutputVariables().toArray(new String[0]));
-		}
-	}
-
-	/**
-	 * Check security, create scratch space, cleanup working directories,
-	 * initialize caching, and reset statistics.
-	 */
-	protected void initializeCachingAndScratchSpace() {
-		if (!init)
-			return;
-
-		try {
-			DMLScript.initHadoopExecution(config);
-		} catch (ParseException e) {
-			throw new MLContextException("Exception occurred initializing caching and scratch space", e);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred initializing caching and scratch space", e);
-		} catch (IOException e) {
-			throw new MLContextException("Exception occurred initializing caching and scratch space", e);
-		}
-	}
-
-	/**
 	 * Parse the script into an ANTLR parse tree, and convert this parse tree
 	 * into a SystemML program. Parsing includes lexical/syntactic analysis.
 	 */
@@ -461,29 +324,6 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Replace persistent reads and writes with transient reads and writes in
-	 * the symbol table.
-	 */
-	protected void rewritePersistentReadsAndWrites() {
-		LocalVariableMap symbolTable = script.getSymbolTable();
-		if (symbolTable != null) {
-			String[] inputs = (script.getInputVariables() == null) ? new String[0]
-					: script.getInputVariables().toArray(new String[0]);
-			String[] outputs = (script.getOutputVariables() == null) ? new String[0]
-					: script.getOutputVariables().toArray(new String[0]);
-			RewriteRemovePersistentReadWrite rewrite = new RewriteRemovePersistentReadWrite(inputs, outputs,
-					script.getSymbolTable());
-			ProgramRewriter programRewriter = new ProgramRewriter(rewrite);
-			try {
-				programRewriter.rewriteProgramHopDAGs(dmlProgram);
-			} catch (LanguageException | HopsException e) {
-				throw new MLContextException("Exception occurred while rewriting persistent reads and writes", e);
-			}
-		}
-
-	}
-
-	/**
 	 * Set the SystemML configuration properties.
 	 *
 	 * @param config
@@ -495,65 +335,12 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Liveness analysis is performed on the program, obtaining sets of live-in
-	 * and live-out variables by forward and backward passes over the program.
-	 */
-	protected void liveVariableAnalysis() {
-		try {
-			dmlTranslator = new DMLTranslator(dmlProgram);
-			dmlTranslator.liveVariableAnalysis(dmlProgram);
-		} catch (DMLRuntimeException e) {
-			throw new MLContextException("Exception occurred during live variable analysis", e);
-		} catch (LanguageException e) {
-			throw new MLContextException("Exception occurred during live variable analysis", e);
-		}
-	}
-
-	/**
-	 * Semantically validate the program's expressions, statements, and
-	 * statement blocks in a single recursive pass over the program. Constant
-	 * and size propagation occurs during this step.
-	 */
-	protected void validateScript() {
-		try {
-			dmlTranslator.validateParseTree(dmlProgram);
-		} catch (LanguageException | ParseException e) {
-			throw new MLContextException("Exception occurred while validating script", e);
-		}
-	}
-
-	/**
-	 * Check that the Script object has a type (DML or PYDML) and a string
-	 * representing the content of the Script.
-	 */
-	protected void checkScriptHasTypeAndString() {
-		if (script == null) {
-			throw new MLContextException("Script is null");
-		} else if (script.getScriptType() == null) {
-			throw new MLContextException("ScriptType (DML or PYDML) needs to be specified");
-		} else if (script.getScriptString() == null) {
-			throw new MLContextException("Script string is null");
-		} else if (StringUtils.isBlank(script.getScriptString())) {
-			throw new MLContextException("Script string is blank");
-		}
-	}
-
-	/**
 	 * Obtain the program
 	 *
 	 * @return the program
 	 */
 	public DMLProgram getDmlProgram() {
 		return dmlProgram;
-	}
-
-	/**
-	 * Obtain the translator
-	 *
-	 * @return the translator
-	 */
-	public DMLTranslator getDmlTranslator() {
-		return dmlTranslator;
 	}
 
 	/**
@@ -591,9 +378,7 @@ public class ScriptExecutor {
 	 *            {@code true} if explanation should be output, {@code false}
 	 *            otherwise
 	 */
-	public void setExplain(boolean explain) {
-		this.explain = explain;
-	}
+	public void setExplain(boolean explain) { this.explain = explain; }
 
 	/**
 	 * Whether or not statistics about the DML/PYDML program should be output to
@@ -664,8 +449,7 @@ public class ScriptExecutor {
 		if (explainLevel == null) {
 			DMLScript.EXPLAIN = ExplainType.NONE;
 		} else {
-			ExplainType explainType = explainLevel.getExplainType();
-			DMLScript.EXPLAIN = explainType;
+			DMLScript.EXPLAIN = explainLevel.getExplainType();
 		}
 	}
 

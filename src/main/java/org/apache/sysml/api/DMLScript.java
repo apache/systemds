@@ -376,56 +376,56 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
-    /**
-     * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
-     * and customized parameters have been put into _argVals
-     *
-     * @param dmlScriptStr DML script string
-     * @param fnameOptConfig configuration file
-     * @param argVals map of argument values
-     * @param allArgs arguments
-     * @param scriptType type of script (DML or PyDML)
-     * @throws IOException if IOException occurs
-     */
-    private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
-            throws IOException
-    {
-        SCRIPT_TYPE = scriptType;
+	/**
+	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
+	 * and customized parameters have been put into _argVals
+	 *
+	 * @param dmlScriptStr DML script string
+	 * @param fnameOptConfig configuration file
+	 * @param argVals map of argument values
+	 * @param allArgs arguments
+	 * @param scriptType type of script (DML or PyDML)
+	 * @throws IOException if IOException occurs
+	 */
+	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
+			throws IOException
+	{
+		SCRIPT_TYPE = scriptType;
 
-        //print basic time and environment info
-        printStartExecInfo( dmlScriptStr );
+		//print basic time and environment info
+		printStartExecInfo( dmlScriptStr );
 
-        //Step 1: parse configuration files & write any configuration specific global variables
-        DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
-        ConfigurationManager.setGlobalConfig(dmlconf);
-        CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
-        ConfigurationManager.setGlobalConfig(cconf);
-        LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
+		//Step 1: parse configuration files & write any configuration specific global variables
+		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
+		ConfigurationManager.setGlobalConfig(dmlconf);
+		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
+		ConfigurationManager.setGlobalConfig(cconf);
+		LOG.debug("\nDML config: \n" + dmlconf.getConfigInfo());
 
-        setGlobalFlags(dmlconf);
-        Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(dmlScriptStr, argVals, allArgs,
-                scriptType, dmlconf, SystemMLAPI.DMLScript);
-        List<GPUContext> gCtxs = ConfigurationManager.getDMLOptions().gpu ? GPUContextPool.getAllGPUContexts() : null;
+		setGlobalFlags(dmlconf);
+		Program rtprog = ScriptExecutorUtils.compileRuntimeProgram(dmlScriptStr, argVals, allArgs,
+				scriptType, dmlconf, SystemMLAPI.DMLScript);
+		List<GPUContext> gCtxs = ConfigurationManager.getDMLOptions().gpu ? GPUContextPool.getAllGPUContexts() : null;
 
-        //double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
-        //System.out.println("Estimated costs: "+costs);
+		//double costs = CostEstimationWrapper.getTimeEstimate(rtprog, ExecutionContextFactory.createContext());
+		//System.out.println("Estimated costs: "+costs);
 
-        //Step 10: execute runtime program
-        ExecutionContext ec = null;
-        try {
-            ec = ScriptExecutorUtils.executeRuntimeProgram(
-                    rtprog, dmlconf, ConfigurationManager.isStatistics() ?
-                            ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
-                    new LocalVariableMap(), null, SystemMLAPI.DMLScript, gCtxs);
-        }
-        finally {
-            if(ec != null && ec instanceof SparkExecutionContext)
-                ((SparkExecutionContext) ec).close();
-            LOG.info("END DML run " + getDateTime() );
-            //cleanup scratch_space and all working dirs
-            cleanupHadoopExecution( dmlconf );
-        }
-    }
+		//Step 10: execute runtime program
+		ExecutionContext ec = null;
+		try {
+			ec = ScriptExecutorUtils.executeRuntimeProgram(
+					rtprog, ConfigurationManager.isStatistics() ?
+							ConfigurationManager.getDMLOptions().getStatisticsMaxHeavyHitters() : 0,
+					new LocalVariableMap(), null, SystemMLAPI.DMLScript, gCtxs);
+		}
+		finally {
+			if(ec != null && ec instanceof SparkExecutionContext)
+				((SparkExecutionContext) ec).close();
+			LOG.info("END DML run " + getDateTime() );
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution( dmlconf );
+		}
+	}
 	
 	/**
 	 * Sets the global flags in DMLScript based on user provided configuration
@@ -547,8 +547,8 @@ public class DMLScript
 
 		//determine security states
 		boolean flagDiffUser = !(   taskController.equals("org.apache.hadoop.mapred.LinuxTaskController") //runs map/reduce tasks as the current user
-							     || localMode  // run in the same JVM anyway
-							     || groupNames.contains( ttGroupName) ); //user in task tracker group 
+								 || localMode  // run in the same JVM anyway
+								 || groupNames.contains( ttGroupName) ); //user in task tracker group 
 		boolean flagLocalFS = fsURI==null || fsURI.getScheme().equals("file");
 		boolean flagSecurity = perm.equals("yes"); 
 		

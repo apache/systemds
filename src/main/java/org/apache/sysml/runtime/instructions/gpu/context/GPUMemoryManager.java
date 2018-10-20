@@ -224,6 +224,10 @@ public class GPUMemoryManager {
 			return "->" + stackTrace[index].getClassName() + "." + stackTrace[index].getMethodName() + "(" + stackTrace[index].getFileName() + ":" + stackTrace[index].getLineNumber() + ")";
 	}
 	
+	public boolean canAllocate(String opcode, long size) {
+		return allocator.canAllocate(size);
+	}
+	
 	
 	public boolean canAllocateWithoutEviction(String opcode, long size) {
 		return lazyCudaFreeMemoryManager.contains(opcode, size) || allocator.canAllocate(size) ||

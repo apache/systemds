@@ -182,7 +182,6 @@ backward = function(matrix[double] dout, matrix[double] dc,
   for (iter in 1:T) {  # each timestep in reverse order
     X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
     dout_t = dout[,(t-1)*M+1:t*M]  # shape (N, M)
-    out_t = matrix(cache_out[t,], rows=N, cols=M)  # shape (N, M)
     ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
     if (t == 1) {
       out_prev = out0  # shape (N, M)

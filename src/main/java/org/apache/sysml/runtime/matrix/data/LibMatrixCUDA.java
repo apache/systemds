@@ -227,6 +227,23 @@ public class LibMatrixCUDA {
 				A, ret, numElems);
 		return ret;
 	}
+	
+	public static void printPointerForDebugging(Pointer ptr, int rows, int cols, String matName) {
+		if(sizeOfDataType == jcuda.Sizeof.DOUBLE) {
+			double[] devData = new double[rows*cols];
+			cudaMemcpy(Pointer.to(devData), ptr, rows*cols*sizeOfDataType, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+			System.out.println(matName + ":");
+			for(int i = 0; i < rows; i++) {
+				for(int j = 0; j < cols; j++) {
+					System.out.print(String.format("%.3f", devData[i*cols+j]) + " ");
+				}
+				System.out.println();
+			}
+		}
+		else {
+			throw new DMLRuntimeException("The method printPointerForDebugging is only supported for double precision.");
+		}
+	}
 
 	//********************************************************************/
 	//************************ End of UTILS ******************************/
@@ -1425,7 +1442,7 @@ public class LibMatrixCUDA {
 	 * @param isRightTransposed true if right matrix is transposed
 	 * @param op                operator
 	 */
-	private static void matrixMatrixOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
+	static void matrixMatrixOp(ExecutionContext ec, GPUContext gCtx, String instName, MatrixObject in1, MatrixObject in2,
 			String outputName, boolean isLeftTransposed, boolean isRightTransposed, BinaryOperator op) {
 		if (ec.getGPUContext(0) != gCtx)
 			throw new DMLRuntimeException("GPU : Invalid internal state, the GPUContext set with the ExecutionContext is not the same used to run this LibMatrixCUDA function");
@@ -1502,7 +1519,7 @@ public class LibMatrixCUDA {
 	 * @param c						output matrix of size (maxRlen, maxClen) allocated on GPU
 	 * @param op					the operation to perform
 	 */
-	private static void matrixMatrixOp(GPUContext gCtx, String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) {
+	static void matrixMatrixOp(GPUContext gCtx, String instName, Pointer a, Pointer b, int maxRlen, int maxClen, int vecStatusA, int vecStatusB, Pointer c, BinaryOperator op) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : matrix_matrix_cellwise_op" + ", GPUContext=" + gCtx);
 		}

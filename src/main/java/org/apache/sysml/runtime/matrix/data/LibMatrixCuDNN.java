@@ -54,11 +54,14 @@ import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
+import org.apache.sysml.runtime.matrix.data.LibMatrixCuMatMult.CuMatMultParameters;
 import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
+import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.utils.GPUStatistics;
 import org.apache.sysml.utils.Statistics;
 
@@ -846,17 +849,229 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 	
-	static Pointer getDenseInputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String inputName,
+	public static Pointer getDenseInputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String inputName,
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixInputForGPUInstruction(inputName, instName);
 		return LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
 	}
 	
-	static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
+	public static Pointer getDenseOutputPointer(ExecutionContext ec, GPUContext gCtx, String instName, String outputName,
 			long numRows, long numCols) throws DMLRuntimeException {
 		MatrixObject output = ec.getMatrixObject(outputName);
 		getDenseMatrixOutputForGPUInstruction(ec, instName, outputName, numRows, numCols); // Allocated the dense output matrix
 		return getDensePointerForCuDNN(gCtx, output, instName, numRows, numCols);
+	}
+	
+	public static void nnLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer X, Pointer out0, Pointer c0, MatrixObject W, Pointer dout, Pointer dc,  // input
+			Pointer cache_out, Pointer cache_c, Pointer cache_ifog,
+			Pointer dX, Pointer dW, Pointer db, Pointer dout0, Pointer dc0,  	// output
+			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
+		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType); 
+		Pointer difog_raw = gCtx.allocate(instName, N*4*M*sizeOfDataType);
+		Pointer dct = copy(gCtx, instName, dc, N*M);
+		Pointer dinput = gCtx.allocate(instName, N*(D+M)*sizeOfDataType); // (N, D+M)
+		Pointer tmpDb = gCtx.allocate(instName, 4*M*sizeOfDataType); // (1, 4M)
+		
+		// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
+		CuMatMultParameters param1 = new CuMatMultParameters(N, D+M,
+				N, 4*M, true, false, one(), one());
+		
+		// dinput = difog_raw %*% t(W)  # shape (N, D+M)
+		CuMatMultParameters param2 = new CuMatMultParameters(N, 4*M,
+				D+M, 4*M, false, true);
+		
+		CSRPointer wSparsePointer = null;
+		Pointer wDensePointer = null;
+		
+		// TODO: Only dense weight supported for now
+		boolean isWSparse = false; // isInSparseFormat(gCtx, W);
+		if(isWSparse)
+			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		else
+			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		
+		Pointer dout_t = return_sequences ? gCtx.allocate(instName, N*M*sizeOfDataType) : copy(gCtx, instName, dout, N*M);
+		if(return_sequences) {
+			getCudaKernels(gCtx).launchKernel("initializeDoutWhenReturnSeq",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					dout, dout_t, T-1, toInt(M), toInt(T*M), toInt(N*M));
+		}
+		
+		for(int t = toInt(T); t >= 1; t--) {
+			// if (t == 1) { out_prev = out0; } else { out_prev = matrix(cache_out[t-1,], rows=N, cols=M) }
+			Pointer out_prev = (t == 1) ? out0 : cache_out.withByteOffset((t-2)*N*M*sizeOfDataType); // since read-only
+			
+			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+			// input = cbind(X_t, out_prev)  # shape (N, D+M)
+			getCudaKernels(gCtx).launchKernel("prepareInputNNLstm",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
+					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
+			
+			// ct = matrix(cache_c[t,], rows=N, cols=M)  # shape (N, M)
+			Pointer ct = cache_c.withByteOffset((t-1)*N*M*sizeOfDataType); // since read-only
+			
+			// ifog = matrix(cache_ifog[t,], rows=N, cols=4*M)
+			Pointer ifog = cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType); // since read-only
+			
+			// i = ifog[,1:M]  # input gate, shape (N, M)
+			// f = ifog[,M+1:2*M]  # forget gate, shape (N, M)
+			// o = ifog[,2*M+1:3*M]  # output gate, shape (N, M)
+			// g = ifog[,3*M+1:4*M]  # g gate, shape (N, M)
+			// dct = dct + o*tanh::backward(dout_t, ct)  # shape (N, M)
+			// do = tanh::forward(ct) * dout_t  # output gate, shape (N, M)
+			// df = c_prev * dct  # forget gate, shape (N, M)
+			// dc_prev = f * dct  # shape (N, M)
+			// di = g * dct  # input gate, shape (N, M)
+			// dg = i * dct  # g gate, shape (N, M)
+			// di_raw = i * (1-i) * di
+			// df_raw = f * (1-f) * df
+			// do_raw = o * (1-o) * do
+			// dg_raw = (1-g^2) * dg
+			// difog_raw = cbind(di_raw, df_raw, do_raw, dg_raw)  # shape (N, 4M)
+			getCudaKernels(gCtx).launchKernel("computeDifog_raw",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					ifog, ct, dout_t, cache_c, c0, 
+					difog_raw, dct, dc0, // output
+					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			
+			// dW = dW + t(input) %*% difog_raw  # shape (D+M, 4M)
+			LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dW, input, difog_raw, param1);
+			
+			// dinput = difog_raw %*% t(W)  # shape (N, D+M)
+			if(isWSparse) {
+				if(wSparsePointer.nnz == 0) {
+					cudaMemset(dinput, 0, N*(D+M)*sizeOfDataType);
+				}
+				else {
+					LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, dinput, difog_raw, wSparsePointer, param2);
+				}
+			}
+			else
+				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, dinput, difog_raw, wDensePointer, param2);
+			
+			// db = db + colSums(difog_raw)  # shape (1, 4M)
+			reduceCol(gCtx, instName, "reduce_col_sum", difog_raw, tmpDb, 1, toInt(4*M));
+			matrixMatrixOp(gCtx, instName, tmpDb, db, 1, toInt(4*M), VectorShape.NONE.code(), VectorShape.NONE.code(), db, 
+					new BinaryOperator(Plus.getPlusFnObject()));
+			
+			// jcuda.runtime.JCuda.cudaDeviceSynchronize();
+			
+			int size = toInt(Math.max(N*D, N*M));
+			getCudaKernels(gCtx).launchKernel("postProcessNNLstmBackward",
+					ExecutionConfig.getConfigForSimpleVectorOperations(size),
+					dinput, dout0, dout, dout_t, dX, return_sequences ? 1 : 0, t-1, N, D, M, 
+					toInt(N*D), toInt(N*M), toInt(T*D), toInt(T*M), toInt(D+M), size);
+			
+		}
+		
+		gCtx.cudaFreeHelper(instName, dout_t, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, input, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, difog_raw, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, dct, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, dinput, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, tmpDb, gCtx.EAGER_CUDA_FREE);
+		
+	}
+	
+	public static void nnLstm(ExecutionContext ec, GPUContext gCtx, String instName,
+			Pointer X,  MatrixObject W, Pointer b, Pointer out0, Pointer c0, boolean return_sequences,
+			Pointer out, Pointer c,  // output matrices
+			Pointer cache_out, Pointer cache_c, Pointer cache_ifog, // temporary workspace passed to the backward function
+			long N, long M, long D, long T) throws DMLRuntimeException {
+		boolean skipCache = cache_out == null || cache_c == null || cache_ifog == null;
+		
+		if( (skipCache && (cache_out != null || cache_c != null || cache_ifog != null)) || 
+			(!skipCache && (cache_out == null || cache_c == null || cache_ifog == null))) {
+			throw new DMLRuntimeException("Either all cache pointers should be null or all should be not null");
+		}
+		
+		// out_prev = out0
+		Pointer out_prev = copy(gCtx, instName, out0, N*M);
+		// c_prev = c0
+		Pointer c_prev = copy(gCtx, instName, c0, N*M);
+		// c = c_prev
+		cudaMemcpy(c, c_prev, N*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+		
+		Pointer input = gCtx.allocate(instName, N*(D+M)*sizeOfDataType);
+		Pointer ifog = gCtx.allocate(instName, N*4*M*sizeOfDataType);
+		
+		boolean isWSparse = isInSparseFormat(gCtx, W);
+		CSRPointer wSparsePointer = null;
+		Pointer wDensePointer = null;
+		if(isWSparse)
+			wSparsePointer = W.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
+		else
+			wDensePointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instName, D+M, 4*M);
+		
+		for(int t = 1; t <= T; t++) {
+			// X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
+			// input = cbind(X_t, out_prev)  # shape (N, D+M)
+			getCudaKernels(gCtx).launchKernel("prepareInputNNLstm",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*(D+M))),
+					X, out_prev, input, (t-1), toInt(M), toInt(D), toInt(T*D), toInt(D+M), toInt(N*(D+M)));
+			
+			// ifog = input %*% W
+			CuMatMultParameters param = new CuMatMultParameters(N, D+M,
+					D+M, 4*M, false, false);
+			if(isWSparse) {
+				if(wSparsePointer.nnz == 0) {
+					cudaMemset(ifog, 0, N*4*M*sizeOfDataType);
+				}
+				else {
+					LibMatrixCuMatMult.denseSparseMatMult(gCtx.getCusparseHandle(), instName, ifog, input, wSparsePointer, param);
+				}
+			}
+			else
+				LibMatrixCuMatMult.denseDenseMatMult(gCtx.getCublasHandle(), instName, ifog, input, wDensePointer, param);
+			
+			// ifog = ifog + b
+			// ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
+			// ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
+			getCudaKernels(gCtx).launchKernel("squashIFOG",
+					ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*4*M)),
+				ifog, b, toInt(M), toInt(N*4*M));
+			
+			
+			// c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]
+			// out_t = ifog[,2*M+1:3*M] * tanh::forward(c)
+			// if (return_sequences) {
+			//   out[,(t-1)*M+1:t*M] = out_t
+			// }
+			// else {
+			//   out = out_t
+			// }
+			// out_prev = out_t
+			// c_prev = c
+			// cache_out[t,] = matrix(out_t, rows=1, cols=N*M)
+			// cache_c[t,] = matrix(c, rows=1, cols=N*M)
+			if(skipCache) {
+				getCudaKernels(gCtx).launchKernel("postProcessNNLstmForwardSkipCache",
+						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					ifog, c,  out_prev, c_prev, out,
+					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+			}
+			else {
+				getCudaKernels(gCtx).launchKernel("postProcessNNLstmForward",
+						ExecutionConfig.getConfigForSimpleVectorOperations(toInt(N*M)),
+					ifog, c,  out_prev, c_prev, out, cache_out, cache_c,
+					return_sequences ? 1 : 0, t-1, toInt(T), toInt(M), toInt(N*M));
+				
+				// cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
+				cudaMemcpy(cache_ifog.withByteOffset((t-1)*N*4*M*sizeOfDataType), ifog, N*4*M*sizeOfDataType, cudaMemcpyDeviceToDevice);
+			}
+		}
+		
+		gCtx.cudaFreeHelper(instName, out_prev, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, c_prev, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, input, gCtx.EAGER_CUDA_FREE);
+		gCtx.cudaFreeHelper(instName, ifog, gCtx.EAGER_CUDA_FREE);
+	}
+	
+	private static Pointer copy(GPUContext gCtx, String instName, Pointer ptr, long numElems) {
+		Pointer ret = gCtx.allocate(instName, numElems*sizeOfDataType);
+		cudaMemcpy(ret, ptr, numElems*sizeOfDataType, cudaMemcpyDeviceToDevice);
+		return ret;
 	}
 	
 	/**
@@ -879,13 +1094,13 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param T sequence length
 	 * @throws DMLRuntimeException if error
 	 */
-	public static void lstm(ExecutionContext ec, GPUContext gCtx, String instName,
+	public static void cuDNNLstm(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer X,  Pointer wPointer, Pointer out0, Pointer c0, boolean return_sequences,
 			String outputName, String cyName, int N, int M, int D, int T) throws DMLRuntimeException {
-		singleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
+		cuDNNSingleLayerUnidirectionalRNNForward(ec, gCtx, instName, X, out0, c0, wPointer, outputName, cyName, "lstm", return_sequences, N, M, D, T);
 	}
 	
-	private static void singleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
+	private static void cuDNNSingleLayerUnidirectionalRNNForward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  					 // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
@@ -924,13 +1139,20 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		gCtx.cudaFreeHelper(instName, cudnnYPointer, gCtx.EAGER_CUDA_FREE);
 	}
 	
-	public static void lstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
+	public static void cuDNNLstmBackward(ExecutionContext ec, GPUContext gCtx, String instName,
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer, String doutName, String dcyName,  // input
 			String dxName, String dwName, String dbName, String dhxName, String dcxName,  	// output
 			boolean return_sequences, long N, long M, long D, long T) throws DMLRuntimeException {
 		
 		if(LOG.isDebugEnabled()) {
-			long memRequired = (N*T*M + (return_sequences ? T*M : M) + N*T*M + 2*N*T*D + (D+M+2)*(4*M))*sizeOfDataType;
+			long memRequired = (D+M)*4*M // sysmlWPointer
+					+ 2*(D+M+2)*(4*M) // cudnnWPointer and cudnnDwPointer
+					+ 3*N*T*D  // cudnnInput, cudnnDx and smlDx
+					+ 2*N*T*M // dy and yPointer
+					+ (return_sequences ? T*M : M); // dout
+			memRequired *= LibMatrixCUDA.sizeOfDataType;
+			// Assume the workspace to be proportional to cudnnWPointer
+			// memRequired += (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType;
 			LOG.debug("Memory required for invoking lstmBackward is " + memRequired + " bytes + workspace + reserve space + memory for descriptors.");
 		}
 		

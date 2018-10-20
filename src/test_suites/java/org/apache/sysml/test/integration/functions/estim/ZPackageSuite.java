@@ -26,6 +26,7 @@ import org.junit.runners.Suite;
  *  won't run two of them at once. */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+	MNCReshapeTest.class,
 	OpBindChainTest.class,
 	OpBindTest.class,
 	OpElemWChainTest.class,

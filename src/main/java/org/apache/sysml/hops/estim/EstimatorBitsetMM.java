@@ -406,7 +406,6 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 	
-	@SuppressWarnings("unused")
 	public static class BitsetMatrix2 extends BitsetMatrix {
 		private BitSet[] _data;
 

@@ -62,6 +62,8 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
+		if( op == OpCode.MM )
+			return estim(m1, m2);
 		throw new NotImplementedException();
 	}
 

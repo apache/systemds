@@ -71,9 +71,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
 				m2.getMatrixCharacteristics(), op).getSparsity();
-		BitsetMatrix m1Map = new BitsetMatrix1(m1);
+		BitsetMatrix m1Map = createBitset(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
-			m1Map : new BitsetMatrix1(m2);
+			m1Map : createBitset(m2);
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
@@ -83,7 +83,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m.getMatrixCharacteristics(), null, op).getSparsity();
-		BitsetMatrix m1Map = new BitsetMatrix1(m);
+		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
@@ -197,6 +197,18 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		//protected abstract BitsetMatrix diag();
 		
 		//protected abstract BitsetMatrix reshape(int rows, int cols, boolean byrow);
+	}
+	
+	public static BitsetMatrix createBitset(int m, int n) {
+		return (long)m*n < Integer.MAX_VALUE ?
+			new BitsetMatrix1(m, n) : //linearized long array
+			new BitsetMatrix2(m, n);  //bitset per row
+	}
+	
+	public static BitsetMatrix createBitset(MatrixBlock in) {
+		return in.getLength() < Integer.MAX_VALUE ?
+			new BitsetMatrix1(in) : //linearized long array
+			new BitsetMatrix2(in);  //bitset per row
 	}
 	
 	/**

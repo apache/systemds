@@ -24,6 +24,7 @@ import org.apache.directory.api.util.exception.NotImplementedException;
 import org.apache.sysml.hops.estim.EstimatorBasicAvg;
 import org.apache.sysml.hops.estim.EstimatorBasicWorst;
 import org.apache.sysml.hops.estim.EstimatorBitsetMM;
+import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -49,17 +50,6 @@ public class OpSingleTest extends AutomatedTestBase
 		//do  nothing
 	}
 	
-	//Average Case
-//	@Test
-//	public void testAvgEqzero() {
-//		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, eqzero);
-//	}
-	
-//	@Test
-//	public void testAvgDiag() {
-//		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, diag);
-//	}
-	
 	@Test
 	public void testAvgNeqzero() {
 		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, neqzero);
@@ -74,95 +64,36 @@ public class OpSingleTest extends AutomatedTestBase
 	public void testAvgReshape() {
 		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, reshape);
 	}
-	
-	//Worst Case
-//	@Test
-//	public void testWorstEqzero() {
-//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, eqzero);
-//	}
-	
-//	@Test
-//	public void testWCasediag() {
-//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, diag);
-//	}
-	
+
 	@Test
-	public void testWorstNeqzero() {
+	public void testWCNeqzero() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, neqzero);
 	}
 	
 	@Test
-	public void testWoestTrans() {
+	public void testWCTrans() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, trans);
 	}
 	
 	@Test
-	public void testWorstReshape() {
+	public void testWCReshape() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, reshape);
 	} 
 	
-//	//DensityMap
-//	@Test
-//	public void testDMCaseeqzero() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, eqzero);
-//	}
-//	
-//	@Test
-//	public void testDMCasediag() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, diag);
-//	}
-//	
-//	@Test
-//	public void testDMCaseneqzero() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, neqzero);
-//	}
-//	
-//	@Test
-//	public void testDMCasetrans() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, trans);
-//	}
-//		
-//	@Test
-//	public void testDMCasereshape() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, reshape);
-//	}
-//	
-//	//MNC
-//	@Test
-//	public void testMNCCaseeqzero() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, eqzero);
-//	}
-//	
-//	@Test
-//	public void testMNCCasediag() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, diag);
-//	}
-//	
-//	@Test
-//	public void testMNCCaseneqzero() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, neqzero);
-//	}
-//	
-//	@Test
-//	public void testMNCCasetrans() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, trans);
-//	}
-//	
-//	@Test
-//	public void testMNCCasereshape() {
-//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, reshape);
-//	}
-//	
-	//Bitset
-//	@Test
-//	public void testBitsetCaseeqzero() {
-//		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, eqzero);
-//	}
+	@Test
+	public void testDMapNeqzero() {
+		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, neqzero);
+	}
 	
-//	@Test
-//	public void testBitsetCasediag() {
-//		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, diag);
-//	}
+	@Test
+	public void testDMapTrans() {
+		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, trans);
+	}
+	
+	@Test
+	public void testDMapReshape() {
+		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, reshape);
+	}	
 	
 	@Test
 	public void testBitsetNeqzero() {
@@ -178,58 +109,6 @@ public class OpSingleTest extends AutomatedTestBase
 	public void testBitsetReshape() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, reshape);
 	}
-	
-//	//Layered Graph
-//	@Test
-//	public void testLGCaseeqzero() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, eqzero);
-//	}
-//	
-//	@Test
-//	public void testLGCasediag() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
-//	}
-//	
-//	@Test
-//	public void testLGCaseneqzero() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, neqzero);
-//	}
-//	
-//	@Test
-//	public void testLGCasetans() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, trans);
-//	}
-//	
-//	@Test
-//	public void testLGCasereshape() {
-//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, reshape);
-//	}
-//	
-//	//Sample
-//	@Test
-//	public void testSampleCaseeqzero() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, eqzero);
-//	}
-//	
-//	@Test
-//	public void testSampleCasediag() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, diag);
-//	}
-//	
-//	@Test
-//	public void testSampleCaseneqzero() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, neqzero);
-//	}
-//	
-//	@Test
-//	public void testSampleCasetrans() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, trans);
-//	}
-//	
-//	@Test
-//	public void testSampleCasereshape() {
-//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, reshape);
-//	}
 	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
@@ -255,6 +134,6 @@ public class OpSingleTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m2.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
+		TestUtils.compareScalars(est, m2.getSparsity(), 0);
 	}
 }

@@ -23,6 +23,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DenseBlock;
+import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.UtilFunctions;
@@ -81,10 +82,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();
+			return estimExactMetaData(m1.getMatrixCharacteristics(), m2 != null ?
+				m2.getMatrixCharacteristics() : null, op).getSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
-		DensityMap m2Map = (m1 == m2) ? //self product
+		DensityMap m2Map = (m1 == m2 || m2 == null) ? //self product
 			m1Map : new DensityMap(m2, _b);
 		DensityMap outMap = estimIntern(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity( //aggregate output histogram
@@ -105,18 +106,19 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 */
 	private DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {
 		switch(op) {
-			case MM:   return estimInternMM(m1Map, m2Map);
-			case MULT: return estimInternMult(m1Map, m2Map);
-			case PLUS: return estimInternPlus(m1Map, m2Map);
+			case MM:      return estimInternMM(m1Map, m2Map);
+			case MULT:    return estimInternMult(m1Map, m2Map);
+			case PLUS:    return estimInternPlus(m1Map, m2Map);
+			case NEQZERO: return m1Map;
+			case EQZERO:  return estimInternEqZero(m1Map);
 			
 			case RBIND:
 			case CBIND:
 				//TODO simple append not possible due to partial blocks at end of m1Map
 			
-			case TRANS:
-			case DIAG:
-			case RESHAPE:
-				//TODO add missing estimators
+			case TRANS:   return estimInternTrans(m1Map);
+			case DIAG:    return estimInternDiag(m1Map);
+			case RESHAPE: return estimInternReshape(m1Map);
 			default:
 				throw new NotImplementedException();
 		}
@@ -180,6 +182,40 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumColumnsOrig(), _b, true);
 	}
 	
+	private DensityMap estimInternTrans(DensityMap m1Map) {
+		MatrixBlock out = LibMatrixReorg.transpose(m1Map.getMap(), 
+			new MatrixBlock(m1Map.getNumColumns(), m1Map.getNumRows(), false));
+		return new DensityMap(out, m1Map.getNumColumnsOrig(),
+			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
+	}
+	
+	private DensityMap estimInternDiag(DensityMap m1Map) {
+		if( m1Map.getNumColumnsOrig() > 1 )
+			throw new NotImplementedException();
+		m1Map.toNnz();
+		MatrixBlock out = LibMatrixReorg.diag(m1Map.getMap(), 
+			new MatrixBlock(m1Map.getNumRows(), m1Map.getNumRows(), false));
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
+	}
+	
+	private DensityMap estimInternReshape(DensityMap m1Map) {
+		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNonZeros());
+		int b = Math.max(m1Map.getNumRowsOrig(), m1Map.getNumColumnsOrig());
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumColumnsOrig(), b, false);
+	}
+	
+	private DensityMap estimInternEqZero(DensityMap m1Map) {
+		MatrixBlock out = new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), false);
+		m1Map.toSparsity();
+		for(int i=0; i<m1Map.getNumRows(); i++)
+			for(int j=0; j<m1Map.getNumColumns(); j++)
+				out.quickSetValue(i, j, 1-m1Map.get(i, j));
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
+	}
+	
 	public static class DensityMap {
 		private final MatrixBlock _map;
 		private final int _rlen;
@@ -205,6 +241,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_scaled = scaled;
 			if( !isPow2(_b) )
 				throw new RuntimeException("Invalid block size: "+_b);
+		}
+		
+		public MatrixBlock getMap() {
+			return _map;
 		}
 		
 		public int getNumRows() {

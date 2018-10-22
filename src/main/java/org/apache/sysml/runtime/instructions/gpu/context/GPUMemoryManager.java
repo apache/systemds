@@ -429,7 +429,6 @@ public class GPUMemoryManager {
 		else {
 			throw new RuntimeException("ERROR : Internal state corrupted, attempting to free an unaccounted pointer:" + toFree);
 		}
-
 	}
 	
 	/**
@@ -521,10 +520,18 @@ public class GPUMemoryManager {
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
-		Set<Pointer> unlockedDirtyPointers = matrixMemoryManager.getPointers(false, true);
+		Set<Pointer> unlockedDirtyPointers = matrixMemoryManager.getPointers(false, true, false);
 		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), unlockedDirtyPointers);
-		for(Pointer tmpPtr : temporaryPointers) {
+		for (Pointer tmpPtr : temporaryPointers) {
 			guardedCudaFree(tmpPtr);
+		}
+
+		// Also set the pointer(s) to null in the corresponding GPU objects to avoid double freeing pointers
+		Set<GPUObject> gObjs = matrixMemoryManager.getGpuObjects(temporaryPointers);
+		for (GPUObject g : gObjs) {
+			g.jcudaDenseMatrixPtr = null;
+			g.jcudaSparseMatrixPtr = null;
+			removeGPUObject(g);
 		}
 	}
 	

@@ -164,7 +164,7 @@ public class DenseBlockLDRB extends DenseBlock
 				nnz += UtilFunctions.computeNnz(data[bi], lpos, len);
 			else
 				for(int i=lpos; i<lpos+len; i+=clen)
-					nnz += UtilFunctions.computeNnz(data[i], i+cl, cu-cl);
+					nnz += UtilFunctions.computeNnz(data[bi], i+cl, cu-cl);
 		}
 		return nnz;
 	}

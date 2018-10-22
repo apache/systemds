@@ -46,14 +46,11 @@ public class EstimatorBitsetMM extends SparsityEstimator
 {
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		// recursive density map computation of non-leaf nodes
-		if (!root.getLeft().isLeaf())
-			estim(root.getLeft()); // obtain synopsis
-		if (!root.getRight().isLeaf())
-			estim(root.getRight()); // obtain synopsis
+		estimateInputs(root);
 		BitsetMatrix m1Map = !root.getLeft().isLeaf() ? (BitsetMatrix) root.getLeft().getSynopsis() :
 			new BitsetMatrix1(root.getLeft().getData());
-		BitsetMatrix m2Map = !root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :
+		BitsetMatrix m2Map = root.getRight() == null ? null :
+			!root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :
 			new BitsetMatrix1(root.getRight().getData());
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix

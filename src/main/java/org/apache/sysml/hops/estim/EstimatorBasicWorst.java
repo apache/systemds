@@ -36,10 +36,15 @@ public class EstimatorBasicWorst extends SparsityEstimator
 {
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
+		if (!root.getLeft().isLeaf())
+			estim(root.getLeft()); // obtain synopsis
+		if (root.getRight()!=null && !root.getRight().isLeaf())
+			estim(root.getRight()); // obtain synopsis
 		MatrixCharacteristics mc1 = !root.getLeft().isLeaf() ?
 			estim(root.getLeft()) : root.getLeft().getMatrixCharacteristics();
-		MatrixCharacteristics mc2 = !root.getRight().isLeaf() ?
-			estim(root.getRight()) : root.getRight().getMatrixCharacteristics();
+		MatrixCharacteristics mc2 = root.getRight()==null ? null :
+			!root.getRight().isLeaf() ? estim(root.getRight()) : 
+			root.getRight().getMatrixCharacteristics();
 		return root.setMatrixCharacteristics(
 			estimIntern(mc1, mc2, root.getOp()));
 	}

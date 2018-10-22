@@ -55,15 +55,12 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		//recursive density map computation of non-leaf nodes
-		if( !root.getLeft().isLeaf() )
-			estim(root.getLeft()); //obtain synopsis
-		if( !root.getRight().isLeaf() )
-			estim(root.getRight()); //obtain synopsis
+		estimateInputs(root);
 		DensityMap m1Map = !root.getLeft().isLeaf() ?
 			(DensityMap)root.getLeft().getSynopsis() : 
 			new DensityMap(root.getLeft().getData(), _b);
-		DensityMap m2Map = !root.getRight().isLeaf() ?
+		DensityMap m2Map = root.getRight()==null ? null:
+			!root.getRight().isLeaf() ? 
 			(DensityMap)root.getRight().getSynopsis() :
 			new DensityMap(root.getRight().getData(), _b);
 		
@@ -71,7 +68,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
-			root.getLeft().getRows(), root.getRight().getCols(), outMap.getNonZeros()));
+			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
 	}
 
 	@Override
@@ -230,7 +227,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_map = init(in);
 			_scaled = false;
 			if( !isPow2(_b) )
-				throw new RuntimeException("Invalid block size: "+_b);
+				System.out.println("WARN: Invalid block size: "+_b);
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
@@ -240,7 +237,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_map = map;
 			_scaled = scaled;
 			if( !isPow2(_b) )
-				throw new RuntimeException("Invalid block size: "+_b);
+				System.out.println("WARN: Invalid block size: "+_b);
 		}
 		
 		public MatrixBlock getMap() {

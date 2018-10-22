@@ -68,6 +68,14 @@ public class MMNode
 		this(left, null, op, misc);
 	}
 	
+	public void reset() {
+		if( _m1 != null )
+			_m1.reset();
+		if( _m2 != null )
+			_m2.reset();
+		_synops = null;
+	}
+	
 	public int getRows() {
 		return (int)_mc.getRows();
 	}

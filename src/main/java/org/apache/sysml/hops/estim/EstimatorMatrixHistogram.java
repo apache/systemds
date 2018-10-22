@@ -59,7 +59,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	private MatrixCharacteristics estim(MMNode root, boolean topLevel) {
-		//recursive histogram computation of non-leaf nodes
+		//NOTE: not estimateInputs due to handling of topLevel
 		if( !root.getLeft().isLeaf() )
 			estim(root.getLeft(), false); //obtain synopsis
 		if( root.getRight()!=null && !root.getRight().isLeaf() )

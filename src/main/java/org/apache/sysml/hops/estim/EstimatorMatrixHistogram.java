@@ -110,7 +110,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		return estimIntern(h1, null, op, null);
 	}
 	
-	private double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op, long[] misc) {
+	public double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op, long[] misc) {
 		double msize = (double)h1.getRows()*h1.getCols();
 		switch (op) {
 			case MM:
@@ -184,7 +184,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		//general case with approximate output
 		else {
-			long mnOut = (long)h1.getRows()*h2.getCols();
+			long mnOut = (long)h1.rNonEmpty*h2.cNonEmpty;
 			double spOut = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				double lsp = (double) h1.cNnz[j] * h2.rNnz[j] / mnOut;
@@ -312,8 +312,11 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			rMaxNnz = rmax;
 			cMaxNnz = cmax;
 			rN1 = cN1 = -1;
-			rNonEmpty = cNonEmpty = -1;
 			rNdiv2 = cNdiv2 = -1;
+			
+			//update non-zero rows/cols
+			rNonEmpty = (int)Arrays.stream(rNnz).filter(i -> i!=0).count();
+			cNonEmpty = (int)Arrays.stream(cNnz).filter(i -> i!=0).count();
 		}
 		
 		public int getRows() {

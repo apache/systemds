@@ -101,7 +101,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 * @param m2Map density map right-hand-side operand
 	 * @return density map
 	 */
-	private DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {
+	public DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {
 		switch(op) {
 			case MM:      return estimInternMM(m1Map, m2Map);
 			case MULT:    return estimInternMult(m1Map, m2Map);

@@ -41,16 +41,16 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 public class EstimatorMatrixHistogram extends SparsityEstimator
 {
 	//internal configurations
-	private static final boolean DEFAULT_USE_EXCEPTS = true;
+	private static final boolean DEFAULT_USE_EXTENDED = true;
 	
-	private final boolean _useExcepts;
+	private final boolean _useExtended;
 	
 	public EstimatorMatrixHistogram() {
-		this(DEFAULT_USE_EXCEPTS);
+		this(DEFAULT_USE_EXTENDED);
 	}
 	
-	public EstimatorMatrixHistogram(boolean useExcepts) {
-		_useExcepts = useExcepts;
+	public EstimatorMatrixHistogram(boolean useExtended) {
+		_useExtended = useExtended;
 	}
 	
 	@Override
@@ -66,10 +66,10 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			estim(root.getRight(), false); //obtain synopsis
 		MatrixHistogram h1 = !root.getLeft().isLeaf() ?
 			(MatrixHistogram)root.getLeft().getSynopsis() :
-			new MatrixHistogram(root.getLeft().getData(), _useExcepts);
+			new MatrixHistogram(root.getLeft().getData(), _useExtended);
 		MatrixHistogram h2 = root.getRight() != null ? !root.getRight().isLeaf() ?
 			(MatrixHistogram)root.getRight().getSynopsis() :
-			new MatrixHistogram(root.getRight().getData(), _useExcepts) : null;
+			new MatrixHistogram(root.getRight().getData(), _useExtended) : null;
 		
 		//estimate output sparsity based on input histograms
 		double ret = estimIntern(h1, h2, root.getOp(), root.getMisc());
@@ -96,9 +96,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
 				m2.getMatrixCharacteristics(), op).getSparsity();
-		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
+		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
-			h1 : new MatrixHistogram(m2, _useExcepts);
+			h1 : new MatrixHistogram(m2, _useExtended);
 		return estimIntern(h1, h2, op, null);
 	}
 	
@@ -106,7 +106,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(), null, op).getSparsity();
-		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
+		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
 	}
 	
@@ -169,7 +169,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			//note: normally h1.getRows()*h2.getCols() would define mnOut
 			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
 			//that exact and approximate fractions touch different areas
-			long mnOut = (long)(h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
+			long mnOut = _useExtended ?
+				(long)(h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1) :
+				(long)(h1.getRows()-h1.rN1) * (h2.getCols()-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				//exact fractions, w/o double counting
@@ -184,7 +186,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		//general case with approximate output
 		else {
-			long mnOut = (long)h1.rNonEmpty*h2.cNonEmpty;
+			long mnOut = _useExtended ?
+				(long)h1.rNonEmpty * h2.cNonEmpty :
+				(long)h1.getRows() * h2.getCols();
 			double spOut = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				double lsp = (double) h1.cNnz[j] * h2.rNnz[j] / mnOut;
@@ -193,12 +197,9 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			nnz = (long)(spOut * mnOut);
 		}
 		
-		if( _useExcepts ) {
-			//exploit upper bound on nnz based on non-empty rows/cols
-			nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
-				Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
-			
+		if( _useExtended ) {
 			//exploit lower bound on nnz based on half-full rows/cols
+			//note: upper bound applied via modified output sizes
 			nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
 				Math.max((long)h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
 		}

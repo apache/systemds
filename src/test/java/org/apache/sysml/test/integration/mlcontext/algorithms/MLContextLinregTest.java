@@ -19,12 +19,12 @@
 
 package org.apache.sysml.test.integration.mlcontext.algorithms;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import org.apache.log4j.Logger;
-import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.Script;
 
 public class MLContextLinregTest extends MLContextTestBase {
 	protected static Logger log = Logger.getLogger(MLContextLinregTest.class);

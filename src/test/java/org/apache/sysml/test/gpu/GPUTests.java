@@ -28,21 +28,21 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLResults;
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.api.mlcontext.ScriptFactory;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContext;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.utils.Statistics;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.tugraz.sysds.api.mlcontext.MLContext;
+import org.tugraz.sysds.api.mlcontext.MLResults;
+import org.tugraz.sysds.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.api.mlcontext.ScriptFactory;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
+import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.utils.Statistics;
 
 /**
  * Parent class for all GPU tests

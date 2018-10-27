@@ -21,20 +21,20 @@ package org.apache.sysml.test.integration.functions.frame;
 
 import java.lang.reflect.Method;
 
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysml.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysml.runtime.controlprogram.caching.LazyWriteBuffer;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.MetaDataFormat;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
+import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
+import org.tugraz.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class FrameEvictionTest extends AutomatedTestBase
 {

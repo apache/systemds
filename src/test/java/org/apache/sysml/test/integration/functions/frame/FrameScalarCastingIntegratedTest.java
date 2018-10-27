@@ -21,16 +21,15 @@ package org.apache.sysml.test.integration.functions.frame;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysml.runtime.util.MapReduceTool;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 {

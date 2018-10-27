@@ -21,23 +21,23 @@ package org.apache.sysml.test.integration.functions.frame;
 
 import java.io.IOException;
 
-import org.apache.sysml.conf.CompilerConfig;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysml.runtime.io.FrameReader;
-import org.apache.sysml.runtime.io.FrameReaderFactory;
-import org.apache.sysml.runtime.io.FrameWriter;
-import org.apache.sysml.runtime.io.FrameWriterFactory;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.tugraz.sysds.runtime.io.FrameReader;
+import org.tugraz.sysds.runtime.io.FrameReaderFactory;
+import org.tugraz.sysds.runtime.io.FrameWriter;
+import org.tugraz.sysds.runtime.io.FrameWriterFactory;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class FrameReadWriteTest extends AutomatedTestBase
 {

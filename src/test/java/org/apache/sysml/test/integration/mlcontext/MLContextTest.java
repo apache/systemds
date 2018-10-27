@@ -19,12 +19,12 @@
 
 package org.apache.sysml.test.integration.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromInputStream;
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromLocalFile;
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromUrl;
 import static org.junit.Assert.assertTrue;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromInputStream;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromLocalFile;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromUrl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,24 +55,24 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.mlcontext.MLContextConversionUtil;
-import org.apache.sysml.api.mlcontext.MLContextException;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
-import org.apache.sysml.api.mlcontext.MLResults;
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.MatrixFormat;
-import org.apache.sysml.api.mlcontext.MatrixMetadata;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.api.mlcontext.ScriptExecutor;
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.MLContextConversionUtil;
+import org.tugraz.sysds.api.mlcontext.MLContextException;
+import org.tugraz.sysds.api.mlcontext.MLContextUtil;
+import org.tugraz.sysds.api.mlcontext.MLResults;
+import org.tugraz.sysds.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.MatrixFormat;
+import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.api.mlcontext.ScriptExecutor;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.utils.Statistics;
 
 import scala.Tuple1;
 import scala.Tuple2;
@@ -171,7 +171,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - execute DML script");
 		String testString = "hello dml world!";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');", org.tugraz.sysds.api.mlcontext.ScriptType.DML);
 		ml.execute(script);
 	}
 
@@ -260,7 +260,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - custom execution step DML");
 		String testString = "custom execution step";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');", org.tugraz.sysds.api.mlcontext.ScriptType.DML);
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
 			@Override
@@ -862,7 +862,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testOneScriptTwoExecutionsDML() {
 		System.out.println("MLContextTest - one script with two executions DML");
 
-		Script script = new Script(org.apache.sysml.api.mlcontext.ScriptType.DML);
+		Script script = new Script(org.tugraz.sysds.api.mlcontext.ScriptType.DML);
 
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1);").in("m1", m1).out("sum1");

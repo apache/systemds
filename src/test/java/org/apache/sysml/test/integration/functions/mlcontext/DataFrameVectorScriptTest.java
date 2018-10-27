@@ -19,7 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,21 +36,21 @@ import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.mlcontext.FrameFormat;
-import org.apache.sysml.api.mlcontext.FrameMetadata;
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.integration.mlcontext.MLContextTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.FrameFormat;
+import org.tugraz.sysds.api.mlcontext.FrameMetadata;
+import org.tugraz.sysds.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
 public class DataFrameVectorScriptTest extends MLContextTestBase

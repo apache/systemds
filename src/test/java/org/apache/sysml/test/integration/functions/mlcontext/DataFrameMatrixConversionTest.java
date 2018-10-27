@@ -24,22 +24,22 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 
 public class DataFrameMatrixConversionTest extends AutomatedTestBase 

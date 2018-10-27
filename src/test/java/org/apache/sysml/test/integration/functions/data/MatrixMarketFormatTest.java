@@ -20,6 +20,15 @@
 package org.apache.sysml.test.integration.functions.data;
 
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMField;
+import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMFormat;
+import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMSymmetry;
+import org.tugraz.sysds.runtime.matrix.data.IJV;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,15 +38,6 @@ import java.util.Iterator;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMField;
-import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMFormat;
-import org.apache.sysml.runtime.io.FileFormatPropertiesMM.MMSymmetry;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.matrix.data.IJV;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;

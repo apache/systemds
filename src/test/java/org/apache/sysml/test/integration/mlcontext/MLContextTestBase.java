@@ -21,12 +21,12 @@ package org.apache.sysml.test.integration.mlcontext;
 
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.MLContextUtil;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.tugraz.sysds.api.mlcontext.MLContext;
+import org.tugraz.sysds.api.mlcontext.MLContextUtil;
 
 /**
  * Abstract class that can be used for MLContext tests.

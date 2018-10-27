@@ -25,18 +25,18 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.AggBinaryOp;
-import org.apache.sysml.hops.AggBinaryOp.MMultMethod;
-import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.lops.MMTSJ.MMTSJType;
-import org.apache.sysml.runtime.instructions.Instruction;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.hops.AggBinaryOp;
+import org.tugraz.sysds.hops.AggBinaryOp.MMultMethod;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
+import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * This testcase validates the new tsmm2 (spark only) instruction. We test against

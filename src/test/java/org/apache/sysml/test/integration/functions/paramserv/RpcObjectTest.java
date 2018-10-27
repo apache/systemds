@@ -22,13 +22,13 @@ package org.apache.sysml.test.integration.functions.paramserv;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcCall;
-import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
-import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcCall;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcObject;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.rpc.PSRpcResponse;
+import org.tugraz.sysds.runtime.instructions.cp.ListObject;
 
 public class RpcObjectTest {
 

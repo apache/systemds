@@ -20,8 +20,8 @@
 package org.apache.sysml.test.integration.functions.io.matrixmarket;
 
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.conf.CompilerConfig;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.conf.CompilerConfig;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;

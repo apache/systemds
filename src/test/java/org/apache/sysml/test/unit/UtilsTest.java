@@ -26,10 +26,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.conf.DMLConfig;
+import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 
 /**
  * To test utility functions scattered throughout the codebase

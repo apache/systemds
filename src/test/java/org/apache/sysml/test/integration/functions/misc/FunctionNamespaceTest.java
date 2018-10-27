@@ -24,12 +24,12 @@ import java.io.PrintStream;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.util.MapReduceTool;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.apache.sysml.utils.Statistics;
 
 public class FunctionNamespaceTest extends AutomatedTestBase 
 {

@@ -19,16 +19,16 @@
 
 package org.apache.sysml.test.integration.functions.compress;
 
-import org.apache.sysml.runtime.compress.BitmapEncoder;
-import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.compress.BitmapEncoder;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 
 /**

@@ -21,13 +21,13 @@ package org.apache.sysml.test.integration.functions.transform;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.DMLRuntimeException;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.transform.encode.Encoder;
-import org.apache.sysml.runtime.transform.encode.EncoderFactory;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.transform.encode.Encoder;
+import org.tugraz.sysds.runtime.transform.encode.EncoderFactory;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

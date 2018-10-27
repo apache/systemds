@@ -19,15 +19,15 @@
 
 package org.apache.sysml.test.integration.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
-import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
-import org.apache.sysml.api.mlcontext.MLResults;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.MLResults;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.tugraz.sysds.conf.DMLConfig;
 
 public class MLContextOptLevelTest extends MLContextTestBase
 {

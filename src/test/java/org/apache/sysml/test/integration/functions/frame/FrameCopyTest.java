@@ -19,14 +19,14 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.cp.AppendCPInstruction.AppendType;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.instructions.cp.AppendCPInstruction.AppendType;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class FrameCopyTest extends AutomatedTestBase
 {

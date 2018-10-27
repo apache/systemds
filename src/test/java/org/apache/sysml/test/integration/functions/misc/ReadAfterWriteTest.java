@@ -22,8 +22,7 @@ package org.apache.sysml.test.integration.functions.misc;
 import java.util.Random;
 
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLException;
+import org.tugraz.sysds.api.DMLException;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;

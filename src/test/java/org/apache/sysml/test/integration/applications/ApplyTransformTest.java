@@ -28,8 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.runners.Parameterized.Parameters;
-
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 
 public abstract class ApplyTransformTest extends AutomatedTestBase{

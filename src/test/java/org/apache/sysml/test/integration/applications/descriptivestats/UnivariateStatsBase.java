@@ -21,11 +21,11 @@ package org.apache.sysml.test.integration.applications.descriptivestats;
 
 import java.util.HashMap;
 
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 
 /**
  * Shared methods and fields from the different univariate stats test harness

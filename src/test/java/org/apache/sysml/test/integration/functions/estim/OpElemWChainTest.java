@@ -20,18 +20,18 @@
 package org.apache.sysml.test.integration.functions.estim;
 
 import org.junit.Test;
-import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.tugraz.sysds.hops.estim.EstimatorBasicAvg;
+import org.tugraz.sysds.hops.estim.EstimatorBasicWorst;
+import org.tugraz.sysds.hops.estim.EstimatorBitsetMM;
+import org.tugraz.sysds.hops.estim.MMNode;
+import org.tugraz.sysds.hops.estim.SparsityEstimator;
+import org.tugraz.sysds.hops.estim.SparsityEstimator.OpCode;
+import org.tugraz.sysds.runtime.functionobjects.Multiply;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysml.hops.estim.EstimatorBasicAvg;
-import org.apache.sysml.hops.estim.EstimatorBasicWorst;
-import org.apache.sysml.hops.estim.EstimatorBitsetMM;
-import org.apache.sysml.hops.estim.MMNode;
-import org.apache.sysml.hops.estim.SparsityEstimator;
-import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
-import org.apache.sysml.runtime.functionobjects.Multiply;
-import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

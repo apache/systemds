@@ -19,7 +19,7 @@
 
 package org.apache.sysml.test.integration.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,21 +34,21 @@ import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.sysml.api.mlcontext.FrameFormat;
-import org.apache.sysml.api.mlcontext.FrameMetadata;
-import org.apache.sysml.api.mlcontext.FrameSchema;
-import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
-import org.apache.sysml.api.mlcontext.MLResults;
-import org.apache.sysml.api.mlcontext.MatrixFormat;
-import org.apache.sysml.api.mlcontext.MatrixMetadata;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysml.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.FrameFormat;
+import org.tugraz.sysds.api.mlcontext.FrameMetadata;
+import org.tugraz.sysds.api.mlcontext.FrameSchema;
+import org.tugraz.sysds.api.mlcontext.MLResults;
+import org.tugraz.sysds.api.mlcontext.MatrixFormat;
+import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
+import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 
 import scala.collection.Iterator;
 

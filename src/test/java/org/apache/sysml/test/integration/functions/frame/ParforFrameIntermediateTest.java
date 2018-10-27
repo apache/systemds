@@ -19,17 +19,17 @@
 
 package org.apache.sysml.test.integration.functions.frame;
 
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.io.FrameWriterFactory;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.io.FrameWriterFactory;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class ParforFrameIntermediateTest extends AutomatedTestBase
 {

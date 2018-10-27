@@ -24,15 +24,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.api.jmlc.ResultVariables;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.api.jmlc.ResultVariables;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 public class NamespaceFunctionTest extends AutomatedTestBase 
 {

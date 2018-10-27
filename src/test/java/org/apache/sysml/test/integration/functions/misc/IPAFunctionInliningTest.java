@@ -22,13 +22,13 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 public class IPAFunctionInliningTest extends AutomatedTestBase 
 {

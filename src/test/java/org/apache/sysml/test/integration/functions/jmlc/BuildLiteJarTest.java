@@ -20,8 +20,8 @@
 package org.apache.sysml.test.integration.functions.jmlc;
 
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.utils.lite.BuildLiteExecution;
 import org.junit.Test;
+import org.tugraz.sysds.utils.lite.BuildLiteExecution;
 
 public class BuildLiteJarTest extends AutomatedTestBase 
 {

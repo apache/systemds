@@ -19,18 +19,18 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysml.runtime.io.FrameReader;
-import org.apache.sysml.runtime.io.FrameReaderFactory;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.tugraz.sysds.runtime.io.FrameReader;
+import org.tugraz.sysds.runtime.io.FrameReaderFactory;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class TransformFrameEncodeColmapTest extends AutomatedTestBase 
 {

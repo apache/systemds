@@ -23,10 +23,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.sysml.api.mlcontext.Matrix;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.Matrix;
 
 /**
  * Tests scalar-matrix element wise operations on the GPU

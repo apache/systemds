@@ -19,11 +19,11 @@
 
 package org.apache.sysml.test.integration.functions.misc;
 
-import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.parser.Expression.ValueType;
 
 public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 {	

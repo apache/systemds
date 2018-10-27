@@ -21,12 +21,12 @@ package org.apache.sysml.test.integration.functions.paramserv;
 
 import java.util.stream.IntStream;
 
-import org.apache.sysml.parser.Statement;
-import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.parser.Statement;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.LocalDataPartitioner;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public abstract class BaseDataPartitionerTest {
 

@@ -24,12 +24,12 @@ import java.util.Map;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.ParseException;
-import org.apache.sysml.api.DMLOptions;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.mlcontext.ScriptType;
-import org.apache.sysml.utils.Explain;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLOptions;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.mlcontext.ScriptType;
+import org.tugraz.sysds.utils.Explain;
 
 
 public class CLIOptionsParserTest {

@@ -23,12 +23,12 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.conf.CompilerConfig;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.apache.sysml.utils.Statistics;
 
 public class PredicateRecompileTest extends AutomatedTestBase 
 {

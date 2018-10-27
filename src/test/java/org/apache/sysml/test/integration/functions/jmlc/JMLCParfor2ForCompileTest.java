@@ -23,12 +23,12 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.utils.Statistics;
 
 public class JMLCParfor2ForCompileTest extends AutomatedTestBase 
 {

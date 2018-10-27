@@ -20,8 +20,7 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
-import org.apache.sysml.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.OptimizerUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

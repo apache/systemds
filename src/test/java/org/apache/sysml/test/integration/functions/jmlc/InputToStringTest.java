@@ -19,13 +19,13 @@
 
 package org.apache.sysml.test.integration.functions.jmlc;
 
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class InputToStringTest extends AutomatedTestBase 
 {

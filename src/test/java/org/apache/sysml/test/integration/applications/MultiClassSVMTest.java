@@ -26,8 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
-
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

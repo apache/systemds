@@ -21,11 +21,11 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.conf.CompilerConfig;
-import org.apache.sysml.hops.OptimizerUtils;
+import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
-import org.apache.sysml.utils.Statistics;
 
 public class RandRecompileTest extends AutomatedTestBase 
 {

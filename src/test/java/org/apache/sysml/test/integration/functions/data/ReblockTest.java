@@ -20,8 +20,7 @@
 package org.apache.sysml.test.integration.functions.data;
 
 import org.junit.Test;
-
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

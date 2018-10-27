@@ -22,13 +22,13 @@ package org.apache.sysml.test.integration.functions.jmlc;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 
 /**
  * Test input and output capabilities of JMLC API.

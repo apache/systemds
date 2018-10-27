@@ -22,13 +22,12 @@ package org.apache.sysml.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PExecMode;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;

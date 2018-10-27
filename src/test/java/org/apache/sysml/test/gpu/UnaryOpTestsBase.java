@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.sysml.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.Matrix;
 
 /**
  * Abstract class for all Unary Op tests

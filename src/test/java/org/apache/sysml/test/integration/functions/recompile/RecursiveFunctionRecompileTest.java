@@ -21,17 +21,17 @@ package org.apache.sysml.test.integration.functions.recompile;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.MapReduceTool;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * This test ensures that recursive functions are not marked for recompile-once 

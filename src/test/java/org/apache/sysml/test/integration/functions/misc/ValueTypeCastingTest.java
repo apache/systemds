@@ -21,12 +21,11 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.runtime.util.MapReduceTool;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

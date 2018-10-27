@@ -20,10 +20,9 @@
 package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
-
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.junit.Assert;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;

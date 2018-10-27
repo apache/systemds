@@ -24,10 +24,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Map;
-import org.apache.sysml.runtime.DMLRuntimeException;
+
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 
 /**
  * To run Python tests, please:

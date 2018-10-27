@@ -20,14 +20,14 @@
 package org.apache.sysml.test.integration.functions.estim;
 
 import org.junit.Test;
+import org.tugraz.sysds.hops.estim.EstimatorBasicAvg;
+import org.tugraz.sysds.hops.estim.EstimatorBasicWorst;
+import org.tugraz.sysds.hops.estim.EstimatorBitsetMM;
+import org.tugraz.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.tugraz.sysds.hops.estim.SparsityEstimator;
+import org.tugraz.sysds.hops.estim.SparsityEstimator.OpCode;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysml.hops.estim.EstimatorBasicAvg;
-import org.apache.sysml.hops.estim.EstimatorBasicWorst;
-import org.apache.sysml.hops.estim.EstimatorBitsetMM;
-import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
-import org.apache.sysml.hops.estim.SparsityEstimator;
-import org.apache.sysml.hops.estim.SparsityEstimator.OpCode;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

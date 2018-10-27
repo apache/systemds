@@ -19,25 +19,25 @@
 
 package org.apache.sysml.test.integration.functions.codegen;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.conf.CompilerConfig.ConfigType;
-import org.apache.sysml.conf.DMLConfig;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.utils.Statistics;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.api.mlcontext.MLContext;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.conf.DMLConfig;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.utils.Statistics;
 
 
 public class APICodegenTest extends AutomatedTestBase

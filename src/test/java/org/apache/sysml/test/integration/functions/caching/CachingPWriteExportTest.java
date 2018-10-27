@@ -21,11 +21,11 @@ package org.apache.sysml.test.integration.functions.caching;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.hops.Hop;
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.hops.Hop;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

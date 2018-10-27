@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.util.LocalFileUtils;
 
 /**
  *   

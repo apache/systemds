@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.sysml.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.instructions.InstructionUtils;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 

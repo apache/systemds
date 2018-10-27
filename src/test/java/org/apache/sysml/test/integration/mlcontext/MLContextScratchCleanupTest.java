@@ -19,20 +19,20 @@
 
 package org.apache.sysml.test.integration.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dmlFromFile;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import java.io.File;
 
 import org.apache.spark.sql.SparkSession;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.api.mlcontext.MLContext;
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.Script;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.After;
 import org.junit.Test;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.api.mlcontext.MLContext;
+import org.tugraz.sysds.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.Script;
 
 
 public class MLContextScratchCleanupTest extends AutomatedTestBase 

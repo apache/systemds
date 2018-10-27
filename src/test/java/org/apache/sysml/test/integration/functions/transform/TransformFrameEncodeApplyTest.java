@@ -21,15 +21,15 @@ package org.apache.sysml.test.integration.functions.transform;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.runtime.io.MatrixReaderFactory;
-import org.apache.sysml.runtime.matrix.data.InputInfo;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 public class TransformFrameEncodeApplyTest extends AutomatedTestBase 
 {

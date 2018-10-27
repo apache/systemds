@@ -20,9 +20,8 @@
 package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.runtime.functionobjects.Modulus;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

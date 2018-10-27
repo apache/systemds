@@ -22,8 +22,7 @@ package org.apache.sysml.test.integration.applications.descriptivestats;
 import java.util.HashMap;
 
 import org.junit.Test;
-
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 

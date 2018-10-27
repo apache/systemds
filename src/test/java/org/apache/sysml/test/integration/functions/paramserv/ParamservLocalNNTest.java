@@ -19,10 +19,10 @@
 
 package org.apache.sysml.test.integration.functions.paramserv;
 
-import org.apache.sysml.parser.Statement;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Test;
+import org.tugraz.sysds.parser.Statement;
 
 public class ParamservLocalNNTest extends AutomatedTestBase {
 

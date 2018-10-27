@@ -20,12 +20,11 @@
 package org.apache.sysml.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
-import org.apache.sysml.hops.ParameterizedBuiltinOp;
-import org.apache.sysml.lops.LopProperties.ExecType;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

@@ -29,13 +29,13 @@ import java.util.concurrent.Future;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.api.DMLException;
-import org.apache.sysml.api.DMLScript;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.apache.sysml.utils.Statistics;
 
 public class JMLCClonedPreparedScriptTest extends AutomatedTestBase 
 {

@@ -19,22 +19,22 @@
 
 package org.apache.sysml.test.integration.mlcontext;
 
-import static org.apache.sysml.api.mlcontext.ScriptFactory.dml;
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel;
-import org.apache.sysml.api.mlcontext.MLResults;
-import org.apache.sysml.api.mlcontext.Matrix;
-import org.apache.sysml.api.mlcontext.MatrixMetadata;
-import org.apache.sysml.api.mlcontext.Script;
-import org.apache.sysml.conf.ConfigurationManager;
-import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.mlcontext.MLResults;
+import org.tugraz.sysds.api.mlcontext.Matrix;
+import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class MLContextOutputBlocksizeTest extends MLContextTestBase
 {

@@ -19,14 +19,14 @@
 
 package org.apache.sysml.test.integration.functions.compress;
 
-import org.apache.sysml.lops.MapMultChain.ChainType;
-import org.apache.sysml.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
+import org.tugraz.sysds.lops.MapMultChain.ChainType;
+import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
+import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 /**
  * 

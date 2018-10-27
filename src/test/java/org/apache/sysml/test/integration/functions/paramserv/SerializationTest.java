@@ -21,14 +21,14 @@ package org.apache.sysml.test.integration.functions.paramserv;
 
 import java.util.Arrays;
 
-import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
-import org.apache.sysml.runtime.instructions.cp.IntObject;
-import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.ProgramConverter;
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.tugraz.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.tugraz.sysds.runtime.instructions.cp.IntObject;
+import org.tugraz.sysds.runtime.instructions.cp.ListObject;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.util.ProgramConverter;
 
 public class SerializationTest {
 

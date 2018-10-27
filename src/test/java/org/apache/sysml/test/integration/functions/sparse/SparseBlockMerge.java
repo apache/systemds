@@ -21,10 +21,10 @@ package org.apache.sysml.test.integration.functions.sparse;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlockFactory;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlockFactory;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

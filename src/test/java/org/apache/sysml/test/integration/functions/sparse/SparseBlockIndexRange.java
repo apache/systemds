@@ -24,13 +24,13 @@ import java.util.Iterator;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysml.runtime.matrix.data.IJV;
-import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlock;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCOO;
-import org.apache.sysml.runtime.matrix.data.SparseBlockCSR;
-import org.apache.sysml.runtime.matrix.data.SparseBlockMCSR;
-import org.apache.sysml.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.matrix.data.IJV;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlockCOO;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlockCSR;
+import org.tugraz.sysds.runtime.matrix.data.SparseBlockMCSR;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

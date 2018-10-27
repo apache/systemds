@@ -20,8 +20,7 @@
 package org.apache.sysml.test.integration.applications.descriptivestats;
 
 import org.junit.Test;
-
-import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 
 
 /**

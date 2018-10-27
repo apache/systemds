@@ -23,15 +23,14 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.apache.sysml.hops.OptimizerUtils;
-import org.apache.sysml.lops.LeftIndex;
-import org.apache.sysml.lops.RightIndex;
-import org.apache.sysml.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.lops.LeftIndex;
+import org.tugraz.sysds.lops.RightIndex;
+import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
-import org.apache.sysml.utils.Statistics;
 
 /**
  * INTERESTING NOTE: see MINUS_RIGHT; if '(X+1)-X' instead of '(X+2)-X'

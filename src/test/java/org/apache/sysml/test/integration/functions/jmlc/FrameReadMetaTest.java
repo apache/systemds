@@ -27,17 +27,17 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.tugraz.sysds.api.jmlc.Connection;
+import org.tugraz.sysds.api.jmlc.PreparedScript;
+import org.tugraz.sysds.api.jmlc.ResultVariables;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.transform.TfUtils;
+import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysml.api.jmlc.Connection;
-import org.apache.sysml.api.jmlc.PreparedScript;
-import org.apache.sysml.api.jmlc.ResultVariables;
-import org.apache.sysml.lops.Lop;
-import org.apache.sysml.runtime.io.IOUtilFunctions;
-import org.apache.sysml.runtime.matrix.data.FrameBlock;
-import org.apache.sysml.runtime.transform.TfUtils;
-import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

@@ -24,8 +24,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import org.apache.sysml.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.MapReduceTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

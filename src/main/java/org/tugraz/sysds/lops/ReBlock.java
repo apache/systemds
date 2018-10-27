@@ -19,10 +19,10 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -50,16 +50,8 @@ public class ReBlock extends Lop
 		
 		_outputEmptyBlocks = outputEmptyBlocks;
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		
-		lps.addCompatibility(JobType.REBLOCK);
-		
-		if(et == ExecType.MR) 
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-		else if(et == ExecType.SPARK) 
-			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		if(et == ExecType.SPARK) 
+			lps.setProperties(inputs, ExecType.SPARK);
 		else 
 			throw new LopsException("Incorrect execution type for Reblock:" + et);
 	}

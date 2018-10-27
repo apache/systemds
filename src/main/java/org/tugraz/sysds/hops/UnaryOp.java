@@ -22,22 +22,16 @@ package org.tugraz.sysds.hops;
 import java.util.ArrayList;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.lops.Aggregate;
-import org.tugraz.sysds.lops.CombineUnary;
 import org.tugraz.sysds.lops.CumulativeOffsetBinary;
 import org.tugraz.sysds.lops.CumulativePartialAggregate;
-import org.tugraz.sysds.lops.CumulativeSplitAggregate;
 import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.PartialAggregate;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
@@ -154,11 +148,7 @@ public class UnaryOp extends MultiThreadedHop
 				if( isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU) )  
 				{
 					//TODO additional physical operation if offsets fit in memory
-					Lop cumsumLop = null;
-					if( et == ExecType.MR )
-						cumsumLop = constructLopsMRCumulativeUnary();
-					else
-						cumsumLop = constructLopsSparkCumulativeUnary();
+					Lop cumsumLop = constructLopsSparkCumulativeUnary();
 					setLops(cumsumLop);
 				}
 				else //default unary 
@@ -189,67 +179,30 @@ public class UnaryOp extends MultiThreadedHop
 	{
 		ExecType et = optFindExecType();
 
-		if ( et == ExecType.MR ) {
-			CombineUnary combine = CombineUnary.constructCombineLop(
-					getInput().get(0).constructLops(),
-					getDataType(), getValueType());
+		
+		SortKeys sort = SortKeys.constructSortByValueLop(
+							getInput().get(0).constructLops(), 
+							SortKeys.OperationTypes.WithoutWeights, 
+							DataType.MATRIX, ValueType.DOUBLE, et );
+		sort.getOutputParameters().setDimensions(
+				getInput().get(0).getDim1(),
+				getInput().get(0).getDim2(),
+				getInput().get(0).getRowsInBlock(),
+				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getNnz());
+		PickByCount pick = new PickByCount(
+				sort,
+				Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+				getDataType(),
+				getValueType(),
+				PickByCount.OperationTypes.MEDIAN, et, true);
 
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					combine, SortKeys.OperationTypes.WithoutWeights,
-					DataType.MATRIX, ValueType.DOUBLE, et);
-
-			combine.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
-			// Sort dimensions are same as the first input
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			// If only a single quantile is computed, then "pick" operation executes in CP.
-			ExecType et_pick = ExecType.CP;
-			
-			PickByCount pick = new PickByCount(
-					sort,
-					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					getDataType(),
-					getValueType(),
-					PickByCount.OperationTypes.MEDIAN, et_pick, false);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(pick);
-
-			return pick;
-		}
-		else {
-			SortKeys sort = SortKeys.constructSortByValueLop(
-								getInput().get(0).constructLops(), 
-								SortKeys.OperationTypes.WithoutWeights, 
-								DataType.MATRIX, ValueType.DOUBLE, et );
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-			PickByCount pick = new PickByCount(
-					sort,
-					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					getDataType(),
-					getValueType(),
-					PickByCount.OperationTypes.MEDIAN, et, true);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(pick);
-			setLops(pick);
-			
-			return pick;
-		}
+		pick.getOutputParameters().setDimensions(getDim1(),
+				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(pick);
+		setLops(pick);
+		
+		return pick;
 	}
 	
 	private Lop constructLopsIQM() 
@@ -258,186 +211,27 @@ public class UnaryOp extends MultiThreadedHop
 		ExecType et = optFindExecType();
 
 		Hop input = getInput().get(0);
-		if ( et == ExecType.MR ) {
-			CombineUnary combine = CombineUnary.constructCombineLop(input.constructLops(),
-							                       DataType.MATRIX, getValueType());
-			combine.getOutputParameters().setDimensions(
-					input.getDim1(),
-					input.getDim2(), 
-					input.getRowsInBlock(),
-					input.getColsInBlock(),
-					input.getNnz());
+				SortKeys sort = SortKeys.constructSortByValueLop(
+				input.constructLops(), 
+				SortKeys.OperationTypes.WithoutWeights, 
+				DataType.MATRIX, ValueType.DOUBLE, et );
+		sort.getOutputParameters().setDimensions(
+				input.getDim1(),
+				input.getDim2(),
+				input.getRowsInBlock(),
+				input.getColsInBlock(),
+				input.getNnz());
+		PickByCount pick = new PickByCount(sort, null,
+				getDataType(),getValueType(),
+				PickByCount.OperationTypes.IQM, et, true);
 
-			SortKeys sort = SortKeys.constructSortByValueLop(combine,
-							           SortKeys.OperationTypes.WithoutWeights,
-							           DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-
-			// Sort dimensions are same as the first input
-			sort.getOutputParameters().setDimensions(
-					input.getDim1(),
-					input.getDim2(),
-					input.getRowsInBlock(),
-					input.getColsInBlock(),
-					input.getNnz());
-
-			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
-			
-			lit.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-            			
-			PickByCount pick = new PickByCount(
-					sort, lit, DataType.MATRIX, getValueType(),
-					PickByCount.OperationTypes.RANGEPICK);
-
-			pick.getOutputParameters().setDimensions(-1, -1,  
-					getRowsInBlock(), getColsInBlock(), -1);
-			setLineNumbers(pick);
-			
-			PartialAggregate pagg = new PartialAggregate(
-					pick, HopsAgg2Lops.get(Hop.AggOp.SUM),
-					HopsDirection2Lops.get(Hop.Direction.RowCol),
-					DataType.MATRIX, getValueType());
-			setLineNumbers(pagg);
-
-			// Set the dimensions of PartialAggregate LOP based on the
-			// direction in which aggregation is performed
-			pagg.setDimensionsBasedOnDirection(getDim1(),
-						getDim2(), getRowsInBlock(),
-						getColsInBlock());
-
-			Group group1 = new Group(
-					pagg, Group.OperationTypes.Sort, DataType.MATRIX,
-					getValueType());
-			group1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(),
-					getColsInBlock(), getNnz());
-			setLineNumbers(group1);
-
-			Aggregate agg1 = new Aggregate(
-					group1, HopsAgg2Lops.get(Hop.AggOp.SUM),
-					DataType.MATRIX, getValueType(), ExecType.MR);
-			agg1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(),
-					getColsInBlock(), getNnz());
-			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
-			setLineNumbers(agg1);
-			
-			UnaryCP unary1 = new UnaryCP(
-					agg1, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-					getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
+		pick.getOutputParameters().setDimensions(getDim1(),
+				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		setLineNumbers(pick);
 		
-			Unary iqm = new Unary(sort, unary1, Unary.OperationTypes.MR_IQM, DataType.SCALAR, ValueType.DOUBLE, ExecType.CP);
-			iqm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(iqm);
-
-			return iqm;
-		}
-		else {
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					input.constructLops(), 
-					SortKeys.OperationTypes.WithoutWeights, 
-					DataType.MATRIX, ValueType.DOUBLE, et );
-			sort.getOutputParameters().setDimensions(
-					input.getDim1(),
-					input.getDim2(),
-					input.getRowsInBlock(),
-					input.getColsInBlock(),
-					input.getNnz());
-			PickByCount pick = new PickByCount(sort, null,
-					getDataType(),getValueType(),
-					PickByCount.OperationTypes.IQM, et, true);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(pick);
-			
-			return pick;
-		}
+		return pick;
 	}
 	
-	/**
-	 * MR Cumsum is currently based on a multipass algorithm of (1) preaggregation and (2) subsequent offsetting. 
-	 * Note that we currently support one robust physical operator but many alternative
-	 * realizations are possible for specific scenarios (e.g., when the preaggregated intermediate
-	 * fit into the map task memory budget) or by creating custom job types.
-	 * 
-	 * @return low-level operator
-	 */
-	private Lop constructLopsMRCumulativeUnary() 
-	{
-		Hop input = getInput().get(0);
-		long rlen = input.getDim1();
-		long clen = input.getDim2();
-		long brlen = input.getRowsInBlock();
-		long bclen = input.getColsInBlock();
-		boolean force = !dimsKnown() || _etypeForced == ExecType.MR;
-		OperationTypes aggtype = getCumulativeAggType();
-		
-		Lop X = input.constructLops();
-		Lop TEMP = X;
-		ArrayList<Lop> DATA = new ArrayList<>();
-		int level = 0;
-		
-		//recursive preaggregation until aggregates fit into CP memory budget
-		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
-				 > OptimizerUtils.getLocalMemBudget()
-			   && TEMP.getOutputParameters().getNumRows()>1) || force )
-		{
-			DATA.add(TEMP);
-	
-			//preaggregation per block
-			long rlenAgg = (long)Math.ceil((double)TEMP.getOutputParameters().getNumRows()/brlen);
-			Lop preagg = new CumulativePartialAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.MR);
-			preagg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
-			setLineNumbers(preagg);
-			
-			Group group = new Group( preagg, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
-			group.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
-			setLineNumbers(group);
-			
-			Aggregate agg = new Aggregate(group, HopsAgg2Lops.get(AggOp.SUM), getDataType(), getValueType(), ExecType.MR);
-			agg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
-			agg.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
-			setLineNumbers(agg);
-			TEMP = agg;	
-			level++;
-			force = false; //in case of unknowns, generate one level
-		}
-		
-		//in-memory cum sum (of partial aggregates)
-		if( TEMP.getOutputParameters().getNumRows()!=1 ) {
-			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
-			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
-			setLineNumbers(unary1);
-			TEMP = unary1;
-		}
-		
-		//split, group and mr cumsum
-		while( level-- > 0  ) {
-			double init = getCumulativeInitValue();
-			CumulativeSplitAggregate split = new CumulativeSplitAggregate(TEMP, DataType.MATRIX, ValueType.DOUBLE, init);
-			split.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(split);
-			
-			Group group1 = new Group( DATA.get(level), Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
-			group1.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(group1);
-			
-			Group group2 = new Group( split, Group.OperationTypes.Sort, DataType.MATRIX, ValueType.DOUBLE );
-			group2.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(group2);
-			
-			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(group1, group2, 
-					DataType.MATRIX, ValueType.DOUBLE, aggtype, ExecType.MR);
-			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(binary);
-			TEMP = binary;
-		}
-		
-		return TEMP;
-	}
 
 	private Lop constructLopsSparkCumulativeUnary() 
 	{
@@ -628,8 +422,6 @@ public class UnaryOp extends MultiThreadedHop
 	protected ExecType optFindExecType() 
 	{
 		checkAndSetForcedPlatform();
-	
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 		{
@@ -649,7 +441,7 @@ public class UnaryOp extends MultiThreadedHop
 			}
 			else 
 			{
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size

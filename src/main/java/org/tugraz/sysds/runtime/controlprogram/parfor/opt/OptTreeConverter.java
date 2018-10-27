@@ -500,8 +500,6 @@ public class OptTreeConverter
 					node.setExecType(ExecType.CP); break;
 				case SPARK:
 					node.setExecType(ExecType.SPARK); break;
-				case MR:
-					node.setExecType(ExecType.MR); break;
 				default:
 					throw new DMLRuntimeException("Unsupported optnode exec type: "+et);
 			}

@@ -22,10 +22,8 @@ package org.tugraz.sysds.lops;
 import java.util.HashMap;
 
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
@@ -91,23 +89,7 @@ public class DataGen extends Lop
 		this.getOutputParameters().setNnz(-1);
 		this.getOutputParameters().setRowsInBlock(id.getRowsInBlock());
 		this.getOutputParameters().setColsInBlock(id.getColumnsInBlock());
-		
-		this.baseDir = baseDir;
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob;
-		
-		if ( et == ExecType.MR ) {
-			definesMRJob = true;
-			lps.addCompatibility(JobType.DATAGEN);
-			this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
-		}
-		else {
-			definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	/**
@@ -203,11 +185,6 @@ public class DataGen extends Lop
 		iLop = _inputParams.get(DataExpression.RAND_SEED.toString());		
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
-
-		if ( getExecType() == ExecType.MR || getExecType() == ExecType.SPARK ) {
-			sb.append(baseDir);
-			sb.append(OPERAND_DELIMITOR);
-		}
 		
 		iLop = _inputParams.get(DataExpression.RAND_PDF.toString()); //no variable support
 		if (iLop.isVariable())
@@ -369,10 +346,6 @@ public class DataGen extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( incrString );
 		sb.append( OPERAND_DELIMITOR );
-		if ( et == ExecType.MR ) {
-			sb.append( baseDir );
-			sb.append( OPERAND_DELIMITOR );
-		}
 		sb.append( this.prepOutputOperand(output));
 
 		return sb.toString();
@@ -470,20 +443,20 @@ public class DataGen extends Lop
 		Lop iLop = null;
 		iLop = _inputParams.get(Statement.SEQ_FROM.toString()); 
 		String fromString = iLop.getOutputParameters().getLabel();
-		if ( (iLop.getExecLocation() == ExecLocation.Data &&
-				 !((Data)iLop).isLiteral()) || !(iLop.getExecLocation() == ExecLocation.Data ))
+		if ( (iLop.isDataExecLocation() &&
+				 !((Data)iLop).isLiteral()) || !iLop.isDataExecLocation())
 			fromString = Lop.VARIABLE_NAME_PLACEHOLDER + fromString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		iLop = _inputParams.get(Statement.SEQ_TO.toString()); 
 		String toString = iLop.getOutputParameters().getLabel();
-		if ( iLop.getExecLocation() == ExecLocation.Data 
-				&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
+		if ( iLop.isDataExecLocation() 
+				&& !((Data)iLop).isLiteral() || !iLop.isDataExecLocation() )
 			toString = Lop.VARIABLE_NAME_PLACEHOLDER + toString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		iLop = _inputParams.get(Statement.SEQ_INCR.toString()); 
 		String incrString = iLop.getOutputParameters().getLabel();
-		if ( iLop.getExecLocation() == ExecLocation.Data 
-				&& !((Data)iLop).isLiteral() || !(iLop.getExecLocation() == ExecLocation.Data ) )
+		if ( iLop.isDataExecLocation() 
+				&& !((Data)iLop).isLiteral() || !iLop.isDataExecLocation() )
 			incrString = Lop.VARIABLE_NAME_PLACEHOLDER + incrString + Lop.VARIABLE_NAME_PLACEHOLDER;
 		
 		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());

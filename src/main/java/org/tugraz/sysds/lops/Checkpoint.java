@@ -20,9 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.apache.spark.storage.StorageLevel;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -63,13 +61,7 @@ public class Checkpoint extends Lop
 		input.addOutput(this);
 		
 		_storageLevel = StorageLevel.fromString(level);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties(inputs, ExecType.SPARK);
 	}
 
 	public StorageLevel getStorageLevel()

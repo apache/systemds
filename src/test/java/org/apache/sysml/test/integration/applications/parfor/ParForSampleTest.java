@@ -68,16 +68,6 @@ public class ParForSampleTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParForSampleDenseMR() {
-		runParForSampleTest(false, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForSampleSparseMR() {
-		runParForSampleTest(true, ExecType.MR);
-	}
-	
-	@Test
 	public void testParForSampleDenseSpark() {
 		runParForSampleTest(false, ExecType.SPARK);
 	}
@@ -99,7 +89,6 @@ public class ParForSampleTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

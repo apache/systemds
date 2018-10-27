@@ -19,10 +19,8 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -41,9 +39,6 @@ public class Aggregate extends Lop
 	}
 	OperationTypes operation;
  
-	private boolean isCorrectionUsed = false;
-	private CorrectionLocationType correctionLocation = CorrectionLocationType.INVALID;
-	
 	public Aggregate(Lop input, Aggregate.OperationTypes op, DataType dt, ValueType vt, ExecType et ) {
 		super(Lop.Type.Aggregate, dt, vt);
 		init ( input, op, dt, vt, et );
@@ -53,31 +48,12 @@ public class Aggregate extends Lop
 		operation = op;	
 		this.addInput(input);
 		input.addOutput(this);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties(inputs, et);
 	}
 	
 	// this function must be invoked during hop-to-lop translation
 	public void setupCorrectionLocation(CorrectionLocationType loc) {
-		if (operation == OperationTypes.KahanSum || operation == OperationTypes.KahanSumSq
-				|| operation == OperationTypes.KahanTrace || operation == OperationTypes.Mean
-				|| operation == OperationTypes.Var) {
-			isCorrectionUsed = true;
-			correctionLocation = loc;
-		}
+
 	}
 	
 	@Override
@@ -132,12 +108,7 @@ public class Aggregate extends Lop
 
 	@Override
 	public String getInstructions(String input1, String output) 
-	{
-		boolean isCorrectionApplicable = (getExecType() == ExecType.MR &&
-				(operation == OperationTypes.Mean || operation == OperationTypes.Var
-				|| operation == OperationTypes.KahanSum || operation == OperationTypes.KahanSumSq
-				|| operation == OperationTypes.KahanTrace));
-			
+	{	
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
@@ -148,13 +119,6 @@ public class Aggregate extends Lop
 		sb.append( OPERAND_DELIMITOR );
 
 		sb.append( this.prepOutputOperand(output));
-		
-		if ( isCorrectionApplicable ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( isCorrectionUsed );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( correctionLocation );
-		}
 		
 		return sb.toString();
 	}

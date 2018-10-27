@@ -20,9 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 public class CumulativeOffsetBinary extends Lop 
@@ -52,33 +50,12 @@ public class CumulativeOffsetBinary extends Lop
 		init(data, offsets, dt, vt, et);
 	}
 	
-	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
-
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties(inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob);
-		}
-		else //Spark/CP
-		{
-			//setup Spark parameters 
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

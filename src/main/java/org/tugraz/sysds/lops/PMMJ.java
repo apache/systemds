@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -36,7 +36,6 @@ public class PMMJ extends Lop
 	}
 	
 	private CacheType _cacheType = null;
-	private boolean _outputEmptyBlocks = true;
 	private int _numThreads = 1;
 	
 	/**
@@ -62,15 +61,8 @@ public class PMMJ extends Lop
 		
 		//setup mapmult parameters
 		_cacheType = partitioned ? CacheType.LEFT_PART : CacheType.LEFT;
-		_outputEmptyBlocks = emptyBlocks;
 		
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		ExecLocation el = (et == ExecType.MR) ? ExecLocation.Map : ExecLocation.ControlProgram;
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, et, el, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et);
 	}
 
 	@Override
@@ -101,10 +93,7 @@ public class PMMJ extends Lop
 		sb.append( getInputs().get(1).prepInputOperand(input_index2));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if( getExecType() == ExecType.MR )
-			sb.append( getInputs().get(2).prepScalarLabel() );
-		else
-			sb.append( getInputs().get(2).prepInputOperand(input_index3));
+		sb.append( getInputs().get(2).prepInputOperand(input_index3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output_index));
@@ -113,28 +102,12 @@ public class PMMJ extends Lop
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(_cacheType);
 		}
-		else if( getExecType() == ExecType.MR ) {
-			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(_cacheType);
-			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(_outputEmptyBlocks);
-		}
 		else if( getExecType() == ExecType.CP ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 		}
 		
 		return sb.toString();
-	}
-
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {	
-		return new int[]{1};
 	}
 	
 	public void setNumThreads(int k) {

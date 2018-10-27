@@ -77,30 +77,6 @@ public class AggregateInfTest extends AutomatedTestBase
 	{
 		runInfAggregateOperationTest(false, true, ExecType.CP);
 	}
-	
-	@Test
-	public void testSumPosInfDenseMR() 
-	{
-		runInfAggregateOperationTest(true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSumNegInfDenseMR() 
-	{
-		runInfAggregateOperationTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSumPosInfSparseMR() 
-	{
-		runInfAggregateOperationTest(true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSumNegInfSparseMR() 
-	{
-		runInfAggregateOperationTest(false, true, ExecType.MR);
-	}
 
 	/**
 	 * 
@@ -112,7 +88,7 @@ public class AggregateInfTest extends AutomatedTestBase
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{

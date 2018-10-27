@@ -22,10 +22,8 @@ package org.tugraz.sysds.lops;
 import java.util.HashMap;
 
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
@@ -131,37 +129,7 @@ public class Data extends Lop
 	}
 
 	private void setLopProperties() {
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-
-		if ( getFileFormatType() == FileFormatTypes.CSV ) {
-			// The input must be converted to csv format via WriteCSV MR job.
-			lps.addCompatibility(JobType.CSV_WRITE);
-			definesMRJob = true;
-		}
-		else {
-			/*
-			 *  This lop can be executed in all job types except for RAND, PARTITION.
-			 *  RAND: because all inputs must be of type random. 
-			 */
-			lps.addCompatibility(JobType.ANY);
-			// reads are not compatible with RAND because RAND must have all inputs that are random
-			if ( operation == OperationTypes.READ )
-				lps.removeCompatibility(JobType.DATAGEN);
-			else if ( operation == OperationTypes.WRITE ) {
-				// WRITE lops are not compatible with jobs that produce an 
-				// intermediate output, which MUST be consumed by other subsequent lops 
-				lps.removeCompatibility(JobType.MMCJ);
-				// If at all, SORT job can only write in BinaryBlock format
-				if(this.getDataType() == DataType.MATRIX && formatType != FileFormatTypes.BINARY)
-					lps.removeCompatibility(JobType.SORT);
-				lps.removeCompatibility(JobType.COMBINE);
-			}
-		}
-		// ExecType is invalid for Data lop
-		this.lps.setProperties ( inputs, ExecType.INVALID, ExecLocation.Data, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties ( inputs, ExecType.INVALID);
 	}
 	
 	/**

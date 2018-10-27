@@ -23,7 +23,6 @@ import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.parser.Expression.DataType;
@@ -172,7 +171,16 @@ public abstract class Lop
 		reachable = new boolean[size];
 		return reachable;
 	}
+	
+	public boolean isDataExecLocation() {
+		return this instanceof Data;
+	}
 
+	protected void setupLopProperties(ExecType et) {
+		//setup Spark parameters 
+		lps.setProperties( inputs, et);
+	}
+	
 	/**
 	 * get data type of the output that is produced by this lop
 	 * 
@@ -357,16 +365,7 @@ public abstract class Lop
 			}
 		}
 	}
-	
-	/**
-	 * Method to get the location property of LOP
-	 * 
-	 * @return location
-	 */
- 	public ExecLocation getExecLocation() {
-		return lps.getExecLocation();
-	}
- 
+
 	/**
 	 * Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP
 	 * 
@@ -375,38 +374,9 @@ public abstract class Lop
  	public ExecType getExecType() {
 		return lps.getExecType();
 	}
- 
-	/**
-	 * Method to get the compatible job type for the LOP
-	 * 
-	 * @return compatible job type
-	 */
-	
-	public int getCompatibleJobs() {
-		return lps.getCompatibleJobs();
-	}
-	
-	/**
-	 * Method to find if the lop breaks alignment
-	 * 
-	 * @return true if lop breaks alignment
-	 */
-	public boolean getBreaksAlignment() {
-		return lps.getBreaksAlignment();
-	}
 	
 	public boolean getProducesIntermediateOutput() {
 		return lps.getProducesIntermediateOutput();
-	}
-	
-	public boolean isAligner()
-	{
-		return lps.isAligner();
-	}
-
-	public boolean definesMRJob()
-	{
-		return lps.getDefinesMRJob();
 	}
 
 	/**
@@ -656,8 +626,8 @@ public abstract class Lop
 	 * @return true if lop output defined by a variable
 	 */
 	public boolean isVariable() {
-		return ( (getExecLocation() == ExecLocation.Data && !((Data)this).isLiteral()) 
-				 || !(getExecLocation() == ExecLocation.Data ) );
+		return ( (isDataExecLocation() && !((Data)this).isLiteral()) 
+				 || !isDataExecLocation() );
 	}
 	
 	
@@ -762,7 +732,7 @@ public abstract class Lop
 	 * @return prepared scalar operand
 	 */
 	public String prepScalarOperand(ExecType et, String label) {
-		boolean isData = (getExecLocation() == ExecLocation.Data);
+		boolean isData = isDataExecLocation();
 		boolean isLiteral = (isData && ((Data)this).isLiteral());
 		
 		StringBuilder sb = new StringBuilder("");
@@ -790,7 +760,7 @@ public abstract class Lop
 	}
 	
 	public String prepScalarInputOperand(String label) {
-		boolean isData = (getExecLocation() == ExecLocation.Data);
+		boolean isData = isDataExecLocation();
 		boolean isLiteral = (isData && ((Data)this).isLiteral());
 		
 		StringBuilder sb = new StringBuilder("");
@@ -817,28 +787,5 @@ public abstract class Lop
 		else {
 			return prepScalarInputOperand(label);
 		}
-	}
-	
-	/**
-	 * Method to check if a LOP expects an input from the Distributed Cache.
-	 * The method in parent class always returns <code>false</code> (default).
-	 * It must be overridden by individual LOPs that use the cache.
-	 * 
-	 * @return true if lop expects input from distributed cache. In LOP class, always returns false.
-	 */
-	public boolean usesDistributedCache() {
-		return false;
-	}
-	
-	public int[] distributedCacheInputIndex() {
-		return new int[]{-1};
-	}
-
-	
-	public boolean hasNonBlockedInputs() {
-		for(Lop in : getInputs())
-			if(in.getDataType() == DataType.MATRIX && !in.getOutputParameters().isBlocked())
-				return true;
-		return false;
 	}
 }

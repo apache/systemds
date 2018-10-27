@@ -741,8 +741,6 @@ public class QuaternaryOp extends MultiThreadedHop
 	{
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		
 		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
@@ -758,7 +756,7 @@ public class QuaternaryOp extends MultiThreadedHop
 					&& getInput().get(3).areDimsBelowThreshold()) )
 				_etype = ExecType.CP;
 			else
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();

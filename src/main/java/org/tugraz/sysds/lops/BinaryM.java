@@ -20,9 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.Binary.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -72,17 +70,8 @@ public class BinaryM extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if(et == ExecType.MR) {
-			lps.addCompatibility(JobType.GMR);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else if(et == ExecType.SPARK) {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		if(et == ExecType.SPARK) {
+			lps.setProperties( inputs, ExecType.SPARK);
 		}
 		else {
 			throw new LopsException("Incorrect execution type for BinaryM lop:" + et.name());
@@ -209,16 +198,5 @@ public class BinaryM extends Lop
 		sb.append(_vectorType);
 		
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {	
-		// second input is from distributed cache
-		return new int[]{2};
 	}
 }

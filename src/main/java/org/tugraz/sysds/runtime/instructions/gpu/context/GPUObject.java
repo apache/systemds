@@ -690,23 +690,7 @@ public class GPUObject {
 	 * Updates the locks depending on the eviction policy selected
 	 */
 	private void updateReleaseLocks() {
-		DMLScript.EvictionPolicy evictionPolicy = DMLScript.GPU_EVICTION_POLICY;
-		switch (evictionPolicy) {
-			case LRU:
-				timestamp.set(System.nanoTime());
-				break;
-			case LFU:
-				timestamp.addAndGet(1);
-				break;
-			case MIN_EVICT: /* Do Nothing */
-			case ALIGN_MEMORY:
-				break;
-			case MRU:
-				timestamp.set(-System.nanoTime());
-				break;
-			default:
-				throw new DMLRuntimeException("The eviction policy is not supported:" + evictionPolicy.name());
-		}
+		timestamp.set(System.nanoTime());
 	}
 
 	/**

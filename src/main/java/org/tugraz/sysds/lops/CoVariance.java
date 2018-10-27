@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -59,30 +57,17 @@ public class CoVariance extends Lop
 		addInput(input1);
 		input1.addOutput(this);
 
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		if ( et == ExecType.MR ) 
-		{
-			lps.addCompatibility(JobType.CM_COV);
-			lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		if ( input2 == null ) {
+			throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
 		}
-		else //CP/SPARK
-		{
-			definesMRJob = false;
-			if ( input2 == null ) {
-				throw new LopsException(this.printErrorLocation() + "Invalid inputs to covariance lop.");
-			}
-			addInput(input2);
-			input2.addOutput(this);
-			
-			if ( input3 != null ) {
-				addInput(input3);
-				input3.addOutput(this);
-			}
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		addInput(input2);
+		input2.addOutput(this);
+		
+		if ( input3 != null ) {
+			addInput(input3);
+			input3.addOutput(this);
 		}
+		lps.setProperties(inputs, et);
 	}
 
 	@Override

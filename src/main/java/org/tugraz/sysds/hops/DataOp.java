@@ -446,7 +446,6 @@ public class DataOp extends Hop
 		//for example for sum(X) where the memory consumption is solely determined by the DataOp
 		
 		ExecType letype = (OptimizerUtils.isMemoryBasedOptLevel()) ? findExecTypeByMemEstimate() : null;
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		//NOTE: independent of etype executed in MR (piggybacked) if input to persistent write is MR
 		if( _dataop == DataOpTypes.PERSISTENTWRITE || _dataop == DataOpTypes.TRANSIENTWRITE )
@@ -454,7 +453,7 @@ public class DataOp extends Hop
 			checkAndSetForcedPlatform();
 
 			//additional check for write only
-			if( getDataType()==DataType.SCALAR || (getDataType()==DataType.FRAME && REMOTE==ExecType.MR) )
+			if( getDataType()==DataType.SCALAR )
 				_etypeForced = ExecType.CP;
 			
 			if( _etypeForced != null )
@@ -473,7 +472,7 @@ public class DataOp extends Hop
 				}
 				else
 				{
-					_etype = REMOTE;
+					_etype = ExecType.SPARK;
 				}
 			
 				//check for valid CP dimensions and matrix size
@@ -483,10 +482,10 @@ public class DataOp extends Hop
 			//mark for recompile (forever)
 			setRequiresRecompileIfNecessary();
 		}
-	    else //READ
+		else //READ
 		{
-	    	//mark for recompile (forever)
-			if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && letype==REMOTE 
+			//mark for recompile (forever)
+			if( ConfigurationManager.isDynamicRecompilation() && !dimsKnown(true) && letype==ExecType.SPARK 
 				&& (_recompileRead || _requiresCheckpoint) ) 
 			{
 				setRequiresRecompile();

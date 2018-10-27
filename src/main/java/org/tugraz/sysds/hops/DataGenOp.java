@@ -261,8 +261,6 @@ public class DataGenOp extends MultiThreadedHop
 	@Override
 	protected ExecType optFindExecType() {
 		checkAndSetForcedPlatform();
-
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 			_etype = _etypeForced;
@@ -274,7 +272,7 @@ public class DataGenOp extends MultiThreadedHop
 			else if (this.areDimsBelowThreshold() || this.isVector())
 				_etype = ExecType.CP;
 			else
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 		
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
@@ -286,10 +284,6 @@ public class DataGenOp extends MultiThreadedHop
 		//always force string initialization into CP (not supported in MR)
 		//similarly, sample is currently not supported in MR either
 		if( _op == DataGenMethod.SINIT )
-			_etype = ExecType.CP;
-		
-		//workaround until sample supported in MR
-		if( _op == DataGenMethod.SAMPLE && _etype == ExecType.MR )
 			_etype = ExecType.CP;
 		
 		return _etype;

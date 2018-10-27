@@ -237,8 +237,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	/////////////////////
 	
 	private static double getInstTimeEstimate(String opcode, VarStats[] vs, String[] args, ExecType et) {
-		boolean inMR = (et == ExecType.MR);
-		return getInstTimeEstimate(opcode, inMR,
+		return getInstTimeEstimate(opcode, false,
 			vs[0]._rlen, vs[0]._clen, (vs[0]._nnz<0)? 1.0:(double)vs[0]._nnz/vs[0]._rlen/vs[0]._clen,
 			vs[1]._rlen, vs[1]._clen, (vs[1]._nnz<0)? 1.0:(double)vs[1]._nnz/vs[1]._rlen/vs[1]._clen,
 			vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen,

@@ -68,11 +68,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBitwAndDenseMR() {
-		runBitwLogic(TEST_NAME1, false, ExecType.MR);
-	}
-
-	@Test
 	public void testBitwAndSparseCP() {
 		runBitwLogic(TEST_NAME1, true, ExecType.CP);
 	}
@@ -80,11 +75,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	@Test
 	public void testBitwAndSparseSP() {
 		runBitwLogic(TEST_NAME1, true, ExecType.SPARK);
-	}
-
-	@Test
-	public void testBitwAndSparseMR() {
-		runBitwLogic(TEST_NAME1, true, ExecType.MR);
 	}
 
 	@Test
@@ -98,11 +88,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBitwOrDenseMR() {
-		runBitwLogic(TEST_NAME2, false, ExecType.MR);
-	}
-
-	@Test
 	public void testBitwOrSparseCP() {
 		runBitwLogic(TEST_NAME2, true, ExecType.CP);
 	}
@@ -110,11 +95,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	@Test
 	public void testBitwOrSparseSP() {
 		runBitwLogic(TEST_NAME2, true, ExecType.SPARK);
-	}
-
-	@Test
-	public void testBitwOrSparseMR() {
-		runBitwLogic(TEST_NAME2, true, ExecType.MR);
 	}
 
 	@Test
@@ -128,11 +108,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBitwXorDenseMR() {
-		runBitwLogic(TEST_NAME3, false, ExecType.MR);
-	}
-
-	@Test
 	public void testBitwXorSparseCP() {
 		runBitwLogic(TEST_NAME3, true, ExecType.CP);
 	}
@@ -140,11 +115,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	@Test
 	public void testBitwXorSparseSP() {
 		runBitwLogic(TEST_NAME3, true, ExecType.SPARK);
-	}
-
-	@Test
-	public void testBitwXorSparseMR() {
-		runBitwLogic(TEST_NAME3, true, ExecType.MR);
 	}
 
 	@Test
@@ -158,11 +128,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBitwShiftLDenseMR() {
-		runBitwLogic(TEST_NAME4, false, ExecType.MR);
-	}
-
-	@Test
 	public void testBitwShiftLSparseCP() {
 		runBitwLogic(TEST_NAME4, true, ExecType.CP);
 	}
@@ -170,11 +135,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	@Test
 	public void testBitwShiftLSparseSP() {
 		runBitwLogic(TEST_NAME4, true, ExecType.SPARK);
-	}
-
-	@Test
-	public void testBitwShiftLSparseMR() {
-		runBitwLogic(TEST_NAME4, true, ExecType.MR);
 	}
 
 	@Test
@@ -188,11 +148,6 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBitwShiftRDenseMR() {
-		runBitwLogic(TEST_NAME5, false, ExecType.MR);
-	}
-
-	@Test
 	public void testBitwShiftRSparseCP() {
 		runBitwLogic(TEST_NAME5, true, ExecType.CP);
 	}
@@ -202,23 +157,17 @@ public class ElementwiseBitwLogicalTest extends AutomatedTestBase{
 		runBitwLogic(TEST_NAME5, true, ExecType.SPARK);
 	}
 
-	@Test
-	public void testBitwShiftRSparseMR() {
-		runBitwLogic(TEST_NAME5, true, ExecType.MR);
-	}
-
 	private void runBitwLogic(String testname, boolean sparse, ExecType et) {
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {

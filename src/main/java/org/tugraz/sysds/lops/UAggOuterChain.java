@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -69,28 +69,7 @@ public class UAggOuterChain extends Lop
 		_uaggDir = uadir;
 		_binOp = bop;
 		
-		//setup MR parameters 
-		if( et == ExecType.MR )
-		{
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			lps.addCompatibility(JobType.CSV_REBLOCK);
-			lps.addCompatibility(JobType.MMCJ);
-			lps.addCompatibility(JobType.MMRJ);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //SPARK
-		{
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 	
 	@Override
@@ -118,7 +97,7 @@ public class UAggOuterChain extends Lop
 		sb.append(Lop.OPERAND_DELIMITOR);
 
 		//outer operation op code
-		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));		
+		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));
 		sb.append(Lop.OPERAND_DELIMITOR);
 
 		//inner operation op code
@@ -133,16 +112,5 @@ public class UAggOuterChain extends Lop
 		sb.append( this.prepOutputOperand(output));
 				
 		return sb.toString();
-	}
-	
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {
-		return new int[]{2};
 	}
 }

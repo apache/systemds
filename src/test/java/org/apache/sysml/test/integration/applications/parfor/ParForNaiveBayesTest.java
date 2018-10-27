@@ -115,18 +115,6 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParForNaiveBayesDefaultDenseMR() 
-	{
-		runParForNaiveBayesTest(null, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testParForNaiveBayesDefaultSparseMR() 
-	{
-		runParForNaiveBayesTest(null, ExecType.MR, false, true);
-	}
-
-	@Test
 	public void testParForNaiveBayesRemoteDPDenseCPSmallMem() 
 	{
 		runParForNaiveBayesTest(PExecMode.REMOTE_MR_DP, ExecType.CP, true, false);
@@ -147,11 +135,11 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 	 */
 	private void runParForNaiveBayesTest( PExecMode outer, ExecType instType, boolean smallMem, boolean sparse )
 	{
-		int cols = (instType==ExecType.MR)? cols2 : cols1;
+		int cols = cols1;
 		
 		//inst exec type, influenced via rows
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = (instType==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		
 		//determine the script
 		int scriptNum = -1;

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Transform;
@@ -184,28 +183,8 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case REV:
 			{
-				Lop rev = null;
-				
-				if( et == ExecType.MR ) {
-					Lop tmp = new Transform( getInput().get(0).constructLops(), 
-							HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
-					setOutputDimensions(tmp);
-					setLineNumbers(tmp);
-						
-					Group group1 = new Group(tmp, Group.OperationTypes.Sort, 
-							DataType.MATRIX, getValueType());
-					setOutputDimensions(group1);
-					setLineNumbers(group1);
-	
-					rev = new Aggregate(group1, Aggregate.OperationTypes.Sum, 
-							DataType.MATRIX, getValueType(), et);
-				}
-				else { //CP/SPARK
-
-					rev = new Transform( getInput().get(0).constructLops(), 
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
-				}
-				
+				Lop rev = new Transform( getInput().get(0).constructLops(), 
+					HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
 				setOutputDimensions(rev);
 				setLineNumbers(rev);
 				setLops(rev);
@@ -218,36 +197,14 @@ public class ReorgOp extends MultiThreadedHop
 				for( int i=0; i<4; i++ )
 					linputs[i] = getInput().get(i).constructLops();
 				
-				if( et==ExecType.MR )
-				{
-					Transform transform1 = new Transform( linputs,
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), true, et);
-					setOutputDimensions(transform1);
-					setLineNumbers(transform1);
-					
-					Group group1 = new Group(transform1,
-						Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
-					setOutputDimensions(group1);
-					setLineNumbers(group1);
-	
-					Aggregate agg1 = new Aggregate(group1,
-						Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), et);
-					setOutputDimensions(agg1);
-					setLineNumbers(agg1);
-					
-					setLops(agg1);
-				}
-				else //CP/SPARK
-				{
-					_outputEmptyBlocks = (et==ExecType.SPARK &&
-						!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this)); 
-					Transform transform1 = new Transform( linputs,
-						HopsTransf2Lops.get(op), getDataType(), getValueType(), _outputEmptyBlocks, et);
-					setOutputDimensions(transform1);
-					setLineNumbers(transform1);
-					
-					setLops(transform1);
-				}
+				_outputEmptyBlocks = (et==ExecType.SPARK &&
+					!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this)); 
+				Transform transform1 = new Transform( linputs,
+					HopsTransf2Lops.get(op), getDataType(), getValueType(), _outputEmptyBlocks, et);
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				
+				setLops(transform1);
 				break;
 			}
 			case SORT:
@@ -257,98 +214,7 @@ public class ReorgOp extends MultiThreadedHop
 				Hop desc = getInput().get(2);
 				Hop ixret = getInput().get(3);
 				
-				if( et==ExecType.MR )
-				{
-					
-					if( !(desc instanceof LiteralOp && ixret instanceof LiteralOp) ) {
-						LOG.warn("Unsupported non-constant ordering parameters, using defaults and mark for recompilation.");
-						setRequiresRecompile();
-						desc = new LiteralOp(false);
-						ixret = new LiteralOp(false);
-					}
-						
-					//Step 1: extraction (if unknown ncol or multiple columns)
-					Hop vinput = input;
-					if( input.getDim2() != 1 ) {
-						vinput = new IndexingOp("tmp1", getDataType(), getValueType(), input, new LiteralOp(1L), 
-								HopRewriteUtils.createValueHop(input, true), by, by, false, true);
-						vinput.refreshSizeInformation();
-						vinput.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
-						HopRewriteUtils.copyLineNumbers(this, vinput);	
-					}
-					
-					//Step 2: Index vector sort 
-					Hop voutput = null;
-					if( 2*OptimizerUtils.estimateSize(vinput.getDim1(), vinput.getDim2())
-						> OptimizerUtils.getLocalMemBudget() 
-						|| FORCE_DIST_SORT_INDEXES ) 
-					{ 
-						//large vector, fallback to MR sort
-						//sort indexes according to given values
-						SortKeys sort = new SortKeys(
-								vinput.constructLops(), HopRewriteUtils.getBooleanValueSafe((LiteralOp)desc), 
-								SortKeys.OperationTypes.Indexes, 
-								vinput.getDataType(), vinput.getValueType(), ExecType.MR);
-			
-						sort.getOutputParameters().setDimensions(vinput.getDim1(), 1, 
-								vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-			
-						setLineNumbers(sort);
-						
-						//note: this sortindexes includes also the shift by offsets and 
-						//final aggregate because sideways passing of offsets would
-						//not nicely fit the current instruction model
-						
-						setLops(sort);
-						voutput = this;
-					}
-					else
-					{
-						//small vector, use in-memory sort
-						ArrayList<Hop> sinputs = new ArrayList<>();
-						sinputs.add(vinput);
-						sinputs.add(new LiteralOp(1)); //by (always vector)
-						sinputs.add(desc);
-						sinputs.add(new LiteralOp(true)); //indexreturn (always indexes)
-						voutput = new ReorgOp("tmp3", getDataType(), getValueType(), ReOrgOp.SORT, sinputs); 
-						HopRewriteUtils.copyLineNumbers(this, voutput);	
-						//explicitly construct CP lop; otherwise there is danger of infinite recursion if forced runtime platform.
-						voutput.setLops( constructCPOrSparkSortLop(vinput, sinputs.get(1), sinputs.get(2), sinputs.get(3), ExecType.CP, false) );
-						voutput.getLops().getOutputParameters().setDimensions(vinput.getDim1(), vinput.getDim2(), vinput.getRowsInBlock(), vinput.getColsInBlock(), vinput.getNnz());
-						setLops( voutput.constructLops() );
-					}
-					
-					//Step 3: Data permutation (only required for sorting data) 
-					// -- done via X' = table(seq(), IX') %*% X;
-					if( !HopRewriteUtils.getBooleanValueSafe((LiteralOp)ixret) ) 
-					{
-						//generate seq 
-						DataGenOp seq = HopRewriteUtils.createSeqDataGenOp(voutput);
-						seq.setName("tmp4");
-						seq.refreshSizeInformation(); 
-						seq.computeMemEstimate(new MemoTable()); //select exec type
-						HopRewriteUtils.copyLineNumbers(this, seq);	
-						
-						//generate table
-						TernaryOp table = new TernaryOp("tmp5", DataType.MATRIX, ValueType.DOUBLE, OpOp3.CTABLE, seq, voutput, new LiteralOp(1L) );
-						table.setOutputBlocksizes(getRowsInBlock(), getColsInBlock());
-						table.refreshSizeInformation();
-						table.setForcedExecType(ExecType.MR); //force MR 
-						HopRewriteUtils.copyLineNumbers(this, table);
-						table.setDisjointInputs(true);
-						table.setOutputEmptyBlocks(false);
-						
-						//generate matrix mult
-						AggBinaryOp mmult = HopRewriteUtils.createMatrixMultiply(table, input);
-						mmult.setForcedExecType(ExecType.MR); //force MR 
-						
-						setLops( mmult.constructLops() );
-						
-						//cleanups
-						HopRewriteUtils.removeChildReference(table, input);
-					}
-				}
-				else if( et==ExecType.SPARK ) {
+				if( et==ExecType.SPARK ) {
 					boolean sortRewrite = !FORCE_DIST_SORT_INDEXES 
 						&& isSortSPRewriteApplicable() && by.getDataType().isScalar();
 					Lop transform1 = constructCPOrSparkSortLop(input, by, desc, ixret, et, sortRewrite);
@@ -372,7 +238,7 @@ public class ReorgOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-				
+		
 		return getLops();
 	}
 
@@ -509,8 +375,6 @@ public class ReorgOp extends MultiThreadedHop
 	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
-	
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 		{
@@ -528,7 +392,7 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			else 
 			{
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size

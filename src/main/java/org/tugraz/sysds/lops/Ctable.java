@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -75,26 +73,7 @@ public class Ctable extends Lop
 			inputLops[i].addOutput(this);
 		}
 		
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			//lps.addCompatibility(JobType.DATAGEN); MB: disabled due to piggybacking issues
-			//lps.addCompatibility(JobType.REBLOCK); MB: disabled since no runtime support
-			
-			if( operation==OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
-				this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-				//TODO create runtime for ctable in gmr mapper and switch to maporreduce.
-				//this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
-			else
-				this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties(inputs, et);
 	}
 	
 	@Override

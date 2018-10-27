@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -42,13 +40,7 @@ public class Compression extends Lop
 		super(Lop.Type.Checkpoint, dt, vt);
 		this.addInput(input);
 		input.addOutput(this);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et);
 	}
 
 	

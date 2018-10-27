@@ -539,24 +539,18 @@ public class OptimizerUtils
 		//switch default to hybrid_spark (cp+spark) if in spark driver
 		String sparkenv = System.getenv().get("SPARK_ENV_LOADED");
 		if( sparkenv != null && sparkenv.equals("1") )
-			ret = RUNTIME_PLATFORM.HYBRID_SPARK;
+			ret = RUNTIME_PLATFORM.HYBRID;
 		
 		return ret;
 	}
 
 	public static boolean isSparkExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK);
+		return DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+			|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
 	}
-
-	public static boolean isHadoopExecutionMode() {
-		return (   DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
-				|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID);
-	}
-
+	
 	public static boolean isHybridExecutionMode() {
-		return (  DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID 
-			   || DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK );
+		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
 	}
 	
 	/**

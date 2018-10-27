@@ -567,17 +567,15 @@ public class DnnOp extends MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		
 		if( _etypeForced != null ) {
 			_etype = _etypeForced;
 		}
-		else {	
+		else {
 			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
 				_etype = findExecTypeByMemEstimate();
 			}
 			else {
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size
@@ -585,7 +583,7 @@ public class DnnOp extends MultiThreadedHop
 		}
 		
 		// TODO: Fix this after adding remaining spark instructions
-		_etype = !isEligibleForSpark() && _etype == REMOTE ?  ExecType.CP : _etype;
+		_etype = !isEligibleForSpark() && _etype == ExecType.SPARK ?  ExecType.CP : _etype;
 		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();

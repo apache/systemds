@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -56,29 +56,6 @@ public class WeightedCrossEntropy extends Lop
 		//setup mapmult parameters
 		_wcemmType = wt;
 		setupLopProperties(et);
-	}
-	
-	private void setupLopProperties( ExecType et )
-	{
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters 
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //Spark/CP
-		{
-			//setup Spark parameters 
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
 	}
 
 	@Override
@@ -120,12 +97,7 @@ public class WeightedCrossEntropy extends Lop
 		sb.append( getInputs().get(2).prepInputOperand(input3));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
-		if ( (getExecType() == ExecType.MR) && (getInputs().get(3).getDataType() == DataType.SCALAR) ) {
-			sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
-		}
-		else {
-			sb.append( getInputs().get(3).prepInputOperand(input4));
-		}
+		sb.append( getInputs().get(3).prepInputOperand(input4));
 		
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append( prepOutputOperand(output));
@@ -140,17 +112,6 @@ public class WeightedCrossEntropy extends Lop
 		}
 		
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return (getExecType()==ExecType.MR);
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {
-		return (getExecType()==ExecType.MR) ?
-			new int[]{2,3} : new int[]{-1};
 	}
 	
 	public void setNumThreads(int k) {

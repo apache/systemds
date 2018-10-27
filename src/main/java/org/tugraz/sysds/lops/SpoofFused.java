@@ -21,9 +21,9 @@ package org.tugraz.sysds.lops;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -42,8 +42,7 @@ public class SpoofFused extends Lop
 			lop.addOutput(this);
 		}
 		
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, etype, ExecLocation.ControlProgram, false, false, false );
+		lps.setProperties( inputs, etype);
 	}
 
 	@Override

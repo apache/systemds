@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -80,26 +78,11 @@ public class DnnTransform extends Lop
 		setLevel();
 	}
 
-	private void init (Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init (Lop input, DnnTransform.OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		operation = op;
- 
 		this.addInput(input);
 		input.addOutput(this);
-
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		if ( et == ExecType.MR ) {
-			throw new RuntimeException("The execution type is not supported: " + et.name());
-		}
-		else //CP/SPARK
-		{
-			// <code>breaksAlignment</code> is not meaningful when <code>Transform</code> executes in CP. 
-			breaksAlignment = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 	
 	public void updateLopProperties() {

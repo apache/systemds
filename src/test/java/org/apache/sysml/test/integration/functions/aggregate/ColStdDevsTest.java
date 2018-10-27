@@ -69,11 +69,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsDenseMatrixMR() {
-        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Dense row vector
     @Test
     public void testColStdDevsDenseRowVectorCP() {
@@ -101,11 +96,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsDenseColVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
-    }
-
     // Sparse matrix
     @Test
     public void testColStdDevsSparseMatrixCP() {
@@ -115,11 +105,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
     @Test
     public void testColStdDevsSparseMatrixSpark() {
         testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColStdDevsSparseMatrixMR() {
-        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Sparse row vector
@@ -133,11 +118,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsSparseRowVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Sparse column vector
     @Test
     public void testColStdDevsSparseColVectorCP() {
@@ -149,11 +129,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsSparseColVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
-    }
-
     // Empty matrix
     @Test
     public void testColStdDevsEmptyMatrixCP() {
@@ -163,11 +138,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
     @Test
     public void testColStdDevsEmptyMatrixSpark() {
         testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColStdDevsEmptyMatrixMR() {
-        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
     }
 
     // Empty row vector

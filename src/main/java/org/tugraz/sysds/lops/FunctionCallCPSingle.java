@@ -23,9 +23,9 @@ package org.tugraz.sysds.lops;
 import java.util.ArrayList;
 
 import org.tugraz.sysds.hops.FunctionOp;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;

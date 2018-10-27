@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -53,18 +53,7 @@ public class Ternary extends Lop
 		input2.addOutput(this);
 		input3.addOutput(this);
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.CP ||  et == ExecType.SPARK || et == ExecType.GPU ){
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
-		else if( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 	
 	@Override
@@ -95,10 +84,7 @@ public class Ternary extends Lop
 		String[] inputs = new String[]{input1, input2, input3};
 		for( int i=0; i<3; i++ ) {
 			sb.append( OPERAND_DELIMITOR );
-			if( getExecType()==ExecType.MR && getInputs().get(i).getDataType().isScalar() )
-				sb.append( getInputs().get(i).prepScalarLabel() );
-			else
-				sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
+			sb.append( getInputs().get(i).prepInputOperand(inputs[i]) );
 		}
 		
 		sb.append( OPERAND_DELIMITOR );

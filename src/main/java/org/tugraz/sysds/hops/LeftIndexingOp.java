@@ -21,7 +21,6 @@ package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.lops.Binary;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.RightIndex;
@@ -113,74 +112,8 @@ public class LeftIndexingOp  extends Hop
 		{
 			ExecType et = optFindExecType();
 			
-			if(et == ExecType.MR) 
-			{	
-				//the right matrix is reindexed
-				Lop top=getInput().get(2).constructLops();
-				Lop bottom=getInput().get(3).constructLops();
-				Lop left=getInput().get(4).constructLops();
-				Lop right=getInput().get(5).constructLops();
-				
-				//right hand matrix
-				Lop nrow=new UnaryCP(getInput().get(0).constructLops(), 
-								OperationTypes.NROW, DataType.SCALAR, ValueType.INT);
-				Lop ncol=new UnaryCP(getInput().get(0).constructLops(), 
-										OperationTypes.NCOL, DataType.SCALAR, ValueType.INT);
-				
-				Lop rightInput = null;
-				if (isRightHandSideScalar()) {
-					//insert cast to matrix if necessary (for reuse MR runtime)
-					rightInput = new UnaryCP(getInput().get(1).constructLops(),
-						OperationTypes.CAST_AS_MATRIX, DataType.MATRIX, ValueType.DOUBLE);
-					rightInput.getOutputParameters().setDimensions(1L, 1L,
-						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), -1L);
-				} 
-				else 
-					rightInput = getInput().get(1).constructLops();
-
-				
-				RightIndex reindex = new RightIndex(
-						rightInput, top, bottom, 
-						left, right, nrow, ncol,
-						getDataType(), getValueType(), et, true);
-				
-				reindex.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-						getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers(reindex);
-				
-				Group group1 = new Group(
-						reindex, Group.OperationTypes.Sort, DataType.MATRIX,
-						getValueType());
-				group1.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-						getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers(group1);
-				
-				//the left matrix is zeroed out
-				ZeroOut zeroout = new ZeroOut(
-						getInput().get(0).constructLops(), top, bottom,
-						left, right, getInput().get(0).getDim1(), getInput().get(0).getDim2(),
-						getDataType(), getValueType(), et);
-				zeroout.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-						getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers(zeroout);
-				
-				Group group2 = new Group(
-						zeroout, Group.OperationTypes.Sort, DataType.MATRIX,
-						getValueType());
-				group2.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-						getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers(group2);
-				
-				Binary binary = new Binary(group1, group2, HopsOpOp2LopsB.get(Hop.OpOp2.PLUS),
-						getDataType(), getValueType(), et);				
-				binary.getOutputParameters().setDimensions(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 
-						getRowsInBlock(), getColsInBlock(), getNnz());
-				setLineNumbers(binary);
-				
-				setLops(binary);
-			}
-			else if(et == ExecType.SPARK)  
-			{				
+			if(et == ExecType.SPARK)  
+			{
 				Hop left = getInput().get(0);
 				Hop right = getInput().get(1);
 				
@@ -363,8 +296,6 @@ public class LeftIndexingOp  extends Hop
 		
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		
 		if( _etypeForced != null )
 		{
 			_etype = _etypeForced;
@@ -381,7 +312,7 @@ public class LeftIndexingOp  extends Hop
 			}
 			else 
 			{
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size

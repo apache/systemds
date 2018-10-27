@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -79,21 +77,7 @@ public class Binary extends Lop
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			this.lps.setProperties( inputs, et, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else if ( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ){
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

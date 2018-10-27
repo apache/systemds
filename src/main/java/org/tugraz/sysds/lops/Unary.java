@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -82,26 +82,7 @@ public class Unary extends Lop
 		input1.addOutput(this);
 		this.addInput(input2);
 		input2.addOutput(this);
-
-		// By definition, this lop should not break alignment
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-
-		if ( et == ExecType.MR ) {
-			/*
-			 * This lop CAN NOT be executed in PARTITION, SORT, CM_COV, and COMBINE
-			 * jobs MMCJ: only in mapper.
-			 */
-			lps.addCompatibility(JobType.ANY);
-			lps.removeNonPiggybackableJobs();
-			lps.removeCompatibility(JobType.CM_COV); // CM_COV allows only reducer instructions but this is MapOrReduce. TODO: piggybacking should be updated to take this extra constraint.
-			lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	/**
@@ -123,7 +104,7 @@ public class Unary extends Lop
 	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		//sanity check
 		if ( (op == OperationTypes.INVERSE || op == OperationTypes.CHOLESKY)
-			 && (et == ExecType.SPARK || et == ExecType.MR) ) {
+			 && et == ExecType.SPARK ) {
 			throw new LopsException("Invalid exection type "+et.toString()+" for operation "+op.toString());
 		}
 		
@@ -132,25 +113,7 @@ public class Unary extends Lop
 
 		this.addInput(input1);
 		input1.addOutput(this);
-
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-
-		if ( et == ExecType.MR ) {
-			/*
-			 * This lop can be executed in all jobs except for PARTITION. MMCJ: only
-			 * in mapper. GroupedAgg: only in reducer.
-			 */
-			lps.addCompatibility(JobType.ANY);
-			lps.removeNonPiggybackableJobs();
-			lps.removeCompatibility(JobType.CM_COV); // CM_COV allows only reducer instructions but this is MapOrReduce. TODO: piggybacking should be updated to take this extra constraint.
-			lps.setProperties(inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob);
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	@Override

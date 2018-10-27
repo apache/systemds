@@ -19,11 +19,11 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.Unary.OperationTypes;
 import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -53,28 +53,6 @@ public class WeightedUnaryMMR extends Lop
 		setupLopProperties(et);
 	}
 	
-	private void setupLopProperties( ExecType et ) {
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters 
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Reduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else //Spark/CP
-		{
-			//setup Spark parameters 
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
-	}
-
 	@Override
 	public String toString() {
 		return "Operation = WeightedUMMR";
@@ -123,23 +101,5 @@ public class WeightedUnaryMMR extends Lop
 		sb.append(_cacheV);
 		
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return (_cacheU || _cacheV);
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() 
-	{
-		if( !_cacheU && !_cacheV )
-			return new int[]{-1};
-		else if( _cacheU && !_cacheV )
-			return new int[]{2};
-		else if( !_cacheU && _cacheV )
-			return new int[]{3};
-		else
-			return new int[]{2,3};
 	}
 }

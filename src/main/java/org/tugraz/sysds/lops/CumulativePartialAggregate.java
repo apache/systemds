@@ -20,9 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 public class CumulativePartialAggregate extends Lop 
@@ -44,27 +42,10 @@ public class CumulativePartialAggregate extends Lop
 		init(input, dt, vt, et);
 	}
 	
-	private void init(Lop input, DataType dt, ValueType vt, ExecType et) 
-	{
+	private void init(Lop input, DataType dt, ValueType vt, ExecType et) {
 		this.addInput(input);
 		input.addOutput(this);
-
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
-		}
-		else //Spark/CP
-		{
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, false, false, false );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

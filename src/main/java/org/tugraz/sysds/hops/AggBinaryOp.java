@@ -381,8 +381,6 @@ public class AggBinaryOp extends MultiThreadedHop
 	protected ExecType optFindExecType()
 	{
 		checkAndSetForcedPlatform();
-
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 		{
@@ -403,14 +401,14 @@ public class AggBinaryOp extends MultiThreadedHop
 			}
 			else
 			{
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP mmchain, send invalid memory requirements to remote
 			if( _etype == ExecType.CP && checkMapMultChain() != ChainType.NONE
 				&& OptimizerUtils.getLocalMemBudget() < 
 				getInput().get(0).getInput().get(0).getOutputMemEstimate() )
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
@@ -812,7 +810,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		Lop lpmInput = pmInput.constructLops();
 		Hop nrow = null;
 		double mestPM = OptimizerUtils.estimateSize(pmInput.getDim1(), 1);
-		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.MR:ExecType.CP;
+		ExecType etVect = (mestPM>OptimizerUtils.getLocalMemBudget())?ExecType.SPARK:ExecType.CP;
 		
 		//a) full permutation matrix input (potentially without empty block materialized)
 		if( pmInput.getDim2() != 1 ) //not a vector
@@ -891,8 +889,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	{
 		//check for forced MR or Spark execution modes, which prevent the introduction of
 		//additional CP operations and hence the rewrite application
-		if(    DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP  //not hybrid_mr
-			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) //not hybrid_spark
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) //not hybrid_spark
 		{
 			return false;
 		}

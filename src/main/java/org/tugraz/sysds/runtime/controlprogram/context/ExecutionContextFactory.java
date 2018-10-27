@@ -56,13 +56,8 @@ public class ExecutionContextFactory
 					ec = new SparkExecutionContext(allocateVars, prog);
 				break;
 				
-			case HADOOP:
-			case HYBRID:
-				ec = new ExecutionContext(allocateVars, prog);
-				break;
-				
 			case SPARK:
-			case HYBRID_SPARK:
+			case HYBRID:
 				ec = new SparkExecutionContext(allocateVars, prog);
 				break;
 		}

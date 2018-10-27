@@ -41,7 +41,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	
 	private final static int rows = 3578;  
 	private final static int cols1 = 20;      // # of columns in each vector  
-	private final static int cols2 = 5;      // # of columns in each vector  
 	
 	private final static double minVal=0;    // minimum value in each vector 
 	private final static double maxVal=1000; // maximum value in each vector 
@@ -59,12 +58,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	{
 		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false, false, false);
 	}
-
-	@Test
-	public void testForCorrleationSerialSerialMR() 
-	{
-		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR, false, false, false);
-	}
 	
 	@Test
 	public void testParForCorrleationLocalLocalCP() 
@@ -76,12 +69,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	public void testParForCorrleationLocalLocalCPWithStats() 
 	{
 		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false, false, true);
-	}
-
-	@Test
-	public void testParForCorrleationLocalLocalMR() 
-	{
-		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR, false, false, false);
 	}
 
 	@Test
@@ -109,24 +96,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(true, null, null, ExecType.CP, false, false, false);
 	}
 	
-	@Test
-	public void testParForCorrleationDefaultMR() 
-	{
-		runParForCorrelationTest(true, null, null, ExecType.MR, false, false, false);
-	}
-	
-	@Test
-	public void testParForCorrleationDefaultMRWithProfile() 
-	{
-		runParForCorrelationTest(true, null, null, ExecType.MR, true, false, false);
-	}
-	
-	@Test
-	public void testParForCorrleationDefaultMRWithDebug() 
-	{
-		runParForCorrelationTest(true, null, null, ExecType.MR, false, true, false);
-	}
-	
 	/**
 	 * 
 	 * @param outer execution mode of outer parfor loop
@@ -137,8 +106,8 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	{
 		//inst exec type, influenced via rows
 		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = (instType==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
-		int cols = (instType==ExecType.MR)? cols2 : cols1;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		int cols = cols1;
 		
 		//script
 		int scriptNum = -1;

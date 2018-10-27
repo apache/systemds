@@ -203,8 +203,6 @@ public abstract class Hop implements ParseInfo
 				_etypeForced = ExecType.CP;  
 			}
 		}
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP )
-			_etypeForced = ExecType.MR; // enabled with -exec hadoop option
 		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
 	}
@@ -218,8 +216,6 @@ public abstract class Hop implements ParseInfo
 			//force exec type mr if necessary
 			if( invalid ) { 
 				if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
-					_etype = ExecType.MR;
-				else if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
 					_etype = ExecType.SPARK;
 			}
 		}
@@ -293,7 +289,7 @@ public abstract class Hop implements ParseInfo
 		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE 
 			&& !(getDataType()==DataType.SCALAR) )
 		{
-			et = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			et = ExecType.SPARK;
 		}
 
 		//add reblock lop to output if required
@@ -742,8 +738,6 @@ public abstract class Hop implements ParseInfo
 		}
 		else {
 			if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID )
-				et = ExecType.MR;
-			else if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK )
 				et = ExecType.SPARK;
 			
 			c = '*';
@@ -1608,8 +1602,7 @@ public abstract class Hop implements ParseInfo
 	 * <ul> <p>
 	 */
 	protected void setRequiresRecompileIfNecessary() {
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
-		boolean caseRemote = (!dimsKnown(true) && _etype == REMOTE);
+		boolean caseRemote = (!dimsKnown(true) && _etype == ExecType.SPARK);
 		boolean caseLocal = (!dimsKnown() && _etypeForced == ExecType.CP);
 		boolean caseCodegen = (!dimsKnown() && ConfigurationManager.isCodegenEnabled());
 		

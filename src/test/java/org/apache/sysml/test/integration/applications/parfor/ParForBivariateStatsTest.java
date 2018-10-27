@@ -53,19 +53,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 
-	
-	@Test
-	public void testForBivariateStatsSerialSerialMR() 
-	{
-		runParForBivariateStatsTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}
-	
-	@Test 
-	public void testParForBivariateStatsLocalLocalMR() 
-	{
-		runParForBivariateStatsTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.MR);
-	}
-	
 	@Test
 	public void testParForBivariateStatsLocalRemoteCP() 
 	{
@@ -76,12 +63,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	public void testParForBivariateStatsRemoteLocalCP() 
 	{
 		runParForBivariateStatsTest(true, PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
-	}
-
-	@Test
-	public void testParForBivariateStatsDefaultMR() 
-	{
-		runParForBivariateStatsTest(true, null, null, ExecType.MR);
 	}
 	
 	/**

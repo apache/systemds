@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -40,15 +40,6 @@ public class PickByCount extends Lop
 	
 	private OperationTypes operation;
 	private boolean inMemoryInput = false;
-
-	
-	/*
-	 * valuepick: first input is always a matrix, second input can either be a scalar or a matrix
-	 * rangepick: first input is always a matrix, second input is always a scalar
-	 */
-	public PickByCount(Lop input1, Lop input2, DataType dt, ValueType vt, OperationTypes op) {
-		this(input1, input2, dt, vt, op, ExecType.MR);
-	}
 	
 	public PickByCount(Lop input1, Lop input2, DataType dt, ValueType vt, OperationTypes op, ExecType et) {
 		super(Lop.Type.PickValues, dt, vt);
@@ -72,19 +63,7 @@ public class PickByCount extends Lop
 		}
 		
 		operation = op;
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			lps.setProperties( inputs, et, ExecLocation.RecordReader, breaksAlignment, aligner, definesMRJob );
-		}
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

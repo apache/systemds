@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -65,11 +65,6 @@ public class Transform extends Lop
 		init(inputs, op, dt, vt, et);
 		_numThreads = k;
 	}
-	
-	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt) {
-		super(Lop.Type.Transform, dt, vt);
-		init(new Lop[]{input}, op, dt, vt, ExecType.MR);
-	}
 
 	public Transform(Lop input, Transform.OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bSortIndInMem) {
 		super(Lop.Type.Transform, dt, vt);
@@ -92,34 +87,7 @@ public class Transform extends Lop
 			in.addOutput(this);
 		}
 		
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		if ( et == ExecType.MR ) {
-			/*
-			 *  This lop CAN NOT be executed in PARTITION, SORT, STANDALONE
-			 *  MMCJ: only in mapper.
-			 */
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			lps.addCompatibility(JobType.CSV_REBLOCK);
-			lps.addCompatibility(JobType.MMCJ);
-			lps.addCompatibility(JobType.MMRJ);
-			
-			if( op == OperationTypes.Reshape )
-				//reshape should be executed in map because we have potentially large intermediate data and want to exploit the combiner.
-				this.lps.setProperties( inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-			else
-				this.lps.setProperties( inputs, et, ExecLocation.MapOrReduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else //CP/SPARK
-		{
-			// <code>breaksAlignment</code> is not meaningful when <code>Transform</code> executes in CP. 
-			breaksAlignment = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override
@@ -267,8 +235,8 @@ public class Transform extends Lop
 		//byrow
 		Lop input4 = getInputs().get(3); 
 		String byrowString = input4.prepScalarLabel();
-		if ( input4.getExecLocation() == ExecLocation.Data 
-				&& !((Data)input4).isLiteral() || !(input4.getExecLocation() == ExecLocation.Data ) ){
+		if ( input4.isDataExecLocation()
+				&& !((Data)input4).isLiteral() || !input4.isDataExecLocation() ){
 			throw new LopsException(this.printErrorLocation() + "Parameter 'byRow' must be a literal for a matrix operation.");
 		}
 		sb.append( OPERAND_DELIMITOR );

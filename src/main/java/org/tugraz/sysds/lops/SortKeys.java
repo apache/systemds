@@ -21,9 +21,9 @@ package org.tugraz.sysds.lops;
 
 import java.util.HashSet;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -46,12 +46,12 @@ public class SortKeys extends Lop
 	}
 
 	public SortKeys(Lop input, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.SortKeys, dt, vt);		
+		super(Lop.Type.SortKeys, dt, vt);
 		init(input, null, op, et);
 	}
 	
 	public SortKeys(Lop input, boolean desc, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.SortKeys, dt, vt);		
+		super(Lop.Type.SortKeys, dt, vt);
 		init(input, null, op, et);
 		descending = desc;
 	}
@@ -67,26 +67,13 @@ public class SortKeys extends Lop
 		
 		operation = op;
 		
-		if ( et == ExecType.MR ) {
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = true;
-			
-			lps.addCompatibility(JobType.SORT);
-			this.lps.setProperties( inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
-			if(op != OperationTypes.Indexes)
-				this.lps.setProducesIntermediateOutput(true);
+		// SortKeys can accept a optional second input only when executing in CP
+		// Example: sorting with weights inside CP
+		if ( input2 != null ) {
+			this.addInput(input2);
+			input2.addOutput(this);
 		}
-		else {
-			// SortKeys can accept a optional second input only when executing in CP
-			// Example: sorting with weights inside CP
-			if ( input2 != null ) {
-				this.addInput(input2);
-				input2.addOutput(this);
-			}
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties( inputs, et, ExecLocation.ControlProgram, false, false, false);
-		}
+		lps.setProperties( inputs, et);
 	}
 
 
@@ -112,14 +99,6 @@ public class SortKeys extends Lop
 		sb.append( getInputs().get(0).prepInputOperand(input));
 		sb.append( OPERAND_DELIMITOR );
 		sb.append ( this.prepOutputOperand(output));
-		
-		if( getExecType() == ExecType.MR ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( operation );
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( descending );
-		}
-		
 		return sb.toString();
 	}
 	

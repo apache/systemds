@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -47,23 +45,12 @@ public class CentralMoment extends Lop
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		if ( et == ExecType.MR ) {
-			definesMRJob = true;
-			lps.addCompatibility(JobType.CM_COV);
-			lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
+		// when executing in CP, this lop takes an optional 3rd input (Weights)
+		if ( input3 != null ) {
+			this.addInput(input3);
+			input3.addOutput(this);
 		}
-		else { //CP/SPARK
-			// when executing in CP, this lop takes an optional 3rd input (Weights)
-			if ( input3 != null ) {
-				this.addInput(input3);
-				input3.addOutput(this);
-			}
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	public CentralMoment(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {

@@ -20,7 +20,6 @@
 package org.tugraz.sysds.lops.compile;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,36 +28,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.AggBinaryOp;
-import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.AppendM;
-import org.tugraz.sysds.lops.BinaryM;
-import org.tugraz.sysds.lops.CombineBinary;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.FunctionCallCP;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.MapMult;
 import org.tugraz.sysds.lops.OutputParameters;
-import org.tugraz.sysds.lops.PMMJ;
-import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Data.OperationTypes;
 import org.tugraz.sysds.lops.Lop.Type;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -87,12 +73,6 @@ public class Dag<N extends Lop>
 {
 	private static final Log LOG = LogFactory.getLog(Dag.class.getName());
 
-	private static final int CHILD_BREAKS_ALIGNMENT = 2;
-	private static final int CHILD_DOES_NOT_BREAK_ALIGNMENT = 1;
-	private static final int MRCHILD_NOT_FOUND = 0;
-	private static final int MR_CHILD_FOUND_BREAKS_ALIGNMENT = 4;
-	private static final int MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT = 5;
-
 	private static IDSequence job_id = null;
 	private static IDSequence var_index = null;
 	
@@ -101,13 +81,6 @@ public class Dag<N extends Lop>
 
 	// list of all nodes in the dag
 	private ArrayList<Lop> nodes = null;
-	
-	// Hashmap to translates the nodes in the DAG to a sequence of numbers
-	//     key:   Lop ID
-	//     value: Sequence Number (0 ... |DAG|)
-	// This map is primarily used in performing DFS on the DAG, and subsequently in performing ancestor-descendant checks.
-	private HashMap<Long, Integer> IDMap = null;
-	private double gmrMapperFootprint = 0;
 
 	static {
 		job_id = new IDSequence();
@@ -117,13 +90,11 @@ public class Dag<N extends Lop>
 	private static class NodeOutput {
 		OutputInfo outInfo;
 		ArrayList<Instruction> preInstructions; // instructions added before a MR instruction
-		ArrayList<Instruction> postInstructions; // instructions added after a MR instruction
 		ArrayList<Instruction> lastInstructions;
 		
 		NodeOutput() {
 			outInfo = null;
 			preInstructions = new ArrayList<>(); 
-			postInstructions = new ArrayList<>(); 
 			lastInstructions = new ArrayList<>();
 		}
 		
@@ -139,9 +110,6 @@ public class Dag<N extends Lop>
 		public void addPreInstruction(Instruction inst) {
 			preInstructions.add(inst);
 		}
-		public void addPostInstruction(Instruction inst) {
-			postInstructions.add(inst);
-		}
 		public ArrayList<Instruction> getLastInstructions() {
 			return lastInstructions;
 		}
@@ -153,7 +121,6 @@ public class Dag<N extends Lop>
 	public Dag() {
 		//allocate internal data structures
 		nodes = new ArrayList<>();
-		IDMap = new HashMap<>();
 	}
 	
 	///////
@@ -213,43 +180,17 @@ public class Dag<N extends Lop>
 		
 		// create ordering of lops (for MR, we sort by level, while for all
 		// other exec types we use a two-level sorting of )
-		List<Lop> node_v = OptimizerUtils.isHadoopExecutionMode() ?
-			doTopologicalSortStrictOrder(nodes) :
+		List<Lop> node_v = 
+			//doTopologicalSortStrictOrder(nodes) :
 			doTopologicalSortTwoLevelOrder(nodes);
 		
 		// do greedy grouping of operations
-		ArrayList<Instruction> inst = OptimizerUtils.isHadoopExecutionMode() ?
-			doGreedyGrouping(sb, node_v) : doPlainInstructionGen(sb, node_v);
+		ArrayList<Instruction> inst =
+			//doGreedyGrouping(sb, node_v) :
+			doPlainInstructionGen(sb, node_v);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
-	}
-	
-	
-	/**
-	 * Sort the lops by topological order.
-	 * 
-	 *  1) All nodes with level i appear prior to the nodes in level i+1.
-	 *  2) All nodes within a level are ordered by their ID i.e., in the order
-	 *  they are created
-	 * 
-	 * @param v list of lops
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private List<Lop> doTopologicalSortStrictOrder(List<Lop> v) {
-		/*
-		 * Step 1: compute the level for each node in the DAG. Level for each node is 
-		 *   computed as lops are created. So, this step is need not be performed here.
-		 * Step 2: sort the nodes by level, and within a level by node ID.
-		 */
-		
-		// Step1: Performed at the time of creating Lops
-		
-		// Step2: sort nodes by level, and then by node ID
-		Lop[] nodearray = v.toArray(new Lop[0]);
-		Arrays.sort(nodearray, new LopComparator());
-
-		return createIDMapping(nodearray);
 	}
 	
 	private List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
@@ -266,476 +207,6 @@ public class Dag<N extends Lop>
 		return nodes;
 	}
 	
-	private List<Lop> createIDMapping(Lop[] nodearray) {
-		// Copy sorted nodes into "v" and construct a mapping between Lop IDs and sequence of numbers
-		ArrayList<Lop> ret = new ArrayList<>();
-		IDMap.clear();
-		for (int i = 0; i < nodearray.length; i++) {
-			ret.add(nodearray[i]);
-			IDMap.put(nodearray[i].getID(), i);
-		}
-		
-		// Compute of All-pair reachability graph (Transitive Closure) of the DAG.
-		// - Perform a depth-first search (DFS) from every node $u$ in the DAG 
-		// - and construct the list of reachable nodes from the node $u$
-		// - store the constructed reachability information in $u$.reachable[] boolean array
-		for (int i = 0; i < nodearray.length; i++) {
-			dagDFS(nodearray[i], nodearray[i]
-				.createReachable(nodearray.length));
-		}
-
-		// print the nodes in sorted order
-		if (LOG.isTraceEnabled()) {
-			for ( Lop vnode : ret ) {
-				StringBuilder sb = new StringBuilder();
-				sb.append(vnode.getID());
-				sb.append("(");
-				sb.append(vnode.getLevel());
-				sb.append(") ");
-				sb.append(vnode.getType());
-				sb.append("(");
-				for(Lop vin : vnode.getInputs()) {
-					sb.append(vin.getID());
-					sb.append(",");
-				}
-				sb.append("), ");
-				LOG.trace(sb.toString());
-			}
-			LOG.trace("topological sort -- done");
-		}
-		return ret;
-	}
-	
-	
-	/**
-	 * Method to group a vector of sorted lops.
-	 * 
-	 * @param sb statement block
-	 * @param node_v list of low-level operators
-	 * @return list of instructions
-	 */
-	private ArrayList<Instruction> doGreedyGrouping(StatementBlock sb, List<Lop> node_v)
-	{
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Grouping DAG ============");
-
-		// nodes to be executed in current iteration
-		List<Lop> execNodes = new ArrayList<>();
-		// nodes that have already been processed
-		List<Lop> finishedNodes = new ArrayList<>();
-		// nodes that are queued for the following iteration
-		List<Lop> queuedNodes = new ArrayList<>();
-
-		List<List<Lop>> jobNodes = createNodeVectors(JobType.getNumJobTypes());
-		
-		//prepare basic instruction sets
-		List<Instruction> deleteInst = new ArrayList<>();
-		List<Instruction> writeInst = deleteUpdatedTransientReadVariables(sb, node_v);
-		List<Instruction> endOfBlockInst = generateRemoveInstructions(sb);
-		ArrayList<Instruction> inst = generateInstructionsForInputVariables(node_v);
-		
-		boolean done = false;
-		String indent = "    ";
-
-		while (!done) {
-			if( LOG.isTraceEnabled() )
-				LOG.trace("Grouping nodes in DAG");
-
-			execNodes.clear();
-			queuedNodes.clear();
-			clearNodeVectors(jobNodes);
-			gmrMapperFootprint=0;
-
-			for ( Lop  node : node_v ) {
-				// finished nodes don't need to be processed
-				if (finishedNodes.contains(node))
-					continue;
-
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Processing node (" + node.getID()
-							+ ") " + node.toString() + " exec nodes size is " + execNodes.size());
-				
-				
-		        //if node defines MR job, make sure it is compatible with all 
-		        //its children nodes in execNodes 
-		        if(node.definesMRJob() && !compatibleWithChildrenInExecNodes(execNodes, node))
-		        {
-		        	if( LOG.isTraceEnabled() )			
-			          LOG.trace(indent + "Queueing node "
-			                + node.toString() + " (code 1)");
-			
-		          queuedNodes.add(node);
-		          removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
-		          continue;
-		        }
-
-				// if child is queued, this node will be processed in the later
-				// iteration
-				if (hasChildNode(node,queuedNodes)) {
-
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Queueing node "
-								+ node.toString() + " (code 2)");
-					queuedNodes.add(node);
-
-					// if node has more than two inputs,
-					// remove children that will be needed in a future
-					// iterations
-					// may also have to remove parent nodes of these children
-					removeNodesForNextIteration(node, finishedNodes, execNodes,
-							queuedNodes, jobNodes);
-
-					continue;
-				}
-				
-				// if inputs come from different jobs, then queue
-				if ( node.getInputs().size() >= 2) {
-					int jobid = Integer.MIN_VALUE;
-					boolean queueit = false;
-					for(int idx=0; idx < node.getInputs().size(); idx++) {
-						int input_jobid = jobType(node.getInputs().get(idx), jobNodes);
-						if (input_jobid != -1) {
-							if ( jobid == Integer.MIN_VALUE )
-								jobid = input_jobid;
-							else if ( jobid != input_jobid ) { 
-								queueit = true;
-								break;
-							}
-						}
-					}
-					if ( queueit ) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing node " + node.toString() + " (code 3)");
-						queuedNodes.add(node);
-						removeNodesForNextIteration(node, finishedNodes, execNodes, queuedNodes, jobNodes);
-						continue;
-					}
-				}
-
-				// See if this lop can be eliminated
-				// This check is for "aligner" lops (e.g., group)
-				boolean eliminate = false;
-				eliminate = canEliminateLop(node, execNodes);
-				if (eliminate) {
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Adding -"+ node.toString());
-					execNodes.add(node);
-					finishedNodes.add(node);
-					addNodeByJobType(node, jobNodes, execNodes, eliminate);
-					continue;
-				}
-
-				// If the node defines a MR Job then make sure none of its
-				// children that defines a MR Job are present in execNodes
-				if (node.definesMRJob()) {
-					if (hasMRJobChildNode(node, execNodes)) {
-						// "node" must NOT be queued when node=group and the child that defines job is Rand
-						// this is because "group" can be pushed into the "Rand" job.
-						if (! (node.getType() == Lop.Type.Grouping && checkDataGenAsChildNode(node,execNodes))  ) {
-							if( LOG.isTraceEnabled() )
-								LOG.trace(indent + "Queueing node " + node.toString() + " (code 4)");
-
-							queuedNodes.add(node);
-
-							removeNodesForNextIteration(node, finishedNodes,
-									execNodes, queuedNodes, jobNodes);
-
-							continue;
-						}
-					}
-				}
-
-				// if "node" has more than one input, and has a descendant lop
-				// in execNodes that is of type RecordReader
-				// then all its inputs must be ancestors of RecordReader. If
-				// not, queue "node"
-				if (node.getInputs().size() > 1
-						&& hasChildNode(node, execNodes, ExecLocation.RecordReader)) {
-					// get the actual RecordReader lop
-					Lop rr_node = getChildNode(node, execNodes, ExecLocation.RecordReader);
-
-					// all inputs of "node" must be ancestors of rr_node
-					boolean queue_it = false;
-					for (Lop n : node.getInputs()) {
-						// each input should be ancestor of RecordReader lop
-						if (!n.equals(rr_node) && !isChild(rr_node, n, IDMap)) {
-							queue_it = true; // i.e., "node" must be queued
-							break;
-						}
-					}
-
-					if (queue_it) {
-						// queue node
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing -" + node.toString() + " (code 5)");
-						queuedNodes.add(node);
-						// TODO: does this have to be modified to handle
-						// recordreader lops?
-						removeNodesForNextIteration(node, finishedNodes,
-								execNodes, queuedNodes, jobNodes);
-						continue;
-					} else {
-						// nothing here.. subsequent checks have to be performed
-						// on "node"
-					}
-				}
-
-				// data node, always add if child not queued
-				// only write nodes are kept in execnodes
-				if (node.getExecLocation() == ExecLocation.Data) {
-					Data dnode = (Data) node;
-					boolean dnode_queued = false;
-					
-					if ( dnode.getOperationType() == OperationTypes.READ ) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Adding Data -"+ node.toString());
-
-						// TODO: avoid readScalar instruction, and read it on-demand just like the way Matrices are read in control program
-						if ( node.getDataType() == DataType.SCALAR 
-								//TODO: LEO check the following condition is still needed
-								&& node.getOutputParameters().getFile_name() != null ) {
-							// this lop corresponds to reading a scalar from HDFS file
-							// add it to execNodes so that "readScalar" instruction gets generated
-							execNodes.add(node);
-							// note: no need to add it to any job vector
-						}
-					}
-					else if (dnode.getOperationType() == OperationTypes.WRITE) {
-						// Skip the transient write <code>node</code> if the input is a 
-						// transient read with the same variable name. i.e., a dummy copy. 
-						// Hence, <code>node</code> can be avoided.
-						// TODO: this case should ideally be handled in the language layer 
-						//       prior to the construction of Hops Dag 
-						Lop input = dnode.getInputs().get(0);
-						if ( isTransientWriteRead(dnode) ) {
-							// do nothing, <code>node</code> must not processed any further.
-						}
-						else if ( execNodes.contains(input) && !isCompatible(node, input) && sendWriteLopToMR(node)) {
-							// input is in execNodes but it is not compatible with write lop. So, queue the write lop.
-							if( LOG.isTraceEnabled() )
-								LOG.trace(indent + "Queueing -" + node.toString());
-							queuedNodes.add(node);
-							dnode_queued = true;
-						}
-						else {
-							if( LOG.isTraceEnabled() )
-								LOG.trace(indent + "Adding Data -"+ node.toString());
-
-							execNodes.add(node);
-							if ( sendWriteLopToMR(node) ) {
-								addNodeByJobType(node, jobNodes, execNodes, false);
-							}
-						}
-					}
-					if (!dnode_queued)
-						finishedNodes.add(node);
-
-					continue;
-				}
-
-				// map or reduce node, can always be piggybacked with parent
-				if (node.getExecLocation() == ExecLocation.MapOrReduce) {
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Adding -"+ node.toString());
-					execNodes.add(node);
-					finishedNodes.add(node);
-					addNodeByJobType(node, jobNodes, execNodes, false);
-
-					continue;
-				}
-
-				// RecordReader node, add, if no parent needs reduce, else queue
-				if (node.getExecLocation() == ExecLocation.RecordReader) {
-					// "node" should not have any children in
-					// execNodes .. it has to be the first one in the job!
-					if (!hasChildNode(node, execNodes, ExecLocation.Map)
-							&& !hasChildNode(node, execNodes,
-									ExecLocation.MapAndReduce)) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Adding -"+ node.toString());
-						execNodes.add(node);
-						finishedNodes.add(node);
-						addNodeByJobType(node, jobNodes, execNodes, false);
-					} else {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 6)");
-						queuedNodes.add(node);
-						removeNodesForNextIteration(node, finishedNodes,
-								execNodes, queuedNodes, jobNodes);
-
-					}
-					continue;
-				}
-
-				// map node, add, if no parent needs reduce, else queue
-				if (node.getExecLocation() == ExecLocation.Map) {
-					boolean queueThisNode = false;
-					int subcode = -1;
-					if ( node.usesDistributedCache() ) {
-						// if an input to <code>node</code> comes from distributed cache
-						// then that input must get executed in one of the previous jobs.
-						int[] dcInputIndexes = node.distributedCacheInputIndex();
-						for( int dcInputIndex : dcInputIndexes ){
-							Lop dcInput = node.getInputs().get(dcInputIndex-1);
-							if ( (dcInput.getType() != Lop.Type.Data && dcInput.getExecType()==ExecType.MR)
-								  &&  execNodes.contains(dcInput) )
-							{
-								queueThisNode = true;
-								subcode = 1;
-							}
-						}
-						
-						// Limit the number of distributed cache inputs based on the available memory in mappers
-						double memsize = computeFootprintInMapper(node);
-						if ( gmrMapperFootprint>0 && !checkMemoryLimits(node, gmrMapperFootprint+memsize ) ) {
-							queueThisNode = true;
-							subcode = 2;
-						}
-						if(!queueThisNode)
-							gmrMapperFootprint += memsize;
-					}
-					if (!queueThisNode && !hasChildNode(node, execNodes,ExecLocation.MapAndReduce)&& !hasMRJobChildNode(node, execNodes)) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Adding -"+ node.toString());
-						execNodes.add(node);
-						finishedNodes.add(node);
-						addNodeByJobType(node, jobNodes, execNodes, false);
-					} else {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 7 - " + "subcode " + subcode + ")");
-						queuedNodes.add(node);
-						removeNodesForNextIteration(node, finishedNodes,
-								execNodes, queuedNodes, jobNodes);
-
-					}
-					continue;
-				}
-
-				// reduce node, make sure no parent needs reduce, else queue
-				if (node.getExecLocation() == ExecLocation.MapAndReduce) {
-					// TODO: statiko -- keep the middle condition
-					// discuss about having a lop that is MapAndReduce but does
-					// not define a job
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Adding -"+ node.toString());
-					execNodes.add(node);
-					finishedNodes.add(node);
-					addNodeByJobType(node, jobNodes, execNodes, eliminate);
-					
-					continue;
-				}
-
-				// aligned reduce, make sure a parent that is reduce exists
-				if (node.getExecLocation() == ExecLocation.Reduce) {
-					if (  compatibleWithChildrenInExecNodes(execNodes, node) && 
-							(hasChildNode(node, execNodes, ExecLocation.MapAndReduce)
-							 || hasChildNode(node, execNodes, ExecLocation.Map) ) ) 
-					{ 
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Adding -"+ node.toString());
-						execNodes.add(node);
-						finishedNodes.add(node);
-						addNodeByJobType(node, jobNodes, execNodes, false);
-					} else {
-						if( LOG.isTraceEnabled() )
-							LOG.trace(indent + "Queueing -"+ node.toString() + " (code 8)");
-						queuedNodes.add(node);
-						removeNodesForNextIteration(node, finishedNodes,
-								execNodes, queuedNodes, jobNodes);
-					}
-
-					continue;
-
-				}
-
-				// add Scalar to execNodes if it has no child in exec nodes
-				// that will be executed in a MR job.
-				if (node.getExecLocation() == ExecLocation.ControlProgram) {
-					for ( Lop lop : node.getInputs() ) {
-						if (execNodes.contains(lop)
-								&& !(lop.getExecLocation() == ExecLocation.Data)
-								&& !(lop.getExecLocation() == ExecLocation.ControlProgram)) {
-							if( LOG.isTraceEnabled() )
-								LOG.trace(indent + "Queueing -"+ node.toString() + " (code 9)");
-
-							queuedNodes.add(node);
-							removeNodesForNextIteration(node, finishedNodes,
-									execNodes, queuedNodes, jobNodes);
-							break;
-						}
-					}
-
-					if (queuedNodes.contains(node))
-						continue;
-					if( LOG.isTraceEnabled() )
-						LOG.trace(indent + "Adding - scalar"+ node.toString());
-					execNodes.add(node);
-					addNodeByJobType(node, jobNodes, execNodes, false);
-					finishedNodes.add(node);
-					continue;
-				}
-
-			}
-
-			// no work to do
-			if ( execNodes.isEmpty() ) {
-			  
-			  if( !queuedNodes.isEmpty() )
-				  throw new LopsException("Queued nodes should not be 0 at this point \n");
-			  
-			  if( LOG.isTraceEnabled() )
-				LOG.trace("All done! queuedNodes = "+ queuedNodes.size());
-				
-			  done = true;
-			} else {
-				// work to do
-
-				if( LOG.isTraceEnabled() )
-					LOG.trace("Generating jobs for group -- Node count="+ execNodes.size());
-
-				// first process scalar instructions
-				generateControlProgramJobs(execNodes, inst, writeInst, deleteInst);
-
-				// copy unassigned lops in execnodes to gmrnodes
-				for (int i = 0; i < execNodes.size(); i++) {
-					Lop node = execNodes.get(i);
-					if (jobType(node, jobNodes) == -1) {
-						if ( isCompatible(node,  JobType.GMR) ) {
-							if ( node.hasNonBlockedInputs() ) {
-								jobNodes.get(JobType.GMRCELL.getId()).add(node);
-								addChildren(node, jobNodes.get(JobType.GMRCELL.getId()), execNodes);
-							}
-							else {
-								jobNodes.get(JobType.GMR.getId()).add(node);
-								addChildren(node, jobNodes.get(JobType.GMR.getId()), execNodes);
-							}
-						}
-						else {
-							if( LOG.isTraceEnabled() )
-								LOG.trace(indent + "Queueing -" + node.toString() + " (code 10)");
-							execNodes.remove(i);
-							finishedNodes.remove(node);
-							queuedNodes.add(node);
-							removeNodesForNextIteration(node, finishedNodes,
-								execNodes, queuedNodes, jobNodes);
-						}
-					}
-				}
-
-				// next generate MR instructions
-				//if (!execNodes.isEmpty())
-				//	generateMRJobs(execNodes, inst, writeInst, deleteInst, jobNodes);
-				handleSingleOutputJobs(execNodes, jobNodes, finishedNodes);
-			}
-		}
-
-		// add write and delete inst at the very end.
-		inst.addAll(writeInst);
-		inst.addAll(deleteInst);
-		inst.addAll(endOfBlockInst);
-		return inst;
-	}
-
 	private ArrayList<Instruction> doPlainInstructionGen(StatementBlock sb, List<Lop> nodes)
 	{
 		//prepare basic instruction sets
@@ -746,7 +217,7 @@ public class Dag<N extends Lop>
 		
 		// filter out non-executable nodes
 		List<Lop> execNodes = nodes.stream()
-			.filter(l -> (l.getExecLocation() != ExecLocation.Data 
+			.filter(l -> (!l.isDataExecLocation() 
 				|| (((Data)l).getOperationType()==OperationTypes.WRITE && !isTransientWriteRead((Data)l))
 				|| (((Data)l).isPersistentRead() && l.getDataType().isScalar())))
 			.collect(Collectors.toList());
@@ -764,7 +235,7 @@ public class Dag<N extends Lop>
 	private boolean isTransientWriteRead(Data dnode) {
 		Lop input = dnode.getInputs().get(0);
 		return dnode.isTransient() 
-			&& input.getExecLocation() == ExecLocation.Data  && ((Data)input).isTransient() 
+			&& input.isDataExecLocation() && ((Data)input).isTransient() 
 			&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel());
 	}
 	
@@ -786,7 +257,7 @@ public class Dag<N extends Lop>
 		
 		// first capture all transient read variables
 		for ( Lop node : nodeV ) {
-			if (node.getExecLocation() == ExecLocation.Data
+			if (node.isDataExecLocation()
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.READ
 					&& ((Data) node).getDataType() == DataType.MATRIX) {
@@ -794,7 +265,7 @@ public class Dag<N extends Lop>
 				// So, make sure that this READ node does not feed into any (transient/persistent) WRITE
 				boolean hasWriteParent=false;
 				for(Lop p : node.getOutputs()) {
-					if(p.getExecLocation() == ExecLocation.Data) {
+					if(p.isDataExecLocation()) {
 						// if the "p" is of type Data, then it has to be a WRITE
 						hasWriteParent = true;
 						break;
@@ -810,7 +281,7 @@ public class Dag<N extends Lop>
 
 		// capture updated transient write variables
 		for ( Lop node : nodeV ) {
-			if (node.getExecLocation() == ExecLocation.Data
+			if (node.isDataExecLocation()
 					&& ((Data) node).isTransient()
 					&& ((Data) node).getOperationType() == OperationTypes.WRITE
 					&& ((Data) node).getDataType() == DataType.MATRIX
@@ -855,233 +326,6 @@ public class Dag<N extends Lop>
 		return insts;
 	}
 
-	private static List<List<Lop>> createNodeVectors(int size) {
-		return IntStream.range(0, size).mapToObj(i -> 
-			new ArrayList<Lop>()).collect(Collectors.toList());
-	}
-
-	private static void clearNodeVectors(List<List<Lop>> arr) {
-		arr.stream().forEach(t -> t.clear());
-	}
-
-	private static boolean isCompatible(List<Lop> nodes, JobType jt, int from, int to) {
-		return nodes.stream().allMatch(n -> (n.getCompatibleJobs() & jt.getBase()) != 0);
-	}
-
-	/**
-	 * Function that determines if the two input nodes can be executed together 
-	 * in at least one job.
-	 * 
-	 * @param node1 low-level operator 1
-	 * @param node2 low-level operator 2
-	 * @return true if nodes can be executed together
-	 */
-	private static boolean isCompatible(Lop node1, Lop node2) {
-		return( (node1.getCompatibleJobs() & node2.getCompatibleJobs()) > 0);
-	}
-	
-	/**
-	 * Function that checks if the given node executes in the job specified by jt.
-	 * 
-	 * @param node low-level operator
-	 * @param jt job type
-	 * @return true if node executes in the specified job type
-	 */
-	private static boolean isCompatible(Lop node, JobType jt) {
-		if ( jt == JobType.GMRCELL )
-			jt = JobType.GMR;
-		return ((node.getCompatibleJobs() & jt.getBase()) > 0);
-	}
-
-	/*
-	 * Add node, and its relevant children to job-specific node vectors.
-	 */
-	private void addNodeByJobType(Lop node, List<List<Lop>> arr, List<Lop> execNodes, boolean eliminate) {
-		if (!eliminate) {
-			// Check if this lop defines a MR job.
-			if ( node.definesMRJob() ) {
-				
-				// find the corresponding JobType
-				JobType jt = JobType.findJobTypeFromLop(node);
-				
-				if ( jt == null ) {
-					throw new LopsException(node.printErrorLocation() + "No matching JobType is found for a the lop type: " + node.getType() + " \n");
-				}
-				
-				// Add "node" to corresponding job vector
-				
-				if ( jt == JobType.GMR ) {
-					if ( node.hasNonBlockedInputs() ) {
-						int gmrcell_index = JobType.GMRCELL.getId();
-						arr.get(gmrcell_index).add(node);
-						int from = arr.get(gmrcell_index).size();
-						addChildren(node, arr.get(gmrcell_index), execNodes);
-						int to = arr.get(gmrcell_index).size();
-						if (!isCompatible(arr.get(gmrcell_index),JobType.GMR, from, to))  // check against GMR only, not against GMRCELL
-							throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
-					}
-					else {
-						// if "node" (in this case, a group lop) has any inputs from RAND 
-						// then add it to RAND job. Otherwise, create a GMR job
-						if (hasChildNode(node, arr.get(JobType.DATAGEN.getId()) )) {
-							arr.get(JobType.DATAGEN.getId()).add(node);
-							// we should NOT call 'addChildren' because appropriate
-							// child nodes would have got added to RAND job already
-						} else {
-							int gmr_index = JobType.GMR.getId();
-							arr.get(gmr_index).add(node);
-							int from = arr.get(gmr_index).size();
-							addChildren(node, arr.get(gmr_index), execNodes);
-							int to = arr.get(gmr_index).size();
-							if (!isCompatible(arr.get(gmr_index),JobType.GMR, from, to)) 
-								throw new LopsException(node.printErrorLocation() + "Error during compatibility check \n");
-						}
-					}
-				}
-				else {
-					int index = jt.getId();
-					arr.get(index).add(node);
-					int from = arr.get(index).size();
-					addChildren(node, arr.get(index), execNodes);
-					int to = arr.get(index).size();
-					// check if all added nodes are compatible with current job
-					if (!isCompatible(arr.get(index), jt, from, to)) {
-						throw new LopsException( 
-								"Unexpected error in addNodeByType.");
-					}
-				}
-				return;
-			}
-		}
-
-		if ( eliminate ) {
-			// Eliminated lops are directly added to GMR queue. 
-			// Note that eliminate flag is set only for 'group' lops
-			if ( node.hasNonBlockedInputs() )
-				arr.get(JobType.GMRCELL.getId()).add(node);
-			else
-				arr.get(JobType.GMR.getId()).add(node);
-			return;
-		}
-		
-		/*
-		 * If this lop does not define a job, check if it uses the output of any
-		 * specialized job. i.e., if this lop has a child node in any of the
-		 * job-specific vector, then add it to the vector. Note: This lop must
-		 * be added to ONLY ONE of the job-specific vectors.
-		 */
-
-		int numAdded = 0;
-		for ( JobType j : JobType.values() ) {
-			if ( j.getId() > 0 && hasDirectChildNode(node, arr.get(j.getId()))) {
-				if (isCompatible(node, j)) {
-					arr.get(j.getId()).add(node);
-					numAdded += 1;
-				}
-			}
-		}
-		if (numAdded > 1) {
-			throw new LopsException("Unexpected error in addNodeByJobType(): A given lop can ONLY be added to a single job vector (numAdded = " + numAdded + ")." );
-		}
-	}
-
-	/*
-	 * Remove the node from all job-specific node vectors. This method is
-	 * invoked from removeNodesForNextIteration().
-	 */
-	private static void removeNodeByJobType(Lop node, List<List<Lop>> arr) {
-		for ( JobType jt : JobType.values())
-			if ( jt.getId() > 0 ) 
-				arr.get(jt.getId()).remove(node);
-	}
-
-	/**
-	 * As some jobs only write one output, all operations in the mapper need to
-	 * be redone and cannot be marked as finished.
-	 * 
-	 * @param execNodes list of exec low-level operators
-	 * @param jobNodes list of job low-level operators
-	 * @param finishedNodes list of finished low-level operators
-	 */
-	private void handleSingleOutputJobs(List<Lop> execNodes, List<List<Lop>> jobNodes, List<Lop> finishedNodes)
-	{
-		/*
-		 * If the input of a MMCJ/MMRJ job (must have executed in a Mapper) is used
-		 * by multiple lops then we should mark it as not-finished.
-		 */
-		ArrayList<Lop> nodesWithUnfinishedOutputs = new ArrayList<>();
-		int[] jobIndices = {JobType.MMCJ.getId()};
-		Lop.Type[] lopTypes = { Lop.Type.MMCJ};
-		
-		// TODO: SortByValue should be treated similar to MMCJ, since it can
-		// only sort one file now
-		
-		for ( int jobi=0; jobi < jobIndices.length; jobi++ ) {
-			int jindex = jobIndices[jobi];
-			if (!jobNodes.get(jindex).isEmpty()) {
-				List<Lop> vec = jobNodes.get(jindex);
-				// first find all nodes with more than one parent that is not finished.
-				for (int i = 0; i < vec.size(); i++) {
-					Lop node = vec.get(i);
-					if (node.getExecLocation() == ExecLocation.MapOrReduce
-							|| node.getExecLocation() == ExecLocation.Map) {
-						Lop MRparent = getParentNode(node, execNodes, ExecLocation.MapAndReduce);
-						if ( MRparent != null && MRparent.getType() == lopTypes[jobi]) {
-							int numParents = node.getOutputs().size();
-							if (numParents > 1) {
-								for (int j = 0; j < numParents; j++) {
-									if (!finishedNodes.contains(node.getOutputs()
-											.get(j)))
-										nodesWithUnfinishedOutputs.add(node);
-								}
-							}
-						}
-					} 
-				}
-
-				// need to redo all nodes in nodesWithOutput as well as their children
-				for ( Lop node : vec ) {
-					if (node.getExecLocation() == ExecLocation.MapOrReduce
-							|| node.getExecLocation() == ExecLocation.Map) {
-						if (nodesWithUnfinishedOutputs.contains(node))
-							finishedNodes.remove(node);
-						if (hasParentNode(node, nodesWithUnfinishedOutputs))
-							finishedNodes.remove(node);
-					}
-				}
-			}
-		}
-		
-	}
-
-	/**
-	 * Method to check if a lop can be eliminated from checking
-	 * 
-	 * @param node low-level operator
-	 * @param execNodes list of exec nodes
-	 * @return true if lop can be eliminated
-	 */
-	private static boolean canEliminateLop(Lop node, List<Lop> execNodes) {
-		// this function can only eliminate "aligner" lops such a group
-		if (!node.isAligner())
-			return false;
-		// find the child whose execLoc = 'MapAndReduce'
-		int ret = getChildAlignment(node, execNodes, ExecLocation.MapAndReduce);
-		if (ret == CHILD_BREAKS_ALIGNMENT)
-			return false;
-		else if (ret == CHILD_DOES_NOT_BREAK_ALIGNMENT)
-			return true;
-		else if (ret == MRCHILD_NOT_FOUND)
-			return false;
-		else if (ret == MR_CHILD_FOUND_BREAKS_ALIGNMENT)
-			return false;
-		else if (ret == MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT)
-			return true;
-		else
-			throw new RuntimeException("Should not happen. \n");
-	}
-	
-	
 	/**
 	 * Method to generate createvar instructions, which creates a new entry
 	 * in the symbol table. One instruction is generated for every LOP that is 
@@ -1099,7 +343,7 @@ public class Dag<N extends Lop>
 	private static ArrayList<Instruction> generateInstructionsForInputVariables(List<Lop> nodes_v) {
 		ArrayList<Instruction> insts = new ArrayList<>();
 		for(Lop n : nodes_v) {
-			if (n.getExecLocation() == ExecLocation.Data && !((Data) n).isTransient() 
+			if (n.isDataExecLocation() && !((Data) n).isTransient() 
 					&& ((Data) n).getOperationType() == OperationTypes.READ 
 					&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME) ) {
 				if ( !((Data)n).isLiteral() ) {
@@ -1117,120 +361,6 @@ public class Dag<N extends Lop>
 		return insts;
 	}
 	
-	
-	/**
-	 * Determine whether to send <code>node</code> to MR or to process it in the control program.
-	 * It is sent to MR in the following cases:
-	 * 
-	 * 1) if input lop gets processed in MR then <code>node</code> can be piggybacked
-	 * 
-	 * 2) if the exectype of write lop itself is marked MR i.e., memory estimate > memory budget.
-	 * 
-	 * @param node low-level operator
-	 * @return true if lop should be sent to MR
-	 */
-	private static boolean sendWriteLopToMR(Lop node) 
-	{
-		if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE )
-			return false;
-		Lop in = node.getInputs().get(0);
-		Format nodeFormat = node.getOutputParameters().getFormat();
-		
-		//send write lop to MR if (1) it is marked with exec type MR (based on its memory estimate), or
-		//(2) if the input lop is in MR and the write format allows to pack it into the same job (this does
-		//not apply to csv write because MR csvwrite is a separate MR job type)
-		return (node.getExecType() == ExecType.MR
-			|| (in.getExecType() == ExecType.MR && nodeFormat != Format.CSV));
-	}
-	
-	/**
-	 * Computes the memory footprint required to execute <code>node</code> in the mapper.
-	 * It is used only for those nodes that use inputs from distributed cache. The returned 
-	 * value is utilized in limiting the number of instructions piggybacked onto a single GMR mapper.
-	 * 
-	 * @param node low-level operator
-	 * @return memory footprint
-	 */
-	private static double computeFootprintInMapper(Lop node) {
-		// Memory limits must be checked only for nodes that use distributed cache
-		if ( ! node.usesDistributedCache() )
-			// default behavior
-			return 0.0;
-		
-		OutputParameters in1dims = node.getInputs().get(0).getOutputParameters();
-		OutputParameters in2dims = node.getInputs().get(1).getOutputParameters();
-		
-		double footprint = 0;
-		if ( node instanceof MapMult ) {
-			int dcInputIndex = node.distributedCacheInputIndex()[0];
-			footprint = AggBinaryOp.getMapmmMemEstimate(
-					in1dims.getNumRows(), in1dims.getNumCols(), in1dims.getRowsInBlock(), in1dims.getColsInBlock(), in1dims.getNnz(),
-					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), in2dims.getNnz(),
-					dcInputIndex, false);
-		}
-		else if ( node instanceof PMMJ ) {
-			int dcInputIndex = node.distributedCacheInputIndex()[0];
-			footprint = AggBinaryOp.getMapmmMemEstimate(
-					in1dims.getNumRows(), 1, in1dims.getRowsInBlock(), in1dims.getColsInBlock(), in1dims.getNnz(),
-					in2dims.getNumRows(), in2dims.getNumCols(), in2dims.getRowsInBlock(), in2dims.getColsInBlock(), in2dims.getNnz(), 
-					dcInputIndex, true);
-		}
-		else if ( node instanceof AppendM ) {
-			footprint = BinaryOp.footprintInMapper(
-					in1dims.getNumRows(), in1dims.getNumCols(), 
-					in2dims.getNumRows(), in2dims.getNumCols(), 
-					in1dims.getRowsInBlock(), in1dims.getColsInBlock());
-		}
-		else if ( node instanceof BinaryM ) {
-			footprint = BinaryOp.footprintInMapper(
-					in1dims.getNumRows(), in1dims.getNumCols(), 
-					in2dims.getNumRows(), in2dims.getNumCols(), 
-					in1dims.getRowsInBlock(), in1dims.getColsInBlock());
-		}
-		else {
-			// default behavior
-			return 0.0;
-		}
-		return footprint;
-	}
-	
-	/**
-	 * Determines if <code>node</code> can be executed in current round of MR jobs or if it needs to be queued for later rounds.
-	 * If the total estimated footprint (<code>node</code> and previously added nodes in GMR) is less than available memory on 
-	 * the mappers then <code>node</code> can be executed in current round, and <code>true</code> is returned. Otherwise, 
-	 * <code>node</code> must be queued and <code>false</code> is returned. 
-	 * 
-	 * @param node low-level operator
-	 * @param footprintInMapper mapper footprint
-	 * @return true if node can be executed in current round of jobs
-	 */
-	private static boolean checkMemoryLimits(Lop node, double footprintInMapper) {
-		boolean addNode = true;
-		
-		// Memory limits must be checked only for nodes that use distributed cache
-		if ( ! node.usesDistributedCache() )
-			// default behavior
-			return addNode;
-		
-		double memBudget = Math.min(AggBinaryOp.MAPMULT_MEM_MULTIPLIER, BinaryOp.APPEND_MEM_MULTIPLIER) * OptimizerUtils.getRemoteMemBudgetMap(true);
-		if ( footprintInMapper <= memBudget ) 
-			return addNode;
-		else
-			return !addNode;
-	}
-
-	private boolean compatibleWithChildrenInExecNodes(List<Lop> execNodes, Lop node) {
-	  for( Lop tmpNode : execNodes ) {
-	    // for lops that execute in control program, compatibleJobs property is set to LopProperties.INVALID
-	    // we should not consider such lops in this check
-	    if (isChild(tmpNode, node, IDMap) 
-	    		&& tmpNode.getExecLocation() != ExecLocation.ControlProgram
-	    		&& (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) == 0)
-	      return false;
-	  }
-	  return true;
-	}
-
 	/**
 	 * Exclude rmvar instruction for varname from deleteInst, if exists
 	 * 
@@ -1266,7 +396,7 @@ public class Dag<N extends Lop>
 		// reduce the consumer count for all input lops
 		// if the count becomes zero, then then variable associated w/ input can be removed
 		if ( node.removeConsumer() == 0 ) {
-			if ( node.getExecLocation() == ExecLocation.Data && ((Data)node).isLiteral() ) {
+			if ( node.isDataExecLocation() && ((Data)node).isLiteral() ) {
 				return;
 			}
 			
@@ -1309,8 +439,7 @@ public class Dag<N extends Lop>
 			doRmVar = false;
 
 			// mark input scalar read nodes for deletion
-			// TODO: statiko -- check if this condition ever evaluated to TRUE
-			if (node.getExecLocation() == ExecLocation.Data
+			if (node.isDataExecLocation()
 					&& ((Data) node).getOperationType() == Data.OperationTypes.READ
 					&& ((Data) node).getDataType() == DataType.SCALAR 
 					&& node.getOutputParameters().getFile_name() == null ) {
@@ -1319,7 +448,7 @@ public class Dag<N extends Lop>
 			}
 			
 			// output scalar instructions and mark nodes for deletion
-			if (node.getExecLocation() == ExecLocation.ControlProgram) {
+			if (!node.isDataExecLocation()) {
 
 				if (node.getDataType() == DataType.SCALAR) {
 					// Output from lops with SCALAR data type must
@@ -1336,7 +465,7 @@ public class Dag<N extends Lop>
 					
 					boolean hasTransientWriteParent = false;
 					for ( Lop parent : node.getOutputs() ) {
-						if ( parent.getExecLocation() == ExecLocation.Data 
+						if ( parent.isDataExecLocation() 
 								&& ((Data)parent).getOperationType() == Data.OperationTypes.WRITE 
 								&& ((Data)parent).isTransient() ) {
 							hasTransientWriteParent = true;
@@ -1478,18 +607,12 @@ public class Dag<N extends Lop>
 				markedNodes.add(node);
 				doRmVar = true;
 			}
-			else if (node.getExecLocation() == ExecLocation.Data ) {
+			else if (node.isDataExecLocation() ) {
 				Data dnode = (Data)node;
 				Data.OperationTypes op = dnode.getOperationType();
 				
 				if ( op == Data.OperationTypes.WRITE ) {
 					NodeOutput out = null;
-					if ( sendWriteLopToMR(node) ) {
-						// In this case, Data WRITE lop goes into MR, and 
-						// we don't have to do anything here
-						doRmVar = false;
-					}
-					else {
 						out = setupNodeOutputs(node, ExecType.CP, false, false);
 						if ( dnode.getDataType() == DataType.SCALAR ) {
 							// processing is same for both transient and persistent scalar writes 
@@ -1512,7 +635,7 @@ public class Dag<N extends Lop>
 							}
 						}
 						markedNodes.add(node);
-					}
+					
 				}
 				else {
 					// generate a temp label to hold the value that is read from HDFS
@@ -1556,424 +679,6 @@ public class Dag<N extends Lop>
 		// delete all marked nodes
 		for ( Lop node : markedNodes ) {
 			execNodes.remove(node);
-		}
-	}
-
-	/**
-	 * Method to remove all child nodes of a queued node that should be executed
-	 * in a following iteration.
-	 * 
-	 * @param node low-level operator
-	 * @param finishedNodes list of finished nodes
-	 * @param execNodes list of exec nodes
-	 * @param queuedNodes list of queued nodes
-	 * @param jobvec list of lists of low-level operators
-	 */
-	private void removeNodesForNextIteration(Lop node, List<Lop> finishedNodes,
-		List<Lop> execNodes, List<Lop> queuedNodes, List<List<Lop>> jobvec) {
-		
-		// only queued nodes with multiple inputs need to be handled.
-		if (node.getInputs().size() == 1)
-			return;
-		
-		//if all children are queued, then there is nothing to do.
-		boolean allQueued = true;
-		for( Lop input : node.getInputs() ) {
-			if( !queuedNodes.contains(input) ) {
-				allQueued = false;
-				break;
-			}
-		}
-		if ( allQueued )
-			return; 
-		
-		if( LOG.isTraceEnabled() )
-			LOG.trace("  Before remove nodes for next iteration -- size of execNodes " + execNodes.size());
-
-		// Determine if <code>node</code> has inputs from the same job or multiple jobs
-		int jobid = Integer.MIN_VALUE;
-		boolean inputs_in_same_job = true;
-		for( Lop input : node.getInputs() ) {
-			int input_jobid = jobType(input, jobvec);
-			if ( jobid == Integer.MIN_VALUE )
-				jobid = input_jobid;
-			else if ( jobid != input_jobid ) { 
-				inputs_in_same_job = false;
-				break;
-			}
-		}
-
-		// Determine if there exist any unassigned inputs to <code>node</code>
-		// Evaluate only those lops that execute in MR.
-		boolean unassigned_inputs = false;
-		for( Lop input : node.getInputs() ) {
-			if ( input.getExecType() == ExecType.MR && !execNodes.contains(input)) { 
-				unassigned_inputs = true;
-				break;
-			}
-		}
-
-		// Determine if any node's children are queued
-		boolean child_queued = false;
-		for( Lop input : node.getInputs() ) {
-			if (queuedNodes.contains(input) ) {
-				child_queued = true;
-				break;
-			}
-		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("  Property Flags:");
-			LOG.trace("    Inputs in same job: " + inputs_in_same_job);
-			LOG.trace("    Unassigned inputs: " + unassigned_inputs);
-			LOG.trace("    Child queued: " + child_queued);
-		}
-
-		// Evaluate each lop in <code>execNodes</code> for removal.
-		// Add lops to be removed to <code>markedNodes</code>.
-		
-		ArrayList<Lop> markedNodes = new ArrayList<>();
-		for (Lop tmpNode : execNodes ) {
-
-			if (LOG.isTraceEnabled()) {
-				LOG.trace("  Checking for removal (" + tmpNode.getID() + ") " + tmpNode.toString());
-			}
-			
-			// if tmpNode is not a descendant of 'node', then there is no advantage in removing tmpNode for later iterations.
-			if(!isChild(tmpNode, node, IDMap))
-				continue;
-			
-			// handle group input lops
-			if(node.getInputs().contains(tmpNode) && tmpNode.isAligner()) {
-			    markedNodes.add(tmpNode);
-			    if( LOG.isTraceEnabled() )
-			    	LOG.trace("    Removing for next iteration (code 1): (" + tmpNode.getID() + ") " + tmpNode.toString());
-			}
-			
-			//if (child_queued) {
-				// if one of the children are queued, 
-				// remove some child nodes on other leg that may be needed later on. 
-				// For e.g. Group lop. 
-				
-				if (!hasOtherQueuedParentNode(tmpNode, queuedNodes, node) 
-					&& branchHasNoOtherUnExecutedParents(tmpNode, node, execNodes, finishedNodes)) {
-					
-					boolean queueit = false;
-					int code = -1;
-					switch(node.getExecLocation()) {
-					case Map:
-						if(branchCanBePiggyBackedMap(tmpNode, node, execNodes, queuedNodes, markedNodes))
-							queueit = true;
-						code=2;
-						break;
-						
-					case MapAndReduce:
-						if(branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)&& !tmpNode.definesMRJob()) 
-							queueit = true;
-						code=3;
-						break;
-					case Reduce:
-						if(branchCanBePiggyBackedReduce(tmpNode, node, execNodes, queuedNodes))
-							queueit = true;
-						code=4;
-						break;
-					default:
-						//do nothing
-					}
-					
-					if(queueit) {
-						if( LOG.isTraceEnabled() )
-							LOG.trace("    Removing for next iteration (code " + code + "): (" + tmpNode.getID() + ") " + tmpNode.toString());
-						markedNodes.add(tmpNode);
-					}
-				}
-				/*
-				 * "node" has no other queued children.
-				 * 
-				 * If inputs are in the same job and "node" is of type
-				 * MapAndReduce, then remove nodes of all types other than
-				 * Reduce, MapAndReduce, and the ones that define a MR job as
-				 * they can be piggybacked later.
-				 * 
-				 * e.g: A=Rand, B=Rand, C=A%*%B Here, both inputs of MMCJ lop
-				 * come from Rand job, and they should not be removed.
-				 * 
-				 * Other examples: -- MMCJ whose children are of type
-				 * MapAndReduce (say GMR) -- Inputs coming from two different
-				 * jobs .. GMR & REBLOCK
-				 */
-				if ((inputs_in_same_job || unassigned_inputs)
-						&& node.getExecLocation() == ExecLocation.MapAndReduce
-						&& !hasOtherMapAndReduceParentNode(tmpNode, execNodes,node)  // don't remove since it already piggybacked with a MapReduce node
-						&& branchCanBePiggyBackedMapAndReduce(tmpNode, node, execNodes, queuedNodes)
-						&& !tmpNode.definesMRJob()) {
-					if( LOG.isTraceEnabled() )
-						LOG.trace("    Removing for next iteration (code 5): ("+ tmpNode.getID() + ") " + tmpNode.toString());
-
-					markedNodes.add(tmpNode);
-				}
-		} 
-
-		// we also need to delete all parent nodes of marked nodes
-		for ( Lop enode : execNodes ) {
-			if( LOG.isTraceEnabled() ) {
-				LOG.trace("  Checking for removal - ("
-							+ enode.getID() + ") " + enode.toString());
-			}
-			
-			if (hasChildNode(enode, markedNodes) && !markedNodes.contains(enode)) {
-				markedNodes.add(enode);
-				if( LOG.isTraceEnabled() )
-					LOG.trace("    Removing for next iteration (code 6) (" + enode.getID() + ") " + enode.toString());
-			}
-		}
-
-		if ( execNodes.size() != markedNodes.size() ) {
-			// delete marked nodes from finishedNodes and execNodes
-			// add to queued nodes
-			for(Lop n : markedNodes) {
-				if ( n.usesDistributedCache() )
-					gmrMapperFootprint -= computeFootprintInMapper(n);
-				finishedNodes.remove(n);
-				execNodes.remove(n);
-				removeNodeByJobType(n, jobvec);
-				queuedNodes.add(n);
-			}
-		}
-	}
-
-	private boolean branchCanBePiggyBackedReduce(Lop tmpNode, Lop node, List<Lop> execNodes, List<Lop> queuedNodes) {
-		if(node.getExecLocation() != ExecLocation.Reduce)
-			return false;
-		// if tmpNode is descendant of any queued child of node, then branch can not be piggybacked
-		for(Lop ni : node.getInputs()) {
-			if(queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
-				return false;
-		}
-		for( Lop n : execNodes ) {
-		   if(n.equals(node))
-			   continue;
-		   if(n.equals(tmpNode) && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-			   return false;
-		   // check if n is on the branch tmpNode->*->node
-		   if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap)) {
-			   if(!node.getInputs().contains(tmpNode) // redundant
-				   && n.getExecLocation() != ExecLocation.Map && n.getExecLocation() != ExecLocation.MapOrReduce)
-				   return false;
-		   }
-	   }
-	   return true;
-	}
-
-	private boolean branchCanBePiggyBackedMap(Lop tmpNode, Lop node, List<Lop> execNodes, List<Lop> queuedNodes, List<Lop> markedNodes) {
-		if(node.getExecLocation() != ExecLocation.Map)
-			return false;
-		
-		// if tmpNode is descendant of any queued child of node, then branch can not be piggybacked
-		for(Lop ni : node.getInputs()) {
-			if(queuedNodes != null && queuedNodes.contains(ni) && isChild(tmpNode, ni, IDMap))
-				return false;
-		}
-		
-		// since node.location=Map: only Map & MapOrReduce lops must be considered
-		if( tmpNode.definesMRJob() || (tmpNode.getExecLocation() != ExecLocation.Map && tmpNode.getExecLocation() != ExecLocation.MapOrReduce))
-			return false;
-
-		// if there exist a node "dcInput" that is 
-		//   -- a) parent of tmpNode, and b) feeds into "node" via distributed cache
-		//   then, tmpNode should not be removed.
-		// "dcInput" must be executed prior to "node", and removal of tmpNode does not make that happen.
-		if(node.usesDistributedCache() ) {
-			for(int dcInputIndex : node.distributedCacheInputIndex()) { 
-				Lop dcInput = node.getInputs().get(dcInputIndex-1);
-				if(isChild(tmpNode, dcInput, IDMap))
-					return false;
-			}
-		}
-		
-		// if tmpNode requires an input from distributed cache,
-		//   remove tmpNode only if that input can fit into mappers' memory. If not, 
-		if ( tmpNode.usesDistributedCache() ) {
-			double memsize = computeFootprintInMapper(tmpNode);
-			if (node.usesDistributedCache() )
-				memsize += computeFootprintInMapper(node);
-			if ( markedNodes != null ) {
-				for(Lop n : markedNodes) {
-					if ( n.usesDistributedCache() ) 
-						memsize += computeFootprintInMapper(n);
-				}
-			}
-			if ( !checkMemoryLimits(node, memsize ) ) {
-				return false;
-			}
-		}
-		
-		return ( (tmpNode.getCompatibleJobs() & node.getCompatibleJobs()) > 0);
-	}
-	  
-	/**
-	 * Function that checks if <code>tmpNode</code> can be piggybacked with MapAndReduce 
-	 * lop <code>node</code>. 
-	 * 
-	 * Decision depends on the exec location of <code>tmpNode</code>. If the exec location is: 
-	 * MapAndReduce: CAN NOT be piggybacked since it defines its own MR job
-	 * Reduce: CAN NOT be piggybacked since it must execute before <code>node</code>
-	 * Map or MapOrReduce: CAN be piggybacked ONLY IF it is comatible w/ <code>tmpNode</code> 
-	 * 
-	 * @param tmpNode temporary low-level operator
-	 * @param node low-level operator
-	 * @param execNodes list of exec nodes
-	 * @param queuedNodes list of queued nodes
-	 * @return true if tmpNode can be piggbacked on node
-	 */
-	private boolean branchCanBePiggyBackedMapAndReduce(Lop tmpNode, Lop node, List<Lop> execNodes, List<Lop> queuedNodes) {
-		if (node.getExecLocation() != ExecLocation.MapAndReduce)
-			return false;
-		JobType jt = JobType.findJobTypeFromLop(node);
-		for ( Lop n : execNodes ) {
-			if (n.equals(node))
-				continue;
-			// Evaluate only nodes on the branch between tmpNode->..->node
-			if (n.equals(tmpNode) || (isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap))) {
-				if ( hasOtherMapAndReduceParentNode(tmpNode, queuedNodes,node) )
-					return false;
-				ExecLocation el = n.getExecLocation();
-				if (el != ExecLocation.Map && el != ExecLocation.MapOrReduce)
-					return false;
-				else if (!isCompatible(n, jt))
-					return false;
-			}
-		}
-		return true;
-	}
-
-	private boolean branchHasNoOtherUnExecutedParents(Lop tmpNode, Lop node,
-		List<Lop> execNodes, List<Lop> finishedNodes) {
-
-	  //if tmpNode has more than one unfinished output, return false 
-	  if(tmpNode.getOutputs().size() > 1)
-	  {
-	    int cnt = 0;
-	    for (Lop output : tmpNode.getOutputs() )
-	    	if (!finishedNodes.contains(output))
-	    		cnt++; 
-	    
-	    if(cnt != 1)
-	      return false;
-	  }
-	  
-	  //check to see if any node between node and tmpNode has more than one unfinished output 
-	  for( Lop n : execNodes ) {
-	    if(n.equals(node) || n.equals(tmpNode))
-	      continue;
-	    
-	    if(isChild(n, node, IDMap) && isChild(tmpNode, n, IDMap))
-	    {      
-	      int cnt = 0;
-	      for (Lop output : n.getOutputs() ) {
-	        if (!finishedNodes.contains(output))
-	          cnt++;
-	      } 
-	      
-	      if(cnt != 1)
-	        return false;
-	    }
-	  }
-	  
-	  return true;
-  }
-
-	/**
-	 * Method to return the job index for a lop.
-	 * 
-	 * @param lops low-level operator
-	 * @param jobvec list of lists of low-level operators
-	 * @return job index for a low-level operator
-	 */
-	private static int jobType(Lop lops, List<List<Lop>> jobvec) {
-		for ( JobType jt : JobType.values()) {
-			int i = jt.getId();
-			if (i > 0 && jobvec.get(i) != null && jobvec.get(i).contains(lops)) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	/**
-	 * Method to see if there is a node of type MapAndReduce between tmpNode and node
-	 * in given node collection
-	 * 
-	 * @param tmpNode temporary low-level operator
-	 * @param nodeList list of low-level operators
-	 * @param node low-level operator
-	 * @return true if MapAndReduce node between tmpNode and node in nodeList
-	 */
-	private boolean hasOtherMapAndReduceParentNode(Lop tmpNode, List<Lop> nodeList, Lop node) {
-		if ( tmpNode.getExecLocation() == ExecLocation.MapAndReduce)
-			return true;
-		for ( Lop n : tmpNode.getOutputs() ) {
-			if ( nodeList.contains(n) && isChild(n,node,IDMap)) {
-				if(!n.equals(node) && n.getExecLocation() == ExecLocation.MapAndReduce)
-					return true;
-				else
-					return hasOtherMapAndReduceParentNode(n, nodeList, node);
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Method to check if there is a queued node that is a parent of both tmpNode and node
-	 * 
-	 * @param tmpNode temporary low-level operator
-	 * @param queuedNodes list of queued nodes
-	 * @param node low-level operator
-	 * @return true if there is a queued node that is a parent of tmpNode and node
-	 */
-	private boolean hasOtherQueuedParentNode(Lop tmpNode, List<Lop> queuedNodes, Lop node) {
-		if ( queuedNodes.isEmpty() )
-			return false;
-		
-		boolean[] nodeMarked = node.getReachable();
-		boolean[] tmpMarked  = tmpNode.getReachable();
-		long nodeid = IDMap.get(node.getID());
-		long tmpid = IDMap.get(tmpNode.getID());
-		
-		for ( Lop qnode : queuedNodes ) {
-			int id = IDMap.get(qnode.getID());
-			if ((id != nodeid && nodeMarked[id]) && (id != tmpid && tmpMarked[id]) )
-				return true;
-		}
-		
-		return false;
-	}
-
-	/**
-	 * Method to add all relevant data nodes for set of exec nodes.
-	 * 
-	 * @param node low-level operator
-	 * @param node_v list of nodes
-	 * @param exec_n list of nodes
-	 */
-	private static void addChildren(Lop node, List<Lop> node_v, List<Lop> exec_n) {
-
-		// add child in exec nodes that is not of type scalar
-		if (exec_n.contains(node)
-				&& node.getExecLocation() != ExecLocation.ControlProgram) {
-			if (!node_v.contains(node)) {
-				node_v.add(node);
-				if(LOG.isTraceEnabled())
-					LOG.trace("      Added child " + node.toString());
-			}
-
-		}
-
-		if (!exec_n.contains(node))
-			return;
-
-		// recurse
-		for (Lop n : node.getInputs() ) {
-			addChildren(n, node_v, exec_n);
 		}
 	}
 	
@@ -2021,24 +726,7 @@ public class Dag<N extends Lop>
 			}
 		}
 
-		/* Instead of following hardcoding, one must get this information from Lops */
-		if (node.getType() == Type.SortKeys && node.getExecType() == ExecType.MR) {
-			if( ((SortKeys)node).getOpType() == SortKeys.OperationTypes.Indexes)
-				oinfo = OutputInfo.BinaryBlockOutputInfo;
-		} else if (node.getType() == Type.CombineBinary) {
-			// Output format of CombineBinary (CB) depends on how the output is consumed
-			CombineBinary combine = (CombineBinary) node;
-			if ( combine.getOperation() == org.tugraz.sysds.lops.CombineBinary.OperationTypes.PreSort ) {
-				oinfo = OutputInfo.OutputInfoForSortInput; 
-			}
-			else if ( combine.getOperation() == org.tugraz.sysds.lops.CombineBinary.OperationTypes.PreCentralMoment 
-					  || combine.getOperation() == org.tugraz.sysds.lops.CombineBinary.OperationTypes.PreCovUnweighted 
-					  || combine.getOperation() == org.tugraz.sysds.lops.CombineBinary.OperationTypes.PreGroupedAggUnweighted ) {
-				oinfo = OutputInfo.WeightedPairOutputInfo;
-			}
-		} else if ( node.getType() == Type.CombineTernary) {
-			oinfo = OutputInfo.WeightedPairOutputInfo;
-		} else if (node.getType() == Type.CentralMoment
+		if (node.getType() == Type.CentralMoment
 				|| node.getType() == Type.CoVariance )  
 		{
 			// CMMR always operate in "cell mode",
@@ -2089,7 +777,7 @@ public class Dag<N extends Lop>
 		// a variable to hold the value produced by this node
 		// note: functioncallcp requires no createvar, rmvar since
 		// since outputs are explicitly specified
-		if (node.getExecLocation() != ExecLocation.Data ) 
+		if (node.isDataExecLocation() ) 
 		{
 			if (node.getDataType() == DataType.SCALAR || node.getDataType() == DataType.LIST) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());
@@ -2295,100 +983,7 @@ public class Dag<N extends Lop>
 				} 
 				// rootNode is not a transient write. It is a persistent write.
 				else {
-					if(et == ExecType.MR) { //MR PERSISTENT WRITE
-						// create a variable to hold the result produced by this "rootNode"
-						oparams.setLabel("pVar" + var_index.getNextID() );
-						
-						int rpb = (int) oparams.getRowsInBlock();
-						int cpb = (int) oparams.getColsInBlock();
-						Lop fnameLop = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
-						String fnameStr = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral()) ? 
-								           fnameLop.getOutputParameters().getLabel() 
-								           : Lop.VARIABLE_NAME_PLACEHOLDER + fnameLop.getOutputParameters().getLabel() + Lop.VARIABLE_NAME_PLACEHOLDER;
-						
-						Instruction createvarInst;
-						
-						// for MatrixMarket format, the creatvar will output the result to a temporary file in textcell format 
-						// the CP write instruction (post instruction) after the MR instruction will merge the result into a single
-						// part MM format file on hdfs.
-						if (oparams.getFormat() == Format.CSV)  {
-							
-							String tempFileName = getNextUniqueFilename();
-							String createInst = node.getInstructions(tempFileName);
-							createvarInst= CPInstructionParser.parseSingleInstruction(createInst);
-						
-							//NOTE: no instruction patching because final write from cp instruction
-							String writeInst = node.getInstructions(oparams.getLabel(), fnameLop.getOutputParameters().getLabel() );
-							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
-							
-							currInstr.setLocation(node);
-							
-							out.addPostInstruction(currInstr);
-							
-							// remove the variable
-							CPInstruction tempInstr = CPInstructionParser.parseSingleInstruction(
-									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
-									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
-							
-							tempInstr.setLocation(node);
-							
-							out.addLastInstruction(tempInstr);
-						} 
-						else if (oparams.getFormat() == Format.MM )  {
-							
-							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
-													oparams.getLabel(), 
-													getNextUniqueFilename(), 
-													false, node.getDataType(),
-													OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
-													new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateType()
-												);
-
-							//NOTE: no instruction patching because final write from cp instruction
-							String writeInst = node.getInstructions(oparams.getLabel(), fnameLop.getOutputParameters().getLabel());
-							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(writeInst);
-							
-							currInstr.setLocation(node);
-							
-							out.addPostInstruction(currInstr);
-							
-							// remove the variable
-							CPInstruction tempInstr = CPInstructionParser.parseSingleInstruction(
-									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
-									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "true" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
-							
-							tempInstr.setLocation(node);
-							
-							out.addLastInstruction(tempInstr);
-						} 
-						else {
-							createvarInst= VariableCPInstruction.prepareCreateVariableInstruction(
-									                oparams.getLabel(), 
-									                fnameStr, 
-									                false, node.getDataType(),
-									                OutputInfo.outputInfoToString(getOutputInfo(node, false)), 
-									                new MatrixCharacteristics(oparams.getNumRows(), oparams.getNumCols(), rpb, cpb, oparams.getNnz()),
-													oparams.getUpdateType()
-								                 );
-							// remove the variable
-							CPInstruction currInstr = CPInstructionParser.parseSingleInstruction(
-									"CP" + Lop.OPERAND_DELIMITOR + "rmfilevar" + Lop.OPERAND_DELIMITOR 
-									+ oparams.getLabel() + Lop.VALUETYPE_PREFIX + Expression.ValueType.UNKNOWN + Lop.OPERAND_DELIMITOR 
-									+ "false" + Lop.VALUETYPE_PREFIX + "BOOLEAN");
-							
-							currInstr.setLocation(node);
-							
-							out.addLastInstruction(currInstr);
-							
-						}
-						
-						createvarInst.setLocation(node);
-						out.addPreInstruction(createvarInst);
-					}
-					else { //CP PERSISTENT WRITE
+					{ //CP PERSISTENT WRITE
 						// generate a write instruction that writes matrix to HDFS
 						Lop fname = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
 						
@@ -2410,169 +1005,6 @@ public class Dag<N extends Lop>
 		return out;
 	}
 
-
-	/**
-	 * check to see if a is the child of b (i.e., there is a directed path from a to b)
-	 * 
-	 * @param a child lop
-	 * @param b parent lop
-	 * @param IDMap id map
-	 * @return true if a child of b
-	 */
-	private static boolean isChild(Lop a, Lop b, Map<Long, Integer> IDMap) {
-		int bID = IDMap.get(b.getID());
-		return a.getReachable()[bID];
-	}
-
-	/**
-	 * Method to perform depth-first traversal from a given node in the DAG.
-	 * Store the reachability information in marked[] boolean array.
-	 * 
-	 * @param root low-level operator
-	 * @param marked reachability results
-	 */
-	private void dagDFS(Lop root, boolean[] marked) {
-		//contains check currently required for globalopt, will be removed when cleaned up
-		if( !IDMap.containsKey(root.getID()) )
-			return;
-		
-		int mapID = IDMap.get(root.getID());
-		if ( marked[mapID] )
-			return;
-		marked[mapID] = true;
-		for( Lop lop : root.getOutputs() ) {
-			dagDFS(lop, marked);
-		}
-	}
-	
-	private static boolean hasDirectChildNode(Lop node, List<Lop> childNodes) {
-		if ( childNodes.isEmpty() ) 
-			return false;
-		for( Lop cnode : childNodes ) {
-			if ( cnode.getOutputs().contains(node))
-				return true;
-		}
-		return false;
-	}
-	
-	private boolean hasChildNode(Lop node, List<Lop> nodes) {
-		return hasChildNode(node, nodes, ExecLocation.INVALID);
-	}
-
-	private boolean hasChildNode(Lop node, List<Lop> childNodes, ExecLocation type) {
-		if ( childNodes.isEmpty() ) 
-			return false;
-		int index = IDMap.get(node.getID());
-		for( Lop cnode : childNodes ) {
-			if ( (type == ExecLocation.INVALID || cnode.getExecLocation() == type) && cnode.getReachable()[index])
-				return true;
-		}
-		return false;
-	}
-	
-	private Lop getChildNode(Lop node, List<Lop> childNodes, ExecLocation type) {
-		if ( childNodes.isEmpty() )
-			return null;
-		int index = IDMap.get(node.getID());
-		for( Lop cnode : childNodes ) {
-			if ( cnode.getExecLocation() == type && cnode.getReachable()[index])
-				return cnode;
-		}
-		return null;
-	}
-
-	/*
-	 * Returns a node "n" such that 
-	 * 1) n \in parentNodes
-	 * 2) n is an ancestor of "node"
-	 * 3) n.ExecLocation = type
-	 * 
-	 * Returns null if no such "n" exists
-	 * 
-	 */
-	private Lop getParentNode(Lop node, List<Lop> parentNodes, ExecLocation type) {
-		if ( parentNodes.isEmpty() )
-			return null;
-		for( Lop pn : parentNodes ) {
-			int index = IDMap.get( pn.getID() );
-			if ( pn.getExecLocation() == type && node.getReachable()[index])
-				return pn;
-		}
-		return null;
-	}
-
-	// Checks if "node" has any descendants in nodesVec with definedMRJob flag
-	// set to true
-	private boolean hasMRJobChildNode(Lop node, List<Lop> nodesVec) {
-		if ( nodesVec.isEmpty() )
-			return false;
-		
-		int index = IDMap.get(node.getID());
-		for( Lop n : nodesVec ) {
-			if ( n.definesMRJob() && n.getReachable()[index]) 
-				return true;
-		}
-		return false;
-	}
-
-	private boolean checkDataGenAsChildNode(Lop node, List<Lop> nodesVec) {
-		if( nodesVec.isEmpty() )
-			return true;
-		
-		int index = IDMap.get(node.getID());
-		boolean onlyDatagen = true;
-		for( Lop n : nodesVec ) {
-			if ( n.definesMRJob() && n.getReachable()[index] &&  JobType.findJobTypeFromLop(n) != JobType.DATAGEN )
-				onlyDatagen = false;
-		}
-		// return true also when there is no lop in "nodesVec" that defines a MR job.
-		return onlyDatagen;
-	}
-
-	private static int getChildAlignment(Lop node, List<Lop> execNodes, ExecLocation type) 
-	{
-		for (Lop n : node.getInputs() ) {
-			if (!execNodes.contains(n))
-				continue;
-
-			if (execNodes.contains(n) && n.getExecLocation() == type) {
-				if (n.getBreaksAlignment())
-					return MR_CHILD_FOUND_BREAKS_ALIGNMENT;
-				else
-					return MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT;
-			} 
-			else {
-				int ret = getChildAlignment(n, execNodes, type);
-				if (ret == MR_CHILD_FOUND_DOES_NOT_BREAK_ALIGNMENT
-					|| ret == CHILD_DOES_NOT_BREAK_ALIGNMENT) {
-					if (n.getBreaksAlignment())
-						return CHILD_BREAKS_ALIGNMENT;
-					else
-						return CHILD_DOES_NOT_BREAK_ALIGNMENT;
-				}
-				else if (ret == MRCHILD_NOT_FOUND
-						|| ret == CHILD_BREAKS_ALIGNMENT
-						|| ret == MR_CHILD_FOUND_BREAKS_ALIGNMENT)
-					return ret;
-				else
-					throw new RuntimeException("Something wrong in getChildAlignment().");
-			}
-		}
-
-		return MRCHILD_NOT_FOUND;
-	}
-
-	private boolean hasParentNode(Lop node, List<Lop> parentNodes) {
-		if ( parentNodes.isEmpty() )
-			return false;		
-		for( Lop pnode : parentNodes ) {
-			int index = IDMap.get( pnode.getID() );
-			if ( node.getReachable()[index])
-				return true;
-		}
-		return false;
-	}
-	
 	/**
 	 * Performs various cleanups on the list of instructions in order to reduce the
 	 * number of instructions to simply debugging and reduce interpretation overhead. 

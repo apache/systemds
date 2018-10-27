@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -36,13 +36,7 @@ public class PMapMult extends Lop
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
-		
-		//setup MR parameters 
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.SPARK);
 	}
 
 	@Override

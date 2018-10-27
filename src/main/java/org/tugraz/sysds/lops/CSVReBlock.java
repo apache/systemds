@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
@@ -46,16 +44,8 @@ public class CSVReBlock extends Lop
 		_rows_per_block = rows_per_block;
 		_cols_per_block = cols_per_block;
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = true;
-		lps.addCompatibility(JobType.CSV_REBLOCK);
-		
-		if(et == ExecType.MR) {
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else if(et == ExecType.SPARK) {
-			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		if(et == ExecType.SPARK) {
+			lps.setProperties( inputs, ExecType.SPARK);
 		}
 		else {
 			throw new LopsException("Incorrect execution type for CSVReblock:" + et);

@@ -182,14 +182,10 @@ public class MLContext implements ConfigurableAPI
 				return DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
 			case SPARK:
 				return DMLScript.RUNTIME_PLATFORM.SPARK;
-			case HADOOP:
-				return DMLScript.RUNTIME_PLATFORM.HADOOP;
 			case DRIVER_AND_SPARK:
-				return DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
-			case DRIVER_AND_HADOOP:
 				return DMLScript.RUNTIME_PLATFORM.HYBRID;
 			default:
-				return DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
+				return DMLScript.RUNTIME_PLATFORM.HYBRID;
 			}
 		}
 	}

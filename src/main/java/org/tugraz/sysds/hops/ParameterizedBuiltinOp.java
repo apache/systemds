@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.GroupedAggregate;
 import org.tugraz.sysds.lops.GroupedAggregateM;
 import org.tugraz.sysds.lops.Lop;
@@ -414,31 +413,12 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 
 	private void constructLopsRExpand(HashMap<String, Lop> inputlops, ExecType et) 
 	{
-		if( et == ExecType.CP || et == ExecType.SPARK )
-		{
-			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, k);
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-			setLops(pbilop);
-		}
-		else if( et == ExecType.MR )
-		{
-			ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
-					HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et);
-			setOutputDimensions(pbilop);
-			setLineNumbers(pbilop);
-		
-			Group group1 = new Group( pbilop, Group.OperationTypes.Sort, getDataType(), getValueType());
-			setOutputDimensions(group1);
-			setLineNumbers(group1);
-			
-			Aggregate finalagg = new Aggregate(group1, Aggregate.OperationTypes.Sum, DataType.MATRIX, getValueType(), ExecType.MR);
-			setOutputDimensions(finalagg);
-			setLineNumbers(finalagg);
-			setLops(finalagg);
-		}
+		int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+		ParameterizedBuiltin pbilop = new ParameterizedBuiltin(inputlops, 
+				HopsParameterizedBuiltinLops.get(_op), getDataType(), getValueType(), et, k);
+		setOutputDimensions(pbilop);
+		setLineNumbers(pbilop);
+		setLops(pbilop);
 	}
 
 	@Override
@@ -705,8 +685,6 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 	protected ExecType optFindExecType() 
 	{
 		checkAndSetForcedPlatform();
-
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 		{
@@ -722,7 +700,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				_etype = ExecType.CP;
 			}
 			else {
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size
@@ -733,9 +711,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		// 2. For paramserv function, always be CP mode so that
 		// the parameter server could have a central instruction
 		// to determine the local or remote workers
-		if ((_op == ParamBuiltinOp.TRANSFORMAPPLY && REMOTE == ExecType.MR)
-				|| _op == ParamBuiltinOp.TRANSFORMDECODE && REMOTE == ExecType.MR
-				|| _op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
+		if (_op == ParamBuiltinOp.TRANSFORMCOLMAP || _op == ParamBuiltinOp.TRANSFORMMETA
 				|| _op == ParamBuiltinOp.TOSTRING || _op == ParamBuiltinOp.LIST
 				|| _op == ParamBuiltinOp.CDF || _op == ParamBuiltinOp.INVCDF
 				|| _op == ParamBuiltinOp.PARAMSERV) {

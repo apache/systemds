@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -50,27 +48,11 @@ public class AppendM extends Lop
 	{
 		addInput(input1);
 		input1.addOutput(this);
-
 		addInput(input2);
 		input2.addOutput(this);
-		
 		addInput(input3);
 		input3.addOutput(this);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if( et == ExecType.MR )
-		{
-			lps.addCompatibility(JobType.GMR);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //SPARK
-		{			
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties(inputs, ExecType.SPARK);
 	}
 	
 	@Override
@@ -109,26 +91,10 @@ public class AppendM extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );
-
-		//note: for SP: no cache type
-		if( getExecType()==ExecType.MR ){
-			sb.append(Lop.OPERAND_DELIMITOR);
-			sb.append(_cacheType);	
-		}
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _cbind );
 				
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {
-		return new int[]{2}; // second input is from distributed cache
 	}
 }

@@ -55,9 +55,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 	{
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.HADOOP
-			|| DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
-		{
+		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) {
 			// nothing to do here, return original statement block
 			return Arrays.asList(sb);
 		}

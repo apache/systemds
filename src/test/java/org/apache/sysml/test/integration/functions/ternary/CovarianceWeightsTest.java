@@ -67,18 +67,6 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCovarianceWeightsDenseMR() 
-	{
-		runCovarianceTest(false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCovarianceWeightsSparseMR() 
-	{
-		runCovarianceTest(true, ExecType.MR);
-	}
-	
-	@Test
 	public void testCovarianceWeightsDenseSP() 
 	{
 		runCovarianceTest(false, ExecType.SPARK);
@@ -101,7 +89,6 @@ public class CovarianceWeightsTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

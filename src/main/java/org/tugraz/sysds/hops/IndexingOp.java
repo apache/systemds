@@ -24,7 +24,6 @@ import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -131,40 +130,8 @@ public class IndexingOp extends Hop
 		{
 			try {
 				ExecType et = optFindExecType();
-				if(et == ExecType.MR) {
-					IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
-							                                       input._dim1, input._dim2, _dim1, _dim2);
-					
-					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
-					RightIndex reindex = new RightIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							getDataType(), getValueType(), et);
-	
-					setOutputDimensions(reindex);
-					setLineNumbers(reindex);
-					
-					if( method == IndexingMethod.MR_RIX )
-					{
-						Group group1 = new Group( reindex, Group.OperationTypes.Sort, 
-								DataType.MATRIX, getValueType());
-						setOutputDimensions(group1);
-						setLineNumbers(group1);
-		
-						Aggregate agg1 = new Aggregate(
-								group1, Aggregate.OperationTypes.Sum, DataType.MATRIX,
-								getValueType(), et);
-						setOutputDimensions(agg1);
-						setLineNumbers(agg1);
-						
-						setLops(agg1);
-					}
-					else //method == IndexingMethod.MR_VRIX
-					{
-						setLops(reindex);
-					}
-				}
-				else if( et == ExecType.SPARK )
+				
+				if( et == ExecType.SPARK )
 				{
 					IndexingMethod method = optFindIndexingMethod( _rowLowerEqualsUpper, _colLowerEqualsUpper,
                             input._dim1, input._dim2, _dim1, _dim2);
@@ -363,8 +330,6 @@ public class IndexingOp extends Hop
 	protected ExecType optFindExecType() {
 		
 		checkAndSetForcedPlatform();
-
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null )
 		{
@@ -381,7 +346,7 @@ public class IndexingOp extends Hop
 			}
 			else
 			{
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			}
 			
 			//check for valid CP dimensions and matrix size

@@ -124,10 +124,6 @@ public class SpoofFusedOp extends MultiThreadedHop
 			checkAndSetInvalidCPDimsAndSize();
 		}
 		
-		//ensure valid execution plans
-		if( _etype == ExecType.MR )
-			_etype = ExecType.CP;
-		
 		return _etype;
 	}
 

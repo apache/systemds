@@ -165,47 +165,6 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	}
 	
 	// --------------------------------------------------------
-	
-	@Test
-	public void testDiagMMDenseDenseMR() 
-	{
-		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testDiagMMDenseDenseTransposeMR() 
-	{
-		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testDiagMVDenseDenseMR() 
-	{
-		//should not apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testDiagMMSparseSparseMR() 
-	{
-		//should apply diag_mm rewrite
-		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testDiagMMSparseSparseTransposeMR() 
-	{
-		//should apply diag_mm / t_t rewrite
-		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testDiagMVSparseSparseMR() 
-	{
-		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.MR, true);
-	}
 
 	@Test
 	public void testDiagMMDenseDenseNoSimplifyCP() 
@@ -242,43 +201,7 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.CP, false);
 	}
-
-	@Test
-	public void testDiagMMDenseDenseNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(false, false, false, false, ExecType.MR, false);
-	}
 	
-	@Test
-	public void testDiagMMDenseDenseTransposeNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(false, false, true, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testDiagMVDenseDenseNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(false, false, false, true, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testDiagMMSparseSparseNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(true, true, false, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testDiagMMSparseSparseTransposeNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(true, true, true, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testDiagMVSparseSparseNoSimplifyMR() 
-	{
-		runDiagMatrixMultiplicationTest(true, true, false, true, ExecType.MR, false);
-	}
-
 	/**
 	 * 
 	 * @param sparseM1
@@ -290,7 +213,6 @@ public class DiagMatrixMultiplicationTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -25,17 +25,13 @@ import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.CentralMoment;
 import org.tugraz.sysds.lops.CoVariance;
-import org.tugraz.sysds.lops.CombineBinary;
-import org.tugraz.sysds.lops.CombineTernary;
 import org.tugraz.sysds.lops.Ctable;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.CombineBinary.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.parser.Statement;
@@ -203,44 +199,14 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		
-		if ( et == ExecType.MR ) 
-		{
-			CombineBinary combine = CombineBinary.constructCombineLop(
-					OperationTypes.PreCentralMoment, 
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					DataType.MATRIX, getValueType());
-			combine.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-			
-			CentralMoment cm = new CentralMoment(combine, getInput()
-					.get(2).constructLops(), DataType.MATRIX,
-					getValueType(), et);
-			cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			setLineNumbers(cm);
-			
-			UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
-					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
-					getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
-		else //CP / SPARK
-		{
-			CentralMoment cm = new CentralMoment(
-					getInput().get(0).constructLops(),
-					getInput().get(1).constructLops(),
-					getInput().get(2).constructLops(),
-					getDataType(), getValueType(), et);
-			cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(cm);
-			setLops(cm);
-		}
+		CentralMoment cm = new CentralMoment(
+				getInput().get(0).constructLops(),
+				getInput().get(1).constructLops(),
+				getInput().get(2).constructLops(),
+				getDataType(), getValueType(), et);
+		cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		setLineNumbers(cm);
+		setLops(cm);
 	}
 	
 	/**
@@ -252,48 +218,15 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		
-		if ( et == ExecType.MR ) 
-		{
-			// combineTertiary -> CoVariance -> CastAsScalar
-			CombineTernary combine = CombineTernary
-					.constructCombineLop(
-							CombineTernary.OperationTypes.PreCovWeighted,
-							getInput().get(0).constructLops(),
-							getInput().get(1).constructLops(),
-							getInput().get(2).constructLops(),
-							DataType.MATRIX, getValueType());
-
-			combine.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			CoVariance cov = new CoVariance(
-					combine, DataType.MATRIX, getValueType(), et);
-
-			cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			setLineNumbers(cov);
-			
-			UnaryCP unary1 = new UnaryCP(
-					cov, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-					getDataType(), getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
-		else //CP / SPARK
-		{
-			CoVariance cov = new CoVariance(
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					getInput().get(2).constructLops(), 
-					getDataType(), getValueType(), et);
-			cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(cov);
-			setLops(cov);
-		}
+		
+		CoVariance cov = new CoVariance(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(), 
+				getInput().get(2).constructLops(), 
+				getDataType(), getValueType(), et);
+		cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		setLineNumbers(cov);
+		setLops(cov);
 	}
 	
 	/**
@@ -306,73 +239,29 @@ public class TernaryOp extends Hop
 		
 		ExecType et = optFindExecType();
 		
-		if ( et == ExecType.MR ) 
-		{
-			CombineBinary combine = CombineBinary
-					.constructCombineLop(
-							OperationTypes.PreSort,
-							getInput().get(0).constructLops(),
-							getInput().get(1).constructLops(),
-							DataType.MATRIX, getValueType());
-
-			SortKeys sort = SortKeys
-					.constructSortByValueLop(
-							combine,
-							SortKeys.OperationTypes.WithWeights,
-							DataType.MATRIX, getValueType(), et);
-
-			// If only a single quantile is computed, then "pick" operation executes in CP.
-			ExecType et_pick = (getInput().get(2).getDataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
-			PickByCount pick = new PickByCount(
-					sort,
-					getInput().get(2).constructLops(),
-					getDataType(),
-					getValueType(),
-					(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-							: PickByCount.OperationTypes.RANGEPICK, et_pick, false);
-
-			combine.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(), 
-					getInput().get(0).getRowsInBlock(), 
-					getInput().get(0).getColsInBlock(),
-					getInput().get(0).getNnz());
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(), 
-					getInput().get(0).getRowsInBlock(), 
-					getInput().get(0).getColsInBlock(),
-					getInput().get(0).getNnz());
-			
-			setOutputDimensions(pick);
-			setLineNumbers(pick);
-			setLops(pick);
-		}
-		else //CP/Spark 
-		{
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					SortKeys.OperationTypes.WithWeights, 
-					getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
-			PickByCount pick = new PickByCount(
-					sort,
-					getInput().get(2).constructLops(),
-					getDataType(),
-					getValueType(),
-					(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
-							: PickByCount.OperationTypes.RANGEPICK, et, true);
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(), 
-					getInput().get(0).getColsInBlock(),
-					getInput().get(0).getNnz());
-			
-			setOutputDimensions(pick);
-			setLineNumbers(pick);
-			setLops(pick);
-		}
+		
+		SortKeys sort = SortKeys.constructSortByValueLop(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(), 
+				SortKeys.OperationTypes.WithWeights, 
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+		PickByCount pick = new PickByCount(
+				sort,
+				getInput().get(2).constructLops(),
+				getDataType(),
+				getValueType(),
+				(_op == Hop.OpOp3.QUANTILE) ? PickByCount.OperationTypes.VALUEPICK
+						: PickByCount.OperationTypes.RANGEPICK, et, true);
+		sort.getOutputParameters().setDimensions(
+				getInput().get(0).getDim1(),
+				getInput().get(0).getDim2(),
+				getInput().get(0).getRowsInBlock(), 
+				getInput().get(0).getColsInBlock(),
+				getInput().get(0).getNnz());
+		
+		setOutputDimensions(pick);
+		setLineNumbers(pick);
+		setLops(pick);
 	}
 
 	/**
@@ -410,261 +299,38 @@ public class TernaryOp extends Hop
 		//reset reblock requirement (see MR ctable / construct lops)
 		setRequiresReblock( false );
 		
-		if ( et == ExecType.CP  || et == ExecType.SPARK) 
-		{	
-			//for CP we support only ctable expand left
-			Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
-				Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
-			boolean ignoreZeros = false;
-			
-			if( isMatrixIgnoreZeroRewriteApplicable() ) { 
-				ignoreZeros = true; //table - rmempty - rshape
-				inputLops[0] = ((ParameterizedBuiltinOp)getInput().get(0)).getTargetHop().getInput().get(0).constructLops();
-				inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
-			}
-			
-			Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
-			
-			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
-			setLineNumbers(ternary);
-			
-			//force blocked output in CP and SPARK
-			ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
-			
-			//ternary opt, w/o reblock in CP
-			setLops(ternary);
+		//for CP we support only ctable expand left
+		Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable(true) ? 
+			Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
+		boolean ignoreZeros = false;
+		
+		if( isMatrixIgnoreZeroRewriteApplicable() ) { 
+			ignoreZeros = true; //table - rmempty - rshape
+			inputLops[0] = ((ParameterizedBuiltinOp)getInput().get(0)).getTargetHop().getInput().get(0).constructLops();
+			inputLops[1] = ((ParameterizedBuiltinOp)getInput().get(1)).getTargetHop().getInput().get(0).constructLops();
 		}
-		else //MR
-		{
-			//for MR we support both ctable expand left and right
-			Ctable.OperationTypes ternaryOp = isSequenceRewriteApplicable() ? 
-				Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ternaryOpOrig;
-			
-			Group group1 = null, group2 = null, group3 = null, group4 = null;
-			group1 = new Group(inputLops[0], Group.OperationTypes.Sort, getDataType(), getValueType());
-			group1.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			setLineNumbers(group1);
-			
-			Ctable ternary = null;
-			// create "group" lops for MATRIX inputs
-			switch (ternaryOp) 
-			{
-				case CTABLE_TRANSFORM:
-					// F = ctable(A,B,W)
-					group2 = new Group(
-							inputLops[1],
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group2.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					setLineNumbers(group2);
-					
-					group3 = new Group(
-							inputLops[2],
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group3.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					setLineNumbers(group3);
-					
-					if ( inputLops.length == 3 )
-						ternary = new Ctable(
-							new Lop[] {group1, group2, group3}, ternaryOp,
-							getDataType(), getValueType(), et);	
-					else 
-						// output dimensions are given
-						ternary = new Ctable(
-							new Lop[] {group1, group2, group3, inputLops[3], inputLops[4]},
-							ternaryOp, getDataType(), getValueType(), et);	
-					break;
-	
-				case CTABLE_TRANSFORM_SCALAR_WEIGHT:
-					// F = ctable(A,B) or F = ctable(A,B,1)
-					group2 = new Group(
-							inputLops[1],
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group2.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					setLineNumbers(group2);
-					
-					if ( inputLops.length == 3)
-						ternary = new Ctable(
-								new Lop[] {group1,group2,inputLops[2]},
-								ternaryOp, getDataType(), getValueType(), et);
-					else
-						ternary = new Ctable(
-								new Lop[] {group1,group2,inputLops[2], inputLops[3], inputLops[4]},
-								ternaryOp, getDataType(), getValueType(), et);
-						
-					break;
-			
-				case CTABLE_EXPAND_SCALAR_WEIGHT:
-					// F=ctable(seq(1,N),A) or F = ctable(seq,A,1)
-					int left = isSequenceRewriteApplicable(true)?1:0; //left 1, right 0 (index of input data)
-					
-					Group group = new Group(
-							getInput().get(left).constructLops(),
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					//TODO remove group, whenever we push it into the map task
-					
-					if (inputLops.length == 3)
-						ternary = new Ctable(
-								new Lop[] {group, //matrix
-									getInput().get(2).constructLops(), //weight
-									new LiteralOp(left).constructLops() //left
-								},
-								ternaryOp, getDataType(), getValueType(), et);
-					else
-						ternary = new Ctable(
-								new Lop[] {group, //matrix
-									getInput().get(2).constructLops(), //weight
-									new LiteralOp(left).constructLops(), //left
-									inputLops[3], inputLops[4]
-								},
-								ternaryOp, getDataType(), getValueType(), et);
-					break;
-					
-				case CTABLE_TRANSFORM_HISTOGRAM:
-					// F=ctable(A,1) or F = ctable(A,1,1)
-					if ( inputLops.length == 3 )
-						ternary = new Ctable(
-								new Lop[] {group1, 
-									getInput().get(1).constructLops(),
-									getInput().get(2).constructLops()
-								},
-								ternaryOp, getDataType(), getValueType(), et);
-					else
-						ternary = new Ctable(
-								new Lop[] {group1, 
-									getInput().get(1).constructLops(),
-									getInput().get(2).constructLops(),
-									inputLops[3],
-									inputLops[4]
-								},
-								ternaryOp, getDataType(), getValueType(), et);
-						
-					break;
-				case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM:
-					// F=ctable(A,1,W)
-					group3 = new Group(
-							getInput().get(2).constructLops(),
-							Group.OperationTypes.Sort, getDataType(),
-							getValueType());
-					group3.getOutputParameters().setDimensions(getDim1(),
-							getDim2(), getRowsInBlock(),
-							getColsInBlock(), getNnz());
-					setLineNumbers(group3);
-					
-					if ( inputLops.length == 3)
-						ternary = new Ctable(
-								new Lop[] {group1,
-									getInput().get(1).constructLops(),
-									group3},
-								ternaryOp, getDataType(), getValueType(), et);
-					else
-						ternary = new Ctable(
-								new Lop[] {group1,
-									getInput().get(1).constructLops(),
-									group3, inputLops[3], inputLops[4] },
-								ternaryOp, getDataType(), getValueType(), et);
-						
-					break;
-				
-				default:
-					throw new HopsException("Invalid ternary operator type: "+_op);
-			}
-
-			// output dimensions are not known at compilation time
-			ternary.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-			setLineNumbers(ternary);
-			
-			Lop lctable = ternary;
-			
-			if( !(_disjointInputs || ternaryOp == Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT) ) 
-			{ 
-				//no need for aggregation if (1) input indexed disjoint	or one side is sequence	w/ 1 increment
-				
-				group4 = new Group(
-						ternary, Group.OperationTypes.Sort, getDataType(),
-						getValueType());
-				group4.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-				setLineNumbers(group4);
-				
-				Aggregate agg1 = new Aggregate(
-						group4, HopsAgg2Lops.get(AggOp.SUM), getDataType(),
-						getValueType(), ExecType.MR);
-				agg1.getOutputParameters().setDimensions(_dim1, _dim2, ( _dimInputsPresent ? getRowsInBlock() : -1), ( _dimInputsPresent ? getColsInBlock() : -1), -1);
-				setLineNumbers(agg1);
-				
-				// kahamSum is used for aggregation but inputs do not have
-				// correction values
-				agg1.setupCorrectionLocation(CorrectionLocationType.NONE);
-				lctable = agg1;
-			}
-
-			setLops( lctable );
-			
-			// In this case, output dimensions are known at the time of its execution, no need 
-			// to introduce reblock lop since table itself outputs in blocked format if dims known.
-			if ( !dimsKnown() && !_dimInputsPresent ) {
-				setRequiresReblock( true );
-			}
-		}
+		
+		Ctable ternary = new Ctable(inputLops, ternaryOp, getDataType(), getValueType(), ignoreZeros, et);
+		
+		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+		setLineNumbers(ternary);
+		
+		//force blocked output in CP and SPARK
+		ternary.getOutputParameters().setDimensions(_dim1, _dim2, getRowsInBlock(), getColsInBlock(), -1);
+		
+		//ternary opt, w/o reblock in CP
+		setLops(ternary);
 	}
 
-	private void constructLopsTernaryDefault() 
-	{
+	private void constructLopsTernaryDefault() {
 		ExecType et = optFindExecType();
 		if( getInput().stream().allMatch(h -> h.getDataType().isScalar()) )
 			et = ExecType.CP; //always CP for pure scalar operations
-		
-		Ternary plusmult = null;
-		
-		if( et == ExecType.CP || et == ExecType.SPARK || et == ExecType.GPU ) {
-			plusmult = new Ternary(HopsOpOp3Lops.get(_op),
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(), 
-				getDataType(),getValueType(), et );
-		}
-		else { //MR
-			Hop first = getInput().get(0);
-			Hop second = getInput().get(1);
-			Hop third = getInput().get(2);
-			
-			Lop firstLop = first.constructLops(); 
-			if( first.getDataType().isMatrix() ) {
-				firstLop = new Group(firstLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(firstLop);
-				setOutputDimensions(firstLop);
-			}
-			Lop secondLop = second.constructLops(); 
-			if( second.getDataType().isMatrix() ) {
-				secondLop = new Group(secondLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(secondLop);
-				setOutputDimensions(secondLop);
-			}
-			Lop thirdLop = third.constructLops(); 
-			if( third.getDataType().isMatrix() ) {
-				thirdLop = new Group(thirdLop, Group.OperationTypes.Sort, getDataType(), getValueType());
-				setLineNumbers(thirdLop);
-				setOutputDimensions(thirdLop);
-			}
-			
-			plusmult = new Ternary(HopsOpOp3Lops.get(_op),
-				firstLop, secondLop, thirdLop,
-				getDataType(),getValueType(), et );
-		}
-		
+		Ternary plusmult = new Ternary(HopsOpOp3Lops.get(_op),
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(), 
+			getDataType(),getValueType(), et );
 		setOutputDimensions(plusmult);
 		setLineNumbers(plusmult);
 		setLops(plusmult);
@@ -809,8 +475,6 @@ public class TernaryOp extends Hop
 	protected ExecType optFindExecType() 
 	{
 		checkAndSetForcedPlatform();
-
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		
 		if( _etypeForced != null ) {
 			_etype = _etypeForced;
@@ -825,7 +489,7 @@ public class TernaryOp extends Hop
 					&& getInput().get(2).areDimsBelowThreshold()) )
 				_etype = ExecType.CP;
 			else
-				_etype = REMOTE;
+				_etype = ExecType.SPARK;
 			
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();

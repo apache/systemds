@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.*;
 
 /**
@@ -50,34 +48,16 @@ public class AppendG extends Lop
 		_cbind = cbind;
 	}
 	
-	public void init(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) 
-	{
+	public void init(Lop input1, Lop input2, Lop input3, Lop input4, DataType dt, ValueType vt, ExecType et) {
 		addInput(input1);
 		input1.addOutput(this);
-
 		addInput(input2);
 		input2.addOutput(this);
-		
 		addInput(input3);
 		input3.addOutput(this);
-		
 		addInput(input4);
 		input4.addOutput(this);
-		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if( et == ExecType.MR )
-		{
-			lps.addCompatibility(JobType.GMR);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //SP
-		{
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, ExecType.SPARK);
 	}
 	
 	@Override

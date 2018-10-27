@@ -656,31 +656,7 @@ public class GPUMemoryManager {
 				return 1;
 			} else {
 				// Both are unlocked
-				if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.ALIGN_MEMORY) {
-					if(!p1.isDensePointerNull() && !p2.isDensePointerNull()) {
-						long p1Ptr = new CustomPointer(p1.getDensePointer()).getNativePointer();
-						long p2Ptr = new CustomPointer(p2.getDensePointer()).getNativePointer();
-						
-						if(p1Ptr <= p2Ptr)
-							return -1;
-						else
-							return 1;
-					}
-					else if(p1.isDensePointerNull() && !p2.isDensePointerNull()) {
-						return -1;
-					}
-					else if(!p1.isDensePointerNull() && p2.isDensePointerNull()) {
-						return 1;
-					}
-					else {
-						return minEvictCompare(p1, p2);
-					}
-				}
-				else if (DMLScript.GPU_EVICTION_POLICY == DMLScript.EvictionPolicy.MIN_EVICT) {
-					return minEvictCompare(p1, p2);
-				} else {
-					return Long.compare(p2.timestamp.get(), p1.timestamp.get());
-				}
+				return Long.compare(p2.timestamp.get(), p1.timestamp.get());
 			}
 		}
 	}

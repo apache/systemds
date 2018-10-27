@@ -54,11 +54,6 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testEigenFactorizeDenseMR() {
-		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
-	}
-	
-	@Test
 	public void testEigenFactorizeDenseHybrid() {
 		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
 	}
@@ -71,11 +66,6 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	@Test
 	public void testLargeEigenFactorizeDenseSP() {
 		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SPARK );
-	}
-	
-	@Test
-	public void testLargeEigenFactorizeDenseMR() {
-		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test

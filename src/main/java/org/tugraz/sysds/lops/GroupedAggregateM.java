@@ -21,9 +21,9 @@ package org.tugraz.sysds.lops;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.Expression.*;
 

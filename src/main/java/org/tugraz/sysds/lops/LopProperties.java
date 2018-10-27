@@ -21,26 +21,11 @@ package org.tugraz.sysds.lops;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties 
 {
-	/**
-	 * Execution types:
-	 *
-	 * <ul>
-	 * <li>CP - Control Program (single JVM)</li>
-	 * <li>CP_FILE - ?</li>
-	 * <li>MR - Apache Hadoop</li>
-	 * <li>SPARK - Apache Spark</li>
-	 * <li>GPU - Execute on a GPU</li>
-	 * <li>INVALID - Invalid execution type</li>
-	 * </ul>
-	 *
-	 */
-	public enum ExecType { CP, CP_FILE, MR, SPARK, GPU, INVALID }
-	public enum ExecLocation {INVALID, RecordReader, Map, MapOrReduce, MapAndReduce, Reduce, Data, ControlProgram }
+	public enum ExecType { CP, CP_FILE, SPARK, GPU, INVALID }
 
 	// static variable to assign an unique ID to every lop that is created
 	private static IDSequence UniqueLopID = null;
@@ -61,21 +46,11 @@ public class LopProperties
 	long ID;
 	int level;
 	ExecType execType;
-	ExecLocation execLoc;
-	int compatibleJobs;
-	boolean breaksAlignment;
-	boolean isAligner;
-	boolean definesMRJob;
 	boolean producesIntermediateOutput;
 	
 	public LopProperties() {
 		ID = UniqueLopID.getNextID();
 		execType = ExecType.INVALID;
-		execLoc = ExecLocation.INVALID;
-		compatibleJobs = JobType.INVALID.getBase();
-		breaksAlignment = true;
-		isAligner = false;
-		definesMRJob = false;
 		producesIntermediateOutput = false;
 	}
 	
@@ -83,70 +58,12 @@ public class LopProperties
 	public int getLevel() { return level; }
 	public void setLevel( int l ) { level = l; }
 	
-	public ExecLocation getExecLocation() {
-		return execLoc;
-	}
-	
 	public ExecType getExecType() {
 		return execType;
 	}
 	
-	public int getCompatibleJobs() {
-		return compatibleJobs;
-	}
-	
-	public boolean getBreaksAlignment() {
-		return breaksAlignment;
-	}
-	
-	public boolean getDefinesMRJob() {
-		return definesMRJob;
-	}
-	
-	public boolean isAligner()
-	{
-		return isAligner;
-	}
-	
 	public boolean getProducesIntermediateOutput() {
 		return producesIntermediateOutput;
-	}
-
-	public void setExecLocation(ExecLocation el) {
-		execLoc = el;
-	}
-	
-	public void addCompatibility ( JobType jt ) {
-		compatibleJobs = compatibleJobs | jt.getBase();
-	}
-	
-	public void removeCompatibility ( JobType jt ) {
-		compatibleJobs = compatibleJobs ^ jt.getBase();
-	}
-	
-	public void removeNonPiggybackableJobs() {
-		// Remove compatibility with those jobs which do not allow any "other" instructions 
-		for ( JobType jt : JobType.values()) {
-			if(jt.allowsNoOtherInstructions()) {
-				compatibleJobs = compatibleJobs ^ jt.getBase();
-			}
-		}
-	}
-	
-	public void setCompatibleJobs(int cj) {
-		compatibleJobs = cj;
-	}
-	
-	public void setDefinesMRJob(boolean dmrj) {
-		definesMRJob = dmrj;
-	}
-	
-	public void setBreaksAlignment(boolean ba) {
-		breaksAlignment = ba;
-	}
-	
-	public void setAligner(boolean align) {
-		isAligner = align;
 	}
 	
 	public void setProducesIntermediateOutput(boolean pio) {
@@ -174,13 +91,8 @@ public class LopProperties
 		setLevel(tmplevel);
 	}
 
-	public void setProperties ( ArrayList<Lop> inputs, ExecType et, ExecLocation el, boolean ba, boolean aligner, boolean definesMR ) {
+	public void setProperties ( ArrayList<Lop> inputs, ExecType et) {
 		execType = et;
-		execLoc = el;
-		breaksAlignment = ba;
-		isAligner = aligner;
-		definesMRJob = definesMR;
 		setLevel(inputs);
 	}
-	
 }

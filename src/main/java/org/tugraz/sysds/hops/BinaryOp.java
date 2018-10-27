@@ -22,7 +22,6 @@ package org.tugraz.sysds.hops;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Append;
 import org.tugraz.sysds.lops.AppendG;
 import org.tugraz.sysds.lops.AppendGAlignedSP;
@@ -34,18 +33,13 @@ import org.tugraz.sysds.lops.BinaryScalar;
 import org.tugraz.sysds.lops.BinaryUAggChain;
 import org.tugraz.sysds.lops.CentralMoment;
 import org.tugraz.sysds.lops.CoVariance;
-import org.tugraz.sysds.lops.CombineBinary;
-import org.tugraz.sysds.lops.CombineUnary;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.DnnTransform;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.PartialAggregate;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.CombineBinary.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
@@ -224,238 +218,79 @@ public class BinaryOp extends MultiThreadedHop
 	}
 	
 	private void constructLopsIQM(ExecType et) {
-		if ( et == ExecType.MR ) {
-			CombineBinary combine = CombineBinary.constructCombineLop(
-					OperationTypes.PreSort, (Lop) getInput().get(0)
-							.constructLops(), (Lop) getInput().get(1)
-							.constructLops(), DataType.MATRIX,
-					getValueType());
-			combine.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					combine,
-					SortKeys.OperationTypes.WithWeights,
-					DataType.MATRIX, ValueType.DOUBLE, ExecType.MR);
-
-			// Sort dimensions are same as the first input
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			Data lit = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.25));
-			setLineNumbers(lit);
-	
-			PickByCount pick = new PickByCount(
-					sort, lit, DataType.MATRIX, getValueType(),
-					PickByCount.OperationTypes.RANGEPICK);
-
-			pick.getOutputParameters().setDimensions(-1, -1, 
-					getRowsInBlock(), getColsInBlock(), -1);
-			setLineNumbers(pick);
-			
-			PartialAggregate pagg = new PartialAggregate(pick,
-					HopsAgg2Lops.get(Hop.AggOp.SUM),
-					HopsDirection2Lops.get(Hop.Direction.RowCol),
-					DataType.MATRIX, getValueType());
-			setLineNumbers(pagg);
-			
-			// Set the dimensions of PartialAggregate LOP based on the
-			// direction in which aggregation is performed
-			pagg.setDimensionsBasedOnDirection(getDim1(), getDim2(),
-					getRowsInBlock(), getColsInBlock());
-
-			Group group1 = new Group(pagg, Group.OperationTypes.Sort,
-					DataType.MATRIX, getValueType());
-			setOutputDimensions(group1);
-			setLineNumbers(group1);
-
-			Aggregate agg1 = new Aggregate(group1, HopsAgg2Lops
-					.get(Hop.AggOp.SUM), DataType.MATRIX,
-					getValueType(), ExecType.MR);
-			setOutputDimensions(agg1);
-			agg1.setupCorrectionLocation(pagg.getCorrectionLocation());
-			setLineNumbers(agg1);
-
-			UnaryCP unary1 = new UnaryCP(agg1, HopsOpOp1LopsUS
-					.get(OpOp1.CAST_AS_SCALAR), DataType.SCALAR,
-					getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			
-			Unary iqm = new Unary(sort, unary1, Unary.OperationTypes.MR_IQM, DataType.SCALAR, ValueType.DOUBLE, ExecType.CP);
-			iqm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(iqm);			
-			setLops(iqm);
-		}
-		else 
-		{
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					SortKeys.OperationTypes.WithWeights, 
-					getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(), 
-					getInput().get(0).getRowsInBlock(), 
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-			PickByCount pick = new PickByCount(
-					sort,
-					null,
-					getDataType(),
-					getValueType(),
-					PickByCount.OperationTypes.IQM, et, true);
-			
-			setOutputDimensions(pick);
-			setLineNumbers(pick);
-			setLops(pick);
-		}
+		SortKeys sort = SortKeys.constructSortByValueLop(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(), 
+				SortKeys.OperationTypes.WithWeights, 
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+		sort.getOutputParameters().setDimensions(
+				getInput().get(0).getDim1(),
+				getInput().get(0).getDim2(), 
+				getInput().get(0).getRowsInBlock(), 
+				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getNnz());
+		PickByCount pick = new PickByCount(
+				sort,
+				null,
+				getDataType(),
+				getValueType(),
+				PickByCount.OperationTypes.IQM, et, true);
+		
+		setOutputDimensions(pick);
+		setLineNumbers(pick);
+		setLops(pick);
 	}
 	
 	private void constructLopsMedian(ExecType et) {
-		if ( et == ExecType.MR ) {
-			CombineBinary combine = CombineBinary
-					.constructCombineLop(
-							OperationTypes.PreSort,
-							getInput().get(0).constructLops(),
-							getInput().get(1).constructLops(),
-							DataType.MATRIX, getValueType());
+		SortKeys sort = SortKeys.constructSortByValueLop(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(), 
+				SortKeys.OperationTypes.WithWeights, 
+				getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
+		sort.getOutputParameters().setDimensions(
+				getInput().get(0).getDim1(),
+				getInput().get(0).getDim2(),
+				getInput().get(0).getRowsInBlock(),
+				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getNnz());
+		PickByCount pick = new PickByCount(
+				sort,
+				Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+				getDataType(),
+				getValueType(),
+				PickByCount.OperationTypes.MEDIAN, et, true);
 
-			SortKeys sort = SortKeys
-					.constructSortByValueLop(
-							combine,
-							SortKeys.OperationTypes.WithWeights,
-							DataType.MATRIX, getValueType(), et);
+		pick.getOutputParameters().setDimensions(getDim1(),
+				getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
+		
+		pick.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
 
-			combine.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
-			// Sort dimensions are same as the first input
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			ExecType et_pick = ExecType.CP;
-			
-			PickByCount pick = new PickByCount(
-					sort,
-					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					getDataType(),
-					getValueType(),
-					PickByCount.OperationTypes.MEDIAN, et_pick, false);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-			setLops(pick);
-		}
-		else {
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					SortKeys.OperationTypes.WithWeights, 
-					getInput().get(0).getDataType(), getInput().get(0).getValueType(), et);
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-			PickByCount pick = new PickByCount(
-					sort,
-					Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
-					getDataType(),
-					getValueType(),
-					PickByCount.OperationTypes.MEDIAN, et, true);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-			setLops(pick);
-		}
+		setLops(pick);
 	}
 	
 	private void constructLopsCentralMoment(ExecType et) 
 	{
 		// The output data type is a SCALAR if central moment 
 		// gets computed in CP/SPARK, and it will be MATRIX otherwise.
-		DataType dt = (et == ExecType.MR ? DataType.MATRIX : DataType.SCALAR );
+		DataType dt = DataType.SCALAR;
 		CentralMoment cm = new CentralMoment(
 				getInput().get(0).constructLops(), 
 				getInput().get(1).constructLops(),
 				dt, getValueType(), et);
 
 		setLineNumbers(cm);
-		
-		if ( et == ExecType.MR ) {
-			cm.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			UnaryCP unary1 = new UnaryCP(cm, HopsOpOp1LopsUS
-					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
-					getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);
-			setLops(unary1);
-		}
-		else {
-			cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLops(cm);
-		}
+		cm.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		setLops(cm);
 	}
 
 	private void constructLopsCovariance(ExecType et) {
-		if ( et == ExecType.MR ) {
-			// combineBinary -> CoVariance -> CastAsScalar
-			CombineBinary combine = CombineBinary.constructCombineLop(
-					OperationTypes.PreCovUnweighted, getInput().get(
-							0).constructLops(), getInput().get(1)
-							.constructLops(), DataType.MATRIX,
-					getValueType());
-
-			combine.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			CoVariance cov = new CoVariance(combine, DataType.MATRIX,
-					getValueType(), et);
-			cov.getOutputParameters().setDimensions(1, 1, 0, 0, -1);
-			setLineNumbers(cov);
-
-			UnaryCP unary1 = new UnaryCP(cov, HopsOpOp1LopsUS
-					.get(OpOp1.CAST_AS_SCALAR), getDataType(),
-					getValueType());
-			unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(unary1);	
-			setLops(unary1);
-		}
-		else //CP/SPARK
-		{
-			CoVariance cov = new CoVariance(
-					getInput().get(0).constructLops(), 
-					getInput().get(1).constructLops(), 
-					getDataType(), getValueType(), et);
-			cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-			setLineNumbers(cov);
-			setLops(cov);
-		}
+		CoVariance cov = new CoVariance(
+				getInput().get(0).constructLops(), 
+				getInput().get(1).constructLops(), 
+				getDataType(), getValueType(), et);
+		cov.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
+		setLineNumbers(cov);
+		setLops(cov);
 	}
 	
 	private void constructLopsQuantile(ExecType et) {
@@ -469,63 +304,22 @@ public class BinaryOp extends MultiThreadedHop
 		else
 			pick_op = PickByCount.OperationTypes.RANGEPICK;
 
-		if ( et == ExecType.MR ) 
-		{
-			CombineUnary combine = CombineUnary.constructCombineLop(
-					getInput().get(0).constructLops(),
-					getDataType(), getValueType());
+		SortKeys sort = SortKeys.constructSortByValueLop(
+							getInput().get(0).constructLops(), 
+							SortKeys.OperationTypes.WithoutWeights, 
+							DataType.MATRIX, ValueType.DOUBLE, et );
+		sort.getOutputParameters().setDimensions(
+				getInput().get(0).getDim1(),
+				getInput().get(0).getDim2(),
+				getInput().get(0).getRowsInBlock(),
+				getInput().get(0).getColsInBlock(), 
+				getInput().get(0).getNnz());
+		PickByCount pick = new PickByCount( sort, getInput().get(1).constructLops(),
+				getDataType(), getValueType(), pick_op, et, true);
 
-			SortKeys sort = SortKeys.constructSortByValueLop(
-					combine, SortKeys.OperationTypes.WithoutWeights,
-					DataType.MATRIX, ValueType.DOUBLE, et);
-
-			combine.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-
-			// Sort dimensions are same as the first input
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-
-			// If only a single quantile is computed, then "pick" operation executes in CP.
-			ExecType et_pick = (getInput().get(1).getDataType() == DataType.SCALAR ? ExecType.CP : ExecType.MR);
-			
-			PickByCount pick = new PickByCount(
-					sort,
-					getInput().get(1).constructLops(),
-					getDataType(),
-					getValueType(),
-					pick_op, et_pick, false);
-
-			pick.getOutputParameters().setDimensions(getDim1(),
-					getDim2(), getRowsInBlock(), getColsInBlock(), getNnz());
-			
-			pick.setAllPositions(this.getFilename(), this.getBeginLine(), this.getBeginColumn(), this.getEndLine(), this.getEndColumn());
-
-			setLops(pick);
-		}
-		else //CP/SPARK 
-		{
-			SortKeys sort = SortKeys.constructSortByValueLop(
-								getInput().get(0).constructLops(), 
-								SortKeys.OperationTypes.WithoutWeights, 
-								DataType.MATRIX, ValueType.DOUBLE, et );
-			sort.getOutputParameters().setDimensions(
-					getInput().get(0).getDim1(),
-					getInput().get(0).getDim2(),
-					getInput().get(0).getRowsInBlock(),
-					getInput().get(0).getColsInBlock(), 
-					getInput().get(0).getNnz());
-			PickByCount pick = new PickByCount( sort, getInput().get(1).constructLops(),
-					getDataType(), getValueType(), pick_op, et, true);
-
-			setOutputDimensions(pick);
-			setLineNumbers(pick);
-			setLops(pick);
-		}
+		setOutputDimensions(pick);
+		setLineNumbers(pick);
+		setLops(pick);
 	}
 
 	private void constructLopsAppend(ExecType et) 
@@ -884,7 +678,6 @@ public class BinaryOp extends MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 		DataType dt1 = getInput().get(0).getDataType();
 		DataType dt2 = getInput().get(1).getDataType();
 		
@@ -928,7 +721,7 @@ public class BinaryOp extends MultiThreadedHop
 				
 				//if no CP condition applied
 				if( _etype == null )
-					_etype = REMOTE;
+					_etype = ExecType.SPARK;
 			}
 		
 			//check for valid CP dimensions and matrix size
@@ -1006,64 +799,6 @@ public class BinaryOp extends MultiThreadedHop
 		
 		
 		return ret;
-	}
-	
-	/**
-	 * Special case ternary append. Here, we also compile a MR_RAPPEND or MR_GAPPEND
-	 * 
-	 * @param left ?
-	 * @param right1 ?
-	 * @param right2 ?
-	 * @param dt ?
-	 * @param vt ?
-	 * @param cbind ?
-	 * @param current ?
-	 * @return low-level operator
-	 */
-	public static Lop constructAppendLopChain( Hop left, Hop right1, Hop right2, DataType dt, ValueType vt, boolean cbind, Hop current ) {
-		long m1_dim1 = left.getDim1();
-		long m1_dim2 = left.getDim2();
-		long m2_dim1 = right1.getDim1();
-		long m2_dim2 = right1.getDim2();
-		long m3_dim1 = right2.getDim1();
-		long m3_dim2 = right2.getDim2();
-		long m41_dim2 = (m1_dim2>=0 && m2_dim2>=0) ? (m1_dim2 + m2_dim2) : -1; //output cols
-		long m41_nnz = (left.getNnz()>0 && right1.getNnz()>0) ? 
-				      (left.getNnz() + right1.getNnz()) : -1; //output nnz
-		long m42_dim2 = (m1_dim2>=0 && m2_dim2>=0 && m3_dim2>=0) ? (m1_dim2 + m2_dim2 + m3_dim2) : -1; //output cols
-		long m42_nnz = (left.getNnz()>0 && right1.getNnz()>0 && right2.getNnz()>0) ? 
-				      (left.getNnz() + right1.getNnz()+ right2.getNnz()) : -1; //output nnz
-		long brlen = left.getRowsInBlock();
-		long bclen = left.getColsInBlock();
-		
-		//warn if assumption of blocksize>=3 does not hold
-		if( bclen < 3 )
-			throw new HopsException("MR_RAPPEND requires a blocksize of >= 3.");
-		
-		//case MR_RAPPEND:
-		//special case reduce append w/ one column block
-		
-		Group group1 = new Group(left.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
-		group1.getOutputParameters().setDimensions(m1_dim1, m1_dim2, brlen, bclen, left.getNnz());
-		group1.setAllPositions(left.getFilename(), left.getBeginLine(), left.getBeginColumn(), left.getEndLine(), left.getEndColumn());
-		
-		Group group2 = new Group(right1.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
-		group1.getOutputParameters().setDimensions(m2_dim1, m2_dim2, brlen, bclen, right1.getNnz());
-		group1.setAllPositions(right1.getFilename(), right1.getBeginLine(), right1.getBeginColumn(), right1.getEndLine(), right1.getEndColumn());
-		
-		Group group3 = new Group(right2.constructLops(), Group.OperationTypes.Sort, DataType.MATRIX, vt);
-		group1.getOutputParameters().setDimensions(m3_dim1, m3_dim2, brlen, bclen, right2.getNnz());
-		group1.setAllPositions(right2.getFilename(), right2.getBeginLine(), right2.getBeginColumn(), right2.getEndLine(), right2.getEndColumn());
-		
-		AppendR appR1 = new AppendR(group1, group2, dt, vt, cbind, ExecType.MR);
-		appR1.getOutputParameters().setDimensions(m1_dim1, m41_dim2, brlen, bclen, m41_nnz);
-		appR1.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-		
-		AppendR appR2 = new AppendR(appR1, group3, dt, vt, cbind, ExecType.MR);
-		appR1.getOutputParameters().setDimensions(m1_dim1, m42_dim2, brlen, bclen, m42_nnz);
-		appR1.setAllPositions(current.getFilename(), current.getBeginLine(), current.getBeginColumn(), current.getEndLine(), current.getEndColumn());
-	
-		return appR2;
 	}
 	
 	/**

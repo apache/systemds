@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.*;
 
 
@@ -64,14 +64,7 @@ public class UnaryCP extends Lop
 		operation = op;
 		this.addInput(input);
 		input.addOutput(this);
-
-		//This lop is executed in control program.
-		boolean breaksAlignment = false; // this does not carry any information
-											// for this lop
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
+		lps.setProperties(inputs, et);
 	}
 	
 	public UnaryCP(Lop input, OperationTypes op, DataType dt, ValueType vt) {

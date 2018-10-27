@@ -2601,8 +2601,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	private static Hop foldMultipleMinMaxOperations(Hop hi) 
 	{
 		if( (HopRewriteUtils.isBinary(hi, OpOp2.MIN, OpOp2.MAX) 
-			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX))
-			&& !OptimizerUtils.isHadoopExecutionMode() )
+			|| HopRewriteUtils.isNary(hi, OpOpN.MIN, OpOpN.MAX)) )
 		{
 			OpOp2 bop = (hi instanceof BinaryOp) ? ((BinaryOp)hi).getOp() :
 				OpOp2.valueOf(((NaryOp)hi).getOp().name());

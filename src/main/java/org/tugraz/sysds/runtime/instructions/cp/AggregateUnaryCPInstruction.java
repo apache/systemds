@@ -103,11 +103,8 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 				{
 					if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
-						|| (input1.getDataType() == DataType.FRAME && OptimizerUtils.isHadoopExecutionMode()) )
+						|| input1.getDataType() == DataType.FRAME )
 					{
-						if( OptimizerUtils.isHadoopExecutionMode() )
-							LOG.warn("Reading csv input frame of unkown size into memory for '"+opcode+"'.");
-						
 						//read the input matrix/frame and explicitly refresh meta data
 						CacheableData<?> obj = ec.getCacheableData(input1.getName());
 						obj.acquireRead();

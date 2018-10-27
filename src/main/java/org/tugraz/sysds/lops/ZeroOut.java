@@ -19,9 +19,7 @@
 
 package org.tugraz.sysds.lops;
 
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -36,28 +34,13 @@ public class ZeroOut  extends Lop
 		this.addInput(colL);
 		this.addInput(colU);
 		
-		inputMatrix.addOutput(this);		
+		inputMatrix.addOutput(this);
 		rowL.addOutput(this);
 		rowU.addOutput(this);
 		colL.addOutput(this);
 		colU.addOutput(this);
-
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
 		
-		if ( et == ExecType.MR ) {
-			
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.MMCJ);
-			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
-		} 
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	public ZeroOut(Lop input, Lop rowL, Lop rowU, Lop colL, Lop colU, long rowDim,

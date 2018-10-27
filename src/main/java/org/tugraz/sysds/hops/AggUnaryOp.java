@@ -24,7 +24,6 @@ import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Binary;
-import org.tugraz.sysds.lops.Group;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.PartialAggregate;
 import org.tugraz.sysds.lops.TernaryAggregate;
@@ -162,76 +161,6 @@ public class AggUnaryOp extends MultiThreadedHop
 				if (getDataType() == DataType.SCALAR) {
 					agg1.getOutputParameters().setDimensions(1, 1, getRowsInBlock(), getColsInBlock(), getNnz());
 				}
-			}
-			else if( et == ExecType.MR )
-			{
-				OperationTypes op = HopsAgg2Lops.get(_op);
-				DirectionTypes dir = HopsDirection2Lops.get(_direction);
-				
-				//unary aggregate operation
-				Lop transform1 = null;
-				if( isUnaryAggregateOuterRewriteApplicable() ) 
-				{
-					BinaryOp binput = (BinaryOp)getInput().get(0);
-					transform1 = new UAggOuterChain( binput.getInput().get(0).constructLops(), 
-							binput.getInput().get(1).constructLops(), op, dir, 
-							HopsOpOp2LopsB.get(binput.getOp()), DataType.MATRIX, getValueType(), ExecType.MR);
-					PartialAggregate.setDimensionsBasedOnDirection(transform1, getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), dir);
-				}
-				else //default
-				{
-					transform1 = new PartialAggregate(input.constructLops(), op, dir, DataType.MATRIX, getValueType());
-					((PartialAggregate) transform1).setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
-				}
-				setLineNumbers(transform1);
-				
-				//aggregation if required
-				Lop aggregate = null;
-				Group group1 = null; 
-				Aggregate agg1 = null;
-				if( requiresAggregation(input, _direction) || transform1 instanceof UAggOuterChain )
-				{
-					group1 = new Group(transform1, Group.OperationTypes.Sort, DataType.MATRIX, getValueType());
-					group1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
-					setLineNumbers(group1);
-					
-					agg1 = new Aggregate(group1, HopsAgg2Lops.get(_op), DataType.MATRIX, getValueType(), et);
-					agg1.getOutputParameters().setDimensions(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock(), getNnz());
-					agg1.setupCorrectionLocation(PartialAggregate.getCorrectionLocation(op,dir));
-					setLineNumbers(agg1);
-					
-					aggregate = agg1;
-				}
-				else
-				{
-					((PartialAggregate) transform1).setDropCorrection();
-					aggregate = transform1;
-				}
-				
-				setLops(aggregate);
-				
-				//cast if required
-				if (getDataType() == DataType.SCALAR) {
-
-					// Set the dimensions of PartialAggregate LOP based on the
-					// direction in which aggregation is performed
-					PartialAggregate.setDimensionsBasedOnDirection(transform1, input.getDim1(), input.getDim2(),
-							input.getRowsInBlock(), input.getColsInBlock(), dir);
-					
-					if( group1 != null && agg1 != null ) { //if aggregation required
-						group1.getOutputParameters().setDimensions(input.getDim1(), input.getDim2(), 
-								input.getRowsInBlock(), input.getColsInBlock(), getNnz());
-						agg1.getOutputParameters().setDimensions(1, 1, 
-								input.getRowsInBlock(), input.getColsInBlock(), getNnz());
-					}
-					
-					UnaryCP unary1 = new UnaryCP(
-							aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-							getDataType(), getValueType());
-					unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
-					setLineNumbers(unary1);
-					setLops(unary1);
-				} 
 			}
 			else if( et == ExecType.SPARK )
 			{
@@ -425,7 +354,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		
 		checkAndSetForcedPlatform();
 		
-		ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		ExecType REMOTE = ExecType.SPARK;
 		
 		//forced / memory-based / threshold-based decision
 		if( _etypeForced != null )
@@ -517,9 +446,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					LiteralOp lit = (LiteralOp)binput1.getInput().get(1);
 					ret = HopRewriteUtils.getIntValueSafe(lit) == 3;
 				}
-				else if (binput1.getOp() == OpOp2.MULT
-						// As unary agg instruction is not implemented in MR and since MR is in maintenance mode, postponed it.
-						&& input1.optFindExecType() != ExecType.MR) {
+				else if (binput1.getOp() == OpOp2.MULT ) {
 					Hop input11 = input1.getInput().get(0);
 					Hop input12 = input1.getInput().get(1);
 

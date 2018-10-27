@@ -20,9 +20,9 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
-import org.tugraz.sysds.lops.LopProperties.ExecLocation;
+ 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.compile.JobType;
+
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
 
@@ -76,23 +76,7 @@ public class RightIndex extends Lop
 		colU.addOutput(this);
 		leftMatrixRowDim.addOutput(this);
 		leftMatrixColDim.addOutput(this);
-
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.MMCJ);
-			lps.addCompatibility(JobType.MMRJ);
-			lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
-		} 
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
-		
+		lps.setProperties(inputs, et);
 		forLeftIndexing=forleft;
 	}
 	
@@ -131,15 +115,6 @@ public class RightIndex extends Lop
 		sb.append( getDataType() );
 		sb.append( VALUETYPE_PREFIX );
 		sb.append( getValueType() );
-		
-		if(getExecType() == ExecType.MR) {
-			// following fields are added only when this lop is executed in MR (both for left & right indexing) 
-			sb.append( OPERAND_DELIMITOR );
-			
-			sb.append( getInputs().get(5).prepScalarInputOperand(leftRowDim));
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( getInputs().get(6).prepScalarInputOperand(leftColDim));
-		}
 		
 		//in case of spark, we also compile the optional aggregate flag into the instruction.
 		if( getExecType() == ExecType.SPARK ) {

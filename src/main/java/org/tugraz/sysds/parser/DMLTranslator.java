@@ -81,8 +81,6 @@ import org.tugraz.sysds.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.tugraz.sysds.parser.Expression.ValueType;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -601,56 +599,15 @@ public class DMLTranslator
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			FunctionProgramBlock rtpb = null;
 			
-			if (fstmt instanceof ExternalFunctionStatement) {
-				 // create external function program block
-				
-				String execType = ((ExternalFunctionStatement) fstmt)
-						.getOtherParams().get(ExternalFunctionStatement.EXEC_TYPE);
-				boolean isCP = (execType.equals(ExternalFunctionStatement.IN_MEMORY)) ? true : false;
-				
-				StringBuilder buff = new StringBuilder();
-				buff.append(config.getTextValue(DMLConfig.SCRATCH_SPACE));
-				buff.append(Lop.FILE_SEPARATOR);
-				buff.append(Lop.PROCESS_PREFIX);
-				buff.append(DMLScript.getUUID());
-				buff.append(Lop.FILE_SEPARATOR);
-				buff.append(Lop.CP_ROOT_THREAD_ID);
-				buff.append(Lop.FILE_SEPARATOR);
-				buff.append("PackageSupport");
-				buff.append(Lop.FILE_SEPARATOR);
-				String basedir =  buff.toString();
-				
-				if( isCP )
-				{
-					
-					rtpb = new ExternalFunctionProgramBlockCP(prog, 
-									fstmt.getInputParams(), fstmt.getOutputParams(), 
-									((ExternalFunctionStatement) fstmt).getOtherParams(),
-									basedir );
-				}
-				else
-				{
-					rtpb = new ExternalFunctionProgramBlock(prog, 
-									fstmt.getInputParams(), fstmt.getOutputParams(), 
-									((ExternalFunctionStatement) fstmt).getOtherParams(),
-									basedir);
-				}
-				
-				if (!fstmt.getBody().isEmpty()){
-					throw new LopsException(fstmt.printErrorLocation() + "ExternalFunctionStatementBlock should have no statement blocks in body");
-				}
-			}
-			else 
-			{
-				// create function program block
-				rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());
-				
-				// process the function statement body
-				for (StatementBlock sblock : fstmt.getBody()){	
-					// process the body
-					ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
-					rtpb.addProgramBlock(childBlock);
-				}
+	
+			// create function program block
+			rtpb = new FunctionProgramBlock(prog, fstmt.getInputParams(), fstmt.getOutputParams());
+			
+			// process the function statement body
+			for (StatementBlock sblock : fstmt.getBody()){	
+				// process the body
+				ProgramBlock childBlock = createRuntimeProgramBlock(prog, sblock, config);
+				rtpb.addProgramBlock(childBlock);
 			}
 			
 			// check there are actually Lops in to process (loop stmt body will not have any)

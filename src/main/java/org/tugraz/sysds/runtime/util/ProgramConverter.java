@@ -52,8 +52,6 @@ import org.tugraz.sysds.parser.Expression.ValueType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlockCP;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -93,7 +91,6 @@ import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.udf.ExternalFunctionInvocationInstruction;
 
 /**
  * Program converter functionalities for 
@@ -369,34 +366,17 @@ public class ProgramConverter
 		if( fpb.getOutputParams()!= null )
 			tmp2.addAll(fpb.getOutputParams());
 		
-		if( fpb instanceof ExternalFunctionProgramBlockCP ) {
-			ExternalFunctionProgramBlockCP efpb = (ExternalFunctionProgramBlockCP) fpb;
-			HashMap<String,String> tmp3 = efpb.getOtherParams();
-			if( IDPrefix!=-1 )
-				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),Lop.CP_CHILD_THREAD+IDPrefix,Lop.CP_CHILD_THREAD+pid));
-			else
-				copy = new ExternalFunctionProgramBlockCP(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),Lop.CP_ROOT_THREAD_ID,Lop.CP_CHILD_THREAD+pid));
+		
+		if( !fnStack.contains(fnameNewKey) ) {
+			fnStack.add(fnameNewKey);
+			copy = new FunctionProgramBlock(prog, tmp1, tmp2);
+			copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, fpb.isRecompileOnce()) );
+			copy.setRecompileOnce( fpb.isRecompileOnce() );
+			copy.setThreadID(pid);
+			fnStack.remove(fnameNewKey);
 		}
-		else if( fpb instanceof ExternalFunctionProgramBlock ) {
-			ExternalFunctionProgramBlock efpb = (ExternalFunctionProgramBlock) fpb;
-			HashMap<String,String> tmp3 = efpb.getOtherParams();
-			if( IDPrefix!=-1 )
-				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),Lop.CP_CHILD_THREAD+IDPrefix, Lop.CP_CHILD_THREAD+pid));
-			else
-				copy = new ExternalFunctionProgramBlock(prog,tmp1,tmp2,tmp3,saveReplaceFilenameThreadID(efpb.getBaseDir(),Lop.CP_ROOT_THREAD_ID, Lop.CP_CHILD_THREAD+pid));
-		}
-		else {
-			if( !fnStack.contains(fnameNewKey) ) {
-				fnStack.add(fnameNewKey);
-				copy = new FunctionProgramBlock(prog, tmp1, tmp2);
-				copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, fpb.isRecompileOnce()) );
-				copy.setRecompileOnce( fpb.isRecompileOnce() );
-				copy.setThreadID(pid);
-				fnStack.remove(fnameNewKey);
-			}
-			else //stop deep copy for recursive function calls
-				copy = fpb;
-		}
+		else //stop deep copy for recursive function calls
+			copy = fpb;
 		
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
@@ -929,7 +909,7 @@ public class ProgramConverter
 		int count = 0;
 		for( Instruction linst : inst ) {
 			//check that only cp instruction are transmitted 
-			if( !( linst instanceof CPInstruction || linst instanceof ExternalFunctionInvocationInstruction ) )
+			if( !( linst instanceof CPInstruction) )
 				throw new DMLRuntimeException( NOT_SUPPORTED_MR_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
 			
 			//obtain serialized version of generated classes
@@ -1073,10 +1053,8 @@ public class ProgramConverter
 			sb.append(PB_PARFOR);
 		else if ( pb instanceof IfProgramBlock )
 			sb.append(PB_IF);
-		else if ( pb instanceof FunctionProgramBlock && !(pb instanceof ExternalFunctionProgramBlock) )
+		else if ( pb instanceof FunctionProgramBlock )
 			sb.append(PB_FC);
-		else if ( pb instanceof ExternalFunctionProgramBlock )
-			sb.append(PB_EFC);
 		else //all generic program blocks
 			sb.append(PB_BEGIN);
 		
@@ -1174,7 +1152,7 @@ public class ProgramConverter
 			sb.append( rSerializeProgramBlocks(ipb.getChildBlocksElseBody(), clsMap) );
 			sb.append(PBS_END);
 		}
-		else if( pb instanceof FunctionProgramBlock && !(pb instanceof ExternalFunctionProgramBlock) )
+		else if( pb instanceof FunctionProgramBlock )
 		{
 			FunctionProgramBlock fpb = (FunctionProgramBlock) pb;
 			
@@ -1190,32 +1168,6 @@ public class ProgramConverter
 			sb.append( rSerializeProgramBlocks(fpb.getChildBlocks(), clsMap) );
 			sb.append(PBS_END);
 			sb.append( COMPONENTS_DELIM );
-		}
-		else if( pb instanceof ExternalFunctionProgramBlock )
-		{
-			if( !(pb instanceof ExternalFunctionProgramBlockCP) ) 
-			{
-				throw new DMLRuntimeException( NOT_SUPPORTED_EXTERNALFUNCTION_PB );
-			}
-			
-			ExternalFunctionProgramBlockCP fpb = (ExternalFunctionProgramBlockCP) pb;
-			
-			sb.append( serializeDataIdentifiers( fpb.getInputParams() ) );
-			sb.append( COMPONENTS_DELIM );
-			sb.append( serializeDataIdentifiers( fpb.getOutputParams() ) );
-			sb.append( COMPONENTS_DELIM );
-			sb.append( serializeStringHashMap( fpb.getOtherParams() ) );
-			sb.append( COMPONENTS_DELIM );
-			sb.append( fpb.getBaseDir() );
-			sb.append( COMPONENTS_DELIM );
-			
-			sb.append(INST_BEGIN);
-			//create on construction anyway 
-			sb.append(INST_END);
-			sb.append( COMPONENTS_DELIM );
-			sb.append(PBS_BEGIN);
-			sb.append( rSerializeProgramBlocks(fpb.getChildBlocks(), clsMap) );
-			sb.append(PBS_END);
 		}
 		else //all generic program blocks
 		{
@@ -1393,8 +1345,6 @@ public class ProgramConverter
 			pb = rParseIfProgramBlock( in, prog, id );
 		else if ( in.startsWith(PB_FC) )
 			pb = rParseFunctionProgramBlock( in, prog, id );
-		else if ( in.startsWith(PB_EFC) )
-			pb = rParseExternalFunctionProgramBlock( in, prog, id );
  		else if ( in.startsWith(PB_BEGIN) )
 			pb = rParseGenericProgramBlock( in, prog, id );
 		else 
@@ -1524,34 +1474,6 @@ public class ProgramConverter
 		fpb.setChildBlocks(pbs);
 		
 		return fpb;
-	}
-
-	private static ExternalFunctionProgramBlock rParseExternalFunctionProgramBlock( String in, Program prog, int id ) {
-		String lin = in.substring( PB_EFC.length(),in.length()- PB_END.length());
-		HierarchyAwareStringTokenizer st = new HierarchyAwareStringTokenizer(lin, COMPONENTS_DELIM);
-		
-		//inputs, outputs and params
-		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
-		ArrayList<DataIdentifier> dat2 = parseDataIdentifiers(st.nextToken());
-		HashMap<String,String> dat3 = parseStringHashMap(st.nextToken());
-
-		//basedir
-		String basedir = st.nextToken();
-		
-		//instructions (required for removing INST BEGIN, END)
-		parseInstructions(st.nextToken(),id);
-
-		//program blocks
-		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
-
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(dat1);
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(dat2);
-		
-		//only CP external functions, because no nested MR jobs for reblocks
-		ExternalFunctionProgramBlockCP efpb = new ExternalFunctionProgramBlockCP(prog, tmp1, tmp2, dat3, basedir);
-		efpb.setChildBlocks(pbs);
-		
-		return efpb;
 	}
 
 	private static ProgramBlock rParseGenericProgramBlock( String in, Program prog, int id ) {

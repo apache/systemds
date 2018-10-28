@@ -130,8 +130,6 @@ public class Program
 		for( Entry<String, HashMap<String, FunctionProgramBlock>> e1 : _namespaceFunctions.entrySet() )
 			for( Entry<String, FunctionProgramBlock> e2 : e1.getValue().entrySet() ) {
 				FunctionProgramBlock fpb = e2.getValue();
-				if( fpb instanceof ExternalFunctionProgramBlock )
-					fpb = createPartialDeepCopy(ret, (ExternalFunctionProgramBlock) fpb);
 				ret.addFunctionProgramBlock(e1.getKey(), e2.getKey(), fpb);
 			}
 		return ret;
@@ -140,18 +138,5 @@ public class Program
 	@Override
 	public Object clone() {
 		return clone(true);
-	}
-	
-	private static ExternalFunctionProgramBlock createPartialDeepCopy(Program prog, ExternalFunctionProgramBlock efpb) {
-		try {
-			return ( efpb instanceof ExternalFunctionProgramBlockCP ) ?
-				new ExternalFunctionProgramBlockCP(prog, efpb._inputParams, 
-					efpb._outputParams, efpb._otherParams, efpb._baseDir) :
-				new ExternalFunctionProgramBlock(prog, efpb._inputParams,
-					efpb._outputParams, efpb._otherParams, efpb._baseDir);
-		}
-		catch(DMLRuntimeException ex) {
-			throw new RuntimeException(ex);
-		}
 	}
 }

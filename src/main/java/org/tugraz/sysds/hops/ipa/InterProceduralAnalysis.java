@@ -39,7 +39,6 @@ import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DMLTranslator;
 import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.ExternalFunctionStatement;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.FunctionStatement;
@@ -58,9 +57,6 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
-import org.tugraz.sysds.udf.lib.DynamicReadMatrixCP;
-import org.tugraz.sysds.udf.lib.DynamicReadMatrixRcCP;
-import org.tugraz.sysds.udf.lib.OrderWrapper;
 
 /**
  * This Inter Procedural Analysis (IPA) serves two major purposes:
@@ -78,7 +74,6 @@ import org.tugraz.sysds.udf.lib.OrderWrapper;
  *  global removal of constant binary operations such as X * ones.
  *         
  */
-@SuppressWarnings("deprecation")
 public class InterProceduralAnalysis 
 {
 	private static final boolean LDEBUG = false; //internal local debug level
@@ -505,17 +500,6 @@ public class InterProceduralAnalysis
 					extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
 				}
 			}
-			else if (   fop.getFunctionType() == FunctionType.EXTERNAL_FILE
-				     || fop.getFunctionType() == FunctionType.EXTERNAL_MEM  )
-			{
-				//infer output size for known external functions
-				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-				ExternalFunctionStatement fstmt = (ExternalFunctionStatement) fsb.getStatement(0);
-				if( PROPAGATE_KNOWN_UDF_STATISTICS ) 
-					extractExternalFunctionCallReturnStatistics(fstmt, fop, callVars);
-				else
-					extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
-			}
 		}
 		
 		hop.setVisited();
@@ -668,32 +652,6 @@ public class InterProceduralAnalysis
 		catch( Exception ex ) {
 			throw new HopsException( "Failed to extract output statistics "
 				+ "for unary function "+fop.getFunctionKey()+".", ex);
-		}
-	}
-	
-	private static void extractExternalFunctionCallReturnStatistics( ExternalFunctionStatement fstmt, FunctionOp fop, LocalVariableMap callVars ) 
-	{
-		String className = fstmt.getOtherParams().get(ExternalFunctionStatement.CLASS_NAME);
-
-		if( className.equals(OrderWrapper.class.getName()) )
-		{			
-			Hop input = fop.getInput().get(0);
-			long lnnz = className.equals(OrderWrapper.class.getName()) ? input.getNnz() : -1;
-			MatrixObject moOut = createOutputMatrix(input.getDim1(), input.getDim2(),lnnz);
-			callVars.put(fop.getOutputVariableNames()[0], moOut);
-		}
-		else if(   className.equals(DynamicReadMatrixCP.class.getName())
-				|| className.equals(DynamicReadMatrixRcCP.class.getName()) ) 
-		{
-			Hop input1 = fop.getInput().get(1); //rows
-			Hop input2 = fop.getInput().get(2); //cols
-			if( input1 instanceof LiteralOp && input2 instanceof LiteralOp )
-				callVars.put(fop.getOutputVariableNames()[0], createOutputMatrix(((LiteralOp)input1).getLongValue(), 
-						                                                         ((LiteralOp)input2).getLongValue(),-1));
-		}
-		else
-		{
-			extractFunctionCallUnknownReturnStatistics(fstmt, fop, callVars);
 		}
 	}
 	

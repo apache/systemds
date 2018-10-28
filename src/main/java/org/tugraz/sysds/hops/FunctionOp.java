@@ -42,8 +42,6 @@ public class FunctionOp extends Hop
 {
 	public enum FunctionType{
 		DML,
-		EXTERNAL_MEM,
-		EXTERNAL_FILE,
 		MULTIRETURN_BUILTIN,
 		UNKNOWN
 	}
@@ -132,9 +130,7 @@ public class FunctionOp extends Hop
 		
 		if( _type == FunctionType.DML )
 			_memEstimate = 1; //minimal mem estimate
-		else if( _type == FunctionType.EXTERNAL_MEM )
-			_memEstimate = 2* getInputSize(); //in/out
-		else if(    _type == FunctionType.EXTERNAL_FILE || _type == FunctionType.UNKNOWN )
+		else if( _type == FunctionType.UNKNOWN )
 			_memEstimate = CostEstimatorHops.DEFAULT_MEM_MR;
 		else if ( _type == FunctionType.MULTIRETURN_BUILTIN ) {
 			boolean outputDimsKnown = true;

@@ -28,7 +28,6 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -121,8 +120,7 @@ public abstract class CostEstimator
 			
 			ret *= getNumIterations(stats, tmp);
 		}		
-		else if ( pb instanceof FunctionProgramBlock 
-				  && !(pb instanceof ExternalFunctionProgramBlock)) //see generic
+		else if ( pb instanceof FunctionProgramBlock ) //see generic
 		{
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
 			if( recursive )

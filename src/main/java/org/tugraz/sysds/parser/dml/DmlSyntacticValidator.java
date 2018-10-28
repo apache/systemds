@@ -39,7 +39,6 @@ import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.parser.ExpressionList;
-import org.tugraz.sysds.parser.ExternalFunctionStatement;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.FunctionCallIdentifier;
 import org.tugraz.sysds.parser.FunctionStatement;
@@ -762,52 +761,7 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 		setFileLineColumn(ctx.info.stmt, ctx);
 		ctx.info.functionName = ctx.name.getText();
 	}
-
-	@Override
-	public void exitExternalFunctionDefExpression(ExternalFunctionDefExpressionContext ctx) {
-		//populate function statement
-		ExternalFunctionStatement functionStmt = new ExternalFunctionStatement();
-		functionStmt.setName(ctx.name.getText());
-		functionStmt.setInputParams(getFunctionParametersNoAssign(ctx.inputParams));
-		functionStmt.setOutputParams(getFunctionParametersNoAssign(ctx.outputParams));
-
-		// set other parameters
-		HashMap<String, String> otherParams = new HashMap<>();
-		boolean atleastOneClassName = false;
-		for(StrictParameterizedKeyValueStringContext otherParamCtx : ctx.otherParams){
-			String paramName = otherParamCtx.paramName.getText();
-			String val = "";
-			String text = otherParamCtx.paramVal.getText();
-			// First unquote the string
-			if(	(text.startsWith("\"") && text.endsWith("\"")) ||
-				(text.startsWith("\'") && text.endsWith("\'"))) {
-				if(text.length() > 2) {
-					val = text.substring(1, text.length()-1);
-				}
-				// Empty value allowed
-			}
-			else {
-				notifyErrorListeners("the value of user parameter for external function should be of type string", ctx.start);
-				return;
-			}
-			otherParams.put(paramName, val);
-			if (paramName.equals(ExternalFunctionStatement.CLASS_NAME)) {
-				atleastOneClassName = true;
-			}
-		}
-		functionStmt.setOtherParams(otherParams);
-		if (!atleastOneClassName) {
-			notifyErrorListeners("The \'" + ExternalFunctionStatement.CLASS_NAME
-					+ "\' argument needs to be passed to the externalFunction 'implemented in' clause.", ctx.start);
-			return;
-		}
-
-		ctx.info.stmt = functionStmt;
-		setFileLineColumn(ctx.info.stmt, ctx);
-		ctx.info.functionName = ctx.name.getText();
-	}
-
-
+	
 	@Override
 	public void exitPathStatement(PathStatementContext ctx) {
 		PathStatement stmt = new PathStatement(ctx.pathValue.getText());
@@ -1009,6 +963,12 @@ public class DmlSyntacticValidator extends CommonSyntacticValidator implements D
 			values.add(elem.info.expr);
 		}
 		ctx.info.expr = new ExpressionList(values);
+	}
+
+	@Override
+	public void exitExternalFunctionDefExpression(ExternalFunctionDefExpressionContext ctx) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

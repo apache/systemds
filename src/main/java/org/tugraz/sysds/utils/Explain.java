@@ -35,7 +35,6 @@ import org.tugraz.sysds.hops.codegen.cplan.CNodeTpl;
 import org.tugraz.sysds.hops.ipa.FunctionCallGraph;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ExternalFunctionStatement;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.FunctionStatement;
@@ -46,7 +45,6 @@ import org.tugraz.sysds.parser.ParForStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.runtime.controlprogram.ExternalFunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -220,14 +218,9 @@ public class Explain
 					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(namespace, fname);
 					FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 					String fkey = DMLProgram.constructFunctionKey(namespace, fname);
-					
-					if (fstmt instanceof ExternalFunctionStatement)
-						sb.append("----EXTERNAL FUNCTION " + fkey + "\n");
-					else {
-						sb.append("----FUNCTION " + fkey + " [recompile="+fsb.isRecompileOnce()+"]\n");
-						for (StatementBlock current : fstmt.getBody())
-							sb.append(explainStatementBlock(current, 3));
-					}
+					sb.append("----FUNCTION " + fkey + " [recompile="+fsb.isRecompileOnce()+"]\n");
+					for (StatementBlock current : fstmt.getBody())
+						sb.append(explainStatementBlock(current, 3));
 				}
 			}
 		}
@@ -284,14 +277,9 @@ public class Explain
 			{
 				String fkey = e.getKey();
 				FunctionProgramBlock fpb = e.getValue();
-				if( fpb instanceof ExternalFunctionProgramBlock )
-					sb.append("----EXTERNAL FUNCTION "+fkey+"\n");
-				else
-				{
-					sb.append("----FUNCTION "+fkey+" [recompile="+fpb.isRecompileOnce()+"]\n");
-					for( ProgramBlock pb : fpb.getChildBlocks() )
-						sb.append( explainProgramBlock(pb,3) );
-				}
+				sb.append("----FUNCTION "+fkey+" [recompile="+fpb.isRecompileOnce()+"]\n");
+				for( ProgramBlock pb : fpb.getChildBlocks() )
+					sb.append( explainProgramBlock(pb,3) );
 			}
 		}
 		

@@ -37,7 +37,6 @@ import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.ExternalFunctionStatement;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.FunctionStatement;
@@ -415,13 +414,6 @@ public class FunctionCallGraph
 					
 					//mark as visited for current function call context
 					lfset.add( lfkey );
-					
-					//handle second order external functions
-					FunctionStatementBlock fsb = sb.getDMLProg().getFunctionStatementBlock(lfkey);
-					if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement
-						&& ((ExternalFunctionStatement)fsb.getStatement(0)).isSecondOrder() ) {
-						ret = true;
-					}
 				}
 			}
 		}
@@ -430,10 +422,6 @@ public class FunctionCallGraph
 	}
 	
 	private static boolean isSideEffectFree(FunctionStatementBlock fsb) {
-		//check for side-effect-free external functions (explicit annotation)
-		if( fsb.getStatement(0) instanceof ExternalFunctionStatement ) {
-			return !((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects();
-		}
 		//check regular dml-bodied function for prints, pwrite, and other functions
 		FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 		for( StatementBlock csb : fstmt.getBody() )

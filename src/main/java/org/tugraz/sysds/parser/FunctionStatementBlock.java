@@ -60,122 +60,82 @@ public class FunctionStatementBlock extends StatementBlock
         }
 		
 		// handle DML-bodied functions
-		if (!(fstmt instanceof ExternalFunctionStatement))
-		{			
-			// perform validate for function body
-			this._dmlProg = dmlProg;
-			for(StatementBlock sb : fstmt.getBody())
-			{
-				ids = sb.validate(dmlProg, ids, constVars, conditional);
-				constVars = sb.getConstOut();
-			}
-			if (fstmt.getBody().size() > 0)
-				_constVarsIn.putAll(fstmt.getBody().get(0).getConstIn());
-			
-			if (fstmt.getBody().size() > 1)
-				_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
-			
-			// for each return value, check variable is defined and validate the return type
-			// if returnValue type known incorrect, then throw exception
-			ArrayList<DataIdentifier> returnValues = fstmt.getOutputParams();
-			for (DataIdentifier returnValue : returnValues){
-				DataIdentifier curr = ids.getVariable(returnValue.getName());
-				if (curr == null){
-					raiseValidateError("for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ", conditional);
-				}
-				
-				if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
-					raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType(), conditional);
-				}
-				
-				if (curr.getValueType() != ValueType.UNKNOWN && !curr.getValueType().equals(returnValue.getValueType())){
-					
-					// attempt to convert value type: handle conversion from scalar DOUBLE or INT
-					if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
-						if (returnValue.getValueType() == ValueType.DOUBLE){
-							if (curr.getValueType() == ValueType.INT){
-								IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
-								if (currIntValue != null){
-									DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(),
-											curr);
-									constVars.put(curr.getName(), currDoubleValue);
-								}
-								LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() 
-										+ ", return variable " + curr.getName() + " value type of " 
-										+ curr.getValueType() + " does not match value type in function signature of " 
-										+ returnValue.getValueType() + " but was safely cast");
-								curr.setValueType(ValueType.DOUBLE);
-								ids.addVariable(curr.getName(), curr);
-							}
-							else {
-								// THROW EXCEPTION -- CANNOT CONVERT
-								throw new LanguageException(curr.printErrorLocation() + "for function " 
-										+ fstmt.getName() + ", return variable " + curr.getName() 
-										+ " value type of " + curr.getValueType() 
-										+ " does not match value type in function signature of " 
-										+ returnValue.getValueType() + " and cannot safely cast value");
-							}
-						}
-						if (returnValue.getValueType() == ValueType.INT){
-							// THROW EXCEPTION -- CANNOT CONVERT
-							throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() 
-									+ ", return variable " + curr.getName() + " value type of " + curr.getValueType() 
-									+ " does not match value type in function signature of " 
-									+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
-									+ " as " + returnValue.getValueType());
-							
-						} 
-					}	
-					else {
-						throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
-					}
-				}
-				
-			}
-		}
-		// handle external functions
-		else 
+		// perform validate for function body
+		this._dmlProg = dmlProg;
+		for(StatementBlock sb : fstmt.getBody())
 		{
-			//validate specified attributes and attribute values
-			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
-			efstmt.validateParameters(this);
-			
-			//validate child statements
-			this._dmlProg = dmlProg;
-			for(StatementBlock sb : efstmt.getBody()) 
-			{
-				ids = sb.validate(dmlProg, ids, constVars, conditional);
-				constVars = sb.getConstOut();
-			}
+			ids = sb.validate(dmlProg, ids, constVars, conditional);
+			constVars = sb.getConstOut();
 		}
+		if (fstmt.getBody().size() > 0)
+			_constVarsIn.putAll(fstmt.getBody().get(0).getConstIn());
 		
+		if (fstmt.getBody().size() > 1)
+			_constVarsOut.putAll(fstmt.getBody().get(fstmt.getBody().size()-1).getConstOut());
 		
+		// for each return value, check variable is defined and validate the return type
+		// if returnValue type known incorrect, then throw exception
+		ArrayList<DataIdentifier> returnValues = fstmt.getOutputParams();
+		for (DataIdentifier returnValue : returnValues){
+			DataIdentifier curr = ids.getVariable(returnValue.getName());
+			if (curr == null){
+				raiseValidateError("for function " + fstmt.getName() + ", return variable " + returnValue.getName() + " must be defined in function ", conditional);
+			}
+			
+			if (curr.getDataType() != DataType.UNKNOWN && !curr.getDataType().equals(returnValue.getDataType()) ){
+				raiseValidateError("for function " + fstmt.getName() + ", return variable " + curr.getName() + " data type of " + curr.getDataType() + " does not match data type in function signature of " + returnValue.getDataType(), conditional);
+			}
+			
+			if (curr.getValueType() != ValueType.UNKNOWN && !curr.getValueType().equals(returnValue.getValueType())){
+				
+				// attempt to convert value type: handle conversion from scalar DOUBLE or INT
+				if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
+					if (returnValue.getValueType() == ValueType.DOUBLE){
+						if (curr.getValueType() == ValueType.INT){
+							IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
+							if (currIntValue != null){
+								DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(),
+										curr);
+								constVars.put(curr.getName(), currDoubleValue);
+							}
+							LOG.warn(curr.printWarningLocation() + "for function " + fstmt.getName() 
+									+ ", return variable " + curr.getName() + " value type of " 
+									+ curr.getValueType() + " does not match value type in function signature of " 
+									+ returnValue.getValueType() + " but was safely cast");
+							curr.setValueType(ValueType.DOUBLE);
+							ids.addVariable(curr.getName(), curr);
+						}
+						else {
+							// THROW EXCEPTION -- CANNOT CONVERT
+							throw new LanguageException(curr.printErrorLocation() + "for function " 
+									+ fstmt.getName() + ", return variable " + curr.getName() 
+									+ " value type of " + curr.getValueType() 
+									+ " does not match value type in function signature of " 
+									+ returnValue.getValueType() + " and cannot safely cast value");
+						}
+					}
+					if (returnValue.getValueType() == ValueType.INT){
+						// THROW EXCEPTION -- CANNOT CONVERT
+						throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() 
+								+ ", return variable " + curr.getName() + " value type of " + curr.getValueType() 
+								+ " does not match value type in function signature of " 
+								+ returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() 
+								+ " as " + returnValue.getValueType());
+						
+					} 
+				}	
+				else {
+					throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() + ", return variable " + curr.getName() + " value type of " + curr.getValueType() + " does not match value type in function signature of " + returnValue.getValueType() + " and cannot safely cast " + curr.getValueType() + " as " + returnValue.getValueType());
+				}
+			}
+			
+		}
 
 		return ids;
 	}
 
-	public FunctionType getFunctionOpType()
-	{
-		FunctionType ret = FunctionType.UNKNOWN;
-		
-		FunctionStatement fstmt = (FunctionStatement) _statements.get(0);
-		if (fstmt instanceof ExternalFunctionStatement) 
-		{
-			ExternalFunctionStatement efstmt = (ExternalFunctionStatement) fstmt;
-			String execType = efstmt.getOtherParams().get(ExternalFunctionStatement.EXEC_TYPE);
-			if( execType!=null ){
-				if(execType.equals(ExternalFunctionStatement.IN_MEMORY))
-					ret = FunctionType.EXTERNAL_MEM;
-				else
-					ret = FunctionType.EXTERNAL_FILE;
-			}
-		}
-		else
-		{
-			ret = FunctionType.DML; 
-		}
-		
-		return ret;
+	public FunctionType getFunctionOpType() {
+		return FunctionType.DML; 
 	}
 	
 	@Override

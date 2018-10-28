@@ -254,7 +254,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
     	//reject external functions and function bodies with multiple blocks
     	if(    fblock.getStatements().isEmpty() //empty blocks
-    		|| fblock.getStatement(0) instanceof ExternalFunctionStatement
     		|| ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 )
     	{
 			return false;

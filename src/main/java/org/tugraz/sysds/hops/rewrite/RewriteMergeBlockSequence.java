@@ -28,8 +28,6 @@ import java.util.List;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.parser.ExternalFunctionStatement;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
 
@@ -183,18 +181,6 @@ public class RewriteMergeBlockSequence extends StatementBlockRewriteRule
 	}
 	
 	private static boolean hasExternalFunctionOpRootWithSideEffect(StatementBlock sb) {
-		if( sb == null || sb.getHops() == null )
-			return false;
-		for( Hop root : sb.getHops() )
-			if( root instanceof FunctionOp ) {
-				FunctionStatementBlock fsb = sb.getDMLProg()
-					.getFunctionStatementBlock(((FunctionOp)root).getFunctionKey());
-				//note: in case of builtin multi-return functions such as qr (namespace _internal), 
-				//there is no function statement block and hence we need to check for null
-				if( fsb != null && fsb.getStatement(0) instanceof ExternalFunctionStatement
-					&& ((ExternalFunctionStatement)fsb.getStatement(0)).hasSideEffects() )
-					return true; 
-			}
 		return false;
 	}
 	

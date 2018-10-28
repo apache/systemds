@@ -22,7 +22,6 @@ package org.tugraz.sysds.runtime.instructions;
 import java.util.HashMap;
 
 import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.lops.Compression;
 import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.RightIndex;
@@ -50,7 +49,6 @@ import org.tugraz.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CheckpointSPInstruction;
-import org.tugraz.sysds.runtime.instructions.spark.CompressionSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CovarianceSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CpmmSPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.CtableSPInstruction;
@@ -220,7 +218,6 @@ public class SPInstructionParser extends InstructionParser
 	
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
-		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
 		
 		// Builtin Instruction Opcodes 
 		String2SPInstructionType.put( "log"  , SPType.Builtin);
@@ -473,9 +470,6 @@ public class SPInstructionParser extends InstructionParser
 				
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
-
-			case Compression:
-				return CompressionSPInstruction.parseInstruction(str);
 			
 			case SpoofFused:
 				return SpoofSPInstruction.parseInstruction(str);

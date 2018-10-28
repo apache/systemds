@@ -22,7 +22,6 @@ package org.tugraz.sysds.runtime.codegen;
 import java.io.Serializable;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +29,6 @@ import java.util.concurrent.Future;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise.AggOp;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
@@ -41,7 +39,6 @@ import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
 import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -107,9 +104,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( inputs.get(0) instanceof CompressedMatrixBlock )
-				executeCompressed((CompressedMatrixBlock)inputs.get(0), b, scalars, c, m, n, 0, m, rix);
-			else if( !inputs.get(0).isInSparseFormat() )
+			if( !inputs.get(0).isInSparseFormat() )
 				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
 			else
 				executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
@@ -197,16 +192,6 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 			if( !sparseSafe )
 				for(int j=lastj+1; j<n; j++)
 					genexec(0, lb, scalars, c, m, n, rix+i, i, j);
-		}
-	}
-
-	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, double[] c, int m, int n, int rl, int ru, long rix)
-	{
-		//core compressed aggregation operation
-		Iterator<IJV> iter = a.getIterator(rl, ru, true);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			genexec(cell.getV(), b, scalars, c, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
 		}
 	}
 	
@@ -315,9 +300,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator implements Seria
 		public double[] call() {
 			double[] c = new double[_aggOps.length];
 			setInitialOutputValues(c);
-			if( _a instanceof CompressedMatrixBlock )
-				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _rlen, _clen, _rl, _ru, 0);
-			else if( !_a.isInSparseFormat() )
+			if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, c, _rlen, _clen, _safe, _rl, _ru, 0);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _rlen, _clen, _safe, _rl, _ru, 0);

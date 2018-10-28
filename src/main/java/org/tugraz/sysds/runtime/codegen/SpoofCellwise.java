@@ -23,17 +23,12 @@ import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.compress.BitmapEncoder;
-import org.tugraz.sysds.runtime.compress.ColGroup;
-import org.tugraz.sysds.runtime.compress.ColGroupValue;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
@@ -45,7 +40,6 @@ import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
@@ -145,9 +139,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		double ret = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( inputs.get(0) instanceof CompressedMatrixBlock )
-				ret = executeCompressedAndAgg((CompressedMatrixBlock)a, b, scalars, m, n, sparseSafe, 0, m, rix);
-			else if( !inputs.get(0).isInSparseFormat() )
+			if( !inputs.get(0).isInSparseFormat() )
 				ret = executeDenseAndAgg(a.getDenseBlock(), b, scalars, m, n, sparseSafe, 0, m, rix);
 			else
 				ret = executeSparseAndAgg(a.getSparseBlock(), b, scalars, m, n, sparseSafe, 0, m, rix);
@@ -157,11 +149,8 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<ParAggTask> tasks = new ArrayList<>();
-				int nk = (a instanceof CompressedMatrixBlock) ? k :
-					UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
+				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
-				if( a instanceof CompressedMatrixBlock )
-					blklen = BitmapEncoder.getAlignedBlocksize(blklen);
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParAggTask(a, b, scalars, m, n, sparseSafe, i*blklen, Math.min((i+1)*blklen, m)));
 				//execute tasks
@@ -241,9 +230,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		long lnnz = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( inputs.get(0) instanceof CompressedMatrixBlock )
-				lnnz = executeCompressed((CompressedMatrixBlock)a, b, scalars, out, m, n, sparseSafe, 0, m, rix);
-			else if( !inputs.get(0).isInSparseFormat() )
+			if( !inputs.get(0).isInSparseFormat() )
 				lnnz = executeDense(a.getDenseBlock(), b, scalars, out, m, n, sparseSafe, 0, m, rix);
 			else
 				lnnz = executeSparse(a.getSparseBlock(), b, scalars, out, m, n, sparseSafe, 0, m, rix);
@@ -255,8 +242,6 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				ArrayList<ParExecTask> tasks = new ArrayList<>();
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
-				if( a instanceof CompressedMatrixBlock )
-					blklen = BitmapEncoder.getAlignedBlocksize(blklen);
 				for( int i=0; i<nk & i*blklen<m; i++ )
 					tasks.add(new ParExecTask(a, b, scalars, out, m, n,
 						sparseSafe, i*blklen, Math.min((i+1)*blklen, m)));
@@ -374,48 +359,6 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 			return executeSparseAggSum(sblock, lb, scalars, m, n, sparseSafe, rl, ru, rix);
 		else
 			return executeSparseAggMxx(sblock, lb, scalars, m, n, sparseSafe, rl, ru, rix);
-	}
-	
-	private long executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
-		//compressed data is access in a column-major order 
-		
-		if( _type == CellType.NO_AGG ) {
-			long lnnz = executeCompressedNoAgg(a, b, scalars, out, m, n, sparseSafe, rl, ru, rix);
-			if( out.isInSparseFormat() )
-				out.sortSparseRows(rl, ru);
-			return lnnz;
-		}
-		else if( _type == CellType.ROW_AGG ) {
-			double[] c = out.getDenseBlockValues();
-			if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
-				return executeCompressedRowAggSum(a, b, scalars, c, m, n, sparseSafe, rl, ru, rix);
-			else
-				return executeCompressedRowAggMxx(a, b, scalars, c, m, n, sparseSafe, rl, ru, rix);
-		}
-		else if( _type == CellType.COL_AGG ) {
-			double[] c = out.getDenseBlockValues();
-			if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
-				return executeCompressedColAggSum(a, b, scalars, c, m, n, sparseSafe, rl, ru, rix);
-			else
-				return executeCompressedColAggMxx(a, b, scalars, c, m, n, sparseSafe, rl, ru, rix);
-		}
-		return -1;
-	}
-	
-	private double executeCompressedAndAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
-		//compressed data is access in a column-major order 
-		
-		//numerically stable aggregation for sum/sum_sq
-		if( _aggOp == AggOp.SUM || _aggOp == AggOp.SUM_SQ )
-			return executeCompressedAggSum(a, b, scalars, m, n, sparseSafe, rl, ru, rix);
-		else
-			return executeCompressedAggMxx(a, b, scalars, m, n, sparseSafe, rl, ru, rix);
 	}
 	
 	/////////
@@ -951,166 +894,6 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		return ret;
 	}
 	
-	private long executeCompressedNoAgg(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		double[] c = (out.getDenseBlock() != null) ?
-			out.getDenseBlockValues() : null;
-		SparseBlock csblock = out.getSparseBlock();
-		
-		//preallocate sparse rows to avoid reallocations
-		//note: counting nnz requires segment-aligned boundaries, which is enforced
-		//whenever k/2 * BITMAP_BLOCK_SZ > m (i.e., it does not limit parallelism)
-		if( out.isInSparseFormat() && rl%BitmapEncoder.BITMAP_BLOCK_SZ==0
-			&& ru%BitmapEncoder.BITMAP_BLOCK_SZ==0) {
-			int[] rnnz = a.countNonZerosPerRow(rl, ru);
-			for( int i=rl; i<ru; i++ )
-				csblock.allocate(i, rnnz[i-rl]);
-		}
-		
-		long lnnz = 0;
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			if( out.isInSparseFormat() ) {
-				csblock.allocate(cell.getI());
-				csblock.append(cell.getI(), cell.getJ(), val);
-			}
-			else
-				c[cell.getI()*n+cell.getJ()] = val;
-			lnnz += (val!=0) ? 1 : 0;
-		}
-		return lnnz;
-	}
-	
-	private long executeCompressedRowAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			double[] c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		KahanFunction kplus = (KahanFunction) getAggFunction();
-		KahanObject kbuff = new KahanObject(0, 0);
-		long lnnz = 0;
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			kbuff.set(c[cell.getI()], 0);
-			kplus.execute2(kbuff, val);
-			c[cell.getI()] = kbuff._sum;
-		}
-		for( int i=rl; i<ru; i++ )
-			lnnz += (c[i]!=0) ? 1 : 0;
-		return lnnz;
-	}
-	
-	private long executeCompressedRowAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			double[] c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
-		ValueFunction vfun = getAggFunction();
-		long lnnz = 0;
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			c[cell.getI()] = vfun.execute(c[cell.getI()], val);
-		}
-		for( int i=rl; i<ru; i++ )
-			lnnz += (c[i]!=0) ? 1 : 0;
-		return lnnz;
-	}
-	
-	private long executeCompressedColAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-		double[] c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		KahanFunction kplus = (KahanFunction) getAggFunction();
-		KahanObject kbuff = new KahanObject(0, 0);
-		double[] corr = new double[n];
-		
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			kbuff.set(c[cell.getJ()], corr[cell.getJ()]);
-			kplus.execute2(kbuff, val);
-			c[cell.getJ()] = kbuff._sum;
-			corr[cell.getJ()] = kbuff._correction;
-		}
-		return -1;
-	}
-	
-	private long executeCompressedColAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			double[] c, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		Arrays.fill(c, rl, ru, (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
-		ValueFunction vfun = getAggFunction();
-		long lnnz = 0;
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			c[cell.getI()] = vfun.execute(c[cell.getI()], val);
-		}
-		for( int i=rl; i<ru; i++ )
-			lnnz += (c[i]!=0) ? 1 : 0;
-		return lnnz;
-	}
-	
-	private double executeCompressedAggSum(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-		int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		KahanFunction kplus = (KahanFunction) getAggFunction();
-		KahanObject kbuff = new KahanObject(0, 0);
-		KahanObject kbuff2 = new KahanObject(0, 0);
-		
-		//special case: computation over value-tuples only
-		if( sparseSafe && b.length==0 && !a.hasUncompressedColGroup() && !containsSeq()) {
-			//note: all remaining groups are guaranteed ColGroupValue
-			boolean entireGrp = (rl==0 && ru==a.getNumRows());
-			int maxNumVals = a.getColGroups().stream().mapToInt(
-				g -> ((ColGroupValue)g).getNumValues()).max().orElse(0);
-			int[] counts = new int[maxNumVals];
-			for( ColGroup grp : a.getColGroups() ) {
-				ColGroupValue grpv = (ColGroupValue) grp;
-				counts = entireGrp ? grpv.getCounts(counts) :
-					grpv.getCounts(rl, ru, counts);
-				for(int k=0; k<grpv.getNumValues(); k++) {
-					kbuff2.set(0, 0);
-					double in = grpv.sumValues(k, kplus, kbuff2);
-					double out = genexec(in, b, scalars, m, n, -1, -1);
-					kplus.execute3(kbuff, out, counts[k]);
-				}
-			}
-		}
-		//general case of arbitrary side inputs 
-		else {
-			Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-			while( iter.hasNext() ) {
-				IJV cell = iter.next();
-				double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-				kplus.execute2(kbuff, val);
-			}
-		}
-		return kbuff._sum;
-	}
-	
-	private double executeCompressedAggMxx(CompressedMatrixBlock a, SideInput[] b, double[] scalars,
-			int m, int n, boolean sparseSafe, int rl, int ru, long rix)
-	{
-		//safe aggregation for min/max w/ handling of zero entries
-		//note: sparse safe with zero value as min/max handled outside
-		double ret = (_aggOp==AggOp.MIN) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
-		ValueFunction vfun = getAggFunction();
-		
-		Iterator<IJV> iter = a.getIterator(rl, ru, !sparseSafe);
-		while( iter.hasNext() ) {
-			IJV cell = iter.next();
-			double val = genexec(cell.getV(), b, scalars, m, n, rix+cell.getI(), cell.getI(), cell.getJ());
-			ret = vfun.execute(ret, val);
-		}
-		return ret;
-	}
-	
 	//local execution where grix==rix
 	protected final double genexec( double a, SideInput[] b,
 		double[] scalars, int m, int n, int rix, int cix) {
@@ -1146,9 +929,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 		
 		@Override
 		public Double call() {
-			if( _a instanceof CompressedMatrixBlock )
-				return executeCompressedAndAgg((CompressedMatrixBlock)_a, _b, _scalars, _rlen, _clen, _safe, _rl, _ru, 0);
-			else if (!_a.isInSparseFormat())
+			if (!_a.isInSparseFormat())
 				return executeDenseAndAgg(_a.getDenseBlock(), _b, _scalars, _rlen, _clen, _safe, _rl, _ru, 0);
 			else
 				return executeSparseAndAgg(_a.getSparseBlock(), _b, _scalars, _rlen, _clen, _safe, _rl, _ru, 0);
@@ -1186,9 +967,7 @@ public abstract class SpoofCellwise extends SpoofOperator implements Serializabl
 				_c = new MatrixBlock(1,_clen, false);
 				_c.allocateDenseBlock();
 			}
-			if( _a instanceof CompressedMatrixBlock )
-				return executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c, _rlen, _clen, _safe, _rl, _ru, 0);
-			else if( !_a.isInSparseFormat() )
+			if( !_a.isInSparseFormat() )
 				return executeDense(_a.getDenseBlock(), _b, _scalars, _c, _rlen, _clen, _safe, _rl, _ru, 0);
 			else
 				return executeSparse(_a.getSparseBlock(), _b, _scalars, _c, _rlen, _clen, _safe, _rl, _ru, 0);

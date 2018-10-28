@@ -42,7 +42,6 @@ import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.codegen.SpoofCompiler.CompilerType;
 import org.tugraz.sysds.hops.codegen.SpoofCompiler.PlanSelector;
-import org.tugraz.sysds.lops.Compression;
 import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
@@ -73,7 +72,6 @@ public class DMLConfig
 	public static final String YARN_APPQUEUE        = "sysml.yarn.app.queue"; 
 	public static final String CP_PARALLEL_OPS      = "sysml.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysml.cp.parallel.io";
-	public static final String COMPRESSED_LINALG    = "sysml.compressed.linalg"; //auto, true, false
 	public static final String NATIVE_BLAS          = "sysml.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysml.native.blas.directory";
 	public static final String CODEGEN              = "sysml.codegen.enabled"; //boolean
@@ -128,7 +126,6 @@ public class DMLConfig
 		_defaultVals.put(YARN_APPQUEUE,    	     "default" );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
-		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.AUTO.name() );
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_COMPILER,       CompilerType.AUTO.name() );
 		_defaultVals.put(CODEGEN_OPTIMIZER,      PlanSelector.FUSE_COST_BASED_V2.name() );
@@ -426,7 +423,6 @@ public class DMLConfig
 				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
-				COMPRESSED_LINALG, 
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, EVICTION_SHADOW_BUFFERSIZE,

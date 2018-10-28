@@ -20,7 +20,6 @@
 package org.tugraz.sysds.runtime.codegen;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -28,8 +27,6 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.compress.BitmapEncoder;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
 import org.tugraz.sysds.runtime.data.SparseBlock;
@@ -148,9 +145,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//core sequential execute
 		MatrixBlock a = inputs.get(0);
-		if( a instanceof CompressedMatrixBlock )
-			executeCompressed((CompressedMatrixBlock)a, b, scalars, c, n, 0, m, rix);
-		else if( !a.isInSparseFormat() )
+		if( !a.isInSparseFormat() )
 			executeDense(a.getDenseBlock(), b, scalars, c, n, 0, m, rix);
 		else
 			executeSparse(a.getSparseBlock(), b, scalars, c, n, 0, m, rix);
@@ -200,9 +195,8 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//core parallel execute
 		ExecutorService pool = CommonThreadPool.get(k);
-		ArrayList<Integer> blklens = (a instanceof CompressedMatrixBlock) ?
-			UtilFunctions.getAlignedBlockSizes(m, k, BitmapEncoder.BITMAP_BLOCK_SZ) :
-			UtilFunctions.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
+		ArrayList<Integer> blklens = UtilFunctions
+			.getBalancedBlockSizesDefault(m, k, (long)m*n<16*PAR_NUMCELL_THRESHOLD);
 		
 		try
 		{
@@ -314,21 +308,6 @@ public abstract class SpoofRowwise extends SpoofOperator
 		}
 	}
 	
-	private void executeCompressed(CompressedMatrixBlock a, SideInput[] b, double[] scalars, DenseBlock c, int n, int rl, int ru, long rix) {
-		//forward empty block to sparse
-		if( a.isEmptyBlock(false) ) {
-			executeSparse(null, b, scalars, c, n, rl, ru, rix);
-			return;
-		}
-		
-		SideInput[] lb = createSparseSideInputs(b, true);
-		Iterator<double[]> iter = a.getDenseRowIterator(rl, ru);
-		for( int i=rl; iter.hasNext(); i++ ) {
-			genexec(iter.next(), 0, lb, scalars,
-				c.values(i), c.pos(i), n, i);
-		}
-	}
-	
 	//methods to be implemented by generated operators of type SpoofRowAggrgate 
 	
 	//local execution where grix==rix
@@ -380,9 +359,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
 			DenseBlock c = DenseBlockFactory.createDenseBlock(1, _outLen);
 			
-			if( _a instanceof CompressedMatrixBlock )
-				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, c, _clen, _rl, _ru, 0);
-			else if( !_a.isInSparseFormat() )
+			if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, c, _clen, _rl, _ru, 0);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, c, _clen, _rl, _ru, 0);
@@ -424,9 +401,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 			if( _reqVectMem > 0 )
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, _clen, _clen2);
 			
-			if( _a instanceof CompressedMatrixBlock )
-				executeCompressed((CompressedMatrixBlock)_a, _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru, 0);
-			else if( !_a.isInSparseFormat() )
+			if( !_a.isInSparseFormat() )
 				executeDense(_a.getDenseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru, 0);
 			else
 				executeSparse(_a.getSparseBlock(), _b, _scalars, _c.getDenseBlock(), _clen, _rl, _ru, 0);

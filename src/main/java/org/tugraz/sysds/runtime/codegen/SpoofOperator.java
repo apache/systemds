@@ -26,7 +26,6 @@ import java.util.Arrays;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
@@ -82,9 +81,6 @@ public abstract class SpoofOperator implements Serializable
 	{
 		SideInput[] b = new SideInput[len];
 		for(int i=offset; i<offset+len; i++) {
-			//decompress if necessary
-			if( inputs.get(i) instanceof CompressedMatrixBlock )
-				inputs.set(i, ((CompressedMatrixBlock)inputs.get(i)).decompress());
 			//transpose if necessary
 			int clen = inputs.get(i).getNumColumns();
 			MatrixBlock in = (tB1 && i==1 ) ? LibMatrixReorg.transpose(inputs.get(i), 

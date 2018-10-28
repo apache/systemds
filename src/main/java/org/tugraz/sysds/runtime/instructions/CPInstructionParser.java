@@ -37,7 +37,6 @@ import org.tugraz.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CompressionCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.DataGenCPInstruction;
@@ -418,9 +417,6 @@ public class CPInstructionParser extends InstructionParser
 	
 			case Covariance:
 				return CovarianceCPInstruction.parseInstruction(str);
-	
-			case Compression:
-				return (CPInstruction) CompressionCPInstruction.parseInstruction(str);
 			
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);

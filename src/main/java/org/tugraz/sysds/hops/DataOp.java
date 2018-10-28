@@ -28,8 +28,8 @@ import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
@@ -387,7 +387,7 @@ public class DataOp extends Hop
 				case STRING: 
 					// by default, it estimates the size of string[100]
 					ret = 100 * OptimizerUtils.CHAR_SIZE; break;
-				case OBJECT:
+				case UNKNOWN:
 					ret = OptimizerUtils.DEFAULT_SIZE; break;
 				default:
 					ret = 0;

@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.wink.json4j.JSONObject;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.runtime.util.UtilFunctions;

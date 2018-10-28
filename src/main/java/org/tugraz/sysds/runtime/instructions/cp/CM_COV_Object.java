@@ -19,8 +19,8 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -48,7 +48,7 @@ public class CM_COV_Object extends Data
 	
 	public CM_COV_Object()
 	{
-		super(DataType.OBJECT, ValueType.UNKNOWN);
+		super(DataType.UNKNOWN, ValueType.UNKNOWN);
 		w=0;
 		mean=new KahanObject(0,0);
 		m2=new KahanObject(0,0);

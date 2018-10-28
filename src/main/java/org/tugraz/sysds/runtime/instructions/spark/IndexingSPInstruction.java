@@ -23,7 +23,7 @@ import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;

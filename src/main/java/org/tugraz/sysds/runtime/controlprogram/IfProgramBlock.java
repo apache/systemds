@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.controlprogram;
 import java.util.ArrayList;
 
 import org.tugraz.sysds.parser.IfStatementBlock;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

@@ -26,6 +26,8 @@ import java.util.HashSet;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;

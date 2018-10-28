@@ -44,6 +44,7 @@ import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.DoubleIdentifier;
 import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.parser.Expression.DataOp;
 import org.tugraz.sysds.parser.FunctionCallIdentifier;
 import org.tugraz.sysds.parser.ImportStatement;
 import org.tugraz.sysds.parser.IntIdentifier;
@@ -56,9 +57,8 @@ import org.tugraz.sysds.parser.PrintStatement;
 import org.tugraz.sysds.parser.RelationalExpression;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StringIdentifier;
-import org.tugraz.sysds.parser.Expression.DataOp;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.dml.DmlSyntacticValidator;
 
 /**

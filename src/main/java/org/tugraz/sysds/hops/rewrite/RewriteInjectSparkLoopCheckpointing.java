@@ -33,8 +33,8 @@ import org.tugraz.sysds.parser.IndexedIdentifier;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 /**
  * Rule: Insert checkpointing operations for caching purposes. Currently, we

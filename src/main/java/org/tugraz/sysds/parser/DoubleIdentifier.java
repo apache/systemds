@@ -20,6 +20,7 @@
 package org.tugraz.sysds.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 

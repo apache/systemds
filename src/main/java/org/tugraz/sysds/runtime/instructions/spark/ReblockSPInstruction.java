@@ -23,7 +23,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.tugraz.sysds.hops.recompile.Recompiler;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;

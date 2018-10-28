@@ -19,8 +19,8 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

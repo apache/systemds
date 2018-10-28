@@ -23,8 +23,8 @@ import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -158,7 +158,7 @@ public class LiteralOp extends Hop
 				ret = OptimizerUtils.BOOLEAN_SIZE; break;
 			case STRING: 
 				ret = this.value_string.length() * OptimizerUtils.CHAR_SIZE; break;
-			case OBJECT:
+			case UNKNOWN:
 				ret = OptimizerUtils.DEFAULT_SIZE; break;
 			default:
 				ret = 0;
@@ -253,7 +253,6 @@ public class LiteralOp extends Hop
 				return String.valueOf(value_double);
 			case STRING:
 				return value_string;
-			case OBJECT:
 			case UNKNOWN:
 				//do nothing (return null)
 		}
@@ -264,7 +263,7 @@ public class LiteralOp extends Hop
 	@Override
 	public Object clone() throws CloneNotSupportedException 
 	{
-		LiteralOp ret = new LiteralOp();	
+		LiteralOp ret = new LiteralOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);

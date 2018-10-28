@@ -26,7 +26,7 @@ import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**

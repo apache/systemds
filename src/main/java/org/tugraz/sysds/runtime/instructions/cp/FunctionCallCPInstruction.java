@@ -27,7 +27,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;

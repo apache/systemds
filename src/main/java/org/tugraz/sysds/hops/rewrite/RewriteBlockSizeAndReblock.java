@@ -30,7 +30,7 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 
 /**
  * Rule: BlockSizeAndReblock. For all statement blocks, determine

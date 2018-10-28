@@ -43,7 +43,7 @@ import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.Hop.OpOpDnn;
 import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 
 /*

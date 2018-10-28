@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.tugraz.sysds.hops.FunctionOp.FunctionType;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 public class FunctionStatementBlock extends StatementBlock 

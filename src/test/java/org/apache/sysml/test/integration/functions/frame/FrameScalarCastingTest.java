@@ -24,7 +24,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;

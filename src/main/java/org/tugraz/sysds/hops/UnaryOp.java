@@ -32,8 +32,8 @@ import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 
 

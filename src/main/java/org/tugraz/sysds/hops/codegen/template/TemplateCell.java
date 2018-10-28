@@ -60,7 +60,7 @@ import org.tugraz.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 
 public class TemplateCell extends TemplateBase 

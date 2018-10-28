@@ -20,7 +20,7 @@ package org.tugraz.sysds.runtime.instructions.gpu;
 
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

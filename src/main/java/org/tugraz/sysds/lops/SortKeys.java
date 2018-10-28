@@ -24,8 +24,8 @@ import java.util.HashSet;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 public class SortKeys extends Lop 
 {

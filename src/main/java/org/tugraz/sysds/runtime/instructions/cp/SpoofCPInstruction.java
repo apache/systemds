@@ -21,7 +21,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 
 import java.util.ArrayList;
 
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.SpoofOperator;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

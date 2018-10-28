@@ -39,7 +39,7 @@ import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 
 /**
  * This rewrite identifies binary operations with constant matrices 

@@ -22,6 +22,8 @@ package org.tugraz.sysds.parser;
 import java.util.HashMap;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 public class IterablePredicate extends Expression 
@@ -188,9 +190,9 @@ public class IterablePredicate extends Expression
 			return;
 		
 		Identifier ident = expr.getOutput();
-		if( ident.getDataType() == DataType.MATRIX || ident.getDataType() == DataType.OBJECT ||
+		if( ident.getDataType() == DataType.MATRIX ||
 			(ident.getDataType() == DataType.SCALAR && (ident.getValueType() == ValueType.BOOLEAN || 
-			ident.getValueType() == ValueType.STRING || ident.getValueType() == ValueType.OBJECT)) )
+			ident.getValueType() == ValueType.STRING)) )
 		{
 			throw new LanguageException(this.printErrorLocation() + "expression in iterable predicate in for loop '" + expr.toString() + "' must return a numeric scalar");
 		}

@@ -21,8 +21,8 @@ package org.tugraz.sysds.runtime.instructions.cp;
 
 import java.io.Serializable;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.MetaData;

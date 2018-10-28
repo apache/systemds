@@ -29,10 +29,10 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.parser.Expression;
 
 /**
  * Prerequisite: RewriteCommonSubexpressionElimination must run before this rule.
@@ -150,8 +150,8 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 		Hop next = iterator.hasNext() ? iterator.next() : null;
 		Hop colVectorsScalars = null;
 		while(next != null &&
-				(next.getDataType() == Expression.DataType.SCALAR
-						|| next.getDataType() == Expression.DataType.MATRIX && next.getDim2() == 1))
+				(next.getDataType() == DataType.SCALAR
+						|| next.getDataType() == DataType.MATRIX && next.getDim2() == 1))
 		{
 			if( colVectorsScalars == null )
 				colVectorsScalars = next;
@@ -165,7 +165,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 
 		Hop rowVectors = null;
 		while(next != null &&
-				(next.getDataType() == Expression.DataType.MATRIX && next.getDim1() == 1))
+				(next.getDataType() == DataType.MATRIX && next.getDim1() == 1))
 		{
 			if( rowVectors == null )
 				rowVectors = next;
@@ -179,7 +179,7 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 
 		Hop matrices = null;
 		while(next != null &&
-				(next.getDataType() == Expression.DataType.MATRIX))
+				(next.getDataType() == DataType.MATRIX))
 		{
 			if( matrices == null )
 				matrices = next;
@@ -253,16 +253,15 @@ public class RewriteElementwiseMultChainOptimization extends HopRewriteRule {
 	//TODO replace by ComparableHop wrapper around hop that implements equals and compareTo
 	//in order to ensure comparisons that are 'consistent with equals'
 	private static final Comparator<Hop> compareByDataType = new Comparator<Hop>() {
-		private final int[] orderDataType = new int[Expression.DataType.values().length];
+		private final int[] orderDataType = new int[DataType.values().length];
 		{
-			for (int i = 0, valuesLength = Expression.DataType.values().length; i < valuesLength; i++)
-				switch(Expression.DataType.values()[i]) {
+			for (int i = 0, valuesLength = DataType.values().length; i < valuesLength; i++)
+				switch(DataType.values()[i]) {
 					case SCALAR: orderDataType[i] = 0; break;
 					case MATRIX: orderDataType[i] = 1; break;
 					case FRAME:  orderDataType[i] = 2; break;
-					case OBJECT: orderDataType[i] = 3; break;
-					case UNKNOWN:orderDataType[i] = 4; break;
-					case LIST:   orderDataType[i] = 5; break;
+					case UNKNOWN:orderDataType[i] = 3; break;
+					case LIST:   orderDataType[i] = 4; break;
 				}
 		}
 

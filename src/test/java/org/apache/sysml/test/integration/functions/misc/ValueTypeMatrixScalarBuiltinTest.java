@@ -23,7 +23,7 @@ import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 {	

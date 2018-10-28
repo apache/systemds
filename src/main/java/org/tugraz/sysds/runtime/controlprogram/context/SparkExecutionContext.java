@@ -48,7 +48,7 @@ import org.tugraz.sysds.api.mlcontext.MLContextUtil;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Checkpoint;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;

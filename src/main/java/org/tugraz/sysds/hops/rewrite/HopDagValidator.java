@@ -28,12 +28,13 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.utils.Explain;
 
@@ -106,8 +107,8 @@ public class HopDagValidator {
 					parent.getHopID(), parent.getClass().getName());
 
 		final ArrayList<Hop> input = hop.getInput();
-		final Expression.DataType dt = hop.getDataType();
-		final Expression.ValueType vt = hop.getValueType();
+		final DataType dt = hop.getDataType();
+		final ValueType vt = hop.getValueType();
 
 		//check child linking
 		for( Hop child : input )
@@ -123,8 +124,8 @@ public class HopDagValidator {
 		hop.checkArity();
 
 		// check Matrix data type Hops must have Double Value type
-		if (dt == Expression.DataType.MATRIX )
-			check(vt == Expression.ValueType.DOUBLE || vt == Expression.ValueType.INT, hop,
+		if (dt == DataType.MATRIX )
+			check(vt == ValueType.DOUBLE || vt == ValueType.INT, hop,
 				"has Matrix type but Value Type %s is not DOUBLE", vt);
 
 		//recursively process children

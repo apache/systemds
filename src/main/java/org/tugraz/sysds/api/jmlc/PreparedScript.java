@@ -37,7 +37,7 @@ import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.ipa.FunctionCallGraph;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;

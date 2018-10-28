@@ -80,7 +80,7 @@ import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;

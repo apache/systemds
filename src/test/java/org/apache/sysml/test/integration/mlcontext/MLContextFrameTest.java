@@ -46,7 +46,7 @@ import org.tugraz.sysds.api.mlcontext.MatrixFormat;
 import org.tugraz.sysds.api.mlcontext.MatrixMetadata;
 import org.tugraz.sysds.api.mlcontext.Script;
 import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 

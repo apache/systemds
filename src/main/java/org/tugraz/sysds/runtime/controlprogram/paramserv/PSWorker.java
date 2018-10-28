@@ -25,8 +25,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
@@ -85,23 +85,23 @@ public abstract class PSWorker implements Serializable
 			inputNames, func.getInputParamNames(), outputNames, "update function");
 
 		// Check the inputs of the update function
-		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_FEATURES);
-		checkInput(false, inputs, Expression.DataType.MATRIX, Statement.PS_LABELS);
-		checkInput(false, inputs, Expression.DataType.LIST, Statement.PS_MODEL);
-		checkInput(true, inputs, Expression.DataType.LIST, Statement.PS_HYPER_PARAMS);
+		checkInput(false, inputs, DataType.MATRIX, Statement.PS_FEATURES);
+		checkInput(false, inputs, DataType.MATRIX, Statement.PS_LABELS);
+		checkInput(false, inputs, DataType.LIST, Statement.PS_MODEL);
+		checkInput(true, inputs, DataType.LIST, Statement.PS_HYPER_PARAMS);
 
 		// Check the output of the update function
 		if (outputs.size() != 1) {
 			throw new DMLRuntimeException(String.format("The output of the '%s' function "
 				+ "should provide one list containing the gradients.", updFunc));
 		}
-		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
+		if (outputs.get(0).getDataType() != DataType.LIST) {
 			throw new DMLRuntimeException(String.format("The output of the '%s' function should be type of list.", updFunc));
 		}
 		_output = outputs.get(0);
 	}
 
-	private void checkInput(boolean optional, ArrayList<DataIdentifier> inputs, Expression.DataType dt, String pname) {
+	private void checkInput(boolean optional, ArrayList<DataIdentifier> inputs, DataType dt, String pname) {
 		if (optional && inputs.stream().noneMatch(input -> pname.equals(input.getName()))) {
 			// We do not need to check if the input is optional and is not provided
 			return;

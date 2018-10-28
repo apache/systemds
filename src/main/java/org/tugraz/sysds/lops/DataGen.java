@@ -27,7 +27,8 @@ import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.parser.Expression.*;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 /**

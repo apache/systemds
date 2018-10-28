@@ -44,7 +44,7 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -62,10 +62,10 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + DataFrameVectorFrameConversionTest.class.getSimpleName() + "/";
 
 	//schema restriction: single vector included
-	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.OBJECT, ValueType.STRING, ValueType.STRING, ValueType.STRING};
-	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.DOUBLE, ValueType.DOUBLE, ValueType.OBJECT, ValueType.DOUBLE};
-	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.OBJECT, ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.INT};
-	private final static ValueType[] schemaMixed2 = new ValueType[]{ValueType.STRING, ValueType.OBJECT, ValueType.DOUBLE};
+	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.UNKNOWN, ValueType.STRING, ValueType.STRING, ValueType.STRING};
+	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.DOUBLE, ValueType.DOUBLE, ValueType.UNKNOWN, ValueType.DOUBLE};
+	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.UNKNOWN, ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.INT};
+	private final static ValueType[] schemaMixed2 = new ValueType[]{ValueType.STRING, ValueType.UNKNOWN, ValueType.DOUBLE};
 	
 	private final static int rows1 = 2245;
 	private final static int colsVector = 7;
@@ -301,7 +301,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			if( containsID )
 				row[0] = (double)i+1;
 			for( int j=0, j2=0; j<mb.getNumColumns(); j++, j2++ ) {
-				if( schema[j2] != ValueType.OBJECT ) {
+				if( schema[j2] != ValueType.UNKNOWN ) {
 					row[j2+off] = UtilFunctions
 						.doubleToObject(schema[j2], mb.quickGetValue(i, j));
 				}
@@ -326,7 +326,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 				case STRING: dt = DataTypes.StringType; break;
 				case DOUBLE: dt = DataTypes.DoubleType; break;
 				case INT:    dt = DataTypes.LongType; break;
-				case OBJECT: dt = new VectorUDT(); break;
+				case UNKNOWN: dt = new VectorUDT(); break;
 				default: throw new RuntimeException("Unsupported value type.");
 			}
 			fields.add(DataTypes.createStructField("C"+(j+1), dt, true));

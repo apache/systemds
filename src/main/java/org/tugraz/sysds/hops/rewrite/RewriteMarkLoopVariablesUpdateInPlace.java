@@ -38,7 +38,7 @@ import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 
 /**
  * Rule: Mark loop variables that are only read/updated through cp left indexing

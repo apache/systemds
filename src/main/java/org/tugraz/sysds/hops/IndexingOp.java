@@ -26,8 +26,8 @@ import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 
 //for now only works for range based indexing op

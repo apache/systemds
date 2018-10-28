@@ -45,8 +45,8 @@ import org.tugraz.sysds.parser.FunctionStatement;
 import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.LanguageException;
 import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;

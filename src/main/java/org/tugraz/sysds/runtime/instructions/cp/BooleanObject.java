@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 import org.apache.commons.lang.StringUtils;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.mlcontext.ScriptType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 public class BooleanObject extends ScalarObject  

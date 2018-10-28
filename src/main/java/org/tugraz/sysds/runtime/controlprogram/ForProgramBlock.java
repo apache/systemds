@@ -24,7 +24,7 @@ import java.util.Iterator;
 
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;

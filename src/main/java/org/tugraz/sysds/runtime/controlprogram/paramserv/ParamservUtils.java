@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.MultiThreadedHop;
@@ -40,7 +41,6 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DMLTranslator;
-import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -159,7 +159,7 @@ public class ParamservUtils {
 	}
 	
 	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
-		MatrixObject result = new MatrixObject(Expression.ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+		MatrixObject result = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
 			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		result.acquireModify(mb);

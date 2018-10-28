@@ -31,9 +31,9 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.StatementBlockRewriteRule;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.FormatType;
-import org.tugraz.sysds.parser.Expression.ValueType;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -795,8 +795,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				List<Expression> expressions = pstmt.getExpressions();
 				for (Expression expression : expressions) {
 					expression.validateExpression(ids.getVariables(), currConstVars, conditional);
-					if (expression.getOutput().getDataType() != Expression.DataType.SCALAR) {
-						if (expression.getOutput().getDataType() == Expression.DataType.MATRIX) {
+					if (expression.getOutput().getDataType() != DataType.SCALAR) {
+						if (expression.getOutput().getDataType() == DataType.MATRIX) {
 							pstmt.raiseValidateError("Print statements can only print scalars. To print a matrix, please wrap it in a toString() function.", conditional);
 						} else {
 							pstmt.raiseValidateError("Print statements can only print scalars.", conditional);

@@ -24,7 +24,7 @@ import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
 import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;

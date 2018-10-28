@@ -21,7 +21,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.RightIndex;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

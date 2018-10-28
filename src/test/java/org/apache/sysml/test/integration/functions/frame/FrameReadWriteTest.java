@@ -28,7 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;

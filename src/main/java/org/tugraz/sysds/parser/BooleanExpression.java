@@ -21,6 +21,9 @@ package org.tugraz.sysds.parser;
 
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
+
 
 public class BooleanExpression extends Expression
 {

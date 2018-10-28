@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.compress.CompressedMatrixBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;

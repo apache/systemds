@@ -33,7 +33,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;

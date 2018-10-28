@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.ValueComparisonFunction;

@@ -33,7 +33,7 @@ import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;

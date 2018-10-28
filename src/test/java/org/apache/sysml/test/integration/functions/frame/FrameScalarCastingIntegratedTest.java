@@ -23,7 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.util.MapReduceTool;
 import org.tugraz.sysds.utils.Statistics;

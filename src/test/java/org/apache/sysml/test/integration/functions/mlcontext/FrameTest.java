@@ -48,7 +48,7 @@ import org.tugraz.sysds.api.mlcontext.Script;
 import org.tugraz.sysds.api.mlcontext.ScriptFactory;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.ParseException;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;

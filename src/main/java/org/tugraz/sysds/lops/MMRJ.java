@@ -22,7 +22,8 @@ package org.tugraz.sysds.lops;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
-import org.tugraz.sysds.parser.Expression.*;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 /**

@@ -45,7 +45,7 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;

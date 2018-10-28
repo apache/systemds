@@ -33,7 +33,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;

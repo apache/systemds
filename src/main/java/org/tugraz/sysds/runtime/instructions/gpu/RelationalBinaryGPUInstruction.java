@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.instructions.gpu;
 
-import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -49,18 +49,18 @@ public abstract class RelationalBinaryGPUInstruction extends GPUInstruction {
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 
-		Expression.DataType dt1 = in1.getDataType();
-		Expression.DataType dt2 = in2.getDataType();
-		Expression.DataType dt3 = out.getDataType();
+		DataType dt1 = in1.getDataType();
+		DataType dt2 = in2.getDataType();
+		DataType dt3 = out.getDataType();
 
 		Operator operator = (dt1 != dt2) ?
-				InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == Expression.DataType.SCALAR)) :
+				InstructionUtils.parseScalarBinaryOperator(opcode, (dt1 == DataType.SCALAR)) :
 				InstructionUtils.parseBinaryOperator(opcode);
 
-		if(dt1 == Expression.DataType.MATRIX && dt2 == Expression.DataType.MATRIX && dt3 == Expression.DataType.MATRIX) {
+		if(dt1 == DataType.MATRIX && dt2 == DataType.MATRIX && dt3 == DataType.MATRIX) {
 			return new MatrixMatrixRelationalBinaryGPUInstruction(operator, in1, in2, out, opcode, str);
 		}
-		else if( dt3 == Expression.DataType.MATRIX && ((dt1 == Expression.DataType.SCALAR && dt2 == Expression.DataType.MATRIX) || (dt1 == Expression.DataType.MATRIX && dt2 == Expression.DataType.SCALAR)) ) {
+		else if( dt3 == DataType.MATRIX && ((dt1 == DataType.SCALAR && dt2 == DataType.MATRIX) || (dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)) ) {
 			return new ScalarMatrixRelationalBinaryGPUInstruction(operator, in1, in2, out, opcode, str);
 		}
 		else

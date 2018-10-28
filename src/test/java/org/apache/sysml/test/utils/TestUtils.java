@@ -52,7 +52,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.sysml.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.io.FrameWriter;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;

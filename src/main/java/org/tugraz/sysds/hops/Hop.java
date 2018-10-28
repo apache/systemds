@@ -46,8 +46,8 @@ import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.ParseInfo;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -654,7 +654,6 @@ public abstract class Hop implements ParseInfo
 				
 				break;
 			}
-			case OBJECT:
 			case UNKNOWN: {
 				//memory estimate always unknown
 				_outputMemEstimate = OptimizerUtils.DEFAULT_SIZE;

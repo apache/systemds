@@ -34,7 +34,7 @@ import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.compile.Dag;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;

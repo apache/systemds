@@ -61,7 +61,7 @@ import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.ParForStatement;
 import org.tugraz.sysds.parser.ParForStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;

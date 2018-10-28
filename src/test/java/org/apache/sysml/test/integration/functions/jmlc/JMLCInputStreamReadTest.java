@@ -27,7 +27,7 @@ import java.util.stream.IntStream;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.tugraz.sysds.api.jmlc.Connection;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.io.FrameWriter;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;

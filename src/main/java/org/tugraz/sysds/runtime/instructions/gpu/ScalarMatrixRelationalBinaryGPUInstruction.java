@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.instructions.gpu;
 
-import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -40,8 +40,8 @@ public class ScalarMatrixRelationalBinaryGPUInstruction extends RelationalBinary
 	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 
-		CPOperand mat = ( _input1.getDataType() == Expression.DataType.MATRIX ) ? _input1 : _input2;
-		CPOperand scalar = ( _input1.getDataType() == Expression.DataType.MATRIX ) ? _input2 : _input1;
+		CPOperand mat = ( _input1.getDataType() == DataType.MATRIX ) ? _input1 : _input2;
+		CPOperand scalar = ( _input1.getDataType() == DataType.MATRIX ) ? _input2 : _input1;
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 

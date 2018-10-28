@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.instructions.gpu;
 
-import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -60,9 +60,9 @@ public class MatrixAppendGPUInstruction extends GPUInstruction {
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);
-		AppendCPInstruction.AppendType type = (in1.getDataType()!= Expression.DataType.MATRIX && in1.getDataType()!= Expression.DataType.FRAME) ?
+		AppendCPInstruction.AppendType type = (in1.getDataType()!= DataType.MATRIX && in1.getDataType()!= DataType.FRAME) ?
 				AppendCPInstruction.AppendType.STRING : cbind ? AppendCPInstruction.AppendType.CBIND : AppendCPInstruction.AppendType.RBIND;
-		if (in1.getDataType()!= Expression.DataType.MATRIX || in2.getDataType()!= Expression.DataType.MATRIX){
+		if (in1.getDataType()!= DataType.MATRIX || in2.getDataType()!= DataType.MATRIX){
 			throw new DMLRuntimeException("GPU : Error in internal state - Append was called on data other than matrices");
 		}
 		if(!opcode.equalsIgnoreCase("append"))

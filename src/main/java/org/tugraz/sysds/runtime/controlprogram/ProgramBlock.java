@@ -32,7 +32,7 @@ import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.ParseInfo;
 import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;

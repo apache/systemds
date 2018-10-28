@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.functions.misc;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.util.MapReduceTool;

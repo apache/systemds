@@ -40,10 +40,10 @@ import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.BinaryOp;
 import org.tugraz.sysds.parser.Expression.BuiltinFunctionOp;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
@@ -640,7 +640,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	{
 		// check candidate only (output dependency if scalar or constant matrix subscript)
 		if(    cdt == DataType.SCALAR 
-			|| cdt == DataType.OBJECT  ) //dat2 checked for other candidate 
+			|| cdt == DataType.UNKNOWN  ) //dat2 checked for other candidate 
 		{
 			//every write to a scalar or complete data object is an output dependency
 			dep[0] = true;
@@ -716,8 +716,8 @@ public class ParForStatementBlock extends ForStatementBlock
 						DataIdentifier dat2 = read;
 						DataType dat2dt = _vsParent.getVariables().get(read.getName()).getDataType();
 						
-						if( cdt == DataType.SCALAR || cdt == DataType.OBJECT
-							|| dat2dt == DataType.SCALAR || dat2dt == DataType.OBJECT )
+						if( cdt == DataType.SCALAR || cdt == DataType.UNKNOWN
+							|| dat2dt == DataType.SCALAR || dat2dt == DataType.UNKNOWN )
 						{
 							//every write, read combination involving a scalar is a data dependency
 							dep[1] = true;

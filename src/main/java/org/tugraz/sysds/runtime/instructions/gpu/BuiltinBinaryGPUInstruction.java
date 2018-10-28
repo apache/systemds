@@ -19,7 +19,8 @@
 
 package org.tugraz.sysds.runtime.instructions.gpu;
 
-import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
@@ -45,9 +46,9 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 	}
 
   public static BuiltinBinaryGPUInstruction parseInstruction(String str) {
-    CPOperand in1 = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);
-    CPOperand in2 = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);
-    CPOperand out = new CPOperand("", Expression.ValueType.UNKNOWN, Expression.DataType.UNKNOWN);
+    CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+    CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+    CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 
     String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
     InstructionUtils.checkNumFields ( parts, 3 );
@@ -58,18 +59,18 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
     out.split(parts[3]);
 
     // check for valid data type of output
-    if((in1.getDataType() == Expression.DataType.MATRIX || in2.getDataType() == Expression.DataType.MATRIX) && out.getDataType() != Expression.DataType.MATRIX)
+    if((in1.getDataType() == DataType.MATRIX || in2.getDataType() == DataType.MATRIX) && out.getDataType() != DataType.MATRIX)
       throw new DMLRuntimeException("Element-wise matrix operations between variables " + in1.getName() +
               " and " + in2.getName() + " must produce a matrix, which " + out.getName() + " is not");
 
     // Determine appropriate Function Object based on opcode
     ValueFunction func = Builtin.getBuiltinFnObject(opcode);
     
-    boolean isMatrixMatrix = in1.getDataType() == Expression.DataType.MATRIX && in2.getDataType() == Expression.DataType.MATRIX;
-    boolean isMatrixScalar = (in1.getDataType() == Expression.DataType.MATRIX && in2.getDataType() == Expression.DataType.SCALAR) || 
-    							(in1.getDataType() == Expression.DataType.SCALAR && in2.getDataType() == Expression.DataType.MATRIX);
+    boolean isMatrixMatrix = in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX;
+    boolean isMatrixScalar = (in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.SCALAR) || 
+    							(in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.MATRIX);
 
-    if ( in1.getDataType() == Expression.DataType.SCALAR && in2.getDataType() == Expression.DataType.SCALAR )
+    if ( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
       throw new DMLRuntimeException("GPU : Unsupported GPU builtin operations on 2 scalars");
     else if ( isMatrixMatrix && opcode.equals("solve") )
       return new MatrixMatrixBuiltinGPUInstruction(new BinaryOperator(func), in1, in2, out, opcode, str, 2);

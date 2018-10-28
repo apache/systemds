@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.StringUtils;
 import org.tugraz.sysds.hops.codegen.template.TemplateUtils;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 

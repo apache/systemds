@@ -20,7 +20,7 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 public class IntObject extends ScalarObject
 {

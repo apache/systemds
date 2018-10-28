@@ -32,6 +32,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.DataGenOp;
@@ -1595,7 +1597,7 @@ public class DataExpression extends DataIdentifier
 			filename = ((ConstIdentifier)expr.getLeft()).toString()+ filename;
 		}
 		else if (expr.getLeft() instanceof DataIdentifier 
-			&& ((DataIdentifier)expr.getLeft()).getDataType() == Expression.DataType.SCALAR){ 
+			&& ((DataIdentifier)expr.getLeft()).getDataType() == DataType.SCALAR){ 
 			String name = ((DataIdentifier)expr.getLeft()).getName();
 			filename = ((StringIdentifier)currConstVars.get(name)).getValue() + filename;
 		}
@@ -1612,8 +1614,8 @@ public class DataExpression extends DataIdentifier
 			filename = filename + ((ConstIdentifier)expr.getRight()).toString();
 		}
 		else if (expr.getRight() instanceof DataIdentifier 
-			&& ((DataIdentifier)expr.getRight()).getDataType() == Expression.DataType.SCALAR
-			&& ((DataIdentifier)expr.getRight()).getValueType() == Expression.ValueType.STRING){
+			&& ((DataIdentifier)expr.getRight()).getDataType() == DataType.SCALAR
+			&& ((DataIdentifier)expr.getRight()).getValueType() == ValueType.STRING){
 			String name = ((DataIdentifier)expr.getRight()).getName();
 			filename =  filename + ((StringIdentifier)currConstVars.get(name)).getValue();
 		}

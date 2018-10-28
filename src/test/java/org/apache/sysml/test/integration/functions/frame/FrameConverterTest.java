@@ -40,7 +40,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyFrameBlockPairFunction;

@@ -57,7 +57,7 @@ import org.tugraz.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.tugraz.sysds.hops.codegen.template.TemplateBase.CloseType;
 import org.tugraz.sysds.hops.codegen.template.TemplateBase.TemplateType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.tugraz.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;

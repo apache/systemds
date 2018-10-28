@@ -20,7 +20,7 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.lops.PickByCount.OperationTypes;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;

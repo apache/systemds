@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;

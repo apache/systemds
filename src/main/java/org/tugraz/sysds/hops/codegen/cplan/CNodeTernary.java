@@ -21,7 +21,7 @@ package org.tugraz.sysds.hops.codegen.cplan;
 
 import java.util.Arrays;
 
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 

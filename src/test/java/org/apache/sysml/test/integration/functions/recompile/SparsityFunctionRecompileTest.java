@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;

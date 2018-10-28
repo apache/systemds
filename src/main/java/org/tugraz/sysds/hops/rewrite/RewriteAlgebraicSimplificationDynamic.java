@@ -55,8 +55,8 @@ import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions

@@ -34,8 +34,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.DataIdentifier;
-import org.tugraz.sysds.parser.Expression;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
@@ -96,7 +96,7 @@ public abstract class ParamServer
 		if (outputs.size() != 1) {
 			throw new DMLRuntimeException(String.format("The output of the '%s' function should provide one list containing the updated model.", aggFunc));
 		}
-		if (outputs.get(0).getDataType() != Expression.DataType.LIST) {
+		if (outputs.get(0).getDataType() != DataType.LIST) {
 			throw new DMLRuntimeException(String.format("The output of the '%s' function should be type of list.", aggFunc));
 		}
 		_outputName = outputs.get(0).getName();

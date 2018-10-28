@@ -23,8 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 public class KahanObject extends Data 
@@ -36,7 +36,7 @@ public class KahanObject extends Data
 	public double _correction;
 
 	public KahanObject(double sum, double cor){
-		super(DataType.OBJECT, ValueType.UNKNOWN);
+		super(DataType.UNKNOWN, ValueType.UNKNOWN);
 		_sum=sum;
 		_correction=cor;
 	}

@@ -27,7 +27,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 
 
 public class IfStatementBlock extends StatementBlock 

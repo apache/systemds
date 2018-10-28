@@ -21,7 +21,7 @@ package org.tugraz.sysds.runtime.transform.decode;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.Pair;

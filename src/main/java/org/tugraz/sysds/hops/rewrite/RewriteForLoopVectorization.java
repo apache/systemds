@@ -39,7 +39,7 @@ import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.parser.Expression.DataType;
+import org.tugraz.sysds.common.Types.DataType;
 
 /**
  * Rule: Simplify program structure by pulling if or else statement body out

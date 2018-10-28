@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.instructions.cp;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public abstract class ScalarObjectFactory

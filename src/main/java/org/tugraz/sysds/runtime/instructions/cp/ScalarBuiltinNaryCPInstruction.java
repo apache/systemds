@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.parser.Expression;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -54,7 +54,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 
 			// determine the format string (first argument) to pass to String.format
 			ScalarObject formatStringObject = scalarObjects.get(0);
-			if (formatStringObject.getValueType() != Expression.ValueType.STRING) {
+			if (formatStringObject.getValueType() != ValueType.STRING) {
 				throw new DMLRuntimeException("First parameter needs to be a string");
 			}
 			String formatString = formatStringObject.getStringValue();

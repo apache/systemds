@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.DataConverter;

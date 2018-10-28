@@ -24,7 +24,8 @@ import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 
-import org.tugraz.sysds.parser.Expression.*;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 
 /**

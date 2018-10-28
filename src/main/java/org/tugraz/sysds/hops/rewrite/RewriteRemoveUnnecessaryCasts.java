@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 /**
  * Rule: RemoveUnnecessaryCasts. For all value type casts check

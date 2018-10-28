@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.transform.encode;
 import java.util.Arrays;
 import java.util.List;
 
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 

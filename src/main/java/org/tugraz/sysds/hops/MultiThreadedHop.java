@@ -19,8 +19,8 @@
 
 package org.tugraz.sysds.hops;
 
-import org.tugraz.sysds.parser.Expression.DataType;
-import org.tugraz.sysds.parser.Expression.ValueType;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 
 /**
  * Optional hop interface, to be implemented by multi-threaded hops.

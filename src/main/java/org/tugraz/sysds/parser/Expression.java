@@ -26,6 +26,8 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
@@ -178,36 +180,6 @@ public abstract class Expression implements ParseInfo
 	 */
 	public enum FunctCallOp {
 		INTERNAL, EXTERNAL
-	}
-
-	/**
-	 * Data types (matrix, scalar, frame, object, unknown).
-	 */
-	public enum DataType {
-		MATRIX, SCALAR, FRAME, LIST, OBJECT, UNKNOWN;
-		
-		public boolean isMatrix() {
-			return (this == MATRIX);
-		}
-		public boolean isFrame() {
-			return (this == FRAME);
-		}
-		public boolean isScalar() {
-			return (this == SCALAR);
-		}
-		public boolean isList() {
-			return (this == LIST);
-		}
-	}
-
-	/**
-	 * Value types (int, double, string, boolean, object, unknown).
-	 */
-	public enum ValueType {
-		INT, DOUBLE, STRING, BOOLEAN, OBJECT, UNKNOWN;
-		public boolean isNumeric() {
-			return this == INT || this == DOUBLE;
-		}
 	}
 
 	/**

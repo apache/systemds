@@ -21,6 +21,8 @@ package org.tugraz.sysds.parser;
 
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 
 public abstract class Identifier extends Expression
@@ -161,7 +163,7 @@ public abstract class Identifier extends Expression
 				for( int i=0; i<4; i++ ) {
 					if( exp[i] != null ) {
 						exp[i].validateExpression(ids, constVars, conditional);
-						if (exp[i].getOutput().getDataType() == Expression.DataType.MATRIX){
+						if (exp[i].getOutput().getDataType() == DataType.MATRIX){
 							raiseValidateError("Matrix values for "+msg[i]+" index bound are "
 								+ "not supported, which includes indexed identifiers.", conditional);
 						}

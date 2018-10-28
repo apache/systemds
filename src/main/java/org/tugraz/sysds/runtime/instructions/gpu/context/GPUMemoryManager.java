@@ -610,35 +610,12 @@ public class GPUMemoryManager {
 		return ret.toString();
 	}
 	
-	private static class CustomPointer extends Pointer {
-		public CustomPointer(Pointer p) {
-			super(p);
-		}
-		
-		@Override
-		public long getNativePointer() {
-			return super.getNativePointer();
-		}
-	}
-	
 	/**
 	 * Class that governs the eviction policy
 	 */
 	public static class EvictionPolicyBasedComparator implements Comparator<GPUObject> {
-		private long neededSize;
 		public EvictionPolicyBasedComparator(long neededSize) {
-			this.neededSize = neededSize;
-		}
 		
-		private int minEvictCompare(GPUObject p1, GPUObject p2) {
-			long p1Size = p1.getSizeOnDevice() - neededSize;
-			long p2Size = p2.getSizeOnDevice() - neededSize;
-
-			if (p1Size >= 0 && p2Size >= 0) {
-				return Long.compare(p2Size, p1Size);
-			} else {
-				return Long.compare(p1Size, p2Size);
-			}
 		}
 		
 		@Override

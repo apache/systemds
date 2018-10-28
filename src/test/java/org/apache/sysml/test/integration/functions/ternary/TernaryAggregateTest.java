@@ -100,26 +100,6 @@ public class TernaryAggregateTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testTernaryAggregateRCDenseVectorMR() {
-		runTernaryAggregateTest(TEST_NAME1, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTernaryAggregateRCSparseVectorMR() {
-		runTernaryAggregateTest(TEST_NAME1, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTernaryAggregateRCDenseMatrixMR() {
-		runTernaryAggregateTest(TEST_NAME1, false, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTernaryAggregateRCSparseMatrixMR() {
-		runTernaryAggregateTest(TEST_NAME1, true, false, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testTernaryAggregateCDenseVectorCP() {
 		runTernaryAggregateTest(TEST_NAME2, false, true, true, ExecType.CP);
 	}
@@ -208,7 +188,6 @@ public class TernaryAggregateTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
@@ -250,7 +229,7 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check for rewritten patterns in statistics output
-			if( rewrites && et != ExecType.MR ) {
+			if( rewrites ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
 					(((testname.equals(TEST_NAME1) || vectors ) ? "tak+*" : "tack+*"));
 				Assert.assertEquals(Boolean.TRUE,

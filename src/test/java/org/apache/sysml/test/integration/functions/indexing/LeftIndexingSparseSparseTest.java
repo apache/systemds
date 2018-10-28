@@ -134,35 +134,6 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.SPARK, LeftIndexingMethod.SP_MLEFTINDEX_R);
 	}
 	
-	@Test
-	public void testSparseLeftIndexingLeftAligned() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT_ALIGNED, ExecType.MR, null);
-	}
-	
-	@Test
-	public void testSparseLeftIndexingLeft2Aligned() {
-		runLeftIndexingSparseSparseTest(LixType.LEFT2_ALIGNED, ExecType.MR, null);
-	}
-	
-	@Test
-	public void testSparseLeftIndexingRightAligned() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT_ALIGNED, ExecType.MR, null);
-	}
-	
-	@Test
-	public void testSparseLeftIndexingRight2Aligned() {
-		runLeftIndexingSparseSparseTest(LixType.RIGHT2_ALIGNED, ExecType.MR, null);
-	}
-	
-	@Test
-	public void testSparseLeftIndexingCentered() {
-		runLeftIndexingSparseSparseTest(LixType.CENTERED, ExecType.MR, null);
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 */
 	public void runLeftIndexingSparseSparseTest(LixType type, ExecType et, LeftIndexingOp.LeftIndexingMethod indexingMethod) 
 	{
 		//setup range (column lower/upper)

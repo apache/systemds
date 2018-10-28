@@ -22,7 +22,6 @@ package org.tugraz.sysds.hops;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.RightIndex;

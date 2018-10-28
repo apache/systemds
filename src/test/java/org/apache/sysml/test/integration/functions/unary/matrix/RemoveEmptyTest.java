@@ -81,30 +81,6 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRemoveEmptyRowsDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.MR, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME1, "cols", ExecType.MR, true );
-	}
-
-	@Test
 	public void testRemoveEmptyRowsDenseSP() 
 	{
 		runTestRemoveEmpty( TEST_NAME1, "rows", ExecType.SPARK, false );
@@ -151,30 +127,6 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	public void testRemoveEmptyColsMultipleSparseCP() 
 	{
 		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.CP, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsMultipleDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsMultipleSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME2, "rows", ExecType.MR, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsMultipleDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsMultipleSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME2, "cols", ExecType.MR, true );
 	}
 	
 	@Test
@@ -226,30 +178,6 @@ public class RemoveEmptyTest extends AutomatedTestBase
 		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.CP, true );
 	}
 
-	@Test
-	public void testRemoveEmptyRowsDiagDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsDiagSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME3, "rows", ExecType.MR, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDiagDenseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDiagSparseMR() 
-	{
-		runTestRemoveEmpty( TEST_NAME3, "cols", ExecType.MR, true );
-	}
-	
 	@Test
 	public void testRemoveEmptyRowsDiagDenseSP() 
 	{
@@ -375,74 +303,23 @@ public class RemoveEmptyTest extends AutomatedTestBase
 	{
 		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.SPARK, true, true, true);
 	}
-	
-	// MR Test cases
-	@Test
-	public void testRemoveEmptyRowsDenseMRwIdx() 
-	{
-		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.MR, false, true, true);
-	}
-	
-	@Test
-	public void testRemoveEmptyColsDenseMRwIdx() 
-	{
-		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.MR, false, true, true);
-	}
-	
-	@Test
-	public void testRemoveEmptyRowsSparseMRwIdx() 
-	{
-		runTestRemoveEmpty( TEST_NAME4, "rows", ExecType.MR, true, true, true);
-	}
-	
-	@Test
-	public void testRemoveEmptyColsSparseMRwIdx() 
-	{
-		runTestRemoveEmpty( TEST_NAME4, "cols", ExecType.MR, true, true, true);
-	}
-	
+		
 
-	//-------------------------------------------------------------------------------------	
-	/**
-	 * 
-	 * @param testname
-	 * @param margin
-	 * @param mr
-	 * @param sparse
-	 */
 	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse )
 	{
 		runTestRemoveEmpty(testname, margin, et, sparse, true);
 	}
 
-	/**
-	 * 
-	 * @param testname
-	 * @param margin
-	 * @param mr
-	 * @param sparse
-	 * @param bForceDistRmEmpty
-	 */
 	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty)
 	{
 		runTestRemoveEmpty(testname, margin, et, sparse, bForceDistRmEmpty, false);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param margin
-	 * @param mr
-	 * @param sparse
-	 * @param bForceDistRmEmpty
-	 * @param bSelectIndex
-	 */
 	private void runTestRemoveEmpty( String testname, String margin, ExecType et, boolean sparse, boolean bForceDistRmEmpty, boolean bSelectIndex)
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

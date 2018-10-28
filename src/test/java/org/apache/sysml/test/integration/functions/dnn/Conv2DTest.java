@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.test.integration.functions.tensor;
+package org.apache.sysml.test.integration.functions.dnn;
 
 import java.util.HashMap;
 

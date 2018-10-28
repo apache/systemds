@@ -77,78 +77,6 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testDenseDenseMapmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, false, MMultMethod.MAPMM_R, ExecType.MR);
-	}
-	
-	@Test
-	public void testDenseSparseMapmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, true, MMultMethod.MAPMM_R, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseDenseMapmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, false, MMultMethod.MAPMM_R, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseSparseMapmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.MAPMM_R, ExecType.MR);
-	}
-	
-	@Test
-	public void testDenseDenseCpmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, false, MMultMethod.CPMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testDenseSparseCpmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, true, MMultMethod.CPMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseDenseCpmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, false, MMultMethod.CPMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseSparseCpmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.CPMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testDenseDenseRmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, false, MMultMethod.RMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testDenseSparseRmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(false, true, MMultMethod.RMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseDenseRmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, false, MMultMethod.RMM, ExecType.MR);
-	}
-	
-	@Test
-	public void testSparseSparseRmmMR() 
-	{
-		runDistributedMatrixMatrixMultiplicationTest(true, true, MMultMethod.RMM, ExecType.MR);
-	}
-
-	@Test
 	public void testDenseDenseMapmmSpark() 
 	{
 		runDistributedMatrixMatrixMultiplicationTest(false, false, MMultMethod.MAPMM_R, ExecType.SPARK);
@@ -232,7 +160,6 @@ public class FullDistributedMatrixMultiplicationTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

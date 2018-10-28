@@ -131,48 +131,6 @@ public class FullCumprodTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCumprodColVectorDenseMR() 
-	{
-		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCumprodRowVectorDenseMR() 
-	{
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCumprodRowVectorDenseNoRewritesMR() 
-	{
-		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testCumprodMatrixDenseMR() 
-	{
-		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCumprodColVectorSparseMR() 
-	{
-		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCumprodRowVectorSparseNoRewritesMR() 
-	{
-		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testCumprodMatrixSparseMR() 
-	{
-		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testCumprodColVectorDenseSP() 
 	{
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
@@ -243,7 +201,6 @@ public class FullCumprodTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

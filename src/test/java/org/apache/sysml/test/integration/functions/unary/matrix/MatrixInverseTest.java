@@ -71,11 +71,6 @@ public class MatrixInverseTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testInverseMR() {
-		runTestMatrixInverse( RUNTIME_PLATFORM.HADOOP );
-	}
-	
-	@Test
 	public void testInverseHybrid() {
 		runTestMatrixInverse( RUNTIME_PLATFORM.HYBRID );
 	}

@@ -63,12 +63,6 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 		runLeftIndexingTest(ExecType.SPARK);
 	}
 	
-	@Test
-	public void testLeftIndexingScalarMR() 
-	{
-		runLeftIndexingTest(ExecType.MR);
-	}
-	
 	private void runLeftIndexingTest( ExecType instType ) 
 	{		
 		//rtplatform for MR
@@ -77,7 +71,7 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	    	rtplatform = RUNTIME_PLATFORM.SPARK;
 	    }
 	    else {
-			rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 	    }
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )

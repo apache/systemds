@@ -53,11 +53,6 @@ public class LUFactorizeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testLUFactorizeDenseMR() {
-		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HADOOP );
-	}
-	
-	@Test
 	public void testLUFactorizeDenseHybrid() {
 		runTestLUFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
 	}
@@ -70,11 +65,6 @@ public class LUFactorizeTest extends AutomatedTestBase
 	@Test
 	public void testLargeLUFactorizeDenseSP() {
 		runTestLUFactorize( rows2, RUNTIME_PLATFORM.SPARK );
-	}
-	
-	@Test
-	public void testLargeLUFactorizeDenseMR() {
-		runTestLUFactorize( rows2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test

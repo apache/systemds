@@ -72,26 +72,6 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParForAccumulatorRemoteEmptyDenseMR() {
-		runParForAccumulatorResultMergeTest(TEST_NAME2, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForAccumulatorRemoteEmptySparseMR() {
-		runParForAccumulatorResultMergeTest(TEST_NAME2, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForAccumulatorRemoteInitDenseMR() {
-		runParForAccumulatorResultMergeTest(TEST_NAME2, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForAccumulatorRemoteInitSparseMR() {
-		runParForAccumulatorResultMergeTest(TEST_NAME2, true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testParForAccumulatorRemoteEmptyDenseSP() {
 		runParForAccumulatorResultMergeTest(TEST_NAME3, false, false, ExecType.SPARK);
 	}
@@ -116,7 +96,6 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ) {
 			case CP: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;
-			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			default: throw new RuntimeException("Unsupported exec type: "+et.name());
 		}

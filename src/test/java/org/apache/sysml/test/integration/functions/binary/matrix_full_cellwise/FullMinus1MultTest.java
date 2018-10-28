@@ -85,33 +85,11 @@ public class FullMinus1MultTest extends AutomatedTestBase
 		runMinus1MultTest(2, ExecType.SPARK, true);
 	}
 	
-	@Test
-	public void testMinus1MultMatrixMatrixMR() {
-		runMinus1MultTest(-1, ExecType.MR, true);
-	}
 	
-	@Test
-	public void testMinus1MultScalarMatrixMR() {
-		runMinus1MultTest(1, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testMinus1MultMatrixScalarMR() {
-		runMinus1MultTest(2, ExecType.MR, true);
-	}
-	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runMinus1MultTest( int posScalar, ExecType instType, boolean rewrites)
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

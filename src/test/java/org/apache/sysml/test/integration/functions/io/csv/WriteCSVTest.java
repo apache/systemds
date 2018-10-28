@@ -58,18 +58,8 @@ public class WriteCSVTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSV1_MR() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, true, ":", true);
-	}
-	
-	@Test
 	public void testCSV2_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ":", true);
-	}
-	
-	@Test
-	public void testCSV2_MR() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ":", true);
 	}
 	
 	@Test
@@ -78,18 +68,8 @@ public class WriteCSVTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSV3_MR() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ":", false);
-	}
-	
-	@Test
 	public void testCSV4_CP() throws IOException {
 		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ".", false);
-	}
-	
-	@Test
-	public void testCSV4_MR() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HADOOP, false, ".", false);
 	}
 	
 	private void runCSVWriteTest(RUNTIME_PLATFORM platform, boolean header, String sep, boolean sparse) throws IOException {

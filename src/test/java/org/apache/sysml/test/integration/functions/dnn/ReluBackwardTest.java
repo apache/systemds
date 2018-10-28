@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sysml.test.integration.functions.tensor;
+package org.apache.sysml.test.integration.functions.dnn;
 
 import java.util.HashMap;
 
@@ -78,7 +78,7 @@ public class ReluBackwardTest extends AutomatedTestBase
 		    	rtplatform = RUNTIME_PLATFORM.SPARK;
 		    }
 		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    	rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		    }
 			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;

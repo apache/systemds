@@ -137,54 +137,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 		runIntegerDivisionTest(OpType.MOD, DataType.SCALAR, DataType.SCALAR, true, ExecType.CP);
 	}
 
-	@Test
-	public void testModMMDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.MATRIX, DataType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testModMSDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.MATRIX, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testModSMDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.SCALAR, DataType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testModSSDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.SCALAR, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testModMMSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.MATRIX, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testModMSSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.MATRIX, DataType.SCALAR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testModSMSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.SCALAR, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testModSSSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.MOD, DataType.SCALAR, DataType.SCALAR, true, ExecType.MR);
-	}
-	
+		
 	
 	//DIV
 
@@ -236,70 +189,14 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 		runIntegerDivisionTest(OpType.DIV, DataType.SCALAR, DataType.SCALAR, true, ExecType.CP);
 	}
 
-	@Test
-	public void testDivMMDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.MATRIX, DataType.MATRIX, false, ExecType.MR);
-	}
 	
-	@Test
-	public void testDivMSDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.MATRIX, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivSMDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.SCALAR, DataType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivSSDenseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.SCALAR, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivMMSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.MATRIX, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivMSSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.MATRIX, DataType.SCALAR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivSMSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.SCALAR, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testDivSSSparseMR() 
-	{
-		runIntegerDivisionTest(OpType.DIV, DataType.SCALAR, DataType.SCALAR, true, ExecType.MR);
-	}
-	
-
-	/**
-	 * 
-	 * @param type
-	 * @param dt1
-	 * @param dt2
-	 * @param sparse
-	 * @param instType
-	 */
 	private void runIntegerDivisionTest( OpType type, DataType dt1, DataType dt2, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
-		double sparsity = sparse?sparsity2:sparsity1;				
+		double sparsity = sparse?sparsity2:sparsity1;
 		
 		String TEST_CACHE_DIR = "";
 		if (TEST_CACHE_ENABLED)

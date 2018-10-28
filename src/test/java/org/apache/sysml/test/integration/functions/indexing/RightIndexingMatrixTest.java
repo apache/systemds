@@ -64,11 +64,6 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRightIndexingDenseMR() {
-		runRightIndexingTest(ExecType.MR, false);
-	}
-	
-	@Test
 	public void testRightIndexingSparseCP() {
 		runRightIndexingTest(ExecType.CP, true);
 	}
@@ -76,11 +71,6 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	@Test
 	public void testRightIndexingSparseSP() {
 		runRightIndexingTest(ExecType.SPARK, true);
-	}
-	
-	@Test
-	public void testRightIndexingSparseMR() {
-		runRightIndexingTest(ExecType.MR, true);
 	}
 	
 	//various regression tests that led to test failures before
@@ -109,7 +99,6 @@ public class RightIndexingMatrixTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}	

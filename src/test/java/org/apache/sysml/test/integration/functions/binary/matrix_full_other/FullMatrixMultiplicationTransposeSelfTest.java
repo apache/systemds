@@ -98,27 +98,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 	public void testMMRightSparseCP() {
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
-	
-	@Test
-	public void testMMLeftDenseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testMMRightDenseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
-	}
-
-	@Test
-	public void testMMLeftSparseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testMMRightSparseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
-	}	
-	
+		
 	@Test
 	public void testVVLeftDenseCP() {
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.CP, false);
@@ -139,26 +119,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.CP, true);
 	}
 	
-	@Test
-	public void testVVLeftDenseMR() {
-		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
-	}
 	
-	@Test
-	public void testVVRightDenseMR() {
-		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
-	}
-
-	@Test
-	public void testVVLeftSparseMR() {
-		runTransposeSelfVectorMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testVVRightSparseMR() {
-		runTransposeSelfVectorMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
-	}
-
 	private void runTransposeSelfMatrixMultiplicationTest( MMTSJType type, ExecType instType, boolean sparse )
 	{
 		//setup exec type, rows, cols
@@ -196,7 +157,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{
@@ -267,7 +228,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{

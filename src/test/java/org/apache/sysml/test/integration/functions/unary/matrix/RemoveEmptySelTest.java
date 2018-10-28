@@ -86,40 +86,11 @@ public class RemoveEmptySelTest extends AutomatedTestBase
 		runTestRemoveEmptySel( "cols", ExecType.SPARK, true );
 	}
 
-	@Test
-	public void testRemoveEmptyRowSelMR() {
-		runTestRemoveEmptySel( "rows", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyRowSelEmptyMR() {
-		runTestRemoveEmptySel( "rows", ExecType.MR, true );
-	}
-	
-	@Test
-	public void testRemoveEmptyColSelMR() {
-		runTestRemoveEmptySel( "cols", ExecType.MR, false );
-	}
-	
-	@Test
-	public void testRemoveEmptyColSelEmptyMR() {
-		runTestRemoveEmptySel( "cols", ExecType.MR, true );
-	}
-	
-	/**
-	 * 
-	 * @param testname
-	 * @param margin
-	 * @param et
-	 * @param sparse
-	 * @param empty
-	 */
 	private void runTestRemoveEmptySel( String margin, ExecType et, boolean empty )
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

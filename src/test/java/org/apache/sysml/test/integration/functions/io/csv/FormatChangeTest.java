@@ -109,15 +109,6 @@ public class FormatChangeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testFormatChangeMR() {
-		setup();
-		RUNTIME_PLATFORM old_platform = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
-		formatChangeTest();
-		rtplatform =  old_platform;
-	}
-	
-	@Test
 	public void testFormatChangeHybrid() {
 		setup();
 		RUNTIME_PLATFORM old_platform = rtplatform;

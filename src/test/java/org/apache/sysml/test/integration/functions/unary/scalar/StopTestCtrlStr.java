@@ -74,21 +74,6 @@ public class StopTestCtrlStr extends AutomatedTestBase
 		testLoop("fn", RUNTIME_PLATFORM.HYBRID);
 	}
 	
-	@Test
-	public void testStopForMR() {
-		testLoop("for", RUNTIME_PLATFORM.HADOOP);
-	}
-	
-	@Test
-	public void testStopWhileMR() {
-		testLoop("while", RUNTIME_PLATFORM.HADOOP);
-	}
-	
-	@Test
-	public void testStopFunctionMR() {
-		testLoop("fn", RUNTIME_PLATFORM.HADOOP);
-	}
-	
 	private void testLoop(String loop, RUNTIME_PLATFORM rt) {
 		
 		RUNTIME_PLATFORM oldRT = rtplatform;

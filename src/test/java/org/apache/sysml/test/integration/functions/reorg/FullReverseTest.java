@@ -65,16 +65,6 @@ public class FullReverseTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testReverseVectorDenseMR() {
-		runReverseTest(TEST_NAME1, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testReverseVectorSparseMR() {
-		runReverseTest(TEST_NAME1, false, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testReverseVectorDenseSP() {
 		runReverseTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
@@ -92,16 +82,6 @@ public class FullReverseTest extends AutomatedTestBase
 	@Test
 	public void testReverseMatrixSparseCP() {
 		runReverseTest(TEST_NAME1, true, true, ExecType.CP);
-	}
-	
-	@Test
-	public void testReverseMatrixDenseMR() {
-		runReverseTest(TEST_NAME1, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testReverseMatrixSparseMR() {
-		runReverseTest(TEST_NAME1, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -136,7 +116,6 @@ public class FullReverseTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -99,31 +99,6 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMMDenseDenseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMMDenseSparseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testMMSparseDenseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMMSparseSparseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(true, true, ExecType.MR);
-	}
-	
-	
-	@Test
 	public void testMVDenseDenseCP() 
 	{
 		runMatrixVectorMultiplicationTest(false, ExecType.CP);
@@ -134,19 +109,6 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runMatrixVectorMultiplicationTest(true, ExecType.CP);
 	}
-	
-	@Test
-	public void testMVDenseDenseMR() 
-	{
-		runMatrixVectorMultiplicationTest(false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMVSparseDenseMR() 
-	{
-		runMatrixVectorMultiplicationTest(true, ExecType.MR);
-	}
-	
 	
 	@Test
 	public void testVMDenseDenseCP() 
@@ -173,31 +135,6 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testVMDenseDenseMR() 
-	{
-		runVectorMatrixMultiplicationTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testVMDenseSparseMR() 
-	{
-		runVectorMatrixMultiplicationTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testVMSparseDenseMR() 
-	{
-		runVectorMatrixMultiplicationTest(true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testVMSparseSparseMR() 
-	{
-		runVectorMatrixMultiplicationTest(true, true, ExecType.MR);
-	}
-	
-	
-	@Test
 	public void testVVDenseDenseCP() 
 	{
 		runVectorVectorMultiplicationTest(false, false, ExecType.CP);
@@ -207,18 +144,6 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 	public void testVVSparseDenseCP() 
 	{
 		runVectorVectorMultiplicationTest(true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testVVDenseDenseMR() 
-	{
-		runVectorVectorMultiplicationTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testVVSparseDenseMR() 
-	{
-		runVectorVectorMultiplicationTest(true, false, ExecType.MR);
 	}
 	
 	@Test
@@ -233,31 +158,14 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		runVectorVectorMultiplicationTest(true, true, ExecType.CP);
 	}
 	
-	@Test
-	public void testVtVtDenseDenseMR() 
-	{
-		runVectorVectorMultiplicationTest(false, true, ExecType.MR);
-	}
 	
-	@Test
-	public void testVtVtSparseDenseMR() 
-	{
-		runVectorVectorMultiplicationTest(true, true, ExecType.MR);
-	}
-
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType)
 	{
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{
@@ -316,7 +224,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{
@@ -368,7 +276,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{
@@ -426,7 +334,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		try
 		{

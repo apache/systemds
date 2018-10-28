@@ -45,8 +45,7 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 	private final static double eps = 1e-10; 
 	
 	private final static int rows = 50000;
-	private final static int cols1 = 105;      // # of columns in each vector  
-	private final static int cols2 = 15;
+	private final static int cols1 = 105;      // # of columns in each vector
 	
 	private final static double minVal=1;    // minimum value in each vector 
 	private final static double maxVal=5; // maximum value in each vector 

@@ -54,12 +54,6 @@ public class MatrixVectorTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMVwideSparseMR() 
-	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.HADOOP, true);
-	}
-
-	@Test
 	public void testMVwideSparseHYBRID() 
 	{
 		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.HYBRID, true);
@@ -69,12 +63,6 @@ public class MatrixVectorTest extends AutomatedTestBase
 	public void testMVwideDenseCP() 
 	{
 		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.SINGLE_NODE, false);
-	}
-	
-	@Test
-	public void testMVwideDenseMR() 
-	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.HADOOP, false);
 	}
 
 	@Test
@@ -88,12 +76,6 @@ public class MatrixVectorTest extends AutomatedTestBase
 	{
 		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.SINGLE_NODE, true);
 	}
-	
-	@Test
-	public void testMVskinnySparseMR() 
-	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.HADOOP, true);
-	}
 
 	@Test
 	public void testMVskinnySparseHYBRID() 
@@ -105,12 +87,6 @@ public class MatrixVectorTest extends AutomatedTestBase
 	public void testMVskinnyDenseCP() 
 	{
 		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.SINGLE_NODE, false);
-	}
-	
-	@Test
-	public void testMVskinnyDenseMR() 
-	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.HADOOP, false);
 	}
 
 	@Test

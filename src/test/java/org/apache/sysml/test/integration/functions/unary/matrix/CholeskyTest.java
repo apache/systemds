@@ -67,11 +67,6 @@ public class CholeskyTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testCholeskyDenseMR() {
-		runTestCholesky( rows1, cols1, RUNTIME_PLATFORM.HADOOP );
-	}
-
-	@Test
 	public void testCholeskyDenseHybrid() {
 		runTestCholesky( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
 	}
@@ -84,11 +79,6 @@ public class CholeskyTest extends AutomatedTestBase
 	@Test
 	public void testLargeCholeskyDenseSP() {
 		runTestCholesky( rows2, cols2, RUNTIME_PLATFORM.SPARK );
-	}
-
-	@Test
-	public void testLargeCholeskyDenseMR() {
-		runTestCholesky( rows2, cols2, RUNTIME_PLATFORM.HADOOP );
 	}
 
 	@Test

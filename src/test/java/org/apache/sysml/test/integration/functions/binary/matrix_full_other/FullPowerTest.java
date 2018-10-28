@@ -126,68 +126,11 @@ public class FullPowerTest extends AutomatedTestBase
 		runPowerTest(DataType.SCALAR, DataType.SCALAR, true, ExecType.CP);
 	}
 
-	@Test
-	public void testPowMMDenseMR() 
-	{
-		runPowerTest(DataType.MATRIX, DataType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowMSDenseMR() 
-	{
-		runPowerTest(DataType.MATRIX, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowSMDenseMR() 
-	{
-		runPowerTest(DataType.SCALAR, DataType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowSSDenseMR() 
-	{
-		runPowerTest(DataType.SCALAR, DataType.SCALAR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowMMSparseMR() 
-	{
-		runPowerTest(DataType.MATRIX, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowMSSparseMR() 
-	{
-		runPowerTest(DataType.MATRIX, DataType.SCALAR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowSMSparseMR() 
-	{
-		runPowerTest(DataType.SCALAR, DataType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testPowSSSparseMR() 
-	{
-		runPowerTest(DataType.SCALAR, DataType.SCALAR, true, ExecType.MR);
-	}
-	
-
-	/**
-	 * 
-	 * @param type
-	 * @param dt1
-	 * @param dt2
-	 * @param sparse
-	 * @param instType
-	 */
 	private void runPowerTest( DataType dt1, DataType dt2, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 	
 		double sparsity = sparse?sparsity2:sparsity1;
 		

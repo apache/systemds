@@ -212,94 +212,11 @@ public class FullIfElseTest extends AutomatedTestBase
 		runIfElseTest(true, true, true, true, ExecType.SPARK);
 	}
 
-	//MR
-	
-	@Test
-	public void testScalarScalarScalarDenseMR() {
-		runIfElseTest(false, false, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixScalarScalarDenseMR() {
-		runIfElseTest(true, false, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarMatrixScalarDenseMR() {
-		runIfElseTest(false, true, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixMatrixScalarDenseMR() {
-		runIfElseTest(true, true, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarScalarMatrixDenseMR() {
-		runIfElseTest(false, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixScalarMatrixDenseMR() {
-		runIfElseTest(true, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarMatrixMatrixDenseMR() {
-		runIfElseTest(false, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixMatrixMatrixDenseMR() {
-		runIfElseTest(true, true, true, false, ExecType.MR);
-	}
-
-	@Test
-	public void testScalarScalarScalarSparseMR() {
-		runIfElseTest(false, false, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixScalarScalarSparseMR() {
-		runIfElseTest(true, false, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarMatrixScalarSparseMR() {
-		runIfElseTest(false, true, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixMatrixScalarSparseMR() {
-		runIfElseTest(true, true, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarScalarMatrixSparseMR() {
-		runIfElseTest(false, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixScalarMatrixSparseMR() {
-		runIfElseTest(true, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testScalarMatrixMatrixSparseMR() {
-		runIfElseTest(false, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixMatrixMatrixSparseMR() {
-		runIfElseTest(true, true, true, true, ExecType.MR);
-	}
-	
 	private void runIfElseTest(boolean matrix1, boolean matrix2, boolean matrix3, boolean sparse, ExecType et)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

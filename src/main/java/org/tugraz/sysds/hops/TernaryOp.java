@@ -22,7 +22,6 @@ package org.tugraz.sysds.hops;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.CentralMoment;
 import org.tugraz.sysds.lops.CoVariance;
 import org.tugraz.sysds.lops.Ctable;
@@ -31,9 +30,7 @@ import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Ternary;
-import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.Expression.DataType;
 import org.tugraz.sysds.parser.Expression.ValueType;
@@ -614,13 +611,7 @@ public class TernaryOp extends Hop
 		
 		return ret;
 	}
-
-	private boolean isSequenceRewriteApplicable() 
-	{
-		return    isSequenceRewriteApplicable(true)
-			   || isSequenceRewriteApplicable(false);
-	}
-
+	
 	private boolean isSequenceRewriteApplicable( boolean left ) 
 	{
 		boolean ret = false;

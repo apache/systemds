@@ -91,42 +91,6 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCentralMoment2WeightsDenseMR() 
-	{
-		runCentralMomentTest(2, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment3WeightsDenseMR() 
-	{
-		runCentralMomentTest(3, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment4WeightsDenseMR() 
-	{
-		runCentralMomentTest(4, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment2WeightsSparseMR() 
-	{
-		runCentralMomentTest(2, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment3WeightsSparseMR() 
-	{
-		runCentralMomentTest(3, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment4WeightsSparseMR() 
-	{
-		runCentralMomentTest(4, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testCentralMoment2WeightsDenseSP() 
 	{
 		runCentralMomentTest(2, false, ExecType.SPARK);
@@ -173,7 +137,6 @@ public class CentralMomentWeightsTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

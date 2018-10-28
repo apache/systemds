@@ -150,7 +150,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		
 		try
 		{
-			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.MEM_UTIL_FACTOR = computeMemoryUtilFactor( 70 ); //force partitioning
 			ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS = reusePartitionedData;
 			

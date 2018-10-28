@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -67,18 +66,6 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParForDataPartitionLeftindexingColDenseMR() 
-	{
-		runParForDataPartitionLeftindexingTest(true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForDataPartitionLeftindexingColSparseMR() 
-	{
-		runParForDataPartitionLeftindexingTest(true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testParForDataPartitionLeftindexingRowDenseCP() 
 	{
 		runParForDataPartitionLeftindexingTest(false, false, ExecType.CP);
@@ -89,80 +76,47 @@ public class ParForDataPartitionLeftIndexingTest extends AutomatedTestBase
 	{
 		runParForDataPartitionLeftindexingTest(false, true, ExecType.CP);
 	}
-	
-	@Test
-	public void testParForDataPartitionLeftindexingRowDenseMR() 
-	{
-		runParForDataPartitionLeftindexingTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testParForDataPartitionLeftindexingRowSparseMR() 
-	{
-		runParForDataPartitionLeftindexingTest(false, true, ExecType.MR);
-	}
 
-	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runParForDataPartitionLeftindexingTest( boolean colwise, boolean sparse, ExecType et )
 	{
-		//force MR leftindexing via very small memory budget
-		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
-		if(et==ExecType.MR) {
-			long mem = 1024*1024*1;
-			InfrastructureAnalyzer.setLocalMaxMemory(mem);
+		//inst exec type, influenced via rows
+		long rows = -1, cols = -1;
+		if( colwise ){
+			rows = dim1;
+			cols = dim2;
 		}
+		else{
+			rows = dim2;
+			cols = dim1;
+		}
+			
+		//script
+		String TEST_NAME = colwise ? TEST_NAME1 : TEST_NAME2;
+		double sparsity = sparse ? sparsity2 : sparsity1;
 		
-		try
-		{
-			//inst exec type, influenced via rows
-			long rows = -1, cols = -1;
-			if( colwise ){
-				rows = dim1;
-				cols = dim2;
-			}
-			else{
-				rows = dim2;
-				cols = dim1;
-			}
-				
-			//script
-			String TEST_NAME = colwise ? TEST_NAME1 : TEST_NAME2;
-			double sparsity = sparse ? sparsity2 : sparsity1;
-			
-			TestConfiguration config = getTestConfiguration(TEST_NAME);
-			config.addVariable("rows", rows);
-			config.addVariable("cols", cols);
-			loadTestConfiguration(config);
-			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("V"), output("R") };
-			
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-	
-			//generate input data
-			double[][] V = getRandomMatrix((int)rows, (int)cols, 0, 1, sparsity, 7);
-			writeInputMatrixWithMTD("V", V, false);
-	
-			//run tests
-			runTest(true, false, null, -1);
-			
-			//compare matrices
-			HashMap<CellIndex, Double> input = TestUtils.convert2DDoubleArrayToHashMap(V);
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
-			TestUtils.compareMatrices(dmlfile, input, eps, "DML", "Input");	
-		}
-		finally
-		{
-			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
-		}
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
+		config.addVariable("rows", rows);
+		config.addVariable("cols", cols);
+		loadTestConfiguration(config);
+		
+		/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[]{"-args", input("V"), output("R") };
+		
+		fullRScriptName = HOME + TEST_NAME + ".R";
+		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+
+		//generate input data
+		double[][] V = getRandomMatrix((int)rows, (int)cols, 0, 1, sparsity, 7);
+		writeInputMatrixWithMTD("V", V, false);
+
+		//run tests
+		runTest(true, false, null, -1);
+		
+		//compare matrices
+		HashMap<CellIndex, Double> input = TestUtils.convert2DDoubleArrayToHashMap(V);
+		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
+		TestUtils.compareMatrices(dmlfile, input, eps, "DML", "Input");
 	}
 }

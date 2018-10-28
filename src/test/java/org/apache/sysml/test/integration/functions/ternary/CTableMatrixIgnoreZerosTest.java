@@ -111,20 +111,6 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		runCTableTest(false, true, ExecType.CP);
 	}
 	
-	@Test
-	public void testCTableMatrixIgnoreZerosRewriteDenseMR() 
-	{
-		//check that rewrite is NOT applied here
-		runCTableTest(true, false, ExecType.MR);
-	}
-	
-
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runCTableTest( boolean rewrite, boolean sparse, ExecType et)
 	{
 		String TEST_NAME = TEST_NAME1;
@@ -134,7 +120,6 @@ public class CTableMatrixIgnoreZerosTest extends AutomatedTestBase
 		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

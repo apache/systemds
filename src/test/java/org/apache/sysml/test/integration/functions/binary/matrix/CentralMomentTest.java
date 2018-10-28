@@ -91,42 +91,6 @@ public class CentralMomentTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCentralMoment2DenseMR() 
-	{
-		runCentralMomentTest(2, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment3DenseMR() 
-	{
-		runCentralMomentTest(3, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment4DenseMR() 
-	{
-		runCentralMomentTest(4, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment2SparseMR() 
-	{
-		runCentralMomentTest(2, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment3SparseMR() 
-	{
-		runCentralMomentTest(3, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCentralMoment4SparseMR() 
-	{
-		runCentralMomentTest(4, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testCentralMoment2DenseSP() 
 	{
 		runCentralMomentTest(2, false, ExecType.SPARK);
@@ -173,7 +137,6 @@ public class CentralMomentTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

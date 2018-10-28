@@ -89,16 +89,6 @@ public class FullSelectPosTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSelPosDenseMR() {
-		runSelPosTest(false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testSelPosSparseMR() {
-		runSelPosTest(true, ExecType.MR, false);
-	}
-	
-	@Test
 	public void testSelPosDenseSP() {
 		runSelPosTest(false, ExecType.SPARK, false);
 	}
@@ -116,16 +106,6 @@ public class FullSelectPosTest extends AutomatedTestBase
 	@Test
 	public void testSelPosSparseRewriteCP() {
 		runSelPosTest(true, ExecType.CP, true);
-	}
-	
-	@Test
-	public void testSelPosDenseRewriteMR() {
-		runSelPosTest(false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testSelPosSparseRewriteMR() {
-		runSelPosTest(true, ExecType.MR, true);
 	}
 	
 	@Test
@@ -149,7 +129,6 @@ public class FullSelectPosTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

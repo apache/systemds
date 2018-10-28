@@ -61,16 +61,6 @@ public class VectorReshapeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testVectorReshapeDenseMR() {
-		runVectorReshape(false, ExecType.MR);
-	}
-	
-	@Test
-	public void testVectorReshapeSparseMR() {
-		runVectorReshape(true, ExecType.MR);
-	}
-	
-	@Test
 	public void testVectorReshapeDenseSpark() {
 		runVectorReshape(false, ExecType.SPARK);
 	}
@@ -85,7 +75,6 @@ public class VectorReshapeTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

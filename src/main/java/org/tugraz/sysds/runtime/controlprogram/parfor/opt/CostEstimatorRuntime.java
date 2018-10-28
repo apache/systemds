@@ -19,8 +19,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
 
-
-import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.cost.CostEstimationWrapper;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;

@@ -476,39 +476,6 @@ public class AggUnaryOp extends MultiThreadedHop
 			|| opOp2 == OpOp2.GREATER || opOp2 == OpOp2.GREATEREQUAL
 			|| opOp2 == OpOp2.EQUAL || opOp2 == OpOp2.NOTEQUAL);
 	}
-
-	private boolean isUnaryAggregateOuterRewriteApplicable() 
-	{
-		boolean ret = false;
-		Hop input = getInput().get(0);
-		
-		if( input instanceof BinaryOp && ((BinaryOp)input).isOuter() )
-		{
-			//for special cases, we need to hold the broadcast twice in order to allow for
-			//an efficient binary search over a plain java array
-			double factor = (isCompareOperator(((BinaryOp)input).getOp())
-					&& (_direction == Direction.Row || _direction == Direction.Col || _direction == Direction.RowCol)
-					&& (_op == AggOp.SUM)) ? 2.0 : 1.0;
-			
-			factor += (isCompareOperator(((BinaryOp)input).getOp())
-					&& (_direction == Direction.Row || _direction == Direction.Col)
-					&& (_op == AggOp.MAXINDEX || _op == AggOp.MININDEX))
-					? 1.0 : 0.0;
-
-			//note: memory constraint only needs to take the rhs into account because the output
-			//is guaranteed to be an aggregate of <=16KB
-			Hop right = input.getInput().get(1);
-			if(  (right.dimsKnown() && factor*OptimizerUtils.estimateSize(right.getDim1(), right.getDim2())
-				  < OptimizerUtils.getRemoteMemBudgetMap(true)) //dims known and estimate fits
-			   ||(!right.dimsKnown() && factor*right.getOutputMemEstimate()
-				  <	OptimizerUtils.getRemoteMemBudgetMap(true)))//dims unknown but worst-case estimate fits 
-			{
-				ret = true;
-			}
-		}
-		
-		return ret;
-	}
 	
 	/**
 	 * This will check if there is sufficient memory locally (twice the size of second matrix, for original and sort data), and remotely (size of second matrix (sorted data)).  

@@ -20,12 +20,9 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.ZeroOut;
 import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.UnaryCP.OperationTypes;

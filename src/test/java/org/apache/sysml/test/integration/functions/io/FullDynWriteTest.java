@@ -92,47 +92,11 @@ public class FullDynWriteTest extends AutomatedTestBase
 		runDynamicWriteTest( Type.Matrix, OutputInfo.BinaryBlockOutputInfo, ExecType.CP);
 	}
 	
-	@Test
-	public void testScalarMR() 
-	{
-		runDynamicWriteTest( Type.Scalar, OutputInfo.TextCellOutputInfo, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixTextMR() 
-	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.TextCellOutputInfo, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixCSVMR() 
-	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.CSVOutputInfo, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixMMMR() 
-	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.MatrixMarketOutputInfo, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixBinaryMR() 
-	{
-		runDynamicWriteTest( Type.Matrix, OutputInfo.BinaryBlockOutputInfo, ExecType.MR);
-	}
-	
-	/**
-	 * 
-	 * @param type
-	 * @param fmt
-	 * @param et
-	 */
 	private void runDynamicWriteTest( Type type, OutputInfo fmt, ExecType et )
 	{		
-		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;		 
+		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

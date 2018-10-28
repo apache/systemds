@@ -89,16 +89,6 @@ public class MinusTest extends AutomatedTestBase
 		runTestMinus( true, ExecType.SPARK );
 	}
 	
-	@Test
-	public void testMinusDenseMR() {
-		runTestMinus( false, ExecType.MR );
-	}
-	
-	@Test
-	public void testMinusSparseMR() {
-		runTestMinus( true, ExecType.MR );
-	}
-	
 	private void runTestMinus( boolean sparse, ExecType et )
 	{		
 		//handle rows and cols
@@ -109,7 +99,7 @@ public class MinusTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	    }
 		else {
-	    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+	    	rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 	    }
 	
 		try

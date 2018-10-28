@@ -89,31 +89,6 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		runMatrixMatrixMultiplicationTest(false, true, ExecType.CP, false, false);
 	}
 
-	
-	@Test
-	public void testMMRowDenseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testMMRowSparseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testMMRowDenseMR_PMMJ() 
-	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, true, true);
-	}
-	
-	@Test
-	public void testMMRowSparseMR_PMMJ() 
-	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, true, true);
-	}
-	
 	@Test
 	public void testMMRowDenseSpark_PMMJ() 
 	{
@@ -125,26 +100,7 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 	{
 		runMatrixMatrixMultiplicationTest(false, true, ExecType.SPARK, true, true);
 	}
-	
-	@Test
-	public void testMMColDenseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testMMColSparseMR() 
-	{
-		runMatrixMatrixMultiplicationTest(false, true, ExecType.MR, false, false);
-	}
-	
 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runMatrixMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean rowwise, boolean forcePMMJ)
 	{
 		//setup exec type, rows, cols
@@ -152,7 +108,6 @@ public class UltraSparseMRMatrixMultiplicationTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

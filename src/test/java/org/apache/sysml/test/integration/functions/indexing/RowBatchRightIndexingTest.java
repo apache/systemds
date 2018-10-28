@@ -60,11 +60,6 @@ public class RowBatchRightIndexingTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRightIndexingDenseMR() {
-		runRightIndexingTest(ExecType.MR, false);
-	}
-	
-	@Test
 	public void testRightIndexingSparseCP() {
 		runRightIndexingTest(ExecType.CP, true);
 	}
@@ -74,21 +69,10 @@ public class RowBatchRightIndexingTest extends AutomatedTestBase
 		runRightIndexingTest(ExecType.SPARK, true);
 	}
 	
-	@Test
-	public void testRightIndexingSparseMR() {
-		runRightIndexingTest(ExecType.MR, true);
-	}
-	
-	/**
-	 * 
-	 * @param et
-	 * @param sparse
-	 */
 	public void runRightIndexingTest( ExecType et, boolean sparse ) 
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}	

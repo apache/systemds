@@ -55,11 +55,6 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSVDFactorizeDenseMR() {
-		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HADOOP );
-	}
-	
-	@Test
 	public void testSVDFactorizeDenseHybrid() {
 		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
 	}
@@ -72,11 +67,6 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	@Test
 	public void testLargeSVDFactorizeDenseSP() {
 		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SPARK );
-	}
-	
-	@Test
-	public void testLargeSVDFactorizeDenseMR() {
-		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HADOOP );
 	}
 	
 	@Test

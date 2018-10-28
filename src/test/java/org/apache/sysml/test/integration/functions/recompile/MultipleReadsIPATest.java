@@ -62,25 +62,7 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 	{
 		runMultipleReadsTest(ExecType.CP, true);
 	}
-	
-	@Test
-	public void testMultipleReadsMRnoIPA() 
-	{
-		runMultipleReadsTest(ExecType.MR, false);
-	}
-	
-	@Test
-	public void testMultipleReadsMRIPA() 
-	{
-		runMultipleReadsTest(ExecType.MR, true);
-	}
 
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
 	private void runMultipleReadsTest( ExecType et, boolean IPA )
 	{	
 		RUNTIME_PLATFORM platformOld = rtplatform;
@@ -105,7 +87,7 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 						
 			double[][] X1 = getRandomMatrix(rows1, cols1, -1, 1, 1.0d, 7);

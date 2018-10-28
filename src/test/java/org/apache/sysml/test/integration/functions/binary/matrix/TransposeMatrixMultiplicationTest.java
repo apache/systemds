@@ -113,31 +113,6 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 		runTransposeMatrixMultiplicationTest(true, true, ExecType.CP, false);
 	}
 	
-	@Test
-	public void testTransposeMMDenseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testTransposeMMDenseSparseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, true, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testTransposeMMSparseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(true, false, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testTransposeMMSparseSparseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(true, true, ExecType.MR, false);
-	}
-	
-
 	/// ----------------------
 
 	@Test
@@ -228,30 +203,6 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testTransposeMVDenseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testTransposeMVDenseSparseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, true, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testTransposeMVSparseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(true, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testTransposeMVSparseSparseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(true, true, ExecType.MR, true);
-	}
-	
-	@Test
 	public void testTransposeMMMinusDenseDenseCP() 
 	{
 		runTransposeMatrixMultiplicationTest(false, false, ExecType.CP, false, true);
@@ -263,43 +214,16 @@ public class TransposeMatrixMultiplicationTest extends AutomatedTestBase
 		runTransposeMatrixMultiplicationTest(false, false, ExecType.CP, true, true);
 	}
 	
-	@Test
-	public void testTransposeMMMinusDenseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, false, true);
-	}
-	
-	@Test
-	public void testTransposeMVMinusDenseDenseMR() 
-	{
-		runTransposeMatrixMultiplicationTest(false, false, ExecType.MR, true, true);
-	}
-	
-	 
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 * @param vectorM2
-	 */
 	private void runTransposeMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean vectorM2)
 	{
 		runTransposeMatrixMultiplicationTest(sparseM1, sparseM2, instType, vectorM2, false);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runTransposeMatrixMultiplicationTest( boolean sparseM1, boolean sparseM2, ExecType instType, boolean vectorM2, boolean minusM1)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

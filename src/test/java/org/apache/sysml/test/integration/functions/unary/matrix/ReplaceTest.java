@@ -22,13 +22,11 @@ package org.apache.sysml.test.integration.functions.unary.matrix;
 import java.util.HashMap;
 import java.util.Random;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -211,89 +209,8 @@ public class ReplaceTest extends AutomatedTestBase
 		runTestReplace( TEST_NAME5, -1, true, ExecType.SPARK );
 	}
 	
-	// ------------------------------------------------------------------------
-	
-	@Test
-	public void testReplaceZeroDenseMR() 
-	{
-		runTestReplace( TEST_NAME1, 0, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceValueDenseMR() 
-	{
-		runTestReplace( TEST_NAME1, 7, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceNaNDenseMR() 
-	{
-		runTestReplace( TEST_NAME2, Double.NaN, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplacePInfinityDenseMR() 
-	{
-		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceNInfinityDenseMR() 
-	{
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceMaxMinDenseMR() 
-	{
-		runTestReplace( TEST_NAME5, -1, false, ExecType.MR );
-	}
-
-	@Test
-	public void testReplaceZeroSparseMR() 
-	{
-		runTestReplace( TEST_NAME1, 0, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceValueSparseMR() 
-	{
-		runTestReplace( TEST_NAME1, 7, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceNaNSparseMR() 
-	{
-		runTestReplace( TEST_NAME2, Double.NaN, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplacePInfinitySparseMR() 
-	{
-		runTestReplace( TEST_NAME3, Double.POSITIVE_INFINITY, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceNInfinitySparseMR() 
-	{
-		runTestReplace( TEST_NAME4, Double.NEGATIVE_INFINITY, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReplaceMaxMinSparseMR() 
-	{
-		runTestReplace( TEST_NAME5, -1, true, ExecType.MR );
-	}
-		
-	/**
-	 * 
-	 * @param test
-	 * @param pattern
-	 * @param sparse
-	 * @param etype
-	 */
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )
-	{		
+	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
@@ -303,7 +220,7 @@ public class ReplaceTest extends AutomatedTestBase
 		    	rtplatform = RUNTIME_PLATFORM.SPARK;
 		    }
 		    else {
-		    	rtplatform = (etype==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		    	rtplatform = RUNTIME_PLATFORM.HYBRID;
 		    }
 			if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -332,11 +249,7 @@ public class ReplaceTest extends AutomatedTestBase
 
 			runTest(true, false, null, -1);
 			runRScript(true); 
-		
-			int numMRExpect = (etype==ExecType.MR)?(test.equals(TEST_NAME1)?1:test.equals(TEST_NAME5)?3:2):0; 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		           numMRExpect, Statistics.getNoOfExecutedMRJobs()); //reblock in test1, reblock+GMR in test2-4
-		
+			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("C");

@@ -55,30 +55,6 @@ public class BinUaggChainTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "B" })); 
 	}
-
-	@Test
-	public void testBinUaggChainColSingleDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinUaggChainColSingleSparseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinUaggChainColMultiDenseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinUaggChainColMultiSparseMR() 
-	{
-		runBinUaggTest(TEST_NAME1, false, true, ExecType.MR);
-	}
 	
 	// -------------------------
 	
@@ -121,7 +97,6 @@ public class BinUaggChainTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

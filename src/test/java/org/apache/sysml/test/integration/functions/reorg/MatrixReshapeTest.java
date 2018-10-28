@@ -46,8 +46,6 @@ public class MatrixReshapeTest extends AutomatedTestBase
 	//note: (1) even number of rows/cols required, (2) same dims because controlled via exec platform
 	private final static int rows1 = 35;
 	private final static int cols1 = 25;
-	private final static int rows2 = 2500; 
-	private final static int cols2 = 1500; 
 	
 	private final static double sparsityDense = 0.7;
 	private final static double sparsitySparse = 0.1;
@@ -268,39 +266,11 @@ public class MatrixReshapeTest extends AutomatedTestBase
 		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, true, ExecType.SPARK );
 	}
 	
-	//MR exec type
-	
-	@Test
-	public void testReshapeMMRowDenseMR() 
-	{
-		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, true, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReshapeMMRowSparseMR() 
-	{
-		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, true, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testReshapeMMColDenseMR() 
-	{
-		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testReshapeMMColSparseMR() 
-	{
-		runTestMatrixReshape( ReshapeType.MATRIX_MATRIX, false, true, ExecType.MR );
-	}
-	
-	
 	private void runTestMatrixReshape( ReshapeType type, boolean rowwise, boolean sparse, ExecType et )
 	{		
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
@@ -339,11 +309,7 @@ public class MatrixReshapeTest extends AutomatedTestBase
 				trows = rows1*cols1; tcols = 1;
 				break;
 			case MATRIX_MATRIX:
-				if( et==ExecType.MR ){
-					rows = rows2; cols = cols2;
-					trows = cols2; tcols = rows2;
-				}
-				else{ //CP
+				{ //CP
 					rows = rows1; cols = cols1;
 					trows = cols1; tcols = rows1;
 				}

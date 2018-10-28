@@ -23,9 +23,7 @@ import java.util.ArrayList;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Transform;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.Transform.OperationTypes;

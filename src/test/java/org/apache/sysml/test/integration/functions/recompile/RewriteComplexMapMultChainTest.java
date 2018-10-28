@@ -70,16 +70,6 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testRewriteExpr1SingleColumnMR() throws IOException {
-		runRewriteMapMultChain(TEST_NAME1, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRewriteExpr1MultiColumnMR() throws IOException {
-		runRewriteMapMultChain(TEST_NAME1, false, ExecType.MR);
-	}
-	
-	@Test
 	public void testRewriteExpr2SingleColumnCP() throws IOException {
 		runRewriteMapMultChain(TEST_NAME2, true, ExecType.CP);
 	}
@@ -89,16 +79,6 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 		runRewriteMapMultChain(TEST_NAME2, false, ExecType.CP);
 	}
 	
-	@Test
-	public void testRewriteExpr2SingleColumnMR() throws IOException {
-		runRewriteMapMultChain(TEST_NAME2, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRewriteExpr2MultiColumnMR() throws IOException {
-		runRewriteMapMultChain(TEST_NAME2, false, ExecType.MR);
-	}
-
 	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) throws IOException {
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		
@@ -115,7 +95,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			//generate input data
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);

@@ -110,30 +110,6 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSampleProportionVectorDenseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSampleProportionVectorSparseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSampleProportionMatrixDenseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSampleProportionMatrixSparseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, InputType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testSampleProportionVectorDenseSP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, InputType.COL_VECTOR, false, ExecType.SPARK);
@@ -206,44 +182,11 @@ public class MLUnaryBuiltinTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.SPARK);
 	}
 	
-	@Test
-	public void testSigmoidVectorDenseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidVectorSparseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, InputType.COL_VECTOR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidMatrixDenseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidMatrixSparseMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, InputType.MATRIX, true, ExecType.MR);
-	}
-
-	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runMLUnaryBuiltinTest( String testname, InputType type, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

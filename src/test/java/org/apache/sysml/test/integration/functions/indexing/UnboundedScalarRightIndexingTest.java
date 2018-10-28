@@ -49,10 +49,6 @@ public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
 		runRightIndexingTest(ExecType.SPARK, 7);
 	}
 	
-	@Test
-	public void testRightIndexingMRNonzero() {
-		runRightIndexingTest(ExecType.MR, 7);
-	}
 	
 	@Test
 	public void testRightIndexingCPZero() {
@@ -64,20 +60,10 @@ public class UnboundedScalarRightIndexingTest extends AutomatedTestBase
 		runRightIndexingTest(ExecType.SPARK, 0);
 	}
 	
-	@Test
-	public void testRightIndexingMRZero() {
-		runRightIndexingTest(ExecType.MR, 0);
-	}
-	
-	/**
-	 * 
-	 * @param et
-	 */
 	public void runRightIndexingTest( ExecType et, int val ) 
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

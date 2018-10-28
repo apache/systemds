@@ -127,18 +127,6 @@ public class CTableSequenceTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCTableSequenceLeftNoRewriteMR() 
-	{
-		runCTableSequenceTest(false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCTableSequenceLeftRewriteMR() 
-	{
-		runCTableSequenceTest(true, true, false, ExecType.MR);
-	}
-	
-	@Test
 	public void testCTableSequenceRightNoRewriteCP() 
 	{
 		runCTableSequenceTest(false, false, false, ExecType.CP);
@@ -148,18 +136,6 @@ public class CTableSequenceTest extends AutomatedTestBase
 	public void testCTableSequenceRightRewriteCP() 
 	{
 		runCTableSequenceTest(true, false, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testCTableSequenceRightNoRewriteMR() 
-	{
-		runCTableSequenceTest(false, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCTableSequenceRightRewriteMR() 
-	{
-		runCTableSequenceTest(true, false, false, ExecType.MR);
 	}
 	
 	
@@ -176,18 +152,6 @@ public class CTableSequenceTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCTableSequenceLeftNoRewriteAggMR() 
-	{
-		runCTableSequenceTest(false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCTableSequenceLeftRewriteAggMR() 
-	{
-		runCTableSequenceTest(true, true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testCTableSequenceRightNoRewriteAggCP() 
 	{
 		runCTableSequenceTest(false, false, true, ExecType.CP);
@@ -199,25 +163,6 @@ public class CTableSequenceTest extends AutomatedTestBase
 		runCTableSequenceTest(true, false, true, ExecType.CP);
 	}
 	
-	@Test
-	public void testCTableSequenceRightNoRewriteAggMR() 
-	{
-		runCTableSequenceTest(false, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCTableSequenceRightRewriteAggMR() 
-	{
-		runCTableSequenceTest(true, false, true, ExecType.MR);
-	}
-	
-
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runCTableSequenceTest( boolean rewrite, boolean left, boolean withAgg, ExecType et)
 	{
 		String TEST_NAME = left ? TEST_NAME1 : TEST_NAME2;
@@ -227,7 +172,6 @@ public class CTableSequenceTest extends AutomatedTestBase
 		boolean rewriteOld = TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES;
 		
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

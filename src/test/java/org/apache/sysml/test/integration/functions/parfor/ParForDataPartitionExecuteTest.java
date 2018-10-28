@@ -50,26 +50,6 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testFusedDataPartitionExecuteRowDenseMR() {
-		runFusedDataPartitionExecuteTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testFusedDataPartitionExecuteColDenseMR() {
-		runFusedDataPartitionExecuteTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testFusedDataPartitionExecuteRowSparseMR() {
-		runFusedDataPartitionExecuteTest(true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testFusedDataPartitionExecuteColSparseMR() {
-		runFusedDataPartitionExecuteTest(true, false, ExecType.MR);
-	}
-	
-	@Test
 	public void testFusedDataPartitionExecuteRowDenseSpark() {
 		runFusedDataPartitionExecuteTest(false, true, ExecType.SPARK);
 	}
@@ -93,7 +73,6 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			default: throw new RuntimeException("Unsupported exec type: "+et.name());
 		}

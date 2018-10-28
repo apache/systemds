@@ -53,11 +53,6 @@ public class ReadMMTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMatrixMarket1_MR() {
-		runMMTest(1, RUNTIME_PLATFORM.HADOOP, true);
-	}
-	
-	@Test
 	public void testMatrixMarket2_Sequential_CP() {
 		runMMTest(2, RUNTIME_PLATFORM.SINGLE_NODE, false);
 	}
@@ -68,11 +63,6 @@ public class ReadMMTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMatrixMarket2_MR() {
-		runMMTest(2, RUNTIME_PLATFORM.HADOOP, true);
-	}
-	
-	@Test
 	public void testMatrixMarket3_Sequential_CP() {
 		runMMTest(3, RUNTIME_PLATFORM.SINGLE_NODE, false);
 	}
@@ -80,11 +70,6 @@ public class ReadMMTest extends AutomatedTestBase
 	@Test
 	public void testMatrixMarket3_Parallel_CP() {
 		runMMTest(3, RUNTIME_PLATFORM.SINGLE_NODE, true);
-	}
-	
-	@Test
-	public void testMatrixMarket3_MR() {
-		runMMTest(3, RUNTIME_PLATFORM.HADOOP, true);
 	}
 	
 	private void runMMTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) {

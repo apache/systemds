@@ -73,11 +73,6 @@ public class ReadCSVTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSV1_MR() {
-		runCSVTest(1, RUNTIME_PLATFORM.HADOOP, true);
-	}
-	
-	@Test
 	public void testCSV1_SP() {
 		runCSVTest(1, RUNTIME_PLATFORM.SPARK, true);
 	}
@@ -103,11 +98,6 @@ public class ReadCSVTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSV2_MR() {
-		runCSVTest(2, RUNTIME_PLATFORM.HADOOP, true);
-	}
-	
-	@Test
 	public void testCSV2_SP() {
 		runCSVTest(2, RUNTIME_PLATFORM.SPARK, true);
 	}
@@ -130,11 +120,6 @@ public class ReadCSVTest extends AutomatedTestBase
 	@Test
 	public void testCSV3_Parallel_CP() {
 		runCSVTest(3, RUNTIME_PLATFORM.HYBRID, true);
-	}
-	
-	@Test
-	public void testCSV3_MR() {
-		runCSVTest(3, RUNTIME_PLATFORM.HADOOP, false);
 	}
 	
 	@Test

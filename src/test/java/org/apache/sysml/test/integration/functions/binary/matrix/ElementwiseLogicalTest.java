@@ -82,16 +82,6 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	public void testAndDenseMR() {
-		runLogical(TEST_NAME1, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testAndSparseMR() {
-		runLogical(TEST_NAME1, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testOrDenseCP() {
 		runLogical(TEST_NAME2, false, ExecType.CP);
 	}
@@ -112,16 +102,6 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 	}
 	
 	@Test
-	public void testOrDenseMR() {
-		runLogical(TEST_NAME2, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testOrSparseMR() {
-		runLogical(TEST_NAME2, true, ExecType.MR);
-	}
-
-	@Test
 	public void testNotDenseCP() {
 		runLogical(TEST_NAME3, false, ExecType.CP);
 	}
@@ -139,16 +119,6 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 	@Test
 	public void testNotSparseSP() {
 		runLogical(TEST_NAME3, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testNotDenseMR() {
-		runLogical(TEST_NAME3, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testNotSparseMR() {
-		runLogical(TEST_NAME3, true, ExecType.MR);
 	}
 	
 	@Test
@@ -171,21 +141,10 @@ public class ElementwiseLogicalTest extends AutomatedTestBase{
 		runLogical(TEST_NAME4, true, ExecType.SPARK);
 	}
 	
-	@Test
-	public void testXorDenseMR() {
-		runLogical(TEST_NAME4, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testXorSparseMR() {
-		runLogical(TEST_NAME4, true, ExecType.MR);
-	}
-	
 	private void runLogical(String testname, boolean sparse, ExecType et) {
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

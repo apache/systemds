@@ -39,7 +39,6 @@ public class SortKeys extends Lop
 	}
 	
 	private OperationTypes operation;
-	private boolean descending = false;
 	
 	public OperationTypes getOpType() {
 		return operation;
@@ -53,7 +52,6 @@ public class SortKeys extends Lop
 	public SortKeys(Lop input, boolean desc, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.SortKeys, dt, vt);
 		init(input, null, op, et);
-		descending = desc;
 	}
 
 	public SortKeys(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et) {

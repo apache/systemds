@@ -136,57 +136,11 @@ public class FullTransposeTest extends AutomatedTestBase
 		runTransposeTest(OpType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
-	/// -----------------------
-	@Test
-	public void testTransposeMatrixDenseMR() 
-	{
-		runTransposeTest(OpType.MATRIX, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testTransposeRowVectorDenseMR() 
-	{
-		runTransposeTest(OpType.ROW_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testTransposeColVectorDenseMR() 
-	{
-		runTransposeTest(OpType.COL_VECTOR, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testTransposeMatrixSparseMR() 
-	{
-		runTransposeTest(OpType.MATRIX, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTransposeRowVectorSparseMR() 
-	{
-		runTransposeTest(OpType.ROW_VECTOR, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTransposeColVectorSparseMR() 
-	{
-		runTransposeTest(OpType.COL_VECTOR, true, ExecType.MR);
-	}
-	
-	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runTransposeTest( OpType type, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -33,7 +33,6 @@ public class AppendM extends Lop
 	}
 	
 	private boolean _cbind = true;
-	private CacheType _cacheType = null;
 	
 	public AppendM(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, boolean cbind, boolean partitioned, ExecType et) 
 	{
@@ -41,7 +40,6 @@ public class AppendM extends Lop
 		init(input1, input2, input3, dt, vt, et);
 		
 		_cbind = cbind;
-		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 	}
 	
 	public void init(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) 

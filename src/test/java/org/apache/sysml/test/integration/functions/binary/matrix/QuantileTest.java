@@ -92,36 +92,6 @@ public class QuantileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testQuantile1DenseMR() {
-		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testQuantile2DenseMR() {
-		runQuantileTest(TEST_NAME1, 0.50, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testQuantile3DenseMR() {
-		runQuantileTest(TEST_NAME1, 0.75, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testQuantile1SparseMR() {
-		runQuantileTest(TEST_NAME1, 0.25, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testQuantile2SparseMR() {
-		runQuantileTest(TEST_NAME1, 0.50, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testQuantile3SparseMR() {
-		runQuantileTest(TEST_NAME1, 0.75, true, ExecType.MR);
-	}
-
-	@Test
 	public void testQuantile1DenseSP() {
 		runQuantileTest(TEST_NAME1, 0.25, false, ExecType.SPARK);
 	}
@@ -162,16 +132,6 @@ public class QuantileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testMedianDenseMR() {
-		runQuantileTest(TEST_NAME2, -1, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testMedianSparseMR() {
-		runQuantileTest(TEST_NAME2, -1, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testMedianDenseSP() {
 		runQuantileTest(TEST_NAME2, -1, false, ExecType.SPARK);
 	}
@@ -192,16 +152,6 @@ public class QuantileTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testIQMDenseMR() {
-		runQuantileTest(TEST_NAME3, -1, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testIQMSparseMR() {
-		runQuantileTest(TEST_NAME3, -1, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testIQMDenseSP() {
 		runQuantileTest(TEST_NAME3, -1, false, ExecType.SPARK);
 	}
@@ -216,7 +166,6 @@ public class QuantileTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

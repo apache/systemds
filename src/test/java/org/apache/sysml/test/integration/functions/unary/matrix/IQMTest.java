@@ -119,46 +119,6 @@ public class IQMTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testIQM1_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 1, false);
-	}
-	
-	@Test
-	public void testIQM2_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 2, false);
-	}
-	
-	@Test
-	public void testIQM3_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 3, false);
-	}
-	
-	@Test
-	public void testIQM4_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 4, false);
-	}
-	
-	@Test
-	public void testIQM5_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 5, false);
-	}
-	
-	@Test
-	public void testIQM6_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 6, false);
-	}
-	
-	@Test
-	public void testIQM7_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 7, false);
-	}
-	
-	@Test
-	public void testIQM8_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 8, false);
-	}
-	
-	@Test
 	public void testIQM1_SP() {
 		runTest(RUNTIME_PLATFORM.SPARK, 1, false);
 	}
@@ -216,26 +176,6 @@ public class IQMTest extends AutomatedTestBase
 	@Test
 	public void testIQM4wt() {
 		runTest(RUNTIME_PLATFORM.HYBRID, 4, true);
-	}
-	
-	@Test
-	public void testIQM1wt_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 1, true);
-	}
-	
-	@Test
-	public void testIQM2wt_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 2, true);
-	}
-	
-	@Test
-	public void testIQM3wt_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 3, true);
-	}
-	
-	@Test
-	public void testIQM4wt_MR() {
-		runTest(RUNTIME_PLATFORM.HADOOP, 4, true);
 	}
 	
 	@Test

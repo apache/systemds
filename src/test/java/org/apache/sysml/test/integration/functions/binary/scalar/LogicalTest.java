@@ -75,16 +75,6 @@ public class LogicalTest extends AutomatedTestBase {
 		runLogical(TEST_NAME1, true, ExecType.SPARK);
 	}
 
-	@Test
-	public void testAndDenseMR() {
-		runLogical(TEST_NAME1, false, ExecType.MR);
-	}
-
-	@Test
-	public void testAndSparseMR() {
-		runLogical(TEST_NAME1, true, ExecType.MR);
-	}
-
 	//Or Tests
 	@Test
 	public void testOrDenseCP() {
@@ -104,16 +94,6 @@ public class LogicalTest extends AutomatedTestBase {
 	@Test
 	public void testOrSparseSP() {
 		runLogical(TEST_NAME2, true, ExecType.SPARK);
-	}
-
-	@Test
-	public void testOrDenseMR() {
-		runLogical(TEST_NAME2, false, ExecType.MR);
-	}
-
-	@Test
-	public void testOrSparseMR() {
-		runLogical(TEST_NAME2, true, ExecType.MR);
 	}
 
 	//XOR Tests
@@ -137,22 +117,10 @@ public class LogicalTest extends AutomatedTestBase {
 		runLogical(TEST_NAME3, true, ExecType.SPARK);
 	}
 
-	@Test
-	public void testXorDenseMR() {
-		runLogical(TEST_NAME3, false, ExecType.MR);
-	}
-
-	@Test
-	public void testXorSparseMR() {
-		runLogical(TEST_NAME3, true, ExecType.MR);
-	}
-
-
 	public  void runLogical(String testname, boolean sparse, ExecType et) {
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

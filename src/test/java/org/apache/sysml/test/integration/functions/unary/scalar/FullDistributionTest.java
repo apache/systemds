@@ -134,46 +134,7 @@ public class FullDistributionTest extends AutomatedTestBase
 		runDFTest(TEST_TYPE.EXP, true, 5.0, null, ExecType.SPARK);
 	}
 	
-	@Test
-	public void testNormalMR() {
-		runDFTest(TEST_TYPE.NORMAL, true, 1.0, 2.0, ExecType.MR);
-	}
-	
-	@Test
-	public void testNormalNoParamsMR() {
-		runDFTest(TEST_TYPE.NORMAL_NOPARAMS, true, null, null, ExecType.MR);
-	}
-	
-	@Test
-	public void testNormalMeanMR() {
-		runDFTest(TEST_TYPE.NORMAL_MEAN, true, 1.0, null, ExecType.MR);
-	}
-	
-	@Test
-	public void testNormalSdMR() {
-		runDFTest(TEST_TYPE.NORMAL_SD, true, 2.0, null, ExecType.MR);
-	}
-	
-	@Test
-	public void testTMR() {
-		runDFTest(TEST_TYPE.T, true, 10.0, null, ExecType.MR);
-	}
-	
-	@Test
-	public void testFMR() {
-		runDFTest(TEST_TYPE.T, true, 10.0, 20.0, ExecType.MR);
-	}
-	
-	@Test
-	public void testChisqMR() {
-		runDFTest(TEST_TYPE.CHISQ, true, 10.0, null, ExecType.MR);
-	}
-	
-	@Test
-	public void testExpMR() {
-		runDFTest(TEST_TYPE.EXP, true, 5.0, null, ExecType.MR);
-	}
-	
+
 	/**
 	 * Internal test method - all these tests are expected to run in CP independent of the passed
 	 * instType. However, we test all backends to ensure correct compilation in the presence of
@@ -190,7 +151,6 @@ public class FullDistributionTest extends AutomatedTestBase
 		//setup multi backend configuration
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

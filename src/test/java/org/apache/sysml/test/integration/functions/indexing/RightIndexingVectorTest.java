@@ -64,12 +64,6 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		runRightIndexingTest(ExecType.SPARK);
 	}
 	
-	@Test
-	public void testRightIndexingMR() 
-	{
-		runRightIndexingTest(ExecType.MR);
-	}
-	
 	public void runRightIndexingTest( ExecType et ) 
 	{
 		RUNTIME_PLATFORM oldRTP = rtplatform;
@@ -83,7 +77,7 @@ public class RightIndexingVectorTest extends AutomatedTestBase
 		    	rtplatform = RUNTIME_PLATFORM.SPARK;
 		    }
 		    else {
-		    	rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
+		    	rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
 		    }
 		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;

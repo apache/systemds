@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Aggregate;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.GroupedAggregate;
 import org.tugraz.sysds.lops.GroupedAggregateM;

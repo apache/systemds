@@ -118,32 +118,6 @@ public class CSVParametersTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCSVParametersSparseMR() {
-		setup();
-		sparsity = 0.1;
-
-		RUNTIME_PLATFORM old_platform = rtplatform;
-
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
-		csvParameterTest(rtplatform, sparsity);
-		
-		rtplatform = old_platform;
-	}
-	
-	@Test
-	public void testCSVParametersDenseMR() {
-		setup();
-		sparsity = 1.0;
-
-		RUNTIME_PLATFORM old_platform = rtplatform;
-
-		rtplatform = RUNTIME_PLATFORM.HADOOP;
-		csvParameterTest(rtplatform, sparsity);
-		
-		rtplatform = old_platform;
-	}
-	
-	@Test
 	public void testCSVParametersSparseHybrid() {
 		setup();
 		sparsity = 0.1;

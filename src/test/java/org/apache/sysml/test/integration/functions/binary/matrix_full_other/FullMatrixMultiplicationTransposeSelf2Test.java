@@ -118,27 +118,6 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.SPARK, true);
 	}
 	
-	@Test
-	public void testTSMMLeftDenseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testTSMMLeftSparseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.LEFT, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testTSMMRightDenseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, false);
-	}
-	
-	@Test
-	public void testTSMMRightSparseMR() {
-		runTransposeSelfMatrixMultiplicationTest(MMTSJType.RIGHT, ExecType.MR, true);
-	}
-	
-
 	/**
 	 * 
 	 * @param type
@@ -149,7 +128,6 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

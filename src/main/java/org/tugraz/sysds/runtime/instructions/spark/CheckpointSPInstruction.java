@@ -35,12 +35,12 @@ import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyFrameBlockFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class CheckpointSPInstruction extends UnarySPInstruction {

@@ -41,12 +41,12 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class WriteSPInstruction extends SPInstruction {
 	private CPOperand input1 = null;
@@ -127,7 +127,7 @@ public class WriteSPInstruction extends SPInstruction {
 		try
 		{
 			//if the file already exists on HDFS, remove it.
-			MapReduceTool.deleteFileIfExistOnHDFS( fname );
+			HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 			//prepare output info according to meta data
 			String outFmt = input3.getName();
@@ -225,7 +225,7 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		
 		// write meta data file
-		MapReduceTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);
+		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);
 	}
 
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 
@@ -255,7 +255,7 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		
 		// write meta data file
-		MapReduceTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
+		HDFSTool.writeMetaDataFile(fname + ".mtd", input1.getValueType(), schema, DataType.FRAME, mc, oi, formatProperties);	
 	}
 
 	private static void customSaveTextFile(JavaRDD<String> rdd, String fname, boolean inSingleFile) {
@@ -263,12 +263,12 @@ public class WriteSPInstruction extends SPInstruction {
 			Random rand = new Random();
 			String randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
 			try {
-				while(MapReduceTool.existsFileOnHDFS(randFName)) {
+				while(HDFSTool.existsFileOnHDFS(randFName)) {
 					randFName = fname + "_" + rand.nextLong() + "_" + rand.nextLong();
 				}
 				
 				rdd.saveAsTextFile(randFName);
-				MapReduceTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
+				HDFSTool.mergeIntoSingleFile(randFName, fname); // Faster version :)
 				
 				// rdd.coalesce(1, true).saveAsTextFile(randFName);
 				// MapReduceTool.copyFileOnHDFS(randFName + "/part-00000", fname);
@@ -278,7 +278,7 @@ public class WriteSPInstruction extends SPInstruction {
 			finally {
 				try {
 					// This is to make sure that we donot create random files on HDFS
-					MapReduceTool.deleteFileIfExistOnHDFS( randFName );
+					HDFSTool.deleteFileIfExistOnHDFS( randFName );
 				} catch (IOException e) {
 					throw new DMLRuntimeException("Cannot merge the output into single file: " + e.getMessage());
 				}

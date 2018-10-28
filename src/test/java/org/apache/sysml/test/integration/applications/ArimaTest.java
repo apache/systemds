@@ -28,8 +28,8 @@ import java.util.List;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class ArimaTest extends AutomatedTestBase {
 	

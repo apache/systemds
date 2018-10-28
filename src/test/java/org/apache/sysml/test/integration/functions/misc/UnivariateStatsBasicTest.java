@@ -23,10 +23,10 @@ import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -79,7 +79,7 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			MatrixBlock mb = new MatrixBlock(1d);
 			MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo)
 				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1, 1);
-			MapReduceTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.DOUBLE, 
+			HDFSTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.DOUBLE, 
 					new MatrixCharacteristics(1,1,1,1,1), OutputInfo.CSVOutputInfo);
 			
 			//run univariate stats 

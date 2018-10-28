@@ -41,7 +41,7 @@ import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class ReaderTextCell extends MatrixReader
 {
@@ -76,7 +76,7 @@ public class ReaderTextCell extends MatrixReader
 		
 		//allocate output matrix block
 		if( estnnz < 0 )
-			estnnz = MapReduceTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
+			estnnz = HDFSTool.estimateNnzBasedOnFileSize(path, rlen, clen, brlen, bclen, 3);
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, (int)clen, estnnz, true, false);
 		
 		//core read 

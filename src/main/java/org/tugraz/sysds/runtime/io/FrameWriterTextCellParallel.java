@@ -36,7 +36,7 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * Multi-threaded frame text cell writer.
@@ -63,7 +63,7 @@ public class FrameWriterTextCellParallel extends FrameWriterTextCell
 		}
 		
 		//create directory for concurrent tasks
-		MapReduceTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//create and execute tasks

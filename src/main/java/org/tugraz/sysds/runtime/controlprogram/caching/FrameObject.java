@@ -36,12 +36,12 @@ import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
 import org.tugraz.sysds.runtime.io.FrameWriter;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class FrameObject extends CacheableData<FrameBlock>

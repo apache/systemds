@@ -22,7 +22,7 @@ package org.apache.sysml.test.integration.functions.misc;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -109,7 +109,7 @@ public class FunctionInliningTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 			
 			//compare output
-			double ret = MapReduceTool.readDoubleFromHDFSFile(output("Rout"));
+			double ret = HDFSTool.readDoubleFromHDFSFile(output("Rout"));
 			Assert.assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
 			
 			//compiled MR jobs

@@ -25,7 +25,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -141,13 +141,13 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			
 			//generate input data
 			switch( vtIn ) {
-				case STRING: MapReduceTool.writeStringToHDFS("foo", input("V")); break;
-				case INT: MapReduceTool.writeIntToHDFS(7, input("V")); break;
-				case BOOLEAN: MapReduceTool.writeBooleanToHDFS(true, input("V")); break;
-				case DOUBLE: MapReduceTool.writeDoubleToHDFS(7.3, input("V")); break;
+				case STRING: HDFSTool.writeStringToHDFS("foo", input("V")); break;
+				case INT: HDFSTool.writeIntToHDFS(7, input("V")); break;
+				case BOOLEAN: HDFSTool.writeBooleanToHDFS(true, input("V")); break;
+				case DOUBLE: HDFSTool.writeDoubleToHDFS(7.3, input("V")); break;
 				default: throw new RuntimeException("Unsupported type: "+vtIn);
 			}
-			MapReduceTool.writeScalarMetaDataFile(input("V")+".mtd", vtIn);
+			HDFSTool.writeScalarMetaDataFile(input("V")+".mtd", vtIn);
 			
 			//run tests
 			runTest(true, false, null, -1);

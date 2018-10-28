@@ -38,10 +38,10 @@ import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.tugraz.sysds.runtime.instructions.spark.functions.IsFrameBlockInRange;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 

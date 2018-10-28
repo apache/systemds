@@ -56,13 +56,13 @@ import org.tugraz.sysds.runtime.io.MatrixReader;
 import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
 import org.tugraz.sysds.runtime.io.MatrixWriter;
 import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -305,8 +305,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			MapReduceTool.deleteFileIfExistOnHDFS(input("A"));
-			MapReduceTool.deleteFileIfExistOnHDFS(output("B"));
+			HDFSTool.deleteFileIfExistOnHDFS(input("A"));
+			HDFSTool.deleteFileIfExistOnHDFS(output("B"));
 		}
 	}
 	
@@ -377,8 +377,8 @@ public class FrameConverterTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			MapReduceTool.deleteFileIfExistOnHDFS(input("A"));
-			MapReduceTool.deleteFileIfExistOnHDFS(output("B"));
+			HDFSTool.deleteFileIfExistOnHDFS(input("A"));
+			HDFSTool.deleteFileIfExistOnHDFS(output("B"));
 		}
 	}
 	
@@ -424,7 +424,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		JavaSparkContext sc = sec.getSparkContext();
 		ValueType[] lschema = schema.toArray(new ValueType[0]);
 		
-		MapReduceTool.deleteFileIfExistOnHDFS(fnameOut);
+		HDFSTool.deleteFileIfExistOnHDFS(fnameOut);
 		
 		switch( type ) {
 			case CSV2BIN: {

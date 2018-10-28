@@ -31,7 +31,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
 import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class WriterBinaryBlock extends MatrixWriter
 {
@@ -51,7 +51,7 @@ public class WriterBinaryBlock extends MatrixWriter
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
+		HDFSTool.deleteFileIfExistOnHDFS( fname );
 
 		//set up preferred custom serialization framework for binary block format
 		if( MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION )

@@ -44,7 +44,7 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -88,7 +88,7 @@ public class ReaderTextCellParallel extends ReaderTextCell
 		
 		//check for min file size for matrix market (adjust num splits if necessary)
 		if( _isMMFile ){
-			long len = MapReduceTool.getFilesizeOnHDFS(path);
+			long len = HDFSTool.getFilesizeOnHDFS(path);
 			par = ( len < MIN_FILESIZE_MM ) ? 1: par; 
 		}
 		

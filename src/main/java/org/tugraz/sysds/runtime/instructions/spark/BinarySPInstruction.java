@@ -37,12 +37,12 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixVectorBinaryO
 import org.tugraz.sysds.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction {
 

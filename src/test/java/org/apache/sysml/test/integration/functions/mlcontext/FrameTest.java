@@ -52,11 +52,11 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -269,7 +269,7 @@ public class FrameTest extends MLContextTestBase
 			
 			String fName = output("AB");
 			try {
-				MapReduceTool.deleteFileIfExistOnHDFS( fName );
+				HDFSTool.deleteFileIfExistOnHDFS( fName );
 			} catch (IOException e) {
 				throw new DMLRuntimeException("Error: While deleting file on HDFS");
 			}
@@ -296,7 +296,7 @@ public class FrameTest extends MLContextTestBase
 
 			fName = output("C");
 			try {
-				MapReduceTool.deleteFileIfExistOnHDFS( fName );
+				HDFSTool.deleteFileIfExistOnHDFS( fName );
 			} catch (IOException e) {
 				throw new DMLRuntimeException("Error: While deleting file on HDFS");
 			} 

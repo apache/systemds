@@ -23,9 +23,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
@@ -155,25 +155,25 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 			if( matrixInput ){
 				writeInputMatrix("V", V, false);	
 				MatrixCharacteristics mc = new MatrixCharacteristics(numVals,numVals,1000,1000);
-				MapReduceTool.writeMetaDataFile(input("V.mtd"), vtIn, mc, OutputInfo.TextCellOutputInfo);
+				HDFSTool.writeMetaDataFile(input("V.mtd"), vtIn, mc, OutputInfo.TextCellOutputInfo);
 			}
 			else{
-				MapReduceTool.deleteFileIfExistOnHDFS(input("V"));
+				HDFSTool.deleteFileIfExistOnHDFS(input("V"));
 				switch( vtIn ) 
 				{
 					case DOUBLE: 
-						MapReduceTool.writeDoubleToHDFS(V[0][0], input("V")); 
+						HDFSTool.writeDoubleToHDFS(V[0][0], input("V")); 
 						inVal = V[0][0]; break;
 					case INT:    
-						MapReduceTool.writeIntToHDFS((int)V[0][0], input("V")); 
+						HDFSTool.writeIntToHDFS((int)V[0][0], input("V")); 
 						inVal = ((int)V[0][0]); break;
 					case BOOLEAN: 
-						MapReduceTool.writeBooleanToHDFS(V[0][0]!=0, input("V")); 
+						HDFSTool.writeBooleanToHDFS(V[0][0]!=0, input("V")); 
 						inVal = (V[0][0]!=0)?1:0; break;
 					default: 
 						//do nothing	
 				}				
-				MapReduceTool.writeScalarMetaDataFile(input("V.mtd"), vtIn);
+				HDFSTool.writeScalarMetaDataFile(input("V.mtd"), vtIn);
 			}
 			
 			//run tests
@@ -183,9 +183,9 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		        //compare results
 	        	String outName = output("R");
 		        switch( vtOut ) {
-					case DOUBLE:  Assert.assertEquals(inVal, MapReduceTool.readDoubleFromHDFSFile(outName), 1e-16); break;
-					case INT:     Assert.assertEquals((int) inVal, MapReduceTool.readIntegerFromHDFSFile(outName)); break;
-					case BOOLEAN: Assert.assertEquals(inVal!=0, MapReduceTool.readBooleanFromHDFSFile(outName)); break;
+					case DOUBLE:  Assert.assertEquals(inVal, HDFSTool.readDoubleFromHDFSFile(outName), 1e-16); break;
+					case INT:     Assert.assertEquals((int) inVal, HDFSTool.readIntegerFromHDFSFile(outName)); break;
+					case BOOLEAN: Assert.assertEquals(inVal!=0, HDFSTool.readBooleanFromHDFSFile(outName)); break;
 					default: //do nothing
 		        }
 	        }

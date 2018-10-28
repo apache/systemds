@@ -47,14 +47,13 @@ import org.tugraz.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
-import org.tugraz.sysds.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 
 
@@ -755,10 +754,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//CASE 2: matrix already in same format but different file on hdfs (copy matrix to fname)
 			try
 			{
-				MapReduceTool.deleteFileIfExistOnHDFS(fName);
-				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
+				HDFSTool.deleteFileIfExistOnHDFS(fName);
+				HDFSTool.deleteFileIfExistOnHDFS(fName+".mtd");
 				if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
-					MapReduceTool.copyFileOnHDFS( _hdfsFileName, fName );
+					HDFSTool.copyFileOnHDFS( _hdfsFileName, fName );
 				else //write might trigger rdd operations and nnz maintenance
 					writeBlobFromRDDtoHDFS(getRDDHandle(), fName, outputFormat);
 				writeMetaData( fName, outputFormat, formatProperties );
@@ -930,7 +929,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			}
 			
 			//write the actual meta data file
-			MapReduceTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
+			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
 				getSchema(), dataType, mc, oinfo, formatProperties);
 		}
 	}
@@ -1276,16 +1275,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			
 			//export or rename to target file on hdfs
 			if( isDirty() || !eqScheme || (!isEqualOutputFormat(outputFormat) && isEmpty(true)) 
-				|| (getRDDHandle()!=null && !MapReduceTool.existsFileOnHDFS(_hdfsFileName)) )
+				|| (getRDDHandle()!=null && !HDFSTool.existsFileOnHDFS(_hdfsFileName)) )
 			{
 				exportData(fName, outputFormat);
 				ret = true;
 			}
 			else if( isEqualOutputFormat(outputFormat) )
 			{
-				MapReduceTool.deleteFileIfExistOnHDFS(fName);
-				MapReduceTool.deleteFileIfExistOnHDFS(fName+".mtd");
-				MapReduceTool.renameFileOnHDFS( _hdfsFileName, fName );
+				HDFSTool.deleteFileIfExistOnHDFS(fName);
+				HDFSTool.deleteFileIfExistOnHDFS(fName+".mtd");
+				HDFSTool.renameFileOnHDFS( _hdfsFileName, fName );
 				writeMetaData( fName, outputFormat, null );
 				ret = true;
 			}
@@ -1303,29 +1302,24 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		str.append(getClass().getSimpleName());
 		str.append(": ");
 		str.append(_hdfsFileName + ", ");
+		try {
+			MetaDataFormat md = (MetaDataFormat) _metaData;
+			if (md != null) {
+				MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
+				str.append(mc.toString());
 
-		if (_metaData instanceof MetaDataNumItemsByEachReducer) {
-			str.append("NumItemsByEachReducerMetaData");
-		} else {
-			try {
-				MetaDataFormat md = (MetaDataFormat) _metaData;
-				if (md != null) {
-					MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
-					str.append(mc.toString());
-
-					InputInfo ii = md.getInputInfo();
-					if (ii == null)
-						str.append("null");
-					else {
-						str.append(", ");
-						str.append(InputInfo.inputInfoToString(ii));
-					}
-				} else {
-					str.append("null, null");
+				InputInfo ii = md.getInputInfo();
+				if (ii == null)
+					str.append("null");
+				else {
+					str.append(", ");
+					str.append(InputInfo.inputInfoToString(ii));
 				}
-			} catch (Exception ex) {
-				LOG.error(ex);
+			} else {
+				str.append("null, null");
 			}
+		} catch (Exception ex) {
+			LOG.error(ex);
 		}
 		str.append(", ");
 		str.append(isDirty() ? "dirty" : "not-dirty");

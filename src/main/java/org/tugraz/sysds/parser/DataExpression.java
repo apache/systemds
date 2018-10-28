@@ -43,7 +43,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.JSONHelper;
 
@@ -601,11 +601,11 @@ public class DataExpression extends DataIdentifier
 			// track whether should attempt to read MTD file or not
 			boolean shouldReadMTD = _checkMetadata
 				&& (!ConfigurationManager.getCompilerConfigFlag(ConfigType.IGNORE_READ_WRITE_METADATA)
-					|| MapReduceTool.existsFileOnHDFS(mtdFileName)); // existing mtd file
+					|| HDFSTool.existsFileOnHDFS(mtdFileName)); // existing mtd file
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
-				&& !MapReduceTool.existsFileOnHDFS(inputFileName)) 
+				&& !HDFSTool.existsFileOnHDFS(inputFileName)) 
 			{
 				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";
 				raiseValidateError("Read input file does not exist on "+fsext+": " + 
@@ -1765,14 +1765,14 @@ public class DataExpression extends DataIdentifier
 	public JSONObject readMetadataFile(String filename, boolean conditional) 
 	{
 		JSONObject retVal = null;
-		boolean exists = MapReduceTool.existsFileOnHDFS(filename);
-		boolean isDir = MapReduceTool.isDirectory(filename);
+		boolean exists = HDFSTool.existsFileOnHDFS(filename);
+		boolean isDir = HDFSTool.isDirectory(filename);
 		
 		// CASE: filename is a directory -- process as a directory
 		if( exists && isDir ) 
 		{
 			retVal = new JSONObject();
-			for(FileStatus stat : MapReduceTool.getDirectoryListing(filename)) {
+			for(FileStatus stat : HDFSTool.getDirectoryListing(filename)) {
 				Path childPath = stat.getPath(); // gives directory name
 				if( !childPath.getName().startsWith("part") )
 					continue;
@@ -1825,8 +1825,8 @@ public class DataExpression extends DataIdentifier
 		if (mtdObject != null)
 			return false;
 		
-		if( MapReduceTool.existsFileOnHDFS(inputFileName) 
-			&& !MapReduceTool.isDirectory(inputFileName)  )
+		if( HDFSTool.existsFileOnHDFS(inputFileName) 
+			&& !HDFSTool.isDirectory(inputFileName)  )
 		{
 			BufferedReader in = null;
 			try {

@@ -36,7 +36,7 @@ import org.tugraz.sysds.runtime.io.FrameWriter;
 import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class FrameReadWriteTest extends AutomatedTestBase
@@ -239,7 +239,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 		// Verify that data read with original frames
 		verifyFrameData(frame1, frame1Read);			
 		verifyFrameData(frame2, frame2Read);
-		MapReduceTool.deleteFileIfExistOnHDFS(fname1);
-		MapReduceTool.deleteFileIfExistOnHDFS(fname2);
+		HDFSTool.deleteFileIfExistOnHDFS(fname1);
+		HDFSTool.deleteFileIfExistOnHDFS(fname2);
 	}
 }

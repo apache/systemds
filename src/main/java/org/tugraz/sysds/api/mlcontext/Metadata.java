@@ -20,7 +20,7 @@
 package org.tugraz.sysds.api.mlcontext;
 
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Abstract metadata class for MLContext API. Complex types such as SystemML

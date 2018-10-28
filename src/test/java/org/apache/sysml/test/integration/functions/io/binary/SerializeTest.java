@@ -22,12 +22,12 @@ package org.apache.sysml.test.integration.functions.io.binary;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -105,7 +105,7 @@ public class SerializeTest extends AutomatedTestBase
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
 			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.BinaryBlockOutputInfo, mc);
-			MapReduceTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.BinaryBlockOutputInfo);
 			
 			runTest(true, false, null, -1); //mult 7
 			

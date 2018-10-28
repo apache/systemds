@@ -38,7 +38,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * Base class for all format-specific matrix readers. Every reader is required to implement the basic 
@@ -120,7 +120,7 @@ public abstract class MatrixReader
 			throw new IOException("File "+path.toString()+" does not exist on HDFS/LFS.");
 	
 		//check for empty file
-		if( MapReduceTool.isFileEmpty(fs, path) )
+		if( HDFSTool.isFileEmpty(fs, path) )
 			throw new EOFException("Empty input file "+ path.toString() +".");
 		
 	}

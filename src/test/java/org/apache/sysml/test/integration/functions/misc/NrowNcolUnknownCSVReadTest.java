@@ -21,11 +21,11 @@ package org.apache.sysml.test.integration.functions.misc;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -99,7 +99,7 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 			DataConverter.writeMatrixToHDFS(mb, input("A"), OutputInfo.CSVOutputInfo, 
 				new MatrixCharacteristics(rows,cols,-1,-1));
-	        MapReduceTool.deleteFileIfExistOnHDFS(input("A.mtd"));
+	        HDFSTool.deleteFileIfExistOnHDFS(input("A.mtd"));
 			
 			//run tests
 	        runTest(true, false, null, -1);

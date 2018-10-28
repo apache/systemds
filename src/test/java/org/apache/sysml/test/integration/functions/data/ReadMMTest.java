@@ -27,9 +27,9 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -355,11 +355,11 @@ public class ReadMMTest extends AutomatedTestBase
 
 		try {
 			String fname = input("a");
-			MapReduceTool.deleteFileIfExistOnHDFS(fname);
-			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
+			HDFSTool.deleteFileIfExistOnHDFS(fname);
+			HDFSTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 			TestUtils.createFile(fname + "/in");
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
-			MapReduceTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();

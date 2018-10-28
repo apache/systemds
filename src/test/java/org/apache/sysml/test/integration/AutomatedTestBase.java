@@ -55,14 +55,14 @@ import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.ParameterBuilder;
 import org.tugraz.sysds.utils.Statistics;
 
@@ -464,10 +464,10 @@ public abstract class AutomatedTestBase
 	}
 
 	private static void cleanupExistingData(String fname, boolean cleanupRData) throws IOException {
-		MapReduceTool.deleteFileIfExistOnHDFS(fname);
-		MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtd");
+		HDFSTool.deleteFileIfExistOnHDFS(fname);
+		HDFSTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 		if ( cleanupRData )
-			MapReduceTool.deleteFileIfExistOnHDFS(fname + ".mtx");
+			HDFSTool.deleteFileIfExistOnHDFS(fname + ".mtx");
 	}
 
 	/**
@@ -528,7 +528,7 @@ public abstract class AutomatedTestBase
 		try
 		{
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
 		}
 		catch(IOException e)
 		{
@@ -609,7 +609,7 @@ public abstract class AutomatedTestBase
 		writeInputBinaryMatrix(name, matrix, rowsInBlock, colsInBlock, sparseFormat);
 		// write metadata file
 		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-		MapReduceTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+		HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 	}
 
 	/**
@@ -1287,7 +1287,7 @@ public abstract class AutomatedTestBase
 			// delete the scratch_space and all contents
 			// (prevent side effect between tests)
 			String dir = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
-			MapReduceTool.deleteFileIfExistOnHDFS(dir);
+			HDFSTool.deleteFileIfExistOnHDFS(dir);
 		}
 		catch (Exception ex)
 		{
@@ -1315,7 +1315,7 @@ public abstract class AutomatedTestBase
 			sb.append(DMLScript.getUUID());
 			String pLocalDir = sb.toString();
 
-			return MapReduceTool.existsFileOnHDFS(pLocalDir);
+			return HDFSTool.existsFileOnHDFS(pLocalDir);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			return true;
@@ -1803,7 +1803,7 @@ public abstract class AutomatedTestBase
 		try
 		{
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			MapReduceTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, oi);
+			HDFSTool.writeMetaDataFile(completeMTDPath, null, schema, DataType.FRAME, mc, oi);
 		}
 		catch(IOException e)
 		{

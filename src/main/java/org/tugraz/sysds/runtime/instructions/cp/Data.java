@@ -24,8 +24,8 @@ import java.io.Serializable;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
 
 
 public abstract class Data implements Serializable 

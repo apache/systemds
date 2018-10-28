@@ -51,18 +51,18 @@ import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.MatrixReader;
 import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
-public class MapReduceTool 
+public class HDFSTool 
 {
 	private static final int MAX_DELETE_RETRIES = 10;
 	
-	private static final Log LOG = LogFactory.getLog(MapReduceTool.class.getName());
+	private static final Log LOG = LogFactory.getLog(HDFSTool.class.getName());
 	
 	public static String getUniqueKeyPerTask(JobConf job, boolean inMapper) {
 		//TODO: investigate ID pattern, required for parallel jobs
@@ -315,10 +315,10 @@ public class MapReduceTool
 	}
 		
 	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {
-        Path path = new Path(filename);
-        FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		Path path = new Path(filename);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
-        return br;
+		return br;
 	}
 	
 	public static void writeDoubleToHDFS ( double d, String filename ) throws IOException {
@@ -326,11 +326,11 @@ public class MapReduceTool
 	}
 	
 	public static void writeIntToHDFS ( long i, String filename ) throws IOException {
-	    writeObjectToHDFS(i, filename);
+		writeObjectToHDFS(i, filename);
 	}
 	
 	public static void writeBooleanToHDFS ( boolean b, String filename ) throws IOException {
-	    writeObjectToHDFS(b, filename);
+		writeObjectToHDFS(b, filename);
 	}
 	
 	public static void writeStringToHDFS ( String s, String filename ) throws IOException {
@@ -341,59 +341,6 @@ public class MapReduceTool
 		try( BufferedWriter br = setupOutputFile(filename) ) {
 			br.write(obj.toString());
 		}
-	}
-	
-	public static void writeDimsFile ( String filename, byte[] unknownFlags, long[] maxRows, long[] maxCols) throws IOException {
-		try( BufferedWriter br = setupOutputFile(filename) ) {
-	        StringBuilder line = new StringBuilder();
-	        for ( int i=0; i < unknownFlags.length; i++ ) {
-	        	if ( unknownFlags[i]  != (byte)0 ) {
-	        		line.append(i);
-	        		line.append(" " + maxRows[i]);
-	        		line.append(" " + maxCols[i]);
-	        		line.append("\n");
-	        	}
-	        }
-	        br.write(line.toString());
-        }
-	}
-	
-	public static MatrixCharacteristics[] processDimsFiles(String dir, MatrixCharacteristics[] stats) 
-		throws IOException 
-	{
-		Path path = new Path(dir);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path);
-		
-        if ( !fs.exists(path) )
-        	return stats;
-        
-        FileStatus fstat = fs.getFileStatus(path);
-		
-        if ( fstat.isDirectory() ) 
-        {
-			FileStatus[] files = fs.listStatus(path);
-			for ( int i=0; i < files.length; i++ ) {
-				Path filePath = files[i].getPath();
-				try( BufferedReader br = setupInputFile(filePath.toString()) ) {
-					String line = "";
-					while((line=br.readLine()) != null ) {
-						String[] parts = line.split(" ");
-						int resultIndex = Integer.parseInt(parts[0]);
-						long maxRows = Long.parseLong(parts[1]);
-						long maxCols = Long.parseLong(parts[2]);
-						
-						stats[resultIndex].setDimension( (stats[resultIndex].getRows() < maxRows ? maxRows : stats[resultIndex].getRows()), 
-								                         (stats[resultIndex].getCols() < maxCols ? maxCols : stats[resultIndex].getCols()) );
-					}
-				}
-			}
-		}
-		else 
-		{
-			throw new IOException(dir + " is expected to be a folder!");
-		}
-
-		return stats;
 	}
 	
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc, OutputInfo outinfo) 

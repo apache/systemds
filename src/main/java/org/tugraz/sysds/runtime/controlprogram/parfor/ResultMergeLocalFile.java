@@ -48,18 +48,18 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.StagingFileUtils;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * 
@@ -192,7 +192,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			if( ALLOW_COPY_CELLFILES )
 			{
@@ -261,7 +261,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			if( LOG.isTraceEnabled() )
@@ -297,7 +297,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{	
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			if( ALLOW_COPY_CELLFILES )
 			{
@@ -359,7 +359,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			if( LOG.isTraceEnabled() )
@@ -396,7 +396,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 1) read and write blocks to staging area
 			for( MatrixObject in : inMO )
@@ -426,7 +426,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		try
 		{
 			//delete target file if already exists
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 			
 			//Step 0) write compare blocks to staging area (if necessary)
 			if( LOG.isTraceEnabled() )

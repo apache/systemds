@@ -71,7 +71,7 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
 import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.NativeHelper;
 import org.tugraz.sysds.utils.Statistics;
@@ -482,7 +482,7 @@ public class DMLScript
 		
 		//create scratch space with appropriate permissions
 		String scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE);
-		MapReduceTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		HDFSTool.createDirIfNotExistOnHDFS(scratch, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		
 		//cleanup working dirs from previous aborted runs with same pid in order to prevent conflicts
 		cleanupHadoopExecution(config); 
@@ -553,7 +553,7 @@ public class DMLScript
 		
 		//1) cleanup scratch space (everything for current uuid) 
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
-		MapReduceTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
+		HDFSTool.deleteFileIfExistOnHDFS( config.getTextValue(DMLConfig.SCRATCH_SPACE) + dirSuffix );
 		
 		//2) cleanup hadoop working dirs (only required for LocalJobRunner (local job tracker), because
 		//this implementation does not create job specific sub directories)
@@ -562,8 +562,8 @@ public class DMLScript
 			try {
 				LocalFileUtils.deleteFileIfExists( DMLConfig.LOCAL_MR_MODE_STAGING_DIR + dirSuffix );
 				LocalFileUtils.deleteFileIfExists( MRJobConfiguration.getLocalWorkingDirPrefix(job) + dirSuffix );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + dirSuffix );
-				MapReduceTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + dirSuffix );
+				HDFSTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getSystemWorkingDirPrefix(job) + dirSuffix );
+				HDFSTool.deleteFileIfExistOnHDFS( MRJobConfiguration.getStagingWorkingDirPrefix(job) + dirSuffix );
 			}
 			catch(Exception ex) {
 				//we give only a warning because those directories are written by the mapred deamon 
@@ -612,7 +612,7 @@ public class DMLScript
 			//cleanup scratch space (on HDFS)
 			String scratch = conf.getTextValue(DMLConfig.SCRATCH_SPACE);
 			if( scratch != null )
-				MapReduceTool.deleteFileIfExistOnHDFS(scratch);
+				HDFSTool.deleteFileIfExistOnHDFS(scratch);
 			
 			//cleanup local working dir
 			String localtmp = conf.getTextValue(DMLConfig.LOCAL_TMP_DIR);

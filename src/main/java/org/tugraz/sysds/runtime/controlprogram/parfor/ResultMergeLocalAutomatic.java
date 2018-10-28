@@ -24,7 +24,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public class ResultMergeLocalAutomatic extends ResultMerge
 {

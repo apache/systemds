@@ -31,9 +31,9 @@ import org.tugraz.sysds.api.mlcontext.Script;
 import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class MLContextOutputBlocksizeTest extends MLContextTestBase

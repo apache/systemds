@@ -23,8 +23,6 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import java.io.Serializable;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -33,7 +31,7 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.matrix.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaData;
 
 @SuppressWarnings("rawtypes")
 public class InputInfo implements Serializable 
@@ -73,13 +71,6 @@ public class InputInfo implements Serializable
 	public static final InputInfo BinaryBlockFrameInputInfo=new InputInfo(
 			SequenceFileInputFormat.class, LongWritable.class, FrameBlock.class); 
 	
-	// Format that denotes the input of a SORT job
-	public static final InputInfo InputInfoForSort=new InputInfo(SequenceFileInputFormat.class, 
-			DoubleWritable.class, IntWritable.class);
-
-	public static final InputInfo WeightedPairInputInfo=new InputInfo(SequenceFileInputFormat.class, 
-			MatrixIndexes.class, WeightedPair.class);
-	
 	public static final InputInfo CSVInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
 	
@@ -92,10 +83,6 @@ public class InputInfo implements Serializable
 			return OutputInfo.BinaryCellOutputInfo;
 		else if ( ii == InputInfo.TextCellInputInfo )
 			return OutputInfo.TextCellOutputInfo;
-		else if ( ii == InputInfo.InputInfoForSort)
-			return OutputInfo.OutputInfoForSortInput;
-		else if ( ii == InputInfo.WeightedPairInputInfo)
-			return OutputInfo.WeightedPairOutputInfo;
 		else if ( ii == InputInfo.CSVInputInfo)
 			return OutputInfo.CSVOutputInfo;
 		else 
@@ -115,10 +102,6 @@ public class InputInfo implements Serializable
 		else if (str.equalsIgnoreCase("binaryblock")) {
 			return BinaryBlockInputInfo;
 		}
-		else if ( str.equalsIgnoreCase("sort_input"))
-			return InputInfoForSort;
-		else if ( str.equalsIgnoreCase("weightedpair"))
-			return WeightedPairInputInfo;
 		else if ( str.equalsIgnoreCase("csv"))
 			return CSVInputInfo;
 		return null;
@@ -143,10 +126,6 @@ public class InputInfo implements Serializable
 			return "binarycell";
 		else if ( ii == BinaryBlockInputInfo )
 			return "binaryblock";
-		else if ( ii == InputInfoForSort )
-			return "sort_input";
-		else if ( ii == WeightedPairInputInfo )
-			return "weightedpair";
 		else if ( ii == MatrixMarketInputInfo )
 			return "matrixmarket";
 		else if ( ii == CSVInputInfo )

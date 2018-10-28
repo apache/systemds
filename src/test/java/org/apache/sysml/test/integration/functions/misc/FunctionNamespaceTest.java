@@ -26,7 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -366,7 +366,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = origIPA;
 			
 			//compare output
-			double ret = MapReduceTool.readDoubleFromHDFSFile(output("Rout"));
+			double ret = HDFSTool.readDoubleFromHDFSFile(output("Rout"));
 			Assert.assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
 			
 			//compiled MR jobs

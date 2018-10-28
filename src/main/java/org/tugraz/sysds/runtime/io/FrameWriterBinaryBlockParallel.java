@@ -37,7 +37,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 
 /**
@@ -66,7 +66,7 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		}
 		
 		//create directory for concurrent tasks
-		MapReduceTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
+		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		
 		//create and execute write tasks

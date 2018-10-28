@@ -71,7 +71,6 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.CreateSparseBlockFu
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -79,7 +78,8 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.MLContextProxy;
 import org.tugraz.sysds.utils.Statistics;
@@ -1111,7 +1111,7 @@ public class SparkExecutionContext extends ExecutionContext
 				//clean hdfs data if no pending rdd operations on it
 				if( mo.isHDFSFileExists() && mo.getFileName()!=null ) {
 					if( mo.getRDDHandle()==null ) {
-						MapReduceTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
+						HDFSTool.deleteFileWithMTDIfExistOnHDFS(mo.getFileName());
 					}
 					else { //deferred file removal
 						RDDObject rdd = mo.getRDDHandle();
@@ -1154,7 +1154,7 @@ public class SparkExecutionContext extends ExecutionContext
 			int rddID = rdd.getRDD().id();
 			cleanupRDDVariable(rdd.getRDD());
 			if( rdd.getHDFSFilename()!=null ) { //deferred file removal
-				MapReduceTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
+				HDFSTool.deleteFileWithMTDIfExistOnHDFS(rdd.getHDFSFilename());
 			}
 			if( rdd.isParallelizedRDD() )
 				_parRDDs.deregisterRDD(rddID);

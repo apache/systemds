@@ -42,7 +42,6 @@ import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.tugraz.sysds.runtime.instructions.spark.functions.AggregateDropCorrectionFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixOuterAgg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
@@ -51,6 +50,7 @@ import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 
 import scala.Tuple2;

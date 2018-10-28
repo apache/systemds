@@ -29,7 +29,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -128,7 +128,7 @@ public abstract class FrameReader
 			throw new IOException("File "+path.toString()+" does not exist on HDFS/LFS.");
 	
 		//check for empty file
-		if( MapReduceTool.isFileEmpty(fs, path) )
+		if( HDFSTool.isFileEmpty(fs, path) )
 			throw new EOFException("Empty input file "+ path.toString() +".");		
 	}
 }

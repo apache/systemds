@@ -30,7 +30,7 @@ import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -118,7 +118,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 				FrameWriterFactory.createFrameWriter(OutputInfo.TextCellOutputInfo)
 					.writeFrameToHDFS(fb, input("A"), 1, 1);
 			else
-				MapReduceTool.writeObjectToHDFS(inval, input("A"));
+				HDFSTool.writeObjectToHDFS(inval, input("A"));
 			
 			//run testcase
 			runTest(true, false, null, -1);
@@ -126,7 +126,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 			//read and compare scalars
 			Object retval = null;
 			if( testname.equals(TEST_NAME1) ) {
-				retval = MapReduceTool.readObjectFromHDFSFile(output("B"), vt);
+				retval = HDFSTool.readObjectFromHDFSFile(output("B"), vt);
 			}
 			else {
 				retval = FrameReaderFactory.createFrameReader(InputInfo.TextCellInputInfo)

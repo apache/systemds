@@ -26,12 +26,12 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -122,7 +122,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 			String fname = output(Long.toString(sum));
 			
 			if( type == Type.Scalar ) {
-				long val = MapReduceTool.readIntegerFromHDFSFile(fname);
+				long val = HDFSTool.readIntegerFromHDFSFile(fname);
 				Assert.assertEquals(val, sum);
 			}
 			else{
@@ -130,8 +130,8 @@ public class FullDynWriteTest extends AutomatedTestBase
 			    TestUtils.compareMatrices(A, B, rows, cols, eps);
 			}
 		    
-		    MapReduceTool.deleteFileIfExistOnHDFS(fname);
-		    MapReduceTool.deleteFileIfExistOnHDFS(fname+".mtd");
+		    HDFSTool.deleteFileIfExistOnHDFS(fname);
+		    HDFSTool.deleteFileIfExistOnHDFS(fname+".mtd");
 		} 
 		catch (Exception e) 
 		{
@@ -165,14 +165,14 @@ public class FullDynWriteTest extends AutomatedTestBase
 	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
 		throws IOException
 	{
-		MapReduceTool.deleteFileIfExistOnHDFS(fname);
-		MapReduceTool.deleteFileIfExistOnHDFS(fname+".mtd");
+		HDFSTool.deleteFileIfExistOnHDFS(fname);
+		HDFSTool.deleteFileIfExistOnHDFS(fname+".mtd");
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
 		if( oi != OutputInfo.MatrixMarketOutputInfo )
-			MapReduceTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
+			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
 	}
 	
 	private static String getFormatString(OutputInfo oinfo)

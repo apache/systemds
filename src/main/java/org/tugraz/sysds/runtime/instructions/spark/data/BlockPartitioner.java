@@ -22,8 +22,8 @@ package org.tugraz.sysds.runtime.instructions.spark.data;
 import java.util.Arrays;
 
 import org.apache.spark.Partitioner;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Default partitioner used for all binary block rdd operations in order

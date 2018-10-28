@@ -55,7 +55,6 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.ExtractGroup.Extrac
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -70,6 +69,7 @@ import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.transform.TfUtils;
 import org.tugraz.sysds.runtime.transform.decode.Decoder;
 import org.tugraz.sysds.runtime.transform.decode.DecoderFactory;

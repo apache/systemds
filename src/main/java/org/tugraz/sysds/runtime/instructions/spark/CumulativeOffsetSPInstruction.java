@@ -33,12 +33,12 @@ import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.functionobjects.PlusMultiply;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import scala.Tuple2;
 

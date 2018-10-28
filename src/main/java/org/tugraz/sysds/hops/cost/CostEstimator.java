@@ -52,9 +52,9 @@ import org.tugraz.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstructio
 import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class CostEstimator 
 {

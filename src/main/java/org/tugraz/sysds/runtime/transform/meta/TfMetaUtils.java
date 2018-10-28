@@ -45,7 +45,7 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.runtime.transform.TfUtils;
 import org.tugraz.sysds.runtime.transform.decode.DecoderRecode;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class TfMetaUtils 
@@ -162,7 +162,7 @@ public class TfMetaUtils
 		throws IOException 
 	{
 		//read column names
-		String colnamesStr = MapReduceTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLNAMES);
+		String colnamesStr = HDFSTool.readStringFromHDFSFile(metapath+File.separator+TfUtils.TXMTD_COLNAMES);
 		String[] colnames = IOUtilFunctions.split(colnamesStr.trim(), colDelim);
 		
 		//read meta data (currently supported: recode, dummycode, bin, omit, impute)
@@ -174,22 +174,22 @@ public class TfMetaUtils
 			String colName = colnames[j];
 			//read recode maps for recoded or dummycoded columns
 			String name = metapath+File.separator+"Recode"+File.separator+colName;
-			if( MapReduceTool.existsFileOnHDFS(name+TfUtils.TXMTD_RCD_MAP_SUFFIX) ) {
-				meta.put(colName, MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
-				String ndistinct = MapReduceTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
+			if( HDFSTool.existsFileOnHDFS(name+TfUtils.TXMTD_RCD_MAP_SUFFIX) ) {
+				meta.put(colName, HDFSTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_MAP_SUFFIX));
+				String ndistinct = HDFSTool.readStringFromHDFSFile(name+TfUtils.TXMTD_RCD_DISTINCT_SUFFIX);
 				rows = Math.max(rows, Integer.parseInt(ndistinct));
 			}
 			//read binning map for binned columns
 			String name2 = metapath+File.separator+"Bin"+File.separator+colName;
-			if( MapReduceTool.existsFileOnHDFS(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX) ) {
-				String binmap = MapReduceTool.readStringFromHDFSFile(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX);
+			if( HDFSTool.existsFileOnHDFS(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX) ) {
+				String binmap = HDFSTool.readStringFromHDFSFile(name2+TfUtils.TXMTD_BIN_FILE_SUFFIX);
 				meta.put(colName, binmap);
 				rows = Math.max(rows, Integer.parseInt(binmap.split(TfUtils.TXMTD_SEP)[4]));
 			}
 			//read impute value for mv columns
 			String name3 = metapath+File.separator+"Impute"+File.separator+colName;
-			if( MapReduceTool.existsFileOnHDFS(name3+TfUtils.TXMTD_MV_FILE_SUFFIX) ) {
-				String mvmap = MapReduceTool.readStringFromHDFSFile(name3+TfUtils.TXMTD_MV_FILE_SUFFIX);
+			if( HDFSTool.existsFileOnHDFS(name3+TfUtils.TXMTD_MV_FILE_SUFFIX) ) {
+				String mvmap = HDFSTool.readStringFromHDFSFile(name3+TfUtils.TXMTD_MV_FILE_SUFFIX);
 				mvmeta.put(colName, mvmap);
 			}
 		}

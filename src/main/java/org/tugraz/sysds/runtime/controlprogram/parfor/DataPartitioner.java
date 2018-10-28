@@ -25,12 +25,12 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 
 /**
@@ -136,7 +136,7 @@ public abstract class DataPartitioner
 		//prepare filenames and cleanup if required
 		String fnameNew = out.getFileName();
 		try{
-			MapReduceTool.deleteFileIfExistOnHDFS(fnameNew);
+			HDFSTool.deleteFileIfExistOnHDFS(fnameNew);
 		}
 		catch(Exception ex){
 			throw new DMLRuntimeException( ex );

@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
@@ -107,8 +107,8 @@ public class DataTypeCastingTest extends AutomatedTestBase
 				writeInputMatrix("V", V, false);	
 			}
 			else{
-				MapReduceTool.writeDoubleToHDFS(V[0][0], input("V"));
-				MapReduceTool.writeScalarMetaDataFile(input("V.mtd"), ValueType.DOUBLE);
+				HDFSTool.writeDoubleToHDFS(V[0][0], input("V"));
+				HDFSTool.writeScalarMetaDataFile(input("V.mtd"), ValueType.DOUBLE);
 			}
 			
 			//run tests

@@ -17,43 +17,44 @@
  * under the License.
  */
 
+package org.tugraz.sysds.runtime.meta;
 
-package org.tugraz.sysds.runtime.matrix.data;
-
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-
-public class WeightedCellToSortInputConverter implements 
-Converter<MatrixIndexes, WeightedCell, DoubleWritable, IntWritable>
+/**
+ * Class to store metadata associated with a file (e.g., a matrix) on disk.
+ *
+ */
+public class MetaData
 {
-	private DoubleWritable outKey=new DoubleWritable();
-	private IntWritable outValue=new IntWritable();
-	private Pair<DoubleWritable, IntWritable> pair=new Pair<>(outKey, outValue);
-	private boolean hasValue=false;
+	protected final MatrixCharacteristics _mc;
+	
+	public MetaData(MatrixCharacteristics mc) {
+		_mc = mc;
+	}
+	
+	public MatrixCharacteristics getMatrixCharacteristics() {
+		return _mc;
+	}
+	
 	@Override
-	public void convert(MatrixIndexes k1, WeightedCell v1) {
-		outKey.set(v1.getValue());
-		outValue.set((int)v1.getWeight());
-		hasValue=true;
+	public boolean equals (Object anObject) {
+		if( !(anObject instanceof MetaData) )
+			return false;
+		MetaData that = (MetaData)anObject;
+		return _mc.equals(that._mc);
+	}
+	
+	@Override
+	public int hashCode() {
+		return _mc.hashCode();
 	}
 
 	@Override
-	public boolean hasNext() {
-		return hasValue;
+	public String toString() {
+		return _mc.toString();
 	}
-
+	
 	@Override
-	public Pair<DoubleWritable, IntWritable> next() {
-		if(!hasValue)
-			return null;
-		
-		hasValue=false;
-		return pair;
+	public Object clone() {
+		return new MetaData(new MatrixCharacteristics(_mc));
 	}
-
-	@Override
-	public void setBlockSize(int rl, int cl) {
-		//DO nothing
-	}
-
 }

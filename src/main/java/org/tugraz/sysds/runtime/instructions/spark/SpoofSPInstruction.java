@@ -61,10 +61,10 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.MapInputSignature;
 import org.tugraz.sysds.runtime.instructions.spark.functions.MapJoinSignature;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateBlockFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import scala.Tuple2;
 

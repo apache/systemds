@@ -39,13 +39,13 @@ import org.tugraz.sysds.runtime.io.MatrixReader;
 import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
 import org.tugraz.sysds.runtime.io.MatrixWriter;
 import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * 
@@ -201,7 +201,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 		
 		//write meta data
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blksize, blksize);
-		MapReduceTool.writeMetaDataFile(fname+".mtd", vt, null, dt, mc, OutputInfo.BinaryBlockOutputInfo);
+		HDFSTool.writeMetaDataFile(fname+".mtd", vt, null, dt, mc, OutputInfo.BinaryBlockOutputInfo);
 	
 	}
 	

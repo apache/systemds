@@ -21,7 +21,7 @@ package org.tugraz.sysds.hops.recompile;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public class RecompileStatus 
 {

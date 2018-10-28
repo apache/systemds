@@ -23,8 +23,6 @@ package org.tugraz.sysds.runtime.matrix.data;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -60,10 +58,6 @@ public class OutputInfo implements Serializable
 			SequenceFileOutputFormat.class, MatrixIndexes.class, MatrixBlock.class);
 	public static final OutputInfo BinaryBlockFrameOutputInfo=new OutputInfo(
 			SequenceFileOutputFormat.class, LongWritable.class, FrameBlock.class);
-	public static final OutputInfo OutputInfoForSortInput=new OutputInfo(SequenceFileOutputFormat.class, 
-			DoubleWritable.class, IntWritable.class);
-	public static final OutputInfo WeightedPairOutputInfo=new OutputInfo(SequenceFileOutputFormat.class, 
-			MatrixIndexes.class, WeightedPair.class);
 
 	public static final OutputInfo CSVOutputInfo = null;
 	
@@ -76,10 +70,6 @@ public class OutputInfo implements Serializable
 			return InputInfo.BinaryCellInputInfo;
 		else if ( oi == OutputInfo.TextCellOutputInfo )
 			return InputInfo.TextCellInputInfo;
-		else if ( oi == OutputInfo.OutputInfoForSortInput)
-			return InputInfo.InputInfoForSort;
-		else if ( oi == OutputInfo.WeightedPairOutputInfo)
-			return InputInfo.WeightedPairInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
@@ -97,10 +87,6 @@ public class OutputInfo implements Serializable
 		else if (str.equalsIgnoreCase("binaryblock")) {
 			return BinaryBlockOutputInfo;
 		}
-		else if ( str.equalsIgnoreCase("sort_input") )
-			return OutputInfoForSortInput;
-		else if ( str.equalsIgnoreCase("weightedpair") )
-			return WeightedPairOutputInfo;
 		return null;
 	}
 	
@@ -113,10 +99,6 @@ public class OutputInfo implements Serializable
 			return "binarycell";
 		else if ( oi == BinaryBlockOutputInfo )
 			return "binaryblock";
-		else if ( oi == OutputInfoForSortInput )
-			return "sort_input";
-		else if ( oi == WeightedPairOutputInfo )
-			return "weightedpair";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}

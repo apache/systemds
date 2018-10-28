@@ -54,11 +54,11 @@ import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtilsExt;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 @RunWith(value = Parameterized.class)
 public class GNMFTest extends MLContextTestBase
@@ -198,7 +198,7 @@ public class GNMFTest extends MLContextTestBase
 				RDD<String> hOut = results.getRDDStringIJV("H");
 				String fName = output("h");
 				try {
-					MapReduceTool.deleteFileIfExistOnHDFS( fName );
+					HDFSTool.deleteFileIfExistOnHDFS( fName );
 				} catch (IOException e) {
 					throw new DMLRuntimeException("Error: While deleting file on HDFS");
 				}
@@ -217,7 +217,7 @@ public class GNMFTest extends MLContextTestBase
 				
 				String fName = output("w");
 				try {
-					MapReduceTool.deleteFileIfExistOnHDFS( fName );
+					HDFSTool.deleteFileIfExistOnHDFS( fName );
 				} catch (IOException e) {
 					throw new DMLRuntimeException("Error: While deleting file on HDFS");
 				}

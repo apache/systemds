@@ -61,15 +61,15 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.ConvertMatrixBlockT
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.mapred.ReblockBuffer;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import scala.Tuple2;
@@ -318,8 +318,8 @@ public class RDDConverterUtils
 				+ "required to convert sparse input representation.");
 		try {
 			//cleanup existing output files
-			MapReduceTool.deleteFileIfExistOnHDFS(pathX);
-			MapReduceTool.deleteFileIfExistOnHDFS(pathY);
+			HDFSTool.deleteFileIfExistOnHDFS(pathX);
+			HDFSTool.deleteFileIfExistOnHDFS(pathY);
 			
 			//convert libsvm to labeled points
 			int numFeatures = (int) mcOutX.getCols();
@@ -341,7 +341,7 @@ public class RDDConverterUtils
 			out1 = RDDAggregateUtils.mergeByKey(out1, numPartitions2, false);
 			out1.saveAsHadoopFile(pathY, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc1.setNonZeros(aNnz1.value()); //update nnz after triggered save
-			MapReduceTool.writeMetaDataFile(pathY+".mtd", ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
 			
 			//extract data and convert to binary block
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(),
@@ -352,7 +352,7 @@ public class RDDConverterUtils
 			out2 = RDDAggregateUtils.mergeByKey(out2, numPartitions, false);
 			out2.saveAsHadoopFile(pathX, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc2.setNonZeros(aNnz2.value()); //update nnz after triggered save
-			MapReduceTool.writeMetaDataFile(pathX+".mtd", ValueType.DOUBLE, mc2, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathX+".mtd", ValueType.DOUBLE, mc2, OutputInfo.BinaryBlockOutputInfo);
 			
 			//asynchronous cleanup of cached intermediates
 			ilpoints.unpersist(false);

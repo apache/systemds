@@ -21,9 +21,9 @@ package org.tugraz.sysds.runtime.functionobjects;
 
 
 import org.apache.commons.lang.NotImplementedException;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * This index function is NOT used for actual sorting but just as a reference

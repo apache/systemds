@@ -24,7 +24,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
@@ -78,7 +78,7 @@ public class XorTest extends AutomatedTestBase
 
 		//compare result
 		try {
-			boolean retCondition = MapReduceTool.readBooleanFromHDFSFile(output("B"));
+			boolean retCondition = HDFSTool.readBooleanFromHDFSFile(output("B"));
 			Assert.assertEquals(trueCondition, retCondition);
 		}
 		catch (IOException e) {

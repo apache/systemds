@@ -43,15 +43,15 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.GPUStatistics;
 import org.tugraz.sysds.utils.Statistics;
 
@@ -641,8 +641,8 @@ public class ExecutionContext {
 			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )  {
 				mo.clearData(); //clean cached data
 				if( fileExists ) {
-					MapReduceTool.deleteFileIfExistOnHDFS(mo.getFileName());
-					MapReduceTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");
+					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName());
+					HDFSTool.deleteFileIfExistOnHDFS(mo.getFileName()+".mtd");
 				}
 			}
 		}

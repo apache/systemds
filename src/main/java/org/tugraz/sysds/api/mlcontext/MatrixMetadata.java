@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.api.mlcontext;
 
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Matrix metadata, such as the number of rows, the number of columns, the

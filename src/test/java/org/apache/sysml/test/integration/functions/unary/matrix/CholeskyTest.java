@@ -25,8 +25,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Tests for the Cholesky matrix factorization

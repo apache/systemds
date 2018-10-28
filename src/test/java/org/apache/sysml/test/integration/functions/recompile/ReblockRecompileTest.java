@@ -29,7 +29,7 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
@@ -117,7 +117,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		
 		//cleanup previous executions
 		try {
-			MapReduceTool.deleteFileIfExistOnHDFS(output("R"));
+			HDFSTool.deleteFileIfExistOnHDFS(output("R"));
 		} catch (IOException e1){}
 		
 		boolean exceptionExpected = false;

@@ -24,11 +24,11 @@ import java.io.IOException;
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 
@@ -93,7 +93,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, OptimizerUtils.getSparsity(rows, cols, nnz), -1, 1, "uniform", 7);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows,cols,1000,1000,nnz);
 			DataConverter.writeMatrixToHDFS(mb, output("X"), OutputInfo.BinaryBlockOutputInfo, mc1);
-			MapReduceTool.writeMetaDataFile(output("X.mtd"), ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(output("X.mtd"), ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
 			
 			//run test
 			runTest(true, false, null, -1); 

@@ -37,7 +37,7 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -180,7 +180,7 @@ public class JMLCInputStreamReadTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			MapReduceTool.deleteFileIfExistOnHDFS(output("X"));
+			HDFSTool.deleteFileIfExistOnHDFS(output("X"));
 			IOUtilFunctions.closeSilently(conn);
 		}
 	}

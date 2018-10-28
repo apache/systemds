@@ -32,7 +32,7 @@ import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class WriterBinaryCell extends MatrixWriter
 {
@@ -45,7 +45,7 @@ public class WriterBinaryCell extends MatrixWriter
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
+		HDFSTool.deleteFileIfExistOnHDFS( fname );
 			
 		//core write
 		writeBinaryCellMatrixToHDFS(path, job, src, rlen, clen, brlen, bclen);

@@ -18,7 +18,7 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix;
+package org.tugraz.sysds.runtime.meta;
 
 import java.io.Serializable;
 import java.util.Arrays;

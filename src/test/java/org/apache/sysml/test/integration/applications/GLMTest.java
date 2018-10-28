@@ -28,8 +28,8 @@ import java.util.Random;
 
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.utils.TestUtils;
 

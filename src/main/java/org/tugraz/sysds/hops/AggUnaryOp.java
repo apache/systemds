@@ -35,7 +35,7 @@ import org.tugraz.sysds.lops.PartialAggregate.DirectionTypes;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum

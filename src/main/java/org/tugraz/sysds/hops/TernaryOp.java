@@ -32,9 +32,9 @@ import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.Statement;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 
 /** Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)

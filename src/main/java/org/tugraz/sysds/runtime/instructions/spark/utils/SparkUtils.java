@@ -41,13 +41,13 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBlockFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBlockPairFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.RecomputeNnzFunction;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import scala.Tuple2;

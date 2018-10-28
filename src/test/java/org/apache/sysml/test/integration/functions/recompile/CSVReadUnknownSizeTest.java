@@ -24,12 +24,12 @@ import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -116,7 +116,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();			
 			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.CSVOutputInfo, mc, -1, fprop);
 			mc.set(-1, -1, -1, -1);
-			MapReduceTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
 			
 			runTest(true, false, null, -1); 
 			

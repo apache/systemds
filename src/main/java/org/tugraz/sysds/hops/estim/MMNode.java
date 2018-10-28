@@ -20,8 +20,8 @@
 package org.tugraz.sysds.hops.estim;
 
 import org.tugraz.sysds.hops.estim.SparsityEstimator.OpCode;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
  * Helper class to represent matrix multiply operators in a DAG

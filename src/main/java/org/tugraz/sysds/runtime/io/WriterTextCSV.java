@@ -37,7 +37,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 public class WriterTextCSV extends MatrixWriter
 {
@@ -67,7 +67,7 @@ public class WriterTextCSV extends MatrixWriter
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
 		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
+		HDFSTool.deleteFileIfExistOnHDFS( fname );
 			
 		//core write (sequential/parallel)
 		writeCSVMatrixToHDFS(path, job, fs, src, _props);

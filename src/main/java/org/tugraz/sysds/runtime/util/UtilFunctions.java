@@ -32,7 +32,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
@@ -271,22 +270,6 @@ public class UtilFunctions
 		iColEnd = UtilFunctions.computeCellInBlock(indexRange.colEnd, blockColFactor);
 
 		return  new IndexRange(iRowStart, iRowEnd, iColStart, iColEnd);
-	}
-	
-	public static long getTotalLength(MetaDataNumItemsByEachReducer metadata) {
-		long[] counts=metadata.getNumItemsArray();
-		long total=0;
-		for(long count: counts)
-			total+=count;
-		return total;
-	}
-	
-	public static long getLengthForInterQuantile(MetaDataNumItemsByEachReducer metadata, double p)
-	{
-		long total = UtilFunctions.getTotalLength(metadata);
-		long lpos=(long)Math.ceil(total*p);//lower bound is inclusive
-		long upos=(long)Math.ceil(total*(1-p));//upper bound is inclusive
-		return upos-lpos+1;
 	}
 
 	/**

@@ -19,9 +19,9 @@
 
 package org.tugraz.sysds.runtime.functionobjects;
 
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 public class ReduceDiag extends IndexFunction

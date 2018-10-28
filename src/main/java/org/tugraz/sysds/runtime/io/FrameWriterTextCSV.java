@@ -31,7 +31,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.transform.TfUtils;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * Single-threaded frame text csv writer.
@@ -58,7 +58,7 @@ public class FrameWriterTextCSV extends FrameWriter
 		Path path = new Path( fname );
 
 		//if the file already exists on HDFS, remove it.
-		MapReduceTool.deleteFileIfExistOnHDFS( fname );
+		HDFSTool.deleteFileIfExistOnHDFS( fname );
 	
 		//validity check frame dimensions
 		if( src.getNumRows() != rlen || src.getNumColumns() != clen ) {

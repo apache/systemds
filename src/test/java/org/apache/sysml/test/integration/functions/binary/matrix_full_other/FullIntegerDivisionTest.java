@@ -30,9 +30,9 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -289,9 +289,9 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 		try {
 			//write DML scalar
 			String fname = baseDirectory + INPUT_DIR + name; // + "/in";
-			MapReduceTool.deleteFileIfExistOnHDFS(fname);
-			MapReduceTool.writeDoubleToHDFS(matrix[0][0], fname);
-			MapReduceTool.writeScalarMetaDataFile(baseDirectory + INPUT_DIR + name + ".mtd", ValueType.DOUBLE);
+			HDFSTool.deleteFileIfExistOnHDFS(fname);
+			HDFSTool.writeDoubleToHDFS(matrix[0][0], fname);
+			HDFSTool.writeScalarMetaDataFile(baseDirectory + INPUT_DIR + name + ".mtd", ValueType.DOUBLE);
 		
 			//write R matrix
 			if( includeR ){
@@ -308,7 +308,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	private static HashMap<CellIndex,Double> readScalarMatrixFromHDFS(String name) {
 		HashMap<CellIndex,Double> dmlfile = new HashMap<CellIndex,Double>();
 		try {
-			Double val = MapReduceTool.readDoubleFromHDFSFile(baseDirectory + OUTPUT_DIR + name);
+			Double val = HDFSTool.readDoubleFromHDFSFile(baseDirectory + OUTPUT_DIR + name);
 			dmlfile.put(new CellIndex(1,1), val);
 		}
 		catch(IOException e) {

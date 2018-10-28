@@ -48,15 +48,15 @@ import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.WriterMatrixMarket;
 import org.tugraz.sysds.runtime.io.WriterTextCSV;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
@@ -663,19 +663,19 @@ public class VariableCPInstruction extends CPInstruction {
 			try {
 				switch(getInput1().getValueType()) {
 				case DOUBLE:
-					double d = MapReduceTool.readDoubleFromHDFSFile(getInput2().getName());
+					double d = HDFSTool.readDoubleFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new DoubleObject(d);
 					break;
 				case INT:
-					long i = MapReduceTool.readIntegerFromHDFSFile(getInput2().getName());
+					long i = HDFSTool.readIntegerFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new IntObject(i);
 					break;
 				case BOOLEAN:
-					boolean b = MapReduceTool.readBooleanFromHDFSFile(getInput2().getName());
+					boolean b = HDFSTool.readBooleanFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new BooleanObject(b);
 					break;
 				case STRING:
-					String s = MapReduceTool.readStringFromHDFSFile(getInput2().getName());
+					String s = HDFSTool.readStringFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new StringObject(s);
 					break;
 					default:
@@ -877,7 +877,7 @@ public class VariableCPInstruction extends CPInstruction {
 				}
 				
 				// Write Metadata file
-				MapReduceTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, _formatProperties);
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, _formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
@@ -927,8 +927,8 @@ public class VariableCPInstruction extends CPInstruction {
 		try {
 			ScalarObject scalar = ec.getScalarInput(getInput1().getName(), 
 				getInput1().getValueType(), getInput1().isLiteral());
-			MapReduceTool.writeObjectToHDFS(scalar.getValue(), fname);
-			MapReduceTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
+			HDFSTool.writeObjectToHDFS(scalar.getValue(), fname);
+			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
 
 			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
 			if (fs instanceof LocalFileSystem) {
@@ -945,8 +945,8 @@ public class VariableCPInstruction extends CPInstruction {
 		try {
 			String fpath = mo.getFileName();
 			if (fpath != null) {
-				MapReduceTool.deleteFileIfExistOnHDFS(fpath);
-				MapReduceTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
+				HDFSTool.deleteFileIfExistOnHDFS(fpath);
+				HDFSTool.deleteFileIfExistOnHDFS(fpath + ".mtd");
 			}
 		} catch (IOException e) {
 			throw new DMLRuntimeException(e);

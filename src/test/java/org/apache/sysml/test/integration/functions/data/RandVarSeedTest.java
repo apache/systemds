@@ -30,7 +30,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -97,8 +97,8 @@ public class RandVarSeedTest extends AutomatedTestBase
 				Integer.toString(rows), Integer.toString(cols), fnameSeed, output("R") };
 			
 			//write seed as input scalar (to force treatment as variable)			
-			MapReduceTool.writeIntToHDFS(seed, fnameSeed);
-			MapReduceTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT);
+			HDFSTool.writeIntToHDFS(seed, fnameSeed);
+			HDFSTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT);
 			
 			//run test
 			runTest(true, false, null, -1);

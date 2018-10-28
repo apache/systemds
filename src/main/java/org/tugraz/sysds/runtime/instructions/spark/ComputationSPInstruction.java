@@ -26,8 +26,8 @@ import org.tugraz.sysds.runtime.functionobjects.ReduceAll;
 import org.tugraz.sysds.runtime.functionobjects.ReduceCol;
 import org.tugraz.sysds.runtime.functionobjects.ReduceRow;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class ComputationSPInstruction extends SPInstruction {
 	public CPOperand output;

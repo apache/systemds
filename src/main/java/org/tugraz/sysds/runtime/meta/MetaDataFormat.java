@@ -18,42 +18,32 @@
  */
 
 
-package org.tugraz.sysds.runtime.matrix.data;
+package org.tugraz.sysds.runtime.meta;
 
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
+import org.tugraz.sysds.runtime.matrix.data.InputInfo;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 
-
-public class BinaryCellToTextConverter 
-implements Converter<MatrixIndexes, MatrixCell, NullWritable, Text>
+public class MetaDataFormat extends MetaData 
 {
+	private final InputInfo iinfo;
+	private final OutputInfo oinfo;
 	
-	private Text value=new Text();
-	private Pair<NullWritable, Text> pair=new Pair<>(NullWritable.get(), value);
-	private boolean hasValue=false;
-
-	@Override
-	public void convert(MatrixIndexes k1, MatrixCell v1) {
-		double v=((MatrixCell)v1).getValue();
-		value.set(k1.getRowIndex()+" "+k1.getColumnIndex()+" "+v);
-		hasValue=true;
+	public MetaDataFormat(MatrixCharacteristics mc, OutputInfo oinfo, InputInfo iinfo ) {
+		super(mc);
+		this.oinfo = oinfo;
+		this.iinfo = iinfo;
 	}
-
-	@Override
-	public boolean hasNext() {
-		return hasValue;
+	
+	public InputInfo getInputInfo() {
+		return iinfo;
 	}
-
-	@Override
-	public Pair<NullWritable, Text> next() {
-		if(!hasValue)
-			return null;
-		
-		hasValue=false;
-		return pair;
+	
+	public OutputInfo getOutputInfo() {
+		return oinfo;
 	}
-
+	
 	@Override
-	public void setBlockSize(int rl, int cl) {
+	public Object clone() {
+		return new MetaDataFormat(new MatrixCharacteristics(_mc), oinfo, iinfo);
 	}
 }

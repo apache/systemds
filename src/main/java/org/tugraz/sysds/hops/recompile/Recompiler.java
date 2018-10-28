@@ -86,12 +86,12 @@ import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Explain;
@@ -1486,7 +1486,7 @@ public class Recompiler
 		//robustness unknown dimensions, e.g., for csv reblock
 		if( rows <= 0 || cols <= 0 ) {
 			try {
-				long size = MapReduceTool.getFilesizeOnHDFS(new Path(obj.getFileName()));
+				long size = HDFSTool.getFilesizeOnHDFS(new Path(obj.getFileName()));
 				return (size < OptimizerUtils.getLocalMemBudget() &&
 					size < CP_CSV_REBLOCK_UNKNOWN_THRESHOLD_SIZE * 
 					OptimizerUtils.getParallelTextReadParallelism());

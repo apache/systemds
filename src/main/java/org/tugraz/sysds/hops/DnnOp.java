@@ -31,8 +31,8 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.DnnParameters;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public class DnnOp extends MultiThreadedHop
 {

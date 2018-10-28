@@ -24,8 +24,8 @@ import java.util.HashMap;
 
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.recompile.RecompileStatus;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 
 /**
  * Memoization Table (hop id, worst-case matrix characteristics).

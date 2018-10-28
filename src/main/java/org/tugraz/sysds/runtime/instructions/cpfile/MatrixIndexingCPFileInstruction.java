@@ -27,11 +27,11 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.IndexingCPInstruction;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.IndexRange;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 /**
  * This instruction is used if a single partition is too large to fit in memory.
@@ -87,7 +87,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
 			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
-			if( MapReduceTool.existsFileOnHDFS(pfname) ) { //default
+			if( HDFSTool.existsFileOnHDFS(pfname) ) { //default
 				//create output matrix object
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
 				MatrixCharacteristics mcNew = null;

@@ -25,11 +25,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -226,11 +226,11 @@ public class SeqParReadTest extends AutomatedTestBase {
 	private static void writeMatrix( double[][] A, String fname, OutputInfo oi, long rows, long cols, int brows, int bcols, long nnz ) 
 		throws IOException
 	{
-		MapReduceTool.deleteFileWithMTDIfExistOnHDFS(fname);
+		HDFSTool.deleteFileWithMTDIfExistOnHDFS(fname);
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
 		if( oi != OutputInfo.MatrixMarketOutputInfo )
-			MapReduceTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
+			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
 	}
 }

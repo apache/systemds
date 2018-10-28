@@ -21,7 +21,7 @@ package org.apache.sysml.test.integration.functions.binary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 

@@ -35,15 +35,15 @@ import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.matrix.MetaData;
-import org.tugraz.sysds.runtime.matrix.MetaDataFormat;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.IndexRange;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
 
 /**
@@ -310,7 +310,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				
 				
 				//read the 
-				if( MapReduceTool.existsFileOnHDFS(fname) )
+				if( HDFSTool.existsFileOnHDFS(fname) )
 					mb = readBlobFromHDFS( fname, rows, cols );
 				else
 				{
@@ -479,7 +479,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				!OptimizerUtils.checkSparkCollectMemoryBudget(mc, getPinnedSize()+getBroadcastSize(), true) ) {
 				//write RDD to hdfs and read to prevent invalid collect mem consumption 
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
-				if( !MapReduceTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
+				if( !HDFSTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
 					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
 					_metaData.getMatrixCharacteristics().setNonZeros(newnnz);
 					((RDDObject)rdd).setPending(false); //mark rdd as non-pending (for export)

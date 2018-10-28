@@ -22,11 +22,11 @@ package org.apache.sysml.test.integration.functions.misc;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.MapReduceTool;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.apache.sysml.test.integration.AutomatedTestBase;
 import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
@@ -130,16 +130,16 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			MatrixCharacteristics mc = new MatrixCharacteristics(10,15,1000,1000);
 			
 			DataConverter.writeMatrixToHDFS(mb, input+(fileExists?"":"b"), OutputInfo.TextCellOutputInfo, mc);
-			MapReduceTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
+			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
 			
 			//run tests
 	        runTest(true, exceptionExpected, DMLException.class, -1);
 	        
 	        //cleanup
-	        MapReduceTool.deleteFileIfExistOnHDFS(input);
-	        MapReduceTool.deleteFileIfExistOnHDFS(input+"b");
-	        MapReduceTool.deleteFileIfExistOnHDFS(input+".mtd");
-	        MapReduceTool.deleteFileIfExistOnHDFS(input+"b.mtd");	        
+	        HDFSTool.deleteFileIfExistOnHDFS(input);
+	        HDFSTool.deleteFileIfExistOnHDFS(input+"b");
+	        HDFSTool.deleteFileIfExistOnHDFS(input+".mtd");
+	        HDFSTool.deleteFileIfExistOnHDFS(input+"b.mtd");	        
 		}
 		catch(Exception ex)
 		{

@@ -22,9 +22,9 @@ package org.tugraz.sysds.runtime.functionobjects;
 import java.io.Serializable;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 public class RevIndex extends IndexFunction implements Serializable

@@ -536,7 +536,7 @@ public class OptimizerUtils
 		//default execution type is hybrid (cp+mr)
 		RUNTIME_PLATFORM ret = RUNTIME_PLATFORM.HYBRID;
 		
-		//switch default to hybrid_spark (cp+spark) if in spark driver
+		//switch default to HYBRID (cp+spark) if in spark driver
 		String sparkenv = System.getenv().get("SPARK_ENV_LOADED");
 		if( sparkenv != null && sparkenv.equals("1") )
 			ret = RUNTIME_PLATFORM.HYBRID;

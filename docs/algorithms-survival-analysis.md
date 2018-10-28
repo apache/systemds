@@ -63,7 +63,7 @@ censored and uncensored survival times.
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          TE=<file>
                                          GI=<file>
@@ -158,7 +158,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
                                          GI=/user/ml/GI
@@ -195,7 +195,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f KM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
                                          GI=/user/ml/GI
@@ -467,7 +467,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          TE=<file>
                                          F=<file>
@@ -509,7 +509,7 @@ may be categorical (ordinal or nominal) as well as continuous-valued.
                                  SystemML.jar
                                  -f Cox-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          RT=<file>
                                          M=<file>
@@ -618,7 +618,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
                                          F=/user/ml/F
@@ -657,7 +657,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f Cox.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          TE=/user/ml/TE
                                          F=/user/ml/F
@@ -697,7 +697,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f Cox-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X-sorted.mtx
                                          RT=/user/ml/recoded-timestamps.csv
                                          M=/user/ml/model.csv

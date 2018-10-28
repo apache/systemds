@@ -197,14 +197,6 @@ public class CLIOptionsParserTest {
 	}
 
 	@Test
-	public void testExec1() throws Exception {
-		String cl = "systemml -f test.dml -exec hadoop";
-		String[] args = cl.split(" ");
-		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HADOOP, o.execMode);
-	}
-
-	@Test
 	public void testExec2() throws Exception {
 		String cl = "systemml -f test.dml -exec spark";
 		String[] args = cl.split(" ");
@@ -226,14 +218,6 @@ public class CLIOptionsParserTest {
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HYBRID, o.execMode);
-	}
-
-	@Test
-	public void testExec5() throws Exception {
-		String cl = "systemml -f test.dml -exec hybrid_spark";
-		String[] args = cl.split(" ");
-		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK, o.execMode);
 	}
 
 	@Test(expected = ParseException.class)

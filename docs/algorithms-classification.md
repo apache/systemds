@@ -166,7 +166,7 @@ val prediction = model.transform(X_test_df)
                                  SystemML.jar
                                  -f MultiLogReg.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -337,7 +337,7 @@ prediction.show()
                                  SystemML.jar
                                  -f MultiLogReg.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -533,7 +533,7 @@ val model = svm.fit(X_train_df)
                                  SystemML.jar
                                  -f l2-svm.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          icpt=[int]
@@ -580,7 +580,7 @@ val prediction = model.transform(X_test_df)
                                  SystemML.jar
                                  -f l2-svm-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          icpt=[int]
@@ -664,7 +664,7 @@ more details on the Python API.
                                  SystemML.jar
                                  -f l2-svm.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          icpt=0
@@ -698,7 +698,7 @@ more details on the Python API.
                                  SystemML.jar
                                  -f l2-svm-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          icpt=0
@@ -803,7 +803,7 @@ val model = svm.fit(X_train_df)
                                  SystemML.jar
                                  -f m-svm.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          icpt=[int]
@@ -850,7 +850,7 @@ val prediction = model.transform(X_test_df)
                                  SystemML.jar
                                  -f m-svm-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          icpt=[int]
@@ -1015,7 +1015,7 @@ prediction.show()
                                  SystemML.jar
                                  -f m-svm.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          icpt=0
@@ -1049,7 +1049,7 @@ prediction.show()
                                  SystemML.jar
                                  -f m-svm-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          icpt=0
@@ -1154,7 +1154,7 @@ val model = nb.fit(X_train_df)
                                  SystemML.jar
                                  -f naive-bayes.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          laplace=[double]
@@ -1199,7 +1199,7 @@ val prediction = model.transform(X_test_df)
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          prior=<file>
@@ -1290,7 +1290,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  SystemML.jar
                                  -f naive-bayes.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          laplace=1
@@ -1322,7 +1322,7 @@ metrics.f1_score(newsgroups_test.target, pred, average='weighted')
                                  SystemML.jar
                                  -f naive-bayes-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/y.mtx
                                          prior=/user/ml/prior.csv
@@ -1421,7 +1421,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  SystemML.jar
                                  -f decision-tree.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          R=[file]
@@ -1459,7 +1459,7 @@ implementation is well-suited to handle large-scale data and builds a
                                  SystemML.jar
                                  -f decision-tree-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          R=[file]
@@ -1559,7 +1559,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f decision-tree.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          R=/user/ml/R.csv
@@ -1594,7 +1594,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f decision-tree-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          R=/user/ml/R.csv
@@ -1829,7 +1829,7 @@ for classification in parallel.
                                  SystemML.jar
                                  -f random-forest.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          R=[file]
@@ -1872,7 +1872,7 @@ for classification in parallel.
                                  SystemML.jar
                                  -f random-forest-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          R=[file]
@@ -1995,7 +1995,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f random-forest.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          R=/user/ml/R.csv
@@ -2033,7 +2033,7 @@ To compute predictions:
                                  SystemML.jar
                                  -f random-forest-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          R=/user/ml/R.csv

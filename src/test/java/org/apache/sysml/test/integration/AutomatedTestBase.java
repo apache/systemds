@@ -1196,16 +1196,12 @@ public abstract class AutomatedTestBase
 		}
 		// program-independent parameters
 		args.add("-exec");
-		if(rtplatform == RUNTIME_PLATFORM.HADOOP)
-			args.add("hadoop");
-		else if (rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if (rtplatform == RUNTIME_PLATFORM.HYBRID)
 			args.add("hybrid");
 		else if (rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
 			args.add("singlenode");
 		else if (rtplatform == RUNTIME_PLATFORM.SPARK)
 			args.add("spark");
-		else if (rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
-			args.add("hybrid_spark");
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}

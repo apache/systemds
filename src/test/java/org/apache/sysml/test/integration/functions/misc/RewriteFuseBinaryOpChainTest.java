@@ -118,36 +118,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		testFuseBinaryChain( TEST_NAME3, true, ExecType.SPARK );
 	}
 	
-	@Test
-	public void testFuseBinaryPlusNoRewriteMR() {
-		testFuseBinaryChain( TEST_NAME1, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testFuseBinaryPlusRewriteMR() {
-		testFuseBinaryChain( TEST_NAME1, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testFuseBinaryMinusNoRewriteMR() {
-		testFuseBinaryChain( TEST_NAME2, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testFuseBinaryMinusRewriteMR() {
-		testFuseBinaryChain( TEST_NAME2, true, ExecType.MR );
-	}
-	
-	@Test
-	public void testFuseBinaryPlus2NoRewriteMR() {
-		testFuseBinaryChain( TEST_NAME3, false, ExecType.MR );
-	}
-	
-	@Test
-	public void testFuseBinaryPlus2RewriteMR() {
-		testFuseBinaryChain( TEST_NAME3, true, ExecType.MR );
-	}
-	
 	//negative tests
 	
 	@Test
@@ -171,7 +141,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 	{	
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
@@ -202,21 +171,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("S");
 			Assert.assertTrue(TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R"));
-			
-			//check for applies rewrites
-			if( rewrites && instType!=ExecType.MR  ) {
-				String prefix = "";
-				if((instType == ExecType.SPARK || instType==ExecType.CP) && AutomatedTestBase.TEST_GPU)
-					prefix = Instruction.GPU_INST_PREFIX;
-				else if(instType == ExecType.SPARK)
-					prefix = Instruction.SP_INST_PREFIX;
-				
-				String opcode = (testname.equals(TEST_NAME1)||testname.equals(TEST_NAME3)) ? prefix+"+*" : prefix+"-*";
-				if( testname.equals(TEST_NAME4) )
-					Assert.assertFalse("Rewrite applied.", heavyHittersContainsSubString(opcode));
-				else
-					Assert.assertTrue("Rewrite not applied.", heavyHittersContainsSubString(opcode));
-			}
 		}
 		finally
 		{

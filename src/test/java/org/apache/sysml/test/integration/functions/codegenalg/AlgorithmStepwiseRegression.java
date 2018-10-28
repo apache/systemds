@@ -175,11 +175,11 @@ public class AlgorithmStepwiseRegression extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 		currentTestType = testType;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try

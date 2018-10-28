@@ -42,29 +42,13 @@ public class MMRJ extends Lop
 	public MMRJ(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) 
 	{
 		//handle inputs and outputs
-		super(Lop.Type.MMRJ, dt, vt);		
+		super(Lop.Type.MMRJ, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
-		//set basic lop properties based on exec type
-		if( et == ExecType.MR )
-		{
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = true;
-			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties( inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-		}
-		else //if( et == ExecType.SPARK )
-		{
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

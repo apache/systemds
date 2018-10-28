@@ -88,13 +88,12 @@ public class CompressedLinregCG extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		long memOld = InfrastructureAnalyzer.getLocalMaxMemory();
 		
@@ -123,7 +122,7 @@ public class CompressedLinregCG extends AutomatedTestBase
 			double[][] y = getRandomMatrix(rows, 1, 0, 10, 1.0, 3);
 			writeInputMatrixWithMTD("y", y, true);
 			
-			if( rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK  )
+			if( rtplatform == RUNTIME_PLATFORM.HYBRID  )
 				InfrastructureAnalyzer.setLocalMaxMemory(8*1024*1024);
 			
 			runTest(true, false, null, -1); 

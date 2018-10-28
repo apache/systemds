@@ -191,13 +191,12 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
@@ -246,7 +245,6 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	{		
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: 
 				rtplatform = RUNTIME_PLATFORM.SPARK;
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true; 
@@ -268,7 +266,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-stats", "-args", output("S"), input("A")};
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

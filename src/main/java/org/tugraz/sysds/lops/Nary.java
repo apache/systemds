@@ -47,8 +47,7 @@ public class Nary extends Lop {
 		}
 		
 		if( et == ExecType.CP || et == ExecType.SPARK ) {
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties(inputs, et, ExecLocation.ControlProgram, false, false, false);
+			lps.setProperties(inputs, et);
 		}
 		else {
 			throw new LopsException("Unsupported exec type for nary lop:" + et.name());

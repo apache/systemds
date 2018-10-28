@@ -80,18 +80,6 @@ public class WriteMMTest extends AutomatedTestBase
 		runWriteMMTest(ExecType.SPARK, TEST_NAME1);
 	}
 	
-	@Test
-	public void testWriteMMMR() 
-	{
-		runWriteMMTest(ExecType.MR, TEST_NAME1);
-	}
-	
-	@Test
-	public void testWriteMMMRMerge()
-	{
-		runWriteMMTest(ExecType.MR, TEST_NAME2);
-	}
-	
 	private void runWriteMMTest( ExecType instType, String TEST_NAME )
 	{
 		//setup exec type, rows, cols
@@ -111,7 +99,6 @@ public class WriteMMTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

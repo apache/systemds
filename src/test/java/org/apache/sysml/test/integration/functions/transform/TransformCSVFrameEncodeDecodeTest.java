@@ -62,7 +62,7 @@ public class TransformCSVFrameEncodeDecodeTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv");
 	}
 	/**
 	 * 
@@ -77,7 +77,7 @@ public class TransformCSVFrameEncodeDecodeTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )
@@ -104,7 +104,7 @@ public class TransformCSVFrameEncodeDecodeTest extends AutomatedTestBase
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
 			
-			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
+			if( rt == RUNTIME_PLATFORM.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}

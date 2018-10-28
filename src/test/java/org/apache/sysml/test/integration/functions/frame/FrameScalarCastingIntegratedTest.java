@@ -85,22 +85,22 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameStringCP2() { 
-		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.HYBRID_SPARK); 
+		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameLongCP2() { 
-		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.HYBRID_SPARK); 
+		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameBooleanCP2() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.HYBRID_SPARK); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameDoubleCP2() { 
-		runFrameScalarCastingTest(ValueType.DOUBLE, RUNTIME_PLATFORM.HYBRID_SPARK); 
+		runFrameScalarCastingTest(ValueType.DOUBLE, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
@@ -128,7 +128,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		rtplatform = et;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

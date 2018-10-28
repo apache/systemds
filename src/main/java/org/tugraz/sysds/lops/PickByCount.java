@@ -28,7 +28,6 @@ import org.tugraz.sysds.parser.Expression.ValueType;
 
 public class PickByCount extends Lop 
 {
-		
 	public static final String OPCODE = "qpick";
 	
 	public enum OperationTypes {

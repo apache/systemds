@@ -100,41 +100,10 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 		runRBindTest(TEST_NAME2, true, ExecType.SPARK);
 	}
 	
-
-	@Test
-	public void testRBindDenseMR() {
-		runRBindTest(TEST_NAME1, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRBindSparseMR() {
-		runRBindTest(TEST_NAME1, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testCBindDenseMR() {
-		runRBindTest(TEST_NAME2, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCBindSparseMR() {
-		runRBindTest(TEST_NAME2, true, ExecType.MR);
-	}
-	
-	
-	/**
-	 * 
-	 * @param platform
-	 * @param rows
-	 * @param cols1
-	 * @param cols2
-	 * @param sparse
-	 */
 	public void runRBindTest(String testname, boolean sparse, ExecType et)
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

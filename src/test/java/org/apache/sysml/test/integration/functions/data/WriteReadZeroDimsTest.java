@@ -130,46 +130,6 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 		runZeroDimsTest(Type.Zero_Cols, "binary", ExecType.SPARK);
 	}
 
-	@Test
-	public void testZeroRowsTextMR() {
-		runZeroDimsTest(Type.Zero_Rows, "text", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroColsTextMR() {
-		runZeroDimsTest(Type.Zero_Cols, "text", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroRowsMmMR() {
-		runZeroDimsTest(Type.Zero_Rows, "mm", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroColsMmMR() {
-		runZeroDimsTest(Type.Zero_Cols, "mm", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroRowsCsvMR() {
-		runZeroDimsTest(Type.Zero_Rows, "csv", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroColsCsvMR() {
-		runZeroDimsTest(Type.Zero_Cols, "csv", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroRowsBinMR() {
-		runZeroDimsTest(Type.Zero_Rows, "binary", ExecType.MR);
-	}
-	
-	@Test
-	public void testZeroColsBinMR() {
-		runZeroDimsTest(Type.Zero_Cols, "binary", ExecType.MR);
-	}
-	
 	private void runZeroDimsTest( Type type, String format, ExecType et )
 	{
 		int rows = (type == Type.Zero_Rows) ? 0 : rowsM;
@@ -177,7 +137,6 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

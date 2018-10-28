@@ -247,86 +247,6 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, true, ExecType.SPARK, cols2);
 	}
 
-	
-	//MR testcases
-	
-	@Test
-	public void testGroupedAggSumDenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggSumSparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggCountDenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.COUNT, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggCountSparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.COUNT, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMeanDenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MEAN, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMeanSparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MEAN, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggVarDenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.VARIANCE, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggVarSparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.VARIANCE, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMoment3DenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT3, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMoment3SparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT3, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMoment4DenseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT4, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggMoment4SparseMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT4, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testGroupedAggSumDenseWideMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.MR, cols2);
-	}
-	
-	@Test
-	public void testGroupedAggSumSparseWideMR() {
-		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, true, ExecType.MR, cols2);
-	}
-	
-	/**
-	 * 
-	 * @param testname
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
 	private void runGroupedAggregateOperationTest( String testname, OpType type, boolean sparse, ExecType instType) {
 		runGroupedAggregateOperationTest(testname, type, sparse, instType, cols);
 	}
@@ -344,7 +264,6 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -100,7 +100,7 @@ def algorithm_workflow(algo, exec_type, config_path, dml_file_name, action_mode,
     Input algorithm specified
 
     exec_type: String
-    Contains the execution type singlenode / hybrid_spark
+    Contains the execution type singlenode / HYBRID
 
     config_path: String
     Path to read the json file from
@@ -155,7 +155,7 @@ def perf_test_entry(family, algo, exec_type, mat_type, mat_shape, config_dir, mo
     Input algorithms
 
     exec_type: String
-    Contains the execution type singlenode / hybrid_spark
+    Contains the execution type singlenode / HYBRID
 
     mat_type: List
     Type of matrix to generate dense, sparse, all
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     # Supported Arguments
     mat_type = ['dense', 'sparse', 'all']
     workload = ['data-gen', 'train', 'predict']
-    execution_mode = ['hybrid_spark', 'singlenode']
+    execution_mode = ['HYBRID', 'singlenode']
     file_system_type = ['hdfs', 'local']
     # Default Arguments
     default_mat_shape = ['10k_100']
@@ -324,7 +324,7 @@ if __name__ == '__main__':
                          '(Overrides --family, available : ' + ', '.join(sorted(all_algos)) + ')', metavar='',
                          choices=all_algos, nargs='+')
 
-    cparser.add_argument('--exec-type', default='hybrid_spark', help='System-ML backend '
+    cparser.add_argument('--exec-type', default='HYBRID', help='System-ML backend '
                          'available : ' + ','.join(execution_mode), metavar='',
                          choices=execution_mode)
     cparser.add_argument('--mat-type', default=['all'], help='space separated list of types of matrix to generate '
@@ -344,8 +344,8 @@ if __name__ == '__main__':
                          metavar='')
     cparser.add_argument('--file-system-type', choices=file_system_type, metavar='',
                          help='file system for temp directory, '
-                              'supported types are \'hdfs\' for hybrid_spark and \'local\' for standalone;'
-                              'default for hybrid_spark is \'hdfs\' and for standalone is \'local\'')
+                              'supported types are \'hdfs\' for HYBRID and \'local\' for standalone;'
+                              'default for HYBRID is \'hdfs\' and for standalone is \'local\'')
 
     # Configuration Options
     cparser.add_argument('-stats', help='Monitor and report caching/recompilation statistics, '
@@ -382,7 +382,7 @@ if __name__ == '__main__':
 
     # temp_dir hdfs / local path check
     if args.file_system_type is None:
-        if args.exec_type == 'hybrid_spark':
+        if args.exec_type == 'HYBRID':
             args.file_system_type = 'hdfs'
         else:
             args.file_system_type = 'local'

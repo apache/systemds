@@ -47,24 +47,6 @@ public class GroupedAggregate extends Lop
 	//cp-specific parameters
 	private int _numThreads = 1;
 
-	/**
-	 * Constructor to perform grouped aggregate.
-	 * inputParameterLops &lt;- parameters required to compute different aggregates (hashmap)
-	 *   "combinedinput" -- actual data
-	 *   "function" -- aggregate function
-	 * 
-	 * @param inputParameterLops map of input parameter lops
-	 * @param weights weights
-	 * @param dt data type
-	 * @param vt value type
-	 */
-	public GroupedAggregate(
-			HashMap<String, Lop> inputParameterLops, boolean weights,
-			DataType dt, ValueType vt) {		
-		this(inputParameterLops, dt, vt, ExecType.MR);
-		_weights = weights;
-	}
-
 	public GroupedAggregate(
 			HashMap<String, Lop> inputParameterLops, 
 			DataType dt, ValueType vt, ExecType et) {
@@ -89,61 +71,24 @@ public class GroupedAggregate extends Lop
 	}
 	
 	private void init(HashMap<String, Lop> inputParameterLops, 
-			DataType dt, ValueType vt, ExecType et) {
-		if ( et == ExecType.MR ) {
-			/*
-			 * Inputs to ParameterizedBuiltinOp can be in an arbitrary order. However,
-			 * piggybacking (Dag.java:getAggAndOtherInstructions()) expects the first 
-			 * input to be the data (named as "combinedinput") on which the aggregate 
-			 * needs to be computed. Make sure that "combinedinput" is the first input
-			 * to GroupedAggregate lop. 
-			 */
-			this.addInput(inputParameterLops.get(COMBINEDINPUT));
-			inputParameterLops.get(COMBINEDINPUT).addOutput(this);
-			
-			// process remaining parameters
-			for ( Entry<String, Lop> e : inputParameterLops.entrySet() ) {
-				String k = e.getKey();
-				Lop lop = e.getValue();
-				if ( !k.equalsIgnoreCase(COMBINEDINPUT) ) {
-					this.addInput(lop);
-					lop.addOutput(this);
-				}
+		DataType dt, ValueType vt, ExecType et) {
+		// First, add inputs corresponding to "target" and "groups"
+		this.addInput(inputParameterLops.get(Statement.GAGG_TARGET));
+		inputParameterLops.get(Statement.GAGG_TARGET).addOutput(this);
+		this.addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
+		inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
+		
+		// process remaining parameters
+		for ( Entry<String, Lop> e : inputParameterLops.entrySet() ) {
+			String k = e.getKey();
+			Lop lop = e.getValue();
+			if ( !k.equalsIgnoreCase(Statement.GAGG_TARGET) && !k.equalsIgnoreCase(Statement.GAGG_GROUPS) ) {
+				this.addInput(lop);
+				lop.addOutput(this);
 			}
-			
-			_inputParams = inputParameterLops;
-			
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = true;
-			lps.addCompatibility(JobType.GROUPED_AGG);
-			this.lps.setProperties(inputs, et, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob);
 		}
-		else {
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			
-			// First, add inputs corresponding to "target" and "groups"
-			this.addInput(inputParameterLops.get(Statement.GAGG_TARGET));
-			inputParameterLops.get(Statement.GAGG_TARGET).addOutput(this);
-			this.addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
-			inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
-			
-			// process remaining parameters
-			for ( Entry<String, Lop> e : inputParameterLops.entrySet() ) {
-				String k = e.getKey();
-				Lop lop = e.getValue();
-				if ( !k.equalsIgnoreCase(Statement.GAGG_TARGET) && !k.equalsIgnoreCase(Statement.GAGG_GROUPS) ) {
-					this.addInput(lop);
-					lop.addOutput(this);
-				}
-			}
-			_inputParams = inputParameterLops;
-			
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		_inputParams = inputParameterLops;
+		lps.setProperties(inputs, et);
 	}
 
 	@Override

@@ -67,7 +67,7 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			runTest(true, false, null, -1);
 			

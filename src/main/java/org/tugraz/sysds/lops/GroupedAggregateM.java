@@ -61,25 +61,7 @@ public class GroupedAggregateM extends Lop
 		addInput(inputParameterLops.get(Statement.GAGG_GROUPS));
 		inputParameterLops.get(Statement.GAGG_GROUPS).addOutput(this);
 		
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //SPARK
-		{
-			//setup Spark parameters 
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	@Override
@@ -122,16 +104,5 @@ public class GroupedAggregateM extends Lop
 		sb.append( _cacheType.toString() );
 	
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return (getExecType()==ExecType.MR);
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {
-		return (getExecType()==ExecType.MR) ?
-			new int[]{2} : new int[]{-1};
 	}
 }

@@ -55,31 +55,14 @@ public class MMCJ extends Lop
 	 */
 	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, MMCJType type, ExecType et) 
 	{
-		super(Lop.Type.MMCJ, dt, vt);		
+		super(Lop.Type.MMCJ, dt, vt);
 		this.addInput(input1);
 		this.addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
 		
 		_type = type;
-		
-		if( et == ExecType.MR )
-		{
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = true;
-			lps.addCompatibility(JobType.MMCJ);
-			this.lps.setProperties( inputs, ExecType.MR, ExecLocation.MapAndReduce, breaksAlignment, aligner, definesMRJob );
-			this.lps.setProducesIntermediateOutput(true);
-		}
-		else //if( et == ExecType.SPARK )
-		{
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
+		lps.setProperties(inputs, et);
 	}
 
 	public MMCJ(Lop input1, Lop input2, DataType dt, ValueType vt, boolean outputEmptyBlocks, SparkAggType aggtype, ExecType et) {

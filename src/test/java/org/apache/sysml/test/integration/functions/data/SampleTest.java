@@ -103,7 +103,7 @@ public class SampleTest extends AutomatedTestBase
 			rtplatform = RUNTIME_PLATFORM.SPARK;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			runSampleTest();
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			runSampleTest();
 			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 		}

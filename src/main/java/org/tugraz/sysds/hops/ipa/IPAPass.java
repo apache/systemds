@@ -33,7 +33,7 @@ public abstract class IPAPass
 	/**
 	 * Indicates if an IPA pass is applicable for the current
 	 * configuration such as global flags or the chosen execution 
-	 * mode (e.g., hybrid_spark).
+	 * mode (e.g., HYBRID).
 	 * 
 	 * @param fgraph function call graph
 	 * @return true if applicable.

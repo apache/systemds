@@ -78,7 +78,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		
 		t.setOutAndExpectedDeletionDisabled(true);
 		
-		t.testRowIndexMaxDenseMatrixNegMR();
 		t.tearDown();
 		
 		long elapsedMsec = System.currentTimeMillis() - startMsec;
@@ -260,149 +259,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP);
 	}
 	
-	@Test
-	public void testRowSumsDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMeansDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, false, false, ExecType.MR);
-	}	
-	
-	@Test
-	public void testRowMaxDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMinDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowSumsDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMeansDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, false, true, ExecType.MR);
-	}	
-	
-	@Test
-	public void testRowMaxDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMinDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowSumsSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMeansSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, true, false, ExecType.MR);
-	}	
-	
-	@Test
-	public void testRowMaxSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMinSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMaxSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMinSparseMatrixMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowSumsSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMeansSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, true, true, ExecType.MR);
-	}	
-	
-	@Test
-	public void testRowMaxSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowMinSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMaxSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testRowIndexMinSparseVectorMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR);
-	}
 	
 	@Test
 	public void testRowIndexMaxDenseMatrixNegCP() 
@@ -428,32 +284,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.CP, true);
 	}
 	
-	@Test
-	public void testRowIndexMaxDenseMatrixNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseVectorNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR, true);
-	}
-	
-	
-	@Test
-	public void testRowIndexMaxSparseMatrixNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.MR, true);
-	}
-	
-	
-	@Test
-	public void testRowIndexMaxSparseVectorNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR, true);
-	}
-	//----
 	
 	@Test
 	public void testRowIndexMinDenseMatrixNegCP() 
@@ -479,33 +309,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP, true);
 	}
 	
-	@Test
-	public void testRowIndexMinDenseMatrixNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR, true);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseVectorNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR, true);
-	}
-	
-	
-	@Test
-	public void testRowIndexMinSparseMatrixNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR, true);
-	}
-	
-	
-	@Test
-	public void testRowIndexMinSparseVectorNegMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, true);
-	}
-
-	//TODO
 	
 	@Test
 	public void testRowSumsDenseMatrixNoRewritesCP() 
@@ -649,150 +452,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	public void testRowIndexMinSparseVectorNoRewritesCP() 
 	{
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP, false, false);
-	}
-	
-	@Test
-	public void testRowSumsDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMeansDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, false, false, ExecType.MR, false, false);
-	}	
-	
-	@Test
-	public void testRowMaxDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMinDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowSumsDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, false, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMeansDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, false, true, ExecType.MR, false, false);
-	}	
-	
-	@Test
-	public void testRowMaxDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, false, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMinDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, false, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowSumsSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, true, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMeansSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, true, false, ExecType.MR, false, false);
-	}	
-	
-	@Test
-	public void testRowMaxSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, true, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMinSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, true, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMaxSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMinSparseMatrixNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowSumsSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_SUMS, true, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMeansSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MEANS, true, true, ExecType.MR, false, false);
-	}	
-	
-	@Test
-	public void testRowMaxSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MAX, true, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowMinSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_MIN, true, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMaxSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR, false, false);
-	}
-	
-	@Test
-	public void testRowIndexMinSparseVectorNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, false, false);
 	}
 	
 	@Test
@@ -989,56 +648,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.CP, true, false);
 	}
 	
-	@Test
-	public void testRowIndexMaxDenseMatrixNegNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, false, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testRowIndexMaxDenseVectorNegNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, false, true, ExecType.MR, true, false);
-	}
-	
-	
-	@Test
-	public void testRowIndexMaxSparseMatrixNegNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, false, ExecType.MR, true, false);
-	}
-	
-	
-	@Test
-	public void testRowIndexMaxSparseVectorNegNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMAX, true, true, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseMatrixPosNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, false, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testRowIndexMinDenseVectorPosNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, false, true, ExecType.MR, true, false);
-	}
-	
-	
-	@Test
-	public void testRowIndexMinSparseMatrixPosNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, false, ExecType.MR, true, false);
-	}
-	
-	@Test
-	public void testRowIndexMinSparseVectorPosNoRewritesMR() 
-	{
-		runRowAggregateOperationTest(OpType.ROW_INDEXMIN, true, true, ExecType.MR, true, false);
-	}
 	
 	@Test
 	public void testRowIndexMaxDenseMatrixNegNoRewritesSP() 
@@ -1123,7 +732,6 @@ public class FullRowAggregateTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

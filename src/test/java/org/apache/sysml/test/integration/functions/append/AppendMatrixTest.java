@@ -163,55 +163,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 	public void testAppendOutBlock2CP() {
 		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1d, cols2d);
 	}*/
-	
-	@Test
-	public void testAppendInBlock1DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, false, null);
-	}   
-	
-	@Test
-	public void testAppendInBlock1SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1a, cols2a, true, null);
-	}   
-	
-	@Test
-	public void testAppendInBlock2DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, false, null);
-	}
-	
-	@Test
-	public void testAppendInBlock2SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1b, cols2b, true, null);
-	}
-	
-	@Test
-	public void testAppendOutBlock1DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, false, null);
-	}
-	
-	@Test
-	public void testAppendOutBlock1SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1c, cols2c, true, null);
-	}
-	
-	@Test
-	public void testAppendOutBlock2DenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, false, null);
-	}
-	
-	@Test
-	public void testAppendOutBlock2SparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1d, cols2d, true, null);
-	}
-	
-	/**
-	 * 
-	 * @param platform
-	 * @param rows
-	 * @param cols1
-	 * @param cols2
-	 * @param sparse
-	 */
 	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
@@ -254,8 +205,8 @@ public class AppendMatrixTest extends AutomatedTestBase
 	        writeInputMatrix("B", B, true);
 	        
 	        boolean exceptionExpected = false;
-	        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
-			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
+	        int expectedCompiledMRJobs = 1;
+			int expectedExecutedMRJobs = 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
 			Assert.assertEquals("Wrong number of executed MR jobs.",

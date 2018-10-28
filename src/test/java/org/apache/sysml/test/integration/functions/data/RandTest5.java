@@ -141,56 +141,11 @@ public class RandTest5 extends AutomatedTestBase
 		runRandTest(true, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.SPARK);
 	}
 	
-	// -------------------------------------------------------------
-	
-	@Test
-	public void testRandValuesDensePositiveMR() 
-	{
-		runRandTest(false, RandMinMaxType.POSITIVE_ONLY, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandValuesDenseNegativeMR() 
-	{
-		runRandTest(false, RandMinMaxType.NEGATIVE_ONLY, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandValuesDenseNegativePositiveMR() 
-	{
-		runRandTest(false, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandValuesSparsePositiveMR() 
-	{
-		runRandTest(true, RandMinMaxType.POSITIVE_ONLY, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandValuesSparseNegativeMR() 
-	{
-		runRandTest(true, RandMinMaxType.NEGATIVE_ONLY, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandValuesSparseNegativePositiveMR() 
-	{
-		runRandTest(true, RandMinMaxType.NEGATIVE_POSITIVE, ExecType.MR);
-	}
-	
-	
-	/**
-	 * 
-	 * @param sparse
-	 * @param et
-	 */
 	private void runRandTest( boolean sparse, RandMinMaxType type, ExecType et )
 	{	
 		//keep old runtime 
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

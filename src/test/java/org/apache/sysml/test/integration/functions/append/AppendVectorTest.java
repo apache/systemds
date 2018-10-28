@@ -72,17 +72,6 @@ public class AppendVectorTest extends AutomatedTestBase
 	public void testAppendOutBlockCP() {
 		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows2, cols2);
 	}	
-
-	@Test
-	public void testAppendInBlockMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows1, cols1);
-	}   
-	
-	@Test
-	public void testAppendOutBlockMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows2, cols2);
-	}   
-
 	
 	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols)
 	{
@@ -119,8 +108,8 @@ public class AppendVectorTest extends AutomatedTestBase
 	        writeInputMatrix("B", B, true);
 	        
 	        boolean exceptionExpected = false;
-	        int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 1;
-			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2 : 0;
+	        int expectedCompiledMRJobs = 1;
+			int expectedExecutedMRJobs = 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			Assert.assertEquals("Wrong number of executed MR jobs.",
 					             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());

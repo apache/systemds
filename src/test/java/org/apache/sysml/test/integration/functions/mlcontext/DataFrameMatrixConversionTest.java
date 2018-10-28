@@ -198,7 +198,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			//generate input data and setup metadata
 			int rows = (cols == cols3) ? rows3 : rows1;
@@ -240,7 +240,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			//generate input data and setup metadata
 			double[][] A = getRandomMatrix(rows1, 1, -10, 10, 0.7, 2373);

@@ -149,7 +149,7 @@ public class FrameTest extends MLContextTestBase
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
-		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;

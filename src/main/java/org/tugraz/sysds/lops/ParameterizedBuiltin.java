@@ -64,40 +64,7 @@ public class ParameterizedBuiltin extends Lop
 		_inputParams = paramLops;
 		_numThreads = k;
 		
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		ExecLocation eloc = null;
-		
-		if( _operation == OperationTypes.REPLACE && et==ExecType.MR )
-		{
-			eloc = ExecLocation.MapOrReduce;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-		}
-		else if( _operation == OperationTypes.RMEMPTY && et==ExecType.MR )
-		{
-			eloc = ExecLocation.Reduce;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			breaksAlignment=true;
-		}
-		else if( _operation == OperationTypes.REXPAND && et==ExecType.MR )
-		{
-			eloc = ExecLocation.MapOrReduce;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			breaksAlignment=true;
-		}
-		else //executed in CP / CP_FILE / SPARK
-		{
-			eloc = ExecLocation.ControlProgram;
-			lps.addCompatibility(JobType.INVALID);
-		}
-		lps.setProperties(inputs, et, eloc, breaksAlignment, aligner, definesMRJob);
+		lps.setProperties(inputs, et);
 	}
 
 	public ParameterizedBuiltin(HashMap<String, Lop> paramLops, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean bRmEmptyBC) {

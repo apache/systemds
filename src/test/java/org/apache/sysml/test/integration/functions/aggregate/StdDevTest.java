@@ -68,11 +68,6 @@ public class StdDevTest extends AutomatedTestBase {
         testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testStdDevDenseMatrixMR() {
-        testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Dense row vector
     @Test
     public void testStdDevDenseRowVectorCP() {
@@ -82,11 +77,6 @@ public class StdDevTest extends AutomatedTestBase {
     @Test
     public void testStdDevDenseRowVectorSpark() {
         testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testStdDevDenseRowVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
     // Dense column vector
@@ -100,11 +90,6 @@ public class StdDevTest extends AutomatedTestBase {
         testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testStdDevDenseColVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
-    }
-
     // Sparse matrix
     @Test
     public void testStdDevSparseMatrixCP() {
@@ -114,11 +99,6 @@ public class StdDevTest extends AutomatedTestBase {
     @Test
     public void testStdDevSparseMatrixSpark() {
         testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
-    }
-
-    @Test
-    public void testStdDevSparseMatrixMR() {
-        testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Sparse row vector
@@ -132,11 +112,6 @@ public class StdDevTest extends AutomatedTestBase {
         testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testStdDevSparseRowVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Sparse column vector
     @Test
     public void testStdDevSparseColVectorCP() {
@@ -146,11 +121,6 @@ public class StdDevTest extends AutomatedTestBase {
     @Test
     public void testStdDevSparseColVectorSpark() {
         testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testStdDevSparseColVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     // Empty matrix
@@ -164,11 +134,6 @@ public class StdDevTest extends AutomatedTestBase {
         testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testStdDevEmptyMatrixMR() {
-        testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Empty row vector
     @Test
     public void testStdDevEmptyRowVectorCP() {
@@ -180,11 +145,6 @@ public class StdDevTest extends AutomatedTestBase {
         testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testStdDevEmptyRowVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Empty column vector
     @Test
     public void testStdDevEmptyColVectorCP() {
@@ -194,11 +154,6 @@ public class StdDevTest extends AutomatedTestBase {
     @Test
     public void testStdDevEmptyColVectorSpark() {
         testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testStdDevEmptyColVectorMR() {
-        testStdDev(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     /**
@@ -216,9 +171,6 @@ public class StdDevTest extends AutomatedTestBase {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
             case SPARK:
                 rtplatform = RUNTIME_PLATFORM.SPARK;
                 break;

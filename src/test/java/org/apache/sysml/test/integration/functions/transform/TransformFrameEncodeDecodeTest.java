@@ -74,7 +74,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
@@ -89,7 +89,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesDummycodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
@@ -104,7 +104,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE, true);
 	}
 	
 	@Test
@@ -119,7 +119,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesDummycodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.DUMMY, true);
 	}
 	
 	/**
@@ -135,7 +135,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		//set transform specification
@@ -180,7 +180,7 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
 			
-			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
+			if( rt == RUNTIME_PLATFORM.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}

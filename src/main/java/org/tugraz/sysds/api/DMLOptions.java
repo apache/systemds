@@ -121,7 +121,7 @@ public class DMLOptions {
 				if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = RUNTIME_PLATFORM.SINGLE_NODE;
 				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID;
 				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = RUNTIME_PLATFORM.SPARK;
-				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, hybrid_spark, spark]");
+				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, HYBRID, spark]");
 			}
 		}
 		if (line.hasOption("explain")) {
@@ -217,7 +217,7 @@ public class DMLOptions {
 			.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime'")
 			.hasOptionalArg().create("explain");
 		Option execOpt = OptionBuilder.withArgName("mode")
-			.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'hybrid_spark' / 'spark'")
+			.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'HYBRID' / 'spark'")
 			.hasArg().create("exec");
 		Option gpuOpt = OptionBuilder.withArgName("force")
 			.withDescription("uses CUDA instructions when reasonable; set <force> option to skip conservative memory estimates and use GPU wherever possible; default off")

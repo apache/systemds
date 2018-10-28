@@ -204,7 +204,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			//generate input data and setup metadata
 			int cols = singleColBlock ? cols1 : cols2;

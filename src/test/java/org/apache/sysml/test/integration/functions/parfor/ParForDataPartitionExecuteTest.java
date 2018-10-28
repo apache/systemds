@@ -94,7 +94,7 @@ public class ParForDataPartitionExecuteTest extends AutomatedTestBase
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
 			case MR: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 			default: throw new RuntimeException("Unsupported exec type: "+et.name());
 		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

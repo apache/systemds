@@ -221,11 +221,6 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			programArgs[programArgs.length-1] = output("A_CP"); // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 			
-			// Generate Data in MR
-			rtplatform = RUNTIME_PLATFORM.HADOOP;
-			programArgs[programArgs.length-1] = output("A_MR"); // data file generated from MR
-			runTest(true, exceptionExpected, null, -1); 
-			
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 			try {
 				// Generate Data in Spark
@@ -240,14 +235,8 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 		
 			//compare matrices (1-2, 2-3 -> transitively 1-3)
 			HashMap<CellIndex, Double> cpfile = readDMLMatrixFromHDFS("A_CP");
-			HashMap<CellIndex, Double> mrfile = readDMLMatrixFromHDFS("A_MR");
-			TestUtils.compareMatrices(cpfile, mrfile, eps, "CPFile", "MRFile");
-			cpfile = null;
-			HashMap<CellIndex, Double> snfile = readDMLMatrixFromHDFS("A_SN");
-			TestUtils.compareMatrices(snfile, mrfile, eps, "SNFile", "MRFile");		
-			
 			HashMap<CellIndex, Double> spfile = readDMLMatrixFromHDFS("A_SPARK");
-			TestUtils.compareMatrices(spfile, mrfile, eps, "SPFile", "MRFile");	
+			TestUtils.compareMatrices(spfile, cpfile, eps, "SPFile", "CPFile");
 			
 		}
 		finally

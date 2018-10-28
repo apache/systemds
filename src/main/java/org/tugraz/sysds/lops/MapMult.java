@@ -57,41 +57,6 @@ public class MapMult extends Lop
 	
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
-	
-	/**
-	 * Constructor to setup a partial Matrix-Vector Multiplication for MR
-	 * 
-	 * @param input1 low-level operator 1
-	 * @param input2 low-level operator 2
-	 * @param dt data type
-	 * @param vt value type
-	 * @param rightCache true if right cache, false if left cache
-	 * @param partitioned true if partitioned, false if not partitioned
-	 * @param emptyBlocks true if output empty blocks
-	 */
-	public MapMult(Lop input1, Lop input2, DataType dt, ValueType vt, boolean rightCache, boolean partitioned, boolean emptyBlocks ) 
-	{
-		super(Lop.Type.MapMult, dt, vt);
-		this.addInput(input1);
-		this.addInput(input2);
-		input1.addOutput(this);
-		input2.addOutput(this);
-		
-		//setup mapmult parameters
-		if( rightCache )
-			_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
-		else
-			_cacheType = partitioned ? CacheType.LEFT_PART : CacheType.LEFT;
-		_outputEmptyBlocks = emptyBlocks;
-		
-		//setup MR parameters 
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.GMR);
-		lps.addCompatibility(JobType.DATAGEN);
-		lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-	}
 
 	/**
 	 * Constructor to setup a partial Matrix-Vector Multiplication for Spark
@@ -120,12 +85,7 @@ public class MapMult extends Lop
 		_outputEmptyBlocks = emptyBlocks;
 		_aggtype = aggtype;
 		
-		//setup MR parameters 
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, ExecType.SPARK, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, ExecType.SPARK);
 	}
 
 	@Override
@@ -170,16 +130,5 @@ public class MapMult extends Lop
 		}
 		
 		return sb.toString();
-	}
-
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {	
-		return _cacheType.isRight() ?
-			new int[]{2} : new int[]{1};
 	}
 }

@@ -77,7 +77,7 @@ def plot(x, y, xlab, ylab, title):
 # Example Usage
 #  ./stats.py --auth ../key/client_json.json --exec-mode singlenode
 if __name__ == '__main__':
-    execution_mode = ['hybrid_spark', 'singlenode']
+    execution_mode = ['HYBRID', 'singlenode']
 
     cparser = argparse.ArgumentParser(description='System-ML Statistics Script')
     cparser.add_argument('--auth', help='Location to read auth file',

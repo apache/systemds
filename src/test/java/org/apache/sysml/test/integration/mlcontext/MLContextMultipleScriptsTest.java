@@ -57,7 +57,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 	
 	@Test
 	public void testMLContextMultipleScriptsHybrid() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID_SPARK, false);
+		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID, false);
 	}
 	
 	@Test
@@ -72,7 +72,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 	
 	@Test
 	public void testMLContextMultipleScriptsWithReadHybrid() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID_SPARK, true);
+		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID, true);
 	}
 	
 	@Test

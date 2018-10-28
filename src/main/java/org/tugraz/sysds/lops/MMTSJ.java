@@ -65,13 +65,7 @@ public class MMTSJ extends Lop
 		if( multiPass && et != ExecType.SPARK )
 			throw new RuntimeException("Multipass tsmm only supported for exec type SPARK.");
 		 
-		boolean breaksAlignment = true; //if result keys (matrix indexes) different 
-		boolean aligner = false; //if groups multiple inputs by key (e.g., group)
-		boolean definesMRJob = (et == ExecType.MR); //if requires its own MR job 
-		ExecLocation el = (et == ExecType.MR) ? ExecLocation.Map : ExecLocation.ControlProgram;
-		
-		lps.addCompatibility(JobType.GMR);
-		lps.setProperties( inputs, et, el, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties(inputs, et);
 	}
 
 	@Override

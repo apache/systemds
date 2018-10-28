@@ -132,44 +132,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testSquaredLossDensePostWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDensePreWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDenseNoWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePostWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePreWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparseNoWeightsNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.MR);
-	}
-	
-	//with rewrites
-	
-	@Test
 	public void testSquaredLossDensePostWeightsRewritesCP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.CP);
@@ -205,41 +167,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.CP);
 	}
 
-	@Test
-	public void testSquaredLossDensePostWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDensePreWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDenseNoWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePostWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePreWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparseNoWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
-	}
 	
 	@Test
 	public void testSquaredLossDensePostWeightsRewritesSP() 
@@ -288,18 +215,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.CP);
 	}
-
-	@Test
-	public void testSquaredLossDensePostNzWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME7, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePostNzWeightsRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME7, true, true, ExecType.MR);
-	}
 	
 	@Test
 	public void testSquaredLossDensePostNzWeightsRewritesSP() 
@@ -316,42 +231,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	
 	//the following tests force the replication based mr operator because
 	//otherwise we would always choose broadcasts for this small input data
-	
-	@Test
-	public void testSquaredLossSparsePostWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePreWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossSparseNoWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDensePostWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDensePreWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDenseNoWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.MR);
-	}
 	
 	@Test
 	public void testSquaredLossSparsePostWeightsRewritesRepSP() 
@@ -387,18 +266,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	public void testSquaredLossDenseNoWeightsRewritesRepSP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.SPARK);
-	}
-	
-	@Test
-	public void testSquaredLossSparsePostNzWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME7, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSquaredLossDensePostNzWeightsRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME7, false, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -457,7 +324,6 @@ public class WeightedSquaredLossTest extends AutomatedTestBase
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

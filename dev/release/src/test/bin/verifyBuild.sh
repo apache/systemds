@@ -159,7 +159,7 @@ runCommand "cd ../.."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Spark batch mode..."
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Spark batch mode..." >> $OUT_FILE
 runCommand "cd systemml-$VER_NAME-bin/lib"
-runCommand "$SPARK_HOME/bin/spark-submit systemml-$VER_NAME.jar -s \"print('hello world');\" -exec hybrid_spark"
+runCommand "$SPARK_HOME/bin/spark-submit systemml-$VER_NAME.jar -s \"print('hello world');\" -exec HYBRID"
 
 ## Verify Hadoop batch mode
 echo "`date +%Y-%m-%dT%H:%M:%S`: INFO: Verifying Hadoop batch mode..."

@@ -80,7 +80,7 @@ def split_config_args(args):
     backend_args_dict = {}
     exec_type = args['exec_type']
     
-    if exec_type == 'hybrid_spark':
+    if exec_type == 'HYBRID':
         if args['master'] is not None:
             backend_args_dict['--master'] = args['master']
 
@@ -200,7 +200,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, s
     We also extract time obtained from the output of this subprocess
 
     exec_type: String
-    Contains the execution type singlenode / hybrid_spark
+    Contains the execution type singlenode / HYBRID
 
     dml_file_name: String
     DML file name to be used while processing the arguments give
@@ -230,7 +230,7 @@ def exec_dml_and_parse_time(exec_type, dml_file_name, args, backend_args_dict, s
         cmd = [exec_script, singlenode_pre_args, '-f', algorithm, args, sup_args]
         cmd_string = ' '.join(cmd)
 
-    if exec_type == 'hybrid_spark':
+    if exec_type == 'HYBRID':
         exec_script = join(os.environ.get('SYSTEMML_HOME'), 'bin', 'systemml-spark-submit.py')
         spark_pre_args = ' '.join([' {} {} '.format(k, v) for k, v in backend_args_dict.items()])
         args = ' '.join(['{} {}'.format(k, v) for k, v in args.items()])
@@ -270,7 +270,7 @@ def exec_test_data(exec_type, backend_args_dict, systemml_args_dict, datagen_pat
     Creates the test data split from the given input path
 
     exec_type : String
-    Contains the execution type singlenode / hybrid_spark
+    Contains the execution type singlenode / HYBRID
 
     path : String
     Location of the input folder to pick X and Y
@@ -391,7 +391,7 @@ def get_default_dir(file_system_type, temp_dir, exec_mode, config_dir):
         if temp_dir is not None:
             return temp_dir
 
-    if exec_mode == 'hybrid_spark':
+    if exec_mode == 'HYBRID':
         if file_system_type == 'hdfs':
             cmd = ['hdfs', 'getconf', '-confKey', 'fs.default.name']
             hdfs_base = subprocess_exec(' '.join(cmd), extract='hdfs_base')

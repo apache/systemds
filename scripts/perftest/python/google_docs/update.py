@@ -101,7 +101,7 @@ def row_append(data_frame, file):
 # Example Usage
 #  ./update.py --file ../temp/test.out --exec-mode singlenode --auth client_json.json --tag 3.0
 if __name__ == '__main__':
-    execution_mode = ['hybrid_spark', 'singlenode']
+    execution_mode = ['HYBRID', 'singlenode']
 
     cparser = argparse.ArgumentParser(description='System-ML Update / Stat Script')
     cparser.add_argument('--file', help='Location of the current perf test outputs',

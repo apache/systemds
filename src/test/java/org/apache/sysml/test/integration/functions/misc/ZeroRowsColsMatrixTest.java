@@ -64,16 +64,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testEmptyMatrixRemoveEmptyNoRewritesEmptyRetMR() {
-		runEmptyMatrixTest(TEST_NAME1, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testEmptyMatrixRemoveEmptyRewritesEmptyRetMR() {
-		runEmptyMatrixTest(TEST_NAME1, true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testEmptyMatrixRemoveEmptyNoRewritesEmptyRetSP() {
 		runEmptyMatrixTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
@@ -93,15 +83,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 		runEmptyMatrixTest(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
-	@Test
-	public void testEmptyMatrixRemoveEmptyNoRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME1, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testEmptyMatrixRemoveEmptyRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME1, true, false, ExecType.MR);
-	}
 	
 	@Test
 	public void testEmptyMatrixRemoveEmptyNoRewritesSP() {
@@ -121,16 +102,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	@Test
 	public void testEmptyMatrixCbindRewritesCP() {
 		runEmptyMatrixTest(TEST_NAME2, true, ExecType.CP);
-	}
-	
-	@Test
-	public void testEmptyMatrixCbindNoRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME2, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testEmptyMatrixCbindRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME2, true, ExecType.MR);
 	}
 	
 	@Test
@@ -154,16 +125,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testEmptyMatrixRbindNoRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME3, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testEmptyMatrixRbindRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME3, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testEmptyMatrixRbindNoRewritesSP() {
 		runEmptyMatrixTest(TEST_NAME3, false, ExecType.SPARK);
 	}
@@ -184,16 +145,6 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testEmptyMatrixAggregatesNoRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME4, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testEmptyMatrixAggregatesRewritesMR() {
-		runEmptyMatrixTest(TEST_NAME4, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testEmptyMatrixAggregatesNoRewritesSP() {
 		runEmptyMatrixTest(TEST_NAME4, false, ExecType.SPARK);
 	}
@@ -211,13 +162,12 @@ public class ZeroRowsColsMatrixTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK; break;
+			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK )
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

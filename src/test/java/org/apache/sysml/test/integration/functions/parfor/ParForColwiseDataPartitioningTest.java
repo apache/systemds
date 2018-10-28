@@ -283,7 +283,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 		
 		if( partitioner == PDataPartitioner.REMOTE_SPARK || mode == PExecMode.REMOTE_SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 		}
 
 		try

@@ -91,33 +91,12 @@ public class RandVarMinMaxTest extends AutomatedTestBase
 	public void testMatrixVarExpressionSP() {
 		runRandVarMinMaxTest(TEST_NAME_DML3, ExecType.SPARK);
 	}
-	
-	@Test
-	public void testMatrixVarMinMaxMR() {
-		runRandVarMinMaxTest(TEST_NAME_DML1, ExecType.MR);
-	}
-	
-	@Test
-	public void testRandVarMinMaxMR() {		
-		runRandVarMinMaxTest(TEST_NAME_DML2, ExecType.MR);
-	}
-	
-	@Test
-	public void testMatrixVarExpressionMR() {		
-		runRandVarMinMaxTest(TEST_NAME_DML3, ExecType.MR);
-	}
 
-	/**
-	 * 
-	 * @param TEST_NAME
-	 * @param instType
-	 */
 	private void runRandVarMinMaxTest( String TEST_NAME, ExecType instType )
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

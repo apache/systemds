@@ -36,7 +36,7 @@ public class MMZip extends Lop
 	public MMZip(Lop input1, Lop input2, DataType dt, ValueType vt, boolean tRewrite, ExecType et) 
 	{
 		//handle inputs and outputs
-		super(Lop.Type.MMRJ, dt, vt);		
+		super(Lop.Type.MMRJ, dt, vt);
 		
 		_tRewrite = tRewrite;
 		
@@ -44,13 +44,7 @@ public class MMZip extends Lop
 		addInput(input2);
 		input1.addOutput(this);
 		input2.addOutput(this);
-		
-		//only applicable for spark
-		boolean breaksAlignment = false;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		lps.addCompatibility(JobType.INVALID);
-		lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
+		lps.setProperties( inputs, et);
 	}
 
 	@Override

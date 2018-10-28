@@ -136,55 +136,6 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	{
 		runMLUnaryBuiltinTest(TEST_NAME4, true, false, ExecType.CP);
 	}
-
-	@Test
-	public void testSigmoidDenseBasicNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseMinusNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogMinusNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, false, false, ExecType.MR);
-	}
-
-	@Test
-	public void testSigmoidSparseBasicNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseMinusNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogMinusNoRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, true, false, ExecType.MR);
-	}
-	
 	//with rewrites
 
 	@Test
@@ -236,54 +187,6 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSigmoidDenseBasicRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseMinusRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogMinusRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, false, true, ExecType.MR);
-	}
-
-	@Test
-	public void testSigmoidSparseBasicRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseMinusRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogMinusRewritesMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.MR);
-	}
-
-	@Test
 	public void testSigmoidDenseBasicRewritesSP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME1, false, true, ExecType.SPARK);
@@ -329,58 +232,6 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	public void testSigmoidSparseLogMinusRewritesSP() 
 	{
 		runMLUnaryBuiltinTest(TEST_NAME4, true, true, ExecType.SPARK);
-	}
-	
-	
-	//the following tests force the replication based mr operator because
-	//otherwise we would always choose broadcasts for this small input data
-	
-	@Test
-	public void testSigmoidSparseBasicRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseMinusRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidSparseLogMinusRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, true, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseBasicRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME1, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME2, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseMinusRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME3, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testSigmoidDenseLogMinusRewritesRepMR() 
-	{
-		runMLUnaryBuiltinTest(TEST_NAME4, false, true, true, ExecType.MR);
 	}
 	
 
@@ -455,7 +306,6 @@ public class WeightedSigmoidTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

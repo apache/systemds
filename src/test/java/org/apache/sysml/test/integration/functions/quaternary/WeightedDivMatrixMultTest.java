@@ -135,36 +135,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testWeightedDivMMLeftDenseMR() {
-		runWeightedDivMMTest(TEST_NAME1, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMLeftSparseMR() {
-		runWeightedDivMMTest(TEST_NAME1, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMLeftDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME1, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightDenseMR() {
-		runWeightedDivMMTest(TEST_NAME2, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightSparseMR() {
-		runWeightedDivMMTest(TEST_NAME2, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME2, false, true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testWeightedDivMMLeftDenseSP() {
 		runWeightedDivMMTest(TEST_NAME1, false, true, false, ExecType.SPARK);
 	}
@@ -264,111 +234,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	@Test
 	public void testWeightedDivMM4MultMinusRightSparseCP() {
 		runWeightedDivMMTest(TEST_NAME9, true, true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultBasicDenseMR() {
-		runWeightedDivMMTest(TEST_NAME3, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultBasicSparseMR() {
-		runWeightedDivMMTest(TEST_NAME3, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultBasicDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME3, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultLeftDenseMR() {
-		runWeightedDivMMTest(TEST_NAME4, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultLeftSparseMR() {
-		runWeightedDivMMTest(TEST_NAME4, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultLeftDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME4, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultRightDenseMR() {
-		runWeightedDivMMTest(TEST_NAME5, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultRightSparseMR() {
-		runWeightedDivMMTest(TEST_NAME5, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultRightDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME5, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusLeftDenseMR() {
-		runWeightedDivMMTest(TEST_NAME6, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusLeftSparseMR() {
-		runWeightedDivMMTest(TEST_NAME6, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusLeftDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME6, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusRightDenseMR() {
-		runWeightedDivMMTest(TEST_NAME7, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusRightSparseMR() {
-		runWeightedDivMMTest(TEST_NAME7, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMMultMinusRightDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME7, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusLeftDenseMR() {
-		runWeightedDivMMTest(TEST_NAME8, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusLeftSparseMR() {
-		runWeightedDivMMTest(TEST_NAME8, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusLeftDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME8, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusRightDenseMR() {
-		runWeightedDivMMTest(TEST_NAME9, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusRightSparseMR() {
-		runWeightedDivMMTest(TEST_NAME9, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMM4MultMinusRightDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME9, false, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -500,36 +365,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testWeightedDivMMLeftEpsDenseMR() {
-		runWeightedDivMMTest(TEST_NAME10, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMLeftEpsSparseMR() {
-		runWeightedDivMMTest(TEST_NAME10, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMLeftEpsDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME10, false, true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightEpsDenseMR() {
-		runWeightedDivMMTest(TEST_NAME11, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightEpsSparseMR() {
-		runWeightedDivMMTest(TEST_NAME11, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedDivMMRightEpsDenseMRRep() {
-		runWeightedDivMMTest(TEST_NAME11, false, true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testWeightedDivMMLeftEpsDenseSP() {
 		runWeightedDivMMTest(TEST_NAME10, false, true, false, ExecType.SPARK);
 	}
@@ -581,7 +416,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

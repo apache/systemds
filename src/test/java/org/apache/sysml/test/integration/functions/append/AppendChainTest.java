@@ -93,16 +93,6 @@ public class AppendChainTest extends AutomatedTestBase
 	// ------------------------------------------------------
 	
 	@Test
-	public void testAppendChainVectorDenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1, cols2a, cols3a, false);
-	}
-	
-	@Test
-	public void testAppendChainMatrixDenseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1, cols2b, cols3b, false);
-	}
-	
-	@Test
 	public void testAppendChainVectorSparseCP() {
 		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2a, cols3a, true);
 	}
@@ -112,24 +102,6 @@ public class AppendChainTest extends AutomatedTestBase
 		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2b, cols3b, true);
 	}
 	
-	@Test
-	public void testAppendChainVectorSparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1, cols2a, cols3a, true);
-	}
-	
-	@Test
-	public void testAppendChainMatrixSparseMR() {
-		commonAppendTest(RUNTIME_PLATFORM.HADOOP, rows, cols1, cols2b, cols3b, true);
-	}
-			
-	/**
-	 * 
-	 * @param platform
-	 * @param rows
-	 * @param cols1
-	 * @param cols2
-	 * @param cols3
-	 */
 	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, int cols3, boolean sparse)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
@@ -172,8 +144,8 @@ public class AppendChainTest extends AutomatedTestBase
 	        writeInputMatrix("B2", B2, true);
 	        
 	        boolean exceptionExpected = false;
-			int expectedCompiledMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2+((cols3>1)?1:0) : 1;
-			int expectedExecutedMRJobs = (rtplatform==RUNTIME_PLATFORM.HADOOP)? 2+((cols3>1)?1:0) : 0; 
+			int expectedCompiledMRJobs = 1;
+			int expectedExecutedMRJobs = 0; 
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
 			Assert.assertEquals("Wrong number of executed MR jobs.",

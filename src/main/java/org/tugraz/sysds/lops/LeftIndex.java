@@ -80,23 +80,12 @@ public class LeftIndex extends Lop
 		this.addInput(colU);
 		
 		lhsMatrix.addOutput(this);		
-		rhsMatrix.addOutput(this);		
+		rhsMatrix.addOutput(this);
 		rowL.addOutput(this);
 		rowU.addOutput(this);
 		colL.addOutput(this);
 		colU.addOutput(this);
-
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) {
-			throw new LopsException(this.printErrorLocation() + "LeftIndexing lop is undefined for MR runtime");
-		} 
-		else {
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
 	
 	private String getOpcode() {

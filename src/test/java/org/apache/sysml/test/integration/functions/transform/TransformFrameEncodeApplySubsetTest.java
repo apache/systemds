@@ -58,7 +58,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeColnames1HybridCSV() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true);
+		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.HYBRID, "csv", true);
 	}
 	
 	@Test
@@ -73,7 +73,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeColnames2HybridCSV() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true);
+		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.HYBRID, "csv", true);
 	}
 	
 	
@@ -90,7 +90,7 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

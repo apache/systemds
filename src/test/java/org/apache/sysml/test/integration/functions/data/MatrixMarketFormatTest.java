@@ -67,11 +67,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	public void testMMCooRealGeneralSp() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.GENERAL, ExecType.SPARK);
 	}
-
-	@Test
-	public void testMMCooRealGeneralMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.REAL, MMSymmetry.GENERAL, ExecType.MR);
-	}
 	
 	@Test
 	public void testMMCooRealSymmetricCP() {
@@ -101,11 +96,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	@Test
 	public void testMMCooIntegerGeneralSp() {
 		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.SPARK);
-	}
-
-	@Test
-	public void testMMCooIntegerGeneralMR() {
-		runMatrixMarketFormatTest(MMFormat.COORDINATE, MMField.INTEGER, MMSymmetry.GENERAL, ExecType.MR);
 	}
 	
 	@Test
@@ -213,7 +203,6 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;
 		}

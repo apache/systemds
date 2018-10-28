@@ -55,7 +55,7 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 	
 	@Test
 	public void testCSVReadWriteHybrid() {
-		runCSVQuotesReadWriteTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv");
+		runCSVQuotesReadWriteTest(RUNTIME_PLATFORM.HYBRID, "csv");
 	}
 	
 	@Test
@@ -77,7 +77,7 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.lops.FunctionCallCP;
-import org.tugraz.sysds.lops.FunctionCallCPSingle;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.DMLProgram;
@@ -58,7 +57,6 @@ public class FunctionOp extends Hop
 	private String[] _inputNames = null;  // A,B in C = foo(A=X, B=Y)
 	private String[] _outputNames = null; // C in C = foo(A=X, B=Y)
 	private ArrayList<Hop> _outputHops = null;
-	private boolean _singleOutFun = false;
 	
 	private FunctionOp() {
 		//default constructor for clone
@@ -78,7 +76,6 @@ public class FunctionOp extends Hop
 		_fname = fname;
 		_inputNames = inputNames;
 		_outputNames = outputNames;
-		_singleOutFun = singleOut;
 		
 		for( Hop in : inputs ) {
 			getInput().add(in);
@@ -274,8 +271,7 @@ public class FunctionOp extends Hop
 			tmp.add( in.constructLops() );
 		
 		//construct function call
-		Lop fcall = _singleOutFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) :
-			new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et);
+		Lop fcall = new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et);
 		setLineNumbers(fcall);
 		setLops(fcall);
 		

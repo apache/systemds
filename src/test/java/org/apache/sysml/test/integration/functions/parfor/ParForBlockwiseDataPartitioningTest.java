@@ -185,7 +185,7 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 		
 		//run always in spark execution mode
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		
 		try
 		{

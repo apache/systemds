@@ -96,23 +96,15 @@ public class StringAppendTest extends AutomatedTestBase
 		runStringAppendTest(TEST_NAME2, 10000, true, ExecType.CP);
 	}
 	
-	/**
-	 * 
-	 * @param platform
-	 * @param rows
-	 * @param cols1
-	 * @param cols2
-	 * @param cols3
-	 */
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
 	{
-		RUNTIME_PLATFORM oldPlatform = rtplatform;		
+		RUNTIME_PLATFORM oldPlatform = rtplatform;
 
 	    if(et == ExecType.SPARK) {
 	    	rtplatform = RUNTIME_PLATFORM.SPARK;
 	    }
 	    else {
-			rtplatform = (et==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 	    }
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == RUNTIME_PLATFORM.SPARK )
@@ -120,7 +112,7 @@ public class StringAppendTest extends AutomatedTestBase
 		
 		try
 		{
-			getAndLoadTestConfiguration(TEST_NAME);			
+			getAndLoadTestConfiguration(TEST_NAME);
 			
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";

@@ -177,66 +177,11 @@ public class WeightedUnaryMatrixMultTest extends AutomatedTestBase
 	public void testWeightedUnaryMMExpMultDenseRepSP()  {
 		runWeightedUnaryMMTest(TEST_NAME1, false, true, true, ExecType.SPARK);
 	}
-
-	//mr testcases
 	
-	@Test
-	public void testWeightedUnaryMMExpMultDenseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME1, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMExpDivDenseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME2, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMPow2DenseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME3, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMMult2DenseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME4, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMExpMultSparseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME1, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMExpDivSparseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME2, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMPow2SparseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME3, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testWeightedUnaryMMMult2SparseMR()  {
-		runWeightedUnaryMMTest(TEST_NAME4, true, true, false, ExecType.MR);
-	}
-
-	@Test
-	public void testWeightedUnaryMMExpMultDenseRepMR()  {
-		runWeightedUnaryMMTest(TEST_NAME1, false, true, true, ExecType.MR);
-	}
-	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runWeightedUnaryMMTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
-	{		
+	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

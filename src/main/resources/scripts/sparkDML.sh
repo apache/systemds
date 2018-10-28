@@ -120,7 +120,7 @@ $SPARK_HOME/bin/spark-submit \
      ${SYSTEMML_HOME}/${project.artifactId}-${project.version}.jar \
          -f ${f} \
          -config ${SYSTEMML_HOME}/SystemML-config.xml \
-         -exec hybrid_spark \
+         -exec HYBRID \
          $explain \
          $stats \
          $nvargs $args

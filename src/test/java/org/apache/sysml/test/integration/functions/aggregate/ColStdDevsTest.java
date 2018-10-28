@@ -80,11 +80,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsDenseRowVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Dense column vector
     @Test
     public void testColStdDevsDenseColVectorCP() {
@@ -151,11 +146,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testColStdDevsEmptyRowVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Empty column vector
     @Test
     public void testColStdDevsEmptyColVectorCP() {
@@ -165,11 +155,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
     @Test
     public void testColStdDevsEmptyColVectorSpark() {
         testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColStdDevsEmptyColVectorMR() {
-        testColStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     /**
@@ -187,9 +172,6 @@ public class ColStdDevsTest extends AutomatedTestBase {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
             case SPARK:
                 rtplatform = RUNTIME_PLATFORM.SPARK;
                 break;

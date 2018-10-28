@@ -254,7 +254,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 			
 			//generate input data and setup metadata
 			int cols = schema.length + colsVector - 1;

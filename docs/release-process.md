@@ -222,7 +222,7 @@ this OS X example.
 	# verify spark batch mode
 	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
 	cd systemml-1.0.0-bin/target/lib
-	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -s "print('hello world');" -exec hybrid_spark
+	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -s "print('hello world');" -exec HYBRID
 
 	# verify hadoop batch mode
 	hadoop jar systemml-1.0.0.jar -s "print('hello world');"
@@ -333,10 +333,10 @@ Here is an example of running the `Univar-Stats.dml` algorithm on random generat
 
 	cd systemml-1.0.0-bin/lib
 	export SPARK_HOME=~/spark-2.1.0-bin-hadoop2.7
-	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/datagen/genRandData4Univariate.dml -exec hybrid_spark -args 1000000 100 10 1 2 3 4 uni.mtx
+	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/datagen/genRandData4Univariate.dml -exec HYBRID -args 1000000 100 10 1 2 3 4 uni.mtx
 	echo '1' > uni-types.csv
 	echo '{"rows": 1, "cols": 1, "format": "csv"}' > uni-types.csv.mtd
-	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/algorithms/Univar-Stats.dml -exec hybrid_spark -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
+	$SPARK_HOME/bin/spark-submit systemml-1.0.0.jar -f ../scripts/algorithms/Univar-Stats.dml -exec HYBRID -nvargs X=uni.mtx TYPES=uni-types.csv STATS=uni-stats.txt CONSOLE_OUTPUT=TRUE
 	cd ..
 
 

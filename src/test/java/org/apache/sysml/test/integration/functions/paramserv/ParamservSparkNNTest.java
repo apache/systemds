@@ -81,7 +81,7 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 			String errMessage) {
 		DMLScript.RUNTIME_PLATFORM oldRtplatform = AutomatedTestBase.rtplatform;
 		boolean oldUseLocalSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID_SPARK;
+		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {

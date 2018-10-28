@@ -62,7 +62,7 @@ top-$K$ (for a given value of $K$) principal components.
                                  SystemML.jar
                                  -f PCA.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs INPUT=<file>
                                          K=<int>
                                          CENTER=[int]
@@ -125,7 +125,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f PCA.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs INPUT=/user/ml/input.mtx
                                          K=10
                                          CENTER=1
@@ -155,7 +155,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f PCA.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs INPUT=/user/ml/test_input.mtx
                                          K=10
                                          CENTER=1
@@ -263,7 +263,7 @@ problems.
                                  SystemML.jar
                                  -f ALS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs V=<file>
                                          L=<file>
                                          R=<file>
@@ -297,7 +297,7 @@ problems.
                                  SystemML.jar
                                  -f ALS_predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          L=<file>
@@ -328,7 +328,7 @@ problems.
                                  SystemML.jar
                                  -f ALS_topk_predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          L=<file>
@@ -437,7 +437,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f ALS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs V=/user/ml/V
                                          L=/user/ml/L
                                          R=/user/ml/R
@@ -473,7 +473,7 @@ To compute predicted ratings for a given list of users and items:
                                  SystemML.jar
                                  -f ALS_predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y
                                          L=/user/ml/L
@@ -507,7 +507,7 @@ predicted ratings for a given list of users:
                                  SystemML.jar
                                  -f ALS_topk_predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X
                                          Y=/user/ml/Y
                                          L=/user/ml/L

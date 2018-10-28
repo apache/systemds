@@ -86,30 +86,7 @@ public class MapMultChain extends Lop
 		_chainType = chain;
 		setupLopProperties(et);
 	}
-
-	private void setupLopProperties( ExecType et )
-	{
-		if( et == ExecType.MR )
-		{
-			//setup MR parameters 
-			boolean breaksAlignment = true;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.setProperties( inputs, ExecType.MR, ExecLocation.Map, breaksAlignment, aligner, definesMRJob );
-		}
-		else //Spark/CP
-		{
-			//setup Spark parameters 
-			boolean breaksAlignment = false;
-			boolean aligner = false;
-			boolean definesMRJob = false;
-			lps.addCompatibility(JobType.INVALID);
-			lps.setProperties( inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob );
-		}
-	}
-
+	
 	public void setNumThreads(int k) {
 		_numThreads = k;
 	}
@@ -174,16 +151,5 @@ public class MapMultChain extends Lop
 		}
 		
 		return sb.toString();
-	}
-	
-	@Override
-	public boolean usesDistributedCache() {
-		return true;
-	}
-	
-	@Override
-	public int[] distributedCacheInputIndex() {
-		return (_chainType == ChainType.XtXv) ?
-			new int[]{2} : new int[]{2,3};
 	}
 }

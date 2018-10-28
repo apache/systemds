@@ -70,11 +70,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
         testColSumsSquared(TEST_NAME, false, false, true, ExecType.SPARK);
     }
 
-    @Test
-    public void testColSumsSquaredDenseMatrixRewriteMR() {
-        testColSumsSquared(TEST_NAME, false, false, true, ExecType.MR);
-    }
-
     // Dense matrix w/o rewrites
     @Test
     public void testColSumsSquaredDenseMatrixNoRewriteCP() {
@@ -84,11 +79,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
     @Test
     public void testColSumsSquaredDenseMatrixNoRewriteSpark() {
         testColSumsSquared(TEST_NAME, false, false, false, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColSumsSquaredDenseMatrixNoRewriteMR() {
-        testColSumsSquared(TEST_NAME, false, false, false, ExecType.MR);
     }
 
     // Dense vector w/ rewrites
@@ -102,11 +92,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
         testColSumsSquared(TEST_NAME, false, true, true, ExecType.SPARK);
     }
 
-    @Test
-    public void testColSumsSquaredDenseVectorRewriteMR() {
-        testColSumsSquared(TEST_NAME, false, true, true, ExecType.MR);
-    }
-
     // Dense vector w/o rewrites
     @Test
     public void testColSumsSquaredDenseVectorNoRewriteCP() {
@@ -116,11 +101,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
     @Test
     public void testColSumsSquaredDenseVectorNoRewriteSpark() {
         testColSumsSquared(TEST_NAME, false, true, false, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColSumsSquaredDenseVectorNoRewriteMR() {
-        testColSumsSquared(TEST_NAME, false, true, false, ExecType.MR);
     }
 
     // Sparse matrix w/ rewrites
@@ -134,11 +114,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
         testColSumsSquared(TEST_NAME, true, false, true, ExecType.SPARK);
     }
 
-    @Test
-    public void testColSumsSquaredSparseMatrixRewriteMR() {
-        testColSumsSquared(TEST_NAME, true, false, true, ExecType.MR);
-    }
-
     // Sparse matrix w/o rewrites
     @Test
     public void testColSumsSquaredSparseMatrixNoRewriteCP() {
@@ -148,11 +123,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
     @Test
     public void testColSumsSquaredSparseMatrixNoRewriteSpark() {
         testColSumsSquared(TEST_NAME, true, false, false, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColSumsSquaredSparseMatrixNoRewriteMR() {
-        testColSumsSquared(TEST_NAME, true, false, false, ExecType.MR);
     }
 
     // Sparse vector w/ rewrites
@@ -166,11 +136,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
         testColSumsSquared(TEST_NAME, true, true, true, ExecType.SPARK);
     }
 
-    @Test
-    public void testColSumsSquaredSparseVectorRewriteMR() {
-        testColSumsSquared(TEST_NAME, true, true, true, ExecType.MR);
-    }
-
     // Sparse vector w/o rewrites
     @Test
     public void testColSumsSquaredSparseVectorNoRewriteCP() {
@@ -180,11 +145,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
     @Test
     public void testColSumsSquaredSparseVectorNoRewriteSpark() {
         testColSumsSquared(TEST_NAME, true, true, false, ExecType.SPARK);
-    }
-
-    @Test
-    public void testColSumsSquaredSparseVectorNoRewriteMR() {
-        testColSumsSquared(TEST_NAME, true, true, false, ExecType.MR);
     }
 
     /**
@@ -206,9 +166,6 @@ public class ColSumsSqTest extends AutomatedTestBase {
 
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
             case SPARK:
                 rtplatform = RUNTIME_PLATFORM.SPARK;
                 break;

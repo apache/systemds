@@ -104,7 +104,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
 			OptimizerUtils.IPA_NUM_REPETITIONS = IPA_SECOND_CHANCE ? 2 : 1;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 
 			// Run test
 			runTest(true, false, null, -1);

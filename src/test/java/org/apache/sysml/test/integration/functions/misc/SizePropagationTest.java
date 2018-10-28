@@ -117,7 +117,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "hops", "-stats","-args", String.valueOf(N), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			runTest(true, false, null, -1); 

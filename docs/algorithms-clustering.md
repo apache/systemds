@@ -135,7 +135,7 @@ apart is a "false negative" etc.
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          C=[file]
                                          k=<int>
@@ -169,7 +169,7 @@ apart is a "false negative" etc.
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=[file]
                                          C=[file]
                                          spY=[file]
@@ -261,7 +261,7 @@ standard output
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
                                          C=/user/ml/centroids.mtx
@@ -290,7 +290,7 @@ standard output
                                  SystemML.jar
                                  -f Kmeans.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          k=5
                                          runs=100
@@ -323,7 +323,7 @@ To predict Y given X and C:
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
                                          prY=/user/ml/PredY.mtx
@@ -349,7 +349,7 @@ given X and C:
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          C=/user/ml/C.mtx
                                          spY=/user/ml/Y.mtx
@@ -374,7 +374,7 @@ labels prY:
                                  SystemML.jar
                                  -f Kmeans-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs spY=/user/ml/Y.mtx
                                          prY=/user/ml/PredY.mtx
                                          O=/user/ml/stats.csv

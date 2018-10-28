@@ -62,20 +62,12 @@ public class PartialAggregate extends Lop
 	
 	private Aggregate.OperationTypes operation;
 	private DirectionTypes direction;
-	private boolean _dropCorr = false;
 	
 	//optional attribute for CP num threads
 	private int _numThreads = -1;
 	
 	//optional attribute for spark exec type
 	private SparkAggType _aggtype = SparkAggType.MULTI_BLOCK;
-	
-	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
-			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt)
-	{
-		super(Lop.Type.PartialAggregate, dt, vt);
-		init(input, op, direct, dt, vt, ExecType.MR);
-	}
 
 	public PartialAggregate( Lop input, Aggregate.OperationTypes op,
 			PartialAggregate.DirectionTypes direct, DataType dt, ValueType vt, ExecType et, int k)
@@ -110,36 +102,9 @@ public class PartialAggregate extends Lop
 		direction = direct;
 		this.addInput(input);
 		input.addOutput(this);
-
-		boolean breaksAlignment = true;
-		boolean aligner = false;
-		boolean definesMRJob = false;
-		
-		if ( et == ExecType.MR ) 
-		{
-			/*
-			 * This lop CAN NOT be executed in PARTITION, SORT, STANDALONE MMCJ:
-			 * only in mapper.
-			 */
-			lps.addCompatibility(JobType.GMR);
-			lps.addCompatibility(JobType.DATAGEN);
-			lps.addCompatibility(JobType.REBLOCK);
-			lps.addCompatibility(JobType.MMCJ);
-			lps.addCompatibility(JobType.MMRJ);
-			this.lps.setProperties(inputs, et, ExecLocation.Map, breaksAlignment, aligner, definesMRJob);
-		} 
-		else //CP | SPARK
-		{
-			lps.addCompatibility(JobType.INVALID);
-			this.lps.setProperties(inputs, et, ExecLocation.ControlProgram, breaksAlignment, aligner, definesMRJob);
-		}
+		lps.setProperties(inputs, et);
 	}
-
-	public void setDropCorrection()
-	{
-		_dropCorr = true;
-	}
-
+	
 	/**
 	 * This method computes the location of "correction" terms in the output
 	 * produced by PartialAgg instruction.
@@ -298,9 +263,7 @@ public class PartialAggregate extends Lop
 		//exec-type specific attributes
 		sb.append( OPERAND_DELIMITOR );
 		if( getExecType() == ExecType.SPARK )
-			sb.append( _aggtype );	
-		else if( getExecType() == ExecType.MR )
-			sb.append( _dropCorr );
+			sb.append( _aggtype );
 		else if( getExecType() == ExecType.CP )
 			sb.append( _numThreads );	
 		

@@ -69,11 +69,6 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testVarianceDenseMatrixMR() {
-        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Dense row vector
     @Test
     public void testVarianceDenseRowVectorCP() {
@@ -83,11 +78,6 @@ public class VarianceTest extends AutomatedTestBase {
     @Test
     public void testVarianceDenseRowVectorSpark() {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testVarianceDenseRowVectorMR() {
-        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
     // Dense column vector
@@ -101,11 +91,6 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testVarianceDenseColVectorMR() {
-        testVariance(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
-    }
-
     // Sparse matrix
     @Test
     public void testVarianceSparseMatrixCP() {
@@ -115,11 +100,6 @@ public class VarianceTest extends AutomatedTestBase {
     @Test
     public void testVarianceSparseMatrixSpark() {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
-    }
-
-    @Test
-    public void testVarianceSparseMatrixMR() {
-        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Sparse row vector
@@ -133,11 +113,6 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testVarianceSparseRowVectorMR() {
-        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Sparse column vector
     @Test
     public void testVarianceSparseColVectorCP() {
@@ -147,11 +122,6 @@ public class VarianceTest extends AutomatedTestBase {
     @Test
     public void testVarianceSparseColVectorSpark() {
         testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testVarianceSparseColVectorMR() {
-        testVariance(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     // Empty matrix
@@ -165,11 +135,6 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testVarianceEmptyMatrixMR() {
-        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Empty row vector
     @Test
     public void testVarianceEmptyRowVectorCP() {
@@ -181,11 +146,6 @@ public class VarianceTest extends AutomatedTestBase {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testVarianceEmptyRowVectorMR() {
-        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Empty column vector
     @Test
     public void testVarianceEmptyColVectorCP() {
@@ -195,11 +155,6 @@ public class VarianceTest extends AutomatedTestBase {
     @Test
     public void testVarianceEmptyColVectorSpark() {
         testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testVarianceEmptyColVectorMR() {
-        testVariance(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     /**
@@ -217,9 +172,6 @@ public class VarianceTest extends AutomatedTestBase {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
             case SPARK:
                 rtplatform = RUNTIME_PLATFORM.SPARK;
                 break;

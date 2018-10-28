@@ -131,7 +131,7 @@ to compute the mean of a categorical attribute like ‘Hair Color’.
                                  SystemML.jar
                                  -f Univar-Stats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          TYPES=<file>
                                          STATS=<file>
@@ -170,7 +170,7 @@ be stored. The format of the output matrix is defined by
                                  SystemML.jar
                                  -f Univar-Stats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          TYPES=/user/ml/types.mtx
                                          STATS=/user/ml/stats.mtx
@@ -591,7 +591,7 @@ attributes like ‘Hair Color’.
                                  SystemML.jar
                                  -f bivar-stats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          index1=<file>
                                          index2=<file>
@@ -660,7 +660,7 @@ are defined in [**Table 2**](algorithms-descriptive-statistics.html#table2).
                                  SystemML.jar
                                  -f bivar-stats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          index1=/user/ml/S1.mtx
                                          index2=/user/ml/S2.mtx
@@ -1153,7 +1153,7 @@ becomes reversed and amplified (from $+0.1$ to $-0.5$) if we ignore the months.
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Xcid=[file]
                                          Y=[file]
@@ -1361,7 +1361,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Xcid=/user/ml/Xcid.mtx
                                          Y=/user/ml/Y.mtx
@@ -1389,7 +1389,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f stratstats.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/Data.mtx
                                          Xcid=/user/ml/Xcid.mtx
                                          Ycid=/user/ml/Ycid.mtx

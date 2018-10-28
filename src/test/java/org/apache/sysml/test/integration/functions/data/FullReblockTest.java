@@ -148,43 +148,6 @@ public class FullReblockTest extends AutomatedTestBase
 		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.SPARK);
 	}
 	
-	@Test
-	public void testTextCellSingleMDenseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Single, ExecType.MR);
-	}
-	
-	@Test
-	public void testTextCellSingeMSparseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Single, ExecType.MR);
-	}
-	
-	
-	@Test
-	public void testTextCellSingleVDenseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Vector, ExecType.MR);
-	}
-	
-	@Test
-	public void testTextCellSingeVSparseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Vector, ExecType.MR);
-	}
-	
-	@Test
-	public void testTextCellMultipleMDenseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, false, Type.Multiple, ExecType.MR);
-	}
-	
-	@Test
-	public void testTextCellMultipleMSparseMR() 
-	{
-		runReblockTest(OutputInfo.TextCellOutputInfo, true, Type.Multiple, ExecType.MR);
-	}
-	
 	//binary block
 	
 	@Test
@@ -223,41 +186,6 @@ public class FullReblockTest extends AutomatedTestBase
 		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.CP);
 	}
 	
-	@Test
-	public void testBinaryBlockSingleMDenseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Single, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinaryBlockSingeMSparseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Single, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinaryBlockSingleVDenseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Vector, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinaryBlockSingeVSparseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Vector, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinaryBlockMultipleMDenseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, false, Type.Multiple, ExecType.MR);
-	}
-	
-	@Test
-	public void testBinaryBlockMultipleMSparseMR() 
-	{
-		runReblockTest(OutputInfo.BinaryBlockOutputInfo, true, Type.Multiple, ExecType.MR);
-	}
 
 	@Test
 	public void testBinaryBlockSingleMDenseSP() {
@@ -333,7 +261,6 @@ public class FullReblockTest extends AutomatedTestBase
 		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( et ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -111,21 +111,6 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 		runWeightedCrossEntropyTest(TEST_NAME, false, true, true, ExecType.SPARK);
 	}
 	
-	@Test
-	public void testCrossEntropyDenseMR() {
-		runWeightedCrossEntropyTest(TEST_NAME, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCrossEntropySparseMR() {
-		runWeightedCrossEntropyTest(TEST_NAME, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCrossEntropyDenseMRRep() {
-		runWeightedCrossEntropyTest(TEST_NAME, false, true, true, ExecType.MR);
-	}
-	
 	// test cases for wcemm with Epsilon (sum(X*log(U%*%t(V) + eps)))
 	
 	@Test
@@ -136,21 +121,6 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 	@Test
 	public void testCrossEntropyEpsSparseCP() {
 		runWeightedCrossEntropyTest(TEST_NAME2, true, true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testCrossEntropyEpsDenseMR() {
-		runWeightedCrossEntropyTest(TEST_NAME2, false, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCrossEntropyEpsSparseMR() {
-		runWeightedCrossEntropyTest(TEST_NAME2, true, true, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testCrossEntropyEpsDenseMRRep() {
-		runWeightedCrossEntropyTest(TEST_NAME2, false, true, true, ExecType.MR);
 	}
 	
 	@Test
@@ -181,7 +151,6 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 	{		
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

@@ -149,7 +149,7 @@ public class GNMFTest extends MLContextTestBase
 		
 		try 
 		{
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID_SPARK;
+			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
 
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			// set positional argument values

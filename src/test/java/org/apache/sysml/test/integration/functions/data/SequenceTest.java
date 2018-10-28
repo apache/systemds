@@ -163,10 +163,6 @@ public class SequenceTest extends AutomatedTestBase
 			programArgs[outputIndex] = output("A_CP");
 			runTest(true, exceptionExpected, null, -1); 
 			
-			rtplatform = RUNTIME_PLATFORM.HADOOP;
-			programArgs[outputIndex] = output("A_HADOOP");
-			runTest(true, exceptionExpected, null, -1); 
-			
 			rtplatform = RUNTIME_PLATFORM.HYBRID;
 			programArgs[outputIndex] = output("A_HYBRID");
 			runTest(true, exceptionExpected, null, -1);

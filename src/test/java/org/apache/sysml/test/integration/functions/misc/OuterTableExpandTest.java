@@ -81,26 +81,6 @@ public class OuterTableExpandTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testOuterDenseLeftMR() {
-		runOuterTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testOuterSparseLeftMR() {
-		runOuterTest(true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testOuterDenseRightMR() {
-		runOuterTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testOuterSparseRightMR() {
-		runOuterTest(true, false, ExecType.MR);
-	}
-	
-	@Test
 	public void testOuterDenseLeftSP() {
 		runOuterTest(false, true, ExecType.SPARK);
 	}
@@ -140,26 +120,6 @@ public class OuterTableExpandTest extends AutomatedTestBase
 	@Test
 	public void testTableSparseRightCP() {
 		runTableTest(true, false, ExecType.CP);
-	}
-	
-	@Test
-	public void testTableDenseLeftMR() {
-		runTableTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTableSparseLeftMR() {
-		runTableTest(true, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testTableDenseRightMR() {
-		runTableTest(false, false, ExecType.MR);
-	}
-	
-	@Test
-	public void testTableSparseRightMR() {
-		runTableTest(true, false, ExecType.MR);
 	}
 	
 	@Test
@@ -210,7 +170,6 @@ public class OuterTableExpandTest extends AutomatedTestBase
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}
@@ -252,14 +211,6 @@ public class OuterTableExpandTest extends AutomatedTestBase
 				
 				//check meta data
 				checkDMLMetaDataFile("C", new MatrixCharacteristics(left?rows:cols2,left?cols2:rows,1,1));
-			
-				//check compiled/executed jobs
-				if( rtplatform == RUNTIME_PLATFORM.HADOOP ) {
-					int expectedNumCompiled = 2; //reblock+gmr if rexpand; otherwise 3/5
-					int expectedNumExecuted = expectedNumCompiled; 
-					checkNumCompiledMRJobs(expectedNumCompiled); 
-					checkNumExecutedMRJobs(expectedNumExecuted); 	
-				}
 			}
 		}
 		finally

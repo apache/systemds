@@ -69,11 +69,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testRowStdDevsDenseMatrixMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Dense row vector
     @Test
     public void testRowStdDevsDenseRowVectorCP() {
@@ -83,11 +78,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
     @Test
     public void testRowStdDevsDenseRowVectorSpark() {
         testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testRowStdDevsDenseRowVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.ROWVECTOR, ExecType.MR);
     }
 
     // Dense column vector
@@ -101,11 +91,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testRowStdDevsDenseColVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.DENSE,  DataType.COLUMNVECTOR, ExecType.MR);
-    }
-
     // Sparse matrix
     @Test
     public void testRowStdDevsSparseMatrixCP() {
@@ -115,11 +100,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
     @Test
     public void testRowStdDevsSparseMatrixSpark() {
         testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.SPARK);
-    }
-
-    @Test
-    public void testRowStdDevsSparseMatrixMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.MATRIX, ExecType.MR);
     }
 
     // Sparse row vector
@@ -133,11 +113,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testRowStdDevsSparseRowVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Sparse column vector
     @Test
     public void testRowStdDevsSparseColVectorCP() {
@@ -147,11 +122,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
     @Test
     public void testRowStdDevsSparseColVectorSpark() {
         testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testRowStdDevsSparseColVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.SPARSE,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     // Empty matrix
@@ -165,11 +135,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.SPARK);
     }
 
-    @Test
-    public void testRowStdDevsEmptyMatrixMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.MATRIX, ExecType.MR);
-    }
-
     // Empty row vector
     @Test
     public void testRowStdDevsEmptyRowVectorCP() {
@@ -181,11 +146,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.SPARK);
     }
 
-    @Test
-    public void testRowStdDevsEmptyRowVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.ROWVECTOR, ExecType.MR);
-    }
-
     // Empty column vector
     @Test
     public void testRowStdDevsEmptyColVectorCP() {
@@ -195,11 +155,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
     @Test
     public void testRowStdDevsEmptyColVectorSpark() {
         testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.SPARK);
-    }
-
-    @Test
-    public void testRowStdDevsEmptyColVectorMR() {
-        testRowStdDevs(TEST_NAME, Sparsity.EMPTY,  DataType.COLUMNVECTOR, ExecType.MR);
     }
 
     /**
@@ -217,9 +172,6 @@ public class RowStdDevsTest extends AutomatedTestBase {
         // Configure settings for this test case
         RUNTIME_PLATFORM platformOld = rtplatform;
         switch (platform) {
-            case MR:
-                rtplatform = RUNTIME_PLATFORM.HADOOP;
-                break;
             case SPARK:
                 rtplatform = RUNTIME_PLATFORM.SPARK;
                 break;

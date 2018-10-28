@@ -108,7 +108,7 @@ y_test = lr.fit(df_train)
                                  SystemML.jar
                                  -f LinearRegDS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -153,7 +153,7 @@ y_test = lr.fit(df_train)
                                  SystemML.jar
                                  -f LinearRegCG.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -260,7 +260,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  SystemML.jar
                                  -f LinearRegDS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -317,7 +317,7 @@ print("Residual sum of squares: %.2f" % np.mean((regr.predict(diabetes_X_test) -
                                  SystemML.jar
                                  -f LinearRegCG.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -558,7 +558,7 @@ lowest AIC is computed.
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -629,7 +629,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f StepLinearRegDS.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -761,7 +761,7 @@ distributions and link functions, see below for details.
                                  SystemML.jar
                                  -f GLM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -899,7 +899,7 @@ if no maximum limit provided
                                  SystemML.jar
                                  -f GLM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -1236,7 +1236,7 @@ distribution family is supported (see below for details).
                                  SystemML.jar
                                  -f StepGLM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=<file>
                                          B=<file>
@@ -1341,7 +1341,7 @@ SystemML Language Reference for details.
                                  SystemML.jar
                                  -f StepGLM.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=/user/ml/X.mtx
                                          Y=/user/ml/Y.mtx
                                          B=/user/ml/B.mtx
@@ -1487,7 +1487,7 @@ this step outside the scope of `GLM-predict.dml` for now.
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs X=<file>
                                          Y=[file]
                                          B=<file>
@@ -1626,7 +1626,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=1
                                          vpow=0.0
                                          link=1
@@ -1662,7 +1662,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=1
                                          vpow=0.0
                                          link=1
@@ -1696,7 +1696,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=2
                                          link=2
                                          disp=3.0004464
@@ -1731,7 +1731,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=2
                                          link=3
                                          disp=3.0004464
@@ -1764,7 +1764,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=3
                                          X=/user/ml/X.mtx
                                          B=/user/ml/B.mtx
@@ -1799,7 +1799,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=1
                                          vpow=1.0
                                          link=1
@@ -1838,7 +1838,7 @@ unknown (which sets it to `1.0`).
                                  SystemML.jar
                                  -f GLM-predict.dml
                                  -config SystemML-config.xml
-                                 -exec hybrid_spark
+                                 -exec HYBRID
                                  -nvargs dfam=1
                                          vpow=2.0
                                          link=1

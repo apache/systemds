@@ -93,16 +93,6 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testWSigmoidDenseRewritesMR() {
-		runRewriteWeightedSigmoidTest(false, true, ExecType.MR);
-	}
-	
-	@Test
-	public void testWSigmoidSparseRewritesMR() {
-		runRewriteWeightedSigmoidTest(true, true, ExecType.MR);
-	}
-	
-	@Test
 	public void testWSigmoidDenseRewritesSP() {
 		runRewriteWeightedSigmoidTest(false, true, ExecType.SPARK);
 	}
@@ -123,7 +113,6 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 	{
 		RUNTIME_PLATFORM platformOld = rtplatform;
 		switch( instType ){
-			case MR: rtplatform = RUNTIME_PLATFORM.HADOOP; break;
 			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
 			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
 		}

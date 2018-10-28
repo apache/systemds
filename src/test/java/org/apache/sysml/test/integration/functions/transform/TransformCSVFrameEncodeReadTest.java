@@ -60,7 +60,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", false, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", false, false);
 	}
 	
 	@Test
@@ -75,7 +75,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameParReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", false, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", false, true);
 	}
 
 	@Test
@@ -90,7 +90,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameReadSubMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", true, false);
 	}
 	
 	@Test
@@ -105,7 +105,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameParReadSubMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", true, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", true, true);
 	}
 
 	
@@ -122,7 +122,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

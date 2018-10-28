@@ -286,38 +286,11 @@ public class FullStringInitializeTest extends AutomatedTestBase
 		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, true, ErrorType.TOO_MANY, ExecType.CP);
 	}
 
-	//few additional tests for MR to test that string initialize is always forced into CP
-	
-	@Test
-	public void testStringIntializeColVectorIntDenseNoErrorMR() 
-	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.INT, false, ErrorType.NO_ERROR, ExecType.MR);
-	}
-	
-	@Test
-	public void testStringIntializeRowVectorIntDenseNoErrorMR() 
-	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.INT, false, ErrorType.NO_ERROR, ExecType.MR);
-	}
-
-	@Test
-	public void testStringIntializeMatrixIntDenseNoErrorMR() 
-	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.INT, false, ErrorType.NO_ERROR, ExecType.MR);
-	}
-	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runStringInitializeTest( InputType intype, ValueType vt, boolean sparse, ErrorType errtype, ExecType instType)
 	{
 		//rtplatform for MR
 		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = (instType==ExecType.MR) ? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.HYBRID;
+		rtplatform = RUNTIME_PLATFORM.HYBRID;
 		
 		try
 		{

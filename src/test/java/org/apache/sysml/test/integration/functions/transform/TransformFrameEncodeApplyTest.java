@@ -82,7 +82,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE, false);
 	}
 	
 	@Test
@@ -97,7 +97,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesDummycodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.DUMMY, false);
 	}
 	
 	@Test
@@ -112,7 +112,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeDummycodeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE_DUMMY, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE_DUMMY, false);
 	}
 	
 	@Test
@@ -127,7 +127,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesBinningIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.BIN, false);
 	}
 	
 	@Test
@@ -142,7 +142,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesOmitIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.OMIT, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.OMIT, false);
 	}
 	
 	@Test
@@ -157,7 +157,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesImputeIDsHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.IMPUTE, false);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.IMPUTE, false);
 	}
 
 	@Test
@@ -172,7 +172,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE, true);
 	}
 	
 	@Test
@@ -187,7 +187,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesDummycodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.DUMMY, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.DUMMY, true);
 	}
 	
 	@Test
@@ -202,7 +202,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeDummycodeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.RECODE_DUMMY, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.RECODE_DUMMY, true);
 	}
 	
 	@Test
@@ -217,7 +217,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesBinningColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.BIN, true);
 	}
 	
 	@Test
@@ -232,7 +232,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesOmitvColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.OMIT, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.OMIT, true);
 	}
 	
 	@Test
@@ -247,7 +247,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesImputeColnamesHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.IMPUTE, true);
+		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", TransformType.IMPUTE, true);
 	}
 	
 	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, TransformType type, boolean colnames )
@@ -257,7 +257,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID_SPARK)
+		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		//set transform specification
@@ -298,7 +298,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 				.readMatrixFromHDFS(output("tfout2"), -1L, -1L, 1000, 1000, -1));
 			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);		
 			
-			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
+			if( rt == RUNTIME_PLATFORM.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}

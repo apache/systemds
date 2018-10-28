@@ -25,9 +25,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UTFDataFormatException;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataOutput;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 /**
  * This buffered output stream is essentially a merged version of

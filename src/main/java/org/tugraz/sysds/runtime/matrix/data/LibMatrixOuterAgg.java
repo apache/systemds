@@ -21,6 +21,7 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import java.util.Arrays;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.functionobjects.Equals;
 import org.tugraz.sysds.runtime.functionobjects.GreaterThan;

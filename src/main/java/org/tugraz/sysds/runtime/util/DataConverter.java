@@ -31,6 +31,9 @@ import java.util.Map.Entry;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.DenseBlockFactory;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.MatrixReader;
@@ -40,15 +43,12 @@ import org.tugraz.sysds.runtime.io.MatrixWriterFactory;
 import org.tugraz.sysds.runtime.io.ReadProperties;
 import org.tugraz.sysds.runtime.matrix.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.matrix.data.CTableMap;
-import org.tugraz.sysds.runtime.matrix.data.DenseBlock;
-import org.tugraz.sysds.runtime.matrix.data.DenseBlockFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 
 /**

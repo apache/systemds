@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2018 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

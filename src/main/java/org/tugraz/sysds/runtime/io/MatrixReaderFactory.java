@@ -22,9 +22,9 @@ package org.tugraz.sysds.runtime.io;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 public class MatrixReaderFactory 
 {

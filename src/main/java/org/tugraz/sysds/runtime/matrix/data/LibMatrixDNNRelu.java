@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 
 /**
  * This class contains the different implementation of rotate180 operation

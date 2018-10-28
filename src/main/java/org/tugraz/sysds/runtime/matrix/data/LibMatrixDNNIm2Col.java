@@ -21,6 +21,7 @@ package org.tugraz.sysds.runtime.matrix.data;
 import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**

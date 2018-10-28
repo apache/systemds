@@ -22,8 +22,8 @@ package org.tugraz.sysds.runtime.compress;
 import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.compress.utils.DblArray;
+import org.tugraz.sysds.runtime.data.SparseRow;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseRow;
 
 /**
  * Used to extract the values at certain indexes from each row in a sparse

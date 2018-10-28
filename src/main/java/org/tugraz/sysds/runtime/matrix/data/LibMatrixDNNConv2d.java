@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
 import org.tugraz.sysds.utils.NativeHelper;
 import org.tugraz.sysds.utils.Statistics;

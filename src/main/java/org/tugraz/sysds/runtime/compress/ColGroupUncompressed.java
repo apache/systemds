@@ -27,13 +27,13 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock.Type;
 import org.tugraz.sysds.runtime.functionobjects.ReduceRow;
 import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock.Type;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 import org.tugraz.sysds.runtime.util.SortUtils;

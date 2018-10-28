@@ -21,10 +21,10 @@ package org.tugraz.sysds.hops.estim;
 
 import java.util.Arrays;
 
-import org.tugraz.sysds.runtime.matrix.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseRowVector;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseRowVector;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public abstract class EstimationUtils 

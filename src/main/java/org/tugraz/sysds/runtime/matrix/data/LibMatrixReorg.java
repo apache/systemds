@@ -36,6 +36,10 @@ import java.util.stream.Collectors;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.DenseBlockFactory;
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlockCSR;
 import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
 import org.tugraz.sysds.runtime.functionobjects.RevIndex;
 import org.tugraz.sysds.runtime.functionobjects.SortIndex;

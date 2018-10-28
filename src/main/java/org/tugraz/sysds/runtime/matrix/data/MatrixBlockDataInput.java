@@ -21,6 +21,8 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import java.io.IOException;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
+
 /**
  * Any data input that is intended to support fast deserialization / read
  * of entire blocks should implement this interface. On read of a matrix block

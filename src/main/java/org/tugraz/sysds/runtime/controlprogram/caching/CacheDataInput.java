@@ -23,9 +23,9 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataInput;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 public class CacheDataInput implements DataInput, MatrixBlockDataInput
 {

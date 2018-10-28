@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 

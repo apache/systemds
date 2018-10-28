@@ -24,8 +24,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataInput;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 public class ByteBufferDataInput implements DataInput, MatrixBlockDataInput
 {

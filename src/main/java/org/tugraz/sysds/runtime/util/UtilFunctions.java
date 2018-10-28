@@ -31,11 +31,11 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.MetaDataNumItemsByEachReducer;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 
 public class UtilFunctions 

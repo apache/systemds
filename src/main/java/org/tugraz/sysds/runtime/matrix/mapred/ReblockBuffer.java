@@ -28,9 +28,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.SparseBlock.Type;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock.Type;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class ReblockBuffer

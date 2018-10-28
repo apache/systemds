@@ -26,10 +26,10 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlockCSR;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataInput;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlockCSR;
 
 public class FastBufferedDataInputStream extends FilterInputStream implements DataInput, MatrixBlockDataInput
 {

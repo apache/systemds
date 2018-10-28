@@ -22,10 +22,10 @@ package org.tugraz.sysds.runtime.codegen;
 import java.util.Arrays;
 
 import org.apache.commons.math3.util.FastMath;
+import org.tugraz.sysds.runtime.data.DenseBlockDRB;
 import org.tugraz.sysds.runtime.functionobjects.BitwAnd;
 import org.tugraz.sysds.runtime.functionobjects.IntegerDivide;
 import org.tugraz.sysds.runtime.functionobjects.Modulus;
-import org.tugraz.sysds.runtime.matrix.data.DenseBlockDRB;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNIm2Col;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNPooling;

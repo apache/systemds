@@ -22,10 +22,10 @@ import java.util.Iterator;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.lops.Checkpoint;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 import scala.Tuple2;
 

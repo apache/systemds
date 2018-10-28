@@ -18,6 +18,8 @@
  */
 package org.tugraz.sysds.runtime.matrix.data;
 
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNNHelper.CellIndex3;
 
 /**

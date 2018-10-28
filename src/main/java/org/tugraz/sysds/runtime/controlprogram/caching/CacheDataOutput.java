@@ -23,9 +23,9 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataOutput;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 /**
  * Custom DataOutput to serialize directly into the given byte array.

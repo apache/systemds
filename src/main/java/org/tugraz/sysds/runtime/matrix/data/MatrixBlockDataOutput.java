@@ -22,6 +22,8 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import java.io.IOException;
 
+import org.tugraz.sysds.runtime.data.SparseBlock;
+
 /**
  * Any data output that is intended to support fast serialization / write
  * of entire blocks should implement this interface. On write of a matrix block

@@ -22,6 +22,13 @@ package org.tugraz.sysds.runtime.matrix.data;
 import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlockCSR;
+import org.tugraz.sysds.runtime.data.SparseBlockFactory;
+import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
+import org.tugraz.sysds.runtime.data.SparseRow;
+import org.tugraz.sysds.runtime.data.SparseRowVector;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.functionobjects.Divide;
 import org.tugraz.sysds.runtime.functionobjects.Equals;

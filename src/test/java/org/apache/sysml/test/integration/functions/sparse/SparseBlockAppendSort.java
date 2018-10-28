@@ -21,10 +21,10 @@ package org.apache.sysml.test.integration.functions.sparse;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlockCOO;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlockCSR;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlockMCSR;
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlockCOO;
+import org.tugraz.sysds.runtime.data.SparseBlockCSR;
+import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
 import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap;
 import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
 

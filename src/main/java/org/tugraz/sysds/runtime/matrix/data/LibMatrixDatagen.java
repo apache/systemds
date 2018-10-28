@@ -34,6 +34,8 @@ import org.apache.commons.math3.random.Well1024a;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
 import org.tugraz.sysds.runtime.util.NormalPRNGenerator;
 import org.tugraz.sysds.runtime.util.PRNGenerator;

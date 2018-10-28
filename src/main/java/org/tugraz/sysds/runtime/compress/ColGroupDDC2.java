@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.compress.utils.ConverterUtils;
+import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.functionobjects.KahanFunction;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
-import org.tugraz.sysds.runtime.matrix.data.DenseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 

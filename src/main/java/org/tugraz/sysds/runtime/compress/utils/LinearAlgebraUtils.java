@@ -19,7 +19,7 @@
 
 package org.tugraz.sysds.runtime.compress.utils;
 
-import org.tugraz.sysds.runtime.matrix.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixMult;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 

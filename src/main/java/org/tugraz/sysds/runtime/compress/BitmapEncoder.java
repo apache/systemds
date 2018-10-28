@@ -25,8 +25,8 @@ import org.tugraz.sysds.runtime.compress.utils.DblArray;
 import org.tugraz.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.tugraz.sysds.runtime.compress.utils.DoubleIntListHashMap;
 import org.tugraz.sysds.runtime.compress.utils.IntArrayList;
+import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.matrix.data.SparseBlock;
 
 
 /** 

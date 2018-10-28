@@ -22,9 +22,6 @@ package org.tugraz.sysds.conf;
 import org.apache.hadoop.mapred.JobConf;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
-import org.tugraz.sysds.runtime.matrix.mapred.MRJobConfiguration;
-import org.tugraz.sysds.utils.lite.LiteCheck;
 
 
 
@@ -59,14 +56,6 @@ public class ConfigurationManager
 		//ConfigManager -> OptimizerUtils -> InfrastructureAnalyer -> ConfigManager 
  		_dmlconf = new DMLConfig();
 		_cconf = new CompilerConfig();
-
-		if (LiteCheck.isLite() && MRJobConfiguration.USE_BINARYBLOCK_SERIALIZATION) {
-			// to be able to write using binary format
-			// WritableSerialization -> MatrixIndexes
-			// BinaryBlockSerialization -> MatrixBlock
-			_rJob.set(MRConfigurationNames.IO_SERIALIZATIONS,
-					"org.apache.hadoop.io.serializer.WritableSerialization,org.apache.sysml.runtime.io.BinaryBlockSerialization");
-		}
 	}
 	
 	

@@ -30,7 +30,6 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.utils.lite.LiteCheck;
 
 /**
  * Central place for analyzing and obtaining static infrastructure properties
@@ -87,7 +86,7 @@ public class InfrastructureAnalyzer
 	 * @return number of cluster nodes
 	 */
 	public static int getRemoteParallelNodes() {
-		if ((_remotePar == -1) && (!LiteCheck.isLite()))
+		if( _remotePar == -1 )
 			analyzeHadoopCluster();
 		return _remotePar;
 	}
@@ -98,7 +97,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel map tasks
 	 */
 	public static int getRemoteParallelMapTasks() {
-		if ((_remoteParMap == -1) && (!LiteCheck.isLite()))
+		if( _remoteParMap == -1 )
 			analyzeHadoopCluster();
 		return _remoteParMap;
 	}
@@ -113,7 +112,7 @@ public class InfrastructureAnalyzer
 	 * @return number of remote parallel reduce tasks
 	 */
 	public static int getRemoteParallelReduceTasks() {
-		if ((_remoteParReduce == -1) && (!LiteCheck.isLite()))
+		if( _remoteParReduce == -1 )
 			analyzeHadoopCluster();
 		return _remoteParReduce;
 	}
@@ -150,7 +149,7 @@ public class InfrastructureAnalyzer
 	 * @return maximum memory of remote hadoop map task jvm
 	 */
 	public static long getRemoteMaxMemoryMap() {
-		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
+		if( _remoteJVMMaxMemMap == -1 )
 			analyzeHadoopConfiguration();
 		return _remoteJVMMaxMemMap;
 	}
@@ -165,7 +164,7 @@ public class InfrastructureAnalyzer
 	 * @return maximum memory of remote hadoop reduce task jvm
 	 */
 	public static long getRemoteMaxMemoryReduce() {
-		if ((_remoteJVMMaxMemReduce == -1) && (!LiteCheck.isLite()))
+		if( _remoteJVMMaxMemReduce == -1 )
 			analyzeHadoopConfiguration();
 		return _remoteJVMMaxMemReduce;
 	}
@@ -180,13 +179,13 @@ public class InfrastructureAnalyzer
 	 * @return maximum sort buffer memory of hadoop task
 	 */
 	public static long getRemoteMaxMemorySortBuffer() {
-		if ((_remoteMRSortMem == -1) && (!LiteCheck.isLite()))
+		if( _remoteMRSortMem == -1 )
 			analyzeHadoopConfiguration();
 		return _remoteMRSortMem;
 	}
 
 	public static boolean isLocalMode() {
-		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
+		if( _remoteJVMMaxMemMap == -1 )
 			analyzeHadoopConfiguration();
 		return _localJT;
 	}
@@ -243,13 +242,13 @@ public class InfrastructureAnalyzer
 	 * @return HDFS block size
 	 */
 	public static long getHDFSBlockSize() {
-		if ((_blocksize == -1) && (!LiteCheck.isLite()))
+		if( _blocksize == -1 )
 			analyzeHadoopConfiguration();
 		return _blocksize;
 	}
 
 	public static boolean isYarnEnabled() {
-		if ((_remoteJVMMaxMemMap == -1) && (!LiteCheck.isLite()))
+		if( _remoteJVMMaxMemMap == -1 )
 			analyzeHadoopConfiguration();
 		return _yarnEnabled;
 	}

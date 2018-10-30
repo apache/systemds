@@ -26,23 +26,11 @@ import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockDRB_FP64 extends DenseBlock
+public class DenseBlockFP64 extends DenseBlockDRB
 {
 	private static final long serialVersionUID = 8546723684649816489L;
 
 	private double[] data;
-	private int rlen;
-	private int clen;
-
-	public DenseBlockDRB_FP64(int rlen, int clen) {
-		reset(rlen, clen, 0);
-	}
-
-	public DenseBlockDRB_FP64(double[] data, int rlen, int clen) {
-		this.data = data;
-		this.rlen = rlen;
-		this.clen = clen;
-	}
 
 	@Override
 	public void reset() {
@@ -67,46 +55,6 @@ public class DenseBlockDRB_FP64 extends DenseBlock
 		}
 		this.rlen = rlen;
 		this.clen = clen;
-	}
-
-	@Override
-	public int numRows() {
-		return rlen;
-	}
-
-	@Override
-	public int numBlocks() {
-		return 1;
-	}
-	
-	@Override
-	public int blockSize() {
-		return rlen;
-	}
-	
-	@Override
-	public int blockSize(int bix) {
-		return rlen;
-	}
-	
-	@Override
-	public boolean isContiguous() {
-		return true;
-	}
-	
-	@Override
-	public boolean isContiguous(int rl, int ru) {
-		return true;
-	}
-
-	@Override
-	public long size() {
-		return rlen * clen;
-	}
-	
-	@Override
-	public int size(int bix) {
-		return rlen * clen;
 	}
 
 	@Override
@@ -227,18 +175,5 @@ public class DenseBlockDRB_FP64 extends DenseBlock
 	@Override
 	public double get(int r, int c) {
 		return data[pos(r, c)];
-	}
-	
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		for(int i=0, ix=0; i<rlen; i++, ix+=clen) {
-			for(int j=0; j<clen; j++) {
-				sb.append(data[ix+j]);
-				sb.append("\t");
-			}
-			sb.append("\n");
-		}
-		return sb.toString();
 	}
 }

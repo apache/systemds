@@ -39,6 +39,9 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
  * is no constant-time random access to individual rows. Similar to CSR, the nnz
  * is limited to Integer.MAX_VALUE.
  * 
+ * In contrast to COO matrix formats with three arrays, we use 1+#dims arrays
+ * to represent the values and indexes of all dimensions.
+ * 
  */
 public class SparseBlockCOO extends SparseBlock 
 {

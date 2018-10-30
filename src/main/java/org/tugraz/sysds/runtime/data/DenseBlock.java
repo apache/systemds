@@ -23,8 +23,10 @@
 package org.tugraz.sysds.runtime.data;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
  * This DenseBlock is an abstraction for different dense, row-major 
@@ -42,6 +44,17 @@ public abstract class DenseBlock implements Serializable
 		LDRB, //large dense row block
 	}
 	
+	protected int _rlen;
+	protected int _odims;
+	
+	protected DenseBlock(int[] dims) {
+		long odims = UtilFunctions.prod(dims, 1);
+		if( odims > Integer.MAX_VALUE )
+			throw new RuntimeException("Invalid dims: "+Arrays.toString(dims));
+		_rlen = dims[0];
+		_odims = (int) odims;
+	}
+	
 	/**
 	 * Resets the dense block by deleting non-zero values. After this
 	 * call all countNonZeros() calls are guaranteed to return 0.
@@ -54,19 +67,17 @@ public abstract class DenseBlock implements Serializable
 	 * the new dimensions exceed the current capacity, the underlying
 	 * storage is extended accordingly.
 	 * 
-	 * @param rlen number of rows
-	 * @param clen number of columns
+	 * @param dims length and size of dimensions.
 	 */
-	public abstract void reset(int rlen, int clen);
+	public abstract void reset(int[] dims);
 	
 	/**
 	 * Resets the dense block by setting the given value.
 	 * 
-	 * @param rlen number of rows
-	 * @param clen number of columns
+	 * @param dims lenth and size of dimensions
 	 * @param v value
 	 */
-	public abstract void reset(int rlen, int clen, double v);
+	public abstract void reset(int[] dims, double v);
 	
 	
 	/**
@@ -74,7 +85,9 @@ public abstract class DenseBlock implements Serializable
 	 * 
 	 * @return number of rows
 	 */
-	public abstract int numRows();
+	public final int numRows() {
+		return _rlen;
+	}
 	
 	/**
 	 * Get the number of allocated blocks.
@@ -99,6 +112,12 @@ public abstract class DenseBlock implements Serializable
 	public abstract int blockSize(int bix);
 	
 	/**
+	 * Indicates of the dnse block is numeric.
+	 * @return true if numeric (FP, INT, BOOLEAN)
+	 */
+	public abstract boolean isNumeric();
+	
+	/**
 	 * Indicates if the dense block has a single
 	 * underlying block, i.e., if numBlocks==1.
 	 * 
@@ -116,14 +135,15 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract boolean isContiguous(int rl, int ru);
 	
-	
 	/**
 	 * Get the length of the dense block as the product
-	 * of row and column dimensions.
+	 * of all dimensions.
 	 * 
 	 * @return length
 	 */
-	public abstract long size();
+	public final long size() {
+		return _rlen * _odims;
+	}
 	
 	/**
 	 * Get the length of the given block.
@@ -339,6 +359,26 @@ public abstract class DenseBlock implements Serializable
 	 */
 	public abstract double get(int r, int c);
 	
-	@Override 
-	public abstract String toString();
+	/**
+	 * 
+	 * @param ix
+	 * @return
+	 */
+	public abstract double get(int[] ix);
+	
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0; i<_rlen; i++) {
+			double[] data = values(i);
+			int ix = pos(i);
+			for(int j=0; j<_odims; j++) {
+				sb.append(data[ix+j]);
+				sb.append("\t");
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
+	}
 }

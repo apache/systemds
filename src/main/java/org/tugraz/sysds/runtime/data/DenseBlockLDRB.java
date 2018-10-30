@@ -269,20 +269,7 @@ public class DenseBlockLDRB extends DenseBlock
 		return data[index(r)][pos(r, c)];
 	}
 	
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		for(int i=0; i<rlen; i++) {
-			double[] data = values(i);
-			int ix = pos(i);
-			for(int j=0; j<clen; j++) {
-				sb.append(data[ix+j]);
-				sb.append("\t");
-			}
-			sb.append("\n");
-		}
-		return sb.toString();
-	}
+	
 
 	private static int blocksize(int rlen, int clen) {
 		return Math.min(rlen, Integer.MAX_VALUE / clen);

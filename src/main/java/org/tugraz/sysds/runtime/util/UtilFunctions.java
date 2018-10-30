@@ -668,4 +668,18 @@ public class UtilFunctions
 		Iterable<T> iterable = () -> iter;
 		return StreamSupport.stream(iterable.spliterator(), false);
 	}
+
+	public static long prod(int[] arr) {
+		long ret = 1;
+		for(int i=0; i<arr.length; i++)
+			ret *= arr[i];
+		return ret;
+	}
+	
+	public static long prod(int[] arr, int off) {
+		long ret = 1;
+		for(int i=off; i<arr.length; i++)
+			ret *= arr[i];
+		return ret;
+	}
 }

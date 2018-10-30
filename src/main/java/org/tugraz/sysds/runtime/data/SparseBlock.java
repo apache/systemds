@@ -564,7 +564,7 @@ public abstract class SparseBlock implements Serializable
 
 		@Override
 		public void remove() {
-			throw new RuntimeException("SparseBlockIterator is unsupported!");			
+			throw new RuntimeException("SparseBlockIterator is unsupported!");
 		}		
 		
 		/**
@@ -581,6 +581,6 @@ public abstract class SparseBlock implements Serializable
 				_curIndexes = indexes(_curRow); 
 				_curValues = values(_curRow);
 			}
-		}		
+		}
 	}
 }

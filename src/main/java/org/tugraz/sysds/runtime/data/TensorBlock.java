@@ -20,6 +20,7 @@ import java.io.Serializable;
 
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class TensorBlock implements Serializable
 {
@@ -236,10 +237,7 @@ public class TensorBlock implements Serializable
 	}
 	
 	public long getLength() {
-		long ret = 1;
-		for(int i=0; i<getNumDims(); i++)
-			ret *= getDim(i);
-		return ret;
+		return UtilFunctions.prod(_dims);
 	}
 	
 	public boolean isSparse() {

@@ -22,9 +22,9 @@ import static jcuda.runtime.JCuda.cudaMemcpy;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
+import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -36,21 +36,17 @@ import jcuda.Sizeof;
 public class ShadowBuffer {
 	private static final Log LOG = LogFactory.getLog(ShadowBuffer.class.getName());
 	
-	GPUObject gpuObj;
-	float[] shadowPointer = null;
+	private GPUObject gpuObj;
+	// shadowPointer can be double[], float[] or short[].
+	private Object shadowPointer = null;
 	private static boolean _warnedAboutShadowBuffer = false;
 	private static long EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;
 	private static long EVICTION_SHADOW_BUFFER_MAX_BYTES;
 	static {
-		if(DMLScript.FLOATING_POINT_PRECISION.equals("double")) {
-			EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;
-		}
-		else {
-			double shadowBufferSize = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
-			if(shadowBufferSize < 0 || shadowBufferSize > 1) 
-				throw new RuntimeException("Incorrect value (" + shadowBufferSize + ") for the configuration:" + DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
-			EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (((double)InfrastructureAnalyzer.getLocalMaxMemory())*shadowBufferSize);
-		}
+		double shadowBufferSize = ConfigurationManager.getDMLConfig().getDoubleValue(DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
+		if(shadowBufferSize < 0 || shadowBufferSize > 1) 
+			throw new RuntimeException("Incorrect value (" + shadowBufferSize + ") for the configuration:" + DMLConfig.EVICTION_SHADOW_BUFFERSIZE);
+		EVICTION_SHADOW_BUFFER_MAX_BYTES = (long) (((double)InfrastructureAnalyzer.getLocalMaxMemory())*shadowBufferSize);
 	}
 	
 	public ShadowBuffer(GPUObject gpuObj) {
@@ -73,9 +69,21 @@ public class ShadowBuffer {
 	public void moveFromDevice(String instName) {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 		int numElems = GPUObject.toIntExact(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
-		shadowPointer = new float[numElems];
-		EVICTION_SHADOW_BUFFER_CURR_BYTES += getSizeOfFloat(shadowPointer.length);
-		cudaMemcpy(Pointer.to(shadowPointer), gpuObj.jcudaDenseMatrixPtr, getSizeOfDataType(numElems), jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
+		if(LibMatrixCUDA.sizeOfDataType == Sizeof.DOUBLE) {
+			shadowPointer = new double[numElems];
+		}
+		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
+			shadowPointer = new float[numElems];
+		}
+		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.SHORT) {
+			shadowPointer = new short[numElems];
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported datatype");
+		}
+		long numBytes = getNumBytesOfShadowBuffer();
+		EVICTION_SHADOW_BUFFER_CURR_BYTES += numBytes;
+		cudaMemcpy(getHostShadowPointer(), gpuObj.jcudaDenseMatrixPtr, numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost);
 		gpuObj.getGPUContext().cudaFreeHelper(instName, gpuObj.jcudaDenseMatrixPtr, true);
 		gpuObj.jcudaDenseMatrixPtr = null;
 		if (ConfigurationManager.isStatistics()) {
@@ -87,12 +95,35 @@ public class ShadowBuffer {
 		}
 	}
 	
-	private long getSizeOfFloat(long numElems) {
-		return numElems*Sizeof.FLOAT;
+	private long getNumBytesOfShadowBuffer() {
+		long numElems = 0;
+		switch(LibMatrixCUDA.sizeOfDataType) {
+			case Sizeof.DOUBLE:
+				numElems = ((double[])shadowPointer).length;
+				break;
+			case Sizeof.FLOAT:
+				numElems = ((float[])shadowPointer).length;
+				break;
+			case Sizeof.SHORT:
+				numElems = ((short[])shadowPointer).length;
+				break;
+			default:
+				throw new DMLRuntimeException("Unsupported datatype of size:" + LibMatrixCUDA.sizeOfDataType);	
+		}
+		return numElems*LibMatrixCUDA.sizeOfDataType;
 	}
 	
-	private long getSizeOfDataType(long numElems) {
-		return numElems*LibMatrixCUDA.sizeOfDataType;
+	private Pointer getHostShadowPointer() {
+		switch(LibMatrixCUDA.sizeOfDataType) {
+			case Sizeof.DOUBLE:
+				return Pointer.to((double[])shadowPointer);
+			case Sizeof.FLOAT:
+				return Pointer.to((float[])shadowPointer);
+			case Sizeof.SHORT:
+				return Pointer.to((short[])shadowPointer);
+			default:
+				throw new DMLRuntimeException("Unsupported datatype of size:" + LibMatrixCUDA.sizeOfDataType);	
+		}
 	}
 	
 	/**
@@ -103,9 +134,24 @@ public class ShadowBuffer {
 		MatrixBlock tmp = new MatrixBlock(GPUObject.toIntExact(gpuObj.mat.getNumRows()), GPUObject.toIntExact(gpuObj.mat.getNumColumns()), false);
 		tmp.allocateDenseBlock();
 		double [] tmpArr = tmp.getDenseBlockValues();
-		for(int i = 0; i < shadowPointer.length; i++) {
-			tmpArr[i] = shadowPointer[i];
+		if(LibMatrixCUDA.sizeOfDataType == Sizeof.DOUBLE) {
+			double[] sArr = ((double[])shadowPointer);
+			System.arraycopy(sArr, 0, tmpArr, 0, sArr.length);
 		}
+		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.FLOAT) {
+			float[] sArr = ((float[])shadowPointer);
+			for(int i = 0; i < sArr.length; i++) {
+				tmpArr[i] = sArr[i];
+			}
+		}
+		else if(LibMatrixCUDA.sizeOfDataType == Sizeof.SHORT) {
+			// short[] sArr = ((short[])shadowPointer);
+			throw new DMLRuntimeException("Unsupported operation: moveToHost for half precision");
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported datatype of size:" + LibMatrixCUDA.sizeOfDataType);
+		}
+		
 		gpuObj.mat.acquireModify(tmp);
 		gpuObj.mat.release();
 		clearShadowPointer();
@@ -125,9 +171,9 @@ public class ShadowBuffer {
 	 */
 	public void moveToDevice() {
 		long start = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
-		long numBytes = getSizeOfDataType(shadowPointer.length);
+		long numBytes = getNumBytesOfShadowBuffer();
 		gpuObj.jcudaDenseMatrixPtr = gpuObj.getGPUContext().allocate(null, numBytes);
-		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, Pointer.to(shadowPointer), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
+		cudaMemcpy(gpuObj.jcudaDenseMatrixPtr, getHostShadowPointer(), numBytes, jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice);
 		clearShadowPointer();
 		if (ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - start;
@@ -144,8 +190,8 @@ public class ShadowBuffer {
 	 * @return true if the given GPU object is eligible to be shadow buffered
 	 */
 	public boolean isEligibleForBuffering(boolean isEviction, boolean eagerDelete) {
-		if(LibMatrixCUDA.sizeOfDataType == jcuda.Sizeof.FLOAT && isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
-			long numBytes = getSizeOfFloat(gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns());
+		if(isEviction && eagerDelete && !gpuObj.isDensePointerNull()) {
+			long numBytes = gpuObj.mat.getNumRows()*gpuObj.mat.getNumColumns()*LibMatrixCUDA.sizeOfDataType;
 			boolean ret = EVICTION_SHADOW_BUFFER_CURR_BYTES + numBytes <= EVICTION_SHADOW_BUFFER_MAX_BYTES;
 			if(!ret && !_warnedAboutShadowBuffer) {
 				LOG.warn("Shadow buffer is full, so using CP bufferpool instead. Consider increasing sysml.gpu.eviction.shadow.bufferSize.");
@@ -163,7 +209,7 @@ public class ShadowBuffer {
 	 */
 	public void clearShadowPointer() {
 		if(shadowPointer != null) {
-			EVICTION_SHADOW_BUFFER_CURR_BYTES -= getSizeOfFloat(shadowPointer.length);
+			EVICTION_SHADOW_BUFFER_CURR_BYTES -= getNumBytesOfShadowBuffer();
 		}
 		shadowPointer = null;
 	}

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
 
+import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
@@ -238,7 +239,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			return new DnnGPUInstruction(in1, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[16]));
 		}
-		else if( opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("avgpooling_backward") ) {
+		else if( opcode.equalsIgnoreCase("maxpooling_backward") || opcode.equalsIgnoreCase("relu_maxpooling_backward") 
+				|| opcode.equalsIgnoreCase("avgpooling_backward") ) {
 			boolean withMaxPoolOut = false;
 			if(parts.length == 18) {
 				withMaxPoolOut = true;
@@ -298,7 +300,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 			return new DnnGPUInstruction(in1, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, Double.parseDouble(parts[17]));
 		}
-		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("avgpooling")) {
+		else if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling") 
+				|| opcode.equalsIgnoreCase("avgpooling")) {
 			InstructionUtils.checkNumFields(parts, 15);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand out = new CPOperand(parts[14]);
@@ -1005,8 +1008,19 @@ public class DnnGPUInstruction extends GPUInstruction {
 			LibMatrixCuDNN.conv2dBackwardData(ec.getGPUContext(0), getExtendedOpcode(), filter, dout, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, _intermediateMemoryBudget);
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("avgpooling")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling") 
+			|| instOpcode.equalsIgnoreCase("avgpooling")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+			Pointer x = null;
+			if(instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+				Pointer tmpX = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
+				long CHW = ((long)C)*((long)H)*((long)W);
+				x = gCtx.allocate(instName, ((long)N)*CHW*LibMatrixCUDA.sizeOfDataType);
+				LibMatrixCuDNN.getCudaKernels(gCtx).launchKernel("relu",
+						ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
+						tmpX, x, N, toInt(CHW));
+				ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+			}
 
 			if(image.getNumRows() != N || image.getNumColumns() != C*H*W) 
 				throw new DMLRuntimeException("Incorrect dimensions for image in maxpooling: " + 
@@ -1014,11 +1028,30 @@ public class DnnGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * P * Q);
 			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling") ? PoolingType.MAX : PoolingType.AVG;
-			LibMatrixCuDNN.pooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
+			if(instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+				LibMatrixCuDNN.pooling(ec.getGPUContext(0), getExtendedOpcode(), x, out, N, C, H, W,
+						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
+				gCtx.cudaFreeHelper(instName, x, gCtx.EAGER_CUDA_FREE);
+			}
+			else {
+				LibMatrixCuDNN.pooling(ec.getGPUContext(0), getExtendedOpcode(), image, out, N, C, H, W,
 					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
+			}
 		}
-		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("avgpooling_backward")) {
+		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward") 
+			|| instOpcode.equalsIgnoreCase("avgpooling_backward")) {
 			MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
+			Pointer x = null;
+			if(instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
+				Pointer tmpX = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, image, instName);
+				long CHW = ((long)C)*((long)H)*((long)W);
+				x = gCtx.allocate(instName, ((long)N)*CHW*LibMatrixCUDA.sizeOfDataType);
+				LibMatrixCuDNN.getCudaKernels(gCtx).launchKernel("relu",
+						ExecutionConfig.getConfigForSimpleMatrixOperations(toInt(N), toInt(CHW)),
+						tmpX, x, N, toInt(CHW));
+				ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+			}
+			
 			MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
 			MatrixObject maxPoolOutput = _input3 != null ? getMatrixInputForGPUInstruction(ec, _input3.getName()) : null;
 			if(dout.getNumRows() != N || dout.getNumColumns() != C*P*Q) 
@@ -1029,18 +1062,26 @@ public class DnnGPUInstruction extends GPUInstruction {
 			
 			MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), N, C * H * W);
 			PoolingType poolType = instOpcode.equalsIgnoreCase("maxpooling_backward") ? PoolingType.MAX : PoolingType.AVG;
-			LibMatrixCuDNN.poolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
-					K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
+			if(instOpcode.equalsIgnoreCase("relu_maxpooling_backward")) {
+				LibMatrixCuDNN.poolingBackward(ec.getGPUContext(0), getExtendedOpcode(), x, dout, maxPoolOutput, out, N, C, H, W,
+						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
+				gCtx.cudaFreeHelper(instName, x, gCtx.EAGER_CUDA_FREE);
+			}
+			else {
+				LibMatrixCuDNN.poolingBackward(ec.getGPUContext(0), getExtendedOpcode(), image, dout, maxPoolOutput, out, N, C, H, W,
+						K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolType, _intermediateMemoryBudget);
+			}
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported GPU context for " + instOpcode);
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInputForGPUInstruction(_input1.getName());
+		if(!instOpcode.equalsIgnoreCase("relu_maxpooling") && !instOpcode.equalsIgnoreCase("relu_maxpooling_backward"))
+			ec.releaseMatrixInputForGPUInstruction(_input1.getName());
 		
-		boolean isPool = instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("avgpooling");
-		boolean isPoolBackward = instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("avgpooling_backward");
+		boolean isPool = instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("avgpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling");
+		boolean isPoolBackward = instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("avgpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward");
 
 		if ( !isPool )
 			ec.releaseMatrixInputForGPUInstruction(_input2.getName());

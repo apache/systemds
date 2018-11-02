@@ -643,6 +643,44 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			throwCuDNNDimensionError(N, CHW, N, CPQ);
 		}
 	}
+	
+	/**
+	 * performs maxpooling on GPU by exploiting cudnnPoolingForward(...)
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param x image as pointer
+	 * @param outputBlock output matrix
+	 * @param N				batch size
+	 * @param C				number of channels
+	 * @param H				height of image
+	 * @param W				width of image
+	 * @param K				number of filters
+	 * @param R				height of filter
+	 * @param S				width of filter
+	 * @param pad_h			vertical padding
+	 * @param pad_w			horizontal padding
+	 * @param stride_h		horizontal stride
+	 * @param stride_w		vertical stride
+	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
+	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType	type of pooling
+	 * @param intermediateMemoryBudget intermediate memory budget
+	 */
+	public static void pooling(GPUContext gCtx, String instName, Pointer x,
+			MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) {
+		long CHW = C*H*W; long CPQ = C*P*Q;  
+		long NCHW = N*CHW; long NCPQ = N*CPQ; 
+
+		if(NCHW < maxNumElementsOfCuDNNTensor && NCPQ < maxNumElementsOfCuDNNTensor) {
+			Pointer y = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			cudnnPoolingHelper(gCtx, instName, x, y, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
+		}
+		else {
+			throwCuDNNDimensionError(N, CHW, N, CPQ);
+		}
+	}
 
 	private static void cudnnPoolingHelper(GPUContext gCtx, String instName, Pointer x,
 			Pointer y, int N, int C, int H, int W, int K, int R,
@@ -732,6 +770,53 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 				if(isMaxPoolOutputProvided)
 					maxPoolOutFetcher.close();
 			}
+		}
+		else {
+			throwCuDNNDimensionError(N, CHW, N, CPQ);
+		}
+	}
+	
+	/**
+	 * Performs maxpoolingBackward on GPU by exploiting cudnnPoolingBackward(...)
+	 * This method computes the backpropogation errors for previous layer of maxpooling operation
+	 * @param gCtx   a valid {@link GPUContext}
+	 * @param instName the invoking instruction's name for record {@link Statistics}.
+	 * @param x image as dense pointer
+	 * @param dout			delta matrix, output of previous layer
+	 * @param maxpoolOutput (optional and can be null) output of maxpool forward function
+	 * @param outputBlock output matrix
+	 * @param N				batch size
+	 * @param C				number of channels
+	 * @param H				height of image
+	 * @param W				width of image
+	 * @param K				number of filters
+	 * @param R				height of filter
+	 * @param S				width of filter
+	 * @param pad_h			vertical padding
+	 * @param pad_w			horizontal padding
+	 * @param stride_h		horizontal stride
+	 * @param stride_w		vertical stride
+	 * @param P				(H - R + 1 + 2*pad_h)/stride_h
+	 * @param Q				(W - S + 1 + 2*pad_w)/stride_w
+	 * @param poolingType	type of pooling
+	 * @param intermediateMemoryBudget intermediate memory budget
+	 */
+	public static void poolingBackward(GPUContext gCtx, String instName, Pointer x, MatrixObject dout,
+			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
+			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
+			int Q, PoolingType poolingType, double intermediateMemoryBudget) {
+		long CHW = C*H*W; long CPQ = C*P*Q;  
+		long NCHW = N*CHW; long NCPQ = N*CPQ; 
+
+		final boolean isMaxPoolOutputProvided = maxpoolOutput != null;
+		
+		if(NCHW < maxNumElementsOfCuDNNTensor && NCPQ < maxNumElementsOfCuDNNTensor) {
+			// Filter and output are accounted as dense in the memory estimation for conv2dBackwardData
+			Pointer dx = getDensePointerForCuDNN(gCtx, outputBlock, instName);
+			Pointer dy = getDensePointerForCuDNN(gCtx, dout, instName);
+			Pointer y = isMaxPoolOutputProvided ? getDensePointerForCuDNN(gCtx, maxpoolOutput, instName) : null;
+			cudnnPoolingBackwardHelper(gCtx, instName, x, dy, y, dx, N, C, H, W, K, R, S, pad_h, pad_w, stride_h, stride_w, P, Q, poolingType);
+			
 		}
 		else {
 			throwCuDNNDimensionError(N, CHW, N, CPQ);
@@ -1457,7 +1542,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param instName name of the instruction
 	 * @return jcuda pointer
 	 */
-	protected static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName) {
+	public static Pointer getDensePointerForCuDNN(GPUContext gCtx, MatrixObject image, String instName) {
 		long numElems = image.getNumRows()*image.getNumColumns();
 		if(numElems > maxNumElementsOfCuDNNTensor) {
 			throw new DMLRuntimeException("CuDNN restriction: the size of input tensor cannot have greater than 2 giga-elements, but has " + numElems + " (i.e. [" + image.getNumRows() + " X " + image.getNumColumns() + "]). Hint: try reducing the mini-batch size.");

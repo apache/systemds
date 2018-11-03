@@ -89,13 +89,13 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
   for (t in 1:T) {  # each timestep
     X_t = X[,(t-1)*D+1:t*D]  # shape (N, D)
     input = cbind(X_t, out_prev)  # shape (N, D+M)
-    ifog = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
-    ifog[,1:3*M] = sigmoid::forward(ifog[,1:3*M])  # i,f,o gates squashed with sigmoid
-    ifog[,3*M+1:4*M] = tanh::forward(ifog[,3*M+1:4*M])  # g gate squashed with tanh
+    ifog_raw = input %*% W + b  # input, forget, output, and g gates; shape (N, 4M)
+    ifo = sigmoid::forward(ifog_raw[,1:3*M])  # i,f,o gates squashed with sigmoid
+    g = tanh::forward(ifog_raw[,3*M+1:4*M])  # g gate squashed with tanh
     # c_t = f*prev_c + i*g
-    c = ifog[,M+1:2*M]*c_prev + ifog[,1:M]*ifog[,3*M+1:4*M]  # shape (N, M)
+    c = ifo[,M+1:2*M]*c_prev + ifo[,1:M]*g  # shape (N, M)
     # out_t = o*tanh(c)
-    out_t = ifog[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
+    out_t = ifo[,2*M+1:3*M] * tanh::forward(c)  # shape (N, M)
 
     # store
     if (return_sequences) {
@@ -108,7 +108,7 @@ forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int T, 
     c_prev = c
     cache_out[t,] = matrix(out_t, rows=1, cols=N*M)  # reshape
     cache_c[t,] = matrix(c, rows=1, cols=N*M)  # reshape
-    cache_ifog[t,] = matrix(ifog, rows=1, cols=N*4*M)  # reshape
+    cache_ifog[t,] = matrix(cbind(ifo, g), rows=1, cols=N*4*M)  # reshape
   }
 }
 

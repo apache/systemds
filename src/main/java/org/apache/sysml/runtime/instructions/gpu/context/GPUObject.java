@@ -68,7 +68,7 @@ public class GPUObject {
 	/**
 	 * Pointer to the underlying sparse matrix block on GPU
 	 */
-	private CSRPointer jcudaSparseMatrixPtr = null;
+	CSRPointer jcudaSparseMatrixPtr = null;
 
 	/**
 	 * whether the block attached to this {@link GPUContext} is dirty on the device and needs to be copied back to host

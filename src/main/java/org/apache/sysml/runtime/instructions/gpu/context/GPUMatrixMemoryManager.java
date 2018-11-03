@@ -18,7 +18,9 @@
  */
 package org.apache.sysml.runtime.instructions.gpu.context;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,8 +45,7 @@ public class GPUMatrixMemoryManager {
 	void addGPUObject(GPUObject gpuObj) {
 		gpuObjects.add(gpuObj);
 	}
-	
-	
+
 	/**
 	 * Get list of all Pointers in a GPUObject 
 	 * @param gObj gpu object 
@@ -81,6 +82,20 @@ public class GPUMatrixMemoryManager {
 	 * so that an extraneous host to dev transfer can be avoided
 	 */
 	HashSet<GPUObject> gpuObjects = new HashSet<>();
+
+	/**
+	 * Return a set of GPU Objects associated with a list of pointers
+	 * @param pointers A list of pointers
+	 * @return A set of GPU objects corresponding to any of these pointers
+	 */
+	Set<GPUObject> getGpuObjects(Set<Pointer> pointers) {
+		Set<GPUObject> gObjs = new HashSet<>();
+		for (GPUObject g : gpuObjects) {
+			if (!Collections.disjoint(getPointers(g), pointers))
+				gObjs.add(g);
+		}
+		return gObjs;
+	}
 	
 	/**
 	 * Return all pointers in the first section
@@ -94,10 +109,14 @@ public class GPUMatrixMemoryManager {
 	 * Get pointers from the first memory sections "Matrix Memory"
 	 * @param locked return locked pointers if true
 	 * @param dirty return dirty pointers if true
+	 * @param isCleanupEnabled return pointers marked for cleanup if true
 	 * @return set of pointers
 	 */
-	Set<Pointer> getPointers(boolean locked, boolean dirty) {
-		return gpuObjects.stream().filter(gObj -> gObj.isLocked() == locked && gObj.isDirty() == dirty).flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
+	Set<Pointer> getPointers(boolean locked, boolean dirty, boolean isCleanupEnabled) {
+		return gpuObjects.stream().filter(
+				gObj -> (gObj.isLocked() == locked && gObj.isDirty() == dirty) ||
+						(gObj.mat.isCleanupEnabled() == isCleanupEnabled)).flatMap(
+						gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
 	}
 	
 	/**

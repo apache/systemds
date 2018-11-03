@@ -413,10 +413,7 @@ public class MLContextTest extends MLContextTestBase {
 		setExpectedStdOut(testString);
 		Script script = new Script("print('" + testString + "');", org.apache.sysml.api.mlcontext.ScriptType.DML);
 
-		ScriptExecutor scriptExecutor = new ScriptExecutor() {
-			@Override
-			protected void showExplanation() {}
-		};
+		ScriptExecutor scriptExecutor = new ScriptExecutor();
 		ml.execute(script, scriptExecutor);
 	}
 
@@ -427,10 +424,7 @@ public class MLContextTest extends MLContextTestBase {
 		setExpectedStdOut(testString);
 		Script script = new Script("print('" + testString + "')", org.apache.sysml.api.mlcontext.ScriptType.PYDML);
 
-		ScriptExecutor scriptExecutor = new ScriptExecutor() {
-			@Override
-			protected void showExplanation() {}
-		};
+		ScriptExecutor scriptExecutor = new ScriptExecutor();
 		ml.execute(script, scriptExecutor);
 	}
 

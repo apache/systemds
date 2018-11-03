@@ -116,7 +116,7 @@ public class ScriptExecutorUtils {
 												boolean init) {
 		DMLScript.SCRIPT_TYPE = scriptType;
 
-		Program rtprog = null;
+		Program rtprog;
 
 		if (ConfigurationManager.isGPU() && !IS_JCUDA_AVAILABLE)
 			throw new RuntimeException("Incorrect usage: Cannot use the GPU backend without JCuda libraries. Hint: Include systemml-*-extra.jar (compiled using mvn package -P distribution) into the classpath.");
@@ -161,7 +161,7 @@ public class ScriptExecutorUtils {
 
 			//init working directories (before usage by following compilation steps)
 			if(api != SystemMLAPI.JMLC)
-				if ((api == SystemMLAPI.MLContext && init) || api != SystemMLAPI.MLContext)
+				if (api != SystemMLAPI.MLContext || init)
 					DMLScript.initHadoopExecution( dmlconf );
 
 
@@ -222,8 +222,9 @@ public class ScriptExecutorUtils {
 				ExplainCounts counts = Explain.countDistributedOperations(rtprog);
 				Statistics.resetNoOfCompiledJobs( counts.numJobs );
 				//explain plan of program (hops or runtime)
-				if( DMLScript.EXPLAIN != ExplainType.NONE )
-					System.out.println(Explain.display(prog, rtprog, DMLScript.EXPLAIN, counts));
+				if( ConfigurationManager.getDMLOptions().explainType != ExplainType.NONE )
+					System.out.println(
+							Explain.display(prog, rtprog, ConfigurationManager.getDMLOptions().explainType, counts));
 
 				Statistics.stopCompileTimer();
 			}
@@ -231,9 +232,6 @@ public class ScriptExecutorUtils {
 		catch(ParseException pe) {
 			// don't chain ParseException (for cleaner error output)
 			throw pe;
-		}
-		catch(IOException ex) {
-			throw new DMLException(ex);
 		}
 		catch(Exception ex) {
 			throw new DMLException(ex);
@@ -248,8 +246,6 @@ public class ScriptExecutorUtils {
 	 *
 	 * @param rtprog
 	 *            runtime program
-	 * @param dmlconf
-	 *            dml configuration
 	 * @param statisticsMaxHeavyHitters
 	 *            maximum number of statistics to print
 	 * @param symbolTable
@@ -262,7 +258,7 @@ public class ScriptExecutorUtils {
 	 * 			  list of GPU contexts
 	 * @return execution context
 	 */
-	public static ExecutionContext executeRuntimeProgram(Program rtprog, DMLConfig dmlconf, int statisticsMaxHeavyHitters,
+	public static ExecutionContext executeRuntimeProgram(Program rtprog, int statisticsMaxHeavyHitters,
 														 LocalVariableMap symbolTable, HashSet<String> outputVariables,
 														 SystemMLAPI api, List<GPUContext> gCtxs) {
 		boolean exceptionThrown = false;
@@ -299,7 +295,7 @@ public class ScriptExecutorUtils {
 					if(outputVariables != null) {
 						for(String outVar : outputVariables) {
 							Data data = ec.getVariable(outVar);
-							if(data != null && data instanceof MatrixObject) {
+							if(data instanceof MatrixObject) {
 								for(GPUContext gCtx : ec.getGPUContexts()) {
 									GPUObject gpuObj = ((MatrixObject)data).getGPUObject(gCtx);
 									if(gpuObj != null && gpuObj.isDirty()) {

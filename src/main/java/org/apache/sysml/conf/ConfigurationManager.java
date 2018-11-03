@@ -37,10 +37,10 @@ import org.apache.sysml.utils.lite.LiteCheck;
 public class ConfigurationManager 
 {
 	/** Global cached job conf for read-only operations	*/
-	private static JobConf _rJob = null; 
+	private static JobConf _rJob;
 	
 	/** Global DML configuration (read or defaults) */
-	private static DMLConfig _dmlconf = null; 
+	private static DMLConfig _dmlconf;
 	
 	/** Local DML configuration for thread-local config updates */
 	private static ThreadLocalDMLConfig _ldmlconf = new ThreadLocalDMLConfig();
@@ -52,7 +52,7 @@ public class ConfigurationManager
 	private static ThreadLocalDMLOptions _ldmlOptions = new ThreadLocalDMLOptions();
 	
     /** Global compiler configuration (defaults) */
-    private static CompilerConfig _cconf = null;
+    private static CompilerConfig _cconf;
 	
     /** Local compiler configuration for thead-local config updates */
     private static ThreadLocalCompilerConfig _lcconf = new ThreadLocalCompilerConfig();
@@ -208,7 +208,7 @@ public class ConfigurationManager
 	 */
 	public static boolean getCompilerConfigFlag(ConfigType key) {
 		CompilerConfig cconf = getCompilerConfig();
-		return (cconf!=null) ? cconf.getBool(key) : false;
+		return (cconf!=null) && cconf.getBool(key);
 	}
 	
 	/////////////////////////////////////

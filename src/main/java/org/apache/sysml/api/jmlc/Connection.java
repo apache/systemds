@@ -44,7 +44,6 @@ import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.conf.DMLOptions;
 import org.apache.sysml.hops.codegen.SpoofCompiler;
 import org.apache.sysml.parser.DataExpression;
-import org.apache.sysml.parser.LanguageException;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.Program;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
@@ -61,7 +60,6 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.Explain;
 import org.apache.wink.json4j.JSONObject;
 
@@ -945,5 +943,6 @@ public class Connection implements Closeable
 		//set thread-local configurations for compilation and read
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
+		DMLScript.setGlobalFlags(_dmlconf);
 	}
 }

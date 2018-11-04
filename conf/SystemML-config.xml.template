@@ -114,4 +114,8 @@
    
    <!-- Allocator to use to allocate GPU device memory. Supported values are cuda, unified_memory (default: cuda) -->
    <sysml.gpu.memory.allocator>cuda</sysml.gpu.memory.allocator>
+   
+   <!-- Should perform recomputation of activations such as ReLU to reduce memory consumption. Set this to true
+   when performing inference or for training very large networks (default: false) -->
+   <sysml.gpu.recompute.activations>false</sysml.gpu.recompute.activations>
 </root>

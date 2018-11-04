@@ -20,6 +20,7 @@
 package org.apache.sysml.hops;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.DnnTransform;
 import org.apache.sysml.lops.DnnTransform.OperationTypes;
@@ -46,6 +47,8 @@ public class DnnOp extends MultiThreadedHop
 	// This guards us from cases where the user provides incorrect C,H,W parameters.
 	private static final boolean THROW_ERROR_IF_INFERRED_SHAPE_MISMATCH = true;
 	// -------------------------------------------------------------------------
+	
+	private static final boolean GPU_RECOMPUTE_ACTIVATIONS = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.GPU_RECOMPUTE_ACTIVATIONS); 
 	
 	// Specifies the type of this hop
 	private Hop.OpOpDnn op;
@@ -273,11 +276,16 @@ public class DnnOp extends MultiThreadedHop
 		// by reducing unnecessary sparse-to-dense-to-sparse conversion.
 		// For other backends, this operators is not necessary as it reduces an additional relu operator.
 		Hop parentReLU = isInputReLU(inputs.get(0));
-		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL && parentReLU != null) {
+		
+		if(OptimizerUtils.ALLOW_OPERATOR_FUSION && 
+			(et == ExecType.CP || (et == ExecType.GPU && GPU_RECOMPUTE_ACTIVATIONS)) 
+			&& op == OpOpDnn.MAX_POOL && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING;
 		}
-		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && et == ExecType.CP && op == OpOpDnn.MAX_POOL_BACKWARD && parentReLU != null) {
+		else if(OptimizerUtils.ALLOW_OPERATOR_FUSION && 
+			(et == ExecType.CP || (et == ExecType.GPU && GPU_RECOMPUTE_ACTIVATIONS)) 
+			&& op == OpOpDnn.MAX_POOL_BACKWARD && parentReLU != null) {
 			lhsInputLop = parentReLU.constructLops();
 			lopOp = OperationTypes.RELU_MAX_POOLING_BACKWARD;
 		}

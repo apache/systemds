@@ -287,6 +287,7 @@ public class ScriptExecutorUtils {
 		} finally { // ensure cleanup/shutdown
 			if (ConfigurationManager.isGPU() && !ec.getGPUContexts().isEmpty()) {
 				try {
+					HashSet<MatrixObject> outputMatrixObjects = new HashSet<>();
 					// -----------------------------------------------------------------
 					// The below code pulls the output variables on the GPU to the host. This is required especially when:
 					// The output variable was generated as part of a MLContext session with GPU enabled
@@ -302,12 +303,13 @@ public class ScriptExecutorUtils {
 										gpuObj.acquireHostRead(null);
 									}
 								}
+								outputMatrixObjects.add(((MatrixObject)data));
 							}
 						}
 					}
 					// -----------------------------------------------------------------
 					for(GPUContext gCtx : ec.getGPUContexts()) {
-						gCtx.clearTemporaryMemory();
+						gCtx.clearTemporaryMemory(outputMatrixObjects);
 					}
 				} catch (Exception e1) {
 					exceptionThrown = true;

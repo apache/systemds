@@ -31,6 +31,8 @@ import static jcuda.runtime.JCuda.cudaGetDeviceCount;
 import static jcuda.runtime.JCuda.cudaSetDevice;
 import static jcuda.runtime.JCuda.cudaSetDeviceFlags;
 
+import java.util.HashSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysml.api.DMLScript.EvictionPolicy;
@@ -424,8 +426,8 @@ public class GPUContext {
 		memoryManager.clearMemory();
 	}
 	
-	public void clearTemporaryMemory() {
-		memoryManager.clearTemporaryMemory();
+	public void clearTemporaryMemory(HashSet<MatrixObject> outputMatrixObjects) {
+		memoryManager.clearTemporaryMemory(outputMatrixObjects);
 	}
 
 	@Override

@@ -21,6 +21,7 @@ package org.apache.sysml.udf.lib;
 
 import java.util.ArrayList;
 
+import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.StringObject;
@@ -66,7 +67,7 @@ public class SplitWrapper extends PackageFunction {
 		for(String part : str.split(regex)) {
 			outputData.add(new StringObject(part));
 		}
-		outputList = new List(new ListObject(outputData));
+		outputList = new List(new ListObject(outputData, ValueType.STRING));
 	}
 
 }

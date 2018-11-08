@@ -40,7 +40,7 @@ import org.apache.sysml.udf.List;
  * (classname="org.apache.sysml.udf.lib.SplitWrapper",exectype="mem");
  * 
  * out = split ("foo_goo_boo", "_"); 
- * for ( i in 1:len(out)) { print(out[i]); }
+ * for ( i in 1:3) { print(as.scalar(out[i])); }
  * 
  */
 public class SplitWrapper extends PackageFunction {

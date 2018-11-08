@@ -27,11 +27,7 @@ import org.apache.sysml.runtime.instructions.cp.StringObject;
 import org.apache.sysml.udf.FunctionParameter;
 import org.apache.sysml.udf.PackageFunction;
 import org.apache.sysml.udf.Scalar;
-import org.apache.sysml.udf.Scalar.ScalarValueType;
-import org.apache.sysml.parser.Expression.ValueType;
-import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.udf.List;
-//import org.apache.sysml.udf.Matrix.ValueType;
 
 /**
  * Wrapper class for split invocation

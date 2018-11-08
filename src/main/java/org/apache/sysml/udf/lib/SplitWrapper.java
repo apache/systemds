@@ -33,10 +33,10 @@ import org.apache.sysml.udf.List;
 /**
  * Wrapper class for split invocation
  * 
- * split = externalFunction(String s, String regex) return (list[String] out) implemented in
+ * split = externalFunction(String s, String regex, int limit) return (list[String] out) implemented in
  * (classname="org.apache.sysml.udf.lib.SplitWrapper",exectype="mem");
  * 
- * out = split ("foo_goo_boo", "_"); 
+ * out = split ("foo_goo_boo", "_", 2); 
  * for ( i in 1:3) { print(as.scalar(out[i])); }
  * 
  */
@@ -62,9 +62,21 @@ public class SplitWrapper extends PackageFunction {
 	public void execute() {
 		String str = ((Scalar) getFunctionInput(0)).getValue();
 		String regex = ((Scalar) getFunctionInput(1)).getValue();
+		
+		int numInputs = getNumFunctionInputs();
+		String [] parts = null;
+		if(numInputs == 2) {
+			parts = str.split(regex);
+		}
+		else if(numInputs == 3) {
+			parts = str.split(regex, Integer.parseInt(((Scalar) getFunctionInput(2)).getValue()));
+		}
+		else {
+			throw new RuntimeException("Incorrect number of inputs. Expected 2 or 3 inputs.");
+		}
 
 		java.util.List<Data> outputData = new ArrayList<>();
-		for(String part : str.split(regex)) {
+		for(String part : parts) {
 			outputData.add(new StringObject(part));
 		}
 		outputList = new List(new ListObject(outputData, ValueType.STRING));

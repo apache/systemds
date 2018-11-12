@@ -39,6 +39,7 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.conf.DMLConfig;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.DMLRuntimeException;
+import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysml.utils.GPUStatistics;
 
@@ -518,20 +519,27 @@ public class GPUMemoryManager {
 	/**
 	 * Clears up the memory used by non-dirty pointers.
 	 */
-	public void clearTemporaryMemory() {
-		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
-		Set<Pointer> unlockedDirtyPointers = matrixMemoryManager.getPointers(false, true, false);
-		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), unlockedDirtyPointers);
+	public void clearTemporaryMemory(HashSet<MatrixObject> outputMatrixObjects) {
+		Set<Pointer> donotClearPointers =  new HashSet<>();
+		// First clean up all GPU objects except:
+		// 1. Output matrix objects
+		// 2. GPU objects that are currently being used (i.e. locked)
+		// 3. Matrix object are 
+		Set<GPUObject> allGPUObjects = new HashSet<>(matrixMemoryManager.getGpuObjects());
+		for (GPUObject gpuObj : allGPUObjects) {
+			boolean isOutput = outputMatrixObjects.contains(gpuObj.mat);
+			if(!isOutput && !gpuObj.isLocked() && gpuObj.mat.isCleanupEnabled()) {
+				gpuObj.clearData(null, gpuObj.getGPUContext().EAGER_CUDA_FREE);
+			}
+			else {
+				donotClearPointers.addAll(gpuObj.getPointers());
+			}
+		}
+		
+		// Next, cleanup workspace and other temporary pointers
+		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), donotClearPointers);
 		for (Pointer tmpPtr : temporaryPointers) {
 			guardedCudaFree(tmpPtr);
-		}
-
-		// Also set the pointer(s) to null in the corresponding GPU objects to avoid double freeing pointers
-		Set<GPUObject> gObjs = matrixMemoryManager.getGpuObjects(temporaryPointers);
-		for (GPUObject g : gObjs) {
-			g.jcudaDenseMatrixPtr = null;
-			g.jcudaSparseMatrixPtr = null;
-			removeGPUObject(g);
 		}
 	}
 	
@@ -579,18 +587,18 @@ public class GPUMemoryManager {
 			if(gpuObj.isLocked()) {
 				numLockedGPUObjects++;
 				sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
-				numLockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				numLockedPointers += gpuObj.getPointers().size();
 			}
 			else {
 				if(gpuObj.isDirty()) {
 					numUnlockedDirtyGPUObjects++;
 					sizeOfUnlockedDirtyGPUObjects += gpuObj.getSizeOnDevice();
-					numUnlockedDirtyPointers += matrixMemoryManager.getPointers(gpuObj).size();
+					numUnlockedDirtyPointers += gpuObj.getPointers().size();
 				}
 				else {
 					numUnlockedNonDirtyGPUObjects++;
 					sizeOfUnlockedNonDirtyGPUObjects += gpuObj.getSizeOnDevice();
-					numUnlockedNonDirtyPointers += matrixMemoryManager.getPointers(gpuObj).size();
+					numUnlockedNonDirtyPointers += gpuObj.getPointers().size();
 				}
 			}
 		}

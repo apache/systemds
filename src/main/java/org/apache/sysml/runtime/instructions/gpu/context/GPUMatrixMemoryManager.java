@@ -20,7 +20,6 @@ package org.apache.sysml.runtime.instructions.gpu.context;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,33 +45,6 @@ public class GPUMatrixMemoryManager {
 		gpuObjects.add(gpuObj);
 	}
 
-	/**
-	 * Get list of all Pointers in a GPUObject 
-	 * @param gObj gpu object 
-	 * @return set of pointers
-	 */
-	Set<Pointer> getPointers(GPUObject gObj) {
-		Set<Pointer> ret = new HashSet<>();
-		if(!gObj.isDensePointerNull() && gObj.getSparseMatrixCudaPointer() != null) {
-			LOG.warn("Matrix allocated in both dense and sparse format");
-		}
-		if(!gObj.isDensePointerNull()) {
-			// && gObj.evictedDenseArr == null - Ignore evicted array
-			ret.add(gObj.getDensePointer());
-		}
-		if(gObj.getSparseMatrixCudaPointer() != null) {
-			CSRPointer sparsePtr = gObj.getSparseMatrixCudaPointer();
-			if(sparsePtr != null) {
-				if(sparsePtr.rowPtr != null)
-					ret.add(sparsePtr.rowPtr);
-				else if(sparsePtr.colInd != null)
-					ret.add(sparsePtr.colInd);
-				else if(sparsePtr.val != null)
-					ret.add(sparsePtr.val);
-			}
-		}
-		return ret;
-	}
 	
 	/**
 	 * list of allocated {@link GPUObject} instances allocated on {@link GPUContext#deviceNum} GPU
@@ -91,10 +63,14 @@ public class GPUMatrixMemoryManager {
 	Set<GPUObject> getGpuObjects(Set<Pointer> pointers) {
 		Set<GPUObject> gObjs = new HashSet<>();
 		for (GPUObject g : gpuObjects) {
-			if (!Collections.disjoint(getPointers(g), pointers))
+			if (!Collections.disjoint(g.getPointers(), pointers))
 				gObjs.add(g);
 		}
 		return gObjs;
+	}
+	
+	Set<GPUObject> getGpuObjects() {
+		return gpuObjects;
 	}
 	
 	/**
@@ -102,7 +78,7 @@ public class GPUMatrixMemoryManager {
 	 * @return all pointers in this section
 	 */
 	Set<Pointer> getPointers() {
-		return gpuObjects.stream().flatMap(gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
+		return gpuObjects.stream().flatMap(gObj -> gObj.getPointers().stream()).collect(Collectors.toSet());
 	}
 	
 	/**
@@ -116,7 +92,7 @@ public class GPUMatrixMemoryManager {
 		return gpuObjects.stream().filter(
 				gObj -> (gObj.isLocked() == locked && gObj.isDirty() == dirty) ||
 						(gObj.mat.isCleanupEnabled() == isCleanupEnabled)).flatMap(
-						gObj -> getPointers(gObj).stream()).collect(Collectors.toSet());
+						gObj -> gObj.getPointers().stream()).collect(Collectors.toSet());
 	}
 	
 	/**

@@ -24,6 +24,8 @@ import static jcuda.runtime.JCuda.cudaMemset;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -151,6 +153,28 @@ public class GPUObject {
 		jcudaSparseMatrixPtr = null;
 	}
 	
+	Set<Pointer> getPointers() {
+		Set<Pointer> ret = new HashSet<>();
+		if(!isDensePointerNull() && getSparseMatrixCudaPointer() != null) {
+			LOG.warn("Matrix allocated in both dense and sparse format");
+		}
+		if(!isDensePointerNull()) {
+			// && evictedDenseArr == null - Ignore evicted array
+			ret.add(getDensePointer());
+		}
+		if(getSparseMatrixCudaPointer() != null) {
+			CSRPointer sparsePtr = getSparseMatrixCudaPointer();
+			if(sparsePtr != null) {
+				if(sparsePtr.rowPtr != null)
+					ret.add(sparsePtr.rowPtr);
+				else if(sparsePtr.colInd != null)
+					ret.add(sparsePtr.colInd);
+				else if(sparsePtr.val != null)
+					ret.add(sparsePtr.val);
+			}
+		}
+		return ret;
+	}
 	
 	/**
 	 * Convenience method to directly set the dense matrix pointer on GPU

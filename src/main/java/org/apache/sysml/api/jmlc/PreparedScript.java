@@ -454,6 +454,10 @@ public class PreparedScript implements ConfigurableAPI
 		//add reused variables
 		_vars.putAll(_inVarReuse);
 
+		// clear thread local configurations (left over from previous run)
+		ConfigurationManager.clearLocalConfigs();
+		ConfigurationManager.resetStatistics();
+
 		//set thread-local configurations
 		ConfigurationManager.setLocalConfig(_dmlconf);
 		ConfigurationManager.setLocalConfig(_cconf);
@@ -474,10 +478,6 @@ public class PreparedScript implements ConfigurableAPI
 			if( tmpVar != null )
 				rvars.addResult(ovar, tmpVar);
 		}
-
-		// clear prior thread local configurations (for subsequent run)
-		ConfigurationManager.clearLocalConfigs();
-		ConfigurationManager.resetStatistics();
 
 		return rvars;
 	}

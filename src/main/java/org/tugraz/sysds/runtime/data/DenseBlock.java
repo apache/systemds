@@ -44,8 +44,8 @@ public abstract class DenseBlock implements Serializable
 		LDRB, //large dense row block
 	}
 	
-	protected int _rlen;
-	protected int _odims;
+	protected int _rlen;  //number of rows
+	protected int _odims; //length of other dimensions
 	
 	protected DenseBlock(int[] dims) {
 		long odims = UtilFunctions.prod(dims, 1);
@@ -72,13 +72,29 @@ public abstract class DenseBlock implements Serializable
 	public abstract void reset(int[] dims);
 	
 	/**
-	 * Resets the dense block by setting the given value.
+	 * Resets the dense block by deleting non-zeros.
 	 * 
 	 * @param dims lenth and size of dimensions
 	 * @param v value
 	 */
 	public abstract void reset(int[] dims, double v);
 	
+	/**
+	 * Resets the dense block by deleting non-zeros.
+	 * 
+	 * @param rlen number of rows
+	 * @param odims other dimensions
+	 */
+	public abstract void reset(int rlen, int odims);
+	
+	/**
+	 * Resets the dense block by setting the given value.
+	 * 
+	 * @param rlen number of rows
+	 * @param odims other dimensions
+	 * @param v value
+	 */
+	public abstract void reset(int rlen, int odims, double v);
 	
 	/**
 	 * Get the number of rows.
@@ -189,14 +205,6 @@ public abstract class DenseBlock implements Serializable
 	 * @return number of non-zeros
 	 */
 	public abstract long countNonZeros(int rl, int ru, int cl, int cu);
-	
-	
-	/**
-	 * Get the allocated blocks.
-	 * 
-	 * @return blocks
-	 */
-	public abstract double[][] values();
 	
 	/**
 	 * Get the allocated block for the given row. This call
@@ -360,9 +368,10 @@ public abstract class DenseBlock implements Serializable
 	public abstract double get(int r, int c);
 	
 	/**
+	 * Get the value of a given cell
 	 * 
-	 * @param ix
-	 * @return
+	 * @param ix cell indexes
+	 * @return value
 	 */
 	public abstract double get(int[] ix);
 	

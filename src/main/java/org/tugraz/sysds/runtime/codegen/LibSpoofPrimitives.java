@@ -22,7 +22,7 @@ package org.tugraz.sysds.runtime.codegen;
 import java.util.Arrays;
 
 import org.apache.commons.math3.util.FastMath;
-import org.tugraz.sysds.runtime.data.DenseBlockDRB;
+import org.tugraz.sysds.runtime.data.DenseBlockFP64;
 import org.tugraz.sysds.runtime.functionobjects.BitwAnd;
 import org.tugraz.sysds.runtime.functionobjects.IntegerDivide;
 import org.tugraz.sysds.runtime.functionobjects.Modulus;
@@ -2118,8 +2118,8 @@ public class LibSpoofPrimitives
 		double[] c = allocVector(K*P*Q, true);
 		int CRS = C*R*S, PQ = P*Q;
 		LibMatrixMult.matrixMultDenseDenseMM(
-			new DenseBlockDRB(a, K, CRS), new DenseBlockDRB(b, CRS, PQ),
-			new DenseBlockDRB(c, K, PQ), PQ, CRS, 0, K, 0, PQ);
+			new DenseBlockFP64(new int[]{K, CRS}, a), new DenseBlockFP64(new int[]{CRS, PQ}, b),
+			new DenseBlockFP64(new int[]{K, PQ}, c), PQ, CRS, 0, K, 0, PQ);
 		return c;
 	} 
 	

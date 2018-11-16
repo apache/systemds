@@ -22,22 +22,34 @@
 
 package org.tugraz.sysds.runtime.data;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
+
 public abstract class DenseBlockFactory
 {
-	public static DenseBlock createDenseBlock(int rlen, int clen) {
-		DenseBlock.Type type = ((long)rlen*clen < Integer.MAX_VALUE) ?
+	public static DenseBlock createDenseBlock(int[] dims) {
+		DenseBlock.Type type = 
+			(UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
 			DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
-		return createDenseBlock(type, rlen, clen);
-	}
-
-	public static DenseBlock createDenseBlock(double[] data, int rlen, int clen) {
-		return new DenseBlockDRB(data, rlen, clen);
+		return createDenseBlock(type, dims);
 	}
 	
-	public static DenseBlock createDenseBlock(DenseBlock.Type type, int rlen, int clen) {
+	public static DenseBlock createDenseBlock(int rlen, int clen) {
+		return createDenseBlock(new int[]{rlen, clen});
+	}
+
+	public static DenseBlock createDenseBlock(double[] data, int[] dims) {
+		return new DenseBlockFP64(dims, data);
+	}
+	
+	public static DenseBlock createDenseBlock(double[] data, int rlen, int clen) {
+		return createDenseBlock(data, new int[]{rlen, clen});
+	}
+	
+	public static DenseBlock createDenseBlock(DenseBlock.Type type, int[] dims) {
 		switch( type ) {
-			case DRB: return new DenseBlockDRB(rlen, clen);
-			case LDRB: return new DenseBlockLDRB(rlen, clen);
+			case DRB: return new DenseBlockFP64(dims);
+			case LDRB: throw new NotImplementedException();
 			default:
 				throw new RuntimeException("Unexpected dense block type: "+type.name());
 		}
@@ -49,6 +61,6 @@ public abstract class DenseBlockFactory
 
 	public static DenseBlock.Type getDenseBlockType(DenseBlock dblock) {
 		return (dblock instanceof DenseBlockDRB) ? DenseBlock.Type.DRB :
-			(dblock instanceof DenseBlockLDRB) ? DenseBlock.Type.LDRB : null;
+			(dblock instanceof DenseBlockDRB) ? DenseBlock.Type.LDRB : null; //TODO
 	}
 }

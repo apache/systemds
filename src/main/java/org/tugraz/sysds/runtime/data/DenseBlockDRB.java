@@ -22,12 +22,10 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.util.Arrays;
-
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 public abstract class DenseBlockDRB extends DenseBlock
 {
+	private static final long serialVersionUID = 3581157975703708947L;
+
 	protected DenseBlockDRB(int[] dims) {
 		super(dims);
 	}
@@ -39,12 +37,12 @@ public abstract class DenseBlockDRB extends DenseBlock
 	
 	@Override
 	public int blockSize() {
-		return _dims[0];
+		return _rlen;
 	}
 	
 	@Override
 	public int blockSize(int bix) {
-		return _dims[0];
+		return _rlen;
 	}
 	
 	@Override

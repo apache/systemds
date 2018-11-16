@@ -59,7 +59,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarIntegerToDouble() 
 	{ 
-		runTest( ValueType.INT, ValueType.FP64, false, false ); 
+		runTest( ValueType.INT64, ValueType.FP64, false, false ); 
 	}
 	
 	@Test
@@ -77,25 +77,25 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarDoubleToInteger() 
 	{ 
-		runTest( ValueType.FP64, ValueType.INT, false, false ); 
+		runTest( ValueType.FP64, ValueType.INT64, false, false ); 
 	}
 	
 	@Test
 	public void testScalarIntegerToInteger() 
 	{ 
-		runTest( ValueType.INT, ValueType.INT, false, false ); 
+		runTest( ValueType.INT64, ValueType.INT64, false, false ); 
 	}
 	
 	@Test
 	public void testScalarBooleanToInteger() 
 	{ 
-		runTest( ValueType.BOOLEAN, ValueType.INT, false, false ); 
+		runTest( ValueType.BOOLEAN, ValueType.INT64, false, false ); 
 	}
 	
 	@Test
 	public void testMatrixDoubleToInteger() 
 	{ 
-		runTest( ValueType.FP64, ValueType.INT, true, true ); 
+		runTest( ValueType.FP64, ValueType.INT64, true, true ); 
 	}
 
 	
@@ -108,7 +108,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarIntegerToBoolean() 
 	{ 
-		runTest( ValueType.INT, ValueType.BOOLEAN, false, false ); 
+		runTest( ValueType.INT64, ValueType.BOOLEAN, false, false ); 
 	}
 	
 	@Test
@@ -134,7 +134,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		switch( vtOut )
 		{
 			case FP64:  TEST_NAME = TEST_NAME1; break;
-			case INT: 	  TEST_NAME = TEST_NAME2; break;
+			case INT64: 	  TEST_NAME = TEST_NAME2; break;
 			case BOOLEAN: TEST_NAME = TEST_NAME3; break;
 			default: //do nothing
 		}
@@ -164,7 +164,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 					case FP64: 
 						HDFSTool.writeDoubleToHDFS(V[0][0], input("V")); 
 						inVal = V[0][0]; break;
-					case INT:    
+					case INT64:    
 						HDFSTool.writeIntToHDFS((int)V[0][0], input("V")); 
 						inVal = ((int)V[0][0]); break;
 					case BOOLEAN: 
@@ -184,7 +184,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	        	String outName = output("R");
 		        switch( vtOut ) {
 					case FP64:  Assert.assertEquals(inVal, HDFSTool.readDoubleFromHDFSFile(outName), 1e-16); break;
-					case INT:     Assert.assertEquals((int) inVal, HDFSTool.readIntegerFromHDFSFile(outName)); break;
+					case INT64:     Assert.assertEquals((int) inVal, HDFSTool.readIntegerFromHDFSFile(outName)); break;
 					case BOOLEAN: Assert.assertEquals(inVal!=0, HDFSTool.readBooleanFromHDFSFile(outName)); break;
 					default: //do nothing
 		        }

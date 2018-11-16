@@ -53,6 +53,24 @@ public class DenseBlockConstIndexingTest
 	}
 	
 	@Test
+	public void testIndexDenseBlock2Int32Const() throws Exception {
+		DenseBlock db = getDenseBlock2(ValueType.INT32);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				Assert.assertEquals(7, db.get(i, j), 0);
+	}
+	
+	@Test
+	public void testIndexDenseBlock2Int64Const() throws Exception {
+		DenseBlock db = getDenseBlock2(ValueType.INT64);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				Assert.assertEquals(7, db.get(i, j), 0);
+	}
+	
+	@Test
 	public void testIndexDenseBlock3FP32Const() throws Exception {
 		DenseBlock db = getDenseBlock3(ValueType.FP32);
 		db.set(7.3);
@@ -80,6 +98,26 @@ public class DenseBlockConstIndexingTest
 			for(int j=0; j<5; j++)
 				for(int k=0; k<7; k++)
 					Assert.assertEquals(1, db.get(new int[]{i,j,k}), 0);
+	}
+	
+	@Test
+	public void testIndexDenseBlock3Int32Const() throws Exception {
+		DenseBlock db = getDenseBlock3(ValueType.INT32);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				for(int k=0; k<7; k++)
+					Assert.assertEquals(7, db.get(new int[]{i,j,k}), 0);
+	}
+	
+	@Test
+	public void testIndexDenseBlock3Int64Const() throws Exception {
+		DenseBlock db = getDenseBlock3(ValueType.INT64);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				for(int k=0; k<7; k++)
+					Assert.assertEquals(7, db.get(new int[]{i,j,k}), 0);
 	}
 	
 	private DenseBlock getDenseBlock2(ValueType vt) {

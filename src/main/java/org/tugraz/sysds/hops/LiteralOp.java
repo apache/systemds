@@ -47,7 +47,7 @@ public class LiteralOp extends Hop
 	}
 
 	public LiteralOp(long value) {
-		super(String.valueOf(value), DataType.SCALAR, ValueType.INT);
+		super(String.valueOf(value), DataType.SCALAR, ValueType.INT64);
 		value_long = value;
 	}
 
@@ -101,8 +101,8 @@ public class LiteralOp extends Hop
 			case STRING:
 				l = Data.createLiteralLop(ValueType.STRING, value_string);
 				break;
-			case INT:
-				l = Data.createLiteralLop(ValueType.INT, Long.toString(value_long));
+			case INT64:
+				l = Data.createLiteralLop(ValueType.INT64, Long.toString(value_long));
 				break;
 			default:
 				throw new HopsException(this.printErrorLocation() + 
@@ -135,7 +135,7 @@ public class LiteralOp extends Hop
 			case STRING:
 				val = value_string;
 				break;
-			case INT:
+			case INT64:
 				val = Long.toString(value_long);
 				break;
 			default:
@@ -150,7 +150,7 @@ public class LiteralOp extends Hop
 		double ret = 0;
 		
 		switch( getValueType() ) {
-			case INT:
+			case INT64:
 				ret = OptimizerUtils.INT_SIZE; break;
 			case FP64:
 				ret = OptimizerUtils.DOUBLE_SIZE; break;
@@ -200,7 +200,7 @@ public class LiteralOp extends Hop
 	
 	public long getLongValue() {
 		switch( getValueType() ) {
-			case INT:
+			case INT64:
 				return value_long;
 			case FP64:
 				return UtilFunctions.toLong(value_double);
@@ -215,7 +215,7 @@ public class LiteralOp extends Hop
 	
 	public double getDoubleValue() {
 		switch( getValueType() ) {
-			case INT:
+			case INT64:
 				return value_long;
 			case FP64:
 				return value_double;
@@ -230,7 +230,7 @@ public class LiteralOp extends Hop
 	
 	public boolean getBooleanValue() {
 		switch( getValueType() ) {
-			case INT:
+			case INT64:
 				return (value_long != 0);
 			case FP64:
 				return (value_double != 0);
@@ -247,7 +247,7 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case BOOLEAN:
 				return String.valueOf(value_boolean);
-			case INT:
+			case INT64:
 				return String.valueOf(value_long);
 			case FP64:
 				return String.valueOf(value_double);

@@ -85,7 +85,7 @@ public class IterablePredicate extends Expression
 		// check the variable has either 1) not been defined already OR 2) defined as integer scalar
 		if (ids.containsKey(_iterVar.getName())){
 			DataIdentifier otherDI = ids.get(_iterVar.getName());
-			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT ){
+			if( otherDI.getDataType() != DataType.SCALAR || otherDI.getValueType() != ValueType.INT64 ){
 				raiseValidateError("iterable predicate in for loop '" + _iterVar.getName()
 					+ "' must be a scalar integer", conditional);
 			}

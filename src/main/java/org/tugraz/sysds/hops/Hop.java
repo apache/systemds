@@ -373,13 +373,13 @@ public abstract class Hop implements ParseInfo
 			// If dynamic recompilation is enabled and dims are known, we can replace the ncol with 
 			// a literal in order to increase the piggybacking potential. This is safe because append 
 			// is always marked for recompilation and hence, we have propagated the exact dimensions.
-			offset = Data.createLiteralLop(ValueType.INT, String.valueOf(repCols ? hop.getDim2() : hop.getDim1()));
+			offset = Data.createLiteralLop(ValueType.INT64, String.valueOf(repCols ? hop.getDim2() : hop.getDim1()));
 		}
 		else
 		{
 			offset = new UnaryCP(hop.constructLops(), 
 					      repCols ? UnaryCP.OperationTypes.NCOL : UnaryCP.OperationTypes.NROW, 
-					      DataType.SCALAR, ValueType.INT);
+					      DataType.SCALAR, ValueType.INT64);
 		}
 		
 		offset.getOutputParameters().setDimensions(0, 0, 0, 0, -1);

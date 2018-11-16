@@ -50,7 +50,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameLongCP0() { 
-		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.SINGLE_NODE); 
 	}
 	
 	@Test
@@ -70,7 +70,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameLongCP1() { 
-		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
@@ -90,7 +90,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameLongCP2() { 
-		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.HYBRID); 
 	}
 	
 	@Test
@@ -110,7 +110,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameLongSP() { 
-		runFrameScalarCastingTest(ValueType.INT, RUNTIME_PLATFORM.SPARK); 
+		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.SPARK); 
 	}
 	
 	@Test
@@ -142,7 +142,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 			//generate input data
 			switch( vtIn ) {
 				case STRING: HDFSTool.writeStringToHDFS("foo", input("V")); break;
-				case INT: HDFSTool.writeIntToHDFS(7, input("V")); break;
+				case INT64: HDFSTool.writeIntToHDFS(7, input("V")); break;
 				case BOOLEAN: HDFSTool.writeBooleanToHDFS(true, input("V")); break;
 				case FP64: HDFSTool.writeDoubleToHDFS(7.3, input("V")); break;
 				default: throw new RuntimeException("Unsupported type: "+vtIn);

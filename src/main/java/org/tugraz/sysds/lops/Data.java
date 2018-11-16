@@ -238,7 +238,7 @@ public class Data extends Lop
 		if(literal_var) {
 			ValueType vt = getValueType();
 			switch(vt) {
-			case INT:
+			case INT64:
 				return Long.parseLong(getOutputParameters().getLabel());
 			case FP64:
 				return (long) Double.parseDouble(getOutputParameters().getLabel());

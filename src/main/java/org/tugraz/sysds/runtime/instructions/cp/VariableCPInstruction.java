@@ -666,7 +666,7 @@ public class VariableCPInstruction extends CPInstruction {
 					double d = HDFSTool.readDoubleFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new DoubleObject(d);
 					break;
-				case INT:
+				case INT64:
 					long i = HDFSTool.readIntegerFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new IntObject(i);
 					break;

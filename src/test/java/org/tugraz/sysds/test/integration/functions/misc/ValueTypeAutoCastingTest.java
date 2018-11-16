@@ -58,7 +58,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testIterablePredicateInteger() 
 	{ 
-		runTest( TEST_NAME1, ValueType.INT, false ); 
+		runTest( TEST_NAME1, ValueType.INT64, false ); 
 	}
 	
 	@Test
@@ -76,7 +76,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateWhileInteger() 
 	{ 
-		runTest( TEST_NAME2, ValueType.INT, false ); 
+		runTest( TEST_NAME2, ValueType.INT64, false ); 
 	}
 	
 	@Test
@@ -94,7 +94,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateIfInteger() 
 	{ 
-		runTest( TEST_NAME3, ValueType.INT, false ); 
+		runTest( TEST_NAME3, ValueType.INT64, false ); 
 	}
 	
 	@Test
@@ -112,7 +112,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionInliningInteger() 
 	{ 
-		runTest( TEST_NAME4, ValueType.INT, false ); 
+		runTest( TEST_NAME4, ValueType.INT64, false ); 
 	}
 	
 	@Test
@@ -130,7 +130,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNoInliningInteger() 
 	{ 
-		runTest( TEST_NAME5, ValueType.INT, false ); 
+		runTest( TEST_NAME5, ValueType.INT64, false ); 
 	}
 	
 	@Test
@@ -160,7 +160,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 				case FP64:
 					val1 = Double.toString(V[0][0]); 
 					val2 = Double.toString(V[0][1]); break;
-				case INT:
+				case INT64:
 					val1 = Integer.toString((int)V[0][0]); 
 					val2 = Integer.toString((int)V[0][1]); break;
 				case BOOLEAN:

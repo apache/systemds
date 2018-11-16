@@ -1677,7 +1677,7 @@ public class DMLTranslator
 			return null;
 		DataIdentifier tmpOut = createTarget();
 		tmpOut.setDataType(DataType.SCALAR);
-		tmpOut.setValueType(ValueType.INT);
+		tmpOut.setValueType(ValueType.INT64);
 		source.setOutput(tmpOut);
 		return processExpression(source, tmpOut, hops );
 	}
@@ -1699,7 +1699,7 @@ public class DMLTranslator
 			if ( target.getDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(target.getOrigDim1());
 			else {
-				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(target.getName()));
+				rowUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NROW, hops.get(target.getName()));
 				rowUpperHops.setParseInfo(target);
 			}
 		}
@@ -1715,7 +1715,7 @@ public class DMLTranslator
 			if ( target.getDim2() != -1 ) 
 				colUpperHops = new LiteralOp(target.getOrigDim2());
 			else
-				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(target.getName()));
+				colUpperHops = new UnaryOp(target.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NCOL, hops.get(target.getName()));
 		}
 		
 		// process the source expression to get source Hops
@@ -1760,7 +1760,7 @@ public class DMLTranslator
 			if ( source.getOrigDim1() != -1 ) 
 				rowUpperHops = new LiteralOp(source.getOrigDim1());
 			else {
-				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NROW, hops.get(source.getName()));
+				rowUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NROW, hops.get(source.getName()));
 				rowUpperHops.setParseInfo(source);
 			}
 		}
@@ -1776,7 +1776,7 @@ public class DMLTranslator
 			if ( source.getOrigDim2() != -1 ) 
 				colUpperHops = new LiteralOp(source.getOrigDim2());
 			else
-				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT, Hop.OpOp1.NCOL, hops.get(source.getName()));
+				colUpperHops = new UnaryOp(source.getName(), DataType.SCALAR, ValueType.INT64, Hop.OpOp1.NCOL, hops.get(source.getName()));
 		}
 		
 		if (target == null) {
@@ -2515,7 +2515,7 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, Hop.OpOp1.CAST_AS_DOUBLE, expr);
 			break;
 		case CAST_AS_INT:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT, Hop.OpOp1.CAST_AS_INT, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT64, Hop.OpOp1.CAST_AS_INT, expr);
 			break;
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, Hop.OpOp1.CAST_AS_BOOLEAN, expr);
@@ -2642,7 +2642,7 @@ public class DMLTranslator
 					tmpparams.put(DataExpression.RAND_PDF, expr3);
 					tmpparams.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 				}
-				else if ( expr3.getValueType() == ValueType.INT ) 
+				else if ( expr3.getValueType() == ValueType.INT64 ) 
 				{
 					tmpparams.put(DataExpression.RAND_PDF, new LiteralOp(false));
 					tmpparams.put(DataExpression.RAND_SEED, expr3 );

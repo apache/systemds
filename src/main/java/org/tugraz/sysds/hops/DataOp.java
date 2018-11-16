@@ -378,7 +378,7 @@ public class DataOp extends Hop
 		{
 			switch( getValueType() ) 
 			{
-				case INT:
+				case INT64:
 					ret = OptimizerUtils.INT_SIZE; break;
 				case FP64:
 					ret = OptimizerUtils.DOUBLE_SIZE; break;

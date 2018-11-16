@@ -50,8 +50,8 @@ public class TensorConstructionTest
 	
 	@Test
 	public void testMetaTypedTensor() throws Exception {
-		TensorBlock tb = new TensorBlock(ValueType.INT, new int[]{11,12,13});
-		Assert.assertEquals(ValueType.INT, tb.getValueType());
+		TensorBlock tb = new TensorBlock(ValueType.INT64, new int[]{11,12,13});
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumCols());
@@ -63,8 +63,8 @@ public class TensorConstructionTest
 	
 	@Test
 	public void testMetaTypedTensor2() throws Exception {
-		TensorBlock tb = new TensorBlock(ValueType.INT, new int[]{11,12,13}, false);
-		Assert.assertEquals(ValueType.INT, tb.getValueType());
+		TensorBlock tb = new TensorBlock(ValueType.INT64, new int[]{11,12,13}, false);
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumCols());
@@ -113,8 +113,8 @@ public class TensorConstructionTest
 	
 	@Test
 	public void testMetaCopyTypedTensor() throws Exception {
-		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT, new int[]{11,12,13}));
-		Assert.assertEquals(ValueType.INT, tb.getValueType());
+		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT64, new int[]{11,12,13}));
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumCols());
@@ -126,8 +126,8 @@ public class TensorConstructionTest
 	
 	@Test
 	public void testMetaCopyTypedTensor2() throws Exception {
-		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT, new int[]{11,12,13}, false));
-		Assert.assertEquals(ValueType.INT, tb.getValueType());
+		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT64, new int[]{11,12,13}, false));
+		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
 		Assert.assertEquals(12, tb.getNumCols());

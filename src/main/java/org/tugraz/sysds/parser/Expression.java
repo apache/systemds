@@ -436,9 +436,9 @@ public abstract class Expression implements ParseInfo
 			return v1;
 
 		if (cast) {
-			if (v1 == ValueType.FP64 && v2 == ValueType.INT)
+			if (v1 == ValueType.FP64 && v2 == ValueType.INT64)
 				return ValueType.FP64;
-			if (v2 == ValueType.FP64 && v1 == ValueType.INT)
+			if (v2 == ValueType.FP64 && v1 == ValueType.INT64)
 				return ValueType.FP64;
 			
 			// String value type will override others

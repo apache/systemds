@@ -389,7 +389,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return String.valueOf(in);
 			case BOOLEAN: return (in!=0);
-			case INT:     return UtilFunctions.toLong(in);
+			case INT64:     return UtilFunctions.toLong(in);
 			case FP64:  return in;
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -400,7 +400,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return in;
 			case BOOLEAN: return Boolean.parseBoolean(in);
-			case INT:     return Long.parseLong(in);
+			case INT64:     return Long.parseLong(in);
 			case FP64:  return Double.parseDouble(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -411,7 +411,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return !((String)in).isEmpty() ? Double.parseDouble((String)in) : 0;
 			case BOOLEAN: return ((Boolean)in)?1d:0d;
-			case INT:     return (Long)in;
+			case INT64:     return (Long)in;
 			case FP64:  return (Double)in;
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -450,7 +450,7 @@ public class UtilFunctions
 
 	public static Object objectToObject(ValueType vt, Object in) {
 		if( in instanceof Double && vt == ValueType.FP64 
-			|| in instanceof Long && vt == ValueType.INT
+			|| in instanceof Long && vt == ValueType.INT64
 			|| in instanceof Boolean && vt == ValueType.BOOLEAN
 			|| in instanceof String && vt == ValueType.STRING )
 			return in; //quick path to avoid double parsing
@@ -474,7 +474,7 @@ public class UtilFunctions
 		switch( vt ) {
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
-			case INT:     return ((Long)in1).compareTo((Long)in2);
+			case INT64:     return ((Long)in1).compareTo((Long)in2);
 			case FP64:  return ((Double)in1).compareTo((Double)in2);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
@@ -602,6 +602,13 @@ public class UtilFunctions
 	}
 	
 	public static int computeNnz(long[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
+	
+	public static int computeNnz(int[] a, int ai, int len) {
 		int lnnz = 0;
 		for( int i=ai; i<ai+len; i++ )
 			lnnz += (a[i] != 0) ? 1 : 0;

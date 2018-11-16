@@ -368,7 +368,7 @@ public class ForStatementBlock extends StatementBlock
 					ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier) constValue).getValue()).getLongValue(),
 							expr);
 					break;
-				case INT:
+				case INT64:
 					ret = new IntIdentifier((IntIdentifier) constValue, expr);
 					break;
 				case BOOLEAN:

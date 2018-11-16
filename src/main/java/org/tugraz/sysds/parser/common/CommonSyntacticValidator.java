@@ -773,7 +773,7 @@ public abstract class CommonSyntacticValidator {
 		if( (shortVt && valueType.equals("int"))
 			|| valueType.equals("int") || valueType.equals("integer")
 			|| valueType.equals("Int") || valueType.equals("Integer")) {
-			dataId.setValueType(ValueType.INT);
+			dataId.setValueType(ValueType.INT64);
 		}
 		else if( (shortVt && valueType.equals("str"))
 			|| valueType.equals("string") || valueType.equals("String")) {

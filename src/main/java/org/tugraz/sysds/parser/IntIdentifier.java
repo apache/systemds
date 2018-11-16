@@ -60,7 +60,7 @@ public class IntIdentifier extends ConstIdentifier
 		_val = val;
 		setDimensions(0, 0);
 		computeDataType();
-		setValueType(ValueType.INT);
+		setValueType(ValueType.INT64);
 	}
 
 	// Used only by the parser for unary operation

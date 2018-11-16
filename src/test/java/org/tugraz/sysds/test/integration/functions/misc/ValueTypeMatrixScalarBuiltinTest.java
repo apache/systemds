@@ -54,7 +54,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeMaxLeftScalarInt() { 
-		runTest(TEST_NAME1, ValueType.INT); 
+		runTest(TEST_NAME1, ValueType.INT64); 
 	}
 	
 	@Test
@@ -64,7 +64,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeMaxRightScalarInt() { 
-		runTest(TEST_NAME2, ValueType.INT); 
+		runTest(TEST_NAME2, ValueType.INT64); 
 	}
 	
 	@Test
@@ -74,7 +74,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeLogLeftScalarInt() { 
-		runTest(TEST_NAME3, ValueType.INT); 
+		runTest(TEST_NAME3, ValueType.INT64); 
 	}
 	
 	@Test
@@ -84,7 +84,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeLogRightScalarInt() { 
-		runTest(TEST_NAME4, ValueType.INT); 
+		runTest(TEST_NAME4, ValueType.INT64); 
 	}
 	
 	@Test
@@ -94,7 +94,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypePredLeftScalarInt() { 
-		runTest(TEST_NAME5, ValueType.INT); 
+		runTest(TEST_NAME5, ValueType.INT64); 
 	}
 	
 	@Test
@@ -104,7 +104,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypePredRightScalarInt() { 
-		runTest(TEST_NAME6, ValueType.INT); 
+		runTest(TEST_NAME6, ValueType.INT64); 
 	}
 	
 	private void runTest(String testName, ValueType vtIn) 

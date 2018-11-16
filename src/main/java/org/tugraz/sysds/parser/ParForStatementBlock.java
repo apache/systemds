@@ -1572,7 +1572,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private LinearFunction getLinearFunction(Hop hop, boolean ignoreMinWithConstant) {
-		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT )
+		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT64 )
 			return new LinearFunction(HopRewriteUtils.getIntValue((LiteralOp)hop), 0, null);
 		else if( HopRewriteUtils.isBinary(hop, OpOp2.PLUS, OpOp2.MINUS, OpOp2.MULT) )
 			return rParseBinaryExpression(hop);
@@ -1817,7 +1817,7 @@ public class ParForStatementBlock extends ForStatementBlock
 	}
 	
 	private static Long parseLongConstant(Hop hop) {
-		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT ) {
+		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT64 ) {
 			return HopRewriteUtils.getIntValue((LiteralOp)hop);
 		}
 		else if( hop instanceof LiteralOp && hop.getValueType()==ValueType.FP64 ) {

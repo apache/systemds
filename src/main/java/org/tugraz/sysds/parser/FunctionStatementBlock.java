@@ -91,7 +91,7 @@ public class FunctionStatementBlock extends StatementBlock
 				// attempt to convert value type: handle conversion from scalar DOUBLE or INT
 				if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
 					if (returnValue.getValueType() == ValueType.FP64){
-						if (curr.getValueType() == ValueType.INT){
+						if (curr.getValueType() == ValueType.INT64){
 							IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
 							if (currIntValue != null){
 								DoubleIdentifier currDoubleValue = new DoubleIdentifier(currIntValue.getValue(),
@@ -114,7 +114,7 @@ public class FunctionStatementBlock extends StatementBlock
 									+ returnValue.getValueType() + " and cannot safely cast value");
 						}
 					}
-					if (returnValue.getValueType() == ValueType.INT){
+					if (returnValue.getValueType() == ValueType.INT64){
 						// THROW EXCEPTION -- CANNOT CONVERT
 						throw new LanguageException(curr.printErrorLocation() + "for function " + fstmt.getName() 
 								+ ", return variable " + curr.getName() + " value type of " + curr.getValueType() 

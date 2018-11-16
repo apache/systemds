@@ -339,9 +339,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkStringParam(true, fname, Statement.PS_MODE, conditional);
 		checkStringParam(true, fname, Statement.PS_UPDATE_TYPE, conditional);
 		checkStringParam(true, fname, Statement.PS_FREQUENCY, conditional);
-		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT, conditional);
-		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT, conditional);
-		checkDataValueType(true, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT, conditional);
+		checkDataValueType(false, fname, Statement.PS_EPOCHS, DataType.SCALAR, ValueType.INT64, conditional);
+		checkDataValueType(true, fname, Statement.PS_BATCH_SIZE, DataType.SCALAR, ValueType.INT64, conditional);
+		checkDataValueType(true, fname, Statement.PS_PARALLELISM, DataType.SCALAR, ValueType.INT64, conditional);
 		checkStringParam(true, fname, Statement.PS_SCHEME, conditional);
 		checkDataValueType(true, fname, Statement.PS_HYPER_PARAMS, DataType.LIST, ValueType.UNKNOWN, conditional);
 		checkStringParam(true, fname, Statement.PS_CHECKPOINTING, conditional);

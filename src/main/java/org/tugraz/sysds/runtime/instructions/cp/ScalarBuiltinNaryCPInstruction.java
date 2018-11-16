@@ -66,7 +66,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 				for (int i = 1; i < scalarObjects.size(); i++) {
 					ScalarObject scalarObject = scalarObjects.get(i);
 					switch (scalarObject.getValueType()) {
-					case INT:
+					case INT64:
 						objects[i - 1] = scalarObject.getLongValue();
 						break;
 					case FP64:

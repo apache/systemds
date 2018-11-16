@@ -137,7 +137,7 @@ public class IndexingOp extends Hop
 					SparkAggType aggtype = (method==IndexingMethod.MR_VRIX || isBlockAligned()) ? 
 							SparkAggType.NONE : SparkAggType.MULTI_BLOCK;
 					
-					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
+					Lop dummy = Data.createLiteralLop(ValueType.INT64, Integer.toString(-1));
 					RightIndex reindex = new RightIndex(
 							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
@@ -149,7 +149,7 @@ public class IndexingOp extends Hop
 				}
 				else //CP or GPU
 				{
-					Lop dummy = Data.createLiteralLop(ValueType.INT, Integer.toString(-1));
+					Lop dummy = Data.createLiteralLop(ValueType.INT64, Integer.toString(-1));
 					RightIndex reindex = new RightIndex(
 							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
 							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,

@@ -698,7 +698,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
-			output.setValueType(ValueType.INT);
+			output.setValueType(ValueType.INT64);
 			break;
 		case CAST_AS_BOOLEAN:
 			checkNumParameters(1);
@@ -848,7 +848,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
-			output.setValueType(ValueType.INT);
+			output.setValueType(ValueType.INT64);
 			break;
 			
 		case LIST:
@@ -1144,9 +1144,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			for(Expression e : in)
 				checkScalarParam(e);
 			
-			if (in[0].getOutput().getValueType() != ValueType.FP64 && in[0].getOutput().getValueType() != ValueType.INT) 
+			if (in[0].getOutput().getValueType() != ValueType.FP64 && in[0].getOutput().getValueType() != ValueType.INT64) 
 				throw new LanguageException("First argument to sample() must be a number.");
-			if (in[1].getOutput().getValueType() != ValueType.FP64 && in[1].getOutput().getValueType() != ValueType.INT) 
+			if (in[1].getOutput().getValueType() != ValueType.FP64 && in[1].getOutput().getValueType() != ValueType.INT64) 
 				throw new LanguageException("Second argument to sample() must be a number.");
 			
 			boolean check = false;
@@ -1161,7 +1161,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if(in.length == 4 )
 			{
 				checkNumParameters(4);
-				if (in[3].getOutput().getValueType() != ValueType.INT) 
+				if (in[3].getOutput().getValueType() != ValueType.INT64) 
 					throw new LanguageException("Fourth arugment, seed, to sample() must be an integer value.");
 				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN ) 
 					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
@@ -1170,7 +1170,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			{
 				checkNumParameters(3);
 				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN 
-						&& in[2].getOutput().getValueType() != ValueType.INT ) 
+						&& in[2].getOutput().getValueType() != ValueType.INT64 ) 
 					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
 			
@@ -1504,7 +1504,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;
 		Expression firstM = dt.isMatrix() ? Arrays.stream(getAllExpr()).filter(
 			e -> e.getOutput().getDataType().isMatrix()).findFirst().get() : null;
-		ValueType vt = dt.isMatrix() ? ValueType.FP64 : ValueType.INT;
+		ValueType vt = dt.isMatrix() ? ValueType.FP64 : ValueType.INT64;
 		for( Expression e : getAllExpr() ) {
 			vt = computeValueType(e, e.getOutput().getValueType(), vt, true);
 			if( e.getOutput().getDataType().isMatrix() )
@@ -2036,7 +2036,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		{
 			case FP64:
 				return BuiltinFunctionOp.CAST_AS_DOUBLE;
-			case INT:
+			case INT64:
 				return BuiltinFunctionOp.CAST_AS_INT;
 			case BOOLEAN:
 				return BuiltinFunctionOp.CAST_AS_BOOLEAN;

@@ -934,7 +934,7 @@ public class DataExpression extends DataIdentifier
 				} else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE)) {
 					getOutput().setValueType(ValueType.STRING);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE)) {
-					getOutput().setValueType(ValueType.INT);
+					getOutput().setValueType(ValueType.INT64);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
 					getOutput().setValueType(ValueType.BOOLEAN);
 				} else {
@@ -1094,7 +1094,7 @@ public class DataExpression extends DataIdentifier
 			if (!( (lambda instanceof DataIdentifier 
 					|| lambda instanceof ConstIdentifier) 
 				&& (lambda.getOutput().getValueType() == ValueType.FP64 
-					|| lambda.getOutput().getValueType() == ValueType.INT) )) {
+					|| lambda.getOutput().getValueType() == ValueType.INT64) )) {
 				raiseValidateError("for Rand statement " + RAND_LAMBDA + " has incorrect data type", conditional);
 			}
 				

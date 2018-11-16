@@ -159,42 +159,42 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 
 	@Test
 	public void testRowLongConversionSingleDense() {
-		testDataFrameConversion(ValueType.INT, true, true, false);
+		testDataFrameConversion(ValueType.INT64, true, true, false);
 	}
 	
 	@Test
 	public void testRowLongConversionSingleDenseUnknown() {
-		testDataFrameConversion(ValueType.INT, true, true, true);
+		testDataFrameConversion(ValueType.INT64, true, true, true);
 	}
 	
 	@Test
 	public void testRowLongConversionSingleSparse() {
-		testDataFrameConversion(ValueType.INT, true, false, false);
+		testDataFrameConversion(ValueType.INT64, true, false, false);
 	}
 	
 	@Test
 	public void testRowLongConversionSingleSparseUnknown() {
-		testDataFrameConversion(ValueType.INT, true, false, true);
+		testDataFrameConversion(ValueType.INT64, true, false, true);
 	}
 	
 	@Test
 	public void testRowLongConversionMultiDense() {
-		testDataFrameConversion(ValueType.INT, false, true, false);
+		testDataFrameConversion(ValueType.INT64, false, true, false);
 	}
 	
 	@Test
 	public void testRowLongConversionMultiDenseUnknown() {
-		testDataFrameConversion(ValueType.INT, false, true, true);
+		testDataFrameConversion(ValueType.INT64, false, true, true);
 	}
 	
 	@Test
 	public void testRowLongConversionMultiSparse() {
-		testDataFrameConversion(ValueType.INT, false, false, false);
+		testDataFrameConversion(ValueType.INT64, false, false, false);
 	}
 	
 	@Test
 	public void testRowLongConversionMultiSparseUnknown() {
-		testDataFrameConversion(ValueType.INT, false, false, true);
+		testDataFrameConversion(ValueType.INT64, false, false, true);
 	}
 
 	private void testDataFrameConversion(ValueType vt, boolean singleColBlock, boolean dense, boolean unknownDims) {
@@ -210,7 +210,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 			int cols = singleColBlock ? cols1 : cols2;
 			double sparsity = dense ? sparsity1 : sparsity2; 
 			double[][] A = getRandomMatrix(rows1, cols, -10, 10, sparsity, 2373); 
-			A = (vt == ValueType.INT) ? TestUtils.round(A) : A;
+			A = (vt == ValueType.INT64) ? TestUtils.round(A) : A;
 			MatrixBlock mbA = DataConverter.convertToMatrixBlock(A); 
 			FrameBlock fbA = DataConverter.convertToFrameBlock(mbA, vt);
 			int blksz = ConfigurationManager.getBlocksize();

@@ -98,7 +98,7 @@ public class RandVarSeedTest extends AutomatedTestBase
 			
 			//write seed as input scalar (to force treatment as variable)			
 			HDFSTool.writeIntToHDFS(seed, fnameSeed);
-			HDFSTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT);
+			HDFSTool.writeScalarMetaDataFile(fnameSeed+".mtd", ValueType.INT64);
 			
 			//run test
 			runTest(true, false, null, -1);

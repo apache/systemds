@@ -30,7 +30,7 @@ public class IntObject extends ScalarObject
 	private final long _value;
 
 	public IntObject(long val) {
-		super(ValueType.INT);
+		super(ValueType.INT64);
 		_value = val;
 	}
 	

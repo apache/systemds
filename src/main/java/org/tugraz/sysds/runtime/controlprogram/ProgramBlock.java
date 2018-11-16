@@ -219,7 +219,7 @@ public class ProgramBlock implements ParseInfo
 		if( ret.getValueType() != retType )
 			switch( retType ) {
 				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
-				case INT:	  ret = new IntObject(ret.getLongValue()); break;
+				case INT64:	  ret = new IntObject(ret.getLongValue()); break;
 				case FP64:  ret = new DoubleObject(ret.getDoubleValue()); break;
 				case STRING:  ret = new StringObject(ret.getStringValue()); break;
 				default:

@@ -204,7 +204,7 @@ public abstract class Identifier extends Expression
 	
 	public void setIntProperties(){
 		_dataType = DataType.SCALAR;
-		_valueType = ValueType.INT;
+		_valueType = ValueType.INT64;
 		_dim1 = 0;
 		_dim2 = 0;
 		_rows_in_block = 0;

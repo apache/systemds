@@ -62,7 +62,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 	//schema restriction: single vector included
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.UNKNOWN, ValueType.STRING, ValueType.STRING, ValueType.STRING};
 	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.FP64, ValueType.FP64, ValueType.UNKNOWN, ValueType.FP64};
-	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.UNKNOWN, ValueType.INT, ValueType.STRING, ValueType.FP64, ValueType.INT};
+	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.UNKNOWN, ValueType.INT64, ValueType.STRING, ValueType.FP64, ValueType.INT64};
 	private final static ValueType[] schemaMixed2 = new ValueType[]{ValueType.STRING, ValueType.UNKNOWN, ValueType.FP64};
 
 	private final static int rows1 = 2245;
@@ -314,7 +314,7 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 			switch(schema[j]) {
 				case STRING: dt = DataTypes.StringType; break;
 				case FP64: dt = DataTypes.DoubleType; break;
-				case INT:    dt = DataTypes.LongType; break;
+				case INT64:    dt = DataTypes.LongType; break;
 				case UNKNOWN: dt = new VectorUDT(); break;
 				default: throw new RuntimeException("Unsupported value type.");
 			}

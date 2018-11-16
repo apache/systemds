@@ -211,7 +211,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			double max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				Double.valueOf(s[1]) : 0;
 			CPOperand rows = new CPOperand(s[2]);
-			CPOperand cols = new CPOperand("1", ValueType.INT, DataType.SCALAR);
+			CPOperand cols = new CPOperand("1", ValueType.INT64, DataType.SCALAR);
 			boolean replace = (!s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) 
 				&& Boolean.valueOf(s[3]));
 			

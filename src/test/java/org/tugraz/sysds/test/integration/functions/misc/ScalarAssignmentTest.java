@@ -55,7 +55,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testForLoopInteger() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.INT);
+		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.INT64);
 	}
 	
 	@Test
@@ -79,7 +79,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testParForLoopInteger() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.INT);
+		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.INT64);
 	}
 	
 	@Test
@@ -103,7 +103,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testWhileLoopInteger() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.INT);
+		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.INT64);
 	}
 	
 	@Test
@@ -127,7 +127,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testIfLoopInteger() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.INT);
+		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.INT64);
 	}
 	
 	@Test
@@ -168,7 +168,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		Object value = null;
 		switch( vt )
 		{
-			case INT: value = Integer.valueOf(7); break;
+			case INT64: value = Integer.valueOf(7); break;
 			case FP64: value = Double.valueOf(7.7); break;
 			case STRING: value = "This is a test!"; break;
 			case BOOLEAN: value = Boolean.valueOf(true); break;

@@ -93,7 +93,7 @@ public class HopRewriteUtils
 	public static boolean getBooleanValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case FP64:  return op.getDoubleValue() != 0; 
-			case INT:     return op.getLongValue()   != 0;
+			case INT64:     return op.getLongValue()   != 0;
 			case BOOLEAN: return op.getBooleanValue();
 			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 		}
@@ -103,7 +103,7 @@ public class HopRewriteUtils
 		try {
 			switch( op.getValueType() ) {
 				case FP64:  return op.getDoubleValue() != 0; 
-				case INT:     return op.getLongValue()   != 0;
+				case INT64:     return op.getLongValue()   != 0;
 				case BOOLEAN: return op.getBooleanValue();
 				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
 			}
@@ -119,7 +119,7 @@ public class HopRewriteUtils
 		switch( op.getValueType() ) {
 			case STRING:
 			case FP64:  return op.getDoubleValue(); 
-			case INT:     return op.getLongValue();
+			case INT64:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
 		}
@@ -128,7 +128,7 @@ public class HopRewriteUtils
 	public static double getDoubleValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case FP64:  return op.getDoubleValue(); 
-			case INT:     return op.getLongValue();
+			case INT64:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Double.MAX_VALUE;
 		}
@@ -148,7 +148,7 @@ public class HopRewriteUtils
 		switch( op.getValueType() ) {
 			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
 			case STRING:
-			case INT:     return op.getLongValue();
+			case INT64:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid int value: "+op.getValueType());
 		}
@@ -157,7 +157,7 @@ public class HopRewriteUtils
 	public static long getIntValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
-			case INT:     return op.getLongValue();
+			case INT64:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
 		}
@@ -169,7 +169,7 @@ public class HopRewriteUtils
 	
 	public static boolean isLiteralOfValue( Hop hop, double val ) {
 		return (hop instanceof LiteralOp 
-			&& (hop.getValueType()==ValueType.FP64 || hop.getValueType()==ValueType.INT)
+			&& (hop.getValueType()==ValueType.FP64 || hop.getValueType()==ValueType.INT64)
 			&& getDoubleValueSafe((LiteralOp)hop)==val);
 	}
 	
@@ -294,9 +294,9 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop input, double value ) 
 	{
 		Hop rows = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
-			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, input);
 		Hop cols = input.colsKnown() ? new LiteralOp(input.getDim2()) :
-			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, input);
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, input);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -377,9 +377,9 @@ public class HopRewriteUtils
 	public static Hop createDataGenOp( Hop rowInput, Hop colInput, double value ) 
 	{
 		Hop rows = rowInput.rowsKnown() ? new LiteralOp(rowInput.getDim1()) : 
-			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, rowInput);
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, rowInput);
 		Hop cols = colInput.colsKnown() ? new LiteralOp(colInput.getDim2()) :
-			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, colInput);
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -409,9 +409,9 @@ public class HopRewriteUtils
 		long ncol = tColInput ? colInput.getDim1() : rowInput.getDim2();
 		
 		Hop rows = (nrow>=0) ? new LiteralOp(nrow) : 
-			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, tRowInput?OpOp1.NCOL:OpOp1.NROW, rowInput);
 		Hop cols = (ncol>=0) ? new LiteralOp(ncol) :
-			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
+			new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT64, tColInput?OpOp1.NROW:OpOp1.NCOL, colInput);
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
@@ -673,11 +673,11 @@ public class HopRewriteUtils
 		Hop ret = null;
 		if( row ){
 			ret = hop.rowsKnown() ? new LiteralOp(hop.getDim1()) : 
-				new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, hop);
+				new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, hop);
 		}
 		else{
 			ret = hop.colsKnown() ? new LiteralOp(hop.getDim2()) :
-				new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT, OpOp1.NCOL, hop);
+				new UnaryOp("tmpcols", DataType.SCALAR, ValueType.INT64, OpOp1.NCOL, hop);
 		}
 		
 		return ret;
@@ -690,7 +690,7 @@ public class HopRewriteUtils
 	
 	public static DataGenOp createSeqDataGenOp( Hop input, boolean asc ) {
 		Hop to = input.rowsKnown() ? new LiteralOp(input.getDim1()) : 
-			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT, OpOp1.NROW, input);
+			new UnaryOp("tmprows", DataType.SCALAR, ValueType.INT64, OpOp1.NROW, input);
 		
 		HashMap<String, Hop> params = new HashMap<>();
 		if( asc ) {

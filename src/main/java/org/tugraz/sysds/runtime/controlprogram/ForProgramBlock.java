@@ -173,10 +173,10 @@ public class ForProgramBlock extends ProgramBlock
 					predHops = fsb.getIncrementHops();
 					recompile = fsb.requiresIncrementRecompilation();
 				}
-				tmp = (IntObject) executePredicate(instructions, predHops, recompile, ValueType.INT, ec);
+				tmp = (IntObject) executePredicate(instructions, predHops, recompile, ValueType.INT64, ec);
 			}
 			else
-				tmp = (IntObject) executePredicate(instructions, null, false, ValueType.INT, ec);
+				tmp = (IntObject) executePredicate(instructions, null, false, ValueType.INT64, ec);
 		}
 		catch(Exception ex)
 		{

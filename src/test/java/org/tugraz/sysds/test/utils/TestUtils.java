@@ -805,7 +805,7 @@ public class TestUtils
 		switch( vt ) {
 			case STRING:  return ((String)in1).compareTo((String)in2);
 			case BOOLEAN: return ((Boolean)in1).compareTo((Boolean)in2);
-			case INT:     return ((Long)in1).compareTo((Long)in2);
+			case INT64:     return ((Long)in1).compareTo((Long)in2);
 			case FP64:  
 				return (Math.abs((Double)in1-(Double)in2) < tolerance)?0:	
 					((Double)in1).compareTo((Double)in2);
@@ -832,7 +832,7 @@ public class TestUtils
 					return Boolean.FALSE.compareTo(((Boolean)inR).booleanValue());
 				else
 					return ((Boolean)in1).compareTo((Boolean)inR);
-			case INT:     
+			case INT64:     
 				if(in1 == null)
 					return new Long(0).compareTo(((Long)inR));
 				else

@@ -65,6 +65,7 @@ public abstract class DenseBlockFactory
 				switch(vt) {
 					case FP32: return new DenseBlockFP32(dims);
 					case FP64: return new DenseBlockFP64(dims);
+					case BOOLEAN: return new DenseBlockBool(dims);
 					default:
 						throw new DMLRuntimeException("Unsupported dense block value type: "+vt.name());
 				}

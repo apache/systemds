@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -976,6 +977,13 @@ public class DataConverter
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)
 			ret[i] = data[i];
+		return ret;
+	}
+	
+	public static double[] toDouble(BitSet data, int len) {
+		double[] ret = new double[len];
+		for(int i=0; i<len; i++)
+			ret[i] = data.get(i) ? 1 : 0;
 		return ret;
 	}
 }

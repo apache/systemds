@@ -44,6 +44,15 @@ public class DenseBlockConstIndexingTest
 	}
 	
 	@Test
+	public void testIndexDenseBlock2BoolConst() throws Exception {
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				Assert.assertEquals(1, db.get(i, j), 0);
+	}
+	
+	@Test
 	public void testIndexDenseBlock3FP32Const() throws Exception {
 		DenseBlock db = getDenseBlock3(ValueType.FP32);
 		db.set(7.3);
@@ -61,6 +70,16 @@ public class DenseBlockConstIndexingTest
 			for(int j=0; j<5; j++)
 				for(int k=0; k<7; k++)
 					Assert.assertEquals(7.3, db.get(new int[]{i,j,k}), 0);
+	}
+	
+	@Test
+	public void testIndexDenseBlock3BoolConst() throws Exception {
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		db.set(7.3);
+		for(int i=0; i<db.numRows(); i++)
+			for(int j=0; j<5; j++)
+				for(int k=0; k<7; k++)
+					Assert.assertEquals(1, db.get(new int[]{i,j,k}), 0);
 	}
 	
 	private DenseBlock getDenseBlock2(ValueType vt) {

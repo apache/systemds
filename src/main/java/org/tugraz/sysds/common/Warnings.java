@@ -11,4 +11,8 @@ public class Warnings
 	public static void warnFullFP64Conversion(long len) {
 		LOG.warn("Performance warning: conversion to FP64 array of size "+len+".");
 	}
+	
+	public static void warnInvaldBooleanIncrement(double delta) {
+		LOG.warn("Correctness warning: invalid boolean increment by "+delta+".");
+	}
 }

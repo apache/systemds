@@ -21,6 +21,7 @@ package org.tugraz.sysds.runtime.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -604,6 +605,13 @@ public class UtilFunctions
 		int lnnz = 0;
 		for( int i=ai; i<ai+len; i++ )
 			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
+	
+	public static int computeNnz(BitSet a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += a.get(i) ? 1 : 0;
 		return lnnz;
 	}
 	

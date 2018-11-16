@@ -56,6 +56,21 @@ public class DenseBlockConstructionTest
 	}
 	
 	@Test
+	public void testMetaDenseBlock2Bool() throws Exception {
+		DenseBlock db = getDenseBlock2(ValueType.BOOLEAN);
+		Assert.assertEquals(3, db.numRows());
+		Assert.assertEquals(true, db.isNumeric());
+		Assert.assertEquals(true, db.isContiguous());
+		Assert.assertEquals(1, db.numBlocks());
+		Assert.assertEquals(3, db.blockSize());
+		Assert.assertEquals(3*5, db.size());
+		Assert.assertTrue(3*5 <= db.capacity());
+		Assert.assertEquals(0, db.countNonZeros());
+		Assert.assertEquals(DenseBlock.Type.DRB,
+			DenseBlockFactory.getDenseBlockType(db));
+	}
+	
+	@Test
 	public void testMetaDenseBlock3FP32() throws Exception {
 		DenseBlock db = getDenseBlock3(ValueType.FP32);
 		Assert.assertEquals(3, db.numRows());
@@ -80,6 +95,21 @@ public class DenseBlockConstructionTest
 		Assert.assertEquals(3, db.blockSize());
 		Assert.assertEquals(3*5*7, db.size());
 		Assert.assertEquals(3*5*7, db.capacity());
+		Assert.assertEquals(0, db.countNonZeros());
+		Assert.assertEquals(DenseBlock.Type.DRB,
+			DenseBlockFactory.getDenseBlockType(db));
+	}
+	
+	@Test
+	public void testMetaDenseBlock3Bool() throws Exception {
+		DenseBlock db = getDenseBlock3(ValueType.BOOLEAN);
+		Assert.assertEquals(3, db.numRows());
+		Assert.assertEquals(true, db.isNumeric());
+		Assert.assertEquals(true, db.isContiguous());
+		Assert.assertEquals(1, db.numBlocks());
+		Assert.assertEquals(3, db.blockSize());
+		Assert.assertEquals(3*5*7, db.size());
+		Assert.assertTrue(3*5*7 <= db.capacity());
 		Assert.assertEquals(0, db.countNonZeros());
 		Assert.assertEquals(DenseBlock.Type.DRB,
 			DenseBlockFactory.getDenseBlockType(db));

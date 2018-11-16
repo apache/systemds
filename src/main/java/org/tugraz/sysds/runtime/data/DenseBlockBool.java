@@ -22,26 +22,29 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.util.Arrays;
+import java.util.BitSet;
 
 import org.tugraz.sysds.common.Warnings;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockFP32 extends DenseBlockDRB
+public class DenseBlockBool extends DenseBlockDRB
 {
-	private static final long serialVersionUID = 1950471811056914020L;
+	private static final long serialVersionUID = -2228057308997136969L;
 	
-	private float[] _data;
+	private BitSet _data;
 
-	public DenseBlockFP32(int[] dims) {
+	public DenseBlockBool(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
 	
-	public DenseBlockFP32(int[] dims, float[] data) {
+	public DenseBlockBool(int[] dims, boolean[] data) {
 		super(dims);
-		_data = data;
+		_data = new BitSet(data.length);
+		for(int i=0; i<data.length; i++)
+			if( data[i] )
+			_data.set(i);
 	}
 	
 	@Override
@@ -51,15 +54,15 @@ public class DenseBlockFP32 extends DenseBlockDRB
 	
 	@Override
 	public void reset(int rlen, int[] odims, double v) {
-		float fv = (float) v;
+		boolean bv = v != 0;
 		int len = rlen * odims[0];
 		if( len > capacity() ) {
-			_data = new float[len];
-			if( v != 0 )
-				Arrays.fill(_data, fv);
+			_data = new BitSet(len);
+			if( bv )
+				_data.set(0, len);
 		}
 		else {
-			Arrays.fill(_data, 0, len, fv);
+			_data.set(0, len, bv);
 		}
 		_rlen = rlen;
 		_odims = odims;
@@ -67,12 +70,12 @@ public class DenseBlockFP32 extends DenseBlockDRB
 
 	@Override
 	public long capacity() {
-		return (_data!=null) ? _data.length : -1;
+		return (_data!=null) ? _data.size() : -1;
 	}
 
 	@Override
 	public long countNonZeros() {
-		return UtilFunctions.computeNnz(_data, 0, _rlen*_odims[0]);
+		return _data.cardinality();
 	}
 	
 	@Override
@@ -99,14 +102,15 @@ public class DenseBlockFP32 extends DenseBlockDRB
 		int ix = pos(r);
 		int ncol = _odims[0];
 		for(int j=0; j<ncol; j++)
-			ret[j] = _data[ix+j];
+			ret[j] = _data.get(ix+j) ? 1 : 0;
 		return ret;
 	}
 	
 	@Override
 	public double[] valuesAt(int bix) {
-		Warnings.warnFullFP64Conversion(_data.length);
-		return DataConverter.toDouble(_data);
+		int len = _rlen*_odims[0];
+		Warnings.warnFullFP64Conversion(len);
+		return DataConverter.toDouble(_data, len);
 	}
 
 	@Override
@@ -116,34 +120,36 @@ public class DenseBlockFP32 extends DenseBlockDRB
 
 	@Override
 	public void incr(int r, int c) {
-		_data[pos(r, c)] ++;
+		Warnings.warnInvaldBooleanIncrement(1);
+		_data.set(pos(r, c));
 	}
 	
 	@Override
 	public void incr(int r, int c, double delta) {
-		_data[pos(r, c)] += delta;
+		Warnings.warnInvaldBooleanIncrement(delta);
+		_data.set(pos(r, c));
 	}
 	
 	@Override
 	public DenseBlock set(double v) {
-		Arrays.fill(_data, 0, _rlen*_odims[0], (float)v);
+		_data.set(0, _rlen*_odims[0], v != 0);
 		return this;
 	}
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, double v) {
-		float fv = (float) v;
+		boolean bv = v != 0;
 		if( ol==0 && ou == _odims[0] )
-			Arrays.fill(_data, rl*_odims[0], ru*_odims[0], fv);
+			_data.set(rl*_odims[0], ru*_odims[0], bv);
 		else
 			for(int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0])
-				Arrays.fill(_data, ix+ol, ix+ou, fv);
+				_data.set(ix+ol, ix+ou, bv);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int r, int c, double v) {
-		_data[pos(r, c)] = (float)v;
+		_data.set(pos(r, c), v != 0);
 		return this;
 	}
 	
@@ -174,11 +180,11 @@ public class DenseBlockFP32 extends DenseBlockDRB
 
 	@Override
 	public double get(int r, int c) {
-		return _data[pos(r, c)];
+		return _data.get(pos(r, c)) ? 1 : 0;
 	}
 
 	@Override
 	public double get(int[] ix) {
-		return _data[pos(ix)];
+		return _data.get(pos(ix)) ? 1 : 0;
 	}
 }

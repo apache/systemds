@@ -593,6 +593,20 @@ public class UtilFunctions
 		return lnnz;
 	}
 	
+	public static int computeNnz(float[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
+	
+	public static int computeNnz(long[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int i=ai; i<ai+len; i++ )
+			lnnz += (a[i] != 0) ? 1 : 0;
+		return lnnz;
+	}
+	
 	public static long computeNnz(SparseBlock a, int[] aix, int ai, int alen) {
 		long lnnz = 0;
 		for( int k=ai; k<ai+alen; k++ )

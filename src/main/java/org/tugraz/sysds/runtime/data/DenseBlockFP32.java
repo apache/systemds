@@ -24,20 +24,22 @@ package org.tugraz.sysds.runtime.data;
 
 import java.util.Arrays;
 
+import org.tugraz.sysds.common.Warnings;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockFP64 extends DenseBlockDRB
+public class DenseBlockFP32 extends DenseBlockDRB
 {
 	private static final long serialVersionUID = 8546723684649816489L;
 
-	private double[] _data;
+	private float[] _data;
 
-	public DenseBlockFP64(int[] dims) {
+	public DenseBlockFP32(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
 	
-	public DenseBlockFP64(int[] dims, double[] data) {
+	public DenseBlockFP32(int[] dims, float[] data) {
 		super(dims);
 		_data = data;
 	}
@@ -49,14 +51,15 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	
 	@Override
 	public void reset(int rlen, int odims, double v) {
+		float fv = (float) v;
 		int len = rlen * odims;
 		if( len > capacity() ) {
-			_data = new double[len];
+			_data = new float[len];
 			if( v != 0 )
-				Arrays.fill(_data, v);
+				Arrays.fill(_data, fv);
 		}
 		else {
-			Arrays.fill(_data, 0, len, v);
+			Arrays.fill(_data, 0, len, fv);
 		}
 		_rlen = rlen;
 		_odims = odims;
@@ -92,12 +95,17 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	@Override
 	public double[] values(int r) {
-		return _data;
+		double[] ret = getReuseRow(false);
+		int ix = pos(r);
+		for(int j=0; j<_odims; j++)
+			ret[j] = _data[ix+j];
+		return ret;
 	}
 	
 	@Override
 	public double[] valuesAt(int bix) {
-		return _data;
+		Warnings.warnFullFP64Conversion(_data.length);
+		return DataConverter.toDouble(_data);
 	}
 
 	@Override
@@ -127,23 +135,24 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(double v) {
-		Arrays.fill(_data, 0, _rlen*_odims, v);
+		Arrays.fill(_data, 0, _rlen*_odims, (float)v);
 		return this;
 	}
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, double v) {
+		float fv = (float) v;
 		if( ol==0 && ou == _odims )
-			Arrays.fill(_data, rl*_odims, ru*_odims, v);
+			Arrays.fill(_data, rl*_odims, ru*_odims, fv);
 		else
 			for(int i=rl, ix=rl*_odims; i<ru; i++, ix+=_odims)
-				Arrays.fill(_data, ix+ol, ix+ou, v);
+				Arrays.fill(_data, ix+ol, ix+ou, fv);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int r, int c, double v) {
-		_data[pos(r, c)] = v;
+		_data[pos(r, c)] = (float)v;
 		return this;
 	}
 	

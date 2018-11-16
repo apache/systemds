@@ -25,6 +25,7 @@ package org.tugraz.sysds.runtime.data;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -46,11 +47,12 @@ public abstract class DenseBlock implements Serializable
 	
 	protected int _rlen;  //number of rows
 	protected int _odims; //length of other dimensions
+	private double[] _reuse;
 	
 	protected DenseBlock(int[] dims) {
 		long odims = UtilFunctions.prod(dims, 1);
 		if( odims > Integer.MAX_VALUE )
-			throw new RuntimeException("Invalid dims: "+Arrays.toString(dims));
+			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
 		_rlen = dims[0];
 		_odims = (int) odims;
 	}
@@ -59,7 +61,9 @@ public abstract class DenseBlock implements Serializable
 	 * Resets the dense block by deleting non-zero values. After this
 	 * call all countNonZeros() calls are guaranteed to return 0.
 	 */
-	public abstract void reset();
+	public final void reset() {
+		reset(_rlen, _odims, 0);
+	}
 	
 	/**
 	 * Resets the dense block by deleting non-zero values. After this
@@ -69,7 +73,9 @@ public abstract class DenseBlock implements Serializable
 	 * 
 	 * @param dims length and size of dimensions.
 	 */
-	public abstract void reset(int[] dims);
+	public final void reset(int[] dims) {
+		reset(dims[0], (int)UtilFunctions.prod(dims, 1), 0);
+	}
 	
 	/**
 	 * Resets the dense block by deleting non-zeros.
@@ -77,7 +83,9 @@ public abstract class DenseBlock implements Serializable
 	 * @param dims lenth and size of dimensions
 	 * @param v value
 	 */
-	public abstract void reset(int[] dims, double v);
+	public final void reset(int[] dims, double v) {
+		reset(dims[0], (int)UtilFunctions.prod(dims, 1), v);
+	}
 	
 	/**
 	 * Resets the dense block by deleting non-zeros.
@@ -85,7 +93,9 @@ public abstract class DenseBlock implements Serializable
 	 * @param rlen number of rows
 	 * @param odims other dimensions
 	 */
-	public abstract void reset(int rlen, int odims);
+	public final void reset(int rlen, int odims) {
+		reset(rlen, odims, 0);
+	}
 	
 	/**
 	 * Resets the dense block by setting the given value.
@@ -128,7 +138,7 @@ public abstract class DenseBlock implements Serializable
 	public abstract int blockSize(int bix);
 	
 	/**
-	 * Indicates of the dnse block is numeric.
+	 * Indicates if the dense block is numeric.
 	 * @return true if numeric (FP, INT, BOOLEAN)
 	 */
 	public abstract boolean isNumeric();
@@ -158,7 +168,7 @@ public abstract class DenseBlock implements Serializable
 	 * @return length
 	 */
 	public final long size() {
-		return _rlen * _odims;
+		return (long)_rlen * _odims;
 	}
 	
 	/**
@@ -389,5 +399,13 @@ public abstract class DenseBlock implements Serializable
 			sb.append("\n");
 		}
 		return sb.toString();
+	}
+	
+	protected double[] getReuseRow(boolean reset) {
+		if( _reuse != null && reset )
+			Arrays.fill(_reuse, 0);
+		if( _reuse == null )
+			_reuse = new double[_odims];
+		return _reuse;
 	}
 }

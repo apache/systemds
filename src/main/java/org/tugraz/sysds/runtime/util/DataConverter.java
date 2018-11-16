@@ -964,4 +964,18 @@ public class DataConverter
 		
 		return sb.toString();
 	}
+	
+	public static double[] toDouble(float[] data) {
+		double[] ret = new double[data.length];
+		for(int i=0; i<data.length; i++)
+			ret[i] = data[i];
+		return ret;
+	}
+	
+	public static double[] toDouble(long[] data) {
+		double[] ret = new double[data.length];
+		for(int i=0; i<data.length; i++)
+			ret[i] = data[i];
+		return ret;
+	}
 }

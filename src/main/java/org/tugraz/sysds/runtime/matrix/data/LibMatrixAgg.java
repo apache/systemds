@@ -1786,7 +1786,7 @@ public class LibMatrixAgg
 		double sum = (agg != null) ? agg[0] : 0;
 		//scan once and compute prefix sums
 		double[] avals = a.valuesAt(0);
-		double[] cvals = c.valuesAt(0);
+		double[] cvals = c.values(0);
 		for( int i=rl, ix=rl*2; i<ru; i++, ix+=2 ) {
 			sum = cvals[i] = avals[ix] + avals[ix+1] * sum;
 		}
@@ -1914,7 +1914,7 @@ public class LibMatrixAgg
 		//init output (base for incremental agg)
 		c.set(init);
 		//execute builtin aggregate
-		double[] lc = c.valuesAt(0); //guaranteed single row
+		double[] lc = c.values(0); //guaranteed single row
 		for( int i=rl; i<ru; i++ )
 			builtinAgg( a.values(i), lc, a.pos(i), n, builtin );
 	}
@@ -2138,7 +2138,7 @@ public class LibMatrixAgg
 	 * @param ru row upper index
 	 */
 	private static void d_uarm( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
-		double[] lc = c.valuesAt(0);
+		double[] lc = c.values(0);
 		for( int i=rl; i<ru; i++ )
 			lc[i] = product(a.values(i), a.pos(i), n);
 	}
@@ -2153,7 +2153,7 @@ public class LibMatrixAgg
 	 * @param ru row upper index
 	 */
 	private static void d_uacm( DenseBlock a, DenseBlock c, int n, int rl, int ru ) {
-		double[] lc = c.set(1).valuesAt(0); //guaranteed single row
+		double[] lc = c.set(1).values(0); //guaranteed single row
 		for( int i=rl; i<ru; i++ )
 			LibMatrixMult.vectMultiplyWrite(a.values(i), lc, lc, a.pos(i), 0, 0, n);
 	}

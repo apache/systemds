@@ -796,11 +796,6 @@ public class GPUObject {
 			SparseBlock block = tmp.getSparseBlock();
 			boolean copyToDevice = true;
 			if (block == null && tmp.getNonZeros() == 0) {
-				//				// Allocate empty block --> not necessary
-				//				// To reproduce this, see org.apache.sysml.test.integration.applications.dml.ID3DMLTest
-				//				rowPtr = new int[0];
-				//				colInd = new int[0];
-				//				values = new double[0];
 				copyToDevice = false;
 			} else if (block == null && tmp.getNonZeros() != 0) {
 				throw new DMLRuntimeException("Expected CP sparse block to be not null.");

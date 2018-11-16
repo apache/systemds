@@ -30,22 +30,6 @@ import org.tugraz.sysds.api.mlcontext.Matrix;
 import org.tugraz.sysds.runtime.util.DnnUtils;
 import org.tugraz.sysds.test.utils.TestUtils;
 
-/**
- * Test neural network operations on the GPU
- * Because of the large number of cases that each test deals with, this class takes
- * very long to run. (It took about 9 hours to run the testMaxPoolBackward() to completion.
- * The recommended course of action before a release is
- * 1. Remove the @Ignore annotations
- * 2. Run just these test on a machine with CUDA 8 installed.
- * Only this class can be run like so:
- * <code>
- * mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
- * </code>
- * 
- * Note: generateInputMatrix(...) method in this test performs rounding of input matrix. This helps
- * to test the correctness of our operators at logical level, but not the precision.
- * 
- */
 public class NeuralNetworkOpTests extends GPUTests {
 
 	private final static String TEST_NAME = "NeuralNetworkOpTests";

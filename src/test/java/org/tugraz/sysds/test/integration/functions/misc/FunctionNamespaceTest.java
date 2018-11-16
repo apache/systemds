@@ -338,10 +338,6 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		}
 	}
 
-	/*
-	 * Based on testChainNoInliningIPA and testChainNoInliningIPA from
-	 * org.apache.sysml.test.integration.functions.misc.FunctionInliningTest
-	 */
 	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, ScriptType scriptType, boolean IPA)
 	{		
 		boolean origIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;

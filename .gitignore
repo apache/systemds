@@ -73,3 +73,4 @@ src/main/python/systemml/systemml-java
 # Spark
 **/metastore_db
 derby.log
+/systemds/

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2018 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -89,7 +91,7 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
  * <p>
  * For examples, please see the following:
  * <ul>
- *   <li>JMLC JUnit test cases (org.apache.sysml.test.integration.functions.jmlc)</li>
+ *   <li>JMLC JUnit test cases (org.tugraz.sysds.test.integration.functions.jmlc)</li>
  *   <li><a target="_blank" href="http://apache.github.io/systemml/jmlc.html">JMLC section
  *   of SystemML online documentation</a></li>
  * </ul>

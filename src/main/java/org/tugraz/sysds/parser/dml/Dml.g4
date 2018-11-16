@@ -22,6 +22,8 @@ grammar Dml;
 @header
 {
 /*
+ * Modifications Copyright 2018 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -45,10 +47,10 @@ grammar Dml;
 // For now, we only allow global function definitions (not nested or inside a while block)
 programroot: (blocks+=statement | functionBlocks+=functionStatement)* EOF;
 
-statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
+statement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.apache.sysml.parser.common.StatementInfo();
+       $info = new org.tugraz.sysds.parser.common.StatementInfo();
 } :
     // ------------------------------------------
     // ImportStatement
@@ -82,19 +84,19 @@ statement returns [ org.apache.sysml.parser.common.StatementInfo info ]
     // ------------------------------------------
 ;
 
-iterablePredicate returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
+iterablePredicate returns [ org.tugraz.sysds.parser.common.ExpressionInfo info ]
   @init {
          // This actions occurs regardless of how many alternatives in this rule
-         $info = new org.apache.sysml.parser.common.ExpressionInfo();
+         $info = new org.tugraz.sysds.parser.common.ExpressionInfo();
   } :
     from=expression ':' to=expression #IterablePredicateColonExpression
     | ID '(' from=expression ',' to=expression (',' increment=expression)? ')' #IterablePredicateSeqExpression
     ;
 
-functionStatement returns [ org.apache.sysml.parser.common.StatementInfo info ]
+functionStatement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.apache.sysml.parser.common.StatementInfo();
+       $info = new org.tugraz.sysds.parser.common.StatementInfo();
 } :
     // ------------------------------------------
     // FunctionStatement & ExternalFunctionStatement
@@ -106,11 +108,11 @@ functionStatement returns [ org.apache.sysml.parser.common.StatementInfo info ]
 
 
 // Other data identifiers are typedArgNoAssign, parameterizedExpression and strictParameterizedExpression
-dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo ]
+dataIdentifier returns [ org.tugraz.sysds.parser.common.ExpressionInfo dataInfo ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $dataInfo = new org.apache.sysml.parser.common.ExpressionInfo();
-       // $dataInfo.expr = new org.apache.sysml.parser.DataIdentifier();
+       $dataInfo = new org.tugraz.sysds.parser.common.ExpressionInfo();
+       // $dataInfo.expr = new org.tugraz.sysds.parser.DataIdentifier();
 } :
     // ------------------------------------------
     // IndexedIdentifier
@@ -120,11 +122,11 @@ dataIdentifier returns [ org.apache.sysml.parser.common.ExpressionInfo dataInfo 
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression
     | COMMANDLINE_POSITION_ID                       # CommandlinePositionExpression
 ;
-expression returns [ org.apache.sysml.parser.common.ExpressionInfo info ]
+expression returns [ org.tugraz.sysds.parser.common.ExpressionInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.apache.sysml.parser.common.ExpressionInfo();
-       // $info.expr = new org.apache.sysml.parser.BinaryExpression(org.apache.sysml.parser.Expression.BinaryOp.INVALID);
+       $info = new org.tugraz.sysds.parser.common.ExpressionInfo();
+       // $info.expr = new org.tugraz.sysds.parser.BinaryExpression(org.tugraz.sysds.parser.Expression.BinaryOp.INVALID);
 } :
     // ------------------------------------------
     // BinaryExpression

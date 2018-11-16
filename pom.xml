@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+ * Modifications Copyright 2018 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,44 +26,19 @@
 		<artifactId>apache</artifactId>
 		<version>18</version>
 	</parent>
-	<groupId>org.apache.systemml</groupId>
-	<version>1.2.0</version>
-	<artifactId>systemml</artifactId>
+	<groupId>org.tugraz.systemds</groupId>
+	<version>0.1.0</version>
+	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
-	<name>SystemML</name>
-	<description>Declarative Machine Learning</description>
-	<url>http://systemml.apache.org/</url>
+	<name>SystemDS</name>
+	<description>Declarative End-to-End Data Science</description>
 	<licenses>
 		<license>
 			<name>Apache 2.0 License</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
 		</license>
 	</licenses>
-	<scm>
-		<connection>scm:git:git@github.com:apache/systemml</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/systemml</developerConnection>
-		<url>https://git-wip-us.apache.org/repos/asf?p=systemml.git</url>
-		<tag>v1.2.0-rc1</tag>
-	</scm>
-	<issueManagement>
-		<system>JIRA</system>
-		<url>https://issues.apache.org/jira/browse/SYSTEMML</url>
-	</issueManagement>
-	<mailingLists>
-		<mailingList>
-			<name>Dev Mailing List</name>
-			<post>dev@systemml.apache.org</post>
-			<subscribe>dev-subscribe@systemml.apache.org</subscribe>
-			<unsubscribe>dev-unsubscribe@systemml.apache.org</unsubscribe>
-		</mailingList>
-		<mailingList>
-			<name>Commits Mailing List</name>
-			<post>commits@systemml.apache.org</post>
-			<subscribe>commits-subscribe@systemml.apache.org</subscribe>
-			<unsubscribe>commits-unsubscribe@systemml.apache.org</unsubscribe>
-		</mailingList>
-	</mailingLists>
-
+	
 	<properties>
 		<hadoop.version>2.6.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
@@ -73,7 +50,6 @@
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>0.9.0d</jcuda.version>
-		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
 	</properties>
 
@@ -101,7 +77,6 @@
 					<exclude>staging/**/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
-					<exclude>nn/examples/caffe2dml/**/*</exclude>
 					<!-- <exclude>*.sh</exclude> --> <!-- applies to sparkDML.sh -->
 				</excludes>
 				<targetPath>scripts</targetPath>
@@ -268,13 +243,9 @@
 								<index>true</index>
 								<manifestEntries>
 									<Build-Timestamp>${maven.build.timestamp}</Build-Timestamp>
-									<Main-Class>org.apache.sysml.api.DMLScript</Main-Class>
+									<Main-Class>org.tugraz.sysds.api.DMLScript</Main-Class>
 								</manifestEntries>
 							</archive>
-							<excludes>
-								<exclude>**/caffe/*</exclude>
-								<exclude>**/org/apache/sysml/api/dl/*</exclude>
-							</excludes>
 						</configuration>
 					</execution>
 				</executions>
@@ -345,30 +316,7 @@
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>com.github.os72</groupId>
-				<artifactId>protoc-jar-maven-plugin</artifactId>
-				<version>3.4.0.1</version>
-				<executions>
-					<execution>
-						<id>caffe-sources</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<protocVersion>2.5.0</protocVersion> <!-- 2.4.1, 2.5.0, 2.6.1, 3.4.0 -->
-							<inputDirectories>
-								<include>src/main/proto/caffe</include>
-							</inputDirectories>
-							<outputDirectories>
-								<include>src/main/java</include>
-							</outputDirectories>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
+			
 			<!-- Currently, all tests are integration tests. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -498,45 +446,6 @@
 						</configuration>
 					</execution>
 					<execution>
-						<!-- NOTE: We don't clean up systemml.egg-info since this makes it 
-							difficult to uninstall a dev version after a maven clean -->
-						<id>clean-python-files</id>
-						<phase>clean</phase>
-						<goals>
-							<goal>clean</goal>
-						</goals>
-						<configuration>
-							<excludeDefaultDirectories>true</excludeDefaultDirectories>
-							<filesets>
-								<fileset>
-									<directory>src/main/python/dist</directory>
-								</fileset>
-								<fileset>
-									<directory>src/main/python/systemml/systemml-java</directory>
-								</fileset>
-								<fileset>
-									<directory>src/main/python/systemml/__pycache__</directory>
-								</fileset>
-								<fileset>
-									<directory>src/main/python/systemml/mllearn</directory>
-									<includes>
-										<include>*.pyc</include>
-									</includes>
-								</fileset>
-								<fileset>
-									<directory>src/main/python/systemml/mllearn/__pycache__</directory>
-								</fileset>
-								<fileset>
-									<directory>src/main/python/systemml</directory>
-									<includes>
-										<include>project_info.py</include>
-										<include>*.pyc</include>
-									</includes>
-								</fileset>
-							</filesets>
-						</configuration>
-					</execution>
-					<execution>
 						<!-- remove antlr tokens files during initialize phase so antlr4 -->
 						<!-- plugin can regenerate them during generate-sources phase -->
 						<id>remove-antlr-tokens-files</id>
@@ -601,7 +510,7 @@
 						<phase>package</phase>
 						<configuration>
 							<target name="copy and rename JAR">
-								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemML.jar" />
+								<copy file="${project.build.directory}/${project.artifactId}-${project.version}.jar" tofile="${project.build.directory}/SystemDS.jar" />
 							</target>
 						</configuration>
 						<goals>
@@ -623,24 +532,10 @@
 							<goal>java</goal>
 						</goals>
 						<configuration>
-							<mainClass>org.apache.sysml.utils.InstallDependencyForIntegrationTests</mainClass>
+							<mainClass>org.tugraz.sysds.utils.InstallDependencyForIntegrationTests</mainClass>
 							<arguments>
 								<argument>true</argument> <!-- <argument>${skipTests}</argument> -->
 								<argument>${enableGPU}</argument>
-							</arguments>
-						</configuration>
-					</execution>
-					<execution>
-						<id>generate-classes-for-mlcontext</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>java</goal>
-						</goals>
-						<configuration>
-							<mainClass>org.apache.sysml.utils.GenerateClassesForMLContext</mainClass>
-							<arguments>
-								<arguments>scripts</arguments>
-								<arguments>target/classes</arguments>
 							</arguments>
 						</configuration>
 					</execution>
@@ -895,15 +790,8 @@
 								<!-- Generated antlr files -->
 								<exclude>src/main/java/*.tokens</exclude>
 								<exclude>**/*.interp</exclude>
-								<!-- Generated python files -->
-								<exclude>src/main/python/systemml.egg-info/**</exclude>
-								<!-- Sphinx reStructuredText files -->
-								<exclude>src/main/pythondoc/*.rst</exclude>
 								<!-- Compiled ptx file from nvcc -->
 								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
-								<!-- Proto files -->
-								<exclude>src/main/proto/caffe/caffe.proto</exclude>
-								<exclude>scripts/nn/examples/caffe2dml/models/**/*</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>
@@ -1057,7 +945,7 @@
 								org.apache.sysml.runtime.instructions.spark.utils (for RDDConverterUtils, 
 								etc) org.apache.sysml.runtime.matrix (for MatrixCharacteristics, etc) org.apache.sysml.runtime.matrix.data 
 								(for MatrixIndexes, MatrixBlock, etc) org.apache.sysml.udf -->
-							<excludePackageNames>caffe:org.apache.sysml.conf:org.apache.sysml.debug:org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+							<excludePackageNames>org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
 							<additionalparam>${javadoc.opts}</additionalparam>
 						</configuration>
 						<executions>
@@ -1066,32 +954,6 @@
 								<goals>
 									<goal>jar</goal>
 								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-resources-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>copy-project-info-for-python</id>
-								<phase>prepare-package</phase>
-								<goals>
-									<goal>copy-resources</goal>
-								</goals>
-								<configuration>
-									<overwrite>true</overwrite>
-									<outputDirectory>${basedir}/src/main/python/systemml</outputDirectory>
-									<resources>
-										<resource>
-											<directory>${basedir}/src/main/resources/python</directory>
-											<includes>
-												<include>project_info.py</include>
-											</includes>
-											<filtering>true</filtering>
-										</resource>
-									</resources>
-								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -1174,81 +1036,7 @@
 			</build>
 		</profile>
 
-		<profile>
-			<!-- Profile to create lightweight jar (currently for JMLC only) -->
-			<id>lite</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<configuration>
-							<tarLongFileMode>gnu</tarLongFileMode>
-						</configuration>
-						<executions>
-							<execution>
-								<id>create-lite-jar</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/lite.xml</descriptor>
-									</descriptors>
-									<archive>
-										<manifest>
-											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
-										</manifest>
-										<manifestEntries>
-											<Build-Time>${maven.build.timestamp}</Build-Time>
-											<Group-Id>${project.groupId}</Group-Id>
-											<Artifact-Id>${project.artifactId}-lite</Artifact-Id>
-											<Version>${project.version}</Version>
-										</manifestEntries>
-									</archive>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 
-		<profile>
-			<!-- Profile to create standalone jar. Execute with `mvn clean package 
-				-P standalone-jar` -->
-			<id>standalone-jar</id>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-assembly-plugin</artifactId>
-						<configuration>
-							<tarLongFileMode>gnu</tarLongFileMode>
-						</configuration>
-						<executions>
-							<execution>
-								<id>create-standalone-jar</id>
-								<phase>package</phase>
-								<goals>
-									<goal>single</goal>
-								</goals>
-								<configuration>
-									<descriptors>
-										<descriptor>src/assembly/standalone-jar.xml</descriptor>
-									</descriptors>
-									<archive>
-										<index>true</index>
-										<manifest>
-											<mainClass>org.apache.sysml.api.DMLScript</mainClass>
-										</manifest>
-									</archive>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 	</profiles>
 
 

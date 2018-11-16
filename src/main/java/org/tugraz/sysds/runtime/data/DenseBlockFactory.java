@@ -23,19 +23,24 @@
 package org.tugraz.sysds.runtime.data;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public abstract class DenseBlockFactory
 {
-	public static DenseBlock createDenseBlock(int[] dims) {
-		DenseBlock.Type type = 
-			(UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
-			DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
-		return createDenseBlock(type, dims);
-	}
-	
 	public static DenseBlock createDenseBlock(int rlen, int clen) {
 		return createDenseBlock(new int[]{rlen, clen});
+	}
+	
+	public static DenseBlock createDenseBlock(int[] dims) {
+		return createDenseBlock(ValueType.FP64, dims);
+	}
+	
+	public static DenseBlock createDenseBlock(ValueType vt, int[] dims) {
+		DenseBlock.Type type = (UtilFunctions.prod(dims) < Integer.MAX_VALUE) ?
+			DenseBlock.Type.DRB : DenseBlock.Type.LDRB;
+		return createDenseBlock(vt, type, dims);
 	}
 
 	public static DenseBlock createDenseBlock(double[] data, int[] dims) {
@@ -46,12 +51,27 @@ public abstract class DenseBlockFactory
 		return createDenseBlock(data, new int[]{rlen, clen});
 	}
 	
-	public static DenseBlock createDenseBlock(DenseBlock.Type type, int[] dims) {
+	public static DenseBlock createDenseBlock(float[] data, int[] dims) {
+		return new DenseBlockFP32(dims, data);
+	}
+	
+	public static DenseBlock createDenseBlock(float[] data, int rlen, int clen) {
+		return createDenseBlock(data, new int[]{rlen, clen});
+	}
+	
+	public static DenseBlock createDenseBlock(ValueType vt, DenseBlock.Type type, int[] dims) {
 		switch( type ) {
-			case DRB: return new DenseBlockFP64(dims);
+			case DRB:
+				switch(vt) {
+					case FP32: return new DenseBlockFP32(dims);
+					case FP64: return new DenseBlockFP64(dims);
+					default:
+						throw new DMLRuntimeException("Unsupported dense block value type: "+vt.name());
+				}
 			case LDRB: throw new NotImplementedException();
+				//TODO single call to LDRB with value type
 			default:
-				throw new RuntimeException("Unexpected dense block type: "+type.name());
+				throw new DMLRuntimeException("Unexpected dense block type: "+type.name());
 		}
 	}
 

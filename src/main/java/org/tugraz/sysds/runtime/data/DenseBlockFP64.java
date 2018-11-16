@@ -48,8 +48,8 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	}
 	
 	@Override
-	public void reset(int rlen, int odims, double v) {
-		int len = rlen * odims;
+	public void reset(int rlen, int[] odims, double v) {
+		int len = rlen * odims[0];
 		if( len > capacity() ) {
 			_data = new double[len];
 			if( v != 0 )
@@ -69,22 +69,22 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	@Override
 	public long countNonZeros() {
-		return UtilFunctions.computeNnz(_data, 0, _rlen*_odims);
+		return UtilFunctions.computeNnz(_data, 0, _rlen*_odims[0]);
 	}
 	
 	@Override
 	public int countNonZeros(int r) {
-		return UtilFunctions.computeNnz(_data, r*_odims, _odims);
+		return UtilFunctions.computeNnz(_data, r*_odims[0], _odims[0]);
 	}
 
 	@Override
 	public long countNonZeros(int rl, int ru, int ol, int ou) {
 		long nnz = 0;
-		if( ol == 0 && ou == _odims ) { //specific case: all cols
-			nnz += UtilFunctions.computeNnz(_data, rl*_odims, (ru-rl)*_odims);
+		if( ol == 0 && ou == _odims[0] ) { //specific case: all cols
+			nnz += UtilFunctions.computeNnz(_data, rl*_odims[0], (ru-rl)*_odims[0]);
 		}
 		else {
-			for( int i=rl, ix=rl*_odims; i<ru; i++, ix+=_odims )
+			for( int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0] )
 				nnz += UtilFunctions.computeNnz(_data, ix+ol, ou-ol);
 		}
 		return nnz;
@@ -107,12 +107,12 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	@Override
 	public int pos(int r) {
-		return r * _odims;
+		return r * _odims[0];
 	}
 
 	@Override
 	public int pos(int r, int c) {
-		return r * _odims + c;
+		return r * _odims[0] + c;
 	}
 
 	@Override
@@ -127,16 +127,16 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(double v) {
-		Arrays.fill(_data, 0, _rlen*_odims, v);
+		Arrays.fill(_data, 0, _rlen*_odims[0], v);
 		return this;
 	}
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, double v) {
-		if( ol==0 && ou == _odims )
-			Arrays.fill(_data, rl*_odims, ru*_odims, v);
+		if( ol==0 && ou == _odims[0] )
+			Arrays.fill(_data, rl*_odims[0], ru*_odims[0], v);
 		else
-			for(int i=rl, ix=rl*_odims; i<ru; i++, ix+=_odims)
+			for(int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0])
 				Arrays.fill(_data, ix+ol, ix+ou, v);
 		return this;
 	}
@@ -149,18 +149,18 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(DenseBlock db) {
-		System.arraycopy(db.valuesAt(0), 0, _data, 0, _rlen*_odims);
+		System.arraycopy(db.valuesAt(0), 0, _data, 0, _rlen*_odims[0]);
 		return this;
 	}
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
 		double[] a = db.valuesAt(0);
-		if( ol == 0 && ou == _odims)
-			System.arraycopy(a, 0, _data, rl*_odims+ol, (int)db.size());
+		if( ol == 0 && ou == _odims[0])
+			System.arraycopy(a, 0, _data, rl*_odims[0]+ol, (int)db.size());
 		else {
 			int len = ou - ol;
-			for(int i=rl, ix1=0, ix2=rl*_odims+ol; i<ru; i++, ix1+=len, ix2+=_odims)
+			for(int i=rl, ix1=0, ix2=rl*_odims[0]+ol; i<ru; i++, ix1+=len, ix2+=_odims[0])
 				System.arraycopy(a, ix1, _data, ix2, len);
 		}
 		return this;
@@ -168,7 +168,7 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	@Override
 	public DenseBlock set(int r, double[] v) {
-		System.arraycopy(v, 0, _data, pos(r), _odims);
+		System.arraycopy(v, 0, _data, pos(r), _odims[0]);
 		return this;
 	}
 
@@ -179,7 +179,6 @@ public class DenseBlockFP64 extends DenseBlockDRB
 
 	@Override
 	public double get(int[] ix) {
-		// TODO Auto-generated method stub
-		return 0;
+		return _data[pos(ix)];
 	}
 }

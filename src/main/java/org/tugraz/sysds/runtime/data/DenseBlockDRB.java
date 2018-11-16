@@ -59,4 +59,22 @@ public abstract class DenseBlockDRB extends DenseBlock
 	public int size(int bix) {
 		return (int)size();
 	}
+	
+	@Override
+	public int pos(int r) {
+		return r * _odims[0];
+	}
+
+	@Override
+	public int pos(int r, int c) {
+		return r * _odims[0] + c;
+	}
+	
+	@Override
+	public int pos(int[] ix) {
+		int pos = ix[ix.length-1]; 
+		for(int i=0; i<ix.length-1; i++)
+			pos += ix[i] * _odims[i];
+		return pos;
+	}
 }

@@ -45,8 +45,10 @@ public abstract class DenseBlock implements Serializable
 		LDRB, //large dense row block
 	}
 	
+	//NOTE: for a MxNxPxQ tensor the dimensions are given as
+	//rlen=M, odims=[NxPxQ, PxQ, Q]
 	protected int _rlen;  //number of rows
-	protected int _odims; //length of other dimensions
+	protected int[] _odims; //cumprod other dims
 	private double[] _reuse;
 	
 	protected DenseBlock(int[] dims) {
@@ -54,7 +56,8 @@ public abstract class DenseBlock implements Serializable
 		if( odims > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("Invalid dims: "+Arrays.toString(dims));
 		_rlen = dims[0];
-		_odims = (int) odims;
+		//materialize dim offsets (reverse cumprod)
+		_odims = createDimOffsets(dims);
 	}
 	
 	/**
@@ -74,7 +77,7 @@ public abstract class DenseBlock implements Serializable
 	 * @param dims length and size of dimensions.
 	 */
 	public final void reset(int[] dims) {
-		reset(dims[0], (int)UtilFunctions.prod(dims, 1), 0);
+		reset(dims[0], createDimOffsets(dims), 0);
 	}
 	
 	/**
@@ -84,18 +87,40 @@ public abstract class DenseBlock implements Serializable
 	 * @param v value
 	 */
 	public final void reset(int[] dims, double v) {
-		reset(dims[0], (int)UtilFunctions.prod(dims, 1), v);
+		reset(dims[0], createDimOffsets(dims), v);
 	}
 	
 	/**
 	 * Resets the dense block by deleting non-zeros.
 	 * 
 	 * @param rlen number of rows
-	 * @param odims other dimensions
+	 * @param clen number of columns
 	 */
-	public final void reset(int rlen, int odims) {
+	public final void reset(int rlen, int clen) {
+		reset(rlen, new int[]{clen}, 0);
+	}
+	
+	/**
+	 * Resets the dense block by deleting non-zeros.
+	 * 
+	 * @param rlen number of rows
+	 * @param odims offsets of other dimensions
+	 */
+	public final void reset(int rlen, int[] odims) {
 		reset(rlen, odims, 0);
 	}
+	
+	/**
+	 * Resets the dense block by setting the given value.
+	 * 
+	 * @param rlen number of rows
+	 * @param clen number of columns
+	 * @param v value
+	 */
+	public final void reset(int rlen, int clen, double v) {
+		reset(rlen, new int[]{clen}, v);
+	}
+	
 	
 	/**
 	 * Resets the dense block by setting the given value.
@@ -104,7 +129,7 @@ public abstract class DenseBlock implements Serializable
 	 * @param odims other dimensions
 	 * @param v value
 	 */
-	public abstract void reset(int rlen, int odims, double v);
+	public abstract void reset(int rlen, int[] odims, double v);
 	
 	/**
 	 * Get the number of rows.
@@ -168,7 +193,7 @@ public abstract class DenseBlock implements Serializable
 	 * @return length
 	 */
 	public final long size() {
-		return (long)_rlen * _odims;
+		return (long)_rlen * _odims[0];
 	}
 	
 	/**
@@ -260,6 +285,16 @@ public abstract class DenseBlock implements Serializable
 	 * @return block position
 	 */
 	public abstract int pos(int r, int c);
+	
+	/**
+	 * Get the position for a given cell
+	 * within the associated block.
+	 * 
+	 * @param ix cell indexes
+	 * @return block position
+	 */
+	public abstract int pos(int[] ix);
+	
 	
 	/**
 	 * Increments the given value for a given row and column.
@@ -392,7 +427,7 @@ public abstract class DenseBlock implements Serializable
 		for(int i=0; i<_rlen; i++) {
 			double[] data = values(i);
 			int ix = pos(i);
-			for(int j=0; j<_odims; j++) {
+			for(int j=0; j<_odims[0]; j++) {
 				sb.append(data[ix+j]);
 				sb.append("\t");
 			}
@@ -405,7 +440,17 @@ public abstract class DenseBlock implements Serializable
 		if( _reuse != null && reset )
 			Arrays.fill(_reuse, 0);
 		if( _reuse == null )
-			_reuse = new double[_odims];
+			_reuse = new double[_odims[0]];
 		return _reuse;
+	}
+	
+	private static int[] createDimOffsets(int[] dims) {
+		int[] ret = new int[dims.length-1];
+		int prod = 1;
+		for(int i=dims.length-1; i>=1; i--) {
+			prod *= dims[i];
+			ret[i-1] = prod;
+		}
+		return ret;
 	}
 }

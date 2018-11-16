@@ -1,4 +1,0 @@
-numpy
-pandas
-gspread
-matplotlib

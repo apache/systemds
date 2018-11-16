@@ -53,31 +53,31 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testScalarDoubleToDouble() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.DOUBLE, false, false ); 
+		runTest( ValueType.FP64, ValueType.FP64, false, false ); 
 	}
 	
 	@Test
 	public void testScalarIntegerToDouble() 
 	{ 
-		runTest( ValueType.INT, ValueType.DOUBLE, false, false ); 
+		runTest( ValueType.INT, ValueType.FP64, false, false ); 
 	}
 	
 	@Test
 	public void testScalarBooleanToDouble() 
 	{ 
-		runTest( ValueType.BOOLEAN, ValueType.DOUBLE, false, false ); 
+		runTest( ValueType.BOOLEAN, ValueType.FP64, false, false ); 
 	}
 	
 	@Test
 	public void testMatrixDoubleToDouble() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.DOUBLE, true, true ); 
+		runTest( ValueType.FP64, ValueType.FP64, true, true ); 
 	}
 	
 	@Test
 	public void testScalarDoubleToInteger() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.INT, false, false ); 
+		runTest( ValueType.FP64, ValueType.INT, false, false ); 
 	}
 	
 	@Test
@@ -95,14 +95,14 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testMatrixDoubleToInteger() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.INT, true, true ); 
+		runTest( ValueType.FP64, ValueType.INT, true, true ); 
 	}
 
 	
 	@Test
 	public void testScalarDoubleToBoolean() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.BOOLEAN, false, false ); 
+		runTest( ValueType.FP64, ValueType.BOOLEAN, false, false ); 
 	}
 	
 	@Test
@@ -120,7 +120,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 	@Test
 	public void testMatrixDoubleToBoolean() 
 	{ 
-		runTest( ValueType.DOUBLE, ValueType.BOOLEAN, true, true ); 
+		runTest( ValueType.FP64, ValueType.BOOLEAN, true, true ); 
 	}
 	
 	/**
@@ -133,7 +133,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		String TEST_NAME = null;
 		switch( vtOut )
 		{
-			case DOUBLE:  TEST_NAME = TEST_NAME1; break;
+			case FP64:  TEST_NAME = TEST_NAME1; break;
 			case INT: 	  TEST_NAME = TEST_NAME2; break;
 			case BOOLEAN: TEST_NAME = TEST_NAME3; break;
 			default: //do nothing
@@ -161,7 +161,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 				HDFSTool.deleteFileIfExistOnHDFS(input("V"));
 				switch( vtIn ) 
 				{
-					case DOUBLE: 
+					case FP64: 
 						HDFSTool.writeDoubleToHDFS(V[0][0], input("V")); 
 						inVal = V[0][0]; break;
 					case INT:    
@@ -183,7 +183,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		        //compare results
 	        	String outName = output("R");
 		        switch( vtOut ) {
-					case DOUBLE:  Assert.assertEquals(inVal, HDFSTool.readDoubleFromHDFSFile(outName), 1e-16); break;
+					case FP64:  Assert.assertEquals(inVal, HDFSTool.readDoubleFromHDFSFile(outName), 1e-16); break;
 					case INT:     Assert.assertEquals((int) inVal, HDFSTool.readIntegerFromHDFSFile(outName)); break;
 					case BOOLEAN: Assert.assertEquals(inVal!=0, HDFSTool.readBooleanFromHDFSFile(outName)); break;
 					default: //do nothing

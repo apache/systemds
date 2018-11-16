@@ -161,13 +161,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			// Output1 - Q
 			qrOut1.setDataType(DataType.MATRIX);
-			qrOut1.setValueType(ValueType.DOUBLE);
+			qrOut1.setValueType(ValueType.FP64);
 			qrOut1.setDimensions(rows, cols);
 			qrOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			// Output2 - R
 			qrOut2.setDataType(DataType.MATRIX);
-			qrOut2.setValueType(ValueType.DOUBLE);
+			qrOut2.setValueType(ValueType.FP64);
 			qrOut2.setDimensions(rows, cols);
 			qrOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
@@ -192,19 +192,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			// Output1 - P
 			luOut1.setDataType(DataType.MATRIX);
-			luOut1.setValueType(ValueType.DOUBLE);
+			luOut1.setValueType(ValueType.FP64);
 			luOut1.setDimensions(inrows, inrows);
 			luOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			// Output2 - L
 			luOut2.setDataType(DataType.MATRIX);
-			luOut2.setValueType(ValueType.DOUBLE);
+			luOut2.setValueType(ValueType.FP64);
 			luOut2.setDimensions(inrows, inrows);
 			luOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			// Output3 - U
 			luOut3.setDataType(DataType.MATRIX);
-			luOut3.setValueType(ValueType.DOUBLE);
+			luOut3.setValueType(ValueType.FP64);
 			luOut3.setDimensions(inrows, inrows);
 			luOut3.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
@@ -230,13 +230,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
 			out.setDataType(DataType.MATRIX);
-			out.setValueType(ValueType.DOUBLE);
+			out.setValueType(ValueType.FP64);
 			out.setDimensions(-1, -1);
 			out.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			// Output2 - Cell state for final timestep.
 			cy.setDataType(DataType.MATRIX);
-			cy.setValueType(ValueType.DOUBLE);
+			cy.setValueType(ValueType.FP64);
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
 			
@@ -338,13 +338,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			// Output1 - Eigen Values
 			eigenOut1.setDataType(DataType.MATRIX);
-			eigenOut1.setValueType(ValueType.DOUBLE);
+			eigenOut1.setValueType(ValueType.FP64);
 			eigenOut1.setDimensions(getFirstExpr().getOutput().getDim1(), 1);
 			eigenOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
 			// Output2 - Eigen Vectors
 			eigenOut2.setDataType(DataType.MATRIX);
-			eigenOut2.setValueType(ValueType.DOUBLE);
+			eigenOut2.setValueType(ValueType.FP64);
 			eigenOut2.setDimensions(getFirstExpr().getOutput().getDim1(), getFirstExpr().getOutput().getDim2());
 			eigenOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 			
@@ -363,19 +363,19 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			// Output 1
 			svdOut1.setDataType(DataType.MATRIX);
-			svdOut1.setValueType(ValueType.DOUBLE);
+			svdOut1.setValueType(ValueType.FP64);
 			svdOut1.setDimensions(getFirstExpr().getOutput().getDim1(), minMN);
 			svdOut1.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			// Output 2
 			svdOut2.setDataType(DataType.MATRIX);
-			svdOut2.setValueType(ValueType.DOUBLE);
+			svdOut2.setValueType(ValueType.FP64);
 			svdOut2.setDimensions(minMN, minMN);
 			svdOut2.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
 			// Output 3
 			svdOut3.setDataType(DataType.MATRIX);
-			svdOut3.setValueType(ValueType.DOUBLE);
+			svdOut3.setValueType(ValueType.FP64);
 			svdOut3.setDimensions(getFirstExpr().getOutput().getDim2(), minMN);
 			svdOut3.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
 
@@ -388,7 +388,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private static void setDimensions(DataIdentifier out, Expression exp) {
 		out.setDataType(DataType.MATRIX);
-		out.setValueType(ValueType.DOUBLE);
+		out.setValueType(ValueType.FP64);
 		out.setDimensions(exp.getOutput().getDim1(), exp.getOutput().getDim2());
 		out.setBlockDimensions(exp.getOutput().getRowsInBlock(), exp.getOutput().getColumnsInBlock());
 	}
@@ -522,7 +522,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
 			checkValueTypeParam(_args[0], ValueType.STRING);
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setBlockDimensions(ConfigurationManager.getBlocksize(),
 				ConfigurationManager.getBlocksize());
 			break;
@@ -657,7 +657,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
 			output.setValueType((id.getValueType()!=ValueType.UNKNOWN 
-				|| id.getDataType()==DataType.LIST) ? id.getValueType() : ValueType.DOUBLE);
+				|| id.getDataType()==DataType.LIST) ? id.getValueType() : ValueType.FP64);
 			break;
 		case CAST_AS_MATRIX:
 			checkNumParameters(1);
@@ -670,7 +670,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			if( getFirstExpr().getOutput().getDataType()==DataType.LIST )
 				output.setDimensions(-1, -1); //correction list: arbitrary object
 			output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock());
-			output.setValueType(ValueType.DOUBLE); //matrices always in double
+			output.setValueType(ValueType.FP64); //matrices always in double
 			break;
 		case CAST_AS_FRAME:
 			checkNumParameters(1);
@@ -689,7 +689,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			//output.setDataType(id.getDataType()); //TODO whenever we support multiple matrix value types, currently noop.
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			break;
 		case CAST_AS_INT:
 			checkNumParameters(1);
@@ -967,7 +967,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setDimensions(outputDim1, outputDim2);
 			output.setBlockDimensions (-1, -1);
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			break;
 
 		case MOMENT:
@@ -988,7 +988,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			// output is a scalar
 			output.setDataType(DataType.SCALAR);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions(0,0);
 			break;
@@ -1014,7 +1014,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 			// output is a scalar
 			output.setDataType(DataType.SCALAR);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions(0,0);
 			break;
@@ -1144,9 +1144,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			for(Expression e : in)
 				checkScalarParam(e);
 			
-			if (in[0].getOutput().getValueType() != ValueType.DOUBLE && in[0].getOutput().getValueType() != ValueType.INT) 
+			if (in[0].getOutput().getValueType() != ValueType.FP64 && in[0].getOutput().getValueType() != ValueType.INT) 
 				throw new LanguageException("First argument to sample() must be a number.");
-			if (in[1].getOutput().getValueType() != ValueType.DOUBLE && in[1].getOutput().getValueType() != ValueType.INT) 
+			if (in[1].getOutput().getValueType() != ValueType.FP64 && in[1].getOutput().getValueType() != ValueType.INT) 
 				throw new LanguageException("Second argument to sample() must be a number.");
 			
 			boolean check = false;
@@ -1184,7 +1184,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			
 			// Output is a column vector
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			
 			if ( isConstant(in[1]) )
 	 			output.setDimensions(((ConstIdentifier)in[1]).getLongValue(), 1);
@@ -1246,7 +1246,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				dim1 = UtilFunctions.getSeqLength(from, to, incr);
 			}
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setDimensions(dim1, dim2);
 			output.setBlockDimensions(0, 0);
 			break;
@@ -1265,7 +1265,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Dimension mismatch in a call to solve()", conditional);
 			
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setDimensions(getFirstExpr().getOutput().getDim2(), 1);
 			output.setBlockDimensions(0, 0);
 			break;
@@ -1275,7 +1275,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFirstExpr());
 			
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			
 			Identifier in = getFirstExpr().getOutput();
 			if(in.dimsKnown() && in.getDim1() != in.getDim2()) 
@@ -1292,7 +1292,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFirstExpr());
 
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			
 			Identifier inA = getFirstExpr().getOutput();
 			if(inA.dimsKnown() && inA.getDim1() != inA.getDim2()) 
@@ -1329,7 +1329,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			Expression input = _args[0];
 			Expression bias = _args[1];
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			checkMatrixParam(input);
@@ -1363,7 +1363,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkMatrixParam(input2);
 			}
 			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			
 			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD || this.getOpCode() == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
@@ -1437,7 +1437,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				if( getSecondExpr() == null ) {
 					output.setDataType(id.getDataType());
 					output.setValueType((output.getDataType()==DataType.SCALAR
-						&& getOpCode()==BuiltinFunctionOp.ABS)?id.getValueType():ValueType.DOUBLE );
+						&& getOpCode()==BuiltinFunctionOp.ABS)?id.getValueType():ValueType.FP64 );
 					output.setDimensions(id.getDim1(), id.getDim2());
 					output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 				}
@@ -1446,7 +1446,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					setBinaryOutputProperties(output);
 					// override computed value type for special cases
 					if( getOpCode() == BuiltinFunctionOp.LOG )
-						output.setValueType(ValueType.DOUBLE);
+						output.setValueType(ValueType.FP64);
 				}
 			} 
 			else {
@@ -1471,7 +1471,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatchingDimensions(getFirstExpr(), getSecondExpr(), true);
 		MatrixCharacteristics dims = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
 		output.setDataType(dtOut);
-		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE :
+		output.setValueType(dtOut==DataType.MATRIX ? ValueType.FP64 :
 			computeValueType(getFirstExpr(), getSecondExpr(), true));
 		output.setDimensions(dims.getRows(), dims.getCols());
 		output.setBlockDimensions (dims.getRowsPerBlock(), dims.getColsPerBlock());
@@ -1492,7 +1492,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		MatrixCharacteristics dims1 = getBinaryMatrixCharacteristics(getFirstExpr(), getSecondExpr());
 		MatrixCharacteristics dims2 = getBinaryMatrixCharacteristics(getSecondExpr(), getThirdExpr());
 		output.setDataType(dtOut);
-		output.setValueType(dtOut==DataType.MATRIX ? ValueType.DOUBLE :
+		output.setValueType(dtOut==DataType.MATRIX ? ValueType.FP64 :
 			computeValueType(getSecondExpr(), getThirdExpr(), true));
 		output.setDimensions(Math.max(dims1.getRows(), dims2.getRows()), Math.max(dims1.getCols(), dims2.getCols()));
 		output.setBlockDimensions(Math.max(dims1.getRowsPerBlock(), dims2.getRowsPerBlock()),
@@ -1504,7 +1504,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			e -> e.getOutput().getDataType().isScalar()) ? DataType.SCALAR : DataType.MATRIX;
 		Expression firstM = dt.isMatrix() ? Arrays.stream(getAllExpr()).filter(
 			e -> e.getOutput().getDataType().isMatrix()).findFirst().get() : null;
-		ValueType vt = dt.isMatrix() ? ValueType.DOUBLE : ValueType.INT;
+		ValueType vt = dt.isMatrix() ? ValueType.FP64 : ValueType.INT;
 		for( Expression e : getAllExpr() ) {
 			vt = computeValueType(e, e.getOutput().getValueType(), vt, true);
 			if( e.getOutput().getDataType().isMatrix() )
@@ -2034,7 +2034,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) {
 		switch( vt )
 		{
-			case DOUBLE:
+			case FP64:
 				return BuiltinFunctionOp.CAST_AS_DOUBLE;
 			case INT:
 				return BuiltinFunctionOp.CAST_AS_INT;

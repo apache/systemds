@@ -48,8 +48,8 @@ public class FrameSchemaReadTest extends AutomatedTestBase
 
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.DOUBLE, ValueType.DOUBLE};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.FP64, ValueType.FP64};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT, ValueType.BOOLEAN};	
 	
 	@Override
 	public void setUp() {

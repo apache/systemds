@@ -86,7 +86,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		//update schema information for output frame
 		if( opcode.equals(UnaryCP.CAST_AS_FRAME_OPCODE) ) {
 			sec.getFrameObject(output.getName()).setSchema(
-				UtilFunctions.nCopies((int)mcIn.getCols(), ValueType.DOUBLE));
+				UtilFunctions.nCopies((int)mcIn.getCols(), ValueType.FP64));
 		}
 	}
 }

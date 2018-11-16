@@ -85,7 +85,7 @@ public class DataGenOp extends MultiThreadedHop
 	 */
 	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters)
 	{
-		super(id.getName(), DataType.MATRIX, ValueType.DOUBLE);
+		super(id.getName(), DataType.MATRIX, ValueType.FP64);
 		
 		_id = id;
 		_op = mthd;

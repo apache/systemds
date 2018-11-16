@@ -105,7 +105,7 @@ public class SerializeTest extends AutomatedTestBase
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, 1000, 1000);
 			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.BinaryBlockOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, OutputInfo.BinaryBlockOutputInfo);
 			
 			runTest(true, false, null, -1); //mult 7
 			

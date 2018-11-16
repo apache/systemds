@@ -92,7 +92,7 @@ public class HopRewriteUtils
 
 	public static boolean getBooleanValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return op.getDoubleValue() != 0; 
+			case FP64:  return op.getDoubleValue() != 0; 
 			case INT:     return op.getLongValue()   != 0;
 			case BOOLEAN: return op.getBooleanValue();
 			default: throw new HopsException("Invalid boolean value: "+op.getValueType());
@@ -102,7 +102,7 @@ public class HopRewriteUtils
 	public static boolean getBooleanValueSafe( LiteralOp op ) {
 		try {
 			switch( op.getValueType() ) {
-				case DOUBLE:  return op.getDoubleValue() != 0; 
+				case FP64:  return op.getDoubleValue() != 0; 
 				case INT:     return op.getLongValue()   != 0;
 				case BOOLEAN: return op.getBooleanValue();
 				default: throw new HopsException("Invalid boolean value: "+op.getValueType());
@@ -118,7 +118,7 @@ public class HopRewriteUtils
 	public static double getDoubleValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
 			case STRING:
-			case DOUBLE:  return op.getDoubleValue(); 
+			case FP64:  return op.getDoubleValue(); 
 			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: throw new HopsException("Invalid double value: "+op.getValueType());
@@ -127,7 +127,7 @@ public class HopRewriteUtils
 	
 	public static double getDoubleValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return op.getDoubleValue(); 
+			case FP64:  return op.getDoubleValue(); 
 			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Double.MAX_VALUE;
@@ -146,7 +146,7 @@ public class HopRewriteUtils
 	 */
 	public static long getIntValue( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue());
+			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
 			case STRING:
 			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
@@ -156,7 +156,7 @@ public class HopRewriteUtils
 	
 	public static long getIntValueSafe( LiteralOp op ) {
 		switch( op.getValueType() ) {
-			case DOUBLE:  return UtilFunctions.toLong(op.getDoubleValue());
+			case FP64:  return UtilFunctions.toLong(op.getDoubleValue());
 			case INT:     return op.getLongValue();
 			case BOOLEAN: return op.getBooleanValue() ? 1 : 0;
 			default: return Long.MAX_VALUE;
@@ -169,7 +169,7 @@ public class HopRewriteUtils
 	
 	public static boolean isLiteralOfValue( Hop hop, double val ) {
 		return (hop instanceof LiteralOp 
-			&& (hop.getValueType()==ValueType.DOUBLE || hop.getValueType()==ValueType.INT)
+			&& (hop.getValueType()==ValueType.FP64 || hop.getValueType()==ValueType.INT)
 			&& getDoubleValueSafe((LiteralOp)hop)==val);
 	}
 	
@@ -562,7 +562,7 @@ public class HopRewriteUtils
 	{
 		DataType dt = (type==OpOp1.CAST_AS_SCALAR) ? DataType.SCALAR : 
 			(type==OpOp1.CAST_AS_MATRIX) ? DataType.MATRIX : input.getDataType();
-		ValueType vt = (type==OpOp1.CAST_AS_MATRIX) ? ValueType.DOUBLE : input.getValueType();
+		ValueType vt = (type==OpOp1.CAST_AS_MATRIX) ? ValueType.FP64 : input.getValueType();
 		UnaryOp unary = new UnaryOp(input.getName(), dt, vt, type, input);
 		unary.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		if( type == OpOp1.CAST_AS_SCALAR || type == OpOp1.CAST_AS_MATRIX ) {
@@ -624,7 +624,7 @@ public class HopRewriteUtils
 	}
 	
 	public static ParameterizedBuiltinOp createParameterizedBuiltinOp(Hop input, LinkedHashMap<String,Hop> args, ParamBuiltinOp op) {
-		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, args);
+		ParameterizedBuiltinOp pbop = new ParameterizedBuiltinOp("tmp", DataType.MATRIX, ValueType.FP64, op, args);
 		pbop.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, pbop);
 		pbop.refreshSizeInformation();
@@ -644,7 +644,7 @@ public class HopRewriteUtils
 	}
 	
 	public static IndexingOp createIndexingOp(Hop input, Hop rl, Hop ru, Hop cl, Hop cu) {
-		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, input, rl, ru, cl, cu, rl==ru, cl==cu);
+		IndexingOp ix = new IndexingOp("tmp", DataType.MATRIX, ValueType.FP64, input, rl, ru, cl, cu, rl==ru, cl==cu);
 		ix.setOutputBlocksizes(input.getRowsInBlock(), input.getColsInBlock());
 		copyLineNumbers(input, ix);
 		ix.refreshSizeInformation();
@@ -652,7 +652,7 @@ public class HopRewriteUtils
 	}
 	
 	public static LeftIndexingOp createLeftIndexingOp(Hop lhs, Hop rhs, Hop rl, Hop ru, Hop cl, Hop cu) {
-		LeftIndexingOp ix = new LeftIndexingOp("tmp", DataType.MATRIX, ValueType.DOUBLE, lhs, rhs, rl, ru, cl, cu, rl==ru, cl==cu);
+		LeftIndexingOp ix = new LeftIndexingOp("tmp", DataType.MATRIX, ValueType.FP64, lhs, rhs, rl, ru, cl, cu, rl==ru, cl==cu);
 		ix.setOutputBlocksizes(lhs.getRowsInBlock(), lhs.getColsInBlock());
 		copyLineNumbers(lhs, ix);
 		ix.refreshSizeInformation();
@@ -713,7 +713,7 @@ public class HopRewriteUtils
 	}
 	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
-		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.DOUBLE, op, mleft, smid, mright);
+		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, mleft, smid, mright);
 		ternOp.setOutputBlocksizes(mleft.getRowsInBlock(), mleft.getColsInBlock());
 		copyLineNumbers(mleft, ternOp);
 		ternOp.refreshSizeInformation();

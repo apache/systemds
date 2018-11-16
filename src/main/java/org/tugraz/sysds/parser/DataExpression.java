@@ -930,7 +930,7 @@ public class DataExpression extends DataIdentifier
 			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
 			if (valueTypeString != null) {
 				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE)) {
-					getOutput().setValueType(ValueType.DOUBLE);
+					getOutput().setValueType(ValueType.FP64);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE)) {
 					getOutput().setValueType(ValueType.STRING);
 				} else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE)) {
@@ -942,7 +942,7 @@ public class DataExpression extends DataIdentifier
 							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
 				}
 			} else {
-				getOutput().setValueType(ValueType.DOUBLE);
+				getOutput().setValueType(ValueType.FP64);
 			}
 
 			break; 
@@ -1093,7 +1093,7 @@ public class DataExpression extends DataIdentifier
 			Expression lambda = getVarParam(RAND_LAMBDA);
 			if (!( (lambda instanceof DataIdentifier 
 					|| lambda instanceof ConstIdentifier) 
-				&& (lambda.getOutput().getValueType() == ValueType.DOUBLE 
+				&& (lambda.getOutput().getValueType() == ValueType.FP64 
 					|| lambda.getOutput().getValueType() == ValueType.INT) )) {
 				raiseValidateError("for Rand statement " + RAND_LAMBDA + " has incorrect data type", conditional);
 			}
@@ -1323,7 +1323,7 @@ public class DataExpression extends DataIdentifier
 		
 			getOutput().setFormatType(FormatType.BINARY);
 			getOutput().setDataType(DataType.MATRIX);
-			getOutput().setValueType(ValueType.DOUBLE);
+			getOutput().setValueType(ValueType.FP64);
 			getOutput().setDimensions(rowsLong, colsLong);
 			
 			if (getOutput() instanceof IndexedIdentifier){
@@ -1534,7 +1534,7 @@ public class DataExpression extends DataIdentifier
 			}	
 			getOutput().setFormatType(FormatType.BINARY);
 			getOutput().setDataType(DataType.MATRIX);
-			getOutput().setValueType(ValueType.DOUBLE);
+			getOutput().setValueType(ValueType.FP64);
 			getOutput().setDimensions(rowsLong, colsLong);
 				
 			if (getOutput() instanceof IndexedIdentifier){

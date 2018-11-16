@@ -341,7 +341,7 @@ public class RDDConverterUtils
 			out1 = RDDAggregateUtils.mergeByKey(out1, numPartitions2, false);
 			out1.saveAsHadoopFile(pathY, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc1.setNonZeros(aNnz1.value()); //update nnz after triggered save
-			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.DOUBLE, mc1, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.FP64, mc1, OutputInfo.BinaryBlockOutputInfo);
 			
 			//extract data and convert to binary block
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(),
@@ -352,7 +352,7 @@ public class RDDConverterUtils
 			out2 = RDDAggregateUtils.mergeByKey(out2, numPartitions, false);
 			out2.saveAsHadoopFile(pathX, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 			mc2.setNonZeros(aNnz2.value()); //update nnz after triggered save
-			HDFSTool.writeMetaDataFile(pathX+".mtd", ValueType.DOUBLE, mc2, OutputInfo.BinaryBlockOutputInfo);
+			HDFSTool.writeMetaDataFile(pathX+".mtd", ValueType.FP64, mc2, OutputInfo.BinaryBlockOutputInfo);
 			
 			//asynchronous cleanup of cached intermediates
 			ilpoints.unpersist(false);

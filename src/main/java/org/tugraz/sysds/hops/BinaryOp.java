@@ -255,7 +255,7 @@ public class BinaryOp extends MultiThreadedHop
 				getInput().get(0).getNnz());
 		PickByCount pick = new PickByCount(
 				sort,
-				Data.createLiteralLop(ValueType.DOUBLE, Double.toString(0.5)),
+				Data.createLiteralLop(ValueType.FP64, Double.toString(0.5)),
 				getDataType(),
 				getValueType(),
 				PickByCount.OperationTypes.MEDIAN, et, true);
@@ -307,7 +307,7 @@ public class BinaryOp extends MultiThreadedHop
 		SortKeys sort = SortKeys.constructSortByValueLop(
 							getInput().get(0).constructLops(), 
 							SortKeys.OperationTypes.WithoutWeights, 
-							DataType.MATRIX, ValueType.DOUBLE, et );
+							DataType.MATRIX, ValueType.FP64, et );
 		sort.getOutputParameters().setDimensions(
 				getInput().get(0).getDim1(),
 				getInput().get(0).getDim2(),

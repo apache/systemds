@@ -153,7 +153,7 @@ public class RelationalExpression extends Expression
 			
 			//since SystemML only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change
-			output.setValueType(ValueType.DOUBLE);
+			output.setValueType(ValueType.FP64);
 		}
 		else {
 			output.setBooleanProperties();

@@ -263,7 +263,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				case STRING:  _coldata[j] = new StringArray(new String[numRows]); break;
 				case BOOLEAN: _coldata[j] = new BooleanArray(new boolean[numRows]); break;
 				case INT:     _coldata[j] = new LongArray(new long[numRows]); break;
-				case DOUBLE:  _coldata[j] = new DoubleArray(new double[numRows]); break;
+				case FP64:  _coldata[j] = new DoubleArray(new double[numRows]); break;
 				default: throw new RuntimeException("Unsupported value type: "+_schema[j]);
 			}
 		}
@@ -450,7 +450,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumn(double[] col) {
 		ensureColumnCompatibility(col.length);
 		String[] colnames = getColumnNames(); //before schema modification
-		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.DOUBLE);
+		_schema = (ValueType[]) ArrayUtils.add(_schema, ValueType.FP64);
 		_colnames = (String[]) ArrayUtils.add(colnames, createColName(_schema.length));
 		_coldata = (_coldata==null) ? new Array[]{new DoubleArray(col)} :
 			(Array[]) ArrayUtils.add(_coldata, new DoubleArray(col));
@@ -467,7 +467,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	public void appendColumns(double[][] cols) {
 		int ncol = cols.length;
 		boolean empty = (_schema == null);
-		ValueType[] tmpSchema = UtilFunctions.nCopies(ncol, ValueType.DOUBLE);
+		ValueType[] tmpSchema = UtilFunctions.nCopies(ncol, ValueType.FP64);
 		Array[] tmpData = new Array[ncol];
 		for( int j=0; j<ncol; j++ )
 			tmpData[j] = new DoubleArray(cols[j]);
@@ -483,7 +483,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			case STRING:  return ((StringArray)_coldata[c])._data; 
 			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
 			case INT:     return ((LongArray)_coldata[c])._data;
-			case DOUBLE:  return ((DoubleArray)_coldata[c])._data;
+			case FP64:  return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
 	}
@@ -654,7 +654,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 				case STRING:  arr = new StringArray(new String[_numRows]); break;
 				case BOOLEAN: arr = new BooleanArray(new boolean[_numRows]); break;
 				case INT:     arr = new LongArray(new long[_numRows]); break;
-				case DOUBLE:  arr = new DoubleArray(new double[_numRows]); break;
+				case FP64:  arr = new DoubleArray(new double[_numRows]); break;
 				default: throw new IOException("Unsupported value type: "+vt);
 			}
 			arr.readFields(in);
@@ -708,7 +708,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			switch( _schema[j] ) {
 				case BOOLEAN: size += _numRows; break;
 				case INT:
-				case DOUBLE: size += 8*_numRows; break;
+				case FP64: size += 8*_numRows; break;
 				case STRING: 
 					StringArray arr = (StringArray)_coldata[j];
 					for( int i=0; i<_numRows; i++ )
@@ -739,7 +739,7 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 			switch( _schema[j] ) {
 				case BOOLEAN: size += _numRows; break;
 				case INT:
-				case DOUBLE: size += 8*_numRows; break;
+				case FP64: size += 8*_numRows; break;
 				case STRING: 
 					StringArray arr = (StringArray)_coldata[j];
 					for( int i=0; i<_numRows; i++ )

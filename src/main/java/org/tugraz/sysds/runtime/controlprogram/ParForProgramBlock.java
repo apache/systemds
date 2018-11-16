@@ -1080,7 +1080,7 @@ public class ParForProgramBlock extends ForProgramBlock
 						switch( valuetype ) {
 							case BOOLEAN: dataObj = new BooleanObject(false); break;
 							case INT:     dataObj = new IntObject(-1);        break;
-							case DOUBLE:  dataObj = new DoubleObject(-1d);    break;
+							case FP64:  dataObj = new DoubleObject(-1d);    break;
 							case STRING:  dataObj = new StringObject("-1");   break;
 							default:
 								throw new DMLRuntimeException("Value type not supported: "+valuetype);

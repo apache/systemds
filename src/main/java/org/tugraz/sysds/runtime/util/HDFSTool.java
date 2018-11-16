@@ -270,7 +270,7 @@ public class HDFSTool
 	}
 	
 	public static double readDoubleFromHDFSFile(String filename) throws IOException {
-		return (Double)readObjectFromHDFSFile(filename, ValueType.DOUBLE);
+		return (Double)readObjectFromHDFSFile(filename, ValueType.FP64);
 	}
 	
 	public static long readIntegerFromHDFSFile(String filename) throws IOException {
@@ -308,7 +308,7 @@ public class HDFSTool
 		
 		switch( vt ) {
 			case BOOLEAN: return Boolean.parseBoolean(line);
-			case DOUBLE: return Double.parseDouble(line);
+			case FP64: return Double.parseDouble(line);
 			case INT: return Long.parseLong(line);
 			default: return line;
 		}

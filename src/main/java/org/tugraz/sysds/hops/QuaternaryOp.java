@@ -314,7 +314,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		{
 			//map-side wsloss always with broadcast
 			Lop wsloss = new WeightedSquaredLoss( X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.SCALAR, ValueType.DOUBLE, wtype, ExecType.SPARK);
+					DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -329,7 +329,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			//reduce-side wsloss w/ or without broadcast
 			Lop wsloss = new WeightedSquaredLossR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), W.constructLops(), 
-					DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+					DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wsloss);
 			setLineNumbers(wsloss);
 			setLops(wsloss);
@@ -378,7 +378,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		{
 			//map-side wsig always with broadcast
 			Lop wsigmoid = new WeightedSigmoid( X.constructLops(), U.constructLops(), V.constructLops(),  
-					DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
+					DataType.MATRIX, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wsigmoid);
 			setLineNumbers(wsigmoid);
 			setLops( wsigmoid );
@@ -393,7 +393,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			//reduce-side wsig w/ or without broadcast
 			Lop wsigmoid = new WeightedSigmoidR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+					DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wsigmoid);
 			setLineNumbers(wsigmoid);
 			setLops(wsigmoid);
@@ -445,7 +445,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		{
 			//map-side wdivmm always with broadcast
 			Lop wdivmm = new WeightedDivMM( W.constructLops(), U.constructLops(), V.constructLops(), 
-					X.constructLops(), DataType.MATRIX, ValueType.DOUBLE, wtype, ExecType.SPARK);
+					X.constructLops(), DataType.MATRIX, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wdivmm);
 			setLineNumbers(wdivmm);
 			setLops( wdivmm );
@@ -460,7 +460,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			//reduce-side wdivmm w/ or without broadcast
 			Lop wdivmm = new WeightedDivMMR( 
 					W.constructLops(), U.constructLops(), V.constructLops(), X.constructLops(),
-					DataType.MATRIX, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+					DataType.MATRIX, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wdivmm);
 			setLineNumbers(wdivmm);
 			setLops(wdivmm);
@@ -512,7 +512,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		{
 			//map-side wcemm always with broadcast
 			Lop wcemm = new WeightedCrossEntropy( X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
-					DataType.SCALAR, ValueType.DOUBLE, wtype, ExecType.SPARK);
+					DataType.SCALAR, ValueType.FP64, wtype, ExecType.SPARK);
 			setOutputDimensions(wcemm);
 			setLineNumbers(wcemm);
 			setLops(wcemm);
@@ -527,7 +527,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			//reduce-side wcemm w/ or without broadcast
 			Lop wcemm = new WeightedCrossEntropyR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), eps.constructLops(),
-					DataType.SCALAR, ValueType.DOUBLE, wtype, cacheU, cacheV, ExecType.SPARK);
+					DataType.SCALAR, ValueType.FP64, wtype, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wcemm);
 			setLineNumbers(wcemm);
 			setLops(wcemm);
@@ -585,7 +585,7 @@ public class QuaternaryOp extends MultiThreadedHop
 		{
 			//map-side wumm always with broadcast
 			Lop wumm = new WeightedUnaryMM( X.constructLops(), U.constructLops(), V.constructLops(),  
-					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, ExecType.SPARK);
+					DataType.MATRIX, ValueType.FP64, wtype, uop, ExecType.SPARK);
 			setOutputDimensions(wumm);
 			setLineNumbers(wumm);
 			setLops( wumm );
@@ -600,7 +600,7 @@ public class QuaternaryOp extends MultiThreadedHop
 			//reduce-side wumm w/ or without broadcast
 			Lop wumm = new WeightedUnaryMMR( 
 					X.constructLops(), U.constructLops(), V.constructLops(), 
-					DataType.MATRIX, ValueType.DOUBLE, wtype, uop, cacheU, cacheV, ExecType.SPARK);
+					DataType.MATRIX, ValueType.FP64, wtype, uop, cacheU, cacheV, ExecType.SPARK);
 			setOutputDimensions(wumm);
 			setLineNumbers(wumm);
 			setLops(wumm);

@@ -240,7 +240,7 @@ public class Data extends Lop
 			switch(vt) {
 			case INT:
 				return Long.parseLong(getOutputParameters().getLabel());
-			case DOUBLE:
+			case FP64:
 				return (long) Double.parseDouble(getOutputParameters().getLabel());
 			
 			default:

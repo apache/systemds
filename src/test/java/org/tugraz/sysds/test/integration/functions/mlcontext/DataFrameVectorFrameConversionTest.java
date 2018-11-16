@@ -63,9 +63,9 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 
 	//schema restriction: single vector included
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.UNKNOWN, ValueType.STRING, ValueType.STRING, ValueType.STRING};
-	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.DOUBLE, ValueType.DOUBLE, ValueType.UNKNOWN, ValueType.DOUBLE};
-	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.UNKNOWN, ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.INT};
-	private final static ValueType[] schemaMixed2 = new ValueType[]{ValueType.STRING, ValueType.UNKNOWN, ValueType.DOUBLE};
+	private final static ValueType[] schemaDoubles = new ValueType[]{ValueType.FP64, ValueType.FP64, ValueType.UNKNOWN, ValueType.FP64};
+	private final static ValueType[] schemaMixed1 = new ValueType[]{ValueType.UNKNOWN, ValueType.INT, ValueType.STRING, ValueType.FP64, ValueType.INT};
+	private final static ValueType[] schemaMixed2 = new ValueType[]{ValueType.STRING, ValueType.UNKNOWN, ValueType.FP64};
 	
 	private final static int rows1 = 2245;
 	private final static int colsVector = 7;
@@ -273,7 +273,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			
 			//get output frame block
 			FrameBlock fbB = SparkExecutionContext.toFrameBlock(out, 
-					UtilFunctions.nCopies(cols, ValueType.DOUBLE), rows1, cols);
+					UtilFunctions.nCopies(cols, ValueType.FP64), rows1, cols);
 			
 			//compare frame blocks
 			MatrixBlock mbB = DataConverter.convertToMatrixBlock(fbB); 
@@ -324,7 +324,7 @@ public class DataFrameVectorFrameConversionTest extends AutomatedTestBase
 			DataType dt = null;
 			switch(schema[j]) {
 				case STRING: dt = DataTypes.StringType; break;
-				case DOUBLE: dt = DataTypes.DoubleType; break;
+				case FP64: dt = DataTypes.DoubleType; break;
 				case INT:    dt = DataTypes.LongType; break;
 				case UNKNOWN: dt = new VectorUDT(); break;
 				default: throw new RuntimeException("Unsupported value type.");

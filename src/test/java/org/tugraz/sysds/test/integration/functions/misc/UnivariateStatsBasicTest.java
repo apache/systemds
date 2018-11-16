@@ -79,7 +79,7 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			MatrixBlock mb = new MatrixBlock(1d);
 			MatrixWriterFactory.createMatrixWriter(OutputInfo.CSVOutputInfo)
 				.writeMatrixToHDFS(mb, input("uni-types.csv"), 1, 1, 1, 1, 1);
-			HDFSTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.DOUBLE, 
+			HDFSTool.writeMetaDataFile(input("uni-types.csv.mtd"), ValueType.FP64, 
 					new MatrixCharacteristics(1,1,1,1,1), OutputInfo.CSVOutputInfo);
 			
 			//run univariate stats 

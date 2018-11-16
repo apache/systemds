@@ -536,7 +536,7 @@ public class DataConverter
 		mb.allocateDenseBlock();
 		
 		ValueType[] schema = frame.getSchema();
-		int dFreq = UtilFunctions.frequency(schema, ValueType.DOUBLE);
+		int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
 		
 		if( dFreq == schema.length ) {
 			// special case double schema (without cell-object creation, 
@@ -632,7 +632,7 @@ public class DataConverter
 	 * @return frame block of type double
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb) {
-		return convertToFrameBlock(mb, ValueType.DOUBLE);
+		return convertToFrameBlock(mb, ValueType.FP64);
 	}
 	
 	/**
@@ -673,7 +673,7 @@ public class DataConverter
 		}
 		else //DENSE
 		{
-			int dFreq = UtilFunctions.frequency(schema, ValueType.DOUBLE);
+			int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
 			
 			if( schema.length==1 && dFreq==1 && mb.isAllocated() ) {
 				// special case double schema and single columns which
@@ -949,7 +949,7 @@ public class DataConverter
 			for( int j=0; j<colLength; j++ ) {
 				if( row[j]==null )
 					sb.append(String.valueOf(row[j]));
-				else if( fb.getSchema()[j] == ValueType.DOUBLE )
+				else if( fb.getSchema()[j] == ValueType.FP64 )
 					sb.append(dfFormat(df, (Double)row[j]));
 				else if( fb.getSchema()[j] == ValueType.BOOLEAN )
 					sb.append(new BooleanObject((Boolean)row[j])

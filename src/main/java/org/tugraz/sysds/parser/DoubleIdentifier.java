@@ -59,7 +59,7 @@ public class DoubleIdentifier extends ConstIdentifier
 		_val = val;
 		setDimensions(0, 0);
 		computeDataType();
-		setValueType(ValueType.DOUBLE);
+		setValueType(ValueType.FP64);
 	}
 
 	@Override

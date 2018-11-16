@@ -31,7 +31,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 {
 	private final static int rows = 3254;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT, ValueType.BOOLEAN};	
 	
 	private enum InitType {
 		COLUMN,
@@ -115,7 +115,7 @@ public class FrameGetSetTest extends AutomatedTestBase
 								A[i][j] = tmp3[i] = (Long)UtilFunctions.doubleToObject(vt, A[i][j], false);
 							frame.appendColumn(tmp3);
 							break;
-						case DOUBLE:
+						case FP64:
 							double[] tmp4 = new double[rows];
 							for( int i=0; i<rows; i++ )
 								tmp4[i] = (Double)UtilFunctions.doubleToObject(vt, A[i][j], false);

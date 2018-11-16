@@ -359,7 +359,7 @@ public class ReadMMTest extends AutomatedTestBase
 			HDFSTool.deleteFileIfExistOnHDFS(fname + ".mtd");
 			TestUtils.createFile(fname + "/in");
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
-			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+			HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 			runTest(true, DMLException.class);
 		} catch (IOException e) {
 			e.printStackTrace();

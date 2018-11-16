@@ -101,7 +101,7 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 					DataIdentifier dat = read.getVariable(var);
 					long dim1 = (dat instanceof IndexedIdentifier) ? ((IndexedIdentifier)dat).getOrigDim1() : dat.getDim1();
 					long dim2 = (dat instanceof IndexedIdentifier) ? ((IndexedIdentifier)dat).getOrigDim2() : dat.getDim2();
-					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.DOUBLE, DataOpTypes.TRANSIENTREAD, 
+					DataOp tread = new DataOp(var, DataType.MATRIX, ValueType.FP64, DataOpTypes.TRANSIENTREAD, 
 						dat.getFilename(), dim1, dim2, dat.getNnz(), blocksize, blocksize);
 					tread.setRequiresCheckpoint(true);
 					DataOp twrite = HopRewriteUtils.createTransientWrite(var, tread);

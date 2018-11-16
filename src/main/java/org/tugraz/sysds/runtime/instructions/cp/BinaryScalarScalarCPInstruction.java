@@ -61,7 +61,7 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 				sores = new StringObject( dop.fn.execute(
 					so1.getLanguageSpecificStringValue(), so2.getLanguageSpecificStringValue()) );
 			}
-			else if( so1 instanceof DoubleObject || so2 instanceof DoubleObject || output.getValueType()==ValueType.DOUBLE ) {
+			else if( so1 instanceof DoubleObject || so2 instanceof DoubleObject || output.getValueType()==ValueType.FP64 ) {
 				sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );
 			}
 			else if( so1 instanceof IntObject || so2 instanceof IntObject ) {

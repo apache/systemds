@@ -436,10 +436,10 @@ public abstract class Expression implements ParseInfo
 			return v1;
 
 		if (cast) {
-			if (v1 == ValueType.DOUBLE && v2 == ValueType.INT)
-				return ValueType.DOUBLE;
-			if (v2 == ValueType.DOUBLE && v1 == ValueType.INT)
-				return ValueType.DOUBLE;
+			if (v1 == ValueType.FP64 && v2 == ValueType.INT)
+				return ValueType.FP64;
+			if (v2 == ValueType.FP64 && v1 == ValueType.INT)
+				return ValueType.FP64;
 			
 			// String value type will override others
 			// Primary operation involving strings is concatenation (+)

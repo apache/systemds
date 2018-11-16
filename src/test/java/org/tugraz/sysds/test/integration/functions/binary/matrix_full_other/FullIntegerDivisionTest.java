@@ -291,7 +291,7 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 			String fname = baseDirectory + INPUT_DIR + name; // + "/in";
 			HDFSTool.deleteFileIfExistOnHDFS(fname);
 			HDFSTool.writeDoubleToHDFS(matrix[0][0], fname);
-			HDFSTool.writeScalarMetaDataFile(baseDirectory + INPUT_DIR + name + ".mtd", ValueType.DOUBLE);
+			HDFSTool.writeScalarMetaDataFile(baseDirectory + INPUT_DIR + name + ".mtd", ValueType.FP64);
 		
 			//write R matrix
 			if( includeR ){

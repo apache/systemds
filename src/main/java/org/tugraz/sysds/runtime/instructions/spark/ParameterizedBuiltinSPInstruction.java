@@ -311,7 +311,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			boolean rows = sec.getScalarInput(params.get("margin"), ValueType.STRING, true).getStringValue().equals("rows");
 			boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
-			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.DOUBLE, false).getLongValue();
+			long maxDim = sec.getScalarInput(params.get("maxdim"), ValueType.FP64, false).getLongValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddInVar);
 			
 			if( maxDim > 0 ) //default case

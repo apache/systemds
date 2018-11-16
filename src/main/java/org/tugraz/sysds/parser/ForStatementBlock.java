@@ -364,7 +364,7 @@ public class ForStatementBlock extends StatementBlock
 				ConstIdentifier constValue = currConstVars.get(identifierName);
 				// AUTO CASTING (using runtime operations for consistency)
 				switch (constValue.getValueType()) {
-				case DOUBLE:
+				case FP64:
 					ret = new IntIdentifier(new DoubleObject(((DoubleIdentifier) constValue).getValue()).getLongValue(),
 							expr);
 					break;

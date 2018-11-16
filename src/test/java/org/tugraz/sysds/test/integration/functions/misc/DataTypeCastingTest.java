@@ -108,7 +108,7 @@ public class DataTypeCastingTest extends AutomatedTestBase
 			}
 			else{
 				HDFSTool.writeDoubleToHDFS(V[0][0], input("V"));
-				HDFSTool.writeScalarMetaDataFile(input("V.mtd"), ValueType.DOUBLE);
+				HDFSTool.writeScalarMetaDataFile(input("V.mtd"), ValueType.FP64);
 			}
 			
 			//run tests

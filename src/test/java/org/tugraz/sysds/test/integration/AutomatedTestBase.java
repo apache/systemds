@@ -528,7 +528,7 @@ public abstract class AutomatedTestBase
 		try
 		{
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("textcell"));
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("textcell"));
 		}
 		catch(IOException e)
 		{
@@ -609,7 +609,7 @@ public abstract class AutomatedTestBase
 		writeInputBinaryMatrix(name, matrix, rowsInBlock, colsInBlock, sparseFormat);
 		// write metadata file
 		String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-		HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.DOUBLE, mc, OutputInfo.stringToOutputInfo("binaryblock"));
+		HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, OutputInfo.stringToOutputInfo("binaryblock"));
 	}
 
 	/**

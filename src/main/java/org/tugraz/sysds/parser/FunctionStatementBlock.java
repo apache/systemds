@@ -53,7 +53,7 @@ public class FunctionStatementBlock extends StatementBlock
 		ArrayList<DataIdentifier> inputValues = fstmt.getInputParams();
         for( DataIdentifier inputValue : inputValues ) {
             //check all input matrices have value type double
-            if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.DOUBLE ) {
+            if( inputValue.getDataType()==DataType.MATRIX && inputValue.getValueType()!=ValueType.FP64 ) {
                 raiseValidateError("for function " + fstmt.getName() + ", input variable " + inputValue.getName() 
                                  + " has an unsupported value type of " + inputValue.getValueType() + ".", false);
             }
@@ -90,7 +90,7 @@ public class FunctionStatementBlock extends StatementBlock
 				
 				// attempt to convert value type: handle conversion from scalar DOUBLE or INT
 				if (curr.getDataType() == DataType.SCALAR && returnValue.getDataType() == DataType.SCALAR){ 
-					if (returnValue.getValueType() == ValueType.DOUBLE){
+					if (returnValue.getValueType() == ValueType.FP64){
 						if (curr.getValueType() == ValueType.INT){
 							IntIdentifier currIntValue = (IntIdentifier)constVars.get(curr.getName());
 							if (currIntValue != null){
@@ -102,7 +102,7 @@ public class FunctionStatementBlock extends StatementBlock
 									+ ", return variable " + curr.getName() + " value type of " 
 									+ curr.getValueType() + " does not match value type in function signature of " 
 									+ returnValue.getValueType() + " but was safely cast");
-							curr.setValueType(ValueType.DOUBLE);
+							curr.setValueType(ValueType.FP64);
 							ids.addVariable(curr.getName(), curr);
 						}
 						else {

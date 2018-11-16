@@ -47,7 +47,7 @@ public class FrameReadWriteTest extends AutomatedTestBase
 	
 	private final static int rows = 1593;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT, ValueType.BOOLEAN};	
 	
 	private final static String DELIMITER = "::";
 	private final static boolean HEADER = true;

@@ -1577,7 +1577,7 @@ public class ProgramConverter
 			case SCALAR: {
 				switch ( valuetype ) {
 					case INT:     dat = new IntObject(Long.parseLong(valString)); break;
-					case DOUBLE:  dat = new DoubleObject(Double.parseDouble(valString)); break;
+					case FP64:  dat = new DoubleObject(Double.parseDouble(valString)); break;
 					case BOOLEAN: dat = new BooleanObject(Boolean.parseBoolean(valString)); break;
 					case STRING:  dat = new StringObject(valString); break;
 					default:

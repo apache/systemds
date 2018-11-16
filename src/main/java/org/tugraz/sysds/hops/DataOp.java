@@ -380,7 +380,7 @@ public class DataOp extends Hop
 			{
 				case INT:
 					ret = OptimizerUtils.INT_SIZE; break;
-				case DOUBLE:
+				case FP64:
 					ret = OptimizerUtils.DOUBLE_SIZE; break;
 				case BOOLEAN:
 					ret = OptimizerUtils.BOOLEAN_SIZE; break;

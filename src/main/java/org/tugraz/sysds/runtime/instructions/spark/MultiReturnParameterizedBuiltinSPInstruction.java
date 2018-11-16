@@ -85,7 +85,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
-			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
 			outputs.add ( new CPOperand(parts[4], ValueType.STRING, DataType.FRAME) );
 			return new MultiReturnParameterizedBuiltinSPInstruction(null, in1, in2, outputs, opcode, str);
 		}

@@ -65,7 +65,7 @@ public class DecoderFactory
 			if( schema == null ) {
 				schema = UtilFunctions.nCopies(len, ValueType.STRING);
 				for( Integer col : ptIDs )
-					schema[col-1] = ValueType.DOUBLE;
+					schema[col-1] = ValueType.FP64;
 			}
 			
 			if( !dcIDs.isEmpty() ) {

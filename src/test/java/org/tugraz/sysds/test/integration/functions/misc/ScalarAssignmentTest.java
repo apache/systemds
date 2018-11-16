@@ -61,7 +61,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testForLoopDouble() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.DOUBLE);
+		runScalarAssignmentTest(ControlFlowConstruct.FOR, ValueType.FP64);
 	}
 	
 	@Test
@@ -85,7 +85,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testParForLoopDouble() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.DOUBLE);
+		runScalarAssignmentTest(ControlFlowConstruct.PARFOR, ValueType.FP64);
 	}
 	
 	@Test
@@ -109,7 +109,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testWhileLoopDouble() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.DOUBLE);
+		runScalarAssignmentTest(ControlFlowConstruct.WHILE, ValueType.FP64);
 	}
 	
 	@Test
@@ -133,7 +133,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 	@Test
 	public void testIfLoopDouble() 
 	{
-		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.DOUBLE);
+		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.FP64);
 	}
 	
 	@Test
@@ -169,7 +169,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		switch( vt )
 		{
 			case INT: value = Integer.valueOf(7); break;
-			case DOUBLE: value = Double.valueOf(7.7); break;
+			case FP64: value = Double.valueOf(7.7); break;
 			case STRING: value = "This is a test!"; break;
 			case BOOLEAN: value = Boolean.valueOf(true); break;
 			default: //do nothing

@@ -52,7 +52,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testIterablePredicateDouble() 
 	{ 
-		runTest( TEST_NAME1, ValueType.DOUBLE, false ); 
+		runTest( TEST_NAME1, ValueType.FP64, false ); 
 	}
 	
 	@Test
@@ -70,7 +70,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateWhileDouble() 
 	{ 
-		runTest( TEST_NAME2, ValueType.DOUBLE, false ); 
+		runTest( TEST_NAME2, ValueType.FP64, false ); 
 	}
 	
 	@Test
@@ -88,7 +88,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testConditionalPredicateIfDouble() 
 	{ 
-		runTest( TEST_NAME3, ValueType.DOUBLE, false ); 
+		runTest( TEST_NAME3, ValueType.FP64, false ); 
 	}
 	
 	@Test
@@ -106,7 +106,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionInliningDouble() 
 	{ 
-		runTest( TEST_NAME4, ValueType.DOUBLE, false ); 
+		runTest( TEST_NAME4, ValueType.FP64, false ); 
 	}
 	
 	@Test
@@ -124,7 +124,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 	@Test
 	public void testFunctionNoInliningDouble() 
 	{ 
-		runTest( TEST_NAME5, ValueType.DOUBLE, false ); 
+		runTest( TEST_NAME5, ValueType.FP64, false ); 
 	}
 	
 	@Test
@@ -157,7 +157,7 @@ public class ValueTypeAutoCastingTest extends AutomatedTestBase
 			double[][] V = getRandomMatrix(1, 2, 3, 7, 1.0, System.nanoTime());
 			String val1 = null, val2 = null;
 			switch(vt) {
-				case DOUBLE:
+				case FP64:
 					val1 = Double.toString(V[0][0]); 
 					val2 = Double.toString(V[0][1]); break;
 				case INT:

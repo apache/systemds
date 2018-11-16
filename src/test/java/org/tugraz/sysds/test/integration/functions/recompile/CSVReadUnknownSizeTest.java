@@ -117,7 +117,7 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			FileFormatPropertiesCSV fprop = new FileFormatPropertiesCSV();			
 			DataConverter.writeMatrixToHDFS(mb, input("X"), OutputInfo.CSVOutputInfo, mc, -1, fprop);
 			mc.set(-1, -1, -1, -1);
-			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.DOUBLE, mc, OutputInfo.CSVOutputInfo, fprop);
+			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, OutputInfo.CSVOutputInfo, fprop);
 			
 			runTest(true, false, null, -1); 
 			

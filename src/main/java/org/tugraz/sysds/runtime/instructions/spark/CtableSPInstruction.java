@@ -117,9 +117,9 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		
 		// handle known/unknown dimensions
 		long dim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) :
-			(sec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
+			(sec.getScalarInput(_outDim1, ValueType.FP64, false)).getLongValue());
 		long dim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) :
-			(sec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
+			(sec.getScalarInput(_outDim2, ValueType.FP64, false)).getLongValue());
 		if( dim1 == -1 && dim2 == -1 ) {
 			//note: if we need to determine the dimensions to we do so before 
 			//creating cells to avoid unnecessary caching, repeated joins, etc.

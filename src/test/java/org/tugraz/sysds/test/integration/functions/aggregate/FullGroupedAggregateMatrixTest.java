@@ -296,11 +296,11 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, numCols, -0.05, 1, sparsity, 7); 
 			writeInputMatrix("A", A, true);
 			MatrixCharacteristics mc1 = new MatrixCharacteristics(rows, numCols,1000,1000);
-			HDFSTool.writeMetaDataFile(input("A.mtd"), ValueType.DOUBLE, mc1, OutputInfo.TextCellOutputInfo);
+			HDFSTool.writeMetaDataFile(input("A.mtd"), ValueType.FP64, mc1, OutputInfo.TextCellOutputInfo);
 			double[][] B = TestUtils.round(getRandomMatrix(rows, 1, 1, numGroups, 1.0, 3)); 
 			writeInputMatrix("B", B, true);
 			MatrixCharacteristics mc2 = new MatrixCharacteristics(rows,1,1000,1000);
-			HDFSTool.writeMetaDataFile(input("B.mtd"), ValueType.DOUBLE, mc2, OutputInfo.TextCellOutputInfo);
+			HDFSTool.writeMetaDataFile(input("B.mtd"), ValueType.FP64, mc2, OutputInfo.TextCellOutputInfo);
 			
 			//run tests
 			Class cla = (exceptionExpected ? DMLException.class : null);

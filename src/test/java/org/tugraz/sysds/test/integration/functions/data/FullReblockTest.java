@@ -338,6 +338,6 @@ public class FullReblockTest extends AutomatedTestBase
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols);
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
-		HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
+		HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, oi);
 	}
 }

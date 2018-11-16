@@ -91,19 +91,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleDenseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, false, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, false, ErrorType.NO_ERROR, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleDenseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, false, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, false, ErrorType.NO_ERROR, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleDenseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, false, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, false, ErrorType.NO_ERROR, ExecType.CP);
 	}
 
 	@Test
@@ -127,19 +127,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleSparseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, true, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, true, ErrorType.NO_ERROR, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleSparseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, true, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, true, ErrorType.NO_ERROR, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleSparseNoErrorCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, true, ErrorType.NO_ERROR, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, true, ErrorType.NO_ERROR, ExecType.CP);
 	}
 
 	@Test
@@ -163,19 +163,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleDenseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, false, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, false, ErrorType.TOO_FEW, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleDenseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, false, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, false, ErrorType.TOO_FEW, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleDenseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, false, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, false, ErrorType.TOO_FEW, ExecType.CP);
 	}
 
 	@Test
@@ -199,19 +199,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleSparseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, true, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, true, ErrorType.TOO_FEW, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleSparseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, true, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, true, ErrorType.TOO_FEW, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleSparseTooFewCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, true, ErrorType.TOO_FEW, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, true, ErrorType.TOO_FEW, ExecType.CP);
 	}
 	
 	@Test
@@ -235,19 +235,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleDenseTooManyCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, false, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, false, ErrorType.TOO_MANY, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleDenseTooManyCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, false, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, false, ErrorType.TOO_MANY, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleDenseManyFewCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, false, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, false, ErrorType.TOO_MANY, ExecType.CP);
 	}
 
 	@Test
@@ -271,19 +271,19 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	@Test
 	public void testStringIntializeColVectorDoubleSparseTooManyCP() 
 	{
-		runStringInitializeTest(InputType.COL_VECTOR, ValueType.DOUBLE, true, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.COL_VECTOR, ValueType.FP64, true, ErrorType.TOO_MANY, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeRowVectorDoubleSparseTooManyCP() 
 	{
-		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.DOUBLE, true, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.ROW_VECTOR, ValueType.FP64, true, ErrorType.TOO_MANY, ExecType.CP);
 	}
 	
 	@Test
 	public void testStringIntializeMatrixDoubleSparseTooManyCP() 
 	{
-		runStringInitializeTest(InputType.MATRIX, ValueType.DOUBLE, true, ErrorType.TOO_MANY, ExecType.CP);
+		runStringInitializeTest(InputType.MATRIX, ValueType.FP64, true, ErrorType.TOO_MANY, ExecType.CP);
 	}
 
 	private void runStringInitializeTest( InputType intype, ValueType vt, boolean sparse, ErrorType errtype, ExecType instType)

@@ -311,7 +311,7 @@ public class VariableCPInstruction extends CPInstruction {
 		case CreateVariable:
 			// variable name 
 			DataType dt = DataType.valueOf(parts[4]);
-			ValueType vt = dt==DataType.MATRIX ? ValueType.DOUBLE : ValueType.STRING;
+			ValueType vt = dt==DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
 			int extSchema = (dt==DataType.FRAME && parts.length>=13) ? 1 : 0;
 			in1 = new CPOperand(parts[1], vt, dt);
 			// file name
@@ -662,7 +662,7 @@ public class VariableCPInstruction extends CPInstruction {
 			ScalarObject res = null;
 			try {
 				switch(getInput1().getValueType()) {
-				case DOUBLE:
+				case FP64:
 					double d = HDFSTool.readDoubleFromHDFSFile(getInput2().getName());
 					res = (ScalarObject) new DoubleObject(d);
 					break;

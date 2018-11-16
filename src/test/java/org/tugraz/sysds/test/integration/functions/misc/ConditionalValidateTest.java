@@ -130,7 +130,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 			MatrixCharacteristics mc = new MatrixCharacteristics(10,15,1000,1000);
 			
 			DataConverter.writeMatrixToHDFS(mb, input+(fileExists?"":"b"), OutputInfo.TextCellOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
+			HDFSTool.writeMetaDataFile(input+(fileExists?"":"b")+".mtd", ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
 			
 			//run tests
 	        runTest(true, exceptionExpected, DMLException.class, -1);

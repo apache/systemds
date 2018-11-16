@@ -29,7 +29,7 @@ public class DoubleObject extends ScalarObject
 	private final double _value;
 
 	public DoubleObject(double val){
-		super(ValueType.DOUBLE);
+		super(ValueType.FP64);
 		_value = val;
 	}
 

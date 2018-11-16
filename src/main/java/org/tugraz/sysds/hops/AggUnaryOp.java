@@ -612,7 +612,7 @@ public class AggUnaryOp extends MultiThreadedHop
 		DirectionTypes dir = HopsDirection2Lops.get(_direction);
 		
 		return new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 
-				Binary.OperationTypes.MULTIPLY, dir, getDataType(), ValueType.DOUBLE, et_input, k);
+				Binary.OperationTypes.MULTIPLY, dir, getDataType(), ValueType.FP64, et_input, k);
 	}
 	
 	@Override

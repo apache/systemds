@@ -123,10 +123,10 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<String> listB = new ArrayList<String>();
 		FrameMetadata fmA = null, fmB = null;
 		Script script = null;
-		ValueType[] schemaA = { ValueType.INT, ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		ValueType[] schemaA = { ValueType.INT, ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
 		List<ValueType> lschemaA = Arrays.asList(schemaA);
 		FrameSchema fschemaA = new FrameSchema(lschemaA);
-		ValueType[] schemaB = { ValueType.STRING, ValueType.DOUBLE, ValueType.BOOLEAN };
+		ValueType[] schemaB = { ValueType.STRING, ValueType.FP64, ValueType.BOOLEAN };
 		List<ValueType> lschemaB = Arrays.asList(schemaB);
 		FrameSchema fschemaB = new FrameSchema(lschemaB);
 
@@ -218,11 +218,11 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
 		Assert.assertEquals(ValueType.INT, lschemaOutA.get(0));
 		Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
-		Assert.assertEquals(ValueType.DOUBLE, lschemaOutA.get(2));
+		Assert.assertEquals(ValueType.FP64, lschemaOutA.get(2));
 		Assert.assertEquals(ValueType.BOOLEAN, lschemaOutA.get(3));
 		
 		Assert.assertEquals(ValueType.STRING, lschemaOutC.get(0));
-		Assert.assertEquals(ValueType.DOUBLE, lschemaOutC.get(1));
+		Assert.assertEquals(ValueType.FP64, lschemaOutC.get(1));
 
 		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
 
@@ -370,7 +370,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 		dataA.add("Test2,5.0");
 		dataA.add("Test3,6.0");
 		JavaRDD<String> javaRddStringA = sc.parallelize(dataA);
-		ValueType[] schema = { ValueType.STRING, ValueType.DOUBLE };
+		ValueType[] schema = { ValueType.STRING, ValueType.FP64 };
 
 		List<String> dataB = new ArrayList<String>();
 		dataB.add("1.0");

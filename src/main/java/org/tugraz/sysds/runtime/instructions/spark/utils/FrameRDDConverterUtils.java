@@ -299,7 +299,7 @@ public class FrameRDDConverterUtils
 			DataType dt = null;
 			switch(schema) {
 				case STRING:  dt = DataTypes.StringType; break;
-				case DOUBLE:  dt = DataTypes.DoubleType; break;
+				case FP64:  dt = DataTypes.DoubleType; break;
 				case INT:     dt = DataTypes.LongType; break;
 				case BOOLEAN: dt = DataTypes.BooleanType; break;
 				default:      dt = DataTypes.StringType;
@@ -337,7 +337,7 @@ public class FrameRDDConverterUtils
 			colnames[pos] = structType.name();
 			if(structType.dataType() == DataTypes.DoubleType 
 				|| structType.dataType() == DataTypes.FloatType)
-				fschema[pos++] = ValueType.DOUBLE;
+				fschema[pos++] = ValueType.FP64;
 			else if(structType.dataType() == DataTypes.LongType 
 				|| structType.dataType() == DataTypes.IntegerType)
 				fschema[pos++] = ValueType.INT;
@@ -350,7 +350,7 @@ public class FrameRDDConverterUtils
 				colVect = pos;
 				for( int j=0; j<lenVect; j++ ) {
 					colnames[pos] = name+"v"+j;
-					fschema[pos++] = ValueType.DOUBLE;
+					fschema[pos++] = ValueType.FP64;
 				}
 				containsVect = true;
 			}

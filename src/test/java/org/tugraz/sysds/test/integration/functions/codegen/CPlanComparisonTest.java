@@ -239,12 +239,12 @@ public class CPlanComparisonTest extends AutomatedTestBase
 	}
 	
 	private Hop createDataOp(DataType dt) {
-		return new DataOp("tmp"+_seq.getNextID(), dt, ValueType.DOUBLE, 
+		return new DataOp("tmp"+_seq.getNextID(), dt, ValueType.FP64, 
 			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000, 1000);
 	}
 	
 	private static Hop createDataOp(String name, DataType dt) {
-		return new DataOp(name, dt, ValueType.DOUBLE, 
+		return new DataOp(name, dt, ValueType.FP64, 
 			DataOpTypes.TRANSIENTREAD, "tmp", 77L, 7L, -1L, 1000, 1000);
 	}
 }

@@ -69,7 +69,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction {
 					case INT:
 						objects[i - 1] = scalarObject.getLongValue();
 						break;
-					case DOUBLE:
+					case FP64:
 						objects[i - 1] = scalarObject.getDoubleValue();
 						break;
 					case BOOLEAN:

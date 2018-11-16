@@ -99,8 +99,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		Ctable.OperationTypes ctableOp = findCtableOperation();
 		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
-		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.DOUBLE, false)).getLongValue());
-		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.DOUBLE, false)).getLongValue());
+		long outputDim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) : (ec.getScalarInput(_outDim1, ValueType.FP64, false)).getLongValue());
+		long outputDim2 = (_dim2Literal ? (long) Double.parseDouble(_outDim2) : (ec.getScalarInput(_outDim2, ValueType.FP64, false)).getLongValue());
 		
 		boolean outputDimsKnown = (outputDim1 != -1 && outputDim2 != -1);
 		if ( outputDimsKnown ) {

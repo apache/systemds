@@ -172,7 +172,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 		MatrixBlock mb = DataConverter.convertToMatrixBlock(A);
 		DataConverter.writeMatrixToHDFS(mb, fname, oi, mc);
 		if( oi != OutputInfo.MatrixMarketOutputInfo )
-			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.DOUBLE, mc, oi);
+			HDFSTool.writeMetaDataFile(fname+".mtd", ValueType.FP64, mc, oi);
 	}
 	
 	private static String getFormatString(OutputInfo oinfo)

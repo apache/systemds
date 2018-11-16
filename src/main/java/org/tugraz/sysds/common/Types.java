@@ -42,9 +42,12 @@ public class Types {
 	 * Value types (int, double, string, boolean, unknown).
 	 */
 	public enum ValueType {
-		INT, DOUBLE, STRING, BOOLEAN, UNKNOWN;
+		FP32, FP64, INT, STRING, BOOLEAN, UNKNOWN;
 		public boolean isNumeric() {
-			return this == INT || this == DOUBLE;
+			return this == INT || this == FP32 || this == FP64;
+		}
+		public boolean isPseudoNumeric() {
+			return isNumeric() || this == BOOLEAN;
 		}
 	}
 }

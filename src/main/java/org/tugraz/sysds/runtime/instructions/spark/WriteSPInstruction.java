@@ -225,7 +225,7 @@ public class WriteSPInstruction extends SPInstruction {
 		}
 		
 		// write meta data file
-		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.DOUBLE, mc, oi, formatProperties);
+		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, oi, formatProperties);
 	}
 
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, OutputInfo oi, ValueType[] schema) 

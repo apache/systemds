@@ -296,7 +296,7 @@ public class PreparedScript implements ConfigurableAPI
 		//create new matrix object
 		MatrixCharacteristics mc = new MatrixCharacteristics(matrix.getNumRows(), matrix.getNumColumns(), blocksize, blocksize);
 		MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
-		MatrixObject mo = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(), meta);
+		MatrixObject mo = new MatrixObject(ValueType.FP64, OptimizerUtils.getUniqueTempFileName(), meta);
 		mo.acquireModify(matrix); 
 		mo.release();
 		

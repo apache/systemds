@@ -42,7 +42,7 @@ public class LiteralOp extends Hop
 	}
 	
 	public LiteralOp(double value) {
-		super(String.valueOf(value), DataType.SCALAR, ValueType.DOUBLE);
+		super(String.valueOf(value), DataType.SCALAR, ValueType.FP64);
 		value_double = value;
 	}
 
@@ -92,8 +92,8 @@ public class LiteralOp extends Hop
 			Lop l = null;
 
 			switch (getValueType()) {
-			case DOUBLE:
-				l = Data.createLiteralLop(ValueType.DOUBLE, Double.toString(value_double));
+			case FP64:
+				l = Data.createLiteralLop(ValueType.FP64, Double.toString(value_double));
 				break;
 			case BOOLEAN:
 				l = Data.createLiteralLop(ValueType.BOOLEAN, Boolean.toString(value_boolean));
@@ -126,7 +126,7 @@ public class LiteralOp extends Hop
 	public String getOpString() {
 		String val = null;
 		switch (getValueType()) {
-			case DOUBLE:
+			case FP64:
 				val = Double.toString(value_double);
 				break;
 			case BOOLEAN:
@@ -152,7 +152,7 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case INT:
 				ret = OptimizerUtils.INT_SIZE; break;
-			case DOUBLE:
+			case FP64:
 				ret = OptimizerUtils.DOUBLE_SIZE; break;
 			case BOOLEAN:
 				ret = OptimizerUtils.BOOLEAN_SIZE; break;
@@ -202,7 +202,7 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case INT:
 				return value_long;
-			case DOUBLE:
+			case FP64:
 				return UtilFunctions.toLong(value_double);
 			case STRING:
 				return Long.parseLong(value_string);
@@ -217,7 +217,7 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case INT:
 				return value_long;
-			case DOUBLE:
+			case FP64:
 				return value_double;
 			case STRING:
 				return Double.parseDouble(value_string);
@@ -232,7 +232,7 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case INT:
 				return (value_long != 0);
-			case DOUBLE:
+			case FP64:
 				return (value_double != 0);
 			case STRING:
 				return Boolean.parseBoolean(value_string);
@@ -249,7 +249,7 @@ public class LiteralOp extends Hop
 				return String.valueOf(value_boolean);
 			case INT:
 				return String.valueOf(value_long);
-			case DOUBLE:
+			case FP64:
 				return String.valueOf(value_double);
 			case STRING:
 				return value_string;

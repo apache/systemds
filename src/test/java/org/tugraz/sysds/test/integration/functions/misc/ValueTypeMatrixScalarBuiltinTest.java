@@ -49,7 +49,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 
 	@Test
 	public void testValueTypeMaxLeftScalarDouble() { 
-		runTest(TEST_NAME1, ValueType.DOUBLE); 
+		runTest(TEST_NAME1, ValueType.FP64); 
 	}
 	
 	@Test
@@ -59,7 +59,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeMaxRightScalarDouble() { 
-		runTest(TEST_NAME2, ValueType.DOUBLE); 
+		runTest(TEST_NAME2, ValueType.FP64); 
 	}
 	
 	@Test
@@ -69,7 +69,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeLogLeftScalarDouble() { 
-		runTest(TEST_NAME3, ValueType.DOUBLE); 
+		runTest(TEST_NAME3, ValueType.FP64); 
 	}
 	
 	@Test
@@ -79,7 +79,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypeLogRightScalarDouble() { 
-		runTest(TEST_NAME4, ValueType.DOUBLE); 
+		runTest(TEST_NAME4, ValueType.FP64); 
 	}
 	
 	@Test
@@ -89,7 +89,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypePredLeftScalarDouble() { 
-		runTest(TEST_NAME5, ValueType.DOUBLE); 
+		runTest(TEST_NAME5, ValueType.FP64); 
 	}
 	
 	@Test
@@ -99,7 +99,7 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 	
 	@Test
 	public void testValueTypePredRightScalarDouble() { 
-		runTest(TEST_NAME6, ValueType.DOUBLE); 
+		runTest(TEST_NAME6, ValueType.FP64); 
 	}
 	
 	@Test
@@ -115,12 +115,12 @@ public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
 		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + testName + ".dml";
 		programArgs = new String[]{"-args", 
-			vtIn==ValueType.DOUBLE ? "7.7" : "7", output("R")};
+			vtIn==ValueType.FP64 ? "7.7" : "7", output("R")};
 		runTest(true, false, null, -1);
 		
 		//check output value type
 		ValueType vtOut = readDMLMetaDataValueType("R");
 		Assert.assertTrue("Wrong output value type: " + 
-			vtOut.name(), vtOut.equals(ValueType.DOUBLE));
+			vtOut.name(), vtOut.equals(ValueType.FP64));
 	}
 }

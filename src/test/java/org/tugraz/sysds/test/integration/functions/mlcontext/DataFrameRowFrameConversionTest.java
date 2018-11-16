@@ -79,42 +79,42 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 
 	@Test
 	public void testRowDoubleConversionSingleDense() {
-		testDataFrameConversion(ValueType.DOUBLE, true, true, false);
+		testDataFrameConversion(ValueType.FP64, true, true, false);
 	}
 	
 	@Test
 	public void testRowDoubleConversionSingleDenseUnknown() {
-		testDataFrameConversion(ValueType.DOUBLE, true, true, true);
+		testDataFrameConversion(ValueType.FP64, true, true, true);
 	}
 	
 	@Test
 	public void testRowDoubleConversionSingleSparse() {
-		testDataFrameConversion(ValueType.DOUBLE, true, false, false);
+		testDataFrameConversion(ValueType.FP64, true, false, false);
 	}
 	
 	@Test
 	public void testRowDoubleConversionSingleSparseUnknown() {
-		testDataFrameConversion(ValueType.DOUBLE, true, false, true);
+		testDataFrameConversion(ValueType.FP64, true, false, true);
 	}
 	
 	@Test
 	public void testRowDoubleConversionMultiDense() {
-		testDataFrameConversion(ValueType.DOUBLE, false, true, false);
+		testDataFrameConversion(ValueType.FP64, false, true, false);
 	}
 	
 	@Test
 	public void testRowDoubleConversionMultiDenseUnknown() {
-		testDataFrameConversion(ValueType.DOUBLE, false, true, true);
+		testDataFrameConversion(ValueType.FP64, false, true, true);
 	}
 	
 	@Test
 	public void testRowDoubleConversionMultiSparse() {
-		testDataFrameConversion(ValueType.DOUBLE, false, false, false);
+		testDataFrameConversion(ValueType.FP64, false, false, false);
 	}
 	
 	@Test
 	public void testRowDoubleConversionMultiSparseUnknown() {
-		testDataFrameConversion(ValueType.DOUBLE, false, false, true);
+		testDataFrameConversion(ValueType.FP64, false, false, true);
 	}
 
 	@Test

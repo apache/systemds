@@ -53,8 +53,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		if ( opcode.equalsIgnoreCase("qr") ) {
 			// one input and two ouputs
 			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 		}
@@ -62,9 +62,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 			
 			// one input and three outputs
-			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[4], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
@@ -72,8 +72,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		else if ( opcode.equalsIgnoreCase("eigen") ) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
-			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 			
@@ -82,9 +82,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 			CPOperand in1 = new CPOperand(parts[1]);
 
 			// one input and three outputs
-			outputs.add ( new CPOperand(parts[2], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[3], ValueType.DOUBLE, DataType.MATRIX) );
-			outputs.add ( new CPOperand(parts[4], ValueType.DOUBLE, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
+			outputs.add ( new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX) );
 			
 			return new MultiReturnBuiltinCPInstruction(null, in1, outputs, opcode, str);
 

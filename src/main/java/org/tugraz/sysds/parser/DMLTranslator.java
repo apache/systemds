@@ -1251,7 +1251,7 @@ public class DMLTranslator
 						// (required for scalar input to left indexing)
 						if( target.getDataType() != DataType.MATRIX ) {
 							target.setDataType(DataType.MATRIX);
-							target.setValueType(ValueType.DOUBLE);
+							target.setValueType(ValueType.FP64);
 							target.setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 						}
 						
@@ -1730,7 +1730,7 @@ public class DMLTranslator
 		if( sourceOp.getDataType().isMatrix() && source.getOutput().getDataType().isScalar() )
 			sourceOp.setDataType(DataType.SCALAR);
 		
-		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.DOUBLE, 
+		Hop leftIndexOp = new LeftIndexingOp(target.getName(), target.getDataType(), ValueType.FP64, 
 				targetOp, sourceOp, rowLowerHops, rowUpperHops, colLowerHops, colUpperHops, 
 				target.getRowLowerEqualsUpper(), target.getColLowerEqualsUpper());
 		
@@ -1864,7 +1864,7 @@ public class DMLTranslator
 				// Added to support matrix relational comparison
 				// (we support only matrices of value type double)
 				target.setDataType(DataType.MATRIX);
-				target.setValueType(ValueType.DOUBLE);
+				target.setValueType(ValueType.FP64);
 			}
 			else {
 				// Added to support scalar relational comparison
@@ -2002,7 +2002,7 @@ public class DMLTranslator
 				String[] outputNames = new String[targetList.size()]; 
 				outputNames[0] = ((DataIdentifier)targetList.get(0)).getName();
 				outputNames[1] = ((DataIdentifier)targetList.get(1)).getName();
-				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
+				outputs.add(new DataOp(outputNames[0], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				outputs.add(new DataOp(outputNames[1], DataType.FRAME, ValueType.STRING, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename()));
 				
 				currBuiltinOp = new FunctionOp(ftype, nameSpace, source.getOpCode().toString(), null, inputs, outputNames, outputs);
@@ -2235,7 +2235,7 @@ public class DMLTranslator
 				String[] outputNames = new String[targetList.size()]; 
 				for ( int i=0; i < targetList.size(); i++ ) {
 					outputNames[i] = ((DataIdentifier)targetList.get(i)).getName();
-					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.DOUBLE, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
+					Hop output = new DataOp(outputNames[i], DataType.MATRIX, ValueType.FP64, inputs.get(0), DataOpTypes.FUNCTIONOUTPUT, inputs.get(0).getFilename());
 					outputs.add(output);
 				}
 				
@@ -2512,7 +2512,7 @@ public class DMLTranslator
 
 		//value type casts
 		case CAST_AS_DOUBLE:
-			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.DOUBLE, Hop.OpOp1.CAST_AS_DOUBLE, expr);
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, Hop.OpOp1.CAST_AS_DOUBLE, expr);
 			break;
 		case CAST_AS_INT:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.INT, Hop.OpOp1.CAST_AS_INT, expr);

@@ -80,12 +80,12 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleFrame2MatrixCastSingleCP() {
-		runFrameCastingTest(TEST_NAME1, false, ValueType.DOUBLE, ExecType.CP);
+		runFrameCastingTest(TEST_NAME1, false, ValueType.FP64, ExecType.CP);
 	}
 	
 	@Test
 	public void testDoubleFrame2MatrixCastMultiCP() {
-		runFrameCastingTest(TEST_NAME1, true, ValueType.DOUBLE, ExecType.CP);
+		runFrameCastingTest(TEST_NAME1, true, ValueType.FP64, ExecType.CP);
 	}
 
 	@Test
@@ -110,12 +110,12 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testDoubleFrame2MatrixCastSingleSpark() {
-		runFrameCastingTest(TEST_NAME1, false, ValueType.DOUBLE, ExecType.SPARK);
+		runFrameCastingTest(TEST_NAME1, false, ValueType.FP64, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testDoubleFrame2MatrixCastMultiSpark() {
-		runFrameCastingTest(TEST_NAME1, true, ValueType.DOUBLE, ExecType.SPARK);
+		runFrameCastingTest(TEST_NAME1, true, ValueType.FP64, ExecType.SPARK);
 	}
 
 	@Test
@@ -162,7 +162,7 @@ public class FrameMatrixCastingTest extends AutomatedTestBase
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.9, 7); 
 			DataType dtin = testname.equals(TEST_NAME1) ? DataType.FRAME : DataType.MATRIX;
-			ValueType vtin = testname.equals(TEST_NAME1) ? vt : ValueType.DOUBLE;
+			ValueType vtin = testname.equals(TEST_NAME1) ? vt : ValueType.FP64;
 			writeMatrixOrFrameInput(input("A"), A, rows, cols, dtin, vtin);
 			
 			//run testcase

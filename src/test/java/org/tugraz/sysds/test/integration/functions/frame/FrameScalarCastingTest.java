@@ -57,7 +57,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrame2ScalarDouble() {
-		runFrameCastingTest(TEST_NAME1, ValueType.DOUBLE);
+		runFrameCastingTest(TEST_NAME1, ValueType.FP64);
 	}
 	
 	@Test
@@ -77,7 +77,7 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 	
 	@Test
 	public void testScalar2FrameDouble() {
-		runFrameCastingTest(TEST_NAME2, ValueType.DOUBLE);
+		runFrameCastingTest(TEST_NAME2, ValueType.FP64);
 	}
 	
 	@Test

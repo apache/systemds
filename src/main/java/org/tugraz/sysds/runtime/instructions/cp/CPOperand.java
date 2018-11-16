@@ -99,7 +99,7 @@ public class CPOperand
 			//note: for literals in MR instructions
 			_name = opr[0];
 			_dataType = DataType.SCALAR;
-			_valueType = ValueType.DOUBLE;
+			_valueType = ValueType.FP64;
 			_isLiteral = true;
 		}
 		else {

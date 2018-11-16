@@ -133,7 +133,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows,cols,OptimizerUtils.DEFAULT_BLOCKSIZE,OptimizerUtils.DEFAULT_BLOCKSIZE,(long)(rows*cols*sparsity));
 			
 			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
-			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.DOUBLE, mc, OutputInfo.TextCellOutputInfo);
+			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
 			
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 

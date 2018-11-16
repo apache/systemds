@@ -38,7 +38,7 @@ public class FrameSerializationTest extends AutomatedTestBase
 {
 	private final static int rows = 2791;
 	private final static ValueType[] schemaStrings = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.STRING};	
-	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.DOUBLE, ValueType.INT, ValueType.BOOLEAN};	
+	private final static ValueType[] schemaMixed = new ValueType[]{ValueType.STRING, ValueType.FP64, ValueType.INT, ValueType.BOOLEAN};	
 	
 	private enum SerType {
 		WRITABLE_SER,

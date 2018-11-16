@@ -785,7 +785,7 @@ public abstract class CommonSyntacticValidator {
 		}
 		else if( (shortVt && valueType.equals("float") )
 			|| valueType.equals("double") || valueType.equals("Double")) {
-			dataId.setValueType(ValueType.DOUBLE);
+			dataId.setValueType(ValueType.FP64);
 		}
 		else if(valueType.equals("unknown") || (!shortVt && valueType.equals("Unknown"))) {
 			dataId.setValueType(ValueType.UNKNOWN);

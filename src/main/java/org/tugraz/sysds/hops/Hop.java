@@ -548,7 +548,7 @@ public abstract class Hop implements ParseInfo
 		{
 			case SCALAR: {
 				//memory estimate always known
-				if( getValueType()== ValueType.DOUBLE) //default case
+				if( getValueType()== ValueType.FP64) //default case
 					_outputMemEstimate = OptimizerUtils.DOUBLE_SIZE;
 				else //literalops, dataops
 					_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, _nnz );

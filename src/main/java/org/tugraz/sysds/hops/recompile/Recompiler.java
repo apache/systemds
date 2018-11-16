@@ -907,7 +907,7 @@ public class Recompiler
 	
 	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz )
 	{
-		MatrixObject moOut = new MatrixObject(ValueType.DOUBLE, null);
+		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
 		int blksz = ConfigurationManager.getBlocksize();
 		MatrixCharacteristics mc = new MatrixCharacteristics( 
 				dim1, dim2, blksz, blksz, nnz);
@@ -1135,7 +1135,7 @@ public class Recompiler
 				//extract matrix sizes for size propagation
 				if( hop.getDataType()==DataType.MATRIX )
 				{
-					MatrixObject mo = new MatrixObject(ValueType.DOUBLE, null);
+					MatrixObject mo = new MatrixObject(ValueType.FP64, null);
 					MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 
 						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);

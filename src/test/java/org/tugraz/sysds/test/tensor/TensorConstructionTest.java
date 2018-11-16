@@ -27,7 +27,7 @@ public class TensorConstructionTest
 	@Test
 	public void testMetaDefaultTensor() throws Exception {
 		TensorBlock tb = new TensorBlock();
-		Assert.assertEquals(ValueType.DOUBLE, tb.getValueType());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumCols());
@@ -39,7 +39,7 @@ public class TensorConstructionTest
 	@Test
 	public void testMetaValueTensor() throws Exception {
 		TensorBlock tb = new TensorBlock(7.3);
-		Assert.assertEquals(ValueType.DOUBLE, tb.getValueType());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumCols());
@@ -90,7 +90,7 @@ public class TensorConstructionTest
 	@Test
 	public void testMetaCopyDefaultTensor() throws Exception {
 		TensorBlock tb = new TensorBlock(new TensorBlock());
-		Assert.assertEquals(ValueType.DOUBLE, tb.getValueType());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumCols());
@@ -102,7 +102,7 @@ public class TensorConstructionTest
 	@Test
 	public void testMetaCopyValueTensor() throws Exception {
 		TensorBlock tb = new TensorBlock(new TensorBlock(7.3));
-		Assert.assertEquals(ValueType.DOUBLE, tb.getValueType());
+		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumCols());

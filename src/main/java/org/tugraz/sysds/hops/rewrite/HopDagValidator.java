@@ -125,7 +125,7 @@ public class HopDagValidator {
 
 		// check Matrix data type Hops must have Double Value type
 		if (dt == DataType.MATRIX )
-			check(vt == ValueType.DOUBLE || vt == ValueType.INT, hop,
+			check(vt == ValueType.FP64 || vt == ValueType.INT, hop,
 				"has Matrix type but Value Type %s is not DOUBLE", vt);
 
 		//recursively process children

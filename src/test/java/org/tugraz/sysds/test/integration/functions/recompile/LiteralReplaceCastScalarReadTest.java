@@ -50,7 +50,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testRemoveCastsInputDouble() {
-		runScalarCastTest(ValueType.DOUBLE);
+		runScalarCastTest(ValueType.FP64);
 	}
 	
 	@Test
@@ -70,7 +70,7 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			String val = null;
 			switch( vt ) {
 				case INT: val = "7"; break;
-				case DOUBLE: val = "7.3"; break;
+				case FP64: val = "7.3"; break;
 				case BOOLEAN: val = "TRUE"; break;
 				default: //do nothing
 			}

@@ -27,7 +27,7 @@ public class TensorBlock implements Serializable
 	private static final long serialVersionUID = -4205257127878517048L;
 	
 	public static final double SPARSITY_TURN_POINT = 0.4;
-	public static final ValueType DEFAULT_VTYPE = ValueType.DOUBLE;
+	public static final ValueType DEFAULT_VTYPE = ValueType.FP64;
 	public static final int[] DEFAULT_DIMS = new int[]{0, 0};
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	

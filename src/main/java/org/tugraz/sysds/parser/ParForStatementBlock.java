@@ -1820,7 +1820,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		if( hop instanceof LiteralOp && hop.getValueType()==ValueType.INT ) {
 			return HopRewriteUtils.getIntValue((LiteralOp)hop);
 		}
-		else if( hop instanceof LiteralOp && hop.getValueType()==ValueType.DOUBLE ) {
+		else if( hop instanceof LiteralOp && hop.getValueType()==ValueType.FP64 ) {
 			double tmp = HopRewriteUtils.getDoubleValue((LiteralOp)hop);
 			if( tmp == Math.floor(tmp) ) //ensure int
 				return UtilFunctions.toLong(tmp);

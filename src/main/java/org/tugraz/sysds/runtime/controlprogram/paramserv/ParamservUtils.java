@@ -159,7 +159,7 @@ public class ParamservUtils {
 	}
 	
 	public static MatrixObject newMatrixObject(MatrixBlock mb, boolean cleanup) {
-		MatrixObject result = new MatrixObject(ValueType.DOUBLE, OptimizerUtils.getUniqueTempFileName(),
+		MatrixObject result = new MatrixObject(ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(new MatrixCharacteristics(-1, -1, ConfigurationManager.getBlocksize(),
 			ConfigurationManager.getBlocksize()), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		result.acquireModify(mb);

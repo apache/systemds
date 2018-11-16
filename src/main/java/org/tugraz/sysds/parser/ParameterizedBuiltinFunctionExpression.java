@@ -332,8 +332,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataType(fname, Statement.PS_MODEL, DataType.LIST, conditional); // check the model which is the only non-parameterized argument
 		checkDataType(fname, Statement.PS_FEATURES, DataType.MATRIX, conditional);
 		checkDataType(fname, Statement.PS_LABELS, DataType.MATRIX, conditional);
-		checkDataValueType(true, fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, ValueType.DOUBLE, conditional);
-		checkDataValueType(true, fname, Statement.PS_VAL_LABELS, DataType.MATRIX, ValueType.DOUBLE, conditional);
+		checkDataValueType(true, fname, Statement.PS_VAL_FEATURES, DataType.MATRIX, ValueType.FP64, conditional);
+		checkDataValueType(true, fname, Statement.PS_VAL_LABELS, DataType.MATRIX, ValueType.FP64, conditional);
 		checkDataValueType(false, fname, Statement.PS_UPDATE_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkDataValueType(false, fname, Statement.PS_AGGREGATION_FUN, DataType.SCALAR, ValueType.STRING, conditional);
 		checkStringParam(true, fname, Statement.PS_MODE, conditional);
@@ -381,7 +381,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//set output dimensions
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(-1, -1);
 	}
 	
@@ -413,7 +413,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//set output dimensions
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(exprTarget.getOutput().getDim2(), 3);
 	}
 	
@@ -443,7 +443,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//set output dimensions 
 		output1.setDataType(DataType.MATRIX);
-		output1.setValueType(ValueType.DOUBLE);
+		output1.setValueType(ValueType.FP64);
 		output1.setDimensions(-1, -1);
 		output2.setDataType(DataType.FRAME);
 		output2.setValueType(ValueType.STRING);
@@ -482,7 +482,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		// Output is a matrix with unknown dims
 		Identifier in = getVarParam("target").getOutput();
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(in.getDim1(), in.getDim2());
 	}
 	
@@ -509,7 +509,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		// Output is a matrix with same dims as input
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
 	}
 
@@ -554,7 +554,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		// Output is a matrix with same dims as input
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(target.getOutput().getDim1(), dim2 );
 		
 	}
@@ -595,7 +595,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		// Output is a matrix with unknown dims
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(-1, -1);
 	}
 	
@@ -700,7 +700,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		//set output meta data
 		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(outputDim1, outputDim2);
 	}
 	
@@ -810,7 +810,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		
 		// Output is a scalar
 		output.setDataType(DataType.SCALAR);
-		output.setValueType(ValueType.DOUBLE);
+		output.setValueType(ValueType.FP64);
 		output.setDimensions(0, 0);
 	}
 	

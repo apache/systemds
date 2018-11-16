@@ -120,7 +120,7 @@ public class BinaryExpression extends Expression
 		// Override the computed value type, if needed
 		if (this.getOpCode() == Expression.BinaryOp.POW
 				|| this.getOpCode() == Expression.BinaryOp.DIV) {
-			resultVT = ValueType.DOUBLE;
+			resultVT = ValueType.FP64;
 		}
 
 		output.setValueType(resultVT);

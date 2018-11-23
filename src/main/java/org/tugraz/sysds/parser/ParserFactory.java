@@ -22,29 +22,24 @@ package org.tugraz.sysds.parser;
 import java.util.Collections;
 import java.util.Map;
 
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.parser.common.CommonSyntacticValidator;
 import org.tugraz.sysds.parser.dml.DMLParserWrapper;
 
 public class ParserFactory {
 
-	public static ParserWrapper createParser(ScriptType scriptType) {
-		return createParser(scriptType, Collections.emptyMap());
+	public static ParserWrapper createParser() {
+		return createParser(Collections.emptyMap());
 	}
 	
 	/**
 	 * Factory method for creating parser wrappers
 	 * 
-	 * @param scriptType type of script
 	 * @param nsscripts map of namespace scripts (name, script)
 	 * @return parser wrapper (DMLParserWrapper or PyDMLParserWrapper)
 	 */
-	public static ParserWrapper createParser(ScriptType scriptType, Map<String, String> nsscripts) {
-		ParserWrapper ret = null;
+	public static ParserWrapper createParser(Map<String, String> nsscripts) {
 		// create the parser instance
-		switch (scriptType) {
-			case DML: ret = new DMLParserWrapper(); break;
-		}
+		ParserWrapper ret = new DMLParserWrapper();
 		CommonSyntacticValidator.init(nsscripts);
 		return ret;
 	}

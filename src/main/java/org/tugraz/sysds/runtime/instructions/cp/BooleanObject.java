@@ -19,13 +19,10 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.apache.commons.lang.StringUtils;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.common.Types.ValueType;
 
 
-public class BooleanObject extends ScalarObject  
+public class BooleanObject extends ScalarObject
 {
 	private static final long serialVersionUID = -4506242165735516984L;
 
@@ -58,9 +55,7 @@ public class BooleanObject extends ScalarObject
 
 	@Override
 	public String getLanguageSpecificStringValue() {
-		return (DMLScript.SCRIPT_TYPE == ScriptType.DML) ? 
-			Boolean.toString(_value).toUpperCase() : 
-			StringUtils.capitalize(Boolean.toString(_value));
+		return Boolean.toString(_value).toUpperCase();
 	}
 
 	@Override

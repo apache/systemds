@@ -122,12 +122,9 @@ public class MulticlassSVMScoreTest extends AutomatedTestBase
 			ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR,
 			ConfigType.ALLOW_DYN_RECOMPILATION) )
 		{
-			// For now, JMLC pipeline only allows dml
-			boolean parsePyDML = false;
-			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml");
-			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"}, parsePyDML);
+			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"});
 			
 			//read model
 			String modelData = conn.readScript(SCRIPT_DIR + TEST_DIR + MODEL_FILE );

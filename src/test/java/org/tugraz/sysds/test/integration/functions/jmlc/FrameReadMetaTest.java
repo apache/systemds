@@ -115,7 +115,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"F"}, false);
+			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"F"});
 			
 			if( modelReuse )
 				pstmt.setFrame("M", M, true);

@@ -115,7 +115,7 @@ public class FrameCastingTest extends AutomatedTestBase
 			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"F1","M"}, new String[]{"F2"}, false);
+			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"F1","M"}, new String[]{"F2"});
 			
 			if( modelReuse )
 				pstmt.setFrame("F1", F1, true);

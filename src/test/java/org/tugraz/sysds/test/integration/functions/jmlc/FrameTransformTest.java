@@ -116,7 +116,7 @@ public class FrameTransformTest extends AutomatedTestBase
 			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"Y"}, false);
+			PreparedScript pstmt = conn.prepareScript(script, args, new String[]{"X","M"}, new String[]{"Y"});
 			
 			if( modelReuse )
 				pstmt.setFrame("M", M, true);

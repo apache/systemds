@@ -48,8 +48,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputInt() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		int inScalar1 = 2;
 		int inScalar2 = 3;
 		script.setScalar("inScalar1", inScalar1);
@@ -64,8 +63,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputDouble() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		double inScalar1 = 3.5;
 		double inScalar2 = 4.5;
 		script.setScalar("inScalar1", inScalar1);
@@ -80,8 +78,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputBoolean() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		boolean inScalar1 = true;
 		boolean inScalar2 = true;
 		script.setScalar("inScalar1", inScalar1);
@@ -96,8 +93,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputLong() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		long inScalar1 = 4;
 		long inScalar2 = 5;
 		script.setScalar("inScalar1", inScalar1);
@@ -112,8 +108,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputString() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		String inScalar1 = "Plant";
 		String inScalar2 = " Trees";
 		script.setScalar("inScalar1", inScalar1);
@@ -128,8 +123,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarInputStringExplicitValueType() throws IOException, DMLException {
 		Connection conn = new Connection();
 		String str = conn.readScript(baseDirectory + File.separator + "scalar-input-string.dml");
-		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {},
-				false);
+		PreparedScript script = conn.prepareScript(str, new String[] { "inScalar1", "inScalar2" }, new String[] {});
 		String inScalar1 = "hello";
 		String inScalar2 = "goodbye";
 		script.setScalar("inScalar1", inScalar1);
@@ -144,7 +138,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarOutputLong() throws DMLException {
 		Connection conn = new Connection();
 		String str = "outInteger = 5;\nwrite(outInteger, './tmp/outInteger');";
-		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outInteger" }, false);
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outInteger" });
 
 		long result = script.executeScript().getLong("outInteger");
 		Assert.assertEquals(5, result);
@@ -155,7 +149,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarOutputDouble() throws DMLException {
 		Connection conn = new Connection();
 		String str = "outDouble = 1.23;\nwrite(outDouble, './tmp/outDouble');";
-		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" }, false);
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" });
 
 		double result = script.executeScript().getDouble("outDouble");
 		Assert.assertEquals(1.23, result, 0);
@@ -166,7 +160,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarOutputString() throws DMLException {
 		Connection conn = new Connection();
 		String str = "outString = 'hello';\nwrite(outString, './tmp/outString');";
-		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outString" }, false);
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outString" });
 
 		String result = script.executeScript().getString("outString");
 		Assert.assertEquals("hello", result);
@@ -177,7 +171,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarOutputBoolean() throws DMLException {
 		Connection conn = new Connection();
 		String str = "outBoolean = FALSE;\nwrite(outBoolean, './tmp/outBoolean');";
-		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outBoolean" }, false);
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outBoolean" });
 
 		boolean result = script.executeScript().getBoolean("outBoolean");
 		Assert.assertEquals(false, result);
@@ -188,7 +182,7 @@ public class JMLCInputOutputTest extends AutomatedTestBase {
 	public void testScalarOutputScalarObject() throws DMLException {
 		Connection conn = new Connection();
 		String str = "outDouble = 1.23;\nwrite(outDouble, './tmp/outDouble');";
-		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" }, false);
+		PreparedScript script = conn.prepareScript(str, new String[] {}, new String[] { "outDouble" });
 
 		ScalarObject so = script.executeScript().getScalarObject("outDouble");
 		double result = so.getDoubleValue();

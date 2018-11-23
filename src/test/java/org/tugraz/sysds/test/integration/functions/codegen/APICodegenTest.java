@@ -81,7 +81,7 @@ public class APICodegenTest extends AutomatedTestBase
 				Connection conn = new Connection(ConfigType.CODEGEN_ENABLED, 
 					ConfigType.ALLOW_DYN_RECOMPILATION);
 				PreparedScript pscript = conn.prepareScript(
-					s, new String[]{"X"}, new String[]{"R"}, false); 
+					s, new String[]{"X"}, new String[]{"R"}); 
 				pscript.setMatrix("X", mX, false);
 				pscript.executeScript();
 				conn.close();

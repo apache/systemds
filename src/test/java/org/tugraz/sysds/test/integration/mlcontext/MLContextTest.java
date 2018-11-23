@@ -171,7 +171,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - execute DML script");
 		String testString = "hello dml world!";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.tugraz.sysds.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');");
 		ml.execute(script);
 	}
 
@@ -260,7 +260,7 @@ public class MLContextTest extends MLContextTestBase {
 		System.out.println("MLContextTest - custom execution step DML");
 		String testString = "custom execution step";
 		setExpectedStdOut(testString);
-		Script script = new Script("print('" + testString + "');", org.tugraz.sysds.api.mlcontext.ScriptType.DML);
+		Script script = new Script("print('" + testString + "');");
 
 		ScriptExecutor scriptExecutor = new ScriptExecutor() {
 			@Override
@@ -862,7 +862,7 @@ public class MLContextTest extends MLContextTestBase {
 	public void testOneScriptTwoExecutionsDML() {
 		System.out.println("MLContextTest - one script with two executions DML");
 
-		Script script = new Script(org.tugraz.sysds.api.mlcontext.ScriptType.DML);
+		Script script = new Script();
 
 		double[][] m1 = new double[][] { { 1.0, 2.0 }, { 3.0, 4.0 } };
 		script.setScriptString("sum1 = sum(m1);").in("m1", m1).out("sum1");

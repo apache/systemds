@@ -104,7 +104,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 			DMLScript.STATISTICS = true;
 			Statistics.reset();
 			PreparedScript pscript = conn.prepareScript(
-				script, new String[]{}, new String[]{"out"}, false);
+				script, new String[]{}, new String[]{"out"});
 			
 			ExecutorService pool = Executors.newFixedThreadPool(k);
 			ArrayList<JMLCTask> tasks = new ArrayList<>();

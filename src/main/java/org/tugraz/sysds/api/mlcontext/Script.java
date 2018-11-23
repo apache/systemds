@@ -42,11 +42,6 @@ import scala.collection.JavaConversions;
  *
  */
 public class Script {
-
-	/**
-	 * The type of script ({@code ScriptType.DML} or {@code ScriptType.PYDML}).
-	 */
-	private ScriptType scriptType;
 	/**
 	 * The script content.
 	 */
@@ -92,18 +87,7 @@ public class Script {
 	 * Script constructor, which by default creates a DML script.
 	 */
 	public Script() {
-		scriptType = ScriptType.DML;
-	}
-
-	/**
-	 * Script constructor, specifying the type of script ({@code ScriptType.DML}
-	 * or {@code ScriptType.PYDML}).
-	 *
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
-	 */
-	public Script(ScriptType scriptType) {
-		this.scriptType = scriptType;
+	
 	}
 
 	/**
@@ -115,40 +99,6 @@ public class Script {
 	 */
 	public Script(String scriptString) {
 		this.scriptString = scriptString;
-		this.scriptType = ScriptType.DML;
-	}
-
-	/**
-	 * Script constructor, specifying the script content and the type of script
-	 * (DML or PYDML).
-	 *
-	 * @param scriptString
-	 *            the script content as a string
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
-	 */
-	public Script(String scriptString, ScriptType scriptType) {
-		this.scriptString = scriptString;
-		this.scriptType = scriptType;
-	}
-
-	/**
-	 * Obtain the script type.
-	 *
-	 * @return {@code ScriptType.DML} or {@code ScriptType.PYDML}
-	 */
-	public ScriptType getScriptType() {
-		return scriptType;
-	}
-
-	/**
-	 * Set the type of script (DML or PYDML).
-	 *
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
-	 */
-	public void setScriptType(ScriptType scriptType) {
-		this.scriptType = scriptType;
 	}
 
 	/**
@@ -507,15 +457,6 @@ public class Script {
 	}
 
 	/**
-	 * Is the script type DML?
-	 *
-	 * @return {@code true} if the script type is DML, {@code false} otherwise
-	 */
-	public boolean isDML() {
-		return scriptType.isDML();
-	}
-
-	/**
 	 * Generate the script execution string, which adds read/load/write/save
 	 * statements to the beginning and end of the script to execute.
 	 *
@@ -528,18 +469,16 @@ public class Script {
 		for (String in : ins) {
 			Object inValue = getInputs().get(in);
 			sb.append(in);
-			if (isDML()) {
-				if (inValue instanceof String) {
-					String quotedString = MLContextUtil.quotedString((String) inValue);
-					sb.append(" = " + quotedString + ";\n");
-				} else if (MLContextUtil.isBasicType(inValue)) {
-					sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue)
-							+ "');\n");
-				} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
-					sb.append(" = read('', data_type='frame');\n");
-				} else {
-					sb.append(" = read('');\n");
-				}
+			if (inValue instanceof String) {
+				String quotedString = MLContextUtil.quotedString((String) inValue);
+				sb.append(" = " + quotedString + ";\n");
+			} else if (MLContextUtil.isBasicType(inValue)) {
+				sb.append(" = read('', data_type='scalar', value_type='" + MLContextUtil.getBasicTypeString(inValue)
+						+ "');\n");
+			} else if (MLContextUtil.doesSymbolTableContainFrameObject(symbolTable, in)) {
+				sb.append(" = read('', data_type='frame');\n");
+			} else {
+				sb.append(" = read('');\n");
 			} 
 		}
 
@@ -550,11 +489,9 @@ public class Script {
 
 		Set<String> outs = getOutputVariables();
 		for (String out : outs) {
-			if (isDML()) {
-				sb.append("write(");
-				sb.append(out);
-				sb.append(", '');\n");
-			}
+			sb.append("write(");
+			sb.append(out);
+			sb.append(", '');\n");
 		}
 
 		return sb.toString();
@@ -581,9 +518,6 @@ public class Script {
 	public String info() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("Script Type: ");
-		sb.append(scriptType);
-		sb.append("\n\n");
 		sb.append(MLContextUtil.displayInputs("Inputs", inputs, symbolTable));
 		sb.append("\n");
 		sb.append(MLContextUtil.displayOutputs("Outputs", outputVariables, symbolTable));

@@ -27,7 +27,6 @@ import org.apache.commons.cli.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLOptions;
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.utils.Explain;
 
@@ -47,7 +46,6 @@ public class CLIOptionsParserTest {
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals("test.dml", o.filePath);
-		Assert.assertEquals(ScriptType.DML, o.scriptType);
 	}
 
 	@Test

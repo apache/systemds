@@ -29,7 +29,6 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.utils.Explain;
@@ -55,7 +54,6 @@ public class DMLOptions {
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
 	public boolean              debug         = false;            // to go into debug mode to be able to step through a program
-	public ScriptType           scriptType    = ScriptType.DML;   // whether the script is a DML or PyDML script
 	public String               filePath      = null;             // path to script
 	public String               script        = null;             // the script itself
 	public boolean              help          = false;            // whether to print the usage option
@@ -80,7 +78,6 @@ public class DMLOptions {
 			", gpu=" + gpu +
 			", forceGPU=" + forceGPU +
 			", debug=" + debug +
-			", scriptType=" + scriptType +
 			", filePath='" + filePath + '\'' +
 			", script='" + script + '\'' +
 			", help=" + help +
@@ -102,7 +99,6 @@ public class DMLOptions {
 
 		DMLOptions dmlOptions = new DMLOptions(options);
 		dmlOptions.help = line.hasOption("help");
-		dmlOptions.scriptType = ScriptType.DML;
 		dmlOptions.debug = line.hasOption("debug");
 		dmlOptions.gpu = line.hasOption("gpu");
 		if (dmlOptions.gpu) {

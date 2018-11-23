@@ -355,7 +355,7 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 			}
 			
 			//parsing and dependency analysis
-			ParserWrapper parser = ParserFactory.createParser(org.tugraz.sysds.api.mlcontext.ScriptType.DML);
+			ParserWrapper parser = ParserFactory.createParser();
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, argVals);
 			DMLTranslator dmlt = new DMLTranslator(prog);
 			dmlt.validateParseTree(prog);

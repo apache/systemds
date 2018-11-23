@@ -99,7 +99,7 @@ public class NamespaceFunctionTest extends AutomatedTestBase
 			nsscripts.put(TEST_NAME3, conn.readScript(SCRIPT_DIR + TEST_DIR + TEST_NAME3));
 		}
 		PreparedScript pstmt = conn.prepareScript(script1,
-			nsscripts, Collections.emptyMap(), new String[]{"X"}, new String[]{"Z"}, false);
+			nsscripts, Collections.emptyMap(), new String[]{"X"}, new String[]{"Z"});
 		
 		//generate input data
 		double sparsity = sparse ? sparsity2 : sparsity1;

@@ -63,7 +63,7 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 			Statistics.reset();
 		
 			PreparedScript pscript = conn.prepareScript(
-				script, new String[]{}, new String[]{}, false);
+				script, new String[]{}, new String[]{});
 			pscript.executeScript();
 			conn.close();
 		}

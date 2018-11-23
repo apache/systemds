@@ -37,7 +37,6 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
@@ -208,20 +207,7 @@ public class Connection implements Closeable
 	 * @return PreparedScript object representing the precompiled script
 	 */
 	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs) {
-		return prepareScript(script, inputs, outputs, false);
-	}
-	
-	/**
-	 * Prepares (precompiles) a script and registers input and output variables.
-	 * 
-	 * @param script string representing the DML or PyDML script
-	 * @param inputs string array of input variables to register
-	 * @param outputs string array of output variables to register
-	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
-	 * @return PreparedScript object representing the precompiled script
-	 */
-	public PreparedScript prepareScript( String script, String[] inputs, String[] outputs, boolean parsePyDML) {
-		return prepareScript(script, Collections.emptyMap(), inputs, outputs, parsePyDML);
+		return prepareScript(script, Collections.emptyMap(), inputs, outputs);
 	}
 	
 	/**
@@ -231,11 +217,10 @@ public class Connection implements Closeable
 	 * @param args map of input parameters ($) and their values
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register
-	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
 	 */
-	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
-		return prepareScript(script, Collections.emptyMap(), args, inputs, outputs, parsePyDML);
+	public PreparedScript prepareScript( String script, Map<String, String> args, String[] inputs, String[] outputs) {
+		return prepareScript(script, Collections.emptyMap(), args, inputs, outputs);
 	}
 	
 	/**
@@ -246,12 +231,9 @@ public class Connection implements Closeable
 	 * @param args map of input parameters ($) and their values
 	 * @param inputs string array of input variables to register
 	 * @param outputs string array of output variables to register
-	 * @param parsePyDML {@code true} if PyDML, {@code false} if DML
 	 * @return PreparedScript object representing the precompiled script
 	 */
-	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs, boolean parsePyDML) {
-		DMLScript.SCRIPT_TYPE = ScriptType.DML;
-		
+	public PreparedScript prepareScript(String script, Map<String,String> nsscripts, Map<String, String> args, String[] inputs, String[] outputs) {
 		//check for valid names of passed arguments
 		String[] invalidArgs = args.keySet().stream()
 			.filter(k -> k==null || !k.startsWith("$")).toArray(String[]::new);
@@ -270,7 +252,7 @@ public class Connection implements Closeable
 		Program rtprog = null;
 		try {
 			//parsing
-			ParserWrapper parser = ParserFactory.createParser(ScriptType.DML, nsscripts);
+			ParserWrapper parser = ParserFactory.createParser(nsscripts);
 			DMLProgram prog = parser.parse(null, script, args);
 			
 			//language validate

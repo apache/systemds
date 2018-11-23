@@ -34,7 +34,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.WordUtils;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -447,17 +446,11 @@ public final class MLContextUtil {
 	 *
 	 * @param basicInputParameterMap
 	 *            map of input parameters
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return map of String/String name/value pairs
 	 */
-	public static Map<String, String> convertInputParametersForParser(Map<String, Object> basicInputParameterMap,
-			ScriptType scriptType) {
+	public static Map<String, String> convertInputParametersForParser(Map<String, Object> basicInputParameterMap) {
 		if (basicInputParameterMap == null) {
 			return null;
-		}
-		if (scriptType == null) {
-			throw new MLContextException("ScriptType needs to be specified");
 		}
 		Map<String, String> convertedMap = new HashMap<>();
 		for (Entry<String, Object> entry : basicInputParameterMap.entrySet()) {
@@ -468,11 +461,7 @@ public final class MLContextUtil {
 			} else if (value instanceof Integer) {
 				convertedMap.put(key, Integer.toString((Integer) value));
 			} else if (value instanceof Boolean) {
-				if (scriptType == ScriptType.DML) {
-					convertedMap.put(key, String.valueOf((Boolean) value).toUpperCase());
-				} else {
-					convertedMap.put(key, WordUtils.capitalize(String.valueOf((Boolean) value)));
-				}
+				convertedMap.put(key, String.valueOf((Boolean) value).toUpperCase());
 			} else if (value instanceof Double) {
 				convertedMap.put(key, Double.toString((Double) value));
 			} else if (value instanceof String) {

@@ -365,7 +365,6 @@ public class ScriptExecutor {
 		checkScriptHasTypeAndString();
 		script.setScriptExecutor(this);
 		// Set global variable indicating the script type
-		DMLScript.SCRIPT_TYPE = script.getScriptType();
 		setGlobalFlags();
 		// reset all relevant summary statistics
 		Statistics.resetNoOfExecutedJobs();
@@ -452,10 +451,10 @@ public class ScriptExecutor {
 	 */
 	protected void parseScript() {
 		try {
-			ParserWrapper parser = ParserFactory.createParser(script.getScriptType());
+			ParserWrapper parser = ParserFactory.createParser();
 			Map<String, Object> inputParameters = script.getInputParameters();
 			Map<String, String> inputParametersStringMaps = MLContextUtil
-					.convertInputParametersForParser(inputParameters, script.getScriptType());
+					.convertInputParametersForParser(inputParameters);
 
 			String scriptExecutionString = script.getScriptExecutionString();
 			dmlProgram = parser.parse(null, scriptExecutionString, inputParametersStringMaps);
@@ -533,8 +532,6 @@ public class ScriptExecutor {
 	protected void checkScriptHasTypeAndString() {
 		if (script == null) {
 			throw new MLContextException("Script is null");
-		} else if (script.getScriptType() == null) {
-			throw new MLContextException("ScriptType (DML or PYDML) needs to be specified");
 		} else if (script.getScriptString() == null) {
 			throw new MLContextException("Script string is null");
 		} else if (StringUtils.isBlank(script.getScriptString())) {

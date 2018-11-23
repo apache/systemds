@@ -45,7 +45,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -96,13 +95,6 @@ public class DMLScript
 	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
 	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                          // fraction of available GPU memory to use
 	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                // GPU memory allocator to use
-	
-	/**
-	 * Global variable indicating the script type (DML or PYDML). Can be used
-	 * for DML/PYDML-specific tasks, such as outputting booleans in the correct
-	 * case (TRUE/FALSE for DML and True/False for PYDML).
-	 */
-	public static ScriptType        SCRIPT_TYPE         = DMLOptions.defaultOptions.scriptType;
 	
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
@@ -201,7 +193,6 @@ public class DMLScript
 			USE_ACCELERATOR     = dmlOptions.gpu;
 			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
-			SCRIPT_TYPE         = dmlOptions.scriptType;
 			EXEC_MODE           = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
@@ -228,7 +219,7 @@ public class DMLScript
 			
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
-			execute(dmlScriptStr, fnameOptConfig, argVals, args, SCRIPT_TYPE);
+			execute(dmlScriptStr, fnameOptConfig, argVals, args);
 		}
 		catch(AlreadySelectedException e) {
 			System.err.println("Mutually exclusive options were selected. " + e.getMessage());
@@ -341,14 +332,11 @@ public class DMLScript
 	 * @param fnameOptConfig configuration file
 	 * @param argVals map of argument values
 	 * @param allArgs arguments
-	 * @param scriptType type of script (DML or PyDML)
 	 * @throws IOException if IOException occurs
 	 */
-	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs, ScriptType scriptType)
+	private static void execute(String dmlScriptStr, String fnameOptConfig, Map<String,String> argVals, String[] allArgs)
 		throws IOException
-	{	
-		SCRIPT_TYPE = scriptType;
-
+	{
 		//print basic time and environment info
 		printStartExecInfo( dmlScriptStr );
 		
@@ -363,7 +351,7 @@ public class DMLScript
 		
 		//Step 3: parse dml script
 		Statistics.startCompileTimer();
-		ParserWrapper parser = ParserFactory.createParser(scriptType);
+		ParserWrapper parser = ParserFactory.createParser();
 		DMLProgram prog = parser.parse(DML_FILE_PATH_ANTLR_PARSER, dmlScriptStr, argVals);
 		
 		//Step 4: construct HOP DAGs (incl LVA, validate, and setup)

@@ -125,12 +125,9 @@ public class ReuseModelVariablesTest extends AutomatedTestBase
 		
 		try
 		{
-			// For now, JMLC pipeline only allows dml
-			boolean parsePyDML = false;
-			
 			//read and precompile script
 			String script = conn.readScript(SCRIPT_DIR + TEST_DIR + testname + ".dml");	
-			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"}, parsePyDML);
+			PreparedScript pstmt = conn.prepareScript(script, new String[]{"X","W"}, new String[]{"predicted_y"});
 			
 			//read model
 			String modelData = conn.readScript(SCRIPT_DIR + TEST_DIR + MODEL_FILE );

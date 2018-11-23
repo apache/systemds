@@ -47,7 +47,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromFile(String scriptFilePath) {
-		return scriptFromFile(scriptFilePath, ScriptType.DML);
+		return scriptFromFile(scriptFilePath);
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromInputStream(InputStream inputStream) {
-		return scriptFromInputStream(inputStream, ScriptType.DML);
+		return scriptFromInputStream(inputStream);
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromLocalFile(File localScriptFile) {
-		return scriptFromLocalFile(localScriptFile, ScriptType.DML);
+		return scriptFromLocalFile(localScriptFile);
 	}
 
 	/**
@@ -82,7 +82,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromString(String scriptString) {
-		return scriptFromString(scriptString, ScriptType.DML);
+		return scriptFromString(scriptString);
 	}
 
 	/**
@@ -93,7 +93,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromUrl(String scriptUrlPath) {
-		return scriptFromUrl(scriptUrlPath, ScriptType.DML);
+		return scriptFromUrl(scriptUrlPath);
 	}
 
 	/**
@@ -104,7 +104,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromUrl(URL scriptUrl) {
-		return scriptFromUrl(scriptUrl, ScriptType.DML);
+		return scriptFromUrl(scriptUrl);
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class ScriptFactory {
 	 * @return DML Script object
 	 */
 	public static Script dmlFromResource(String resourcePath) {
-		return scriptFromResource(resourcePath, ScriptType.DML);
+		return scriptFromResource(resourcePath);
 	}
 
 	/**
@@ -127,9 +127,9 @@ public class ScriptFactory {
 	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromFile(String scriptFilePath, ScriptType scriptType) {
+	private static Script scriptFromFile(String scriptFilePath) {
 		String scriptString = getScriptStringFromFile(scriptFilePath);
-		return scriptFromString(scriptString, scriptType).setName(scriptFilePath);
+		return scriptFromString(scriptString).setName(scriptFilePath);
 	}
 
 	/**
@@ -141,9 +141,9 @@ public class ScriptFactory {
 	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromInputStream(InputStream inputStream, ScriptType scriptType) {
+	private static Script scriptFromInputStream(InputStream inputStream) {
 		String scriptString = getScriptStringFromInputStream(inputStream);
-		return scriptFromString(scriptString, scriptType);
+		return scriptFromString(scriptString);
 	}
 
 	/**
@@ -157,9 +157,9 @@ public class ScriptFactory {
 	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromLocalFile(File localScriptFile, ScriptType scriptType) {
+	private static Script scriptFromLocalFile(File localScriptFile) {
 		String scriptString = getScriptStringFromFile(localScriptFile);
-		return scriptFromString(scriptString, scriptType).setName(localScriptFile.getName());
+		return scriptFromString(scriptString).setName(localScriptFile.getName());
 	}
 
 	/**
@@ -167,12 +167,10 @@ public class ScriptFactory {
 	 *
 	 * @param scriptString
 	 *            string of DML or PYDML
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromString(String scriptString, ScriptType scriptType) {
-		return new Script(scriptString, scriptType);
+	private static Script scriptFromString(String scriptString) {
+		return new Script(scriptString);
 	}
 
 	/**
@@ -180,13 +178,11 @@ public class ScriptFactory {
 	 *
 	 * @param scriptUrlPath
 	 *            URL path to DML or PYDML script
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromUrl(String scriptUrlPath, ScriptType scriptType) {
+	private static Script scriptFromUrl(String scriptUrlPath) {
 		String scriptString = getScriptStringFromUrl(scriptUrlPath);
-		return scriptFromString(scriptString, scriptType).setName(scriptUrlPath);
+		return scriptFromString(scriptString).setName(scriptUrlPath);
 	}
 
 	/**
@@ -194,13 +190,11 @@ public class ScriptFactory {
 	 *
 	 * @param scriptUrl
 	 *            URL to DML or PYDML script
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromUrl(URL scriptUrl, ScriptType scriptType) {
+	private static Script scriptFromUrl(URL scriptUrl) {
 		String scriptString = getScriptStringFromUrl(scriptUrl);
-		return scriptFromString(scriptString, scriptType).setName(scriptUrl.toString());
+		return scriptFromString(scriptString).setName(scriptUrl.toString());
 	}
 
 	/**
@@ -208,11 +202,9 @@ public class ScriptFactory {
 	 *
 	 * @param resourcePath
 	 *            path to a resource on the classpath
-	 * @param scriptType
-	 *            {@code ScriptType.DML} or {@code ScriptType.PYDML}
 	 * @return DML or PYDML Script object
 	 */
-	private static Script scriptFromResource(String resourcePath, ScriptType scriptType) {
+	private static Script scriptFromResource(String resourcePath) {
 		if (resourcePath == null) {
 			return null;
 		}
@@ -220,7 +212,7 @@ public class ScriptFactory {
 			resourcePath = "/" + resourcePath;
 		}
 		try( InputStream inputStream = ScriptFactory.class.getResourceAsStream(resourcePath) ) {
-			return scriptFromInputStream(inputStream, scriptType).setName(resourcePath);
+			return scriptFromInputStream(inputStream).setName(resourcePath);
 		} catch (Exception e){
 			throw new MLContextException("Error trying to read script from resource: "+ resourcePath, e);
 		}

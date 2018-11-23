@@ -70,23 +70,23 @@ public class OutputInfo implements Serializable
 			return InputInfo.BinaryCellInputInfo;
 		else if ( oi == OutputInfo.TextCellOutputInfo )
 			return InputInfo.TextCellInputInfo;
+		else if ( oi == OutputInfo.CSVOutputInfo)
+			return InputInfo.CSVInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
 		
 	public static OutputInfo stringToOutputInfo (String str) {
-		if ( str.equalsIgnoreCase("textcell")) {
+		if ( str.equalsIgnoreCase("textcell"))
 			return TextCellOutputInfo;
-		}
-		else if ( str.equalsIgnoreCase("matrixmarket")) {
+		else if ( str.equalsIgnoreCase("matrixmarket"))
 			return MatrixMarketOutputInfo;
-		}
-		else if ( str.equalsIgnoreCase("binarycell")) {
+		else if ( str.equalsIgnoreCase("binarycell"))
 			return BinaryCellOutputInfo;
-		}
-		else if (str.equalsIgnoreCase("binaryblock")) {
+		else if (str.equalsIgnoreCase("binaryblock"))
 			return BinaryBlockOutputInfo;
-		}
+		else if ( str.equalsIgnoreCase("csv") )
+			return CSVOutputInfo;
 		return null;
 	}
 	
@@ -99,6 +99,8 @@ public class OutputInfo implements Serializable
 			return "binarycell";
 		else if ( oi == BinaryBlockOutputInfo )
 			return "binaryblock";
+		else if ( oi == CSVOutputInfo )
+			return "csv";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}
@@ -109,6 +111,8 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_TEXT;
 		else if( oinfo == OutputInfo.MatrixMarketOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
+		else if( oinfo == OutputInfo.CSVOutputInfo )
+			return DataExpression.FORMAT_TYPE_VALUE_CSV;
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo 
 				|| oinfo == OutputInfo.BinaryCellOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;

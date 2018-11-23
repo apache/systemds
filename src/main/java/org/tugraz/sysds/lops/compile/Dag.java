@@ -776,7 +776,7 @@ public class Dag<N extends Lop>
 		// a variable to hold the value produced by this node
 		// note: functioncallcp requires no createvar, rmvar since
 		// since outputs are explicitly specified
-		if (node.isDataExecLocation() ) 
+		if( !node.isDataExecLocation() ) 
 		{
 			if (node.getDataType() == DataType.SCALAR || node.getDataType() == DataType.LIST) {
 				oparams.setLabel(Lop.SCALAR_VAR_NAME_PREFIX + var_index.getNextID());

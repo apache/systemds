@@ -394,7 +394,7 @@ public class HDFSTool
 		//handle data type and value types (incl schema for frames)
 		mtd.put(DataExpression.DATATYPEPARAM, dt.toString().toLowerCase());
 		if (schema == null) {
-			mtd.put(DataExpression.VALUETYPEPARAM, vt.toString().toLowerCase());
+			mtd.put(DataExpression.VALUETYPEPARAM, vt.toExternalString().toLowerCase());
 		}	
 		else {
 			StringBuffer schemaSB = new StringBuffer();

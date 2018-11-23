@@ -1169,8 +1169,10 @@ public abstract class AutomatedTestBase
 		}
 		// program-independent parameters
 		args.add("-exec");
-		if (rtplatform == ExecMode.HYBRID)
+		if (rtplatform == ExecMode.HYBRID) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			args.add("hybrid");
+		}
 		else if (rtplatform == ExecMode.SINGLE_NODE)
 			args.add("singlenode");
 		else if (rtplatform == ExecMode.SPARK)

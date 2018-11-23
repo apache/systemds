@@ -35,6 +35,6 @@ public class ApplyTransformDMLTest extends ApplyTransformTest {
 
 	@Test
 	public void testApplyTransformDml() {
-		testApplyTransform(ScriptType.DML);
+		testApplyTransform();
 	}
 }

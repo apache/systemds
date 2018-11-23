@@ -90,7 +90,6 @@ public class GNMFTest extends MLContextTestBase
 	public void testGNMFWithRDMLAndJava() throws IOException, DMLException, ParseException {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRegisteredInputs + ", "
 				+ numRegisteredOutputs + "} ------------");
-		this.scriptType = ScriptType.DML;
 		
 		int m = 2000;
 		int n = 1500;

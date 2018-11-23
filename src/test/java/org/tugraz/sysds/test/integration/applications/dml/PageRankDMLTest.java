@@ -34,6 +34,6 @@ public class PageRankDMLTest extends PageRankTest {
 
 	@Test
 	public void testPageRankDml() {
-		testPageRank(ScriptType.DML);
+		testPageRank();
 	}
 }

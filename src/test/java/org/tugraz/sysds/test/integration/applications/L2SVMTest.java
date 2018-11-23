@@ -61,12 +61,11 @@ public abstract class L2SVMTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testL2SVM(ScriptType scriptType)
+	protected void testL2SVM()
 	{
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType 
+		System.out.println("------------ BEGIN " + TEST_NAME 
 			+ " TEST WITH {" + numRecords + ", " + numFeatures
 			+ ", " + sparsity + ", " + intercept + "} ------------");
-		this.scriptType = scriptType;
 		int rows = numRecords;
 		int cols = numFeatures;
 		double epsilon = 1e-10;
@@ -77,9 +76,6 @@ public abstract class L2SVMTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-stats");
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));

@@ -39,9 +39,8 @@ public abstract class HITSTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testHits(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST ------------");
-		this.scriptType = scriptType;
+	protected void testHits() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST ------------");
 		
 		int rows = 1000;
 		int cols = 1000;
@@ -50,9 +49,6 @@ public abstract class HITSTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-args");
 		proArgs.add(input("G"));
 		proArgs.add(Integer.toString(maxiter));

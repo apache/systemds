@@ -73,15 +73,14 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase
 		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
-	 protected void testMultiClassSVM( ScriptType scriptType ) 
+	 protected void testMultiClassSVM() 
 	 {
-		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" +
+		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" +
 				 _numRecords + ", " + 
 				 _numFeatures + ", " + 
 				 _numClasses + ", " + 
 				 _intercept + ", " + 
 				 _sparsity + "} ------------");
-		 this.scriptType = scriptType;
 		 
 		 int rows = _numRecords;
 		 int cols = _numFeatures;
@@ -95,9 +94,6 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase
 		 getAndLoadTestConfiguration(TEST_NAME);
 			
 		 List<String> proArgs = new ArrayList<String>();
-		 if (scriptType == ScriptType.PYDML) {
-			 proArgs.add("-python");
-		 }
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");
 		 proArgs.add("X=" + input("X"));

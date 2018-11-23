@@ -50,42 +50,22 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 
 	@Test
 	public void testDefaultWorkingDirDml() {
-		runTest(TEST_NAME1, false, ScriptType.DML);
+		runTest(TEST_NAME1, false);
 	}
 
 	@Test
 	public void testSetWorkingDirDml() {
-		runTest(TEST_NAME2, false, ScriptType.DML);
+		runTest(TEST_NAME2, false);
 	}
 
 	@Test
 	public void testDefaultWorkingDirFailDml() {
-		runTest(TEST_NAME1, true, ScriptType.DML);
+		runTest(TEST_NAME1, true);
 	}
 
 	@Test
 	public void testSetWorkingDirFailDml() {
-		runTest(TEST_NAME2, true, ScriptType.DML);
-	}
-
-	@Test
-	public void testDefaultWorkingDirPyDml() {
-		runTest(TEST_NAME1, false, ScriptType.PYDML);
-	}
-
-	@Test
-	public void testSetWorkingDirPyDml() {
-		runTest(TEST_NAME2, false, ScriptType.PYDML);
-	}
-
-	@Test
-	public void testDefaultWorkingDirFailPyDml() {
-		runTest(TEST_NAME1, true, ScriptType.PYDML);
-	}
-
-	@Test
-	public void testSetWorkingDirFailPyDml() {
-		runTest(TEST_NAME2, true, ScriptType.PYDML);
+		runTest(TEST_NAME2, true);
 	}
 
 	/**
@@ -94,12 +74,12 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 	 * @param fileMissingTest
 	 * @param scriptType
 	 */
-	private void runTest(String testName, boolean fileMissingTest, ScriptType scriptType) {
+	private void runTest(String testName, boolean fileMissingTest) {
 
 		// construct source filenames of dml scripts
 		String dir = SCRIPT_DIR + TEST_DIR;
-		String nameCall = testName + "." + scriptType.lowerCase();
-		String nameLib = TEST_NAME0 + "." + scriptType.lowerCase();
+		String nameCall = testName + ".dml";
+		String nameLib = TEST_NAME0 + ".dml";
 
 		PrintStream originalStdErr = System.err;
 
@@ -119,11 +99,7 @@ public class SetWorkingDirTest extends AutomatedTestBase {
 			// setup test configuration
 			TestConfiguration config = getTestConfiguration(testName);
 			fullDMLScriptName = nameCall;
-			if (scriptType == ScriptType.PYDML) {
-				programArgs = new String[] { "-python" };
-			} else {
-				programArgs = new String[] {};
-			}
+			programArgs = new String[] {};
 			loadTestConfiguration(config);
 
 			// run tests

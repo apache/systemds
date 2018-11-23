@@ -34,6 +34,6 @@ public class ID3DMLTest extends ID3Test {
 
 	@Test
 	public void testID3Dml() {
-		testID3(ScriptType.DML);
+		testID3();
 	}
 }

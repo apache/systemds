@@ -34,6 +34,6 @@ public class CsplineDSDMLTest extends CsplineDSTest {
 
 	@Test
 	public void testCsplineDSDml() {
-		testCsplineDS(ScriptType.DML);
+		testCsplineDS();
 	}
 }

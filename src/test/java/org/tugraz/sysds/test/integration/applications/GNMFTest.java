@@ -56,10 +56,9 @@ public abstract class GNMFTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testGNMF(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + m + ", "
+	protected void testGNMF() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + m + ", "
 				+ n + ", " + k + "} ------------");
-		this.scriptType = scriptType;
 		
 		int maxiter = 2;
 		double Eps = Math.pow(10, -8);
@@ -67,9 +66,7 @@ public abstract class GNMFTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
+		
 		proArgs.add("-args");
 		proArgs.add(input("v"));
 		proArgs.add(input("w"));

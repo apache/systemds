@@ -49,22 +49,22 @@ public class AlgorithmMDABivar extends MDABivariateStatsTest
 	
 	@Test
 	public void testMDABivariateStatsDml() {
-		testMDABivariateStats(ScriptType.DML,TestType.DEFAULT);
+		testMDABivariateStats(TestType.DEFAULT);
 	}
 
 	@Test
 	public void testMDABivariateStatsDmlFuseAll() {
-		testMDABivariateStats(ScriptType.DML,TestType.FUSE_ALL);
+		testMDABivariateStats(TestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testMDABivariateStatsDmlFuseNoRedundancy() {
-		testMDABivariateStats(ScriptType.DML,TestType.FUSE_NO_REDUNDANCY);
+		testMDABivariateStats(TestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void testMDABivariateStats(ScriptType scriptType, TestType testType) {
+	private void testMDABivariateStats(TestType testType) {
 		currentTestType = testType;
-		testMDABivariateStats(scriptType);
+		testMDABivariateStats();
 	}
 	
 	@Override

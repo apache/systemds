@@ -60,17 +60,13 @@ public abstract class MDABivariateStatsTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testMDABivariateStats(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + n + ", " + m
+	protected void testMDABivariateStats() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + n + ", " + m
 				+ ", " + label_index + ", " + label_measurement_level + "} ------------");
-		this.scriptType = scriptType;
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));

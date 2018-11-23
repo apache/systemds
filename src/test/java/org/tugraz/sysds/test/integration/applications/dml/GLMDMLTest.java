@@ -37,6 +37,6 @@ public class GLMDMLTest extends GLMTest {
 
 	@Test
 	public void testGLMDml() {
-		testGLM(ScriptType.DML);
+		testGLM();
 	}
 }

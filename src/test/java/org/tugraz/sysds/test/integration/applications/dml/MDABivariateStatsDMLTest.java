@@ -34,6 +34,6 @@ public class MDABivariateStatsDMLTest extends MDABivariateStatsTest {
 
 	@Test
 	public void testMDABivariateStatsDml() {
-		testMDABivariateStats(ScriptType.DML);
+		testMDABivariateStats();
 	}
 }

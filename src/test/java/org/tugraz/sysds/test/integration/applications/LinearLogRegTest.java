@@ -63,11 +63,10 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
     	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
-    protected void testLinearLogReg(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + numRecords + ", " + numFeatures
+    protected void testLinearLogReg() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numFeatures
 				+ ", " + numTestRecords + ", " + sparsity + "} ------------");
-		this.scriptType = scriptType;
-    	
+		
     	int rows = numRecords;			// # of rows in the training data 
         int cols = numFeatures;
         int rows_test = numTestRecords; // # of rows in the test data 
@@ -76,9 +75,6 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
         getAndLoadTestConfiguration(TEST_NAME);
            
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-stats");
 		proArgs.add("-args");
 		proArgs.add(input("X"));

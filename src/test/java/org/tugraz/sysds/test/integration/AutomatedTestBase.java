@@ -83,23 +83,12 @@ import org.tugraz.sysds.utils.Statistics;
 @SuppressWarnings("deprecation")
 public abstract class AutomatedTestBase
 {
-
-	public enum ScriptType {
-		DML, PYDML;
-
-		public String lowerCase() {
-			return super.toString().toLowerCase();
-		}
-	}
-
 	public static final boolean EXCEPTION_EXPECTED = true;
 	public static final boolean EXCEPTION_NOT_EXPECTED = false;
 
 	// By default: TEST_GPU is set to false to allow developers without Nvidia GPU to run integration test suite
 	public static final boolean TEST_GPU = false;
 	public static final double GPU_TOLERANCE = 1e-9;
-
-	protected ScriptType scriptType;
 
 	// *** HACK ALERT *** HACK ALERT *** HACK ALERT ***
 	// Hadoop 2.4.1 doesn't work on Windows unless winutils.exe is available
@@ -1166,23 +1155,7 @@ public abstract class AutomatedTestBase
 			args.add("-Dsystemml.logging=trace");
 		}
 
-		if (scriptType != null) { // DML/PYDML tests have newWay==true and a non-null scriptType
-			switch (scriptType) {
-			case DML:
-				// Need a null pointer check because some tests read DML from a string.
-				if (null != fullDMLScriptName) {
-					args.add("-f");
-					args.add(fullDMLScriptName);
-				}
-				break;
-			case PYDML:
-				if (null != fullDMLScriptName) {
-					args.add("-f");
-					args.add(fullDMLScriptName);
-				}
-				break;
-			}
-		} else if (newWay) {
+		if (newWay) {
 			// Need a null pointer check because some tests read DML from a string.
 			if (null != fullDMLScriptName) {
 				args.add("-f");
@@ -1223,13 +1196,7 @@ public abstract class AutomatedTestBase
 			if ( !newWay )
 				TestUtils.printDMLScript(executionFile);
 			else {
-				if (scriptType == null) {
-					TestUtils.printDMLScript(fullDMLScriptName);
-				} else if (scriptType == ScriptType.DML) {
-					TestUtils.printDMLScript(fullDMLScriptName);
-				} else if (scriptType == ScriptType.PYDML) {
-					TestUtils.printPYDMLScript(fullDMLScriptName);
-				}
+				TestUtils.printDMLScript(fullDMLScriptName);
 			}
 		}
 
@@ -1716,7 +1683,7 @@ public abstract class AutomatedTestBase
 	}
 
 	protected String getScript() {
-		return sourceDirectory + selectedTest + "." + scriptType.lowerCase();
+		return sourceDirectory + selectedTest + ".dml";
 	}
 
 	protected String getRScript() {

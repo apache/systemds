@@ -53,10 +53,9 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "p" }));
 	}
 
-	protected void testPageRank(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRows + ", "
+	protected void testPageRank() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRows + ", "
 				+ numCols + "} ------------");
-		this.scriptType = scriptType;
 
 		int rows = numRows;
 		int cols = numCols;
@@ -66,9 +65,6 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-args");
 		proArgs.add(input("g"));
 		proArgs.add(input("p"));

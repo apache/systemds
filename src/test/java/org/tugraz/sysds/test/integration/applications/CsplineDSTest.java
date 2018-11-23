@@ -58,11 +58,10 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
         addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
 
-    protected void testCsplineDS(ScriptType scriptType)
+    protected void testCsplineDS()
     {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + numRecords + ", " + numDim
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim
 				+ "} ------------");
-		this.scriptType = scriptType;
 
         int rows = numRecords;
         int cols = numDim;
@@ -70,9 +69,6 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
         getAndLoadTestConfiguration(TEST_NAME);
 
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-nvargs");
 		proArgs.add("X=" + input("X"));
 		proArgs.add("Y=" + input("Y"));

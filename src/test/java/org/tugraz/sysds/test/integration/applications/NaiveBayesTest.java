@@ -67,11 +67,10 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
-	 protected void testNaiveBayes(ScriptType scriptType)
+	 protected void testNaiveBayes()
 	 {
-		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST {" + numRecords + ", "
+		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRecords + ", "
 					+ numFeatures + ", " + numClasses + ", " + sparsity + "} ------------");
-		 this.scriptType = scriptType;
 		 
 		 int rows = numRecords;
 		 int cols = numFeatures;
@@ -82,9 +81,6 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 getAndLoadTestConfiguration(TEST_NAME);
 	     
 		 List<String> proArgs = new ArrayList<String>();
-		 if (scriptType == ScriptType.PYDML) {
-			 proArgs.add("-python");
-		 }
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");
 		 proArgs.add("X=" + input("X"));

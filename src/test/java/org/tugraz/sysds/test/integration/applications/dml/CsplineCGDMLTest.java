@@ -34,6 +34,6 @@ public class CsplineCGDMLTest extends CsplineCGTest {
 
 	@Test
 	public void testCsplineCGDml() {
-		testCsplineCG(ScriptType.DML);
+		testCsplineCG();
 	}
 }

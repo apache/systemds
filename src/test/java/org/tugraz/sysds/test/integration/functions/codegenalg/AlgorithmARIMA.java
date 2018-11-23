@@ -48,22 +48,22 @@ public class AlgorithmARIMA extends ArimaTest
 
 	@Test
 	public void testArimaDml() {
-		testArima(ScriptType.DML, TestType.DEFAULT);
+		testArima(TestType.DEFAULT);
 	}
 
 	@Test
 	public void testArimaDmlFuseAll() {
-		testArima(ScriptType.DML, TestType.FUSE_ALL);
+		testArima(TestType.FUSE_ALL);
 	}
 
 	@Test
 	public void testArimaDmlFuseNoRedundancy() {
-		testArima(ScriptType.DML, TestType.FUSE_NO_REDUNDANCY);
+		testArima(TestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void testArima(ScriptType scriptType, TestType testType){
+	private void testArima(TestType testType){
 		currentTestType = testType;
-		testArima(ScriptType.DML);
+		testArima();
 	}
 	
 	@Override

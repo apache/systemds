@@ -34,6 +34,6 @@ public class WelchTDMLTest extends WelchTTest {
 
 	@Test
 	public void testWelchTTestDml() {
-		testWelchTTest(ScriptType.DML);
+		testWelchTTest();
 	}
 }

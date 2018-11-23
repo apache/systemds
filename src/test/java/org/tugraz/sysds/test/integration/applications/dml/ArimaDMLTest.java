@@ -34,6 +34,6 @@ public class ArimaDMLTest extends ArimaTest {
 
 	@Test
 	public void testArimaDml() {
-		testArima(ScriptType.DML);
+		testArima();
 	}
 }

@@ -34,6 +34,6 @@ public class MultiClassSVMDMLTest extends MultiClassSVMTest {
 
 	@Test
 	public void testMultiClassSVMDml() {
-		testMultiClassSVM(ScriptType.DML);
+		testMultiClassSVM();
 	}
 }

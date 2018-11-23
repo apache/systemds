@@ -34,6 +34,6 @@ public class LinearLogRegDMLTest extends LinearLogRegTest {
 
 	@Test
 	public void testLinearLogRegDml() {
-		testLinearLogReg(ScriptType.DML);
+		testLinearLogReg();
 	}
 }

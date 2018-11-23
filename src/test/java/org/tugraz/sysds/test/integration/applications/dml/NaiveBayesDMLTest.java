@@ -34,6 +34,6 @@ public class NaiveBayesDMLTest extends NaiveBayesTest {
 
 	@Test
 	public void testNaiveBayesDml() {
-		testNaiveBayes(ScriptType.DML);
+		testNaiveBayes();
 	}
 }

@@ -70,8 +70,8 @@ public abstract class ArimaTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME2);
 	}
 	
-	protected void testArima(ScriptType scriptType) {
-		System.out.println("------------ BEGIN " + TEST_NAME1 + " " + scriptType + " TEST WITH {" +
+	protected void testArima() {
+		System.out.println("------------ BEGIN " + TEST_NAME1 + " TEST WITH {" +
 			max_func_invoc + ", " + 
 			p + ", " + 
 			d + ", " + 
@@ -82,17 +82,9 @@ public abstract class ArimaTest extends AutomatedTestBase {
 			s + ", " + 
 			include_mean + ", " + 
 			useJacobi+ "} ------------");
-		this.scriptType = scriptType;
 		
 		List<String> proArgs = new ArrayList<String>();
-		
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-			getAndLoadTestConfiguration(TEST_NAME1);
-		}
-		else {
-			getAndLoadTestConfiguration(TEST_NAME2);
-		}
+		getAndLoadTestConfiguration(TEST_NAME2);
 		
 		proArgs.add("-args");
 		proArgs.add(input("col.mtx"));

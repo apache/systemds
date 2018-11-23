@@ -70,18 +70,14 @@ public abstract class ApplyTransformTest extends AutomatedTestBase{
 	    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 		}
 
-	    protected void testApplyTransform(ScriptType scriptType) {
-		 System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + X + ", " + missing_value_maps
+	    protected void testApplyTransform() {
+		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + X + ", " + missing_value_maps
 					+ ", " + binning_maps + ", " + dummy_coding_maps + ", " + normalization_maps + "} ------------");
-		 this.scriptType = scriptType;
 		 
 		 getAndLoadTestConfiguration(TEST_NAME);
 		 
 		 List<String> proArgs = new ArrayList<String>();
-		 if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		 }
-		 proArgs.add("-stats");
+		proArgs.add("-stats");
 		 proArgs.add("-nvargs");
 		 proArgs.add("X=" + sourceDirectory + X);
 		 proArgs.add("missing_value_maps=" + (missing_value_maps.equals(" ") ? " " : sourceDirectory + missing_value_maps));

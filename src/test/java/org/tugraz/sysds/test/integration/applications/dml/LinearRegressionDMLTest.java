@@ -34,6 +34,6 @@ public class LinearRegressionDMLTest extends LinearRegressionTest {
 
 	@Test
 	public void testLinearRegressionDml() {
-		testLinearRegression(ScriptType.DML);
+		testLinearRegression();
 	}
 }

@@ -195,9 +195,9 @@ public abstract class GLMTest extends AutomatedTestBase
     	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
-    protected void testGLM(ScriptType scriptType)
+    protected void testGLM()
     {
-		System.out.println("------------ BEGIN " + TEST_NAME + " " + scriptType + " TEST WITH {" + 
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + 
 				numRecords + ", " +
 				numFeatures + ", " +
 				distFamilyType + ", " +
@@ -210,8 +210,7 @@ public abstract class GLMTest extends AutomatedTestBase
 				stdevLinearForm + ", " +
 				dispersion +
 				"} ------------");
-		this.scriptType = scriptType;
-    	
+		
     	int rows = numRecords;			    // # of rows in the training data 
         int cols = numFeatures;			    // # of features in the training data 
         
@@ -288,9 +287,6 @@ public abstract class GLMTest extends AutomatedTestBase
         writeInputMatrixWithMTD ("Y", y, true, mc_y);
         
 		List<String> proArgs = new ArrayList<String>();
-		if (scriptType == ScriptType.PYDML) {
-			proArgs.add("-python");
-		}
 		proArgs.add("-nvargs");
 		proArgs.add("dfam=" + String.format ("%d", distFamilyType));
 		proArgs.add(((distFamilyType == 2 && distParam != 1.0) ? "yneg=" : "vpow=") + String.format ("%f", distParam));
@@ -308,8 +304,7 @@ public abstract class GLMTest extends AutomatedTestBase
 		proArgs.add("B=" + output("betas_SYSTEMML"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
-		fullDMLScriptName = (scriptType==ScriptType.DML) ?
-			"scripts/algorithms/GLM.dml" : getScript();
+		fullDMLScriptName = "scripts/algorithms/GLM.dml";
 		
 		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), String.format ("%d", distFamilyType), String.format ("%f", distParam),
 				String.format ("%d", linkType), String.format ("%f", linkPower), "1" /*intercept*/, "0.000000000001" /*tolerance (espilon)*/,

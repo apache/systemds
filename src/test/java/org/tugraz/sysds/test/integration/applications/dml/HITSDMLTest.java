@@ -31,6 +31,6 @@ public class HITSDMLTest extends HITSTest {
 
 	@Test
 	public void testHitsDml() {
-		testHits(ScriptType.DML);
-	}	
+		testHits();
+	}
 }

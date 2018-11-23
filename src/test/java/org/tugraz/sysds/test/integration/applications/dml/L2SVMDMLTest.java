@@ -34,6 +34,6 @@ public class L2SVMDMLTest extends L2SVMTest {
 
 	@Test
 	public void testL2SVMDml() {
-		testL2SVM(ScriptType.DML);
+		testL2SVM();
 	}
 }

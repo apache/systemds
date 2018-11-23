@@ -63,5 +63,15 @@ public class Types
 		public boolean isPseudoNumeric() {
 			return isNumeric() || this == BOOLEAN;
 		}
+		public String toExternalString() {
+			switch(this) {
+				case FP32:
+				case FP64:    return "DOUBLE";
+				case INT32:
+				case INT64:   return "INT";
+				case BOOLEAN: return "BOOLEAN";
+				default:      return toString();
+			}
+		}
 	}
 }

@@ -78,212 +78,110 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	@Test
 	public void testFunctionDefaultNS() 
 	{
-		runFunctionNamespaceTest(TEST_NAME0, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME0);
 	}
 	
 	@Test
 	public void testFunctionSourceNS() 
 	{
-		runFunctionNamespaceTest(TEST_NAME1, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME1);
 	}
 	
 	@Test
 	public void testFunctionWithoutNS() 
 	{
-		runFunctionNamespaceTest(TEST_NAME2, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME2);
 	}
 	
 	@Test
 	public void testFunctionImportSource() 
 	{
-		runFunctionNamespaceTest(TEST_NAME3, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME3);
 	}
 	
 	@Test
 	public void testFunctionMultiSource() 
 	{
-		runFunctionNamespaceTest(TEST_NAME4, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME4);
 	}
 	
 	@Test
 	public void testFunctionNoInliningIPA() 
 	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME5, ScriptType.DML, true);
+		runFunctionNoInliningNamespaceTest(TEST_NAME5, true);
 	}
 	
 	@Test
 	public void testFunctionNoInliningNoIPA() 
 	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME5, ScriptType.DML, false);
+		runFunctionNoInliningNamespaceTest(TEST_NAME5, false);
 	}
 	
 	@Test
 	public void testFunctionCircular() 
 	{
-		runFunctionNamespaceTest(TEST_NAME6, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME6);
 	}
 	
 	@Test
 	public void testFunctionCircularChain() 
 	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.DML, true);
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, true);
 	}
 	
 	@Test
 	public void testFunctionCircularChainNoIPA() 
 	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.DML, false);
+		runFunctionNoInliningNamespaceTest(TEST_NAME7, false);
 	}
 	@Test
 	public void testFunctionErrorConflict() 
 	{
-		runFunctionNamespaceTest(TEST_NAME8, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME8);
 	}
 	
 	@Test
 	public void testFunctionIndirectConflict() 
 	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME9, ScriptType.DML, true);
+		runFunctionNoInliningNamespaceTest(TEST_NAME9, true);
 	}
 	
 	@Test
 	public void testFunctionMultiConflict() 
 	{
-		runFunctionNamespaceTest(TEST_NAME10, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME10);
 	}
 	
 	@Test
 	public void testFunctionBuiltinOverride() 
 	{
-		runFunctionNamespaceTest(TEST_NAME11, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME11);
 	}
 	
 	@Test
 	public void testFunctionMultiOverride() 
 	{
-		runFunctionNamespaceTest(TEST_NAME12, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME12);
 	}
 	
 	@Test
 	public void testFunctionErrorOverride() 
 	{
-		runFunctionNamespaceTest(TEST_NAME13, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME13);
 	}
 	
 	@Test
 	public void testFunctionRandomCDF() 
 	{
-		runFunctionNamespaceTest(TEST_NAME14, ScriptType.DML);
+		runFunctionNamespaceTest(TEST_NAME14);
 	}
 	
-	@Test
-	public void testPyFunctionDefaultNS() 
-	{
-		runFunctionNamespaceTest(TEST_NAME0, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionSourceNS() 
-	{
-		runFunctionNamespaceTest(TEST_NAME1, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionWithoutNS() 
-	{
-		runFunctionNamespaceTest(TEST_NAME2, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionImportSource() 
-	{
-		runFunctionNamespaceTest(TEST_NAME3, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionMultiSource() 
-	{
-		runFunctionNamespaceTest(TEST_NAME4, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionNoInliningIPA() 
-	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME5, ScriptType.PYDML, true);
-	}
-	
-	@Test
-	public void testPyFunctionNoInliningNoIPA() 
-	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME5, ScriptType.PYDML, false);
-	}
-	
-	@Test
-	public void testPyFunctionCircular() 
-	{
-		runFunctionNamespaceTest(TEST_NAME6, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionCircularChain() 
-	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.PYDML, true);
-	}
-	
-	@Test
-	public void testPyFunctionCircularChainNoIPA() 
-	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME7, ScriptType.PYDML, false);
-	}
-	
-	@Test
-	public void testPyFunctionErrorConflict() 
-	{
-		runFunctionNamespaceTest(TEST_NAME8, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionIndirectConflict() 
-	{
-		runFunctionNoInliningNamespaceTest(TEST_NAME9, ScriptType.PYDML, true);
-	}
-	
-	@Test
-	public void testPyFunctionMultiConflict() 
-	{
-		runFunctionNamespaceTest(TEST_NAME10, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionBuiltinOverride() 
-	{
-		runFunctionNamespaceTest(TEST_NAME11, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionMultiOverride() 
-	{
-		runFunctionNamespaceTest(TEST_NAME12, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionErrorOverride() 
-	{
-		runFunctionNamespaceTest(TEST_NAME13, ScriptType.PYDML);
-	}
-	
-	@Test
-	public void testPyFunctionRandomCDF() 
-	{
-		runFunctionNamespaceTest(TEST_NAME14, ScriptType.PYDML);
-	}
-
-	private void runFunctionNamespaceTest(String TEST_NAME, ScriptType scriptType)
+	private void runFunctionNamespaceTest(String TEST_NAME)
 	{		
 		getAndLoadTestConfiguration(TEST_NAME);
 		
-		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "." + scriptType.toString().toLowerCase();
-		programArgs = (ScriptType.PYDML == scriptType) ? new String[]{"-python"} : new String[]{};
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
+		programArgs = new String[]{};
 		
 		PrintStream origStdErr = System.err;
 
@@ -338,16 +236,14 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 		}
 	}
 
-	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, ScriptType scriptType, boolean IPA)
+	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, boolean IPA)
 	{		
 		boolean origIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		getAndLoadTestConfiguration(TEST_NAME);
 		
-		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + "." + scriptType.toString().toLowerCase();
-		programArgs = (ScriptType.PYDML == scriptType) ? 
-			new String[]{"-python", "-args", String.valueOf(rows), String.valueOf(cols), String.valueOf(val), output("Rout")} : 
-			new String[]{"-args", String.valueOf(rows), String.valueOf(cols), String.valueOf(val), output("Rout")};
+		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
+		programArgs = new String[]{"-args", String.valueOf(rows), String.valueOf(cols), String.valueOf(val), output("Rout")};
 		
 		PrintStream originalStdErr = System.err;
 

@@ -2914,7 +2914,7 @@ public class DMLTranslator
 								dexpr.addVarParam(DataExpression.READCOLPARAM, new IntIdentifier(di.getDim2(), di));
 							if (di.getValueType() != ValueType.UNKNOWN)
 								dexpr.addVarParam(DataExpression.VALUETYPEPARAM,
-										new StringIdentifier(di.getValueType().toString(), di));
+										new StringIdentifier(di.getValueType().toExternalString(), di));
 							if (di.getDataType() != DataType.UNKNOWN)
 								dexpr.addVarParam(DataExpression.DATATYPEPARAM,
 										new StringIdentifier(di.getDataType().toString(), di));

@@ -22,6 +22,7 @@
 
 package org.tugraz.sysds.runtime.data;
 
+
 public abstract class DenseBlockDRB extends DenseBlock
 {
 	private static final long serialVersionUID = 3581157975703708947L;
@@ -72,7 +73,7 @@ public abstract class DenseBlockDRB extends DenseBlock
 	
 	@Override
 	public int pos(int[] ix) {
-		int pos = ix[ix.length-1]; 
+		int pos = ix[ix.length-1];
 		for(int i=0; i<ix.length-1; i++)
 			pos += ix[i] * _odims[i];
 		return pos;

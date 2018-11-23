@@ -141,6 +141,15 @@ public abstract class DenseBlock implements Serializable
 	}
 	
 	/**
+	 * Get the number of dimensions.
+	 * 
+	 * @return number of dimensions, min 2
+	 */
+	public final int numDims() {
+		return 1 + _odims.length;
+	}
+	
+	/**
 	 * Get the number of allocated blocks.
 	 * 
 	 * @return number of blocks
@@ -388,6 +397,16 @@ public abstract class DenseBlock implements Serializable
 		set(0, 1, kbuff._correction);
 		return this;
 	}
+	
+	/**
+	 * Set the specified cell to the given value.
+	 * 
+	 * @param ix cell indexes
+	 * @param v value
+	 * @return self
+	 */
+	public abstract DenseBlock set(int[] ix, double v);
+	
 	
 	/**
 	 * Copy the given kahan object sum and correction

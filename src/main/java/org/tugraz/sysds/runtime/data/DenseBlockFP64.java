@@ -171,6 +171,12 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		System.arraycopy(v, 0, _data, pos(r), _odims[0]);
 		return this;
 	}
+	
+	@Override
+	public DenseBlock set(int[] ix, double v) {
+		_data[pos(ix)] = v;
+		return this;
+	}
 
 	@Override
 	public double get(int r, int c) {

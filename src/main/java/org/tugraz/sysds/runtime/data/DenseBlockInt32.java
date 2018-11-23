@@ -171,6 +171,12 @@ public class DenseBlockInt32 extends DenseBlockDRB
 		System.arraycopy(v, 0, _data, pos(r), _odims[0]);
 		return this;
 	}
+	
+	@Override
+	public DenseBlock set(int[] ix, double v) {
+		_data[pos(ix)] = UtilFunctions.toInt(v);
+		return this;
+	}
 
 	@Override
 	public double get(int r, int c) {

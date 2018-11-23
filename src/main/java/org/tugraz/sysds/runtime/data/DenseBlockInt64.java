@@ -173,6 +173,12 @@ public class DenseBlockInt64 extends DenseBlockDRB
 	}
 
 	@Override
+	public DenseBlock set(int[] ix, double v) {
+		_data[pos(ix)] = UtilFunctions.toLong(v);
+		return this;
+	}
+	
+	@Override
 	public double get(int r, int c) {
 		return _data[pos(r, c)];
 	}

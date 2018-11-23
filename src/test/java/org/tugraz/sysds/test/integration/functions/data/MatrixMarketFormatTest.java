@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.data;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMField;
@@ -201,14 +201,14 @@ public class MatrixMarketFormatTest extends AutomatedTestBase
 	private void runMatrixMarketFormatTest(MMFormat fmt, MMField field, MMSymmetry symmetry, ExecType et)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		switch( et ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.SINGLE_NODE; break;
 		}
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		try

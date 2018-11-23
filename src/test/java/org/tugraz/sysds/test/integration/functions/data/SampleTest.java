@@ -28,7 +28,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 
@@ -94,16 +94,16 @@ public class SampleTest extends AutomatedTestBase
 	
 	@Test
 	public void testSample() {
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		
 		try
 		{
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			runSampleTest();
-			rtplatform = RUNTIME_PLATFORM.SPARK;
+			rtplatform = ExecMode.SPARK;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			runSampleTest();
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			runSampleTest();
 			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 		}

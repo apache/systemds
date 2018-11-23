@@ -25,7 +25,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
@@ -130,7 +130,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	 */
 	private void runParForRepeatedOptTest( boolean reusePartitionedData, boolean update, boolean changedDim, ExecType et, int numExpectedMR )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		double memfactorOld = OptimizerUtils.MEM_UTIL_FACTOR;
 		boolean reuseOld = ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS;
 		
@@ -150,7 +150,7 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 		
 		try
 		{
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			OptimizerUtils.MEM_UTIL_FACTOR = computeMemoryUtilFactor( 70 ); //force partitioning
 			ParForProgramBlock.ALLOW_REUSE_PARTITION_VARS = reusePartitionedData;
 			

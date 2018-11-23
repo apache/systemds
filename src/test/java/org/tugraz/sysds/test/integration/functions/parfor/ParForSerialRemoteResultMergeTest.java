@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -123,12 +123,12 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 	 */
 	private void runParallelRemoteResultMerge( String test_name, boolean sparse )
 	{
-		RUNTIME_PLATFORM oldRT = rtplatform;
+		ExecMode oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 		}
 		
 		//inst exec type, influenced via rows

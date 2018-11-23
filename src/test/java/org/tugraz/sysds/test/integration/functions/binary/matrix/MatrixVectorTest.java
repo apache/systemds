@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.functions.binary.matrix;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -50,55 +50,55 @@ public class MatrixVectorTest extends AutomatedTestBase
 	@Test
 	public void testMVwideSparseCP() 
 	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMatrixVectorMultiplicationTest(cols_wide, ExecMode.SINGLE_NODE, true);
 	}
 	
 	@Test
 	public void testMVwideSparseHYBRID() 
 	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.HYBRID, true);
+		runMatrixVectorMultiplicationTest(cols_wide, ExecMode.HYBRID, true);
 	}
 	
 	@Test
 	public void testMVwideDenseCP() 
 	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMatrixVectorMultiplicationTest(cols_wide, ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	public void testMVwideDenseHYBRID() 
 	{
-		runMatrixVectorMultiplicationTest(cols_wide, RUNTIME_PLATFORM.HYBRID, false);
+		runMatrixVectorMultiplicationTest(cols_wide, ExecMode.HYBRID, false);
 	}
 	
 	@Test
 	public void testMVskinnySparseCP() 
 	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMatrixVectorMultiplicationTest(cols_skinny, ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test
 	public void testMVskinnySparseHYBRID() 
 	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.HYBRID, true);
+		runMatrixVectorMultiplicationTest(cols_skinny, ExecMode.HYBRID, true);
 	}
 	
 	@Test
 	public void testMVskinnyDenseCP() 
 	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMatrixVectorMultiplicationTest(cols_skinny, ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	public void testMVskinnyDenseHYBRID() 
 	{
-		runMatrixVectorMultiplicationTest(cols_skinny, RUNTIME_PLATFORM.HYBRID, false);
+		runMatrixVectorMultiplicationTest(cols_skinny, ExecMode.HYBRID, false);
 	}
 	
-	private void runMatrixVectorMultiplicationTest( int cols, RUNTIME_PLATFORM rt, boolean sparse )
+	private void runMatrixVectorMultiplicationTest( int cols, ExecMode rt, boolean sparse )
 	{
 
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		try

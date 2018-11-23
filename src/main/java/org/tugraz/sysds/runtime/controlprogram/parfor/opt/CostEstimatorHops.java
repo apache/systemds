@@ -20,6 +20,7 @@
 package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -76,7 +77,7 @@ public class CostEstimatorHops extends CostEstimator
 			}
 			//check for invalid cp memory estimate
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() ) {
-				if( DMLScript.rtplatform != DMLScript.RUNTIME_PLATFORM.SINGLE_NODE && h.getForcedExecType()==null )
+				if( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE && h.getForcedExecType()==null )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_REMOTE;
 			}

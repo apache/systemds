@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.transform;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderTextCSV;
@@ -50,62 +50,62 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameReadMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false, false);
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameReadMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false, false);
+		runTransformTest(ExecMode.SPARK, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", false, false);
+		runTransformTest(ExecMode.HYBRID, "csv", false, false);
 	}
 	
 	@Test
 	public void testFrameParReadMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", false, true);
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", false, true);
 	}
 	
 	@Test
 	public void testFrameParReadMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", false, true);
+		runTransformTest(ExecMode.SPARK, "csv", false, true);
 	}
 	
 	@Test
 	public void testFrameParReadMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", false, true);
+		runTransformTest(ExecMode.HYBRID, "csv", false, true);
 	}
 
 	@Test
 	public void testFrameReadSubMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true, false);
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", true, false);
 	}
 	
 	@Test
 	public void testFrameReadSubMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true, false);
+		runTransformTest(ExecMode.SPARK, "csv", true, false);
 	}
 	
 	@Test
 	public void testFrameReadSubMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", true, false);
+		runTransformTest(ExecMode.HYBRID, "csv", true, false);
 	}
 	
 	@Test
 	public void testFrameParReadSubMetaSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", true, true);
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", true, true);
 	}
 	
 	@Test
 	public void testFrameParReadSubMetaSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", true, true);
+		runTransformTest(ExecMode.SPARK, "csv", true, true);
 	}
 	
 	@Test
 	public void testFrameParReadSubMetaHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv", true, true);
+		runTransformTest(ExecMode.HYBRID, "csv", true, true);
 	}
 
 	
@@ -115,14 +115,14 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt, boolean subset, boolean parRead )
+	private void runTransformTest( ExecMode rt, String ofmt, boolean subset, boolean parRead )
 	{
 		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

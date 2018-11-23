@@ -20,7 +20,7 @@
 package org.tugraz.sysds.runtime.controlprogram.context;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.Program;
@@ -45,12 +45,12 @@ public class ExecutionContextFactory
 	{
 		ExecutionContext ec = null;
 		
-		switch( DMLScript.rtplatform )
+		switch( DMLScript.getGlobalExecMode() )
 		{
 			case SINGLE_NODE:
 				//NOTE: even in case of forced singlenode operations, users might still 
 				//want to run remote parfor which requires the correct execution context
-				if( OptimizerUtils.getDefaultExecutionMode()==RUNTIME_PLATFORM.HYBRID)
+				if( OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID)
 					ec = new ExecutionContext(allocateVars, prog);
 				else
 					ec = new SparkExecutionContext(allocateVars, prog);

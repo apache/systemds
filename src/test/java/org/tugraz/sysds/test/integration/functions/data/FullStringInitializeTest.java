@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.data;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -289,8 +289,8 @@ public class FullStringInitializeTest extends AutomatedTestBase
 	private void runStringInitializeTest( InputType intype, ValueType vt, boolean sparse, ErrorType errtype, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		
 		try
 		{

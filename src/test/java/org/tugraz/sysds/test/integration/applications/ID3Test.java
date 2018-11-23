@@ -27,7 +27,7 @@ import java.util.List;
 
 import org.junit.Assert;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.utils.TestUtils;
@@ -100,7 +100,7 @@ public abstract class ID3Test extends AutomatedTestBase
 		runRScript(true);
         
 		//check also num actually executed jobs
-		if(AutomatedTestBase.rtplatform != RUNTIME_PLATFORM.SPARK) {
+		if(AutomatedTestBase.rtplatform != ExecMode.SPARK) {
 			long actualMR = Statistics.getNoOfExecutedMRJobs();
 			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
 		}

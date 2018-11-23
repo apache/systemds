@@ -24,7 +24,7 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -259,14 +259,14 @@ public class FullReblockTest extends AutomatedTestBase
 		int rows = (type==Type.Vector)? rowsV : rowsM;
 		int cols = (type==Type.Vector)? colsV : colsM;
 		
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		switch( et ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.HYBRID; break;
 		}
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

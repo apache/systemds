@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.transform;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -48,32 +48,32 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesRecodeColnames1SingleNodeCSV() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+		runTransformTest(TEST_NAME1, ExecMode.SINGLE_NODE, "csv", true);
 	}
 	
 	@Test
 	public void testHomesRecodeColnames1SparkCSV() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SPARK, "csv", true);
+		runTransformTest(TEST_NAME1, ExecMode.SPARK, "csv", true);
 	}
 	
 	@Test
 	public void testHomesRecodeColnames1HybridCSV() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.HYBRID, "csv", true);
+		runTransformTest(TEST_NAME1, ExecMode.HYBRID, "csv", true);
 	}
 	
 	@Test
 	public void testHomesRecodeColnames2SingleNodeCSV() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE, "csv", true);
 	}
 	
 	@Test
 	public void testHomesRecodeColnames2SparkCSV() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SPARK, "csv", true);
+		runTransformTest(TEST_NAME2, ExecMode.SPARK, "csv", true);
 	}
 	
 	@Test
 	public void testHomesRecodeColnames2HybridCSV() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.HYBRID, "csv", true);
+		runTransformTest(TEST_NAME2, ExecMode.HYBRID, "csv", true);
 	}
 	
 	
@@ -83,14 +83,14 @@ public class TransformFrameEncodeApplySubsetTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest(String testname, RUNTIME_PLATFORM rt, String ofmt, boolean colnames)
+	private void runTransformTest(String testname, ExecMode rt, String ofmt, boolean colnames)
 	{
 		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -179,13 +179,13 @@ public class ParForBlockwiseDataPartitioningTest extends AutomatedTestBase
 	
 	private void runParForDataPartitioningTest( String testname, PDataPartitioner partitioner, PExecMode mode, boolean sparse )
 	{
-		RUNTIME_PLATFORM oldRT = rtplatform;
+		ExecMode oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		boolean oldDynRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		
 		//run always in spark execution mode
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		rtplatform = ExecMode.HYBRID;
 		
 		try
 		{

@@ -20,7 +20,7 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
@@ -101,7 +101,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
 				if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 				{
-					if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE 
+					if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE 
 						|| input1.getDataType() == DataType.FRAME )
 					{
 						//read the input matrix/frame and explicitly refresh meta data

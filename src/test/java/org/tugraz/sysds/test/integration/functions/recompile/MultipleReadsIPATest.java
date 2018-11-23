@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.recompile;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -64,7 +64,7 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 
 	private void runMultipleReadsTest( ExecType et, boolean IPA )
 	{	
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -86,7 +86,7 @@ public class MultipleReadsIPATest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 						
 			double[][] X1 = getRandomMatrix(rows1, cols1, -1, 1, 1.0d, 7);

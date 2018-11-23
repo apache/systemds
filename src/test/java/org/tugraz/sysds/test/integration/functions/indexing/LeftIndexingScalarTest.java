@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
@@ -66,15 +66,15 @@ public class LeftIndexingScalarTest extends AutomatedTestBase
 	private void runLeftIndexingTest( ExecType instType ) 
 	{		
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		if(instType == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    	rtplatform = ExecMode.SPARK;
 	    }
 	    else {
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 	    }
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 	

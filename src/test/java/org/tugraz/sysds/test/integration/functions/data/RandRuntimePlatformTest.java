@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -180,7 +180,7 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 	@Test
 	public void testRandAcrossRuntimePlatforms()
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 	
 		try
 		{
@@ -211,20 +211,20 @@ public class RandRuntimePlatformTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			
 			// Generate Data in CP
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			rtplatform = ExecMode.SINGLE_NODE;
 			programArgs[programArgs.length-1] = output("A_SN"); // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 						
 			
 			// Generate Data in CP
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			programArgs[programArgs.length-1] = output("A_CP"); // data file generated from CP
 			runTest(true, exceptionExpected, null, -1); 
 			
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 			try {
 				// Generate Data in Spark
-				rtplatform = RUNTIME_PLATFORM.SPARK;
+				rtplatform = ExecMode.SPARK;
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 				programArgs[programArgs.length-1] = output("A_SPARK"); // data file generated from MR
 				runTest(true, exceptionExpected, null, -1); 

@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -67,26 +67,26 @@ public class QRSolverTest extends AutomatedTestBase
 	
 	@Test
 	public void testQRSolveCP() {
-		runTestQRSolve( RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestQRSolve( ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testQRSolveSP() {
-		runTestQRSolve( RUNTIME_PLATFORM.SPARK );
+		runTestQRSolve( ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testQRSolveHybrid() {
-		runTestQRSolve( RUNTIME_PLATFORM.HYBRID );
+		runTestQRSolve( ExecMode.HYBRID );
 	}
 	
-	private void runTestQRSolve( RUNTIME_PLATFORM rt)
+	private void runTestQRSolve( ExecMode rt)
 	{
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try {

@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -278,12 +278,12 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	 */
 	private void runParForDataPartitioningTest( PDataPartitioner partitioner, PExecMode mode, boolean small, boolean sparse, boolean multiParts )
 	{
-		RUNTIME_PLATFORM oldRT = rtplatform;
+		ExecMode oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		if( partitioner == PDataPartitioner.REMOTE_SPARK || mode == PExecMode.REMOTE_SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 		}
 
 		try

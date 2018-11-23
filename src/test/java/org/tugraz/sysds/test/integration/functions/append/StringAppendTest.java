@@ -23,7 +23,7 @@ package org.tugraz.sysds.test.integration.functions.append;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -98,16 +98,16 @@ public class StringAppendTest extends AutomatedTestBase
 	
 	public void runStringAppendTest(String TEST_NAME, int iters, boolean exceptionExpected, ExecType et)
 	{
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		ExecMode oldPlatform = rtplatform;
 
 	    if(et == ExecType.SPARK) {
-	    	rtplatform = RUNTIME_PLATFORM.SPARK;
+	    	rtplatform = ExecMode.SPARK;
 	    }
 	    else {
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 	    }
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

@@ -36,7 +36,7 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -202,8 +202,8 @@ public class FrameConverterTest extends AutomatedTestBase
 	 */
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SPARK;
+		ExecMode platformOld = rtplatform;
+		DMLScript.setGlobalExecMode(ExecMode.SPARK);
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
@@ -262,7 +262,7 @@ public class FrameConverterTest extends AutomatedTestBase
 		}
 		finally
 		{
-			DMLScript.rtplatform = platformOld;
+			DMLScript.setGlobalExecMode(platformOld);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}

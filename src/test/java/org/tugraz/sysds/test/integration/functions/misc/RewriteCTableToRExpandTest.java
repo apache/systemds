@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.functions.misc;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -127,9 +127,9 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 		boolean unknownTests = ( testname.equals(TEST_NAME5) || testname.equals(TEST_NAME6) );
 			
 		
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		if( unknownTests )
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			rtplatform = ExecMode.SINGLE_NODE;
 		
 		try 
 		{

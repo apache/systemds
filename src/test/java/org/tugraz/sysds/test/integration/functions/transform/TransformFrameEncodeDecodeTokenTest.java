@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.transform;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
@@ -57,17 +57,17 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 	
 	@Test
 	public void test20newsRecodeSingleNodeCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv");
+		runTransformTest(ExecMode.SINGLE_NODE, "csv");
 	}
 	
 	@Test
 	public void test20newsRecodeSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv");
+		runTransformTest(ExecMode.SPARK, "csv");
 	}
 	
 	@Test
 	public void test20newsRecodeHybridCSV() {
-		runTransformTest(RUNTIME_PLATFORM.HYBRID, "csv");
+		runTransformTest(ExecMode.HYBRID, "csv");
 	}
 	
 	/**
@@ -76,14 +76,14 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runTransformTest( RUNTIME_PLATFORM rt, String ofmt )
+	private void runTransformTest( ExecMode rt, String ofmt )
 	{
 		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )
@@ -114,7 +114,7 @@ public class TransformFrameEncodeDecodeTokenTest extends AutomatedTestBase
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
 			
-			if( rt == RUNTIME_PLATFORM.HYBRID ) {
+			if( rt == ExecMode.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
 			}

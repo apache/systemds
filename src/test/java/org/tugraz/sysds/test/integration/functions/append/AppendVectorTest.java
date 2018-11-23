@@ -25,7 +25,7 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -55,33 +55,33 @@ public class AppendVectorTest extends AutomatedTestBase
 	
 	@Test
 	public void testAppendInBlockSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows1, cols1);
+		commonAppendTest(ExecMode.SPARK, rows1, cols1);
 	}
 	@Test
 	public void testAppendOutBlockSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows2, cols2);
+		commonAppendTest(ExecMode.SPARK, rows2, cols2);
 	}
 	
 
 	@Test
 	public void testAppendInBlockCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows1, cols1);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows1, cols1);
 	}
 	
 	@Test
 	public void testAppendOutBlockCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows2, cols2);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows2, cols2);
 	}	
 	
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols)
+	public void commonAppendTest(ExecMode platform, int rows, int cols)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		ExecMode prevPlfm=rtplatform;
 		
 	    rtplatform = platform;
 	    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-	    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+	    if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 	    try {

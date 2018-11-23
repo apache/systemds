@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.rewrite.RewriteElementwiseMultChainOptimization;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -317,14 +317,14 @@ public class ABATernaryAggregateTest extends AutomatedTestBase
 	private void runTernaryAggregateTest(String testname, boolean sparse, boolean vectors, boolean rewrites, ExecType et)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		switch( et ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.HYBRID; break;
 		}
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;

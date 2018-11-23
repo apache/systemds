@@ -24,7 +24,7 @@ import java.util.Random;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -46,15 +46,15 @@ public class DiagV2MTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, "DiagV2MTest", new String[] {"C"}));
 	}
 	
-	public void commonReorgTest(RUNTIME_PLATFORM platform)
+	public void commonReorgTest(ExecMode platform)
 	{
 		TestConfiguration config = getTestConfiguration("DiagV2MTest");
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		ExecMode prevPlfm=rtplatform;
 		
 	    rtplatform = platform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {
@@ -98,12 +98,12 @@ public class DiagV2MTest extends AutomatedTestBase
 	
 	@Test
 	public void testDiagV2MCP() {
-		commonReorgTest(RUNTIME_PLATFORM.SINGLE_NODE);
+		commonReorgTest(ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testDiagV2MSP() {
-		commonReorgTest(RUNTIME_PLATFORM.SPARK);
+		commonReorgTest(ExecMode.SPARK);
 	}
 }
 

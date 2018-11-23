@@ -27,8 +27,8 @@ import org.apache.commons.cli.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLOptions;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.mlcontext.ScriptType;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.utils.Explain;
 
 
@@ -201,7 +201,7 @@ public class CLIOptionsParserTest {
 		String cl = "systemml -f test.dml -exec spark";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.SPARK, o.execMode);
+		Assert.assertEquals(ExecMode.SPARK, o.execMode);
 	}
 
 	@Test
@@ -209,7 +209,7 @@ public class CLIOptionsParserTest {
 		String cl = "systemml -f test.dml -exec singlenode";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.SINGLE_NODE, o.execMode);
+		Assert.assertEquals(ExecMode.SINGLE_NODE, o.execMode);
 	}
 
 	@Test
@@ -217,7 +217,7 @@ public class CLIOptionsParserTest {
 		String cl = "systemml -f test.dml -exec hybrid";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
-		Assert.assertEquals(DMLScript.RUNTIME_PLATFORM.HYBRID, o.execMode);
+		Assert.assertEquals(ExecMode.HYBRID, o.execMode);
 	}
 
 	@Test(expected = ParseException.class)

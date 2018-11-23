@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -45,41 +45,41 @@ public class EigenFactorizeTest extends AutomatedTestBase
 	
 	@Test
 	public void testEigenFactorizeDenseCP() {
-		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestEigenFactorize( rows1, ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testEigenFactorizeDenseSP() {
-		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.SPARK );
+		runTestEigenFactorize( rows1, ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testEigenFactorizeDenseHybrid() {
-		runTestEigenFactorize( rows1, RUNTIME_PLATFORM.HYBRID );
+		runTestEigenFactorize( rows1, ExecMode.HYBRID );
 	}
 	
 	@Test
 	public void testLargeEigenFactorizeDenseCP() {
-		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestEigenFactorize( rows2, ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testLargeEigenFactorizeDenseSP() {
-		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.SPARK );
+		runTestEigenFactorize( rows2, ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testLargeEigenFactorizeDenseHybrid() {
-		runTestEigenFactorize( rows2, RUNTIME_PLATFORM.HYBRID );
+		runTestEigenFactorize( rows2, ExecMode.HYBRID );
 	}
 	
-	private void runTestEigenFactorize( int rows, RUNTIME_PLATFORM rt)
+	private void runTestEigenFactorize( int rows, ExecMode rt)
 	{		
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

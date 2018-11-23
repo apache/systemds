@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.functions.io.matrixmarket;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -44,37 +44,37 @@ public class ReadMMTest extends AutomatedTestBase
 	
 	@Test
 	public void testMatrixMarket1_Sequential_CP() {
-		runMMTest(1, RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMMTest(1, ExecMode.SINGLE_NODE, false);
 	}
 	
 	@Test
 	public void testMatrixMarket1_Parallel_CP() {
-		runMMTest(1, RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMMTest(1, ExecMode.SINGLE_NODE, true);
 	}
 	
 	@Test
 	public void testMatrixMarket2_Sequential_CP() {
-		runMMTest(2, RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMMTest(2, ExecMode.SINGLE_NODE, false);
 	}
 	
 	@Test
 	public void testMatrixMarket2_ParallelCP() {
-		runMMTest(2, RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMMTest(2, ExecMode.SINGLE_NODE, true);
 	}
 	
 	@Test
 	public void testMatrixMarket3_Sequential_CP() {
-		runMMTest(3, RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMMTest(3, ExecMode.SINGLE_NODE, false);
 	}
 	
 	@Test
 	public void testMatrixMarket3_Parallel_CP() {
-		runMMTest(3, RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMMTest(3, ExecMode.SINGLE_NODE, true);
 	}
 	
-	private void runMMTest(int testNumber, RUNTIME_PLATFORM platform, boolean parallel) {
+	private void runMMTest(int testNumber, ExecMode platform, boolean parallel) {
 		
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		ExecMode oldPlatform = rtplatform;
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 		
 		try

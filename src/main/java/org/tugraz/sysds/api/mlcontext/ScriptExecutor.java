@@ -718,7 +718,7 @@ public class ScriptExecutor {
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		DMLScript.setGlobalExecMode(executionType.getExecMode());
 		this.executionType = executionType;
 	}
 }

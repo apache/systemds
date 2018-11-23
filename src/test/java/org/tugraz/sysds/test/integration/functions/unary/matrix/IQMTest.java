@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 import org.tugraz.sysds.test.utils.TestUtils;
@@ -80,131 +80,131 @@ public class IQMTest extends AutomatedTestBase
 	
 	@Test
 	public void testIQM1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 1, false);
+		runTest(ExecMode.HYBRID, 1, false);
 	}
 	
 	@Test
 	public void testIQM2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 2, false);
+		runTest(ExecMode.HYBRID, 2, false);
 	}
 	
 	@Test
 	public void testIQM3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 3, false);
+		runTest(ExecMode.HYBRID, 3, false);
 	}
 	
 	@Test
 	public void testIQM4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 4, false);
+		runTest(ExecMode.HYBRID, 4, false);
 	}
 	
 	@Test
 	public void testIQM5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 5, false);
+		runTest(ExecMode.HYBRID, 5, false);
 	}
 	
 	@Test
 	public void testIQM6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 6, false);
+		runTest(ExecMode.HYBRID, 6, false);
 	}
 	
 	@Test
 	public void testIQM7() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 7, false);
+		runTest(ExecMode.HYBRID, 7, false);
 	}
 	
 	@Test
 	public void testIQM8() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 8, false);
+		runTest(ExecMode.HYBRID, 8, false);
 	}
 	
 	@Test
 	public void testIQM1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 1, false);
+		runTest(ExecMode.SPARK, 1, false);
 	}
 	
 	@Test
 	public void testIQM2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 2, false);
+		runTest(ExecMode.SPARK, 2, false);
 	}
 	
 	@Test
 	public void testIQM3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 3, false);
+		runTest(ExecMode.SPARK, 3, false);
 	}
 	
 	@Test
 	public void testIQM4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 4, false);
+		runTest(ExecMode.SPARK, 4, false);
 	}
 	
 	@Test
 	public void testIQM5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 5, false);
+		runTest(ExecMode.SPARK, 5, false);
 	}
 	
 	@Test
 	public void testIQM6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 6, false);
+		runTest(ExecMode.SPARK, 6, false);
 	}
 	
 	@Test
 	public void testIQM7_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 7, false);
+		runTest(ExecMode.SPARK, 7, false);
 	}
 	
 	@Test
 	public void testIQM8_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 8, false);
+		runTest(ExecMode.SPARK, 8, false);
 	}
 	
 	@Test
 	public void testIQM1wt() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 1, true);
+		runTest(ExecMode.HYBRID, 1, true);
 	}
 	
 	@Test
 	public void testIQM2wt() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 2, true);
+		runTest(ExecMode.HYBRID, 2, true);
 	}
 	
 	@Test
 	public void testIQM3wt() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 3, true);
+		runTest(ExecMode.HYBRID, 3, true);
 	}
 	
 	@Test
 	public void testIQM4wt() {
-		runTest(RUNTIME_PLATFORM.HYBRID, 4, true);
+		runTest(ExecMode.HYBRID, 4, true);
 	}
 	
 	@Test
 	public void testIQM1wt_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 1, true);
+		runTest(ExecMode.SPARK, 1, true);
 	}
 	
 	@Test
 	public void testIQM2wt_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 2, true);
+		runTest(ExecMode.SPARK, 2, true);
 	}
 	
 	@Test
 	public void testIQM3wt_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 3, true);
+		runTest(ExecMode.SPARK, 3, true);
 	}
 	
 	@Test
 	public void testIQM4wt_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, 4, true);
+		runTest(ExecMode.SPARK, 4, true);
 	}
 	
 	
-	private void runTest(RUNTIME_PLATFORM rt, int datasetIndex, boolean isWeighted ) {
-		RUNTIME_PLATFORM rtOld = rtplatform;
+	private void runTest(ExecMode rt, int datasetIndex, boolean isWeighted ) {
+		ExecMode rtOld = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

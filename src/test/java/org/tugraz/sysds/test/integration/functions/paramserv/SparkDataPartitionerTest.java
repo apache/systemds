@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -40,7 +41,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	static {
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		DMLScript.rtplatform = DMLScript.RUNTIME_PLATFORM.SPARK;
+		DMLScript.setGlobalExecMode(ExecMode.SPARK);
 		_sec = (SparkExecutionContext) ExecutionContextFactory.createContext(null);
 	}
 

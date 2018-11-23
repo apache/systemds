@@ -36,7 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.ScriptType;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -151,7 +151,7 @@ public class Connection implements Closeable
 	 * @param dmlconfig a dml configuration.
 	 */
 	public Connection(DMLConfig dmlconfig) {
-		DMLScript.rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		DMLScript.setGlobalExecMode(ExecMode.SINGLE_NODE);
 		
 		//setup basic parameters for embedded execution
 		//(parser, compiler, and runtime parameters)

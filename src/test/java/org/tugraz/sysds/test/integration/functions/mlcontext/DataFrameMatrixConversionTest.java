@@ -28,7 +28,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -193,12 +193,12 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	
 	private void testDataFrameConversion(boolean vector, int cols, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
+		ExecMode oldPlatform = DMLScript.getGlobalExecMode();
 
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+			DMLScript.setGlobalExecMode(ExecMode.HYBRID);
 			
 			//generate input data and setup metadata
 			int rows = (cols == cols3) ? rows3 : rows1;
@@ -229,18 +229,18 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			DMLScript.rtplatform = oldPlatform;
+			DMLScript.setGlobalExecMode(oldPlatform);
 		}
 	}
 
 	private void testDataFrameConversionUltraSparse(boolean vector, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
+		ExecMode oldPlatform = DMLScript.getGlobalExecMode();
 
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+			DMLScript.setGlobalExecMode(ExecMode.HYBRID);
 			
 			//generate input data and setup metadata
 			double[][] A = getRandomMatrix(rows1, 1, -10, 10, 0.7, 2373);
@@ -271,7 +271,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			DMLScript.rtplatform = oldPlatform;
+			DMLScript.setGlobalExecMode(oldPlatform);
 		}
 	}
 	

@@ -25,7 +25,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp.LeftIndexingMethod;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -148,7 +148,7 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 		int cu = cl+cols2-1;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM oldRTP = rtplatform;
+		ExecMode oldRTP = rtplatform;
 		try
 		{
 			if(indexingMethod != null) {
@@ -156,13 +156,13 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			}
 			
 			if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    	rtplatform = ExecMode.SPARK;
 		    }
 			else {
-				// rtplatform = (et==ExecType.MR)? RUNTIME_PLATFORM.HADOOP : RUNTIME_PLATFORM.SINGLE_NODE;
-			    rtplatform = RUNTIME_PLATFORM.HYBRID;
+				// rtplatform = (et==ExecType.MR)? ExecMode.HADOOP : ExecMode.SINGLE_NODE;
+			    rtplatform = ExecMode.HYBRID;
 			}
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

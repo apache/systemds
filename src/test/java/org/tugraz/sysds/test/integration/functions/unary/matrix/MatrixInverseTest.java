@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -62,26 +62,26 @@ public class MatrixInverseTest extends AutomatedTestBase
 	
 	@Test
 	public void testInverseCP() {
-		runTestMatrixInverse( RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestMatrixInverse( ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testInverseSP() {
-		runTestMatrixInverse( RUNTIME_PLATFORM.SPARK );
+		runTestMatrixInverse( ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testInverseHybrid() {
-		runTestMatrixInverse( RUNTIME_PLATFORM.HYBRID );
+		runTestMatrixInverse( ExecMode.HYBRID );
 	}
 	
-	private void runTestMatrixInverse( RUNTIME_PLATFORM rt )
+	private void runTestMatrixInverse( ExecMode rt )
 	{
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try {

@@ -28,6 +28,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.tugraz.sysds.api.ConfigurableAPI;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.parser.DataExpression;
@@ -176,16 +177,15 @@ public class MLContext implements ConfigurableAPI
 	public enum ExecutionType {
 		DRIVER, SPARK, HADOOP, DRIVER_AND_SPARK, DRIVER_AND_HADOOP;
 
-		public DMLScript.RUNTIME_PLATFORM getRuntimePlatform() {
+		public ExecMode getExecMode() {
 			switch (this) {
-			case DRIVER:
-				return DMLScript.RUNTIME_PLATFORM.SINGLE_NODE;
-			case SPARK:
-				return DMLScript.RUNTIME_PLATFORM.SPARK;
-			case DRIVER_AND_SPARK:
-				return DMLScript.RUNTIME_PLATFORM.HYBRID;
-			default:
-				return DMLScript.RUNTIME_PLATFORM.HYBRID;
+				case DRIVER:
+					return ExecMode.SINGLE_NODE;
+				case SPARK:
+					return ExecMode.SPARK;
+				case DRIVER_AND_SPARK:
+				default:
+					return ExecMode.HYBRID;
 			}
 		}
 	}
@@ -266,7 +266,7 @@ public class MLContext implements ConfigurableAPI
 		}
 
 		this.spark = spark;
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		DMLScript.setGlobalExecMode(executionType.getExecMode());
 
 		activeMLContext = this;
 		MLContextProxy.setActive(true);
@@ -736,7 +736,7 @@ public class MLContext implements ConfigurableAPI
 	 *            the execution environment
 	 */
 	public void setExecutionType(ExecutionType executionType) {
-		DMLScript.rtplatform = executionType.getRuntimePlatform();
+		DMLScript.setGlobalExecMode(executionType.getExecMode());
 		this.executionType = executionType;
 	}
 

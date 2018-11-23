@@ -39,7 +39,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.MLResults;
 import org.tugraz.sysds.api.mlcontext.Matrix;
 import org.tugraz.sysds.api.mlcontext.MatrixFormat;
@@ -145,11 +145,11 @@ public class GNMFTest extends MLContextTestBase
 		
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
+		ExecMode oldRT = DMLScript.getGlobalExecMode();
 		
 		try 
 		{
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+			DMLScript.setGlobalExecMode(ExecMode.HYBRID);
 
 			Script script = ScriptFactory.dmlFromFile(fullDMLScriptName);
 			// set positional argument values
@@ -235,7 +235,7 @@ public class GNMFTest extends MLContextTestBase
 			TestUtils.compareMatrices(hmHDML, hmHR, 0.000001, "hmHDML", "hmHR");
 		}
 		finally {
-			DMLScript.rtplatform = oldRT;
+			DMLScript.setGlobalExecMode(oldRT);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}

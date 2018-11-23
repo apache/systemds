@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.applications.descriptivestats;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 
 
 /**
@@ -39,61 +39,61 @@ public class UnivariateUnweightedScaleSparseTest extends UnivariateStatsBase
 	// -------------------------------------------------------------------------------------
 	@Test
 	public void testScale1() {
-		testScaleWithR(SIZE.DIV4, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale2() {
-		testScaleWithR(SIZE.DIV4P1, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P1, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale3() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale4() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale5() {
-		testScaleWithR(SIZE.DIV4, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale6() {
-		testScaleWithR(SIZE.DIV4P1, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P1, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale7() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale8() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale9() {
-		testScaleWithR(SIZE.DIV4, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale10() {
-		testScaleWithR(SIZE.DIV4P1, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P1, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale11() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testScale12() {
-		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 }

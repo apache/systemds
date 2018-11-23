@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.applications.descriptivestats;
 
 import java.util.HashMap;
 
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -137,8 +137,8 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	 * @param rt
 	 *            backend platform to test
 	 */
-	protected void testScaleWithR(SIZE sz, RANGE rng, SPARSITY sp, RUNTIME_PLATFORM rt) {
-		RUNTIME_PLATFORM oldrt = rtplatform;
+	protected void testScaleWithR(SIZE sz, RANGE rng, SPARSITY sp, ExecMode rt) {
+		ExecMode oldrt = rtplatform;
 		rtplatform = rt;
 
 		try {
@@ -213,9 +213,9 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 	 *            backend platform to test
 	 */
 	protected void testWeightedScaleWithR(SIZE sz, RANGE rng, SPARSITY sp,
-			RUNTIME_PLATFORM rt) {
+			ExecMode rt) {
 
-		RUNTIME_PLATFORM oldrt = rtplatform;
+		ExecMode oldrt = rtplatform;
 		rtplatform = rt;
 
 		try {

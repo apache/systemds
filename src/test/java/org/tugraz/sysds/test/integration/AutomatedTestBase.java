@@ -42,7 +42,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
@@ -193,7 +193,7 @@ public abstract class AutomatedTestBase
 	 * Also set DMLScript.USE_LOCAL_SPARK_CONFIG to true for running the test
 	 * suite in spark mode
 	 */
-	protected static RUNTIME_PLATFORM rtplatform = RUNTIME_PLATFORM.HYBRID;
+	protected static ExecMode rtplatform = ExecMode.HYBRID;
 
 	protected static final boolean DEBUG = false;
 
@@ -1196,11 +1196,11 @@ public abstract class AutomatedTestBase
 		}
 		// program-independent parameters
 		args.add("-exec");
-		if (rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if (rtplatform == ExecMode.HYBRID)
 			args.add("hybrid");
-		else if (rtplatform == RUNTIME_PLATFORM.SINGLE_NODE)
+		else if (rtplatform == ExecMode.SINGLE_NODE)
 			args.add("singlenode");
-		else if (rtplatform == RUNTIME_PLATFORM.SPARK)
+		else if (rtplatform == ExecMode.SPARK)
 			args.add("spark");
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);

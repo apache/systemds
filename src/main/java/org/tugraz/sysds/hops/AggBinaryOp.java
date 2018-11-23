@@ -20,7 +20,7 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
@@ -889,7 +889,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	{
 		//check for forced MR or Spark execution modes, which prevent the introduction of
 		//additional CP operations and hence the rewrite application
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) //not HYBRID
+		if( DMLScript.getGlobalExecMode() == ExecMode.SPARK ) //not HYBRID
 		{
 			return false;
 		}

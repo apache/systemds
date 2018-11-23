@@ -37,7 +37,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.util.random.SamplingUtils;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
@@ -253,7 +253,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 		//step 2: potential in-memory rand operations if applicable
 		if( isMemAvail(lrows, lcols, sparsity, minValue, maxValue) 
-			&&  DMLScript.rtplatform != RUNTIME_PLATFORM.SPARK )
+			&&  DMLScript.getGlobalExecMode() != ExecMode.SPARK )
 		{
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 				pdf, (int)lrows, (int)lcols, rowsInBlock, colsInBlock, 

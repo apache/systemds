@@ -22,7 +22,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -67,7 +67,7 @@ public class ReluBackwardTest extends AutomatedTestBase
 	 */
 	public void runReluBackwardTest( ExecType et, int M, int N) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
+		ExecMode oldRTP = rtplatform;
 			
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
@@ -75,12 +75,12 @@ public class ReluBackwardTest extends AutomatedTestBase
 		{
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);
 		    if(et == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    	rtplatform = ExecMode.SPARK;
 		    }
 		    else {
-		    	rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		    	rtplatform = ExecMode.SINGLE_NODE;
 		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			loadTestConfiguration(config);

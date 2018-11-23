@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.applications.descriptivestats;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 
 /**
  * Tests of univariate statistics built-in functions.
@@ -39,61 +39,61 @@ public class UnivariateWeightedScaleSparseTest extends UnivariateStatsBase
 
 	@Test
 	public void testWeightedScale1() {
-		testWeightedScaleWithR(SIZE.DIV4, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale2() {
-		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale3() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale4() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.NEG, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale5() {
-		testWeightedScaleWithR(SIZE.DIV4, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale6() {
-		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale7() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale8() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.MIXED, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale9() {
-		testWeightedScaleWithR(SIZE.DIV4, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale10() {
-		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P1, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale11() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 		
 	@Test
 	public void testWeightedScale12() {
-		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, RUNTIME_PLATFORM.HYBRID);
+		testWeightedScaleWithR(SIZE.DIV4P3, RANGE.POS, SPARSITY.SPARSE, ExecMode.HYBRID);
 	}
 }

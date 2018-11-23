@@ -24,7 +24,7 @@ import java.util.Iterator;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
@@ -92,8 +92,8 @@ public class TransformEncodeDecodeTest extends AutomatedTestBase
 	
 	private void runTransformEncodeDecodeTest( ExecType et, boolean sparse, String fmt)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID; //only CP supported
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID; //only CP supported
 
 		try
 		{

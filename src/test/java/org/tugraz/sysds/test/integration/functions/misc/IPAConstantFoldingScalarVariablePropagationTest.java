@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.misc;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -92,7 +92,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 		// Save old settings
 		int oldIPANumRep = OptimizerUtils.IPA_NUM_REPETITIONS;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 
 		try
 		{
@@ -104,7 +104,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
 			OptimizerUtils.IPA_NUM_REPETITIONS = IPA_SECOND_CHANCE ? 2 : 1;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 
 			// Run test
 			runTest(true, false, null, -1);

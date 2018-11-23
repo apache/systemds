@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -164,8 +164,8 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{
@@ -223,8 +223,8 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{
@@ -275,8 +275,8 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{
@@ -333,8 +333,8 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 		//setup exec type, rows, cols
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{

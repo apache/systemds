@@ -24,7 +24,7 @@ import java.util.Random;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -211,18 +211,18 @@ public class ReplaceTest extends AutomatedTestBase
 	
 	private void runTestReplace( String test, double pattern, boolean sparse, ExecType etype )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try
 		{
 			if(etype == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    	rtplatform = ExecMode.SPARK;
 		    }
 		    else {
-		    	rtplatform = RUNTIME_PLATFORM.HYBRID;
+		    	rtplatform = ExecMode.HYBRID;
 		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			double sparsity = (sparse)? sparsity2 : sparsity1;

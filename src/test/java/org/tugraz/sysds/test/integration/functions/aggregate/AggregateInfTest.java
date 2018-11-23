@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.aggregate;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -87,8 +87,8 @@ public class AggregateInfTest extends AutomatedTestBase
 	private void runInfAggregateOperationTest( boolean pos, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{

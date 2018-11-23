@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.functions.misc;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
@@ -80,11 +80,11 @@ public class NrowNcolUnknownCSVReadTest extends AutomatedTestBase
 	private void runNxxUnkownCSVTest( String testName ) 
 	{
 		String TEST_NAME = testName;
-		RUNTIME_PLATFORM oldplatform = rtplatform;
+		ExecMode oldplatform = rtplatform;
 		
 		try
 		{	
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			rtplatform = ExecMode.SINGLE_NODE;
 			
 			//test configuration
 			getAndLoadTestConfiguration(TEST_NAME);

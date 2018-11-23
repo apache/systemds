@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.misc;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 import org.tugraz.sysds.test.utils.TestUtils;
@@ -56,7 +56,7 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 	{
 		// Save old settings
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		
 		try
 		{
@@ -67,7 +67,7 @@ public class IPANnzPropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{"-stats", "-explain", "recompile_hops"};
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			
 			runTest(true, false, null, -1);
 			

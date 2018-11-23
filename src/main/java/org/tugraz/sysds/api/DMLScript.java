@@ -46,6 +46,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.tugraz.sysds.api.mlcontext.ScriptType;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
@@ -80,27 +81,21 @@ import org.tugraz.sysds.utils.Explain.ExplainType;
 
 
 public class DMLScript 
-{	
-	public enum RUNTIME_PLATFORM { 
-		SINGLE_NODE,    // execute all matrix operations in CP
-		HYBRID,         // execute matrix operations in CP or MR
-		SPARK           // execute matrix operations in Spark
-	}
-	
-	public static RUNTIME_PLATFORM  rtplatform          = DMLOptions.defaultOptions.execMode;    // the execution mode
-	public static boolean           STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
-	public static boolean           FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
-	public static boolean           JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
-	public static int               STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
-	public static int               STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
-	public static ExplainType       EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
-	public static String            DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
-	public static String            FLOATING_POINT_PRECISION = "double";                         // data type to use internally
-	public static boolean           PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
-	public static long            	EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
-	public static long            	EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
-	public static double 			GPU_MEMORY_UTILIZATION_FACTOR = 0.9; 						  // fraction of available GPU memory to use
-	public static String 			GPU_MEMORY_ALLOCATOR = "cuda"; 						  		  // GPU memory allocator to use
+{
+	private static ExecMode   EXEC_MODE          = DMLOptions.defaultOptions.execMode;    // the execution mode
+	public static boolean     STATISTICS          = DMLOptions.defaultOptions.stats;       // whether to print statistics
+	public static boolean     FINEGRAINED_STATISTICS  = false;                             // whether to print fine-grained statistics
+	public static boolean     JMLC_MEM_STATISTICS = false;                                 // whether to gather memory use stats in JMLC
+	public static int         STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;  // statistics maximum heavy hitter count
+	public static int         STATISTICS_MAX_WRAP_LEN = 30;                                // statistics maximum wrap length
+	public static ExplainType EXPLAIN             = DMLOptions.defaultOptions.explainType; // explain type
+	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath; // filename of dml/pydml script
+	public static String      FLOATING_POINT_PRECISION = "double";                         // data type to use internally
+	public static boolean     PRINT_GPU_MEMORY_INFO = false;                               // whether to print GPU memory-related information
+	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                         // maximum number of bytes to use for shadow buffer
+	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
+	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                          // fraction of available GPU memory to use
+	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                // GPU memory allocator to use
 	
 	/**
 	 * Global variable indicating the script type (DML or PYDML). Can be used
@@ -191,8 +186,8 @@ public class DMLScript
 	@SuppressWarnings("null")
 	public static boolean executeScript( Configuration conf, String[] args ) {
 		//parse arguments and set execution properties
-		RUNTIME_PLATFORM oldrtplatform  = rtplatform;  //keep old rtplatform
-		ExplainType oldexplain          = EXPLAIN;     //keep old explain
+		ExecMode oldrtplatform  = EXEC_MODE;  //keep old rtplatform
+		ExplainType oldexplain  = EXPLAIN;     //keep old explain
 
 		DMLOptions dmlOptions = null;
 		
@@ -207,7 +202,7 @@ public class DMLScript
 			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
 			SCRIPT_TYPE         = dmlOptions.scriptType;
-			rtplatform          = dmlOptions.execMode;
+			EXEC_MODE           = dmlOptions.execMode;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -255,7 +250,7 @@ public class DMLScript
 		}
 		finally {
 			//reset runtime platform and visualize flag
-			rtplatform = oldrtplatform;
+			setGlobalExecMode(oldrtplatform);
 			EXPLAIN = oldexplain;
 		}
 		
@@ -584,7 +579,7 @@ public class DMLScript
 
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals) {
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-			+ "RUNTIME: " + rtplatform + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+			+ "RUNTIME: " + getGlobalExecMode() + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
 			+ "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
@@ -622,5 +617,13 @@ public class DMLScript
 		catch(Exception ex) {
 			throw new DMLException("Failed to run SystemML workspace cleanup.", ex);
 		}
+	}
+	
+	public static ExecMode getGlobalExecMode() {
+		return EXEC_MODE;
+	}
+	
+	public static void setGlobalExecMode(ExecMode mode) {
+		EXEC_MODE = mode;
 	}
 }

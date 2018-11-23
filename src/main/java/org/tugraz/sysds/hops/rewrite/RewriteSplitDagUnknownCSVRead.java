@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
@@ -53,7 +53,7 @@ public class RewriteSplitDagUnknownCSVRead extends StatementBlockRewriteRule
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+		if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
 			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return Arrays.asList(sb);
 		

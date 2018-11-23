@@ -33,7 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.AggUnaryOp;
@@ -726,7 +726,7 @@ public class SpoofCompiler
 				}
 				else if( OptimizerUtils.isSparkExecutionMode() ) {
 					Hop hop = memo.getHopRefs().get(e.getKey());
-					boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+					boolean isSpark = DMLScript.getGlobalExecMode() == ExecMode.SPARK
 						|| OptimizerUtils.getTotalMemEstimate(inHops, hop, true)
 							> OptimizerUtils.getLocalMemBudget();
 					boolean invalidNcol = hop.getDataType().isMatrix() && (HopRewriteUtils.isTransposeOperation(hop) ?

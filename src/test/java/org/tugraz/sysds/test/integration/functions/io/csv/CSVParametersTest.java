@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -96,9 +96,9 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 0.1;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		ExecMode old_platform = rtplatform;
 		
-		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		rtplatform = ExecMode.SINGLE_NODE;
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -109,9 +109,9 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 1.0;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		ExecMode old_platform = rtplatform;
 
-		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		rtplatform = ExecMode.SINGLE_NODE;
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -122,9 +122,9 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 0.1;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		ExecMode old_platform = rtplatform;
 
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		rtplatform = ExecMode.HYBRID;
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
@@ -135,15 +135,15 @@ public class CSVParametersTest extends AutomatedTestBase
 		setup();
 		sparsity = 1.0;
 		
-		RUNTIME_PLATFORM old_platform = rtplatform;
+		ExecMode old_platform = rtplatform;
 
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		rtplatform = ExecMode.HYBRID;
 		csvParameterTest(rtplatform, sparsity);
 		
 		rtplatform = old_platform;
 	}
 	
-	private void csvParameterTest(RUNTIME_PLATFORM platform, double sp) {
+	private void csvParameterTest(ExecMode platform, double sp) {
 		
 		//generate actual dataset
 		double[][] D = getRandomMatrix(rows, cols, 0, 1, sp, 7777); 

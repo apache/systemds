@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.transform;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
@@ -50,17 +50,17 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 	
 	@Test
 	public void testCSVReadWriteSinglenode() {
-		runCSVQuotesReadWriteTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv");
+		runCSVQuotesReadWriteTest(ExecMode.SINGLE_NODE, "csv");
 	}
 	
 	@Test
 	public void testCSVReadWriteHybrid() {
-		runCSVQuotesReadWriteTest(RUNTIME_PLATFORM.HYBRID, "csv");
+		runCSVQuotesReadWriteTest(ExecMode.HYBRID, "csv");
 	}
 	
 	@Test
 	public void testCSVReadWriteSpark() {
-		runCSVQuotesReadWriteTest(RUNTIME_PLATFORM.SPARK, "csv");
+		runCSVQuotesReadWriteTest(ExecMode.SPARK, "csv");
 	}
 	
 	
@@ -70,14 +70,14 @@ public class FrameCSVReadWriteTest extends AutomatedTestBase
 	 * @param ofmt
 	 * @param dataset
 	 */
-	private void runCSVQuotesReadWriteTest( RUNTIME_PLATFORM rt, String ofmt )
+	private void runCSVQuotesReadWriteTest( ExecMode rt, String ofmt )
 	{
 		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		if( !ofmt.equals("csv") )

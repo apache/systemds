@@ -26,7 +26,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -698,14 +698,14 @@ public class UaggOuterChainTest extends AutomatedTestBase
 	private void runBinUaggTest( String testname, Type type, boolean singleBlock, boolean sparse, SumType sumType, boolean bEmptyBlock, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		switch( instType ){
-			case SPARK: rtplatform = RUNTIME_PLATFORM.SPARK; break;
-			default: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.HYBRID; break;
 		}
 	
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try
@@ -809,7 +809,7 @@ public class UaggOuterChainTest extends AutomatedTestBase
 				checkDMLMetaDataFile("C", new MatrixCharacteristics(1,1,1,1)); //sums
 			
 			//check compiled/executed jobs
-			if( rtplatform != RUNTIME_PLATFORM.SPARK && instType != ExecType.CP) {
+			if( rtplatform != ExecMode.SPARK && instType != ExecType.CP) {
 				int expectedNumCompiled = 2; //reblock+gmr if uaggouterchain; otherwise 3
 				if(sumType == SumType.SUM_ALL)
 					expectedNumCompiled = 3;  // scaler to matrix conversion.

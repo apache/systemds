@@ -27,7 +27,7 @@ import org.apache.spark.sql.SparkSession;
 import org.junit.After;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.MLContext;
 import org.tugraz.sysds.api.mlcontext.Matrix;
 import org.tugraz.sysds.api.mlcontext.Script;
@@ -52,38 +52,38 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 
 	@Test
 	public void testMLContextMultipleScriptsCP() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SINGLE_NODE, false);
+		runMLContextTestMultipleScript(ExecMode.SINGLE_NODE, false);
 	}
 	
 	@Test
 	public void testMLContextMultipleScriptsHybrid() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID, false);
+		runMLContextTestMultipleScript(ExecMode.HYBRID, false);
 	}
 	
 	@Test
 	public void testMLContextMultipleScriptsSpark() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SPARK, false);
+		runMLContextTestMultipleScript(ExecMode.SPARK, false);
 	}
 	
 	@Test
 	public void testMLContextMultipleScriptsWithReadCP() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SINGLE_NODE, true);
+		runMLContextTestMultipleScript(ExecMode.SINGLE_NODE, true);
 	}
 	
 	@Test
 	public void testMLContextMultipleScriptsWithReadHybrid() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.HYBRID, true);
+		runMLContextTestMultipleScript(ExecMode.HYBRID, true);
 	}
 	
 	@Test
 	public void testMLContextMultipleScriptsWithReadSpark() {
-		runMLContextTestMultipleScript(RUNTIME_PLATFORM.SPARK, true);
+		runMLContextTestMultipleScript(ExecMode.SPARK, true);
 	}
 
-	private static void runMLContextTestMultipleScript(RUNTIME_PLATFORM platform, boolean wRead) 
+	private static void runMLContextTestMultipleScript(ExecMode platform, boolean wRead) 
 	{
-		RUNTIME_PLATFORM oldplatform = DMLScript.rtplatform;
-		DMLScript.rtplatform = platform;
+		ExecMode oldplatform = DMLScript.getGlobalExecMode();
+		DMLScript.setGlobalExecMode(platform);
 		
 		//create mlcontext
 		SparkSession spark = createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
@@ -110,7 +110,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 		finally {
-			DMLScript.rtplatform = oldplatform;
+			DMLScript.setGlobalExecMode(oldplatform);
 			
 			// stop underlying spark context to allow single jvm tests (otherwise the
 			// next test that tries to create a SparkContext would fail)

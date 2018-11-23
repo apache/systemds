@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -105,8 +105,8 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType, boolean profile, boolean debug, boolean statistics )
 	{
 		//inst exec type, influenced via rows
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode oldPlatform = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		int cols = cols1;
 		
 		//script

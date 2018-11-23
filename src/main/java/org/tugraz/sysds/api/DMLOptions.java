@@ -29,8 +29,8 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.api.mlcontext.ScriptType;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.Explain.ExplainType;
@@ -51,7 +51,7 @@ public class DMLOptions {
 	public int                  statsCount    = 10;               // Default statistics count
 	public boolean              memStats      = false;            // max memory statistics
 	public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
-	public RUNTIME_PLATFORM     execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
+	public ExecMode             execMode = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
 	public boolean              debug         = false;            // to go into debug mode to be able to step through a program
@@ -118,9 +118,9 @@ public class DMLOptions {
 		if (line.hasOption("exec")){
 			String execMode = line.getOptionValue("exec");
 			if (execMode != null){
-				if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = RUNTIME_PLATFORM.SINGLE_NODE;
-				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = RUNTIME_PLATFORM.HYBRID;
-				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = RUNTIME_PLATFORM.SPARK;
+				if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = ExecMode.SINGLE_NODE;
+				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = ExecMode.HYBRID;
+				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = ExecMode.SPARK;
 				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, HYBRID, spark]");
 			}
 		}

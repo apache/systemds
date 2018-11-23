@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -519,7 +519,7 @@ public class FullOrderTest extends AutomatedTestBase
 	 */
 	private void runOrderTest( String testname, boolean matrix, InputType dtype, boolean desc, boolean ixreturn, boolean rewrite, ExecType instType, boolean forceDistSort)
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		boolean rewriteOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean forceOpOld = ReorgOp.FORCE_DIST_SORT_INDEXES;
 		
@@ -531,12 +531,12 @@ public class FullOrderTest extends AutomatedTestBase
 		
 			//set flags
 			if(instType == ExecType.SPARK) {
-		    	rtplatform = RUNTIME_PLATFORM.SPARK;
+		    	rtplatform = ExecMode.SPARK;
 		    }
 		    else {
-				rtplatform = RUNTIME_PLATFORM.HYBRID;
+				rtplatform = ExecMode.HYBRID;
 		    }
-			if( rtplatform == RUNTIME_PLATFORM.SPARK )
+			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;

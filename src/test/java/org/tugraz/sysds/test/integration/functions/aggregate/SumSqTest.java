@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.aggregate;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -164,18 +164,18 @@ public class SumSqTest extends AutomatedTestBase {
         boolean rewritesOld = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
         OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
-        RUNTIME_PLATFORM platformOld = rtplatform;
+        ExecMode platformOld = rtplatform;
         switch (platform) {
             case SPARK:
-                rtplatform = RUNTIME_PLATFORM.SPARK;
+                rtplatform = ExecMode.SPARK;
                 break;
             default:
-                rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+                rtplatform = ExecMode.SINGLE_NODE;
                 break;
         }
 
         boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-        if (rtplatform == RUNTIME_PLATFORM.SPARK)
+        if (rtplatform == ExecMode.SPARK)
             DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
         try {

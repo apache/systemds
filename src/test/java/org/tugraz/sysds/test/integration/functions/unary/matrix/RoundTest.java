@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 import org.tugraz.sysds.test.utils.TestUtils;
@@ -61,494 +61,494 @@ public class RoundTest extends AutomatedTestBase
 	
 	@Test
 	public void testRound1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testRound2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testRound3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testRound4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testRound5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testRound6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testFloor1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testFloor2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testFloor3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testFloor4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testFloor5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testFloor6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeil1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeil2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeil3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeil4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeil5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeil6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeiling1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeiling2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeiling3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeiling4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeiling5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeiling6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testRoundMR1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testRoundMR2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testRoundMR3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testRoundMR4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testRoundMR5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testRoundMR6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testFloorMR1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testFloorMR2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testFloorMR3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testFloorMR4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testFloorMR5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testFloorMR6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeilMR1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeilMR2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeilMR3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeilMR4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeilMR5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeilMR6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeilingMR1() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeilingMR2() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeilingMR3() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeilingMR4() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeilingMR5() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeilingMR6() {
-		runTest(RUNTIME_PLATFORM.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
+		runTest(ExecMode.HYBRID, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
 	}
 	
 	// -----------------------------------------------------------------------------
 	
 	@Test
 	public void testRound1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testRound2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testRound3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testRound4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testRound5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testRound6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testFloor1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testFloor2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testFloor3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testFloor4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testFloor5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testFloor6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeil1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeil2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeil3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeil4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeil5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeil6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeiling1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeiling2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeiling3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeiling4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeiling5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeiling6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testRoundMR1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testRoundMR2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testRoundMR3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testRoundMR4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testRoundMR5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testRoundMR6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.ROUND, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testFloorMR1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testFloorMR2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testFloorMR3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testFloorMR4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testFloorMR5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testFloorMR6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.FLOOR, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeilMR1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeilMR2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeilMR3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeilMR4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeilMR5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeilMR6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEIL, rows2, cols2, sparsity3);
 	}
 	
 	@Test
 	public void testCeilingMR1_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity1);
 	}
 	
 	@Test
 	public void testCeilingMR2_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity2);
 	}
 	
 	@Test
 	public void testCeilingMR3_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows1, cols1, sparsity3);
 	}
 	
 	@Test
 	public void testCeilingMR4_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity1);
 	}
 	
 	@Test
 	public void testCeilingMR5_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity2);
 	}
 	
 	@Test
 	public void testCeilingMR6_SP() {
-		runTest(RUNTIME_PLATFORM.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
+		runTest(ExecMode.SPARK, TEST_TYPE.CEILING, rows2, cols2, sparsity3);
 	}
 	
 	// -----------------------------------------------------------------------------
 	
-	private void runTest(RUNTIME_PLATFORM rt, TEST_TYPE test, int rows, int cols, double sparsity) {
-		RUNTIME_PLATFORM rtOld = rtplatform;
+	private void runTest(ExecMode rt, TEST_TYPE test, int rows, int cols, double sparsity) {
+		ExecMode rtOld = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 		try

@@ -28,7 +28,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -199,12 +199,12 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 
 	private void testDataFrameConversion(ValueType vt, boolean singleColBlock, boolean dense, boolean unknownDims) {
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
-		RUNTIME_PLATFORM oldPlatform = DMLScript.rtplatform;
+		ExecMode oldPlatform = DMLScript.getGlobalExecMode();
 
 		try
 		{
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+			DMLScript.setGlobalExecMode(ExecMode.HYBRID);
 			
 			//generate input data and setup metadata
 			int cols = singleColBlock ? cols1 : cols2;
@@ -238,7 +238,7 @@ public class DataFrameRowFrameConversionTest extends AutomatedTestBase
 		}
 		finally {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
-			DMLScript.rtplatform = oldPlatform;
+			DMLScript.setGlobalExecMode(oldPlatform);
 		}
 	}
 

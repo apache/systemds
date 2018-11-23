@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.frame;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.util.HDFSTool;
@@ -45,90 +45,90 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 	
 	@Test
 	public void testFrameStringCP0() { 
-		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.STRING, ExecMode.SINGLE_NODE); 
 	}
 	
 	@Test
 	public void testFrameLongCP0() { 
-		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.INT64, ExecMode.SINGLE_NODE); 
 	}
 	
 	@Test
 	public void testFrameBooleanCP0() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SINGLE_NODE); 
 	}
 	
 	@Test
 	public void testFrameDoubleCP0() { 
-		runFrameScalarCastingTest(ValueType.FP64, RUNTIME_PLATFORM.SINGLE_NODE); 
+		runFrameScalarCastingTest(ValueType.FP64, ExecMode.SINGLE_NODE); 
 	}
 	
 	@Test
 	public void testFrameStringCP1() { 
-		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.STRING, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameLongCP1() { 
-		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.INT64, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameBooleanCP1() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameDoubleCP1() { 
-		runFrameScalarCastingTest(ValueType.FP64, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.FP64, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameStringCP2() { 
-		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.STRING, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameLongCP2() { 
-		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.INT64, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameBooleanCP2() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameDoubleCP2() { 
-		runFrameScalarCastingTest(ValueType.FP64, RUNTIME_PLATFORM.HYBRID); 
+		runFrameScalarCastingTest(ValueType.FP64, ExecMode.HYBRID); 
 	}
 	
 	@Test
 	public void testFrameStringSP() { 
-		runFrameScalarCastingTest(ValueType.STRING, RUNTIME_PLATFORM.SPARK); 
+		runFrameScalarCastingTest(ValueType.STRING, ExecMode.SPARK); 
 	}
 	
 	@Test
 	public void testFrameLongSP() { 
-		runFrameScalarCastingTest(ValueType.INT64, RUNTIME_PLATFORM.SPARK); 
+		runFrameScalarCastingTest(ValueType.INT64, ExecMode.SPARK); 
 	}
 	
 	@Test
 	public void testFrameBooleanSP() { 
-		runFrameScalarCastingTest(ValueType.BOOLEAN, RUNTIME_PLATFORM.SPARK); 
+		runFrameScalarCastingTest(ValueType.BOOLEAN, ExecMode.SPARK); 
 	}
 	
 	@Test
 	public void testFrameDoubleSP() { 
-		runFrameScalarCastingTest(ValueType.FP64, RUNTIME_PLATFORM.SPARK); 
+		runFrameScalarCastingTest(ValueType.FP64, ExecMode.SPARK); 
 	}
 	
-	private void runFrameScalarCastingTest(ValueType vtIn, RUNTIME_PLATFORM et) 
+	private void runFrameScalarCastingTest(ValueType vtIn, ExecMode et) 
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		rtplatform = et;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID )
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
@@ -154,7 +154,7 @@ public class FrameScalarCastingIntegratedTest extends AutomatedTestBase
 
 			//compare output 
 			Assert.assertEquals(readDMLMatrixFromHDFS("R").get(new CellIndex(1,1)), Double.valueOf(1));
-			if( et != RUNTIME_PLATFORM.SPARK ) {
+			if( et != ExecMode.SPARK ) {
 				Assert.assertTrue(Statistics.getNoOfCompiledSPInst()==0);
 				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 			}

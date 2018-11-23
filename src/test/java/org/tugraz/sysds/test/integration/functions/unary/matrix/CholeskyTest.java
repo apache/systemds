@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -58,40 +58,40 @@ public class CholeskyTest extends AutomatedTestBase
 
 	@Test
 	public void testCholeskyDenseCP() {
-		runTestCholesky( rows1, cols1, DMLScript.RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestCholesky( rows1, cols1, ExecMode.SINGLE_NODE );
 	}
 
 	@Test
 	public void testCholeskyDenseSP() {
-		runTestCholesky( rows1, cols1, RUNTIME_PLATFORM.SPARK );
+		runTestCholesky( rows1, cols1, ExecMode.SPARK );
 	}
 
 	@Test
 	public void testCholeskyDenseHybrid() {
-		runTestCholesky( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
+		runTestCholesky( rows1, cols1, ExecMode.HYBRID );
 	}
 
 	@Test
 	public void testLargeCholeskyDenseCP() {
-		runTestCholesky( rows2, cols2, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestCholesky( rows2, cols2, ExecMode.SINGLE_NODE );
 	}
 
 	@Test
 	public void testLargeCholeskyDenseSP() {
-		runTestCholesky( rows2, cols2, RUNTIME_PLATFORM.SPARK );
+		runTestCholesky( rows2, cols2, ExecMode.SPARK );
 	}
 
 	@Test
 	public void testLargeCholeskyDenseHybrid() {
-		runTestCholesky( rows2, cols2, RUNTIME_PLATFORM.HYBRID );
+		runTestCholesky( rows2, cols2, ExecMode.HYBRID );
 	}
 
-	private void runTestCholesky( int rows, int cols, RUNTIME_PLATFORM rt) {
-		RUNTIME_PLATFORM rtold = rtplatform;
+	private void runTestCholesky( int rows, int cols, ExecMode rt) {
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try {

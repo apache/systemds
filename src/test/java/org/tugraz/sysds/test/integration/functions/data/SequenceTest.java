@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -115,7 +115,7 @@ public class SequenceTest extends AutomatedTestBase
 	
 	@Test
 	public void testSequence() {
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		
 		try
 		{
@@ -159,15 +159,15 @@ public class SequenceTest extends AutomatedTestBase
 			}
 			int outputIndex = programArgs.length-1;
 	
-			rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+			rtplatform = ExecMode.SINGLE_NODE;
 			programArgs[outputIndex] = output("A_CP");
 			runTest(true, exceptionExpected, null, -1); 
 			
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			programArgs[outputIndex] = output("A_HYBRID");
 			runTest(true, exceptionExpected, null, -1);
 			
-			rtplatform = RUNTIME_PLATFORM.SPARK;
+			rtplatform = ExecMode.SPARK;
 			boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 			try {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;

@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -102,8 +102,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	@Test
 	public void testFormatChangeCP() {
 		setup();
-		RUNTIME_PLATFORM old_platform = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.SINGLE_NODE;
+		ExecMode old_platform = rtplatform;
+		rtplatform = ExecMode.SINGLE_NODE;
 		formatChangeTest();
 		rtplatform =  old_platform;
 	}
@@ -111,8 +111,8 @@ public class FormatChangeTest extends AutomatedTestBase
 	@Test
 	public void testFormatChangeHybrid() {
 		setup();
-		RUNTIME_PLATFORM old_platform = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode old_platform = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		formatChangeTest();
 		rtplatform =  old_platform;
 	}

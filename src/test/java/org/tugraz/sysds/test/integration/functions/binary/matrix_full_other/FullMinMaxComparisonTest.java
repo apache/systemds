@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -198,8 +198,8 @@ public class FullMinMaxComparisonTest extends AutomatedTestBase
 	private void runMinMaxComparisonTest( OpType type, DataType dtM1, DataType dtM2, boolean sparseM1, boolean sparseM2, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		//get the testname
 		String TEST_NAME = null;

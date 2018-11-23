@@ -28,7 +28,6 @@ import java.util.LinkedHashMap;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
@@ -69,6 +68,7 @@ import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
@@ -811,7 +811,7 @@ public class HopRewriteUtils
 	{
 		//awareness of forced exec single node (e.g., standalone), where we can 
 		//guarantee a single block independent of the size because always in CP.
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+		if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
 			return true;
 		}
 		

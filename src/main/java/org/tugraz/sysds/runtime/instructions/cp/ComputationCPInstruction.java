@@ -20,7 +20,7 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -58,7 +58,7 @@ public abstract class ComputationCPInstruction extends CPInstruction {
 	}
 
 	protected boolean checkGuardedRepresentationChange( MatrixBlock in1, MatrixBlock in2, MatrixBlock out ) {
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE
+		if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
 			&& !CacheableData.isCachingActive() )
 			return true;
 		double memIn1 = (in1 != null) ? in1.getInMemorySize() : 0;

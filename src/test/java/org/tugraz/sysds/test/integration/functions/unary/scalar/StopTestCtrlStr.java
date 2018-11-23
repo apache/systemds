@@ -20,7 +20,7 @@
 package org.tugraz.sysds.test.integration.functions.unary.scalar;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 
@@ -61,22 +61,22 @@ public class StopTestCtrlStr extends AutomatedTestBase
 	
 	@Test
 	public void testStopFor() {
-		testLoop("for", RUNTIME_PLATFORM.HYBRID);
+		testLoop("for", ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testStopWhile() {
-		testLoop("while", RUNTIME_PLATFORM.HYBRID);
+		testLoop("while", ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testStopFunction() {
-		testLoop("fn", RUNTIME_PLATFORM.HYBRID);
+		testLoop("fn", ExecMode.HYBRID);
 	}
 	
-	private void testLoop(String loop, RUNTIME_PLATFORM rt) {
+	private void testLoop(String loop, ExecMode rt) {
 		
-		RUNTIME_PLATFORM oldRT = rtplatform;
+		ExecMode oldRT = rtplatform;
 		rtplatform = rt;
 		
 		getAndLoadTestConfiguration(TEST_NAME);

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -156,8 +156,8 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		}
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{
@@ -227,8 +227,8 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 		}
 
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		try
 		{

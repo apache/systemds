@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.transform;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
@@ -54,52 +54,52 @@ public class TransformFrameEncodeColmapTest extends AutomatedTestBase
 	
 	@Test
 	public void testHomesIDsSingleNode1() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
+		runTransformTest(TEST_NAME1, ExecMode.SINGLE_NODE, "csv", false);
 	}
 	
 	@Test
 	public void testHomesColnamesSingleNode1() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+		runTransformTest(TEST_NAME1, ExecMode.SINGLE_NODE, "csv", true);
 	}
 	
 	@Test
 	public void testHomesIDsSpark1() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SPARK, "csv", false);
+		runTransformTest(TEST_NAME1, ExecMode.SPARK, "csv", false);
 	}
 	
 	@Test
 	public void testHomesColnamesSpark1() {
-		runTransformTest(TEST_NAME1, RUNTIME_PLATFORM.SPARK, "csv", true);
+		runTransformTest(TEST_NAME1, ExecMode.SPARK, "csv", true);
 	}
 	
 	@Test
 	public void testHomesIDsSingleNode2() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SINGLE_NODE, "csv", false);
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE, "csv", false);
 	}
 	
 	@Test
 	public void testHomesColnamesSingleNode2() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SINGLE_NODE, "csv", true);
+		runTransformTest(TEST_NAME2, ExecMode.SINGLE_NODE, "csv", true);
 	}
 	
 	@Test
 	public void testHomesIDsSpark2() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SPARK, "csv", false);
+		runTransformTest(TEST_NAME2, ExecMode.SPARK, "csv", false);
 	}
 	
 	@Test
 	public void testHomesColnamesSpark2() {
-		runTransformTest(TEST_NAME2, RUNTIME_PLATFORM.SPARK, "csv", true);
+		runTransformTest(TEST_NAME2, ExecMode.SPARK, "csv", true);
 	}
 	
-	private void runTransformTest( String testname, RUNTIME_PLATFORM rt, String ofmt, boolean colnames )
+	private void runTransformTest( String testname, ExecMode rt, String ofmt, boolean colnames )
 	{
 		//set runtime platform
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK || rtplatform == RUNTIME_PLATFORM.HYBRID)
+		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		//set transform specification

@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.misc;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -106,7 +106,7 @@ public class SizePropagationTest extends AutomatedTestBase
 	
 	private void testSizePropagation( String testname, boolean rewrites, int expect ) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		ExecMode oldPlatform = rtplatform;
 		
 		try {
 			TestConfiguration config = getTestConfiguration(testname);
@@ -116,7 +116,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[]{ "-explain", "hops", "-stats","-args", String.valueOf(N), output("R") };
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 			runTest(true, false, null, -1); 

@@ -42,7 +42,7 @@ import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.MLContext;
 import org.tugraz.sysds.api.mlcontext.MLContextUtil;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -126,7 +126,7 @@ public class SparkExecutionContext extends ExecutionContext
 		super( allocateVars, prog );
 		
 		//spark context creation via internal initializer
-		if( !LAZY_SPARKCTX_CREATION || DMLScript.rtplatform==RUNTIME_PLATFORM.SPARK ) {
+		if( !LAZY_SPARKCTX_CREATION || DMLScript.getGlobalExecMode()==ExecMode.SPARK ) {
 			initSparkContext();
 		}
 	}

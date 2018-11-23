@@ -27,7 +27,7 @@ import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
 import org.tugraz.sysds.lops.Binary;
@@ -186,7 +186,7 @@ public abstract class Hop implements ParseInfo
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
 			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
 				_etypeForced = findExecTypeByMemEstimate();
@@ -198,7 +198,7 @@ public abstract class Hop implements ParseInfo
 				_etypeForced = ExecType.CP;  
 			}
 		}
-		else if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK )
+		else if ( DMLScript.getGlobalExecMode() == ExecMode.SPARK )
 			_etypeForced = ExecType.SPARK; // enabled with -exec spark option
 	}
 	
@@ -210,7 +210,7 @@ public abstract class Hop implements ParseInfo
 			
 			//force exec type mr if necessary
 			if( invalid ) { 
-				if( DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID )
+				if( DMLScript.getGlobalExecMode() == ExecMode.HYBRID )
 					_etype = ExecType.SPARK;
 			}
 		}
@@ -270,7 +270,7 @@ public abstract class Hop implements ParseInfo
 	{
 		//determine execution type
 		ExecType et = ExecType.CP;
-		if( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE 
+		if( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE 
 			&& !(getDataType()==DataType.SCALAR) )
 		{
 			et = ExecType.SPARK;
@@ -683,7 +683,7 @@ public abstract class Hop implements ParseInfo
 				et = ExecType.CP;
 		}
 		else {
-			if( DMLScript.rtplatform == DMLScript.RUNTIME_PLATFORM.HYBRID )
+			if( DMLScript.getGlobalExecMode() == ExecMode.HYBRID )
 				et = ExecType.SPARK;
 			
 			c = '*';

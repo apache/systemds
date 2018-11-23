@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.io.csv;
 import java.io.IOException;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
 import org.tugraz.sysds.test.utils.TestUtils;
@@ -54,27 +54,27 @@ public class WriteCSVTest extends AutomatedTestBase
 	
 	@Test
 	public void testCSV1_CP() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, true, ":", true);
+		runCSVWriteTest(ExecMode.HYBRID, true, ":", true);
 	}
 	
 	@Test
 	public void testCSV2_CP() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ":", true);
+		runCSVWriteTest(ExecMode.HYBRID, false, ":", true);
 	}
 	
 	@Test
 	public void testCSV3_CP() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ":", false);
+		runCSVWriteTest(ExecMode.HYBRID, false, ":", false);
 	}
 	
 	@Test
 	public void testCSV4_CP() throws IOException {
-		runCSVWriteTest(RUNTIME_PLATFORM.HYBRID, false, ".", false);
+		runCSVWriteTest(ExecMode.HYBRID, false, ".", false);
 	}
 	
-	private void runCSVWriteTest(RUNTIME_PLATFORM platform, boolean header, String sep, boolean sparse) throws IOException {
+	private void runCSVWriteTest(ExecMode platform, boolean header, String sep, boolean sparse) throws IOException {
 		
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
+		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);

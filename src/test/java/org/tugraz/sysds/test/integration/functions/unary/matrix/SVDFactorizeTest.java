@@ -21,7 +21,7 @@ package org.tugraz.sysds.test.integration.functions.unary.matrix;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -46,41 +46,41 @@ public class SVDFactorizeTest extends AutomatedTestBase
 	
 	@Test
 	public void testSVDFactorizeDenseCP() {
-		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestSVDFactorize( rows1, cols1, ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testSVDFactorizeDenseSP() {
-		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.SPARK );
+		runTestSVDFactorize( rows1, cols1, ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testSVDFactorizeDenseHybrid() {
-		runTestSVDFactorize( rows1, cols1, RUNTIME_PLATFORM.HYBRID );
+		runTestSVDFactorize( rows1, cols1, ExecMode.HYBRID );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseCP() {
-		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SINGLE_NODE );
+		runTestSVDFactorize( rows2, cols2, ExecMode.SINGLE_NODE );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseSP() {
-		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.SPARK );
+		runTestSVDFactorize( rows2, cols2, ExecMode.SPARK );
 	}
 	
 	@Test
 	public void testLargeSVDFactorizeDenseHybrid() {
-		runTestSVDFactorize( rows2, cols2, RUNTIME_PLATFORM.HYBRID );
+		runTestSVDFactorize( rows2, cols2, ExecMode.HYBRID );
 	}
 	
-	private void runTestSVDFactorize( int rows, int cols, RUNTIME_PLATFORM rt)
+	private void runTestSVDFactorize( int rows, int cols, ExecMode rt)
 	{
-		RUNTIME_PLATFORM rtold = rtplatform;
+		ExecMode rtold = rtplatform;
 		rtplatform = rt;
 		
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try

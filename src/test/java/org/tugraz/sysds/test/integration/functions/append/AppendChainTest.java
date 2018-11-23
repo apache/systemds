@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -61,58 +61,58 @@ public class AppendChainTest extends AutomatedTestBase
 
 	@Test
 	public void testAppendChainVectorDenseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2a, cols3a, false);
+		commonAppendTest(ExecMode.HYBRID, rows, cols1, cols2a, cols3a, false);
 	}
 	
 	@Test
 	public void testAppendChainMatrixDenseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2b, cols3b, false);
+		commonAppendTest(ExecMode.HYBRID, rows, cols1, cols2b, cols3b, false);
 	}
 	
 	// ------------------------------------------------------
 	@Test
 	public void testAppendChainVectorDenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2a, cols3a, false);
+		commonAppendTest(ExecMode.SPARK, rows, cols1, cols2a, cols3a, false);
 	}
 	
 	@Test
 	public void testAppendChainMatrixDenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2b, cols3b, false);
+		commonAppendTest(ExecMode.SPARK, rows, cols1, cols2b, cols3b, false);
 	}
 	
 	@Test
 	public void testAppendChainVectorSparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2a, cols3a, true);
+		commonAppendTest(ExecMode.SPARK, rows, cols1, cols2a, cols3a, true);
 	}
 	
 	@Test
 	public void testAppendChainMatrixSparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1, cols2b, cols3b, true);
+		commonAppendTest(ExecMode.SPARK, rows, cols1, cols2b, cols3b, true);
 	}
 	
 	// ------------------------------------------------------
 	
 	@Test
 	public void testAppendChainVectorSparseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2a, cols3a, true);
+		commonAppendTest(ExecMode.HYBRID, rows, cols1, cols2a, cols3a, true);
 	}
 	
 	@Test
 	public void testAppendChainMatrixSparseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.HYBRID, rows, cols1, cols2b, cols3b, true);
+		commonAppendTest(ExecMode.HYBRID, rows, cols1, cols2b, cols3b, true);
 	}
 	
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, int cols3, boolean sparse)
+	public void commonAppendTest(ExecMode platform, int rows, int cols1, int cols2, int cols3, boolean sparse)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		ExecMode prevPlfm=rtplatform;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try
 		{
 		    rtplatform = platform;
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		    if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			
 	        config.addVariable("rows", rows);

@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.functions.indexing;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -117,8 +117,8 @@ public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 	 */
 	public void runLeftIndexingUpdateInPlaceTest(boolean sparseM1, boolean sparseM2, boolean vectorM2, boolean emptyM2) 
 	{
-		RUNTIME_PLATFORM oldRTP = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode oldRTP = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		
 		try {
 		    TestConfiguration config = getTestConfiguration(TEST_NAME);

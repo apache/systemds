@@ -22,6 +22,7 @@ package org.tugraz.sysds.test.integration.functions.paramserv;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
 import org.tugraz.sysds.test.integration.TestConfiguration;
@@ -79,9 +80,9 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	private void internalRunDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException,
 			String errMessage) {
-		DMLScript.RUNTIME_PLATFORM oldRtplatform = AutomatedTestBase.rtplatform;
+		ExecMode oldRtplatform = AutomatedTestBase.rtplatform;
 		boolean oldUseLocalSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		AutomatedTestBase.rtplatform = DMLScript.RUNTIME_PLATFORM.HYBRID;
+		AutomatedTestBase.rtplatform = ExecMode.HYBRID;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
 		try {

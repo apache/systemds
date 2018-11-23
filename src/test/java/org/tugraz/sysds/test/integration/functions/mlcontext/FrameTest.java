@@ -36,7 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.FrameFormat;
 import org.tugraz.sysds.api.mlcontext.FrameMetadata;
 import org.tugraz.sysds.api.mlcontext.FrameSchema;
@@ -148,8 +148,8 @@ public class FrameTest extends MLContextTestBase
 		
 		boolean oldConfig = DMLScript.USE_LOCAL_SPARK_CONFIG; 
 		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		RUNTIME_PLATFORM oldRT = DMLScript.rtplatform;
-		DMLScript.rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode oldRT = DMLScript.getGlobalExecMode();
+		DMLScript.setGlobalExecMode(ExecMode.HYBRID);
 
 		int rowstart = 234, rowend = 1478, colstart = 125, colend = 568;
 		int bRows = rowend-rowstart+1, bCols = colend-colstart+1;
@@ -340,7 +340,7 @@ public class FrameTest extends MLContextTestBase
 			System.out.println("Frame MLContext test completed successfully.");
 		}
 		finally {
-			DMLScript.rtplatform = oldRT;
+			DMLScript.setGlobalExecMode(oldRT);
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldConfig;
 		}
 	}

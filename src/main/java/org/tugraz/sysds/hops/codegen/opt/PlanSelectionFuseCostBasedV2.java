@@ -38,7 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
 import org.tugraz.sysds.hops.BinaryOp;
@@ -739,7 +739,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 				if( !memo.contains(hopID, TemplateType.ROW) )
 					continue;
 				Hop hop = memo.getHopRefs().get(hopID);
-				boolean isSpark = DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
+				boolean isSpark = DMLScript.getGlobalExecMode() == ExecMode.SPARK
 					|| OptimizerUtils.getTotalMemEstimate(hop.getInput().toArray(new Hop[0]), hop, true)
 						> OptimizerUtils.getLocalMemBudget();
 				boolean validNcol = hop.getDataType().isScalar() || (HopRewriteUtils.isTransposeOperation(hop) ? 

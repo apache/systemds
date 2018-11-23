@@ -25,7 +25,7 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.BinaryOp.AppendMethod;
@@ -74,75 +74,75 @@ public class AppendMatrixTest extends AutomatedTestBase
 
 	@Test
 	public void testAppendInBlock1DenseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, false, null);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1a, cols2a, false, null);
 	}
 	
 	@Test
 	public void testAppendInBlock1SparseCP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1a, cols2a, true, null);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1a, cols2a, true, null);
 	}
 	
 	// -----------------------------------------------------------------
 	
 	@Test
 	public void testAppendInBlock1DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, false, AppendMethod.MR_RAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1a, cols2a, false, AppendMethod.MR_RAPPEND);
 	}   
 	
 	@Test
 	public void testAppendInBlock1SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1a, cols2a, true, AppendMethod.MR_RAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1a, cols2a, true, AppendMethod.MR_RAPPEND);
 	}   
 	
 	//NOTE: mappend only applied for m2_cols<=blocksize
 	@Test
 	public void testMapAppendInBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1b, cols2a, false, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendInBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2a, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1b, cols2a, true, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, false, AppendMethod.MR_MAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1d, cols3d, false, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testMapAppendOutBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols3d, true, AppendMethod.MR_MAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1d, cols3d, true, AppendMethod.MR_MAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock1DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, false, AppendMethod.SP_GAlignedAppend);
+		commonAppendTest(ExecMode.SPARK, rows, cols1c, cols2c, false, AppendMethod.SP_GAlignedAppend);
 	}
 	
 	@Test
 	public void testAppendOutBlock1SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1c, cols2c, true, AppendMethod.SP_GAlignedAppend);
+		commonAppendTest(ExecMode.SPARK, rows, cols1c, cols2c, true, AppendMethod.SP_GAlignedAppend);
 	}
 	
 	@Test
 	public void testAppendInBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, false, AppendMethod.MR_GAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1b, cols2b, false, AppendMethod.MR_GAPPEND);
 	}
 	
 	@Test
 	public void testAppendInBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1b, cols2b, true, AppendMethod.MR_GAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1b, cols2b, true, AppendMethod.MR_GAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock2DenseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, false, AppendMethod.MR_GAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1d, cols2d, false, AppendMethod.MR_GAPPEND);
 	}
 	
 	@Test
 	public void testAppendOutBlock2SparseSP() {
-		commonAppendTest(RUNTIME_PLATFORM.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_GAPPEND);
+		commonAppendTest(ExecMode.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_GAPPEND);
 	}
 	
 	// -----------------------------------------------------------------
@@ -151,23 +151,23 @@ public class AppendMatrixTest extends AutomatedTestBase
 	/*
 	@Test
 	public void testAppendInBlock2CP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1b, cols2b);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1b, cols2b);
 	}
 	
 	@Test
 	public void testAppendOutBlock1CP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1c, cols2c);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1c, cols2c);
 	}	
 
 	@Test
 	public void testAppendOutBlock2CP() {
-		commonAppendTest(RUNTIME_PLATFORM.SINGLE_NODE, rows, cols1d, cols2d);
+		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1d, cols2d);
 	}*/
-	public void commonAppendTest(RUNTIME_PLATFORM platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
+	public void commonAppendTest(ExecMode platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
 	    
-		RUNTIME_PLATFORM prevPlfm=rtplatform;
+		ExecMode prevPlfm=rtplatform;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -178,7 +178,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
 		    rtplatform = platform;
-		    if( rtplatform == RUNTIME_PLATFORM.SPARK )
+		    if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
 	        config.addVariable("rows", rows);

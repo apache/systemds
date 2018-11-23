@@ -23,7 +23,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -95,8 +95,8 @@ public class FullDynWriteTest extends AutomatedTestBase
 	private void runDynamicWriteTest( Type type, OutputInfo fmt, ExecType et )
 	{		
 		String TEST_NAME = (type==Type.Scalar) ? TEST_NAME1 : TEST_NAME2;
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		config.addVariable("rows", rows);

@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -93,10 +93,10 @@ public class ParForAccumulatorResultMergeTest extends AutomatedTestBase
 
 	private void runParForAccumulatorResultMergeTest( String test, boolean init, boolean sparse, ExecType et )
 	{
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		switch( et ) {
-			case CP: rtplatform = RUNTIME_PLATFORM.SINGLE_NODE; break;
-			case SPARK: rtplatform = RUNTIME_PLATFORM.HYBRID; break;
+			case CP: rtplatform = ExecMode.SINGLE_NODE; break;
+			case SPARK: rtplatform = ExecMode.HYBRID; break;
 			default: throw new RuntimeException("Unsupported exec type: "+et.name());
 		}
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

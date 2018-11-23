@@ -22,7 +22,7 @@ package org.tugraz.sysds.test.integration.applications.parfor;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -137,8 +137,8 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 		int cols = cols1;
 		
 		//inst exec type, influenced via rows
-		RUNTIME_PLATFORM oldPlatform = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode oldPlatform = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 		
 		//determine the script
 		int scriptNum = -1;

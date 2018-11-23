@@ -22,7 +22,7 @@ package org.tugraz.sysds.hops.rewrite;
 import java.util.ArrayList;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
@@ -124,7 +124,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 				} 
 				else if (dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTWRITE
 						|| dop.getDataOpType() == DataOp.DataOpTypes.TRANSIENTREAD) {
-					if ( DMLScript.rtplatform == RUNTIME_PLATFORM.SINGLE_NODE ) {
+					if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
 						// simply copy the values from its input
 						dop.setRowsInBlock(hop.getInput().get(0).getRowsInBlock());
 						dop.setColsInBlock(hop.getInput().get(0).getColsInBlock());
@@ -214,6 +214,6 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	}
 	
 	private static boolean isReblockValid() {
-		return ( DMLScript.rtplatform != RUNTIME_PLATFORM.SINGLE_NODE);
+		return ( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE);
 	}
 }

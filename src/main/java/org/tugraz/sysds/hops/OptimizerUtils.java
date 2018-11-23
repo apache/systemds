@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
@@ -532,25 +532,25 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	public static RUNTIME_PLATFORM getDefaultExecutionMode() {
+	public static ExecMode getDefaultExecutionMode() {
 		//default execution type is hybrid (cp+mr)
-		RUNTIME_PLATFORM ret = RUNTIME_PLATFORM.HYBRID;
+		ExecMode ret = ExecMode.HYBRID;
 		
 		//switch default to HYBRID (cp+spark) if in spark driver
 		String sparkenv = System.getenv().get("SPARK_ENV_LOADED");
 		if( sparkenv != null && sparkenv.equals("1") )
-			ret = RUNTIME_PLATFORM.HYBRID;
+			ret = ExecMode.HYBRID;
 		
 		return ret;
 	}
 
 	public static boolean isSparkExecutionMode() {
-		return DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK
-			|| DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
+		return DMLScript.getGlobalExecMode() == ExecMode.SPARK
+			|| DMLScript.getGlobalExecMode() == ExecMode.HYBRID;
 	}
 	
 	public static boolean isHybridExecutionMode() {
-		return DMLScript.rtplatform == RUNTIME_PLATFORM.HYBRID;
+		return DMLScript.getGlobalExecMode() == ExecMode.HYBRID;
 	}
 	
 	/**

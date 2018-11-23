@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LeftIndexingOp;
@@ -55,7 +55,7 @@ public class RewriteMarkLoopVariablesUpdateInPlace extends StatementBlockRewrite
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus status)
 	{
-		if( DMLScript.rtplatform == RUNTIME_PLATFORM.SPARK ) {
+		if( DMLScript.getGlobalExecMode() == ExecMode.SPARK ) {
 			// nothing to do here, return original statement block
 			return Arrays.asList(sb);
 		}

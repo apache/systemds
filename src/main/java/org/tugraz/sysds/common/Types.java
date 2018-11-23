@@ -16,8 +16,22 @@
 
 package org.tugraz.sysds.common;
 
-public class Types {
-
+public class Types
+{
+	/**
+	 * Execution mode for entire script. 
+	 */
+	public enum ExecMode { 
+		SINGLE_NODE, // execute all matrix operations in CP
+		HYBRID,      // execute matrix operations in CP or MR
+		SPARK        // execute matrix operations in Spark
+	}
+	
+	/**
+	 * Execution type of individual operations.
+	 */
+	public enum ExecType { CP, CP_FILE, SPARK, GPU, INVALID }
+	
 	/**
 	 * Data types (tensor, matrix, scalar, frame, object, unknown).
 	 */

@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.integration.AutomatedTestBase;
@@ -80,7 +80,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	}
 	
 	private void runRewriteMapMultChain( String TEST_NAME, boolean singleCol, ExecType et ) throws IOException {
-		RUNTIME_PLATFORM platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 		
 		try
 		{
@@ -95,7 +95,7 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-			rtplatform = RUNTIME_PLATFORM.HYBRID;
+			rtplatform = ExecMode.HYBRID;
 			
 			//generate input data
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);

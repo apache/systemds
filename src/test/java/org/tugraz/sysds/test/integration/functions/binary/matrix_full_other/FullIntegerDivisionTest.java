@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript.RUNTIME_PLATFORM;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
@@ -193,8 +193,8 @@ public class FullIntegerDivisionTest extends AutomatedTestBase
 	private void runIntegerDivisionTest( OpType type, DataType dt1, DataType dt2, boolean sparse, ExecType instType)
 	{
 		//rtplatform for MR
-		RUNTIME_PLATFORM platformOld = rtplatform;
-		rtplatform = RUNTIME_PLATFORM.HYBRID;
+		ExecMode platformOld = rtplatform;
+		rtplatform = ExecMode.HYBRID;
 	
 		double sparsity = sparse?sparsity2:sparsity1;
 		

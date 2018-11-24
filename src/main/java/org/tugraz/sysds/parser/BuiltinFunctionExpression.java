@@ -37,10 +37,10 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {
-	protected Expression[] 	  _args = null;
-	private BuiltinFunctionOp _opcode;
+	protected Expression[] _args = null;
+	private Builtins _opcode;
 
-	public BuiltinFunctionExpression(ParserRuleContext ctx, BuiltinFunctionOp bifop, ArrayList<ParameterExpression> args, String fname) {
+	public BuiltinFunctionExpression(ParserRuleContext ctx, Builtins bifop, ArrayList<ParameterExpression> args, String fname) {
 		_opcode = bifop;
 		setCtxValuesAndFilename(ctx, fname);
 		args = expandDnnArguments(args);
@@ -50,7 +50,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	public BuiltinFunctionExpression(BuiltinFunctionOp bifop, Expression[] args, ParseInfo parseInfo) {
+	public BuiltinFunctionExpression(Builtins bifop, Expression[] args, ParseInfo parseInfo) {
 		_opcode = bifop;
 		_args = new Expression[args.length];
 		for (int i = 0; i < args.length; i++) {
@@ -59,7 +59,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		setParseInfo(parseInfo);
 	}
 
-	public BuiltinFunctionExpression(ParserRuleContext ctx, BuiltinFunctionOp bifop, Expression[] args, String fname) {
+	public BuiltinFunctionExpression(ParserRuleContext ctx, Builtins bifop, Expression[] args, String fname) {
 		_opcode = bifop;
 		_args = new Expression[args.length];
 		for(int i=0; i < args.length; i++) {
@@ -78,7 +78,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		return retVal;
 	}
 
-	public BuiltinFunctionOp getOpCode() {
+	public Builtins getOpCode() {
 		return _opcode;
 	}
 
@@ -463,22 +463,22 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	private ArrayList<ParameterExpression> expandDnnArguments(ArrayList<ParameterExpression> paramExpression) {
 		try {
-			if(_opcode == BuiltinFunctionOp.CONV2D || _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER 
-					|| _opcode == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+			if(_opcode == Builtins.CONV2D || _opcode == Builtins.CONV2D_BACKWARD_FILTER 
+					|| _opcode == Builtins.CONV2D_BACKWARD_DATA) {
 				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("filter_shape"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression = orderDnnParams(paramExpression, 2);
 			}
-			else if(_opcode == BuiltinFunctionOp.MAX_POOL || _opcode == BuiltinFunctionOp.AVG_POOL ||  
-					_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
+			else if(_opcode == Builtins.MAX_POOL || _opcode == Builtins.AVG_POOL ||  
+					_opcode == Builtins.MAX_POOL_BACKWARD || _opcode == Builtins.AVG_POOL_BACKWARD) {
 				HashSet<String> expand = new HashSet<>();
 				expand.add("input_shape"); expand.add("pool_size"); expand.add("stride"); expand.add("padding");
 				paramExpression = expandListParams(paramExpression, expand);
 				paramExpression.add(new ParameterExpression("filter_shape1", new IntIdentifier(1, this)));
 				paramExpression.add(new ParameterExpression("filter_shape2", new IntIdentifier(1, this)));
 				paramExpression = replaceListParams(paramExpression, "pool_size", "filter_shape", 3);
-				if(_opcode == BuiltinFunctionOp.MAX_POOL_BACKWARD || _opcode == BuiltinFunctionOp.AVG_POOL_BACKWARD)
+				if(_opcode == Builtins.MAX_POOL_BACKWARD || _opcode == Builtins.AVG_POOL_BACKWARD)
 					paramExpression = orderDnnParams(paramExpression, 2);
 				else
 					paramExpression = orderDnnParams(paramExpression, 1);
@@ -636,7 +636,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			// cumsum(X);
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());
-			if( getOpCode() == BuiltinFunctionOp.CUMSUMPROD && id.getDim2() > 2 )
+			if( getOpCode() == Builtins.CUMSUMPROD && id.getDim2() > 2 )
 				raiseValidateError("Cumsumprod only supported over two-column matrices", conditional);
 			
 			output.setDataType(DataType.MATRIX);
@@ -746,7 +746,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				long m2rlen = getExpr(i).getOutput().getDim1();
 				long m2clen = getExpr(i).getOutput().getDim2();
 				
-				if( getOpCode() == BuiltinFunctionOp.CBIND ) {
+				if( getOpCode() == Builtins.CBIND ) {
 					if (m1rlen >= 0 && m2rlen >= 0 && m1rlen!=m2rlen) {
 						raiseValidateError("inputs to cbind must have same number of rows: input 1 rows: " + 
 							m1rlen+", input 2 rows: "+m2rlen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -754,7 +754,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					appendDim1 = (m2rlen>=0) ? m2rlen : appendDim1;
 					appendDim2 = (appendDim2>=0 && m2clen>=0) ? appendDim2 + m2clen : -1;
 				}
-				else if( getOpCode() == BuiltinFunctionOp.RBIND ) {
+				else if( getOpCode() == Builtins.RBIND ) {
 					if (m1clen >= 0 && m2clen >= 0 && m1clen!=m2clen) {
 						raiseValidateError("inputs to rbind must have same number of columns: input 1 columns: " + 
 							m1clen+", input 2 columns: "+m2clen, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1359,7 +1359,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			Expression input = _args[0]; // For conv2d_backward_filter, this is input and for conv2d_backward_data, this is filter
 			
 			Expression input2 = null;
-			if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+			if(!(this.getOpCode() == Builtins.MAX_POOL || this.getOpCode() == Builtins.AVG_POOL)) {
 				input2 = _args[1];			// For conv2d_backward functions, this is dout
 				checkMatrixParam(input2);
 			}
@@ -1367,7 +1367,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setValueType(ValueType.FP64);
 			output.setBlockDimensions(input.getOutput().getRowsInBlock(), input.getOutput().getColumnsInBlock());
 			
-			if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD || this.getOpCode() == BuiltinFunctionOp.AVG_POOL_BACKWARD) {
+			if(this.getOpCode() == Builtins.MAX_POOL_BACKWARD || this.getOpCode() == Builtins.AVG_POOL_BACKWARD) {
 				output.setDimensions(input.getOutput().getDim1(), input.getOutput().getDim2());
 			}
 			else {
@@ -1375,7 +1375,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	 			// filter_shape1=1, filter_shape2=1, filterSize/poolSize1, filterSize/poolSize1
 				try {
 					int start = 2;
-					if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+					if(!(this.getOpCode() == Builtins.MAX_POOL || this.getOpCode() == Builtins.AVG_POOL)) {
 						start = 1;
 					}
 					long stride_h = (long) getDoubleValue(_args[start++]);
@@ -1387,17 +1387,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 					long H = (long) getDoubleValue(_args[start++]);
 					long W = (long) getDoubleValue(_args[start++]);
 					long K = -1;
-					if(!(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)) {
+					if(!(this.getOpCode() == Builtins.MAX_POOL || this.getOpCode() == Builtins.AVG_POOL)) {
 						K = (long) getDoubleValue(_args[start]);
 					}
 					start++; start++; // Increment index for K and C
 					long R = (long) getDoubleValue(_args[start++]);
 					long S = (long) getDoubleValue(_args[start++]);
 					
-					if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER) {
+					if(this.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER) {
 						output.setDimensions(K, C*R*S);
 					}
-					else if(this.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA) {
+					else if(this.getOpCode() == Builtins.CONV2D_BACKWARD_DATA) {
 						output.setDimensions(N, C*H*W);
 					}
 					else if(H > 0 && W > 0 && stride_h > 0 && stride_w > 0 && pad_h >= 0 && pad_w >= 0 && R > 0 && S > 0) {
@@ -1405,18 +1405,18 @@ public class BuiltinFunctionExpression extends DataIdentifier
 						long Q = DnnUtils.getQ(W, S, stride_w, pad_w);
 						
 						// Try to set both rows and columns
-						if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
+						if(this.getOpCode() == Builtins.CONV2D) 
 							output.setDimensions(N, K*P*Q);
-						else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
+						else if(this.getOpCode() == Builtins.MAX_POOL || this.getOpCode() == Builtins.AVG_POOL)
 							output.setDimensions(N, C*P*Q);
 						else
 							throw new LanguageException("");
 					}
 					else {
 						// Since columns cannot be computed, set only rows
-						if(this.getOpCode() == BuiltinFunctionOp.CONV2D) 
+						if(this.getOpCode() == Builtins.CONV2D) 
 							output.setDimensions(input.getOutput().getDim1(), -1);
-						else if(this.getOpCode() == BuiltinFunctionOp.MAX_POOL || this.getOpCode() == BuiltinFunctionOp.AVG_POOL)
+						else if(this.getOpCode() == Builtins.MAX_POOL || this.getOpCode() == Builtins.AVG_POOL)
 							output.setDimensions(input.getOutput().getDim1(), -1);
 						else
 							throw new LanguageException("");
@@ -1438,7 +1438,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				if( getSecondExpr() == null ) {
 					output.setDataType(id.getDataType());
 					output.setValueType((output.getDataType()==DataType.SCALAR
-						&& getOpCode()==BuiltinFunctionOp.ABS)?id.getValueType():ValueType.FP64 );
+						&& getOpCode()==Builtins.ABS)?id.getValueType():ValueType.FP64 );
 					output.setDimensions(id.getDim1(), id.getDim2());
 					output.setBlockDimensions(id.getRowsInBlock(), id.getColumnsInBlock()); 
 				}
@@ -1446,16 +1446,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				else {
 					setBinaryOutputProperties(output);
 					// override computed value type for special cases
-					if( getOpCode() == BuiltinFunctionOp.LOG )
+					if( getOpCode() == Builtins.LOG )
 						output.setValueType(ValueType.FP64);
 				}
 			} 
 			else {
 				// always unconditional (because unsupported operation)
-				BuiltinFunctionOp op = getOpCode();
-				if( op==BuiltinFunctionOp.EIGEN || op==BuiltinFunctionOp.LU || op==BuiltinFunctionOp.QR || op==BuiltinFunctionOp.SVD 
-						|| op==BuiltinFunctionOp.LSTM || op==BuiltinFunctionOp.LSTM_BACKWARD
-						|| op==BuiltinFunctionOp.BATCH_NORM2D || op==BuiltinFunctionOp.BATCH_NORM2D_BACKWARD)
+				Builtins op = getOpCode();
+				if( op==Builtins.EIGEN || op==Builtins.LU || op==Builtins.QR || op==Builtins.SVD 
+						|| op==Builtins.LSTM || op==Builtins.LSTM_BACKWARD
+						|| op==Builtins.BATCH_NORM2D || op==Builtins.BATCH_NORM2D_BACKWARD)
 					raiseValidateError("Function "+op+" needs to be called with multi-return assignment.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				else
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1790,257 +1790,33 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public static BuiltinFunctionExpression getBuiltinFunctionExpression(ParserRuleContext ctx, 
-			String functionName, ArrayList<ParameterExpression> paramExprsPassed,
-			String filename) {
+		String functionName, ArrayList<ParameterExpression> paramExprsPassed, String filename) {
 		
 		if (functionName == null || paramExprsPassed == null)
 			return null;
 		
 		// check if the function name is built-in function
 		//	(assign built-in function op if function is built-in
-		Expression.BuiltinFunctionOp bifop = null;
-		
-		if (functionName.equals("avg"))
-			bifop = Expression.BuiltinFunctionOp.MEAN;
-		else if (functionName.equals("cos"))
-			bifop = Expression.BuiltinFunctionOp.COS;
-		else if (functionName.equals("sin"))
-			bifop = Expression.BuiltinFunctionOp.SIN;
-		else if (functionName.equals("tan"))
-			bifop = Expression.BuiltinFunctionOp.TAN;
-		else if (functionName.equals("acos"))
-			bifop = Expression.BuiltinFunctionOp.ACOS;
-		else if (functionName.equals("asin"))
-			bifop = Expression.BuiltinFunctionOp.ASIN;
-		else if (functionName.equals("atan"))
-			bifop = Expression.BuiltinFunctionOp.ATAN;
-		else if (functionName.equals("cosh"))
-			bifop = Expression.BuiltinFunctionOp.COSH;
-		else if (functionName.equals("sinh"))
-			bifop = Expression.BuiltinFunctionOp.SINH;
-		else if (functionName.equals("tanh"))
-			bifop = Expression.BuiltinFunctionOp.TANH;
-		else if (functionName.equals("diag"))
-			bifop = Expression.BuiltinFunctionOp.DIAG;
-		else if (functionName.equals("exp"))
-			 bifop = Expression.BuiltinFunctionOp.EXP;
-		else if (functionName.equals("abs"))
-			bifop = Expression.BuiltinFunctionOp.ABS;
-		else if (functionName.equals("min"))
-			bifop = Expression.BuiltinFunctionOp.MIN;
-		else if (functionName.equals("max"))
-			 bifop = Expression.BuiltinFunctionOp.MAX;
-		//NOTE: pmin and pmax are just kept for compatibility to R
-		// min and max is capable of handling all unary and binary
-		// operations (in contrast to R)
-		else if (functionName.equals("pmin"))
-			bifop = Expression.BuiltinFunctionOp.MIN;
-		else if (functionName.equals("pmax"))
-			 bifop = Expression.BuiltinFunctionOp.MAX;
-		else if (functionName.equals("ppred"))
-			bifop = Expression.BuiltinFunctionOp.PPRED;
-		else if(functionName.equals("list") //unnamed list
-			&& paramExprsPassed.stream().allMatch(p -> p.getName()==null))
-			bifop = Expression.BuiltinFunctionOp.LIST;
-		else if (functionName.equals("log"))
-			bifop = Expression.BuiltinFunctionOp.LOG;
-		else if (functionName.equals("length"))
-			bifop = Expression.BuiltinFunctionOp.LENGTH;
-		else if (functionName.equals("ncol"))
-			 bifop = Expression.BuiltinFunctionOp.NCOL;
-		else if (functionName.equals("nrow"))
-			bifop = Expression.BuiltinFunctionOp.NROW;
-		else if (functionName.equals("sign"))
-			 bifop = Expression.BuiltinFunctionOp.SIGN;
-		else if (functionName.equals("sqrt"))
-			 bifop = Expression.BuiltinFunctionOp.SQRT;
-		else if (functionName.equals("sum"))
-			bifop = Expression.BuiltinFunctionOp.SUM;
-		else if (functionName.equals("mean"))
-			bifop = Expression.BuiltinFunctionOp.MEAN;
-		else if (functionName.equals("sd"))
-			bifop = Expression.BuiltinFunctionOp.SD;
-		else if (functionName.equals("var"))
-			bifop = Expression.BuiltinFunctionOp.VAR;
-		else if (functionName.equals("trace"))
-			bifop = Expression.BuiltinFunctionOp.TRACE;
-		else if (functionName.equals("t"))
-			 bifop = Expression.BuiltinFunctionOp.TRANS;
-		else if (functionName.equals("rev"))
-			 bifop = Expression.BuiltinFunctionOp.REV;
-		else if (functionName.equals("cbind") || functionName.equals("append"))
-			bifop = Expression.BuiltinFunctionOp.CBIND;
-		else if (functionName.equals("rbind"))
-			bifop = Expression.BuiltinFunctionOp.RBIND;
-		else if (functionName.equals("range"))
-			bifop = Expression.BuiltinFunctionOp.RANGE;
-		else if (functionName.equals("prod"))
-			bifop = Expression.BuiltinFunctionOp.PROD;
-		else if (functionName.equals("rowSums"))
-			bifop = Expression.BuiltinFunctionOp.ROWSUM;
-		else if (functionName.equals("colSums"))
-			bifop = Expression.BuiltinFunctionOp.COLSUM;
-		else if (functionName.equals("rowMins"))
-			bifop = Expression.BuiltinFunctionOp.ROWMIN;
-		else if (functionName.equals("colMins"))
-			bifop = Expression.BuiltinFunctionOp.COLMIN;
-		else if (functionName.equals("rowMaxs"))
-			bifop = Expression.BuiltinFunctionOp.ROWMAX;
-		else if (functionName.equals("rowIndexMax"))
-			bifop = Expression.BuiltinFunctionOp.ROWINDEXMAX;
-		else if (functionName.equals("rowIndexMin"))
-			bifop = Expression.BuiltinFunctionOp.ROWINDEXMIN;
-		else if (functionName.equals("colMaxs"))
-			bifop = Expression.BuiltinFunctionOp.COLMAX;
-		else if (functionName.equals("rowMeans"))
-			bifop = Expression.BuiltinFunctionOp.ROWMEAN;
-		else if (functionName.equals("colMeans"))
-			 bifop = Expression.BuiltinFunctionOp.COLMEAN;
-		else if (functionName.equals("rowSds"))
-			bifop = Expression.BuiltinFunctionOp.ROWSD;
-		else if (functionName.equals("colSds"))
-			bifop = Expression.BuiltinFunctionOp.COLSD;
-		else if (functionName.equals("rowVars"))
-			bifop = Expression.BuiltinFunctionOp.ROWVAR;
-		else if (functionName.equals("colVars"))
-			bifop = Expression.BuiltinFunctionOp.COLVAR;
-		else if (functionName.equals("rowProds"))
-			bifop = Expression.BuiltinFunctionOp.ROWPROD;
-		else if (functionName.equals("colProds"))
-			bifop = Expression.BuiltinFunctionOp.COLPROD;
-		else if (functionName.equals("cummax"))
-			 bifop = Expression.BuiltinFunctionOp.CUMMAX;
-		else if (functionName.equals("cummin"))
-			 bifop = Expression.BuiltinFunctionOp.CUMMIN;
-		else if (functionName.equals("cumprod"))
-			 bifop = Expression.BuiltinFunctionOp.CUMPROD;
-		else if (functionName.equals("cumsum"))
-			 bifop = Expression.BuiltinFunctionOp.CUMSUM;
-		else if (functionName.equals("cumsumprod"))
-			 bifop = Expression.BuiltinFunctionOp.CUMSUMPROD;
-		//'castAsScalar' for backwards compatibility
-		else if (functionName.equals("as.scalar") || functionName.equals("castAsScalar")) 
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_SCALAR;
-		else if (functionName.equals("as.matrix"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_MATRIX;
-		else if (functionName.equals("as.frame"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_FRAME;
-		else if (functionName.equals("as.double"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_DOUBLE;
-		else if (functionName.equals("as.integer"))
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_INT;
-		else if (functionName.equals("as.logical")) //alternative: as.boolean
-			bifop = Expression.BuiltinFunctionOp.CAST_AS_BOOLEAN;
-		else if (functionName.equals("quantile"))
-			bifop= Expression.BuiltinFunctionOp.QUANTILE;
-		else if (functionName.equals("interQuantile"))
-			bifop= Expression.BuiltinFunctionOp.INTERQUANTILE;
-		else if (functionName.equals("interQuartileMean"))
-			bifop= Expression.BuiltinFunctionOp.IQM;
-		//'ctable' for backwards compatibility 
-		else if (functionName.equals("table") || functionName.equals("ctable"))
-			bifop = Expression.BuiltinFunctionOp.TABLE;
-		else if (functionName.equals("round"))
-			bifop = Expression.BuiltinFunctionOp.ROUND;
-		//'centralMoment' for backwards compatibility 
-		else if (functionName.equals("moment") || functionName.equals("centralMoment"))
-			 bifop = Expression.BuiltinFunctionOp.MOMENT;
-		else if (functionName.equals("cov"))
-			bifop = Expression.BuiltinFunctionOp.COV;
-		else if (functionName.equals("seq"))
-			bifop = Expression.BuiltinFunctionOp.SEQ;
-		else if (functionName.equals("qr"))
-			bifop = Expression.BuiltinFunctionOp.QR;
-		else if (functionName.equals("lu"))
-			bifop = Expression.BuiltinFunctionOp.LU;
-		else if (functionName.equals("eigen"))
-			bifop = Expression.BuiltinFunctionOp.EIGEN;
-		else if (functionName.equals("lstm"))
-			bifop = Expression.BuiltinFunctionOp.LSTM;
-		else if (functionName.equals("lstm_backward"))
-			bifop = Expression.BuiltinFunctionOp.LSTM_BACKWARD;
-		else if (functionName.equals("batch_norm2d"))
-			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D;
-		else if (functionName.equals("batch_norm2d_backward"))
-			bifop = Expression.BuiltinFunctionOp.BATCH_NORM2D_BACKWARD;
-		else if (functionName.equals("conv2d"))
-			 bifop = Expression.BuiltinFunctionOp.CONV2D;
-		else if (functionName.equals("bias_add"))
-			 bifop = Expression.BuiltinFunctionOp.BIASADD;
-		else if (functionName.equals("bias_multiply"))
-			 bifop = Expression.BuiltinFunctionOp.BIASMULT;
-		else if (functionName.equals("conv2d_backward_filter"))
-			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_FILTER;
-		else if (functionName.equals("conv2d_backward_data"))
-			 bifop = Expression.BuiltinFunctionOp.CONV2D_BACKWARD_DATA;
-		else if (functionName.equals("max_pool"))
-			 bifop = Expression.BuiltinFunctionOp.MAX_POOL;
-		else if (functionName.equals("max_pool_backward"))
-			 bifop = Expression.BuiltinFunctionOp.MAX_POOL_BACKWARD;
-		else if (functionName.equals("avg_pool"))
-			 bifop = Expression.BuiltinFunctionOp.AVG_POOL;
-		else if (functionName.equals("avg_pool_backward"))
-			 bifop = Expression.BuiltinFunctionOp.AVG_POOL_BACKWARD;
-		else if (functionName.equals("solve"))
-			bifop = Expression.BuiltinFunctionOp.SOLVE;
-		else if (functionName.equals("ceil") || functionName.equals("ceiling"))
-			bifop = Expression.BuiltinFunctionOp.CEIL;
-		else if (functionName.equals("floor"))
-			bifop = Expression.BuiltinFunctionOp.FLOOR;
-		else if (functionName.equals("median"))
-			bifop = Expression.BuiltinFunctionOp.MEDIAN;
-		else if (functionName.equals("inv"))
-			bifop = Expression.BuiltinFunctionOp.INVERSE;
-		else if (functionName.equals("cholesky"))
-			bifop = Expression.BuiltinFunctionOp.CHOLESKY;
-		else if (functionName.equals("svd"))
-			bifop = Expression.BuiltinFunctionOp.SVD;
-		else if (functionName.equals("sample"))
-			bifop = Expression.BuiltinFunctionOp.SAMPLE;
-		else if ( functionName.equals("outer") )
-			bifop = Expression.BuiltinFunctionOp.OUTER;
-		else if ( functionName.equals("xor") )
-			bifop = Expression.BuiltinFunctionOp.XOR;
-		else if ( functionName.equals("bitwAnd") )
-			bifop = Expression.BuiltinFunctionOp.BITWAND;
-		else if ( functionName.equals("bitwOr") )
-			bifop = Expression.BuiltinFunctionOp.BITWOR;
-		else if ( functionName.equals("bitwXor") )
-			bifop = Expression.BuiltinFunctionOp.BITWXOR;
-		else if ( functionName.equals("bitwShiftL") )
-			bifop = Expression.BuiltinFunctionOp.BITWSHIFTL;
-		else if ( functionName.equals("bitwShiftR") )
-			bifop = Expression.BuiltinFunctionOp.BITWSHIFTR;
-		else if ( functionName.equals("ifelse") )
-			bifop = Expression.BuiltinFunctionOp.IFELSE;
-		else if (functionName.equals("eval"))
-			bifop = Expression.BuiltinFunctionOp.EVAL;
-		else if (functionName.equals("exists"))
-			bifop = Expression.BuiltinFunctionOp.EXISTS;
-		else
-			return null;
-		
-		BuiltinFunctionExpression retVal = new BuiltinFunctionExpression(ctx, bifop, paramExprsPassed, filename);
+		return !Builtins.contains(functionName, false) ? null :
+			new BuiltinFunctionExpression(ctx, Builtins.get(functionName), paramExprsPassed, filename);
+	}
 	
-		return retVal;
-	} // end method getBuiltinFunctionExpression
-
 	/**
 	 * Convert a value type (double, int, or boolean) to a built-in function operator.
 	 * 
 	 * @param vt Value type ({@code ValueType.DOUBLE}, {@code ValueType.INT}, or {@code ValueType.BOOLEAN}).
-	 * @return Built-in function operator ({@code BuiltinFunctionOp.AS_DOUBLE},
-	 * {@code BuiltinFunctionOp.AS_INT}, or {@code BuiltinFunctionOp.AS_BOOLEAN}).
+	 * @return Built-in function operator ({@code Builtins.AS_DOUBLE},
+	 * {@code Builtins.AS_INT}, or {@code Builtins.AS_BOOLEAN}).
 	 */
-	public static BuiltinFunctionOp getValueTypeCastOperator( ValueType vt ) {
+	public static Builtins getValueTypeCastOperator( ValueType vt ) {
 		switch( vt )
 		{
 			case FP64:
-				return BuiltinFunctionOp.CAST_AS_DOUBLE;
+				return Builtins.CAST_AS_DOUBLE;
 			case INT64:
-				return BuiltinFunctionOp.CAST_AS_INT;
+				return Builtins.CAST_AS_INT;
 			case BOOLEAN:
-				return BuiltinFunctionOp.CAST_AS_BOOLEAN;
+				return Builtins.CAST_AS_BOOLEAN;
 			default:
 				throw new LanguageException("No cast for value type "+vt);
 		}

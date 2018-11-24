@@ -73,11 +73,10 @@ import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.compile.Dag;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.Expression.BuiltinFunctionOp;
 import org.tugraz.sysds.parser.Expression.FormatType;
-import org.tugraz.sysds.parser.Expression.ParameterizedBuiltinFunctionOp;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
@@ -1942,7 +1941,7 @@ public class DMLTranslator
 		}
 	}
 
-	private static Hop constructDfHop(String name, DataType dt, ValueType vt, ParameterizedBuiltinFunctionOp op, LinkedHashMap<String,Hop> paramHops) {
+	private static Hop constructDfHop(String name, DataType dt, ValueType vt, Builtins op, LinkedHashMap<String,Hop> paramHops) {
 		
 		// Add a hop to paramHops to store distribution information. 
 		// Distribution parameter hops would have been already present in paramHops.
@@ -2446,8 +2445,8 @@ public class DMLTranslator
 			
 		case CBIND:
 		case RBIND:
-			OpOp2 appendOp1 = (source.getOpCode()==BuiltinFunctionOp.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;
-			OpOpN appendOp2 = (source.getOpCode()==BuiltinFunctionOp.CBIND) ? OpOpN.CBIND : OpOpN.RBIND;
+			OpOp2 appendOp1 = (source.getOpCode()==Builtins.CBIND) ? OpOp2.CBIND : OpOp2.RBIND;
+			OpOpN appendOp2 = (source.getOpCode()==Builtins.CBIND) ? OpOpN.CBIND : OpOpN.RBIND;
 			currBuiltinOp = (source.getAllExpr().length == 2) ?
 					new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp1, expr, expr2) :
 					new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOp2,
@@ -2720,10 +2719,10 @@ public class DMLTranslator
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}
 		
-		boolean isConvolution = source.getOpCode() == BuiltinFunctionOp.CONV2D || source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_DATA ||
-				source.getOpCode() == BuiltinFunctionOp.CONV2D_BACKWARD_FILTER || 
-				source.getOpCode() == BuiltinFunctionOp.MAX_POOL || source.getOpCode() == BuiltinFunctionOp.MAX_POOL_BACKWARD || 
-				source.getOpCode() == BuiltinFunctionOp.AVG_POOL || source.getOpCode() == BuiltinFunctionOp.AVG_POOL_BACKWARD;
+		boolean isConvolution = source.getOpCode() == Builtins.CONV2D || source.getOpCode() == Builtins.CONV2D_BACKWARD_DATA ||
+				source.getOpCode() == Builtins.CONV2D_BACKWARD_FILTER || 
+				source.getOpCode() == Builtins.MAX_POOL || source.getOpCode() == Builtins.MAX_POOL_BACKWARD || 
+				source.getOpCode() == Builtins.AVG_POOL || source.getOpCode() == Builtins.AVG_POOL_BACKWARD;
 		if( !isConvolution) {
 			// Since the dimension of output doesnot match that of input variable for these operations
 			setIdentifierParams(currBuiltinOp, source.getOutput());

@@ -31,6 +31,7 @@ import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.StatementBlockRewriteRule;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.FormatType;
@@ -861,8 +862,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		
 		if (source instanceof BuiltinFunctionExpression){
 			BuiltinFunctionExpression bife = (BuiltinFunctionExpression)source;
-			if (   bife.getOpCode() == Expression.BuiltinFunctionOp.NROW
-				|| bife.getOpCode() == Expression.BuiltinFunctionOp.NCOL )
+			if (   bife.getOpCode() == Builtins.NROW
+				|| bife.getOpCode() == Builtins.NCOL )
 			{
 				DataIdentifier id = (DataIdentifier)bife.getFirstExpr();
 				DataIdentifier currVal = ids.getVariable(id.getName());
@@ -871,7 +872,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					bife.raiseValidateError("Undefined Variable (" + id.getName() + ") used in statement", false, LanguageErrorCodes.INVALID_PARAMETERS);
 				}
 				IntIdentifier intid = null;
-				if (bife.getOpCode() == Expression.BuiltinFunctionOp.NROW) {
+				if (bife.getOpCode() == Builtins.NROW) {
 					intid = new IntIdentifier((currVal instanceof IndexedIdentifier)
 							? ((IndexedIdentifier) currVal).getOrigDim1() : currVal.getDim1(), bife);
 				} else {

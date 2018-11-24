@@ -40,10 +40,10 @@ import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.OpOp1;
 import org.tugraz.sysds.hops.Hop.OpOp2;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.BinaryOp;
-import org.tugraz.sysds.parser.Expression.BuiltinFunctionOp;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
@@ -844,7 +844,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if(e instanceof BuiltinFunctionExpression) {
 			BuiltinFunctionExpression be = (BuiltinFunctionExpression) e;
 			//disregard meta data ops nrow/ncol (to exclude from candidates)
-			if( !((be.getOpCode() == BuiltinFunctionOp.NROW || be.getOpCode() == BuiltinFunctionOp.NCOL)
+			if( !((be.getOpCode() == Builtins.NROW || be.getOpCode() == Builtins.NCOL)
 				&& be.getFirstExpr() instanceof DataIdentifier) ) {
 				ret.addAll( rGetDataIdentifiers(be.getFirstExpr()) );
 				ret.addAll( rGetDataIdentifiers(be.getSecondExpr()) );
@@ -1558,7 +1558,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		else if( expr instanceof BuiltinFunctionExpression && ignoreMinWithConstant ) {
 			//note: builtin function expression is also a data identifier and hence order before
 			BuiltinFunctionExpression bexpr = (BuiltinFunctionExpression) expr;
-			if( bexpr.getOpCode()==BuiltinFunctionOp.MIN ) {
+			if( bexpr.getOpCode()==Builtins.MIN ) {
 				if( bexpr.getFirstExpr() instanceof BinaryExpression )
 					return rParseBinaryExpression((BinaryExpression)bexpr.getFirstExpr());
 				else if( bexpr.getSecondExpr() instanceof BinaryExpression )

@@ -137,7 +137,7 @@ public enum Builtins {
 	//TODO handle parameterized builtins explicitly
 	//TODO remove custom handling from parsing
 	CDF("cdf", false),
-	INVCDF("invcdf", false),
+	INVCDF("icdf", false),
 	PCHISQ("pchisq", false),
 	PEXP("pexp", false),
 	PF("pf", false),
@@ -147,19 +147,43 @@ public enum Builtins {
 	QNORM("qnorm", false),
 	QT("qt", false),
 	QEXP("qexp", false),
-	QCHISQ("qchisq", false);
+	QCHISQ("qchisq", false),
 	
+	GROUPEDAGG("aggregate", "groupedAggregate", false),
+	RMEMPTY("removeEmpty", false),
+	REPLACE("replace", false),
+	ORDER("order", false),
+	LOWER_TRI("lower.tri", false),
+	UPPER_TRI("upper.tri", false),
+	
+	TRANSFORMAPPLY("transformapply", false),
+	TRANSFORMDECODE("transformdecode", false),
+	TRANSFORMENCODE("transformencode", false),
+	TRANSFORMCOLMAP("transformcolmap", false),
+	TRANSFORMMETA("transformmeta", false),
+
+	TOSTRING("toString", false),
+	//LIST("LIST", false), TODO both builtin and parameterized builtin 
+	PARAMSERV("paramserv", false);
+
 	
 	Builtins(String name, boolean script) {
-		_name = name;
-		_alias = null;
-		_script = script;
+		this(name, null, script, false);
+	}
+	
+	Builtins(String name, boolean script, boolean parameterized) {
+		this(name, null, script, parameterized);
 	}
 	
 	Builtins(String name, String alias, boolean script) {
+		this(name, alias, script, false);
+	}
+	
+	Builtins(String name, String alias, boolean script, boolean parameterized) {
 		_name = name;
 		_alias = alias;
 		_script = script;
+		_parameterized = parameterized;
 	}
 	
 	private final static HashMap<String, Builtins> _map = new HashMap<>();
@@ -176,6 +200,7 @@ public enum Builtins {
 	private final String _name;
 	private final String _alias;
 	private final boolean _script;
+	private final boolean _parameterized;
 	
 	public String getName() {
 		return _name;
@@ -189,13 +214,21 @@ public enum Builtins {
 		return _script;
 	}
 	
-	public static boolean contains(String name, boolean scriptOnly) {
+	public boolean isParameterized() {
+		return _parameterized;
+	}
+	
+	public static boolean contains(String name, boolean script) {
 		Builtins tmp = _map.get(name);
-		return tmp != null
-			&& (!scriptOnly || tmp._script);
+		return tmp != null && script == tmp.isScript();
 	}
 	
 	public static Builtins get(String name) {
 		return _map.get(name);
+	}
+	
+	public static Builtins get(String name, boolean params) {
+		Builtins tmp = _map.get(name);
+		return tmp != null && (params == tmp.isParameterized()) ? tmp : null;
 	}
 }

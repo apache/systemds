@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.wink.json4j.JSONObject;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
@@ -41,7 +42,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 {
 	//note: we use a linked hashmap to preserve the order of
 	//parameters if needed, such as for named lists
-	private ParameterizedBuiltinFunctionOp _opcode;
+	private Builtins _opcode;
 	private LinkedHashMap<String,Expression> _varParams;
 	
 	public static final String TF_FN_PARAM_DATA = "target";
@@ -49,76 +50,36 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public static final String TF_FN_PARAM_SPEC = "spec";
 	public static final String TF_FN_PARAM_MTD = "transformPath"; //NOTE MB: for backwards compatibility
 	
-	private static HashMap<String, Expression.ParameterizedBuiltinFunctionOp> opcodeMap;
-	static {
-		opcodeMap = new HashMap<>();
-		opcodeMap.put("aggregate",        Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
-		opcodeMap.put("groupedAggregate", Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG);
-		opcodeMap.put("removeEmpty",      Expression.ParameterizedBuiltinFunctionOp.RMEMPTY);
-		opcodeMap.put("replace",          Expression.ParameterizedBuiltinFunctionOp.REPLACE);
-		opcodeMap.put("order",            Expression.ParameterizedBuiltinFunctionOp.ORDER);
-		opcodeMap.put("lower.tri",        Expression.ParameterizedBuiltinFunctionOp.LOWER_TRI);
-		opcodeMap.put("upper.tri",        Expression.ParameterizedBuiltinFunctionOp.UPPER_TRI);
-		
-		// Distribution Functions
-		opcodeMap.put("cdf",	Expression.ParameterizedBuiltinFunctionOp.CDF);
-		opcodeMap.put("pnorm",	Expression.ParameterizedBuiltinFunctionOp.PNORM);
-		opcodeMap.put("pt",		Expression.ParameterizedBuiltinFunctionOp.PT);
-		opcodeMap.put("pf",		Expression.ParameterizedBuiltinFunctionOp.PF);
-		opcodeMap.put("pchisq",	Expression.ParameterizedBuiltinFunctionOp.PCHISQ);
-		opcodeMap.put("pexp",	Expression.ParameterizedBuiltinFunctionOp.PEXP);
-		
-		opcodeMap.put("icdf",	Expression.ParameterizedBuiltinFunctionOp.INVCDF);
-		opcodeMap.put("qnorm",	Expression.ParameterizedBuiltinFunctionOp.QNORM);
-		opcodeMap.put("qt",		Expression.ParameterizedBuiltinFunctionOp.QT);
-		opcodeMap.put("qf",		Expression.ParameterizedBuiltinFunctionOp.QF);
-		opcodeMap.put("qchisq",	Expression.ParameterizedBuiltinFunctionOp.QCHISQ);
-		opcodeMap.put("qexp",	Expression.ParameterizedBuiltinFunctionOp.QEXP);
-
-		// data transformation functions
-		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
-		opcodeMap.put("transformdecode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMDECODE);
-		opcodeMap.put("transformencode", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
-		opcodeMap.put("transformcolmap", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMCOLMAP);
-		opcodeMap.put("transformmeta", Expression.ParameterizedBuiltinFunctionOp.TRANSFORMMETA);
-
-		// toString
-		opcodeMap.put("toString", Expression.ParameterizedBuiltinFunctionOp.TOSTRING);
-		opcodeMap.put("list", Expression.ParameterizedBuiltinFunctionOp.LIST);
-
-		opcodeMap.put("paramserv", Expression.ParameterizedBuiltinFunctionOp.PARAMSERV);
-	}
-	
-	public static HashMap<Expression.ParameterizedBuiltinFunctionOp, ParamBuiltinOp> pbHopMap;
+	public static HashMap<Builtins, ParamBuiltinOp> pbHopMap;
 	static {
 		pbHopMap = new HashMap<>();
 		
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.RMEMPTY, ParamBuiltinOp.RMEMPTY);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.REPLACE, ParamBuiltinOp.REPLACE);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.LOWER_TRI, ParamBuiltinOp.LOWER_TRI);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.UPPER_TRI, ParamBuiltinOp.UPPER_TRI);
+		pbHopMap.put(Builtins.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
+		pbHopMap.put(Builtins.RMEMPTY, ParamBuiltinOp.RMEMPTY);
+		pbHopMap.put(Builtins.REPLACE, ParamBuiltinOp.REPLACE);
+		pbHopMap.put(Builtins.LOWER_TRI, ParamBuiltinOp.LOWER_TRI);
+		pbHopMap.put(Builtins.UPPER_TRI, ParamBuiltinOp.UPPER_TRI);
 		
 		// For order, a ReorgOp is constructed with ReorgOp.SORT type
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.ORDER, ParamBuiltinOp.INVALID);
+		pbHopMap.put(Builtins.ORDER, ParamBuiltinOp.INVALID);
 		
 		// Distribution Functions
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.CDF, ParamBuiltinOp.CDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PNORM, ParamBuiltinOp.CDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PT, ParamBuiltinOp.CDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PF, ParamBuiltinOp.CDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PCHISQ, ParamBuiltinOp.CDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PEXP, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.CDF, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.PNORM, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.PT, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.PF, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.PCHISQ, ParamBuiltinOp.CDF);
+		pbHopMap.put(Builtins.PEXP, ParamBuiltinOp.CDF);
 		
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.INVCDF, ParamBuiltinOp.INVCDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QNORM, ParamBuiltinOp.INVCDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QT, ParamBuiltinOp.INVCDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QF, ParamBuiltinOp.INVCDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QCHISQ, ParamBuiltinOp.INVCDF);
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QEXP, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.INVCDF, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.QNORM, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.QT, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.QF, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.QCHISQ, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Builtins.QEXP, ParamBuiltinOp.INVCDF);
 		
 		// toString
-		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.TOSTRING, ParamBuiltinOp.TOSTRING);
+		pbHopMap.put(Builtins.TOSTRING, ParamBuiltinOp.TOSTRING);
 	}
 	
 	public static ParameterizedBuiltinFunctionExpression getParamBuiltinFunctionExpression(ParserRuleContext ctx,
@@ -126,7 +87,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		if (functionName == null || paramExprsPassed == null)
 			return null;
 		
-		Expression.ParameterizedBuiltinFunctionOp pbifop = opcodeMap.get(functionName);
+		Builtins pbifop = Builtins.get(functionName, true);
 		
 		if ( pbifop == null ) 
 			return null;
@@ -141,14 +102,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 	
 			
-	public ParameterizedBuiltinFunctionExpression(ParserRuleContext ctx, ParameterizedBuiltinFunctionOp op, LinkedHashMap<String,Expression> varParams,
+	public ParameterizedBuiltinFunctionExpression(ParserRuleContext ctx, Builtins op, LinkedHashMap<String,Expression> varParams,
 			String filename) {
 		_opcode = op;
 		_varParams = varParams;
 		setCtxValuesAndFilename(ctx, filename);
 	}
 
-	public ParameterizedBuiltinFunctionExpression(ParameterizedBuiltinFunctionOp op,
+	public ParameterizedBuiltinFunctionExpression(Builtins op,
 			LinkedHashMap<String, Expression> varParams, ParseInfo parseInfo) {
 		_opcode = op;
 		_varParams = varParams;
@@ -167,11 +128,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		return retVal;
 	}
 
-	public void setOpcode(ParameterizedBuiltinFunctionOp op) {
+	public void setOpcode(Builtins op) {
 		_opcode = op;
 	}
 	
-	public ParameterizedBuiltinFunctionOp getOpCode() {
+	public Builtins getOpCode() {
 		return _opcode;
 	}
 	
@@ -277,7 +238,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		default: //always unconditional (because unsupported operation)
 			//handle common issue of transformencode
-			if( getOpCode()==ParameterizedBuiltinFunctionOp.TRANSFORMENCODE )
+			if( getOpCode()==Builtins.TRANSFORMENCODE )
 				raiseValidateError("Parameterized function "+ getOpCode() +" requires a multi-assignment statement "
 						+ "for data and metadata.", false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 			else
@@ -464,7 +425,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 	
-	private void validateExtractTriangular(DataIdentifier output,  ParameterizedBuiltinFunctionOp op, boolean conditional) {
+	private void validateExtractTriangular(DataIdentifier output,  Builtins op, boolean conditional) {
 		
 		//check for invalid parameters
 		Set<String> valid = UtilFunctions.asSet("target", "diag", "values");
@@ -720,7 +681,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 	}
 
-	private void checkInvalidParameters(ParameterizedBuiltinFunctionOp op, HashMap<String, Expression> params,
+	private void checkInvalidParameters(Builtins op, HashMap<String, Expression> params,
 			Set<String> valid) {
 		Set<String> invalid = params.keySet().stream().filter(k -> !valid.contains(k)).collect(Collectors.toSet());
 		if (!invalid.isEmpty()) {
@@ -736,7 +697,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		// CDF and INVCDF expects one unnamed parameter, it must be renamed as "quantile" 
 		// (i.e., we must compute P(X <= x) where x is called as "quantile" )
 		
-		ParameterizedBuiltinFunctionOp op = this.getOpCode();
+		Builtins op = this.getOpCode();
 		
 		// check if quantile is of type SCALAR
 		if ( getVarParam("target") == null || getVarParam("target").getOutput().getDataType() != DataType.SCALAR ) {
@@ -903,6 +864,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	@Override
 	public boolean multipleReturns() {
-		return (_opcode == ParameterizedBuiltinFunctionOp.TRANSFORMENCODE);
+		return (_opcode == Builtins.TRANSFORMENCODE);
 	}
 }

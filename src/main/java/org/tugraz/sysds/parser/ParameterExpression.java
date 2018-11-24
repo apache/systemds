@@ -21,14 +21,12 @@ package org.tugraz.sysds.parser;
 
 public class ParameterExpression 
 {
-	
-	
-	private Expression 	_expr;
-	private String 		_name;
+	private Expression _expr;
+	private String _name;
 
 	public ParameterExpression(String name, Expression val){
-		_name 		= name;
-		_expr 		= val;
+		_name = name;
+		_expr = val;
 	}
 	
 	public String getName(){
@@ -51,5 +49,4 @@ public class ParameterExpression
 	public String toString(){
 		return _name + "=" + _expr;
 	}
-	
 }

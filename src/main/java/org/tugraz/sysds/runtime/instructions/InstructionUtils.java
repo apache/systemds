@@ -97,6 +97,7 @@ import org.tugraz.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 import org.tugraz.sysds.runtime.matrix.operators.TernaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
+import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 
@@ -856,5 +857,30 @@ public class InstructionUtils
 	public static AggregateBinaryOperator getMatMultOperator(int k) {
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		return new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
+	}
+	
+	public static Operator parseGroupedAggOperator(String fn, String other) {
+		AggregateOperationTypes op = AggregateOperationTypes.INVALID;
+		if ( fn.equalsIgnoreCase("centralmoment") )
+			// in case of CM, we also need to pass "order"
+			op = CMOperator.getAggOpType(fn, other);
+		else 
+			op = CMOperator.getAggOpType(fn, null);
+	
+		switch(op) {
+		case SUM:
+			return new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), true, CorrectionLocationType.LASTCOLUMN);
+			
+		case COUNT:
+		case MEAN:
+		case VARIANCE:
+		case CM2:
+		case CM3:
+		case CM4:
+			return new CMOperator(CM.getCMFnObject(op), op);
+		case INVALID:
+		default:
+			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
+		}
 	}
 }

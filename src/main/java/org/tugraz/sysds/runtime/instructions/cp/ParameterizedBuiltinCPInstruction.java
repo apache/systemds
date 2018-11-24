@@ -124,8 +124,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 			}
 			
-			//Operator op = GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
-			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
+			Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
 		} else if (opcode.equalsIgnoreCase("rmempty")
 				|| opcode.equalsIgnoreCase("replace")
 				|| opcode.equalsIgnoreCase("rexpand")

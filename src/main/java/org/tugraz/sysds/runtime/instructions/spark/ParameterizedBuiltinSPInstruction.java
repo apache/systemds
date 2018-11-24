@@ -149,7 +149,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					if ( paramsMap.get("order") == null )
 						throw new DMLRuntimeException("Mandatory \"order\" must be specified when fn=\"centralmoment\" in groupedAggregate.");
 				}
-				Operator op = null; //GroupedAggregateInstruction.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
+				Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str, false);
 			} 
 			else if (opcode.equalsIgnoreCase("rmempty")) {

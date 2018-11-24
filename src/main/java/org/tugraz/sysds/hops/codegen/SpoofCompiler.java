@@ -158,7 +158,7 @@ public class SpoofCompiler
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.hops.codegen")
+			Logger.getLogger("org.tugraz.sysds.hops.codegen")
 				  .setLevel((Level) Level.TRACE);
 		}
 	}

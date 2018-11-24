@@ -116,7 +116,7 @@ public class SparkExecutionContext extends ExecutionContext
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.runtime.controlprogram.context")
+			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.context")
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}

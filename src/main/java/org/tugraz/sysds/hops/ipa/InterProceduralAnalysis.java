@@ -96,7 +96,7 @@ public class InterProceduralAnalysis
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.hops.ipa")
+			Logger.getLogger("org.tugraz.sysds.hops.ipa")
 				.setLevel((Level) Level.DEBUG);
 		}
 	}

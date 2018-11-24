@@ -21,10 +21,6 @@
 
 # Lanczos algorithm to compute eigen vectors and eigen values of a square matrix
 
-eigen = externalFunction(Matrix[Double] A) 
-return(Matrix[Double] eval, Matrix[Double] evec)
-  implemented in (classname="org.apache.sysml.udf.lib.EigenWrapper", exectype="mem")   
-
 A = read($1); # input data, must be a square matrix
 
 m = nrow(A);

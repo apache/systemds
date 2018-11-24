@@ -31,10 +31,10 @@ public class CNodeRow extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofRowwise.RowType;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofRowwise;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofRowwise { \n"

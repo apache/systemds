@@ -94,7 +94,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	static {
 		// for internal debugging only
 		if (LDEBUG) {
-			Logger.getLogger("org.apache.sysml.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
+			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.paramserv").setLevel(Level.DEBUG);
 			Logger.getLogger(ParamservBuiltinCPInstruction.class.getName()).setLevel(Level.DEBUG);
 		}
 	}

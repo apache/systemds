@@ -120,46 +120,6 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 				reserveSpace = gCtx.allocate(instName, reserveSpaceSizeInBytes);
 			}
 		}
-		/*
-		int numLinearLayers = getNumLinearLayers(rnnMode); 
-		for(int i = 0; i < numLinearLayers; i++) {
-			cudnnFilterDescriptor  linLayerMatDesc = new cudnnFilterDescriptor();
-			cudnnCreateFilterDescriptor(linLayerMatDesc);
-			Pointer linLayerMat = new Pointer();
-			JCudnn.cudnnGetRNNLinLayerMatrixParams(gCtx.getCudnnHandle(), rnnDesc, 0, 
-					xDesc[0], wDesc, w, i, linLayerMatDesc, linLayerMat);
-			int[] dataType = new int[] {-1};
-			int[] format = new int[] {-1};
-			int[] nbDims = new int[] {-1};
-			int[] filterDimA = new int[3];
-			JCudnn.cudnnGetFilterNdDescriptor(linLayerMatDesc, 3, dataType, format, nbDims, filterDimA);
-			
-			int filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
-			double [] tmp = new double[filterDims];
-			LibMatrixCUDA.cudaSupportFunctions.deviceToHost(gCtx, linLayerMat, tmp, instName, false);
-			System.out.println();
-			for(int j = 0 ; j < tmp.length; j++) {
-				System.out.print(" " + tmp[j]);
-			}
-			System.out.println();
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
-					org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
-					linLayerMat, Math.pow(filterDims, -1), filterDims);
-			JCudnn.cudnnDestroyFilterDescriptor(linLayerMatDesc);
-			
-			cudnnFilterDescriptor  linLayerBiasDesc = new cudnnFilterDescriptor();
-			cudnnCreateFilterDescriptor(linLayerBiasDesc);
-			Pointer linLayerBias = new Pointer();
-			JCudnn.cudnnGetRNNLinLayerBiasParams(gCtx.getCudnnHandle(), rnnDesc, 0,
-					xDesc[0], wDesc, w, i, linLayerBiasDesc, linLayerBias);
-			JCudnn.cudnnGetFilterNdDescriptor(linLayerBiasDesc, 3, dataType, format, nbDims, filterDimA);
-			filterDims = filterDimA[0] * filterDimA[1] * filterDimA[2];
-			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("fill", 
-					org.apache.sysml.runtime.instructions.gpu.context.ExecutionConfig.getConfigForSimpleVectorOperations(filterDims), 
-					linLayerBias, Math.pow(filterDims, -1), filterDims);
-			JCudnn.cudnnDestroyFilterDescriptor(linLayerBiasDesc);
-		}
-		*/
 	}
 	
 	@SuppressWarnings("unused")

@@ -151,7 +151,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.parser.ParForStatementBlock")
+			Logger.getLogger("org.tugraz.sysds.parser.ParForStatementBlock")
 				  .setLevel((Level) Level.TRACE);
 		}
 	}

@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.binary.matrix.ElementwiseAdditionTest.java
-
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = read("$$indir$$b", rows=$$rows$$, cols=$$cols$$, format="text");
 C = A + B;

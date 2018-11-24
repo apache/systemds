@@ -32,11 +32,11 @@ public class CNodeMultiAgg extends CNodeTpl
 {
 	private static final String TEMPLATE = 
 			  "package codegen;\n"
-			+ "import org.apache.sysml.runtime.codegen.LibSpoofPrimitives;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofCellwise;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofCellwise.AggOp;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofMultiAggregate;\n"
-			+ "import org.apache.sysml.runtime.codegen.SpoofOperator.SideInput;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofCellwise;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofMultiAggregate;\n"
+			+ "import org.tugraz.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
 			+ "import org.apache.commons.math3.util.FastMath;\n"
 			+ "\n"
 			+ "public final class %TMP% extends SpoofMultiAggregate { \n"

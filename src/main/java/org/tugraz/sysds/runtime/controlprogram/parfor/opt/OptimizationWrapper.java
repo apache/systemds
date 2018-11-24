@@ -83,7 +83,7 @@ public class OptimizationWrapper
 	{
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.runtime.controlprogram.parfor.opt")
+			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.parfor.opt")
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}
@@ -125,8 +125,8 @@ public class OptimizationWrapper
 	public static void setLogLevel( Level optLogLevel )
 	{
 		if( !LDEBUG ){ //set log level if not overwritten by internal flag
-			Logger.getLogger("org.apache.sysml.runtime.controlprogram.parfor.opt")
-			      .setLevel( optLogLevel );
+			Logger.getLogger("org.tugraz.sysds.runtime.controlprogram.parfor.opt")
+				.setLevel( optLogLevel );
 		}
 	}
 

@@ -32,7 +32,7 @@ import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
 
 /**
  * This custom serialization class can be used via 
- * job.set(MRConfigurationNames.IO_SERIALIZATIONS, "org.apache.sysml.runtime.io.BinaryBlockSerialization");
+ * job.set(MRConfigurationNames.IO_SERIALIZATIONS, "org.tugraz.sysds.runtime.io.BinaryBlockSerialization");
  * 
  * 
  */

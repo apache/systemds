@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.aggregate.LengthTest.java
-
 $$readhelper$$
 
 computation = ncol($$scalar$$);

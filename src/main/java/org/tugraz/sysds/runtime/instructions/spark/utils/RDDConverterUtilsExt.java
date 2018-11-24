@@ -69,31 +69,6 @@ public class RDDConverterUtilsExt
 		MATRIXENTRY_TO_MATRIXCELL
 	}
 
-
-	/**
-	 * Example usage:
-	 * <pre><code>
-	 * import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtilsExt
-	 * import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-	 * import org.apache.spark.api.java.JavaSparkContext
-	 * import org.apache.spark.mllib.linalg.distributed.MatrixEntry
-	 * import org.apache.spark.mllib.linalg.distributed.CoordinateMatrix
-	 * val matRDD = sc.textFile("ratings.text").map(_.split(" ")).map(x =&gt; new MatrixEntry(x(0).toLong, x(1).toLong, x(2).toDouble)).filter(_.value != 0).cache
-	 * require(matRDD.filter(x =&gt; x.i == 0 || x.j == 0).count == 0, "Expected 1-based ratings file")
-	 * val nnz = matRDD.count
-	 * val numRows = matRDD.map(_.i).max
-	 * val numCols = matRDD.map(_.j).max
-	 * val coordinateMatrix = new CoordinateMatrix(matRDD, numRows, numCols)
-	 * val mc = new MatrixCharacteristics(numRows, numCols, 1000, 1000, nnz)
-	 * val binBlocks = RDDConverterUtilsExt.coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), coordinateMatrix, mc, true)
-	 * </code></pre>
-	 *
-	 * @param sc java spark context
-	 * @param input coordinate matrix
-	 * @param mcIn matrix characteristics
-	 * @param outputEmptyBlocks if true, inject empty blocks if necessary
-	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(JavaSparkContext sc,
 			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks)
 	{

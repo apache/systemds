@@ -38,14 +38,6 @@ import jcuda.driver.CUmodule;
 import jcuda.driver.CUresult;
 import jcuda.runtime.JCuda;
 
-/**
- * Utility class that allows LibMatrixCUDA as well as GPUObject to invoke custom CUDA kernels.
- * <p>
- * The utility org.apache.sysml.runtime.instructions.gpu.context.JCudaKernels simplifies the launching of the kernels.
- * For example: to launch a kernel
- * {@code copyUpperToLowerTriangleDense<<1,1,32,32>>(jcudaDenseMatrixPtr, dim, dim*dim) }, the user has to call:
- * {@code kernels.launchKernel("copyUpperToLowerTriangleDense", new ExecutionConfig(1,1,32,32), jcudaDenseMatrixPtr, dim, dim*dim) }
- */
 public class JCudaKernels {
 
 	private final static String ptxFileName = "/kernels/SystemML.ptx";

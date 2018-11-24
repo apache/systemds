@@ -59,7 +59,7 @@ public class ProgramRewriter
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.hops.rewrite")
+			Logger.getLogger("org.tugraz.sysds.hops.rewrite")
 				  .setLevel((Level) Level.DEBUG);
 		}
 	}

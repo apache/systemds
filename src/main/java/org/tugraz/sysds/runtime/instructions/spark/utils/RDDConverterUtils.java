@@ -192,26 +192,6 @@ public class RDDConverterUtils
 		return RDDAggregateUtils.mergeByKey(out, parts, false); 
 	}
 	
-	/**
-	 * Example usage:
-	 * <pre><code>
-	 * import org.apache.sysml.runtime.instructions.spark.utils.RDDConverterUtils
-	 * import org.apache.sysml.runtime.matrix.MatrixCharacteristics
-	 * import org.apache.spark.api.java.JavaSparkContext
-	 * val A = sc.textFile("ranA.csv")
-	 * val Amc = new MatrixCharacteristics
-	 * val Abin = RDDConverterUtils.csvToBinaryBlock(new JavaSparkContext(sc), A, Amc, false, ",", false, 0)
-	 * </code></pre>
-	 * 
-	 * @param sc java spark context
-	 * @param input rdd of strings
-	 * @param mcOut matrix characteristics
-	 * @param hasHeader if true, has header
-	 * @param delim delimiter as a string
-	 * @param fill if true, fill in empty values with fillValue
-	 * @param fillValue fill value used to fill empty values
-	 * @return matrix as {@code JavaPairRDD<MatrixIndexes, MatrixBlock>}
-	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaRDD<String> input, MatrixCharacteristics mcOut, 
 			boolean hasHeader, String delim, boolean fill, double fillValue) 

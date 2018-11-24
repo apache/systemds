@@ -50,10 +50,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 	
 	//script with dml-bodied and external functions
 	private static final String SCRIPT2 =
-		  "foo1 = externalFunction(int numInputs, boolean stretch, Matrix[double] A, Matrix[double] B, Matrix[double] C) "
-		+ "  return (Matrix[double] D)"
-		+ "  implemented in (classname='org.apache.sysml.udf.lib.MultiInputCbind', exectype='mem');"
-		+ "foo2 = function(Matrix[double] A, Matrix[double] B, Matrix[double] C)"
+		  "foo = function(Matrix[double] A, Matrix[double] B, Matrix[double] C)"
 		+ "  return (Matrix[double] D) {"
 		+ "  while(FALSE){}"
 		+ "  D = cbind(A, B, C)"
@@ -61,9 +58,8 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 		+ "X = matrix(7, 10, 10);"
 		+ "R = matrix(0, 10, 1)"
 		+ "for(i in 1:nrow(X)) {"
-		+ "  D = foo1(3, FALSE, X[i,], X[i,], X[i,])"
-		+ "  E = foo2(D, D, D)"
-		+ "  R[i,] = sum(E)/9"
+		+ "  E = foo(X[1,], X[2,], X[3,])"
+		+ "  R[i,] = sum(E)/3"
 		+ "}"
 		+ "out = sum(R)"
 		+ "write(out, 'tmp/out')";
@@ -117,6 +113,7 @@ public class JMLCClonedPreparedScriptTest extends AutomatedTestBase
 			pool.shutdown();
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			failed = true;
 		}
 		

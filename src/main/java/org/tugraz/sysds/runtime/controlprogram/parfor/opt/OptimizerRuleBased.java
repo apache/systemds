@@ -506,9 +506,9 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		double mem = -1;
 		
-		//not all intermediates need to be known on optimize
+		//not all intermediates need to be known or existing on optimize
 		Data dat = vars.get( varName );
-		if( dat != null )
+		if( dat != null && dat instanceof MatrixObject )
 		{
 			MatrixObject mo = (MatrixObject) dat;
 			

@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.parser.AssignmentStatement;
 import org.tugraz.sysds.parser.BinaryExpression;
@@ -57,6 +58,7 @@ import org.tugraz.sysds.parser.PrintStatement;
 import org.tugraz.sysds.parser.RelationalExpression;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StringIdentifier;
+import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.dml.DmlSyntacticValidator;
@@ -717,6 +719,12 @@ public abstract class CommonSyntacticValidator {
 			if( e != null ) {
 				setAssignmentStatement(ctx, info, target, e);
 				return;
+			}
+			
+			if( Builtins.contains(functionName, true) ) {
+				//load and add builtin DML-bodied function
+				//TODO load file and add to functions
+				throw new NotImplementedException();
 			}
 		}
 

@@ -59,7 +59,7 @@ public abstract class Expression implements ParseInfo
 	/**
 	 * Built-in function operators.
 	 */
-	public enum BuiltinFunctionOp { 
+	public enum BuiltinFunctionOp {
 		ABS,
 		ACOS,
 		ASIN,

@@ -486,7 +486,7 @@
 							<appendAssemblyId>false</appendAssemblyId>
 							<archive>
 								<manifest>
-									<mainClass>org.apache.sysml.api.DMLScript</mainClass>
+									<mainClass>org.tugraz.sysds.api.DMLScript</mainClass>
 								</manifest>
 								<manifestEntries>
 									<Build-Time>${maven.build.timestamp}</Build-Time>
@@ -941,11 +941,11 @@
 						<artifactId>maven-javadoc-plugin</artifactId>
 						<version>2.10.3</version>
 						<configuration>
-							<!-- Need to include the following packages, so exclude others: org.apache.sysml.api 
-								org.apache.sysml.runtime.instructions.spark.utils (for RDDConverterUtils, 
-								etc) org.apache.sysml.runtime.matrix (for MatrixCharacteristics, etc) org.apache.sysml.runtime.matrix.data 
-								(for MatrixIndexes, MatrixBlock, etc) org.apache.sysml.udf -->
-							<excludePackageNames>org.apache.sysml.hops:org.apache.sysml.lops:org.apache.sysml.parser:org.apache.sysml.runtime.controlprogram:org.apache.sysml.runtime.functionobjects:org.apache.sysml.runtime.instructions.cp:org.apache.sysml.runtime.instructions.cpfile:org.apache.sysml.runtime.instructions.mr:org.apache.sysml.runtime.instructions.spark.data:org.apache.sysml.runtime.instructions.spark.functions:org.apache.sysml.runtime.io:org.apache.sysml.runtime.matrix.data.hadoopfix:org.apache.sysml.runtime.matrix.mapred:org.apache.sysml.runtime.matrix.operators:org.apache.sysml.runtime.matrix.sort:org.apache.sysml.runtime.transform:org.apache.sysml.runtime.util:org.apache.sysml.utils:org.apache.sysml.yarn</excludePackageNames>
+							<!-- Need to include the following packages, so exclude others: org.tugraz.sysds.api 
+								org.tugraz.sysds.runtime.instructions.spark.utils (for RDDConverterUtils, 
+								etc) org.tugraz.sysds.runtime.matrix (for MatrixCharacteristics, etc) org.tugraz.sysds.runtime.matrix.data 
+								(for MatrixIndexes, MatrixBlock, etc) org.tugraz.sysds.udf -->
+							<excludePackageNames>org.tugraz.sysds.hops:org.tugraz.sysds.lops:org.tugraz.sysds.parser:org.tugraz.sysds.runtime.controlprogram:org.tugraz.sysds.runtime.functionobjects:org.tugraz.sysds.runtime.instructions.cp:org.tugraz.sysds.runtime.instructions.cpfile:org.tugraz.sysds.runtime.instructions.mr:org.tugraz.sysds.runtime.instructions.spark.data:org.tugraz.sysds.runtime.instructions.spark.functions:org.tugraz.sysds.runtime.io:org.tugraz.sysds.runtime.matrix.data.hadoopfix:org.tugraz.sysds.runtime.matrix.mapred:org.tugraz.sysds.runtime.matrix.operators:org.tugraz.sysds.runtime.matrix.sort:org.tugraz.sysds.runtime.transform:org.tugraz.sysds.runtime.util:org.tugraz.sysds.utils:org.tugraz.sysds.yarn</excludePackageNames>
 							<additionalparam>${javadoc.opts}</additionalparam>
 						</configuration>
 						<executions>
@@ -954,81 +954,6 @@
 								<goals>
 									<goal>jar</goal>
 								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.6.0</version>
-						<executions>
-							<execution>
-								<id>generate-python-package-1</id>
-								<phase>package</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>python</executable>
-									<workingDirectory>src/main/python</workingDirectory>
-									<arguments>
-										<argument>pre_setup.py</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>generate-python-package-2</id>
-								<phase>package</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>python</executable>
-									<workingDirectory>src/main/python</workingDirectory>
-									<arguments>
-										<argument>setup.py</argument>
-										<argument>sdist</argument>
-										<argument>--dist-dir=../../../target</argument>
-									</arguments>
-								</configuration>
-							</execution>
-							<execution>
-								<id>generate-python-package-3</id>
-								<phase>package</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>python</executable>
-									<workingDirectory>src/main/python</workingDirectory>
-									<arguments>
-										<argument>post_setup.py</argument>
-									</arguments>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<!-- Attach python artifact so it can be installed and deployed. -->
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>build-helper-maven-plugin</artifactId>
-						<version>1.8</version>
-						<executions>
-							<execution>
-								<id>attach-python-artifact</id>
-								<phase>pre-integration-test</phase>
-								<goals>
-									<goal>attach-artifact</goal>
-								</goals>
-								<configuration>
-									<artifacts>
-										<artifact>
-											<file>${basedir}/target/${project.artifactId}-${project.version}-python.tar.gz</file>
-											<type>tar.gz</type>
-											<classifier>python</classifier>
-										</artifact>
-									</artifacts>
-								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -1041,11 +966,6 @@
 
 
 	<dependencies>
-		<dependency>
-			<groupId>com.google.protobuf</groupId>
-			<artifactId>protobuf-java</artifactId>
-			<version>3.2.0</version>
-		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda</artifactId>

@@ -46,7 +46,7 @@
 	<dependencySets>
 		<dependencySet>
 			<includes>
-				<include>*:systemml*</include>
+				<include>*:systemds*</include>
 			</includes>
 			<unpackOptions>
 				<excludes>

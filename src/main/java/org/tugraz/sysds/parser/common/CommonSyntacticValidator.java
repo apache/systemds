@@ -721,7 +721,7 @@ public abstract class CommonSyntacticValidator {
 				return;
 			}
 			
-			if( Builtins.contains(functionName, true) ) {
+			if( Builtins.contains(functionName, true, false) ) {
 				//load and add builtin DML-bodied function
 				//TODO load file and add to functions
 				throw new NotImplementedException();

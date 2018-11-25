@@ -30,6 +30,7 @@ import java.util.HashMap;
  * as well as a dml file in script/builtin with a matching name.
  */
 public enum Builtins {
+	//builtin functions
 	ABS("abs", false),
 	ACOS("acos", false),
 	ASIN("asin", false),
@@ -134,39 +135,34 @@ public enum Builtins {
 	VAR("var", false),
 	XOR("xor", false),
 	
-	//TODO handle parameterized builtins explicitly
-	//TODO remove custom handling from parsing
-	CDF("cdf", false),
-	INVCDF("icdf", false),
-	PCHISQ("pchisq", false),
-	PEXP("pexp", false),
-	PF("pf", false),
-	PNORM("pnorm", false),
-	PT("pt", false),
-	QF("qf", false),
-	QNORM("qnorm", false),
-	QT("qt", false),
-	QEXP("qexp", false),
-	QCHISQ("qchisq", false),
-	
-	GROUPEDAGG("aggregate", "groupedAggregate", false),
-	RMEMPTY("removeEmpty", false),
-	REPLACE("replace", false),
-	ORDER("order", false),
-	LOWER_TRI("lower.tri", false),
-	UPPER_TRI("upper.tri", false),
-	
-	TRANSFORMAPPLY("transformapply", false),
-	TRANSFORMDECODE("transformdecode", false),
-	TRANSFORMENCODE("transformencode", false),
-	TRANSFORMCOLMAP("transformcolmap", false),
-	TRANSFORMMETA("transformmeta", false),
-
-	TOSTRING("toString", false),
+	//parameterized builtin functions
+	CDF("cdf", false, true),
+	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
+	INVCDF("icdf", false, true),
+	LOWER_TRI("lower.tri", false, true),
+	ORDER("order", false, true),
+	PARAMSERV("paramserv", false, true),
+	PCHISQ("pchisq", false, true),
+	PEXP("pexp", false, true),
+	PF("pf", false, true),
+	PNORM("pnorm", false, true),
+	PT("pt", false, true),
+	QCHISQ("qchisq", false, true),
+	QF("qf", false, true),
+	QNORM("qnorm", false, true),
+	QT("qt", false, true),
+	QEXP("qexp", false, true),
+	REPLACE("replace", false, true),
+	RMEMPTY("removeEmpty", false, true),
+	TOSTRING("toString", false, true),
+	TRANSFORMAPPLY("transformapply", false, true),
+	TRANSFORMCOLMAP("transformcolmap", false, true),
+	TRANSFORMDECODE("transformdecode", false, true),
+	TRANSFORMENCODE("transformencode", false, true),
+	TRANSFORMMETA("transformmeta", false, true),
+	UPPER_TRI("upper.tri", false, true);
 	//LIST("LIST", false), TODO both builtin and parameterized builtin 
-	PARAMSERV("paramserv", false);
 
-	
 	Builtins(String name, boolean script) {
 		this(name, null, script, false);
 	}
@@ -218,9 +214,10 @@ public enum Builtins {
 		return _parameterized;
 	}
 	
-	public static boolean contains(String name, boolean script) {
+	public static boolean contains(String name, boolean script, boolean parameterized) {
 		Builtins tmp = _map.get(name);
-		return tmp != null && script == tmp.isScript();
+		return tmp != null && script == tmp.isScript()
+			&& parameterized == tmp.isParameterized();
 	}
 	
 	public static Builtins get(String name) {

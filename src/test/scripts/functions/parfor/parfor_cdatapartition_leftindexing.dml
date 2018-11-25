@@ -26,11 +26,11 @@ n = ncol(V);
 
 R = matrix(0,rows=m,cols=n); 
 
-parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=REMOTE_MR, opt=NONE )
+parfor( i in 1:n, par=4, mode=LOCAL, datapartitioner=REMOTE_SPARK, opt=NONE )
 {
    col = V[,i];
    while(FALSE){}
    R[,i] = col; 
-}   
+}
 
-write(R, $2);       
+write(R, $2);

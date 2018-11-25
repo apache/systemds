@@ -28,7 +28,7 @@ R = matrix(ifelse(init, 7, 0), rlen, clen);
 if( sparse )
    R[,50:300] = matrix(0, rlen, 251);
 
-parfor(i in 1:10, opt=CONSTRAINED, resultmerge=REMOTE_MR)
+parfor(i in 1:10, opt=CONSTRAINED, resultmerge=REMOTE_SPARK)
    R += matrix(i, rlen, clen);
 
 write(R, $5);

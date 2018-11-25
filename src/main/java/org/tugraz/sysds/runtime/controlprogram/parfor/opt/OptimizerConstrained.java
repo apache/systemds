@@ -160,16 +160,9 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			// rewrite 12: fused data partitioning and execution
 			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables(), tmpmode);
 
-			// rewrite 13: transpose sparse vector operations
-			super.rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
-
 			//rewrite 14:
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
-
-			//rewrite 15:
-			super.rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
-
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
@@ -183,20 +176,14 @@ public class OptimizerConstrained extends OptimizerRuleBased
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			super.rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 
-			if( !OptimizerUtils.isSparkExecutionMode() ) {
-				// rewrite 16: runtime piggybacking
-				super.rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
-			}
-			else {
-				//rewrite 17: checkpoint injection for parfor loop body
-				super.rewriteInjectSparkLoopCheckpointing( pn );
+			//rewrite 17: checkpoint injection for parfor loop body
+			super.rewriteInjectSparkLoopCheckpointing( pn );
 
-				//rewrite 18: repartition read-only inputs for zipmm 
-				super.rewriteInjectSparkRepartition( pn, ec.getVariables() );
+			//rewrite 18: repartition read-only inputs for zipmm 
+			super.rewriteInjectSparkRepartition( pn, ec.getVariables() );
 
-				//rewrite 19: eager caching for checkpoint rdds
-				super.rewriteSetSparkEagerRDDCaching(pn, ec.getVariables() );
-			}
+			//rewrite 19: eager caching for checkpoint rdds
+			super.rewriteSetSparkEagerRDDCaching(pn, ec.getVariables() );
 		}
 
 		//rewrite 20: set result merge
@@ -259,15 +246,11 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 
 			PExecMode mode = PExecMode.LOCAL;
-			if (n.getExecType()==ExecType.MR) {
-				mode = PExecMode.REMOTE_MR;
-			}
-			else if (n.getExecType() == ExecType.SPARK) {
+			if (n.getExecType() == ExecType.SPARK) {
 				mode = PExecMode.REMOTE_SPARK;
 			}
 
-			ret = ((mode == PExecMode.REMOTE_MR ||
-				mode == PExecMode.REMOTE_SPARK) && !n.isCPOnly() );
+			ret = (mode == PExecMode.REMOTE_SPARK && !n.isCPOnly());
 			pfpb.setExecMode( mode );
 			LOG.debug(getOptMode()+" OPT: forced 'set execution strategy' - result="+mode );
 		}
@@ -360,7 +343,7 @@ public class OptimizerConstrained extends OptimizerRuleBased
 
 	protected void rewriteSetFusedDataPartitioningExecution(OptNode pn, double M, boolean flagLIX, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars, PExecMode emode)
 	{
-		if( emode == PExecMode.REMOTE_MR_DP || emode == PExecMode.REMOTE_SPARK_DP )
+		if(emode == PExecMode.REMOTE_SPARK_DP)
 		{
 			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
@@ -381,17 +364,9 @@ public class OptimizerConstrained extends OptimizerRuleBased
 				(moDpf._dpf==PDataPartitionFormat.ROW_BLOCK_WISE_N && mo.getNumRows()<=_N*moDpf._N)||
 				(moDpf._dpf==PDataPartitionFormat.COLUMN_BLOCK_WISE_N && mo.getNumColumns()<=_N*moDpf._N)) )
 			{
+				pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_SPARK(fused)");
+				pfpb.setExecMode(PExecMode.REMOTE_SPARK_DP); //set fused exec type
 				int k = (int)Math.min(_N,_rk2);
-
-				if (emode == PExecMode.REMOTE_MR_DP) {
-					pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_MR(fused)");
-					pfpb.setExecMode(PExecMode.REMOTE_MR_DP); //set fused exec type
-				}
-				else {
-					pn.addParam(ParamType.DATA_PARTITIONER, "REMOTE_SPARK(fused)");
-					pfpb.setExecMode(PExecMode.REMOTE_SPARK_DP); //set fused exec type
-				}
-
 				pn.setK( k );
 
 				pfpb.setDataPartitioner(PDataPartitioner.NONE);

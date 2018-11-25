@@ -184,7 +184,7 @@ public abstract class CostEstimator
 							val = getMaxEstimate(measure, node.getChilds(), et); 
 							break;
 						case PARFOR:
-							if( node.getExecType() == OptNode.ExecType.MR || node.getExecType() == OptNode.ExecType.SPARK )
+							if( node.getExecType() == OptNode.ExecType.SPARK )
 								val = getMaxEstimate(measure, node.getChilds(), et); //executed in different JVMs
 							else if ( node.getExecType() == OptNode.ExecType.CP || node.getExecType() == null )
 								val = getMaxEstimate(measure, node.getChilds(), et) 

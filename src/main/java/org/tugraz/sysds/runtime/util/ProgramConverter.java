@@ -1104,7 +1104,7 @@ public class ProgramConverter
 			ParForProgramBlock pfpb = (ParForProgramBlock) pb; 
 			
 			//check for nested remote ParFOR
-			if( PExecMode.valueOf( pfpb.getParForParams().get( ParForStatementBlock.EXEC_MODE )) == PExecMode.REMOTE_MR )
+			if( PExecMode.valueOf( pfpb.getParForParams().get( ParForStatementBlock.EXEC_MODE )) == PExecMode.REMOTE_SPARK )
 				throw new DMLRuntimeException( NOT_SUPPORTED_MR_PARFOR );
 			
 			sb.append( pfpb.getIterVar() );

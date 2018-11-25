@@ -32,7 +32,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.DataOp;
@@ -61,7 +60,6 @@ import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.ParForStatement;
 import org.tugraz.sysds.parser.ParForStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
@@ -282,16 +280,10 @@ public class OptimizerRuleBased extends Optimizer
 			
 			// rewrite 12: fused data partitioning and execution
 			rewriteSetFusedDataPartitioningExecution(pn, M1, flagLIX, partitionedMatrices, ec.getVariables());
-		
-			// rewrite 13: transpose sparse vector operations
-			rewriteSetTranposeSparseVectorOperations(pn, partitionedMatrices, ec.getVariables());
 			
 			// rewrite 14: set in-place result indexing
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
-			
-			// rewrite 15: disable caching
-			rewriteDisableCPCaching(pn, inplaceResultVars, ec.getVariables());
 		}
 		else //if( pn.getExecType() == ExecType.CP )
 		{
@@ -305,21 +297,15 @@ public class OptimizerRuleBased extends Optimizer
 			HashSet<ResultVar> inplaceResultVars = new HashSet<>();
 			rewriteSetInPlaceResultIndexing(pn, _cost, ec.getVariables(), inplaceResultVars, ec);
 			
-			if( !OptimizerUtils.isSparkExecutionMode() ) {
-				// rewrite 16: runtime piggybacking
-				rewriteEnableRuntimePiggybacking( pn, ec.getVariables(), partitionedMatrices );
-			}
-			else {
-				//rewrite 17: checkpoint injection for parfor loop body
-				rewriteInjectSparkLoopCheckpointing( pn );
-				
-				//rewrite 18: repartition read-only inputs for zipmm 
-				rewriteInjectSparkRepartition( pn, ec.getVariables() );
-				
-				//rewrite 19: eager caching for checkpoint rdds
-				rewriteSetSparkEagerRDDCaching( pn, ec.getVariables() );
-			}
-		}	
+			//rewrite 17: checkpoint injection for parfor loop body
+			rewriteInjectSparkLoopCheckpointing( pn );
+			
+			//rewrite 18: repartition read-only inputs for zipmm 
+			rewriteInjectSparkRepartition( pn, ec.getVariables() );
+			
+			//rewrite 19: eager caching for checkpoint rdds
+			rewriteSetSparkEagerRDDCaching( pn, ec.getVariables() );
+		}
 	
 		// rewrite 20: set result merge
 		rewriteSetResultMerge( pn, ec.getVariables(), true );
@@ -387,7 +373,7 @@ public class OptimizerRuleBased extends Optimizer
 	}
 	
 	protected ExecType getRemoteExecType() {
-		return OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+		return ExecType.SPARK;
 	}
 	
 	///////
@@ -429,8 +415,7 @@ public class OptimizerRuleBased extends Optimizer
 				partitionedMatrices.putAll(cand2);
 		}
 		
-		PDataPartitioner REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
-				PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
+		PDataPartitioner REMOTE = PDataPartitioner.REMOTE_SPARK;
 		PDataPartitioner pdp = (apply)? REMOTE : PDataPartitioner.NONE;
 		//NOTE: since partitioning is only applied in case of MR index access, we assume a large
 		//      matrix and hence always apply REMOTE_MR (the benefit for large matrices outweigths
@@ -804,8 +789,7 @@ public class OptimizerRuleBased extends Optimizer
 
 		String datapartitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ExecType REMOTE = getRemoteExecType();
-		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? 
-			PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
+		PDataPartitioner REMOTE_DP = PDataPartitioner.REMOTE_SPARK;
 
 		//deciding on the execution strategy
 		if( ConfigurationManager.isParallelParFor()  //allowed remote parfor execution
@@ -863,7 +847,7 @@ public class OptimizerRuleBased extends Optimizer
 		pfpb.setExecMode( mode );	
 		
 		//decide if recompilation according to remote mem budget necessary
-		boolean requiresRecompile = ((mode == PExecMode.REMOTE_MR || mode == PExecMode.REMOTE_SPARK) && !isCPOnly );
+		boolean requiresRecompile = (mode == PExecMode.REMOTE_SPARK && !isCPOnly);
 		
 		_numEvaluatedPlans++;
 		LOG.debug(getOptMode()+" OPT: rewrite 'set execution strategy' - result="+mode+" (recompile="+requiresRecompile+")" );
@@ -965,31 +949,8 @@ public class OptimizerRuleBased extends Optimizer
 		// on the partitioned matrix
 		boolean apply = false;
 		String varname = null;
-		String partitioner = n.getParam(ParamType.DATA_PARTITIONER);
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
-		
-		if(   partitioner!=null && partitioner.equals(PDataPartitioner.REMOTE_MR.toString())
-			&& n.getExecType()==ExecType.MR )
-		{
-			//find all candidates matrices (at least one partitioned access via iterVar)
-			HashSet<String> cand = new HashSet<>();
-			rFindDataColocationCandidates(n, cand, pfpb.getIterVar());
-			
-			//select largest matrix for colocation (based on nnz to account for sparsity)
-			long nnzMax = Long.MIN_VALUE;
-			for( String c : cand ) {
-				MatrixObject tmp = (MatrixObject)vars.get(c);
-				if( tmp != null ){
-					long nnzTmp = tmp.getNnz();
-					if( nnzTmp > nnzMax ) {
-						nnzMax = nnzTmp;
-						varname = c;
-						apply = true;
-					}
-				}
-			}
-		}
 		
 		//modify the runtime plan (apply true if at least one candidate)
 		if( apply )
@@ -1058,8 +1019,7 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
-		if(((n.getExecType()==ExecType.MR && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_MR.name()))
-		    || (n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
+		if(((n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
 		    && n.hasNestedParallelism(false) 
 		    && n.hasNestedPartitionReads(false) )
 		{
@@ -1389,8 +1349,6 @@ public class OptimizerRuleBased extends Optimizer
 		if( flagNested && flagLIX )
 			LOG.warn(getOptMode()+" OPT: Task partitioner decision has conflicting input from rewrites 'nested parallelism' and 'result partitioning'.");
 		
-		boolean jvmreuse = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.JVM_REUSE); 
-		
 		//set task partitioner
 		if( flagNested )
 		{
@@ -1401,8 +1359,7 @@ public class OptimizerRuleBased extends Optimizer
 		{
 			setTaskPartitioner( pn, PTaskPartitioner.FACTORING_CMAX );
 		}
-		else if( ((pn.getExecType()==ExecType.MR && !jvmreuse) 
-			|| pn.getExecType()==ExecType.SPARK) && pn.hasOnlySimpleChilds() )
+		else if( pn.getExecType()==ExecType.SPARK && pn.hasOnlySimpleChilds() )
 		{
 			//for simple body programs without loops, branches, or function calls, we don't
 			//expect much load imbalance and hence use static partitioning in order to
@@ -1482,15 +1439,14 @@ public class OptimizerRuleBased extends Optimizer
 		
 		boolean apply = false;
 		String partitioner = pn.getParam(ParamType.DATA_PARTITIONER);
-		PDataPartitioner REMOTE_DP = OptimizerUtils.isSparkExecutionMode() ? PDataPartitioner.REMOTE_SPARK : PDataPartitioner.REMOTE_MR;
-		PExecMode REMOTE_DPE = OptimizerUtils.isSparkExecutionMode() ? PExecMode.REMOTE_SPARK_DP : PExecMode.REMOTE_MR_DP;
+		PDataPartitioner REMOTE_DP = PDataPartitioner.REMOTE_SPARK;
+		PExecMode REMOTE_DPE = PExecMode.REMOTE_SPARK_DP;
 		
 		//precondition: rewrite only invoked if exec type MR 
 		// (this also implies that the body is CP only)
 		
 		// try to merge MR data partitioning and MR exec 
-		if( (pn.getExecType()==ExecType.MR && M < _rm2 //fits into remote memory of reducers
-			|| pn.getExecType()==ExecType.SPARK) //MR/SP EXEC and CP body
+		if( pn.getExecType()==ExecType.SPARK //MR/SP EXEC and CP body
 			&& partitioner!=null && partitioner.equals(REMOTE_DP.toString()) //MR/SP partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
@@ -1584,38 +1540,6 @@ public class OptimizerRuleBased extends Optimizer
 	///////
 	//REWRITE transpose sparse vector operations
 	///
-	
-	protected void rewriteSetTranposeSparseVectorOperations(OptNode pn, HashMap<String, PartitionFormat> partitionedMatrices, LocalVariableMap vars) 
-	{
-		//assertions (warnings of corrupt optimizer decisions)
-		if( pn.getNodeType() != NodeType.PARFOR )
-			LOG.warn(getOptMode()+" OPT: Transpose sparse vector operations is only applicable for a ParFor node.");
-		
-		boolean apply = false;
-		
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
-		
-		if( pfpb.getExecMode() == PExecMode.REMOTE_MR_DP 
-			&& partitionedMatrices.size()==1 ) //general applicable
-		{
-			String moVarname = partitionedMatrices.keySet().iterator().next();
-			PartitionFormat moDpf = partitionedMatrices.get(moVarname);
-			Data dat = vars.get(moVarname);
-			
-			if(    dat !=null && dat instanceof MatrixObject 
-				&& moDpf == PartitionFormat.COLUMN_WISE	
-				&& ((MatrixObject)dat).getSparsity()<=MatrixBlock.SPARSITY_TURN_POINT  //check for sparse matrix
-				&& rIsTransposeSafePartition(pn, moVarname) ) //tranpose-safe
-			{
-				pfpb.setTransposeSparseColumnVector( true );
-				
-				apply = true;
-			}
-		}
-		
-		LOG.debug(getOptMode()+" OPT: rewrite 'set transpose sparse vector operations' - result="+apply );			
-	}
 
 	protected boolean rIsTransposeSafePartition( OptNode n, String varName ) 
 	{
@@ -1679,8 +1603,7 @@ public class OptimizerRuleBased extends Optimizer
 			totalMem = M + sum;
 			
 			//result update in-place for MR/Spark (w/ remote memory constraint)
-			if( (  pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR
-				|| pfpb.getExecMode() == PExecMode.REMOTE_SPARK_DP || pfpb.getExecMode() == PExecMode.REMOTE_SPARK) 
+			if( (pfpb.getExecMode() == PExecMode.REMOTE_SPARK_DP || pfpb.getExecMode() == PExecMode.REMOTE_SPARK) 
 				&& totalMem < _rm )
 			{ 
 				apply = true;
@@ -1746,27 +1669,6 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE disable CP caching  
 	///
 
-	protected void rewriteDisableCPCaching(OptNode pn, HashSet<ResultVar> inplaceResultVars, LocalVariableMap vars) 
-	{
-		//assertions (warnings of corrupt optimizer decisions)
-		if( pn.getNodeType() != NodeType.PARFOR )
-			LOG.warn(getOptMode()+" OPT: Disable caching is only applicable for a ParFor node.");
-		
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
-		double M_sumInterm = rComputeSumMemoryIntermediates(pn, inplaceResultVars);
-		boolean apply = false;
-		
-		if( (pfpb.getExecMode() == PExecMode.REMOTE_MR_DP || pfpb.getExecMode() == PExecMode.REMOTE_MR)
-			&& M_sumInterm < _rm ) //all intermediates and operations fit into memory budget
-		{
-			pfpb.setCPCaching(false); //default is true
-			apply = true;
-		}
-		
-		LOG.debug(getOptMode()+" OPT: rewrite 'disable CP caching' - result="+apply+" (M="+toMB(M_sumInterm)+")" );
-	}
-
 	protected double rComputeSumMemoryIntermediates( OptNode n, HashSet<ResultVar> inplaceResultVars )
 	{
 		double sum = 0;
@@ -1803,65 +1705,65 @@ public class OptimizerRuleBased extends Optimizer
 	//REWRITE enable runtime piggybacking
 	///
 
-	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices ) 
-	{
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
-		HashSet<String> sharedVars = new HashSet<>();
-		boolean apply = false; 
-		
-		//enable runtime piggybacking if MR jobs on shared read-only data set
-		if( OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING )
-		{
-			//apply runtime piggybacking if hop in mr and shared input variable 
-			//(any input variabled which is not partitioned and is read only and applies)
-			apply = rHasSharedMRInput(n, vars.keySet(), partitionedMatrices.keySet(), sharedVars)
-					&& n.getTotalK() > 1; //apply only if degree of parallelism > 1
-		}
-		
-		if( apply )
-			pfpb.setRuntimePiggybacking(apply);
-		
-		_numEvaluatedPlans++;
-		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="
-			+apply+" ("+Arrays.toString(sharedVars.toArray())+")" );
-	}
-
-	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
-	{
-		boolean ret = false;
-		
-		if( !n.isLeaf() )
-		{
-			for( OptNode cn : n.getChilds() )
-				ret |= rHasSharedMRInput( cn, inputVars, partitionedVars, sharedVars );
-		}
-		else if( n.getNodeType()== NodeType.HOP && n.getExecType()==ExecType.MR )
-		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			for( Hop ch : h.getInput() )
-			{
-				//note: we replaxed the contraint of non-partitioned inputs for additional 
-				//latecy hiding and scan sharing of partitions which are read multiple times
-				
-				if(    ch instanceof DataOp && ch.getDataType() == DataType.MATRIX
-					&& inputVars.contains(ch.getName()) )
-				{
-					ret = true;
-					sharedVars.add(ch.getName());
-				}
-				else if( HopRewriteUtils.isTransposeOperation(ch)
-					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
-					&& inputVars.contains(ch.getInput().get(0).getName()) )
-				{
-					ret = true;
-					sharedVars.add(ch.getInput().get(0).getName());
-				}
-			}
-		}
-
-		return ret;
-	}
+//	protected void rewriteEnableRuntimePiggybacking( OptNode n, LocalVariableMap vars, HashMap<String, PartitionFormat> partitionedMatrices ) 
+//	{
+//		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
+//				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+//		HashSet<String> sharedVars = new HashSet<>();
+//		boolean apply = false; 
+//		
+//		//enable runtime piggybacking if MR jobs on shared read-only data set
+//		if( OptimizerUtils.ALLOW_RUNTIME_PIGGYBACKING )
+//		{
+//			//apply runtime piggybacking if hop in mr and shared input variable 
+//			//(any input variabled which is not partitioned and is read only and applies)
+//			apply = rHasSharedMRInput(n, vars.keySet(), partitionedMatrices.keySet(), sharedVars)
+//					&& n.getTotalK() > 1; //apply only if degree of parallelism > 1
+//		}
+//		
+//		if( apply )
+//			pfpb.setRuntimePiggybacking(apply);
+//		
+//		_numEvaluatedPlans++;
+//		LOG.debug(getOptMode()+" OPT: rewrite 'enable runtime piggybacking' - result="
+//			+apply+" ("+Arrays.toString(sharedVars.toArray())+")" );
+//	}
+//
+//	protected boolean rHasSharedMRInput( OptNode n, Set<String> inputVars, Set<String> partitionedVars, HashSet<String> sharedVars ) 
+//	{
+//		boolean ret = false;
+//		
+//		if( !n.isLeaf() )
+//		{
+//			for( OptNode cn : n.getChilds() )
+//				ret |= rHasSharedMRInput( cn, inputVars, partitionedVars, sharedVars );
+//		}
+//		else if( n.getNodeType()== NodeType.HOP && n.getExecType()==ExecType.MR )
+//		{
+//			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+//			for( Hop ch : h.getInput() )
+//			{
+//				//note: we replaxed the contraint of non-partitioned inputs for additional 
+//				//latecy hiding and scan sharing of partitions which are read multiple times
+//				
+//				if(    ch instanceof DataOp && ch.getDataType() == DataType.MATRIX
+//					&& inputVars.contains(ch.getName()) )
+//				{
+//					ret = true;
+//					sharedVars.add(ch.getName());
+//				}
+//				else if( HopRewriteUtils.isTransposeOperation(ch)
+//					&& ch.getInput().get(0) instanceof DataOp && ch.getInput().get(0).getDataType() == DataType.MATRIX
+//					&& inputVars.contains(ch.getInput().get(0).getName()) )
+//				{
+//					ret = true;
+//					sharedVars.add(ch.getInput().get(0).getName());
+//				}
+//			}
+//		}
+//
+//		return ret;
+//	}
 
 
 	///////
@@ -2146,8 +2048,7 @@ public class OptimizerRuleBased extends Optimizer
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
 		
-		PResultMerge REMOTE = OptimizerUtils.isSparkExecutionMode() ? 
-				PResultMerge.REMOTE_SPARK : PResultMerge.REMOTE_MR;
+		PResultMerge REMOTE = PResultMerge.REMOTE_SPARK;
 		PResultMerge ret = null;
 		
 		//investigate details of current parfor node

@@ -54,23 +54,15 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForBivariateStatsLocalRemoteCP() 
-	{
-		runParForBivariateStatsTest(true, PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP);
+	public void testParForBivariateStatsLocalRemoteCP() {
+		runParForBivariateStatsTest(true, PExecMode.LOCAL, PExecMode.REMOTE_SPARK, ExecType.CP);
 	}
 	
 	@Test
-	public void testParForBivariateStatsRemoteLocalCP() 
-	{
-		runParForBivariateStatsTest(true, PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP);
+	public void testParForBivariateStatsRemoteLocalCP() {
+		runParForBivariateStatsTest(true, PExecMode.REMOTE_SPARK, PExecMode.LOCAL, ExecType.CP);
 	}
 	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runParForBivariateStatsTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType )
 	{
 		//inst exec type, influenced via rows
@@ -84,10 +76,10 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		int scriptNum = -1;
 		if( parallel )
 		{
-			if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
-			else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
-			else if( outer == PExecMode.LOCAL ) 	scriptNum=1;
-			else                                    scriptNum=4; //optimized
+			if( inner == PExecMode.REMOTE_SPARK )      scriptNum=2;
+			else if( outer == PExecMode.REMOTE_SPARK ) scriptNum=3;
+			else if( outer == PExecMode.LOCAL )        scriptNum=1;
+			else                                       scriptNum=4; //optimized
 		}
 		else
 		{
@@ -99,7 +91,6 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		//config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 		
-		/* This is for running the junit test the new way, i.e., construct the arguments directly */
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME +scriptNum + ".dml";
 		programArgs = new String[]{"-args", input("D"),
@@ -128,23 +119,23 @@ public class ParForBivariateStatsTest extends AutomatedTestBase
 		TestUtils.floor(S1);
 		TestUtils.floor(S2);
 		writeInputMatrix("S1", S1, true);
-		writeInputMatrix("S2", S2, true);	
+		writeInputMatrix("S2", S2, true);
 
 		//generate kind for attributes (1,2,3)
-        double[][] K1 = new double[1][cols2];
-        double[][] K2 = new double[1][cols2];
-        for( int i=0; i<cols2; i++ )
-        {
-        	K1[0][i] = Dkind[(int)S1[0][i]-1];
-        	K2[0][i] = Dkind[(int)S2[0][i]-1];
-        }
-        writeInputMatrix("K1", K1, true);
-		writeInputMatrix("K2", K2, true);			
+		double[][] K1 = new double[1][cols2];
+		double[][] K2 = new double[1][cols2];
+		for( int i=0; i<cols2; i++ )
+		{
+			K1[0][i] = Dkind[(int)S1[0][i]-1];
+			K2[0][i] = Dkind[(int)S2[0][i]-1];
+		}
+		writeInputMatrix("K1", K1, true);
+		writeInputMatrix("K2", K2, true);
 		
 		boolean exceptionExpected = false;
-		runTest(true, exceptionExpected, null, 92); 
+		runTest(true, exceptionExpected, null, 92);
 
-		runRScript(true); 
+		runRScript(true);
 		
 		//compare matrices 
 		for( String out : new String[]{"bivar.stats", "category.counts", "category.means",  "category.variances" } )

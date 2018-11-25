@@ -60,86 +60,73 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	//colwise partitioning
 	
 	@Test
-	public void testParForDataPartitioningNoneLocalLargeDense() 
-	{
+	public void testParForDataPartitioningNoneLocalLargeDense() {
 		runParForDataPartitioningTest(PDataPartitioner.NONE, null, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningNoneLocalLargeSparse() 
-	{
+	public void testParForDataPartitioningNoneLocalLargeSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.NONE, PExecMode.LOCAL, false, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningLocalLocalLargeDense() 
-	{
+	public void testParForDataPartitioningLocalLocalLargeDense() {
 		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningLocalLocalLargeSparse() 
-	{
+	public void testParForDataPartitioningLocalLocalLargeSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, false, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningLocalRemoteLargeDense() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, false, false);
+	public void testParForDataPartitioningLocalRemoteLargeDense() {
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningLocalRemoteLargeSparse() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, false, true);
+	public void testParForDataPartitioningLocalRemoteLargeSparse() {
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, false, true);
 	}
 
 	@Test
-	public void testParForDataPartitioningRemoteLocalLargeDense() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, false);
+	public void testParForDataPartitioningRemoteLocalLargeDense() {
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningRemoteLocalLargeSparse() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, true);
+	public void testParForDataPartitioningRemoteLocalLargeSparse() {
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningRemoteRemoteLargeDense() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, false);
+	public void testParForDataPartitioningRemoteRemoteLargeDense() {
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, false);
 	}
 
 	@Test
 	public void testParForDataPartitioningRemoteRemoteLargeSparse() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, false, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, true);
 	}
 
 	@Test
-	public void testParForDataPartitioningRemoteSparkLocalLargeDense() 
-	{
+	public void testParForDataPartitioningRemoteSparkLocalLargeDense() {
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningRemoteSparkLocalLargeSparse() 
-	{
+	public void testParForDataPartitioningRemoteSparkLocalLargeSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningRemoteSparkRemoteLargeDense() 
-	{
+	public void testParForDataPartitioningRemoteSparkRemoteLargeDense() {
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningRemoteSparkRemoteLargeSparse() 
-	{
+	public void testParForDataPartitioningRemoteSparkRemoteLargeSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, false, true);
 	}
 
@@ -148,63 +135,57 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	
 
 	@Test
-	public void testParForDataPartitioningNoneLocalSmallDense() 
-	{
+	public void testParForDataPartitioningNoneLocalSmallDense() {
 		runParForDataPartitioningTest(PDataPartitioner.NONE, null, true, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningNoneLocalSmallSparse() 
-	{
+	public void testParForDataPartitioningNoneLocalSmallSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.NONE, PExecMode.LOCAL, true, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningLocalLocalSmallDense() 
-	{
+	public void testParForDataPartitioningLocalLocalSmallDense() {
 		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, true, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningLocalLocalSmallSparse() 
-	{
+	public void testParForDataPartitioningLocalLocalSmallSparse() {
 		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.LOCAL, true, true);
 	}
 	
 	@Test
-	public void testParForDataPartitioningLocalRemoteSmallDense() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, true, false);
+	public void testParForDataPartitioningLocalRemoteSmallDense() {
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, true, false);
 	}
 
 	@Test
-	public void testParForDataPartitioningLocalRemoteSmallSparse() 
-	{
-		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_MR, true, true);
+	public void testParForDataPartitioningLocalRemoteSmallSparse() {
+		runParForDataPartitioningTest(PDataPartitioner.LOCAL, PExecMode.REMOTE_SPARK, true, true);
 	}
 
 	@Test
 	public void testParForDataPartitioningRemoteLocalSmallDense() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, true, false);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true, false);
 	}
 
 	@Test
 	public void testParForDataPartitioningRemoteLocalSmallSparse() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, true, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, true, true);
 	}
 	
 	@Test
 	public void testParForDataPartitioningRemoteRemoteSmallDense() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, false);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true, false);
 	}
 
 	@Test
 	public void testParForDataPartitioningRemoteRemoteSmallSparse() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.REMOTE_MR, true, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true, true);
 	}
 	
 	@Test
@@ -222,13 +203,13 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	@Test
 	public void testParForDataPartitioningRemoteSparkRemoteSmallDense() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_MR, true, false);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true, false);
 	}
 
 	@Test
 	public void testParForDataPartitioningRemoteSparkRemoteSmallSparse() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_MR, true, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.REMOTE_SPARK, true, true);
 	}
 
 
@@ -237,13 +218,13 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 	@Test
 	public void testParForNoDataPartitioningRemoteLocalLargeDense() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, false, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, false, true);
 	}
 	
 	@Test
 	public void testParForNoDataPartitioningRemoteLocalLargeSparse() 
 	{
-		runParForDataPartitioningTest(PDataPartitioner.REMOTE_MR, PExecMode.LOCAL, false, true, true);
+		runParForDataPartitioningTest(PDataPartitioner.REMOTE_SPARK, PExecMode.LOCAL, false, true, true);
 	}
 	
 	@Test
@@ -304,16 +285,6 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 						scriptNum=2; 
 					else
 						scriptNum=3;
-				case REMOTE_MR: 
-					if( mode==PExecMode.LOCAL ){
-						if( !multiParts )
-							scriptNum = 4; 
-						else 
-							scriptNum = 6;
-					}
-					else
-						scriptNum = 5;	
-					break; 
 				case REMOTE_SPARK: 
 					if( mode==PExecMode.LOCAL ){
 						if( !multiParts )
@@ -322,7 +293,7 @@ public class ParForColwiseDataPartitioningTest extends AutomatedTestBase
 							scriptNum = 9;
 					}
 					else
-						scriptNum = 8;	
+						scriptNum = 8;
 					break; 
 				default:
 					//do nothing

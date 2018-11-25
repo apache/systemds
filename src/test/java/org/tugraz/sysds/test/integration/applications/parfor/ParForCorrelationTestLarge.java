@@ -58,45 +58,22 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 
-	
 	@Test
-	public void testParForCorrleationLargeLocalLocal() 
-	{
+	public void testParForCorrleationLargeLocalLocal() {
 		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.LOCAL);
 	}
 
-	/*
 	@Test
-	public void testParForCorrleationLargeLocalRemote() 
-	{
-		runParForCorrelationTest(PExecMode.LOCAL, PExecMode.REMOTE_MR);
-	}
-	
-	@Test
-	public void testParForCorrleationRemoteLocalCP() 
-	{
-		runParForCorrelationTest(PExecMode.REMOTE_MR, PExecMode.LOCAL);
-	}
-	*/
-	
-	@Test
-	public void testParForCorrleationLargeDefault() 
-	{
+	public void testParForCorrleationLargeDefault() {
 		runParForCorrelationTest(null, null);
 	}
 	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runParForCorrelationTest( PExecMode outer, PExecMode inner )
 	{
 		//script
 		int scriptNum = -1;
-		if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
-		else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
+		if( inner == PExecMode.REMOTE_SPARK )      scriptNum=2;
+		else if( outer == PExecMode.REMOTE_SPARK ) scriptNum=3;
 		else if( outer == PExecMode.LOCAL )     scriptNum=1;
 		else                                    scriptNum=4; //optimized
 		
@@ -115,7 +92,7 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
+		double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;
@@ -126,6 +103,5 @@ public class ParForCorrelationTestLarge extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("PearsonR");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "PearsonR-DML", "PearsonR-R");
-		
 	}
 }

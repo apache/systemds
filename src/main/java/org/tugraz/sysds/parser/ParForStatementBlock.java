@@ -221,25 +221,6 @@ public class ParForStatementBlock extends ForStatementBlock
 					if( constrained ) {
 						params.put(key, _paramDefaults2.get(key));
 					}
-					//special treatment for degree of parallelism
-					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
-							&& params.get(EXEC_MODE).equalsIgnoreCase(PExecMode.REMOTE_MR.name()))
-					{
-						int maxPMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-						//correction max number of reducers on yarn clusters
-						if( InfrastructureAnalyzer.isYarnEnabled() )
-							maxPMap = (int)Math.max( maxPMap, YarnClusterAnalyzer.getNumCores() );
-						params.put(key, String.valueOf(maxPMap));
-					}
-					else if( key.equals(PAR) && params.containsKey(EXEC_MODE)
-							&& params.get(EXEC_MODE).equalsIgnoreCase(PExecMode.REMOTE_MR_DP.name()) )
-					{
-						int maxPRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
-						//correction max number of reducers on yarn clusters
-						if( InfrastructureAnalyzer.isYarnEnabled() )
-							maxPRed = (int)Math.max( maxPRed, YarnClusterAnalyzer.getNumCores()/2 );
-						params.put(key, String.valueOf(maxPRed));
-					}
 					else //default case
 						params.put(key, _paramDefaults.get(key));
 				}

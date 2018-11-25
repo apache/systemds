@@ -64,74 +64,45 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testParForNaiveBayesLocalDenseCP() 
-	{
+	public void testParForNaiveBayesLocalDenseCP() {
 		runParForNaiveBayesTest(PExecMode.LOCAL, ExecType.CP, false, false);
 	}
 	
 	@Test
-	public void testParForNaiveBayesLocalSparseCP() 
-	{
+	public void testParForNaiveBayesLocalSparseCP() {
 		runParForNaiveBayesTest(PExecMode.LOCAL, ExecType.CP, false, true);
 	}
 	
 	@Test
-	public void testParForNaiveBayesRemoteDenseCP() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR, ExecType.CP, false, false);
+	public void testParForNaiveBayesRemoteDenseCP() {
+		runParForNaiveBayesTest(PExecMode.REMOTE_SPARK, ExecType.CP, false, false);
 	}
 	
 	@Test
-	public void testParForNaiveBayesRemoteSparseCP() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR, ExecType.CP, false, true);
-	}
-	
-	/* MB: see small mem test for REMOTE_MR_DP
-	@Test
-	public void testParForNaiveBayesRemoteDPDenseCP() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR_DP, ExecType.CP, false, false);
+	public void testParForNaiveBayesRemoteSparseCP() {
+		runParForNaiveBayesTest(PExecMode.REMOTE_SPARK, ExecType.CP, false, true);
 	}
 	
 	@Test
-	public void testParForNaiveBayesRemoteDPSparseCP() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR_DP, ExecType.CP, false, true);
-	}
-	*/
-	
-	@Test
-	public void testParForNaiveBayesDefaultDenseCP() 
-	{
+	public void testParForNaiveBayesDefaultDenseCP() {
 		runParForNaiveBayesTest(null, ExecType.CP, false, false);
 	}
 	
 	@Test
-	public void testParForNaiveBayesDefaultSparseCP() 
-	{
+	public void testParForNaiveBayesDefaultSparseCP() {
 		runParForNaiveBayesTest(null, ExecType.CP, false, true);
 	}
 	
 	@Test
-	public void testParForNaiveBayesRemoteDPDenseCPSmallMem() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR_DP, ExecType.CP, true, false);
+	public void testParForNaiveBayesRemoteDPDenseCPSmallMem() {
+		runParForNaiveBayesTest(PExecMode.REMOTE_SPARK_DP, ExecType.CP, true, false);
 	}
 	
 	@Test
-	public void testParForNaiveBayesRemoteDPSparseCPSmallMem() 
-	{
-		runParForNaiveBayesTest(PExecMode.REMOTE_MR_DP, ExecType.CP, true, true);
+	public void testParForNaiveBayesRemoteDPSparseCPSmallMem() {
+		runParForNaiveBayesTest(PExecMode.REMOTE_SPARK_DP, ExecType.CP, true, true);
 	}
 	
-	/**
-	 * 
-	 * @param outer
-	 * @param instType
-	 * @param smallMem
-	 * @param sparse
-	 */
 	private void runParForNaiveBayesTest( PExecMode outer, ExecType instType, boolean smallMem, boolean sparse )
 	{
 		int cols = cols1;
@@ -143,8 +114,8 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 		//determine the script
 		int scriptNum = -1;
 		if( outer == PExecMode.LOCAL )      scriptNum=1; //constrained opt
-		else if( outer == PExecMode.REMOTE_MR ) scriptNum=2; //constrained opt
-		else if( outer == PExecMode.REMOTE_MR_DP ) 	scriptNum=3; //constrained opt
+		else if( outer == PExecMode.REMOTE_SPARK ) scriptNum=2; //constrained opt
+		else if( outer == PExecMode.REMOTE_SPARK_DP ) 	scriptNum=3; //constrained opt
 		else                                    scriptNum=4; //opt
 	
 		//invocation arguments

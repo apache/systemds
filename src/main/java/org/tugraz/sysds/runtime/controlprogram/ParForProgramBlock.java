@@ -116,8 +116,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	// execution modes
 	public enum PExecMode {
 		LOCAL,          //local (master) multi-core execution mode
-		REMOTE_MR,      //remote (MR cluster) execution mode
-		REMOTE_MR_DP,   //remote (MR cluster) execution mode, fused with data partitioning
 		REMOTE_SPARK,   //remote (Spark cluster) execution mode
 		REMOTE_SPARK_DP,//remote (Spark cluster) execution mode, fused with data partitioning
 		UNSPECIFIED
@@ -255,16 +253,14 @@ public class ParForProgramBlock extends ForProgramBlock
 	public enum PDataPartitioner {
 		NONE,            // no data partitioning
 		LOCAL,           // local file based partition split on master node
-		REMOTE_MR,       // remote partition split using a reblock MR job 
 		REMOTE_SPARK,    // remote partition split using a spark job
-		UNSPECIFIED, 
-  	}
+		UNSPECIFIED,
+	}
 
 	public enum PResultMerge {
 		LOCAL_MEM,       // in-core (in-memory) result merge (output and one input at a time)
 		LOCAL_FILE,      // out-of-core result merge (file format dependent)
 		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix 
-		REMOTE_MR,       // remote MR parallel result merge
 		REMOTE_SPARK,    // remote Spark parallel result merge
 		UNSPECIFIED,
 	}
@@ -680,7 +676,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		for( String dpvar : _variablesDPOriginal.keySet() ) //release forced exectypes
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, dpvar, ec, false);
 		 //release forced exectypes for fused dp/exec
-		if( _execMode == PExecMode.REMOTE_MR_DP || _execMode == PExecMode.REMOTE_SPARK_DP )
+		if( _execMode == PExecMode.REMOTE_SPARK_DP )
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, _colocatedDPMatrix, ec, false); 
 		resetOptimizerFlags(); //after release, deletes dp_varnames
 		
@@ -1486,8 +1482,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 */
 	private boolean checkParallelRemoteResultMerge() {
 		return (USE_PARALLEL_RESULT_MERGE_REMOTE && _resultVars.size() > 1
-			&& ( _resultMerge == PResultMerge.REMOTE_MR 
-				||_resultMerge == PResultMerge.REMOTE_SPARK) );
+			&& _resultMerge == PResultMerge.REMOTE_SPARK);
 	}
 
 	private void setParForProgramBlockIDs(int IDPrefix) {

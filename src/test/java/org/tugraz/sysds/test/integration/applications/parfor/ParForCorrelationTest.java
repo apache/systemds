@@ -72,21 +72,18 @@ public class ParForCorrelationTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForCorrleationLocalRemoteCP() 
-	{
-		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.REMOTE_MR, ExecType.CP, false, false, false);
+	public void testParForCorrleationLocalRemoteCP() {
+		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.REMOTE_SPARK, ExecType.CP, false, false, false);
 	}
 	
 	@Test
-	public void testParForCorrleationRemoteLocalCP() 
-	{
-		runParForCorrelationTest(true, PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP, false, false, false);
+	public void testParForCorrleationRemoteLocalCP() {
+		runParForCorrelationTest(true, PExecMode.REMOTE_SPARK, PExecMode.LOCAL, ExecType.CP, false, false, false);
 	}
 	
 	@Test
-	public void testParForCorrleationRemoteLocalCPWithStats() 
-	{
-		runParForCorrelationTest(true, PExecMode.REMOTE_MR, PExecMode.LOCAL, ExecType.CP, false, false, true);
+	public void testParForCorrleationRemoteLocalCPWithStats() {
+		runParForCorrelationTest(true, PExecMode.REMOTE_SPARK, PExecMode.LOCAL, ExecType.CP, false, false, true);
 	}
 	
 
@@ -96,12 +93,6 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		runParForCorrelationTest(true, null, null, ExecType.CP, false, false, false);
 	}
 	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runParForCorrelationTest( boolean parallel, PExecMode outer, PExecMode inner, ExecType instType, boolean profile, boolean debug, boolean statistics )
 	{
 		//inst exec type, influenced via rows
@@ -113,12 +104,12 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		int scriptNum = -1;
 		if( parallel )
 		{
-			if( inner == PExecMode.REMOTE_MR )      scriptNum=2;
-			else if( outer == PExecMode.REMOTE_MR ) scriptNum=3;
-			else if( outer == PExecMode.LOCAL )		scriptNum=1;		                  
+			if( inner == PExecMode.REMOTE_SPARK )      scriptNum=2;
+			else if( outer == PExecMode.REMOTE_SPARK ) scriptNum=3;
+			else if( outer == PExecMode.LOCAL )        scriptNum=1;
 			else if( profile )                      scriptNum=5; //optimized with profile
 			else if( debug )                        scriptNum=6; //optimized with profile
-			else                                    scriptNum=4; //optimized                                   
+			else                                    scriptNum=4; //optimized
 		}
 		else
 		{
@@ -147,7 +138,7 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 		long seed = System.nanoTime();
-        double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
+		double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
 		writeInputMatrix("V", V, true);
 
 		try
@@ -166,6 +157,5 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("PearsonR");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "PearsonR-DML", "PearsonR-R");
-		
 	}
 }

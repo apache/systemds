@@ -203,10 +203,6 @@ public class OptTreeConverter
 				case LOCAL:
 					node.setExecType(ExecType.CP);
 					break;
-				case REMOTE_MR:
-				case REMOTE_MR_DP:
-					node.setExecType(ExecType.MR);
-					break;
 				case REMOTE_SPARK:
 				case REMOTE_SPARK_DP:
 					node.setExecType(ExecType.SPARK);
@@ -263,13 +259,6 @@ public class OptTreeConverter
 				//exec operations
 				//CPInstruction cpinst = (CPInstruction) inst;
 				//node.addParam(ParamType.OPTYPE,cpinst.getCPInstructionType().toString());
-				break;
-			case MAPREDUCE:
-			case MAPREDUCE_JOB:
-				node.setExecType(ExecType.MR);
-				//exec operations
-				//MRInstruction mrinst = (MRInstruction) inst;
-				//node.addParam(ParamType.OPTYPE,mrinst.getMRInstructionType().toString());
 				break;
 			default:
 				// In initial prototype, parfor is not supported for spark, so this exception will be thrown
@@ -399,10 +388,6 @@ public class OptTreeConverter
 				case LOCAL:
 					node.setExecType(ExecType.CP);
 					break;
-				case REMOTE_MR:
-				case REMOTE_MR_DP:
-					node.setExecType(ExecType.MR);
-					break;
 				case REMOTE_SPARK:
 				case REMOTE_SPARK_DP:
 					node.setExecType(ExecType.SPARK);
@@ -451,9 +436,7 @@ public class OptTreeConverter
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() ) {
 				boolean isSparkExec = OptimizerUtils.isSparkExecutionMode();
-				if( !isSparkExec && containsMRJobInstruction(pb, false, false) )
-					node.setExecType(ExecType.MR);
-				else if( isSparkExec && containsMRJobInstruction(pb, false, true))
+				if( isSparkExec && containsMRJobInstruction(pb, false, true))
 					node.setExecType(ExecType.SPARK);
 			}
 		}

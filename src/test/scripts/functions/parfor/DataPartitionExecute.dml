@@ -30,13 +30,5 @@ if( $2 ) {
      parfor(i in 1:ncol(X), opt=CONSTRAINED, mode=REMOTE_SPARK_DP, datapartitioner=REMOTE_SPARK)
         R[,i] = min(X[,i], sum(X[,i]));
 }
-else {
-  if( $3 )
-     parfor(i in 1:nrow(X), opt=CONSTRAINED, mode=REMOTE_MR_DP, datapartitioner=REMOTE_MR)
-        R[i,] = min(X[i,], sum(X[i,]));
-  else
-     parfor(i in 1:ncol(X), opt=CONSTRAINED, mode=REMOTE_MR_DP, datapartitioner=REMOTE_MR)
-        R[,i] = min(X[,i], sum(X[,i]));
-}
 
 write(R, $4);

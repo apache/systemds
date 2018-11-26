@@ -334,7 +334,6 @@ public class DnnOp extends MultiThreadedHop
 		
 		// ---------------------------------------------------------------
 		// Add input/output for parent lops of convolutionLop
-		lhsInputLop.addOutput(convolutionLop);
 		if(optionalRhsInputLop != null) {
 			convolutionLop.addInput(optionalRhsInputLop);
 			optionalRhsInputLop.addOutput(convolutionLop);

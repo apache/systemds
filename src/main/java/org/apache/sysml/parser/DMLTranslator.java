@@ -2016,6 +2016,10 @@ public class DMLTranslator
 		case CDF:
 		case INVCDF:
 			break;
+		case QBINOMIAL:
+		case PBINOMIAL:
+			distLop = new LiteralOp("binomial");
+			break;
 			
 		default:
 			throw new HopsException("Invalid operation: " + op);
@@ -2099,11 +2103,13 @@ public class DMLTranslator
 		switch(source.getOpCode()) {
 			case CDF:
 			case INVCDF:
+			case QBINOMIAL:
 			case QNORM:
 			case QT:
 			case QF:
 			case QCHISQ:
 			case QEXP:
+			case PBINOMIAL:
 			case PNORM:
 			case PT:
 			case PF:

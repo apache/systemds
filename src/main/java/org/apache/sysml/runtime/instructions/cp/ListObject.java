@@ -45,7 +45,7 @@ public class ListObject extends Data {
 	}
 	
 	public ListObject(List<Data> data, List<String> names) {
-		this(data, null, ValueType.UNKNOWN);
+		this(data, names, ValueType.UNKNOWN);
 	}
 
 	public ListObject(List<Data> data, List<String> names, ValueType vt) {

@@ -37,11 +37,19 @@ public class ListObject extends Data {
 	private int _nCacheable;
 	
 	public ListObject(List<Data> data) {
-		this(data, null);
+		this(data, null, ValueType.UNKNOWN);
+	}
+	
+	public ListObject(List<Data> data, ValueType vt) {
+		this(data, null, vt);
+	}
+	
+	public ListObject(List<Data> data, List<String> names) {
+		this(data, names, ValueType.UNKNOWN);
 	}
 
-	public ListObject(List<Data> data, List<String> names) {
-		super(DataType.LIST, ValueType.UNKNOWN);
+	public ListObject(List<Data> data, List<String> names, ValueType vt) {
+		super(DataType.LIST, vt);
 		_data = data;
 		_names = names;
 		_nCacheable = (int) data.stream().filter(

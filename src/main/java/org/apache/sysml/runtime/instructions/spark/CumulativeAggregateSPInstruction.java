@@ -39,6 +39,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysml.utils.IntUtils;
 
 public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction {
 
@@ -76,7 +77,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		//merge partial aggregates, adjusting for correct number of partitions
 		//as size can significant shrink (1K) but also grow (sparse-dense)
 		int numParts = SparkUtils.getNumPreferredPartitions(mcOut);
-		int minPar = (int)Math.min(SparkExecutionContext.getDefaultParallelism(true), mcOut.getNumBlocks());
+		int minPar = IntUtils.toInt(Math.min(SparkExecutionContext.getDefaultParallelism(true), mcOut.getNumBlocks()));
 		out = RDDAggregateUtils.mergeByKey(out, Math.max(numParts, minPar), false);
 		
 		//put output handle in symbol table
@@ -133,9 +134,9 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			//cumsum expand partial aggregates
 			long rlenOut = (long)Math.ceil((double)_rlen/_brlen);
 			long rixOut = (long)Math.ceil((double)ixIn.getRowIndex()/_brlen);
-			int rlenBlk = (int) Math.min(rlenOut-(rixOut-1)*_brlen, _brlen);
+			int rlenBlk = IntUtils.toInt( Math.min(rlenOut-(rixOut-1)*_brlen, _brlen));
 			int clenBlk = blkOut.getNumColumns();
-			int posBlk = (int) ((ixIn.getRowIndex()-1) % _brlen);
+			int posBlk = IntUtils.toInt((ixIn.getRowIndex()-1) % _brlen);
 			MatrixBlock blkOut2 = new MatrixBlock(rlenBlk, clenBlk, false);
 			blkOut2.copy(posBlk, posBlk, 0, clenBlk-1, blkOut, true);
 			ixOut.setIndexes(rixOut, ixOut.getColumnIndex());

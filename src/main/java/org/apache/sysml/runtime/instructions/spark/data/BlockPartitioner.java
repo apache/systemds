@@ -25,6 +25,7 @@ import org.apache.spark.Partitioner;
 
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysml.utils.IntUtils;
 
 /**
  * Default partitioner used for all binary block rdd operations in order
@@ -75,7 +76,7 @@ public class BlockPartitioner extends Partitioner
 		}
 		
 		//compute meta data for runtime
-		_ncparts = (int)Math.ceil((double)ncblks/_cbPerPart);
+		_ncparts = IntUtils.toInt(Math.ceil((double)ncblks/_cbPerPart));
 		_numParts = numParts;
 	}
 	
@@ -90,8 +91,8 @@ public class BlockPartitioner extends Partitioner
 			
 		//get partition id
 		MatrixIndexes ix = (MatrixIndexes) arg0;
-		int ixr = (int)((ix.getRowIndex()-1)/_rbPerPart);
-		int ixc = (int)((ix.getColumnIndex()-1)/_cbPerPart);
+		int ixr = IntUtils.toInt((ix.getRowIndex()-1)/_rbPerPart);
+		int ixc = IntUtils.toInt((ix.getColumnIndex()-1)/_cbPerPart);
 		int id = ixr * _ncparts + ixc;
 		
 		//ensure valid range

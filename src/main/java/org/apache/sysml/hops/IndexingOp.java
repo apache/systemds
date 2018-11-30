@@ -31,6 +31,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.utils.IntUtils;
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 
@@ -347,8 +348,8 @@ public class IndexingOp extends Hop
 		long ru = (input3 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input3)) : -1;
 		long cl = (input4 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input4)) : -1;
 		long cu = (input5 instanceof LiteralOp) ? (HopRewriteUtils.getIntValueSafe((LiteralOp)input5)) : -1;
-		int brlen = (int)input1.getRowsInBlock();
-		int bclen = (int)input1.getColsInBlock();
+		int brlen = input1.getRowsInBlock();
+		int bclen = input1.getColsInBlock();
 		
 		return OptimizerUtils.isIndexingRangeBlockAligned(rl, ru, cl, cu, brlen, bclen);
 	}

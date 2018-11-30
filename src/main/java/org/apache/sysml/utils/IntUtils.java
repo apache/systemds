@@ -16,26 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.sysml.utils;
+import static java.lang.Math.toIntExact;
 
-package org.apache.sysml.runtime.controlprogram.parfor;
 
-import org.apache.sysml.runtime.instructions.cp.IntObject;
-import org.apache.sysml.utils.IntUtils;
+public class IntUtils {
 
-/**
- * This static task partitioner virtually iterates over the given FOR loop (from, to, incr),
- * creates iterations and group them to tasks according to a task size of numIterations/numWorkers. 
- * There, all tasks are equally sized.
- * 
- */
-public class TaskPartitionerStatic extends TaskPartitionerFixedsize
-{
+	public static int toInt(long val) {
+		return toIntExact(val);
+	}
 	
-	public TaskPartitionerStatic( long taskSize, int numThreads, String iterVarName, IntObject fromVal, IntObject toVal, IntObject incrVal ) 
-	{
-		super(taskSize, iterVarName, fromVal, toVal, incrVal);
+	public static int toInt(double val) {
+		long val1 = (long) val;
+		return toIntExact(val1);
+	}
 	
-		_taskSize = _numIter / numThreads;
-		_firstnPlus1 = IntUtils.toInt(_numIter % numThreads);
-	}	
 }

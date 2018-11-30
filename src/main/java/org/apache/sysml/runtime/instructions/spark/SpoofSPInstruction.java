@@ -65,6 +65,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysml.utils.IntUtils;
 
 import scala.Tuple2;
 
@@ -144,7 +145,7 @@ public class SpoofSPInstruction extends SPInstruction {
 					long numBlocks = (op.getCellType()==CellType.ROW_AGG ) ? 
 						mcIn.getNumRowBlocks() : mcIn.getNumColBlocks();
 					out = RDDAggregateUtils.aggByKeyStable(out, aggop,
-						(int)Math.min(out.getNumPartitions(), numBlocks), false);
+							IntUtils.toInt(Math.min(out.getNumPartitions(), numBlocks)), false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -183,7 +184,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				if(type == OutProdType.LEFT_OUTER_PRODUCT || type == OutProdType.RIGHT_OUTER_PRODUCT ) {
 					long numBlocks = mcOut.getNumRowBlocks() * mcOut.getNumColBlocks();
 					out = RDDAggregateUtils.sumByKeyStable(out,
-						(int)Math.min(out.getNumPartitions(), numBlocks), false);
+							IntUtils.toInt(Math.min(out.getNumPartitions(), numBlocks)), false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -206,7 +207,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			long clen2 = op.getRowType().isConstDim2(op.getConstDim2()) ? op.getConstDim2() :
 				op.getRowType().isRowTypeB1() ? sec.getMatrixCharacteristics(_in[1].getName()).getCols() : -1;
 			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcVect2,
-				bcMatrices, scalars, mcIn.getRowsPerBlock(), (int)mcIn.getCols(), (int)clen2);
+				bcMatrices, scalars, mcIn.getRowsPerBlock(), IntUtils.toInt(mcIn.getCols()), IntUtils.toInt(clen2));
 			out = in.mapPartitionsToPair(fmmc, op.getRowType()==RowType.ROW_AGG
 					|| op.getRowType() == RowType.NO_AGG);
 			
@@ -222,7 +223,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			{
 				if( op.getRowType()==RowType.ROW_AGG && mcIn.getCols() > mcIn.getColsPerBlock() ) {
 					out = RDDAggregateUtils.sumByKeyStable(out,
-						(int)Math.min(out.getNumPartitions(), mcIn.getNumRowBlocks()), false);
+							IntUtils.toInt(Math.min(out.getNumPartitions(), mcIn.getNumRowBlocks())), false);
 				}
 				sec.setRDDHandleForVariable(_out.getName(), out);
 				
@@ -263,8 +264,8 @@ public class SpoofSPInstruction extends SPInstruction {
 	}
 	
 	private static boolean[] getMatrixBroadcastVector(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect) {
-		int numMtx = (int) Arrays.stream(inputs)
-			.filter(in -> in.getDataType().isMatrix()).count();
+		int numMtx = IntUtils.toInt(Arrays.stream(inputs)
+			.filter(in -> in.getDataType().isMatrix()).count());
 		boolean[] ret = new boolean[numMtx];
 		for(int i=0, pos=0; i<inputs.length; i++)
 			if( inputs[i].getDataType().isMatrix() )
@@ -380,9 +381,9 @@ public class SpoofSPInstruction extends SPInstruction {
 			for( int i=0, posRdd=0, posBc=0; i<_bcInd.length; i++ ) {
 				if( _bcInd[i] ) {
 					PartitionedBroadcast<MatrixBlock> pb = _inputs.get(posBc++);
-					int rowIndex = (int) ((outer && i==2) ? ixIn.getColumnIndex() : 
+					int rowIndex = IntUtils.toInt((outer && i==2) ? ixIn.getColumnIndex() : 
 						(pb.getNumRowBlocks()>=ixIn.getRowIndex())?ixIn.getRowIndex():1);
-					int colIndex = (int) ((outer && i==2) ? 1 : 
+					int colIndex = IntUtils.toInt((outer && i==2) ? 1 : 
 						(pb.getNumColumnBlocks()>=ixIn.getColumnIndex())?ixIn.getColumnIndex():1);
 					ret.add(pb.getBlock(rowIndex, colIndex));
 				}

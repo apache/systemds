@@ -65,6 +65,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("pf",		Expression.ParameterizedBuiltinFunctionOp.PF);
 		opcodeMap.put("pchisq",	Expression.ParameterizedBuiltinFunctionOp.PCHISQ);
 		opcodeMap.put("pexp",	Expression.ParameterizedBuiltinFunctionOp.PEXP);
+		opcodeMap.put("pbinomial", Expression.ParameterizedBuiltinFunctionOp.PBINOMIAL);
 		
 		opcodeMap.put("icdf",	Expression.ParameterizedBuiltinFunctionOp.INVCDF);
 		opcodeMap.put("qnorm",	Expression.ParameterizedBuiltinFunctionOp.QNORM);
@@ -72,6 +73,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		opcodeMap.put("qf",		Expression.ParameterizedBuiltinFunctionOp.QF);
 		opcodeMap.put("qchisq",	Expression.ParameterizedBuiltinFunctionOp.QCHISQ);
 		opcodeMap.put("qexp",	Expression.ParameterizedBuiltinFunctionOp.QEXP);
+		opcodeMap.put("qbinomial",	Expression.ParameterizedBuiltinFunctionOp.QBINOMIAL);
 
 		// data transformation functions
 		opcodeMap.put("transformapply",	Expression.ParameterizedBuiltinFunctionOp.TRANSFORMAPPLY);
@@ -107,6 +109,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PF, ParamBuiltinOp.CDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PCHISQ, ParamBuiltinOp.CDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PEXP, ParamBuiltinOp.CDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.PBINOMIAL, ParamBuiltinOp.CDF);
+
 		
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.INVCDF, ParamBuiltinOp.INVCDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QNORM, ParamBuiltinOp.INVCDF);
@@ -114,6 +118,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QF, ParamBuiltinOp.INVCDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QCHISQ, ParamBuiltinOp.INVCDF);
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QEXP, ParamBuiltinOp.INVCDF);
+		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.QBINOMIAL, ParamBuiltinOp.INVCDF);
 		
 		// toString
 		pbHopMap.put(Expression.ParameterizedBuiltinFunctionOp.TOSTRING, ParamBuiltinOp.TOSTRING);
@@ -225,6 +230,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case QCHISQ:
 		case PEXP:
 		case QEXP:
+		case PBINOMIAL:
+		case QBINOMIAL:
 			validateDistributionFunctions(output, conditional);
 			break;
 			
@@ -784,6 +791,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		switch(op) {
 		case INVCDF:
 		case QNORM:
+		case QBINOMIAL:
 		case QF:
 		case QT:
 		case QCHISQ:
@@ -795,6 +803,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			
 		case CDF:
 		case PNORM:
+		case PBINOMIAL:
 		case PF:
 		case PT:
 		case PCHISQ:

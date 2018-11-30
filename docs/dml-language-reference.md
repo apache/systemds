@@ -691,7 +691,7 @@ moment() | Returns the kth central moment of values in a column matrix V, where 
 colSums() <br/> colMeans() <br/> colVars() <br/> colSds() <br/> colMaxs() <br/> colMins() | Column-wise computations -- for each column, compute the sum/mean/variance/stdDev/max/min of cell values | Input: matrix <br/> Output: (1 x n) matrix | colSums(X) <br/> colMeans(X) <br/> colVars(X) <br/> colSds(X) <br/> colMaxs(X) <br/>colMins(X)
 cov() | Returns the covariance between two 1-dimensional column matrices X and Y. The function takes an optional weights parameter W. All column matrices X, Y, and W (when specified) must have the exact same dimension. | Input: (X &lt;(n x 1) matrix&gt;, Y &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | cov(X,Y) <br/> cov(X,Y,W)
 table() | Returns the contingency table of two vectors A and B. The resulting table F consists of max(A) rows and max(B) columns. <br/> More precisely, F[i,j] = \\|{ k \\| A[k] = i and B[k] = j, 1 ≤ k ≤ n }\\|, where A and B are two n-dimensional vectors. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input: (&lt;(n x 1) matrix&gt;, &lt;(n x 1) matrix&gt;), [&lt;(n x 1) matrix&gt;]) <br/> Output: &lt;matrix&gt; | F = table(A, B) <br/> F = table(A, B, C) <br/> And, several other forms (see below Table 7.)
-cdf()<br/> pnorm()<br/> pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 7. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 7.
+cdf()<br/> pnorm()<br/> pbinomial()<br/>pexp()<br/> pchisq()<br/> pf()<br/> pt()<br/> icdf()<br/> qnorm()<br/> qbinomial()<br/>qexp()<br/> qchisq()<br/> qf()<br/> qt() | p=cdf(target=q, ...) returns the cumulative probability P[X &lt;= q]. <br/> q=icdf(target=p, ...) returns the inverse cumulative probability i.e., it returns q such that the given target p = P[X&lt;=q]. <br/> For more details, please see the section "Probability Distribution Functions" below Table 7. | Input: (target=&lt;scalar&gt;, dist="...", ...) <br/> Output: &lt;scalar&gt; | p = cdf(target=q, dist="normal", mean=1.5, sd=2); is same as p=pnorm(target=q, mean=1.5, sd=2); <br/> q=icdf(target=p, dist="normal") is same as q=qnorm(target=p, mean=0,sd=1) <br/> More examples can be found in the section "Probability Distribution Functions" below Table 7.
 aggregate() | Splits/groups the values from X according to the corresponding values from G, and then applies the function fn on each group. <br/> The result F is a column matrix, in which each row contains the value computed from a distinct group in G. More specifically, F[k,1] = fn( {X[i,1] \\| 1&lt;=i&lt;=n and G[i,1] = k} ), where n = nrow(X) = nrow(G). <br/> Note that the distinct values in G are used as row indexes in the result matrix F. Therefore, nrow(F) = max(G). It is thus recommended that the values in G are consecutive and start from 1. <br/> This function supports multiple other variants, which can be found below, at the end of this Table 7. | Input:<br/> (target = X &lt;(n x 1) matrix, or matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;groups = G &lt;(n x 1) matrix&gt;,<br/> &nbsp;&nbsp;&nbsp;fn= "..." <br/> &nbsp;&nbsp;&nbsp;[,weights= W&lt;(n x 1) matrix&gt;] <br/> &nbsp;&nbsp;&nbsp;[,ngroups=N] )<br/>Output: F &lt;matrix&gt; <br/> Note: X is a (n x 1) matrix unless ngroups is specified with no weights, in which case X is a regular (n x m) matrix.<br/> The parameter fn takes one of the following functions: "count", "sum", "mean", "variance", "centralmoment". In the case of central moment, one must also provide the order of the moment that need to be computed (see example). | F = aggregate(target=X, groups=G, fn= "..." [,weights = W]) <br/> F = aggregate(target=X, groups=G1, fn= "sum"); <br/> F = aggregate(target=Y, groups=G2, fn= "mean", weights=W); <br/> F = aggregate(target=Z, groups=G3, fn= "centralmoment", order= "2"); <br/> And, several other forms (see below Table 7.)
 interQuartileMean() | Returns the mean of all x in X such that x&gt;quantile(X, 0.25) and x&lt;=quantile(X, 0.75). X, W are column matrices (vectors) of the same size. W contains the weights for data in X. | Input: (X &lt;(n x 1) matrix&gt; [, W &lt;(n x 1) matrix&gt;)]) <br/> Output: &lt;scalar&gt; | interQuartileMean(X) <br/> interQuartileMean(X, W)
 quantile () | The p-quantile for a random variable X is the value x such that Pr[X&lt;x] &lt;= p and Pr[X&lt;= x] &gt;= p <br/> let n=nrow(X), i=ceiling(p*n), quantile() will return X[i]. p is a scalar (0&lt;p&lt;1) that specifies the quantile to be computed. Optionally, a weight vector may be provided for X. | Input: (X &lt;(n x 1) matrix&gt;, [W &lt;(n x 1) matrix&gt;),] p &lt;scalar&gt;) <br/> Output: &lt;scalar&gt; | quantile(X, p) <br/> quantile(X, W, p)
@@ -749,6 +749,7 @@ This computes the cumulative probability at the given quantile i.e., P[X&lt;=q],
   * `dist`: name of the distribution specified as a string. Valid values are "normal" (for Normal or Gaussian distribution), "f" (for F distribution), "t" (for Student t-distribution), "chisq" (for Chi Squared distribution), and "exp" (for Exponential distribution). This is a mandatory argument.
   * `...`: parameters of the distribution
     * For `dist="normal"`, valid parameters are mean and sd that specify the mean and standard deviation of the normal distribution. The default values for mean and sd are 0.0 and 1.0, respectively.
+    * For `dist="binomial"`, valid parameters are trials and p that specify the number of trials and probability of success. Both parameters are mandatory.
     * For `dist="f"`, valid parameters are df1 and df2 that specify two degrees of freedom. Both these parameters are mandatory.
     * For `dist="t"`, and dist="chisq", valid parameter is df that specifies the degrees of freedom. This parameter is mandatory.
     * For `dist="exp"`, valid parameter is rate that specifies the rate at which events occur. Note that the mean of exponential distribution is 1.0/rate. The default value is 1.0.
@@ -763,13 +764,17 @@ This computes the inverse cumulative probability i.e., it computes a quantile q 
   * `dist`: name of the distribution specified as a string. Same as that in cdf().
   * `...`: parameters of the distribution. Same as those in cdf().
 
-Alternative to `cdf()` and `icdf()`, users can also use distribution-specific functions. The functions `pnorm()`, `pf()`, `pt()`, `pchisq()`, and `pexp()` computes the cumulative probabilities for Normal, F, t, Chi Squared, and Exponential distributions, respectively. Appropriate distribution parameters must be provided for each function. Similarly, `qnorm()`, `qf()`, `qt()`, `qchisq()`, and `qexp()` compute the inverse cumulative probabilities for Normal, F, t, Chi Squared, and Exponential distributions.
+Alternative to `cdf()` and `icdf()`, users can also use distribution-specific functions. The functions `pnorm()`, `pbinomial()`, `pf()`, `pt()`, `pchisq()`, and `pexp()` computes the cumulative probabilities for Normal, Binomial, F, t, Chi Squared, and Exponential distributions, respectively. Appropriate distribution parameters must be provided for each function. Similarly, `qnorm()`, `qbinomial()`, `qf()`, `qt()`, `qchisq()`, and `qexp()` compute the inverse cumulative probabilities for Normal, Binomial, F, t, Chi Squared, and Exponential distributions.
 
 Following pairs of DML statements are equivalent.
 
 `p = cdf(target=q, dist="normal", mean=1.5, sd=2);`
 is same as
 `p=pnorm(target=q, mean=1.5, sd=2);`
+
+`p = cdf(target=q, dist="binomial", trials=20, p=0.25);`
+is same as
+`p=pbinomial(target=q, trials=20, p=0.25);`
 
 `p = cdf(target=q, dist="exp", rate=5);`
 is same as
@@ -800,6 +805,10 @@ Examples of icdf():
 `q=icdf(target=p, dist="normal");`
 is same as
 `q=qnorm(target=p, mean=0,sd=1);`
+
+`q=icdf(target=p, dist="binomial", trials=20, p=0.25);`
+is same as
+`q=qbinomial(target=p, trials=20, p=0.25);`
 
 `q=icdf(target=p, dist="exp");`
 is same as

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.concurrent.Future;
 
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.StringUtils;
@@ -623,5 +624,14 @@ public class IOUtilFunctions
 		byte[] ret = new byte[len];
 		buff.get(ret, buff.position(), len);
 		return ret;
+	}
+	
+	public static <T> T get(Future<T> in) {
+		try {
+			return in.get();
+		} 
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 }

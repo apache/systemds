@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -46,7 +47,6 @@ import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.api.mlcontext.MLContext;
 import org.apache.sysml.api.mlcontext.MLContextUtil;
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.parser.Expression.ValueType;
@@ -72,6 +72,7 @@ import org.apache.sysml.runtime.instructions.spark.functions.CreateSparseBlockFu
 import org.apache.sysml.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.instructions.spark.utils.SparkUtils;
+import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
@@ -824,7 +825,7 @@ public class SparkExecutionContext extends ExecutionContext
 		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
 
 		MatrixBlock out = null;
-
+		
 		if( rlen <= brlen && clen <= bclen ) //SINGLE BLOCK
 		{
 			//special case without copy and nnz maintenance
@@ -846,9 +847,14 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//create output matrix block (w/ lazy allocation)
 			out = new MatrixBlock(rlen, clen, sparse, lnnz);
-
+			
+			//kickoff asynchronous allocation
+			Future<MatrixBlock> fout = out.allocateBlockAsync();
+			
+			//trigger pending RDD operations and collect blocks
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-
+			out = IOUtilFunctions.get(fout); //wait for allocation
+			
 			//copy blocks one-at-a-time into output matrix block
 			long aNnz = 0;
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )

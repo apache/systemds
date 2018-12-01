@@ -644,7 +644,7 @@ public class RDDAggregateUtils
 
 			// execute merge (never pass by reference)
 			MatrixBlock ret = _deep ? new MatrixBlock(b1) : b1;
-			ret.merge(b2, false);
+			ret.merge(b2, false, false, _deep);
 			ret.examSparsity();
 			
 			// sanity check output number of non-zeros

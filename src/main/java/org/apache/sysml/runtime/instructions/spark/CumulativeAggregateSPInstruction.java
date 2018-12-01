@@ -137,7 +137,9 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 			int rlenBlk = IntUtils.toInt( Math.min(rlenOut-(rixOut-1)*_brlen, _brlen));
 			int clenBlk = blkOut.getNumColumns();
 			int posBlk = IntUtils.toInt((ixIn.getRowIndex()-1) % _brlen);
-			MatrixBlock blkOut2 = new MatrixBlock(rlenBlk, clenBlk, false);
+			
+			//construct sparse output blocks (single row in target block size)
+			MatrixBlock blkOut2 = new MatrixBlock(rlenBlk, clenBlk, true);
 			blkOut2.copy(posBlk, posBlk, 0, clenBlk-1, blkOut, true);
 			ixOut.setIndexes(rixOut, ixOut.getColumnIndex());
 			

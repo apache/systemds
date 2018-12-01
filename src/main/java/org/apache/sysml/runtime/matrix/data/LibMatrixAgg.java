@@ -283,6 +283,10 @@ public class LibMatrixAgg
 	}
 
 	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) {
+		return cumaggregateUnaryMatrix(in, out, uop, null);
+	}
+	
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, double[] agg) {
 		//prepare meta data 
 		AggType aggtype = getAggType(uop);
 		final int m = in.rlen;
@@ -290,7 +294,7 @@ public class LibMatrixAgg
 		final int n2 = out.clen;
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.isEmptyBlock(false) ){
+		if( in.isEmptyBlock(false) && (agg == null || aggtype == AggType.CUM_SUM_PROD ) ) {
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
 		}
 		
@@ -301,9 +305,9 @@ public class LibMatrixAgg
 		//Timing time = new Timing(true);
 		
 		if( !in.sparse )
-			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, agg, 0, m);
 		else
-			cumaggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, agg, 0, m);
 		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();

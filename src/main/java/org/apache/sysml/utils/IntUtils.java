@@ -17,13 +17,14 @@
  * under the License.
  */
 package org.apache.sysml.utils;
-import static java.lang.Math.toIntExact;
+// import static java.lang.Math.toIntExact;
 
 
 public class IntUtils {
 
 	public static int toInt(long val) {
-		return toIntExact(val);
+		return (int) val;
+		// return toIntExact(val);
 	}
 	
 //	public static int toInt(double val) {

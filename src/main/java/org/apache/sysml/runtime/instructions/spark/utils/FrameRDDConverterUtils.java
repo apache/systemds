@@ -937,7 +937,7 @@ public class FrameRDDConverterUtils
 		public static int computeBlockSize(MatrixCharacteristics mc) {
 			int brlen = mc.getRowsPerBlock();
 			int basic = Math.max(IntUtils.toInt(FrameBlock.BUFFER_SIZE/mc.getCols()), 1);
-			int div = IntUtils.toInt(Math.ceil((double)brlen/basic));
+			int div = (int)(Math.ceil((double)brlen/basic));
 			while( brlen % div != 0 ) 
 				div++;
 			return brlen / div;

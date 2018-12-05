@@ -61,7 +61,7 @@ public class RDDSortUtils
 	
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*8)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*8)/hdfsBlocksize));
 		JavaRDD<Double> sdvals = dvals
 				.sortBy(new CreateDoubleKeyFunction(), true, numPartitions);
 		
@@ -83,7 +83,7 @@ public class RDDSortUtils
 	
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*8)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*8)/hdfsBlocksize));
 		JavaRDD<DoublePair> sdvals = dvals
 			.sortBy(new CreateDoubleKeyFunction2(), true, numPartitions);
 
@@ -127,7 +127,7 @@ public class RDDSortUtils
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*16)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*16)/hdfsBlocksize));
 		JavaRDD<ValueIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -173,7 +173,7 @@ public class RDDSortUtils
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*16)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*16)/hdfsBlocksize));
 		JavaRDD<ValueIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -260,7 +260,7 @@ public class RDDSortUtils
 		//flip sort indices from <source ix in target pos> to <target ix in source pos>
 		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 
 		for (int i=0; i < sortedIx.getNumRows(); i++) 
-			sortedIxSrc.quickSetValue(IntUtils.toInt(sortedIx.quickGetValue(i,0)-1), 0, i+1);
+			sortedIxSrc.quickSetValue((int)(sortedIx.quickGetValue(i,0)-1), 0, i+1);
 
 		//broadcast index vector
 		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, brlen, bclen);

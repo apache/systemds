@@ -287,7 +287,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private int getParLevel(int workerNum) {
-		return Math.max(IntUtils.toInt(Math.ceil((double)getRemainingCores()/workerNum)), 1);
+		return Math.max((int)(Math.ceil((double)getRemainingCores()/workerNum)), 1);
 	}
 
 	private PSUpdateType getUpdateType() {

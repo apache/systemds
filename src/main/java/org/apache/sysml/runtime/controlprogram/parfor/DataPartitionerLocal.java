@@ -190,8 +190,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
-					int start = i*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len));
-					int end = (i+1)*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len)-1);
+					int start = i*(int)(Math.ceil(((double)fnamesPartitions.length)/len));
+					int end = (i+1)*(int)(Math.ceil(((double)fnamesPartitions.length)/len)-1);
 					end = Math.min(end, fnamesPartitions.length-1);
 					threads[i] = new Thread(new DataPartitionerWorkerTextCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
 					threads[i].start();
@@ -277,8 +277,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
-					int start = i*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len));
-					int end = (i+1)*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len)-1);
+					int start = i*(int)(Math.ceil(((double)fnamesPartitions.length)/len));
+					int end = (i+1)*(int)(Math.ceil(((double)fnamesPartitions.length)/len)-1);
 					end = Math.min(end, fnamesPartitions.length-1);
 					threads[i] = new Thread(new DataPartitionerWorkerBinaryCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
 					threads[i].start();
@@ -359,8 +359,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
-					int start = i*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len));
-					int end = (i+1)*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len)-1);
+					int start = i*(int)(Math.ceil(((double)fnamesPartitions.length)/len));
+					int end = (i+1)*(int)(Math.ceil(((double)fnamesPartitions.length)/len)-1);
 					end = Math.min(end, fnamesPartitions.length-1);
 					threads[i] = new Thread(new DataPartitionerWorkerBinaryBlock(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
 					threads[i].start();
@@ -463,8 +463,8 @@ public class DataPartitionerLocal extends DataPartitioner
 				Thread[] threads = new Thread[len];
 				for( int i=0;i<len;i++ )
 				{
-					int start = i*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len));
-					int end = (i+1)*IntUtils.toInt(Math.ceil(((double)fnamesPartitions.length)/len)-1);
+					int start = i*(int)(Math.ceil(((double)fnamesPartitions.length)/len));
+					int end = (i+1)*(int)(Math.ceil(((double)fnamesPartitions.length)/len)-1);
 					end = Math.min(end, fnamesPartitions.length-1);
 					threads[i] = new Thread(new DataPartitionerWorkerBinaryCell(job, fnameNew, fnameStaging, fnamesPartitions, start, end));
 					threads[i].start();
@@ -497,7 +497,7 @@ public class DataPartitionerLocal extends DataPartitioner
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			_reuseBlk.reset( 1, IntUtils.toInt(cols), sparse, IntUtils.toInt(cols*sparsity) );
+			_reuseBlk.reset( 1, IntUtils.toInt(cols), sparse, (int)(cols*sparsity) );
 			for( int i=0; i<rows; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));

@@ -54,7 +54,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		incWorkerNumber();
 		try {
 			long dataSize = _features.getNumRows();
-			int batchIter = IntUtils.toInt( Math.ceil((double) dataSize / _batchSize) );
+			int batchIter = (int)( Math.ceil((double) dataSize / _batchSize) );
 
 			switch (_freq) {
 				case BATCH:

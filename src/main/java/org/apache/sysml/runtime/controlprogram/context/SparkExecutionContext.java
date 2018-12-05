@@ -584,7 +584,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
-			int numParts = IntUtils.toInt( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
+			int numParts = (int)( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
@@ -649,7 +649,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
-			int numParts = IntUtils.toInt( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
+			int numParts = (int)( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
@@ -763,7 +763,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//create and write subblocks of matrix
 		int blksize = ConfigurationManager.getBlocksize();
-		for(int blockRow = 0; blockRow < IntUtils.toInt(Math.ceil(src.getNumRows()/(double)blksize)); blockRow++)
+		for(int blockRow = 0; blockRow < (int)(Math.ceil(src.getNumRows()/(double)blksize)); blockRow++)
 		{
 			int maxRow = (blockRow*blksize + blksize < src.getNumRows()) ? blksize : src.getNumRows() - blockRow*blksize;
 			int roffset = blockRow*blksize;

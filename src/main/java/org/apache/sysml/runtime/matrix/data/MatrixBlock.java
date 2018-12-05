@@ -256,7 +256,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		sparse = (val == 0) ? sp : false;
 		nonZeros = (val == 0) ? 0 : (long)rl*cl;
 		estimatedNNzsPerRow = (estnnz < 0 || !sparse) ? -1 :
-			IntUtils.toInt(Math.ceil((double)estnnz/(double)rlen));
+			(int)(Math.ceil((double)estnnz/(double)rlen));
 		
 		//reset sparse/dense blocks
 		if( sparse )
@@ -1292,7 +1292,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		this.rlen=that.rlen;
 		this.clen=that.clen;
 		this.sparse=sp;
-		estimatedNNzsPerRow=IntUtils.toInt(Math.ceil((double)thatValue.getNonZeros()/(double)rlen));
+		estimatedNNzsPerRow=(int)(Math.ceil((double)thatValue.getNonZeros()/(double)rlen));
 		if(this.sparse && that.sparse)
 			copySparseToSparse(that);
 		else if(this.sparse && !that.sparse)
@@ -4124,9 +4124,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		boolean lsparse = evalSparseFormatInMemory(rlen, clen, (long)(estimatedSps*rlen*clen));
 		
 		if(result==null)
-			result=new MatrixBlock(rlen, clen, lsparse, IntUtils.toInt(estimatedSps*rlen*clen));
+			result=new MatrixBlock(rlen, clen, lsparse, (int)(estimatedSps*rlen*clen));
 		else
-			result.reset(rlen, clen, lsparse, IntUtils.toInt(estimatedSps*rlen*clen));
+			result.reset(rlen, clen, lsparse, (int)(estimatedSps*rlen*clen));
 		
 		
 		if(sparse)
@@ -4944,7 +4944,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				throw new DMLRuntimeException("Invalid value (" + min + ") encountered in 'groups' while computing groupedAggregate");
 			if ( max <= 0 )
 				throw new DMLRuntimeException("Invalid value (" + max + ") encountered in 'groups' while computing groupedAggregate.");
-			ngroups = IntUtils.toInt( max );
+			ngroups = (int)( max );
 		}
 	
 		// Allocate result matrix

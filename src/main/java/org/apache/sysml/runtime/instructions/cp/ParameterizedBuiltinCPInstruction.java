@@ -176,7 +176,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			int ngroups = -1;
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-				ngroups = IntUtils.toInt( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
+				ngroups = (int)( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
 			}
 			
 			// compute the result

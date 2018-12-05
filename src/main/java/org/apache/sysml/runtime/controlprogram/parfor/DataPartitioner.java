@@ -177,7 +177,7 @@ public abstract class DataPartitioner
 		{
 			case ROW_WISE:
 				//default assumption sparse, but reset per input block anyway
-				tmp = new MatrixBlock( 1, IntUtils.toInt(cols), true, IntUtils.toInt(cols*0.1) );
+				tmp = new MatrixBlock( 1, IntUtils.toInt(cols), true, (int)(cols*0.1) );
 				break;
 			case COLUMN_WISE:
 				//default dense because single column alwyas below SKINNY_MATRIX_TURN_POINT

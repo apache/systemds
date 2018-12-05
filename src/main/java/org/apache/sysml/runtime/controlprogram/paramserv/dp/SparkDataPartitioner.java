@@ -75,7 +75,7 @@ public class SparkDataPartitioner implements Serializable {
 
 	private void createDCIndicator(SparkExecutionContext sec, int numWorkers, int numEntries) {
 		double[] vector = new double[numEntries];
-		int batchSize = IntUtils.toInt( Math.ceil((double) numEntries / numWorkers) );
+		int batchSize = (int)( Math.ceil((double) numEntries / numWorkers) );
 		for (int i = 1; i < numWorkers; i++) {
 			int begin = batchSize * i;
 			int end = Math.min(begin + batchSize, numEntries);
@@ -91,7 +91,7 @@ public class SparkDataPartitioner implements Serializable {
 			// Create the source-target id vector from the permutation ranging from 1 to number of entries
 			double[] vector = new double[numEntries];
 			for (int j = 0; j < perm.getDenseBlockValues().length; j++) {
-				vector[IntUtils.toInt( perm.getDenseBlockValues()[j] - 1)] = j;
+				vector[(int)( perm.getDenseBlockValues()[j] - 1)] = j;
 			}
 			MatrixBlock vectorMB = DataConverter.convertToMatrixBlock(vector, true);
 			return sec.getBroadcastForMatrixObject(ParamservUtils.newMatrixObject(vectorMB));

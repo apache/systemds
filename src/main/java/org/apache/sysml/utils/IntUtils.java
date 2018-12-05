@@ -26,9 +26,9 @@ public class IntUtils {
 		return toIntExact(val);
 	}
 	
-	public static int toInt(double val) {
-		long val1 = (long) val;
-		return toIntExact(val1);
-	}
+//	public static int toInt(double val) {
+//		long val1 = (long) val;
+//		return toIntExact(val1);
+//	}
 	
 }

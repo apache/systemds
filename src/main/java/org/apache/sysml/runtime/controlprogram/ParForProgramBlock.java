@@ -889,7 +889,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String resultFile = constructResultFileName();
 		
 		long numIterations = partitioner.getNumIterations();
-		int maxDigits = IntUtils.toInt(Math.log10(to.getLongValue()) + 1);
+		int maxDigits = (int)(Math.log10(to.getLongValue()) + 1);
 		long numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION ) {
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
@@ -1633,7 +1633,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			int par = Math.min( _resultVars.size(), 
 					            InfrastructureAnalyzer.getLocalParallelism() );
 			if( InfrastructureAnalyzer.isLocalMode() ) {
-				int parmem = IntUtils.toInt(Math.floor(OptimizerUtils.getLocalMemBudget() / 
+				int parmem = (int)(Math.floor(OptimizerUtils.getLocalMemBudget() / 
 						InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer()));
 				par = Math.min(par, Math.max(parmem, 1)); //reduce k if necessary
 			}

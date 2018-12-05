@@ -66,7 +66,7 @@ public abstract class DataPartitionSparkScheme implements Serializable {
 	protected List<Tuple2<Integer, Tuple2<Long, MatrixBlock>>> nonShuffledPartition(int rblkID, MatrixBlock mb) {
 		MatrixBlock indicator = _workerIndicator.getBlock(rblkID, 1);
 		return LongStream.range(0, mb.getNumRows()).mapToObj(r -> {
-			int workerID = IntUtils.toInt( indicator.getValue(IntUtils.toInt( r ), 0) );
+			int workerID = (int)( indicator.getValue(IntUtils.toInt( r ), 0) );
 			MatrixBlock rowMB = ParamservUtils.sliceMatrixBlock(mb, r + 1, r + 1);
 			long shiftedPosition = r + (rblkID - 1) * OptimizerUtils.DEFAULT_BLOCKSIZE;
 			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));

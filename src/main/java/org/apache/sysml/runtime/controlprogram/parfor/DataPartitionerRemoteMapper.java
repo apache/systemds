@@ -336,7 +336,7 @@ public class DataPartitionerRemoteMapper
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						_reuseBlk.reset(1, IntUtils.toInt(cols), sparse, IntUtils.toInt(cols*sparsity));								
+						_reuseBlk.reset(1, IntUtils.toInt(cols), sparse, (int)(cols*sparsity));								
 						for( int i=0; i<rows; i++ )
 						{
 							_longKey.set(row_offset+1+i);
@@ -672,9 +672,9 @@ public class DataPartitionerRemoteMapper
 				long numPartitions = -1;
 				switch( _pdf ){
 					case ROW_WISE: 			 numPartitions = _rlen; break;
-					case ROW_BLOCK_WISE:     numPartitions = IntUtils.toInt(Math.ceil(_rlen/(double)_brlen)); break;
+					case ROW_BLOCK_WISE:     numPartitions = (int)(Math.ceil(_rlen/(double)_brlen)); break;
 					case COLUMN_WISE:        numPartitions = _clen; break;
-					case COLUMN_BLOCK_WISE:  numPartitions = IntUtils.toInt(Math.ceil(_clen/(double)_bclen)); break;
+					case COLUMN_BLOCK_WISE:  numPartitions = (int)(Math.ceil(_clen/(double)_bclen)); break;
 					default:
 						//do nothing
 				}

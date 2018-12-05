@@ -62,7 +62,7 @@ public class DRSparkScheme extends DataPartitionSparkScheme {
 			int shiftedBlkID =  IntUtils.toInt(shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE + 1);
 
 			MatrixBlock indicator = _workerIndicator.getBlock(shiftedBlkID, 1);
-			int workerID = IntUtils.toInt( indicator.getValue(IntUtils.toInt( shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE), 0));
+			int workerID = (int)( indicator.getValue(IntUtils.toInt( shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE), 0));
 			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
 		}).collect(Collectors.toList());
 	}

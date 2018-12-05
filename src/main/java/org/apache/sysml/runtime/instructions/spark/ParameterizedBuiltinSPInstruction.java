@@ -982,7 +982,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-				int ngroups = IntUtils.toInt( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
+				int ngroups = (int)( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
 				mcOut.set(ngroups, mc1.getCols(), -1, -1); //grouped aggregate with cell output
 			}
 			else {

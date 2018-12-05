@@ -76,7 +76,7 @@ public class BlockPartitioner extends Partitioner
 		}
 		
 		//compute meta data for runtime
-		_ncparts = IntUtils.toInt(Math.ceil((double)ncblks/_cbPerPart));
+		_ncparts = (int)(Math.ceil((double)ncblks/_cbPerPart));
 		_numParts = numParts;
 	}
 	

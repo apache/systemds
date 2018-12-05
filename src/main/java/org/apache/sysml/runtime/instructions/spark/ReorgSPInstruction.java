@@ -269,7 +269,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			ret.add(new Tuple2<>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row
-			int numBlocks = IntUtils.toInt( Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock()));
+			int numBlocks = (int)( Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock()));
 			for(int i = 1; i <= numBlocks; i++) {
 				if(i != ixOut.getColumnIndex()) {
 					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getRowsPerBlock());

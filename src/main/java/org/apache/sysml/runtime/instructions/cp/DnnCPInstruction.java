@@ -592,7 +592,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	private void resetNumThreads(DnnParameters params, int numRows, int numCols, double sparsity) {
 		if(ConfigurationManager.isGPU()) {
 			double memBudget1Thread = OptimizerUtils.estimateSizeExactSparsity(numRows, numCols, sparsity);
-			int limitedDegreeOfParallelism = IntUtils.toInt( Math.floor(_intermediateMemoryBudget / memBudget1Thread) );
+			int limitedDegreeOfParallelism = (int)( Math.floor(_intermediateMemoryBudget / memBudget1Thread) );
 			if(params.numThreads > limitedDegreeOfParallelism) {
 				params.numThreads = limitedDegreeOfParallelism;
 				if(!warnedUnderUtilitization)

@@ -40,7 +40,7 @@ import org.apache.sysml.utils.IntUtils;
 public class DRLocalScheme extends DataPartitionLocalScheme {
 
 	private List<MatrixBlock> partition(int k, MatrixBlock mb, MatrixBlock permutation) {
-		int batchSize = IntUtils.toInt(Math.ceil((double) mb.getNumRows() / k));
+		int batchSize = (int)(Math.ceil((double) mb.getNumRows() / k));
 		return IntStream.range(0, k).mapToObj(i -> {
 			int begin = i * batchSize;
 			int end = Math.min((i + 1) * batchSize, mb.getNumRows());

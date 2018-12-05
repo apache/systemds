@@ -291,7 +291,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
@@ -324,7 +324,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext()
@@ -382,7 +382,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create offset rdd
 			offsetsRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
@@ -409,7 +409,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			offsetsRDD = sec.getSparkContext()
@@ -450,7 +450,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		// divide the population range across numPartitions by creating SampleTasks
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long outputSize = MatrixBlock.estimateSizeDenseInMemory(lrows,1);
-		int numPartitions = IntUtils.toInt( Math.ceil((double)outputSize/hdfsBlockSize));
+		int numPartitions = (int)( Math.ceil((double)outputSize/hdfsBlockSize));
 		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
 
 		ArrayList<SampleTask> offsets = new ArrayList<>();

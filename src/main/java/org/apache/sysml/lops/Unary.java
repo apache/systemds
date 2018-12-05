@@ -53,7 +53,7 @@ public class Unary extends Lop
 	
 	//cp-specific parameters
 	private int _numThreads = 1;
-
+	private boolean _inplace = false;
 
 	/**
 	 * Constructor to perform a unary operation with 2 inputs
@@ -114,10 +114,11 @@ public class Unary extends Lop
 	 * @param et execution type
 	 * @param numThreads number of threads
 	 */
-	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads) {
+	public Unary(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et, int numThreads, boolean inplace) {
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, op, dt, vt, et);
 		_numThreads = numThreads;
+		_inplace = inplace;
 	}
 
 	private void init(Lop input1, OperationTypes op, DataType dt, ValueType vt, ExecType et) {
@@ -361,6 +362,8 @@ public class Unary extends Lop
 		if( getExecType() == ExecType.CP && isMultiThreadedOp(operation) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _inplace );
 		}
 		
 		return sb.toString();

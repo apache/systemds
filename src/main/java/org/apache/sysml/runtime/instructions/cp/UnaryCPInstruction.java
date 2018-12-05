@@ -56,14 +56,15 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 		ValueFunction func = null;
 		
 		//print or stop or cumulative aggregates
-		if( parts.length==4 ) {
+		if( parts.length==5 ) {
 			opcode = parts[0];
 			in.split(parts[1]);
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
 			
 			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucumk+*","ucummin","ucummax","exp","log","sigmoid"}).contains(opcode) )
-				return new UnaryMatrixCPInstruction(new UnaryOperator(func,Integer.parseInt(parts[3])), in, out, opcode, str); 
+				return new UnaryMatrixCPInstruction(new UnaryOperator(func,
+					Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4])), in, out, opcode, str);
 			else
 				return new UnaryScalarCPInstruction(null, in, out, opcode, str);
 		}

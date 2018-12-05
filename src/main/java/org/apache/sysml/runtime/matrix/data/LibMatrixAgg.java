@@ -299,8 +299,13 @@ public class LibMatrixAgg
 		}
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
+		if( !uop.isInplace() || in.isInSparseFormat() ) {
+			out.reset(m2, n2, false); //always dense
+			out.allocateDenseBlock();
+		}
+		else {
+			out = in;
+		}
 		
 		//Timing time = new Timing(true);
 		
@@ -337,13 +342,18 @@ public class LibMatrixAgg
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if( in.isEmptyBlock(false) ){
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
-		}	
+		}
 
 		//Timing time = new Timing(true);
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
+		if( !uop.isInplace() || in.isInSparseFormat() ) {
+			out.reset(m2, n2, false); //always dense
+			out.allocateDenseBlock();
+		}
+		else {
+			out = in;
+		}
 		
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)

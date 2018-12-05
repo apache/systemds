@@ -170,7 +170,7 @@ public class UnaryOp extends MultiThreadedHop
 					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
 						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
 					Unary unary1 = new Unary(input.constructLops(),
-						HopsOpOp1LopsU.get(_op), getDataType(), getValueType(), et, k);
+						HopsOpOp1LopsU.get(_op), getDataType(), getValueType(), et, k, false);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);
@@ -404,15 +404,15 @@ public class UnaryOp extends MultiThreadedHop
 			agg.getOutputParameters().setDimensions(rlenAgg, clen, brlen, bclen, -1);
 			agg.setupCorrectionLocation(CorrectionLocationType.NONE); // aggregation uses kahanSum but the inputs do not have correction values
 			setLineNumbers(agg);
-			TEMP = agg;	
+			TEMP = agg;
 			level++;
 			force = false; //in case of unknowns, generate one level
 		}
 		
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ) {
-			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k, true);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
@@ -487,7 +487,7 @@ public class UnaryOp extends MultiThreadedHop
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
 			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k);
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.DOUBLE, ExecType.CP, k, true);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;

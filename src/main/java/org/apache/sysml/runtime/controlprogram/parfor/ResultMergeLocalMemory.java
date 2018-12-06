@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Local in-memory realization of result merge. If the resulting matrix is
@@ -166,8 +166,8 @@ public class ResultMergeLocalMemory extends ResultMerge
 				//NOTE: always in dense representation in order to allow for parallel unsynchronized access 
 				long rows = outMB.getNumRows();
 				long cols = outMB.getNumColumns();
-				MatrixBlock outMBNew = new MatrixBlock(IntUtils.toInt(rows), IntUtils.toInt(cols), false);
-				outMBNew.allocateDenseBlockUnsafe(IntUtils.toInt(rows), IntUtils.toInt(cols));
+				MatrixBlock outMBNew = new MatrixBlock((int)(rows), (int)(cols), false);
+				outMBNew.allocateDenseBlockUnsafe((int)(rows), (int)(cols));
 				
 				//create compare matrix if required (existing data in result)
 				_compare = getCompareMatrix(outMB);

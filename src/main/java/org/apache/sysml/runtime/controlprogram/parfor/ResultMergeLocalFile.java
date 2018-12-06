@@ -60,7 +60,7 @@ import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * 
@@ -707,8 +707,8 @@ public class ResultMergeLocalFile extends ResultMerge
 					}
 					else {
 						//NOTE: whenever runtime does not need all blocks anymore, this can be removed
-						int maxRow = IntUtils.toInt(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
-						int maxCol = IntUtils.toInt(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
+						int maxRow = (int)(((brow-1)*brlen + brlen < rlen) ? brlen : rlen - (brow-1)*brlen);
+						int maxCol = (int)(((bcol-1)*bclen + bclen < clen) ? bclen : clen - (bcol-1)*bclen);
 						mb = new MatrixBlock(maxRow, maxCol, true);
 					}
 					

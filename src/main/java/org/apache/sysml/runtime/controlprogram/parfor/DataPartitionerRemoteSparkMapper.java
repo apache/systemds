@@ -35,7 +35,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -118,7 +118,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 					for( int i=0; i<rows; i+=_n ) {
 						PairWritableBlock tmp = new PairWritableBlock();
 						tmp.indexes = new MatrixIndexes(1, col_offset/_bclen+1);
-						tmp.block = value2.slice(i, Math.min(i+IntUtils.toInt(_n)-1, value2.getNumRows()-1));
+						tmp.block = value2.slice(i, Math.min(i+(int)(_n)-1, value2.getNumRows()-1));
 						ret.add(new Tuple2<Long,Writable>(new Long((row_offset+i)/_n+1),tmp));
 					}
 				}
@@ -153,7 +153,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 						PairWritableBlock tmp = new PairWritableBlock();
 						tmp.indexes = new MatrixIndexes(row_offset/_brlen+1, 1);
 						tmp.block = value2.slice(0, value2.getNumRows()-1, 
-								i, Math.min(i+IntUtils.toInt(_n)-1, value2.getNumColumns()-1), new MatrixBlock());
+								i, Math.min(i+(int)(_n)-1, value2.getNumColumns()-1), new MatrixBlock());
 						ret.add(new Tuple2<Long,Writable>(new Long((col_offset+i)/_n+1),tmp));
 					}
 				}

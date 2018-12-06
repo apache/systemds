@@ -56,7 +56,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.LocalFileUtils;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Partitions a given matrix into row or column partitions with a two pass-approach.
@@ -497,12 +497,12 @@ public class DataPartitionerLocal extends DataPartitioner
 
 		if( _format == PDataPartitionFormat.ROW_WISE ) 
 		{	
-			_reuseBlk.reset( 1, IntUtils.toInt(cols), sparse, (int)(cols*sparsity) );
+			_reuseBlk.reset( 1, (int)(cols), sparse, (int)(cols*sparsity) );
 			for( int i=0; i<rows; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(row_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(col_offset/bclen+1);
-				mb.slice(i, i, 0, IntUtils.toInt(cols-1), _reuseBlk);
+				mb.slice(i, i, 0, (int)(cols-1), _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
 			}
@@ -516,13 +516,13 @@ public class DataPartitionerLocal extends DataPartitioner
 		else if( _format == PDataPartitionFormat.COLUMN_WISE )
 		{
 			//create object for reuse
-			_reuseBlk.reset( IntUtils.toInt(rows), 1, false );
+			_reuseBlk.reset( (int)(rows), 1, false );
 			
 			for( int i=0; i<cols; i++ )
 			{
 				String pdir = LocalFileUtils.checkAndCreateStagingDir(dir+"/"+(col_offset+1+i));
 				String pfname = pdir+"/"+"block_"+(row_offset/brlen+1); 			
-				mb.slice(0, IntUtils.toInt(rows-1), i, i, _reuseBlk);
+				mb.slice(0, (int)(rows-1), i, i, _reuseBlk);
 				LocalFileUtils.writeMatrixBlockToLocal(pfname, _reuseBlk);
 				_reuseBlk.reset();
 			}				

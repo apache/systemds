@@ -57,7 +57,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -91,7 +91,7 @@ public class RemoteDPParForSpark
 
 		//compute number of reducers (to avoid OOMs and reduce memory pressure)
 		int numParts = SparkUtils.getNumPreferredPartitions(mc, in);
-		int numReducers2 = Math.max(numReducers, Math.min(numParts, IntUtils.toInt(dpf.getNumParts(mc))));
+		int numReducers2 = Math.max(numReducers, Math.min(numParts, (int)(dpf.getNumParts(mc))));
 		
 		//core parfor datapartition-execute (w/ or w/o shuffle, depending on data characteristics)
 		RemoteDPParForSparkWorker efun = new RemoteDPParForSparkWorker(program, clsMap, 
@@ -224,7 +224,7 @@ public class RemoteDPParForSpark
 			int off = _containsID ? 1: 0;
 			Object obj = _isVector ? arg0._1().get(off) : arg0._1();
 			boolean sparse = (obj instanceof SparseVector);
-			MatrixBlock mb = new MatrixBlock(1, IntUtils.toInt(_clen), sparse);
+			MatrixBlock mb = new MatrixBlock(1, (int)(_clen), sparse);
 			
 			if( _isVector ) {
 				Vector vect = (Vector) obj;

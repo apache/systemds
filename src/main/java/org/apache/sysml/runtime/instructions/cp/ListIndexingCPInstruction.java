@@ -25,7 +25,7 @@ import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysml.utils.IntUtils;
+
 
 public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 
@@ -56,7 +56,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 			}
 			else {
 				ec.setVariable(output.getName(),
-					list.slice(IntUtils.toInt(rl.getLongValue()-1), IntUtils.toInt(ru.getLongValue()-1)));
+					list.slice((int)(rl.getLongValue()-1), (int)(ru.getLongValue()-1)));
 			}
 		}
 		//left indexing
@@ -69,14 +69,14 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 				if( rl.getValueType()==ValueType.STRING || ru.getValueType()==ValueType.STRING  )
 					ec.setVariable(output.getName(), lin.copy().set(rl.getStringValue(), ru.getStringValue(), rin));
 				else
-					ec.setVariable(output.getName(), lin.copy().set(IntUtils.toInt(rl.getLongValue()-1), IntUtils.toInt(ru.getLongValue()-1), rin));
+					ec.setVariable(output.getName(), lin.copy().set((int)(rl.getLongValue()-1), (int)(ru.getLongValue()-1), rin));
 			}
 			else if( input2.getDataType().isScalar() ) { //LIST <- SCALAR
 				ScalarObject scalar = ec.getScalarInput(input2);
 				if( rl.getValueType()==ValueType.STRING )
 					ec.setVariable(output.getName(), lin.copy().set(rl.getStringValue(), scalar));
 				else
-					ec.setVariable(output.getName(), lin.copy().set(IntUtils.toInt(rl.getLongValue()-1), scalar));
+					ec.setVariable(output.getName(), lin.copy().set((int)(rl.getLongValue()-1), scalar));
 			}
 			else if( input2.getDataType().isMatrix() ) { //LIST <- MATRIX/FRAME
 				CacheableData<?> dat = ec.getCacheableData(input2);
@@ -84,7 +84,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 				if( rl.getValueType()==ValueType.STRING )
 					ec.setVariable(output.getName(), lin.copy().set(rl.getStringValue(), dat));
 				else
-					ec.setVariable(output.getName(), lin.copy().set(IntUtils.toInt(rl.getLongValue()-1), dat));
+					ec.setVariable(output.getName(), lin.copy().set((int)(rl.getLongValue()-1), dat));
 			}
 			else {
 				throw new DMLRuntimeException("Unsupported list "

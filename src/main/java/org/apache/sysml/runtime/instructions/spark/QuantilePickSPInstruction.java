@@ -47,7 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class QuantilePickSPInstruction extends BinarySPInstruction {
 	private OperationTypes _type = null;
@@ -221,7 +221,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		if( tmp.getNumRows() <= pos )
 			throw new DMLRuntimeException("Invalid key lookup for " +
 				pos + " in block of size " + tmp.getNumRows()+"x"+tmp.getNumColumns());
-		return val.get(0).quickGetValue(IntUtils.toInt(pos), 0);
+		return val.get(0).quickGetValue((int)(pos), 0);
 	}
 	
 	private static class FilterFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
@@ -338,7 +338,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 				return Collections.emptyIterator();
 			
 			//determine which quantiles are active
-			int qlen = IntUtils.toInt(Arrays.stream(_qPIDs).filter(i -> i==v1).count());
+			int qlen = (int)(Arrays.stream(_qPIDs).filter(i -> i==v1).count());
 			int[] qix = new int[qlen];
 			for(int i=0, pos=0; i<_qPIDs.length; i++)
 				if( _qPIDs[i]==v1 )

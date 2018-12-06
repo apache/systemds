@@ -47,7 +47,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class PmmSPInstruction extends BinarySPInstruction {
 	private CacheType _type = null;
@@ -126,7 +126,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 			MatrixBlock mb2 = arg0._2();
 			
 			//get the right hand side matrix
-			MatrixBlock mb1 = _pmV.getBlock(IntUtils.toInt(ixIn.getRowIndex()), 1);
+			MatrixBlock mb1 = _pmV.getBlock((int)(ixIn.getRowIndex()), 1);
 			
 			//compute target block indexes
 			long minPos = UtilFunctions.toLong( mb1.minNonZero() );

@@ -54,7 +54,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.mapred.ReblockBuffer;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -128,7 +128,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) {
-		return convertPy4JArrayToMB(data, IntUtils.toInt(rlen), IntUtils.toInt(clen), false);
+		return convertPy4JArrayToMB(data, (int)(rlen), (int)(clen), false);
 	}
 
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) {
@@ -136,7 +136,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) {
-		return convertSciPyCOOToMB(data, row, col, IntUtils.toInt(rlen), IntUtils.toInt(clen), IntUtils.toInt(nnz));
+		return convertSciPyCOOToMB(data, row, col, (int)(rlen), (int)(clen), (int)(nnz));
 	}
 
 	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, int rlen, int clen, int nnz) {
@@ -160,7 +160,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) {
-		return convertPy4JArrayToMB(data, IntUtils.toInt( rlen), IntUtils.toInt(clen), isSparse);
+		return convertPy4JArrayToMB(data, (int)( rlen), (int)(clen), isSparse);
 	}
 
 	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
@@ -187,7 +187,7 @@ public class RDDConverterUtilsExt
 	public static void copyRowBlocks(MatrixBlock mb, long rowIndex, MatrixBlock ret, long numRowsPerBlock, long rlen, long clen) {
 		// TODO: Double-check if synchronization is required here.
 		// synchronized (RDDConverterUtilsExt.class) {
-			ret.copy(IntUtils.toInt(rowIndex*numRowsPerBlock), IntUtils.toInt(Math.min((rowIndex+1)*numRowsPerBlock-1, rlen-1)), 0, IntUtils.toInt(clen-1), mb, false);
+			ret.copy((int)(rowIndex*numRowsPerBlock), (int)(Math.min((rowIndex+1)*numRowsPerBlock-1, rlen-1)), 0, (int)(clen-1), mb, false);
 		// }
 	}
 
@@ -205,7 +205,7 @@ public class RDDConverterUtilsExt
 			long limit = rlen*clen;
 			if( limit > Integer.MAX_VALUE )
 				throw new DMLRuntimeException("Dense NumPy array of size " + limit + " cannot be converted to MatrixBlock");
-			double [] denseBlock = new double[IntUtils.toInt(limit)];
+			double [] denseBlock = new double[(int)(limit)];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.nativeOrder());
 			for(int i = 0; i < rlen*clen; i++) {
@@ -228,7 +228,7 @@ public class RDDConverterUtilsExt
 		int times = Double.SIZE / Byte.SIZE;
 		if( limit > Integer.MAX_VALUE / times )
 			throw new DMLRuntimeException("MatrixBlock of size " + limit + " cannot be converted to dense numpy array");
-		ret = new byte[IntUtils.toInt(limit * times)];
+		ret = new byte[(int)(limit * times)];
 
 		double [] denseBlock = mb.getDenseBlockValues();
 		if(mb.isEmptyBlock()) {
@@ -319,7 +319,7 @@ public class RDDConverterUtilsExt
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();
 			//determine upper bounded buffer len
-			_bufflen = IntUtils.toInt( Math.min(_rlen*_clen, BUFFER_SIZE));
+			_bufflen = (int)( Math.min(_rlen*_clen, BUFFER_SIZE));
 		}
 
 		// ----------------------------------------------------

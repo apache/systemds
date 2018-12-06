@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
 
@@ -218,7 +218,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 			
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-				pdf, IntUtils.toInt( lrows ), IntUtils.toInt( lcols ), rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
+				pdf, (int)( lrows ), (int)( lcols ), rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
 			soresBlock = MatrixBlock.randOperations(rgen, seed, numThreads);
 		}
 		else if ( method == DataGenMethod.SEQ ) 
@@ -247,7 +247,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			if ( range < lrows && !replace )
 				throw new DMLRuntimeException("Sample (size=" + lrows + ") larger than population (size=" + range + ") can only be generated with replacement.");
 			
-			soresBlock = MatrixBlock.sampleOperations(range, IntUtils.toInt(lrows), replace, seed);
+			soresBlock = MatrixBlock.sampleOperations(range, (int)(lrows), replace, seed);
 		}
 		
 		//guarded sparse block representation change

@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRBaseForCommonInstructions;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class AggregateBinaryInstruction extends BinaryMRInstructionBase implements IDistributedCacheConsumer {
 	private String _opcode = null;
@@ -192,7 +192,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in2Block = dcInput.getDataBlock(IntUtils.toInt(in1.getIndexes().getColumnIndex()), bidx);
+				IndexedMatrixValue in2Block = dcInput.getDataBlock((int)(in1.getIndexes().getColumnIndex()), bidx);
 				
 				MatrixValue in2BlockValue = in2Block.getValue(); 
 				MatrixIndexes in2BlockIndex = in2Block.getIndexes();
@@ -219,7 +219,7 @@ public class AggregateBinaryInstruction extends BinaryMRInstructionBase implemen
 				// Matrix multiply A[i,k] %*% B[k,bid]
 				
 				// Setup input2 block
-				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, IntUtils.toInt(in2.getIndexes().getRowIndex()));
+				IndexedMatrixValue in1Block = dcInput.getDataBlock(bidx, (int)(in2.getIndexes().getRowIndex()));
 				
 				MatrixValue in1BlockValue = in1Block.getValue(); 
 				MatrixIndexes in1BlockIndex = in1Block.getIndexes();

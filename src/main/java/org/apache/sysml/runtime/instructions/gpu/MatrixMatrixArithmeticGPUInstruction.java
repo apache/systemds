@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
 
@@ -61,7 +61,7 @@ public class MatrixMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 			clen = clen1 > clen2 ? clen1 : clen2;
 		}
 
-		ec.setMetaData(_output.getName(), IntUtils.toInt(rlen), IntUtils.toInt(clen));
+		ec.setMetaData(_output.getName(), (int)(rlen), (int)(clen));
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 		LibMatrixCUDA.matrixMatrixArithmetic(ec, ec.getGPUContext(0), getExtendedOpcode(), in1, in2, _output.getName(), isLeftTransposed, isRightTransposed, bop);

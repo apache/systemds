@@ -20,7 +20,7 @@
 package org.apache.sysml.runtime.controlprogram.parfor;
 
 import org.apache.sysml.runtime.instructions.cp.IntObject;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This static task partitioner virtually iterates over the given FOR loop (from, to, incr),
@@ -36,6 +36,6 @@ public class TaskPartitionerStatic extends TaskPartitionerFixedsize
 		super(taskSize, iterVarName, fromVal, toVal, incrVal);
 	
 		_taskSize = _numIter / numThreads;
-		_firstnPlus1 = IntUtils.toInt(_numIter % numThreads);
+		_firstnPlus1 = (int)(_numIter % numThreads);
 	}	
 }

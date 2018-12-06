@@ -79,7 +79,7 @@ import org.apache.sysml.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 import jcuda.Pointer;
@@ -1878,7 +1878,7 @@ public class LibMatrixCUDA {
 	//********************************************************************/
 
 	public static int toInt(long num) {
-		return IntUtils.toInt(num);
+		return (int)(num);
 	}
 
 	//********************************************************************/

@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 
@@ -61,8 +61,8 @@ public class MatrixReshapeCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		//get inputs
 		MatrixBlock in = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		int rows = IntUtils.toInt(ec.getScalarInput(_opRows).getLongValue()); //save cast
-		int cols = IntUtils.toInt(ec.getScalarInput(_opCols).getLongValue()); //save cast
+		int rows = (int)(ec.getScalarInput(_opRows).getLongValue()); //save cast
+		int cols = (int)(ec.getScalarInput(_opCols).getLongValue()); //save cast
 		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 
 		//execute operations 

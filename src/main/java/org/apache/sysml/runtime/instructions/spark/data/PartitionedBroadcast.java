@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.IndexRange;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -72,11 +72,11 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	}
 
 	public int getNumRowBlocks() {
-		return IntUtils.toInt(_mc.getNumRowBlocks());
+		return (int)(_mc.getNumRowBlocks());
 	}
 	
 	public int getNumColumnBlocks() {
-		return IntUtils.toInt(_mc.getNumColBlocks());
+		return (int)(_mc.getNumColBlocks());
 	}
 
 	public static int computeBlocksPerPartition(long rlen, long clen, long brlen, long bclen) {

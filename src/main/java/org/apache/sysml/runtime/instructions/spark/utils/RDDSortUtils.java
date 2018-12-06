@@ -48,7 +48,7 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.SortUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class RDDSortUtils 
 {
@@ -61,7 +61,7 @@ public class RDDSortUtils
 	
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*8)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*8)/hdfsBlocksize));
 		JavaRDD<Double> sdvals = dvals
 				.sortBy(new CreateDoubleKeyFunction(), true, numPartitions);
 		
@@ -83,7 +83,7 @@ public class RDDSortUtils
 	
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*8)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*8)/hdfsBlocksize));
 		JavaRDD<DoublePair> sdvals = dvals
 			.sortBy(new CreateDoubleKeyFunction2(), true, numPartitions);
 
@@ -127,7 +127,7 @@ public class RDDSortUtils
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*16)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*16)/hdfsBlocksize));
 		JavaRDD<ValueIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -173,7 +173,7 @@ public class RDDSortUtils
 		
 		//sort (creates sorted range per partition)
 		long hdfsBlocksize = InfrastructureAnalyzer.getHDFSBlockSize();
-		int numPartitions = IntUtils.toInt(Math.ceil(((double)rlen*16)/hdfsBlocksize));
+		int numPartitions = (int)(Math.ceil(((double)rlen*16)/hdfsBlocksize));
 		JavaRDD<ValueIndexPair> sdvals = dvals
 			.sortByKey(new IndexComparator(asc), true, numPartitions)
 			.keys(); //workaround for index comparator
@@ -250,7 +250,7 @@ public class RDDSortUtils
 	{
 		//collect orderby column for in-memory sorting
 		MatrixBlock inMatBlock = SparkExecutionContext
-				.toMatrixBlock(val, IntUtils.toInt(rlen), 1, brlen, bclen, -1);
+				.toMatrixBlock(val, (int)(rlen), 1, brlen, bclen, -1);
 
 		//in-memory sort operation (w/ index return: source index in target position)
 		ReorgOperator lrop = new ReorgOperator(new SortIndex(1, !asc, true));
@@ -260,7 +260,7 @@ public class RDDSortUtils
 		//flip sort indices from <source ix in target pos> to <target ix in source pos>
 		MatrixBlock sortedIxSrc = new MatrixBlock(sortedIx.getNumRows(), 1, false); 
 		for (int i=0; i < sortedIx.getNumRows(); i++) 
-			sortedIxSrc.quickSetValue(IntUtils.toInt(sortedIx.quickGetValue(i,0)-1), 0, i+1);
+			sortedIxSrc.quickSetValue((int)(sortedIx.quickGetValue(i,0)-1), 0, i+1);
 
 		//broadcast index vector
 		PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(sortedIxSrc, brlen, bclen);
@@ -462,7 +462,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), 1, false);	
+					mb = new MatrixBlock((int)(len), 1, false);	
 				}
 				
 				mb.quickSetValue(pos, 0, val._1);
@@ -509,7 +509,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), 2, false);
+					mb = new MatrixBlock((int)(len), 2, false);
 				}
 				
 				mb.quickSetValue(pos, 0, val._1.val1);
@@ -558,7 +558,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), 1, false);	
+					mb = new MatrixBlock((int)(len), 1, false);	
 				}
 				
 				mb.quickSetValue(pos, 0, val._1.ix);
@@ -606,7 +606,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), 1, false);	
+					mb = new MatrixBlock((int)(len), 1, false);	
 				}
 				
 				mb.quickSetValue(pos, 0, val._2+1);
@@ -652,7 +652,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), val._1.getNumColumns(), false);
+					mb = new MatrixBlock((int)(len), val._1.getNumColumns(), false);
 				}
 				
 				mb.leftIndexingOperations(val._1, pos, pos, 0, val._1.getNumColumns()-1, mb, UpdateType.INPLACE);
@@ -698,7 +698,7 @@ public class RDDSortUtils
 						ret.add(new Tuple2<>(ix,mb));
 					long len = UtilFunctions.computeBlockSize(_rlen, rix, _brlen);
 					ix = new MatrixIndexes(rix,1);
-					mb = new MatrixBlock(IntUtils.toInt(len), 1, false);
+					mb = new MatrixBlock((int)(len), 1, false);
 				}
 				
 				mb.quickSetValue(pos, 0, val._1.ix);
@@ -858,7 +858,7 @@ public class RDDSortUtils
 					//produce next output tuple
 					MatrixIndexes ixmap = _currBlk._1();
 					MatrixBlock data = _currBlk._2();
-					MatrixBlock mbTargetIndex = _pmb.value().getBlock(IntUtils.toInt(ixmap.getRowIndex()), 1);
+					MatrixBlock mbTargetIndex = _pmb.value().getBlock((int)(ixmap.getRowIndex()), 1);
 					
 					long valix = (long) mbTargetIndex.getValue(_currPos, 0);
 					long rix = UtilFunctions.computeBlockIndex(valix, _brlen);

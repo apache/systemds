@@ -49,7 +49,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Cpmm: cross-product matrix multiplication operation (distributed matrix multiply
@@ -166,7 +166,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 	}
 	
 	private static int getMaxParJoin(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
-		return IntUtils.toInt(mc1.colsKnown() ? mc1.getNumColBlocks() :
+		return (int)(mc1.colsKnown() ? mc1.getNumColBlocks() :
 			mc2.rowsKnown() ? mc2.getNumRowBlocks() :
 			Integer.MAX_VALUE);
 	}

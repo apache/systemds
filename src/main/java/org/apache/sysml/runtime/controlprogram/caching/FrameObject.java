@@ -43,7 +43,7 @@ import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -108,14 +108,14 @@ public class FrameObject extends CacheableData<FrameBlock>
 	 */
 	public ValueType[] mergeSchemas(FrameObject fo) {
 		return (ValueType[]) ArrayUtils.addAll(
-			(_schema!=null) ? _schema : UtilFunctions.nCopies(IntUtils.toInt(getNumColumns()), ValueType.STRING), 
-			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies(IntUtils.toInt(fo.getNumColumns()), ValueType.STRING));
+			(_schema!=null) ? _schema : UtilFunctions.nCopies((int)(getNumColumns()), ValueType.STRING), 
+			(fo._schema!=null) ? fo._schema : UtilFunctions.nCopies((int)(fo.getNumColumns()), ValueType.STRING));
 	} 
 	
 	public void setSchema(String schema) {
 		if( schema.equals("*") ) {
 			//populate default schema
-			int clen = IntUtils.toInt( getNumColumns() );
+			int clen = (int)( getNumColumns() );
 			if( clen >= 0 ) //known number of cols
 				_schema = UtilFunctions.nCopies(clen, ValueType.STRING);
 		}
@@ -170,7 +170,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		//handle missing schema if necessary
 		ValueType[] lschema = (_schema!=null) ? _schema : 
-			UtilFunctions.nCopies(clen>=1 ? IntUtils.toInt(clen) : 1, ValueType.STRING);
+			UtilFunctions.nCopies(clen>=1 ? (int)(clen) : 1, ValueType.STRING);
 		
 		//read the frame block
 		FrameBlock data = null;
@@ -202,12 +202,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		int rlen = IntUtils.toInt(mc.getRows());
-		int clen = IntUtils.toInt(mc.getCols());
+		int rlen = (int)(mc.getRows());
+		int clen = (int)(mc.getCols());
 		
 		//handle missing schema if necessary
 		ValueType[] lschema = (_schema!=null) ? _schema : 
-			UtilFunctions.nCopies(clen>=1 ? IntUtils.toInt(clen) : 1, ValueType.STRING);
+			UtilFunctions.nCopies(clen>=1 ? (int)(clen) : 1, ValueType.STRING);
 		
 		FrameBlock fb = null;
 		try  {

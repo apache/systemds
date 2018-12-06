@@ -47,7 +47,7 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This class implements the frame indexing functionality inside Spark.
@@ -104,7 +104,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			
 			//update schema of output with subset of input schema
 			sec.getFrameObject(output.getName()).setSchema(
-				sec.getFrameObject(input1.getName()).getSchema(IntUtils.toInt(cl), IntUtils.toInt(cu)));
+				sec.getFrameObject(input1.getName()).getSchema((int)(cl), (int)(cu)));
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex"))
@@ -187,8 +187,8 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			_ixrange = ixrange;
 			_rlen = mcLeft.getRows();
 			_clen = mcLeft.getCols();
-			_brlen = IntUtils.toInt( Math.min(OptimizerUtils.getDefaultFrameSize(), _rlen));
-			_bclen = IntUtils.toInt(mcLeft.getCols());
+			_brlen = (int)( Math.min(OptimizerUtils.getDefaultFrameSize(), _rlen));
+			_bclen = (int)(mcLeft.getCols());
 		}
 
 		@Override

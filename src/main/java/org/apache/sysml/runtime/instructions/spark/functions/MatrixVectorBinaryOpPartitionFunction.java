@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes,MatrixBlock>>, MatrixIndexes,MatrixBlock>
 {
@@ -75,8 +75,8 @@ public class MatrixVectorBinaryOpPartitionFunction implements PairFlatMapFunctio
 			MatrixBlock in1 = arg._2();
 			
 			//get the rhs block 
-			int rix= IntUtils.toInt((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
-			int cix= IntUtils.toInt((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
+			int rix= (int)((_vtype==VectorType.COL_VECTOR) ? ix.getRowIndex() : 1);
+			int cix= (int)((_vtype==VectorType.COL_VECTOR) ? 1 : ix.getColumnIndex());
 			MatrixBlock in2 = _pmV.getBlock(rix, cix);
 				
 			//execute the binary operation

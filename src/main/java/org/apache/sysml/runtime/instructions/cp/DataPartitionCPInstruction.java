@@ -35,7 +35,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class DataPartitionCPInstruction extends UnaryCPInstruction {
 
@@ -75,10 +75,10 @@ public class DataPartitionCPInstruction extends UnaryCPInstruction {
 			//write matrix partitions to hdfs
 			WriterBinaryBlock.writePartitionedBinaryBlockMatrixToHDFS(new Path(fname), 
 				new JobConf(ConfigurationManager.getCachedJobConf()), mb, moIn.getNumRows(), moIn.getNumColumns(),
-				IntUtils.toInt(moIn.getNumRowsPerBlock()), IntUtils.toInt(moIn.getNumColumnsPerBlock()), _pformat);
+				(int)(moIn.getNumRowsPerBlock()), (int)(moIn.getNumColumnsPerBlock()), _pformat);
 			
 			//ensure correctness of output characteristics (required if input unknown during compile and no recompile)
-			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), IntUtils.toInt(moIn.getNumRowsPerBlock()), IntUtils.toInt(moIn.getNumColumnsPerBlock()), moIn.getNnz()); 
+			MatrixCharacteristics mc = new MatrixCharacteristics(moIn.getNumRows(), moIn.getNumColumns(), (int)(moIn.getNumRowsPerBlock()), (int)(moIn.getNumColumnsPerBlock()), moIn.getNnz()); 
 			MetaDataFormat meta = new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo);
 			moOut.setMetaData(meta);
 		}

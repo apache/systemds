@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This class implements the matrix indexing functionality inside CP.
@@ -204,8 +204,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				 .mapToPair(new SliceBlock2(ixrange, mcOut));       //slice relevant blocks
 		
 		//collect output without shuffle to avoid side-effects with custom PartitionPruningRDD
-		MatrixBlock mbout = SparkExecutionContext.toMatrixBlock(out, IntUtils.toInt(mcOut.getRows()), 
-				IntUtils.toInt(mcOut.getCols()), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
+		MatrixBlock mbout = SparkExecutionContext.toMatrixBlock(out, (int)(mcOut.getRows()), 
+				(int)(mcOut.getCols()), mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), -1);
 		return mbout;
 	}
 	
@@ -411,11 +411,11 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 					MatrixBlock right = arg._2();
 
 					int rl = UtilFunctions.computeCellInBlock(_ixrange.rowStart, _brlen);
-					int ru = IntUtils.toInt(Math.min(_ixrange.rowEnd, rl+right.getNumRows())-1);
+					int ru = (int)(Math.min(_ixrange.rowEnd, rl+right.getNumRows())-1);
 					int cl = UtilFunctions.computeCellInBlock(_ixrange.colStart, _brlen);
-					int cu = IntUtils.toInt(Math.min(_ixrange.colEnd, cl+right.getNumColumns())-1);
+					int cu = (int)(Math.min(_ixrange.colEnd, cl+right.getNumColumns())-1);
 					
-					MatrixBlock left = _binput.getBlock(IntUtils.toInt(ix.getRowIndex()), IntUtils.toInt(ix.getColumnIndex()));
+					MatrixBlock left = _binput.getBlock((int)(ix.getRowIndex()), (int)(ix.getColumnIndex()));
 					MatrixBlock tmp = left.leftIndexingOperations(right, 
 							rl, ru, cl, cu, new MatrixBlock(), UpdateType.COPY);
 					
@@ -475,10 +475,10 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			//compute local index range 
 			long grix = UtilFunctions.computeCellIndex(ix.getRowIndex(), _brlen, 0);
 			long gcix = UtilFunctions.computeCellIndex(ix.getColumnIndex(), _bclen, 0);
-			int lrl = IntUtils.toInt((_ixrange.rowStart<grix) ? 0 : _ixrange.rowStart - grix);
-			int lcl = IntUtils.toInt((_ixrange.colStart<gcix) ? 0 : _ixrange.colStart - gcix);
-			int lru = IntUtils.toInt(Math.min(block.getNumRows()-1, _ixrange.rowEnd - grix));
-			int lcu = IntUtils.toInt(Math.min(block.getNumColumns()-1, _ixrange.colEnd - gcix));
+			int lrl = (int)((_ixrange.rowStart<grix) ? 0 : _ixrange.rowStart - grix);
+			int lcl = (int)((_ixrange.colStart<gcix) ? 0 : _ixrange.colStart - gcix);
+			int lru = (int)(Math.min(block.getNumRows()-1, _ixrange.rowEnd - grix));
+			int lcu = (int)(Math.min(block.getNumColumns()-1, _ixrange.colEnd - gcix));
 			
 			//compute output index
 			MatrixIndexes ixOut = new MatrixIndexes(

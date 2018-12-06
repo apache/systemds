@@ -64,7 +64,7 @@ import org.apache.sysml.runtime.transform.encode.EncoderRecode;
 import org.apache.sysml.runtime.transform.encode.EncoderMVImpute.MVMethod;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -116,7 +116,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 					
 			//step 1: build transform meta data
 			Encoder encoderBuild = EncoderFactory.createEncoder(spec, colnames,
-					fo.getSchema(), IntUtils.toInt(fo.getNumColumns()), null);
+					fo.getSchema(), (int)(fo.getNumColumns()), null);
 			
 			MaxLongAccumulator accMax = registerMaxLongAccumulator(sec.getSparkContext()); 
 			JavaRDD<String> rcMaps = in
@@ -147,7 +147,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(spec, colnames,
-					fo.getSchema(), IntUtils.toInt(fo.getNumColumns()), meta);
+					fo.getSchema(), (int)(fo.getNumColumns()), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;

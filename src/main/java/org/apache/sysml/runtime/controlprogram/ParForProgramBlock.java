@@ -111,7 +111,7 @@ import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
@@ -889,7 +889,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		String resultFile = constructResultFileName();
 		
 		long numIterations = partitioner.getNumIterations();
-		int maxDigits = IntUtils.toInt(Math.log10(to.getLongValue()) + 1);
+		int maxDigits = (int)(Math.log10(to.getLongValue()) + 1);
 		long numCreatedTasks = -1;
 		if( USE_STREAMING_TASK_CREATION ) {
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
@@ -1454,7 +1454,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )
-			maxNumRed = IntUtils.toInt(Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 ));
+			maxNumRed = (int)(Math.max( maxNumRed, YarnClusterAnalyzer.getNumCores()/2 ));
 		int numRed = Math.min(numReducers,maxNumRed);
 		
 		//create data partitioner
@@ -1485,7 +1485,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//determine degree of parallelism
 		int maxMap = -1, maxRed = -1;
 		if( OptimizerUtils.isSparkExecutionMode() ) {
-			maxMap = IntUtils.toInt( SparkExecutionContext.getDefaultParallelism(true));
+			maxMap = (int)( SparkExecutionContext.getDefaultParallelism(true));
 			maxRed = maxMap; //equal map/reduce
 		}
 		else {
@@ -1495,8 +1495,8 @@ public class ParForProgramBlock extends ForProgramBlock
 				InfrastructureAnalyzer.getRemoteParallelReduceTasks());
 			//correction max number of reducers on yarn clusters
 			if( InfrastructureAnalyzer.isYarnEnabled() ) {
-				maxMap = IntUtils.toInt(Math.max( maxMap, YarnClusterAnalyzer.getNumCores() ));
-				maxRed = IntUtils.toInt(Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 ));
+				maxMap = (int)(Math.max( maxMap, YarnClusterAnalyzer.getNumCores() ));
+				maxRed = (int)(Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 ));
 			}
 		}
 		int numMap = Math.max(_numThreads, maxMap);
@@ -1633,7 +1633,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			int par = Math.min( _resultVars.size(), 
 					            InfrastructureAnalyzer.getLocalParallelism() );
 			if( InfrastructureAnalyzer.isLocalMode() ) {
-				int parmem = IntUtils.toInt(Math.floor(OptimizerUtils.getLocalMemBudget() / 
+				int parmem = (int)(Math.floor(OptimizerUtils.getLocalMemBudget() / 
 						InfrastructureAnalyzer.getRemoteMaxMemorySortBuffer()));
 				par = Math.min(par, Math.max(parmem, 1)); //reduce k if necessary
 			}
@@ -1750,7 +1750,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _IDPrefix == -1 ) //not specified
 			_ID = _pfIDSeq.getNextID(); //generated new ID
 		else //remote case (further nested parfors are all in one JVM)
-			_ID = IDHandler.concatIntIDsToLong(_IDPrefix, IntUtils.toInt(_pfIDSeq.getNextID()));	
+			_ID = IDHandler.concatIntIDsToLong(_IDPrefix, (int)(_pfIDSeq.getNextID()));	
 	}
 	
 	/**
@@ -1770,7 +1770,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			if(_IDPrefix == -1)
 				_pwIDs[i] = _pwIDSeq.getNextID();
 			else
-				_pwIDs[i] = IDHandler.concatIntIDsToLong(_IDPrefix,IntUtils.toInt(_pwIDSeq.getNextID()));
+				_pwIDs[i] = IDHandler.concatIntIDsToLong(_IDPrefix,(int)(_pwIDSeq.getNextID()));
 			
 			if( _monitor ) 
 				StatisticMonitor.putPfPwMapping(_ID, _pwIDs[i]);

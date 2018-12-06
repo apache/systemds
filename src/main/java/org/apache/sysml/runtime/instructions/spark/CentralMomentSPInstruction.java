@@ -40,7 +40,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CentralMomentSPInstruction extends UnarySPInstruction {
 
@@ -105,7 +105,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
 		CMOperator cop = ((CMOperator)_optr); 
 		if ( cop.getAggOpType() == AggregateOperationTypes.INVALID ) {
-			cop.setCMAggOp(IntUtils.toInt(order.getLongValue()));
+			cop.setCMAggOp((int)(order.getLongValue()));
 		}
 		
 		//get input

@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.util.IndexRange;
-import org.apache.sysml.utils.IntUtils;
+
 
 public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 
@@ -72,7 +72,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2);
 				out = new FrameBlock(lin);
-				out.set(IntUtils.toInt(ixrange.rowStart), IntUtils.toInt(ixrange.colStart), scalar.getStringValue());
+				out.set((int)(ixrange.rowStart), (int)(ixrange.colStart), scalar.getStringValue());
 			}
 
 			//unpin lhs input

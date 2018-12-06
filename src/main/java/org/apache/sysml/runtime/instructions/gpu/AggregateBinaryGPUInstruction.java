@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class AggregateBinaryGPUInstruction extends GPUInstruction {
 	private CPOperand _input1 = null;
@@ -79,8 +79,8 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 		MatrixObject m1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject m2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		//compute matrix multiplication
-		int rlen = IntUtils.toInt(_isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
-		int clen = IntUtils.toInt(_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
+		int rlen = (int)(_isLeftTransposed ? m1.getNumColumns() : m1.getNumRows());
+		int clen = (int)(_isRightTransposed ? m2.getNumRows() : m2.getNumColumns());
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCuMatMult.matmult(ec, ec.getGPUContext(0), getExtendedOpcode(), m1, m2, _output.getName(), _isLeftTransposed, _isRightTransposed);
 		//release inputs/outputs

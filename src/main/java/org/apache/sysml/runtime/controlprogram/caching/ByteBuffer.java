@@ -28,7 +28,7 @@ import java.io.IOException;
 import org.apache.sysml.runtime.matrix.data.FrameBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.LocalFileUtils;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Wrapper for WriteBuffer byte array per matrix/frame in order to
@@ -62,9 +62,9 @@ public class ByteBuffer
 			{
 				//deep serialize (for compression)
 				if( CacheableData.CACHING_BUFFER_PAGECACHE )
-					_bdata = PageCache.getPage(IntUtils.toInt(_size));
+					_bdata = PageCache.getPage((int)(_size));
 				if( _bdata==null )
-					_bdata = new byte[IntUtils.toInt(_size)];
+					_bdata = new byte[(int)(_size)];
 				DataOutput dout = new CacheDataOutput(_bdata);
 				cb.write(dout);
 			}

@@ -44,7 +44,7 @@ import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class LiteralReplacement 
@@ -248,7 +248,7 @@ public class LiteralReplacement
 				if( mo.getNumRows()*mo.getNumColumns() < REPLACE_LITERALS_MAX_MATRIX_SIZE )
 				{
 					MatrixBlock mBlock = mo.acquireRead();
-					double value = mBlock.getValue(IntUtils.toInt(rlval-1),IntUtils.toInt(clval-1));
+					double value = mBlock.getValue((int)(rlval-1),(int)(clval-1));
 					mo.release();
 					
 					//literal substitution (always double)
@@ -322,7 +322,7 @@ public class LiteralReplacement
 				if( mo.getNumRows()*mo.getNumColumns() < REPLACE_LITERALS_MAX_MATRIX_SIZE )
 				{
 					MatrixBlock mBlock = mo.acquireRead();
-					MatrixBlock mBlock2 = mBlock.slice(IntUtils.toInt(rlval-1), IntUtils.toInt(ruval-1), IntUtils.toInt(clval-1), IntUtils.toInt(cuval-1), new MatrixBlock());
+					MatrixBlock mBlock2 = mBlock.slice((int)(rlval-1), (int)(ruval-1), (int)(clval-1), (int)(cuval-1), new MatrixBlock());
 					double value = replaceUnaryAggregate((AggUnaryOp)c, mBlock2);
 					mo.release();
 						
@@ -370,7 +370,7 @@ public class LiteralReplacement
 				String varname = Dag.getNextUniqueVarname(DataType.MATRIX);
 				LiteralOp lit = (LiteralOp) ix.getInput().get(1);
 				MatrixObject mo = (MatrixObject) (!lit.getValueType().isNumeric() ?
-					list.slice(lit.getName()) : list.slice(IntUtils.toInt(lit.getLongValue()-1)));
+					list.slice(lit.getName()) : list.slice((int)(lit.getLongValue()-1)));
 				vars.put(varname, mo);
 				ret = HopRewriteUtils.createTransientRead(varname, c);
 			}
@@ -392,7 +392,7 @@ public class LiteralReplacement
 				ListObject list = (ListObject)vars.get(ixIn.getName());
 				LiteralOp lit = (LiteralOp) ix.getInput().get(1);
 				ScalarObject so = (ScalarObject) (!lit.getValueType().isNumeric() ?
-					list.slice(lit.getName()) : list.slice(IntUtils.toInt(lit.getLongValue()-1)));
+					list.slice(lit.getName()) : list.slice((int)(lit.getLongValue()-1)));
 				return ScalarObjectFactory.createLiteralOp(so);
 			}
 		}

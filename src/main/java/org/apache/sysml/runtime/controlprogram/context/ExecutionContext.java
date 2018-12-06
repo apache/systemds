@@ -60,7 +60,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 
@@ -289,7 +289,7 @@ public class ExecutionContext {
 		if( oldMetaData == null || !(oldMetaData instanceof MetaDataFormat) )
 			throw new DMLRuntimeException("Metadata not available");
 		MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols,
-				IntUtils.toInt(mo.getNumRowsPerBlock()), IntUtils.toInt(mo.getNumColumnsPerBlock()));
+				(int)(mo.getNumRowsPerBlock()), (int)(mo.getNumColumnsPerBlock()));
 		mo.setMetaData(new MetaDataFormat(mc, 
 			((MetaDataFormat)oldMetaData).getOutputInfo(),
 			((MetaDataFormat)oldMetaData).getInputInfo()));

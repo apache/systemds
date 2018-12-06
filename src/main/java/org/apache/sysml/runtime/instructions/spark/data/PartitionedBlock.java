@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysml.runtime.controlprogram.caching.CacheBlockFactory;
 import org.apache.sysml.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysml.runtime.util.FastBufferedDataOutputStream;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This class is for partitioned matrix/frame blocks, to be used as broadcasts. 
@@ -133,11 +133,11 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	}
 
 	public int getNumRowBlocks() {
-		return IntUtils.toInt(Math.ceil((double)_rlen/_brlen));
+		return (int)(Math.ceil((double)_rlen/_brlen));
 	}
 
 	public int getNumColumnBlocks() {
-		return IntUtils.toInt(Math.ceil((double)_clen/_bclen));
+		return (int)(Math.ceil((double)_clen/_bclen));
 	}
 
 	@SuppressWarnings("unchecked")

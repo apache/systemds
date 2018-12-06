@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.DnnParameters;
-import org.apache.sysml.utils.IntUtils;
+
 
 import java.util.ArrayList;
 
@@ -380,18 +380,18 @@ public class DnnOp extends MultiThreadedHop
 	private static class IntermediateDimensions {
 		int dim1; int dim2; double sp;
 		public IntermediateDimensions(DnnOp h, String dim1Str, String dim2Str, double sp) {
-			dim1 = IntUtils.toInt(h.getDim(dim1Str));
-			dim2 = IntUtils.toInt(h.getDim(dim2Str));
+			dim1 = (int)(h.getDim(dim1Str));
+			dim2 = (int)(h.getDim(dim2Str));
 			this.sp = sp;
 		}
 		public IntermediateDimensions(DnnOp h, String dim1Str, String dim2Str) {
-			dim1 = IntUtils.toInt(h.getDim(dim1Str));
-			dim2 = IntUtils.toInt(h.getDim(dim2Str));
+			dim1 = (int)(h.getDim(dim1Str));
+			dim2 = (int)(h.getDim(dim2Str));
 			sp = 1;
 		}
 		public IntermediateDimensions(DnnOp h, int dim1, String dim2Str) {
 			this.dim1 = dim1;
-			dim2 = IntUtils.toInt(h.getDim(dim2Str));
+			dim2 = (int)(h.getDim(dim2Str));
 			sp = 1;
 		}
 		
@@ -450,7 +450,7 @@ public class DnnOp extends MultiThreadedHop
 			ArrayList<IntermediateDimensions> gpuIntermediates,
 			ArrayList<IntermediateDimensions> cpIntermediates) {
 		// Since CP operators use row-level parallelism by default
-		int numWorkers = IntUtils.toInt(Math.min(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), Math.max(getDim("N"), 1)));
+		int numWorkers = (int)(Math.min(OptimizerUtils.getConstrainedNumThreads(_maxNumThreads), Math.max(getDim("N"), 1)));
 		if(ConfigurationManager.isGPU()) {
 			// Account for potential sparse-to-dense conversion
 			double gpuMemBudget = IntermediateDimensions.addEstimateSizes(gpuIntermediates, 1);
@@ -678,10 +678,10 @@ public class DnnOp extends MultiThreadedHop
 		// P = as.integer(floor((H + 2*pad_h - R)/stride_h + 1))
 		// Q = as.integer(floor((W + 2*pad_w - S)/stride_w + 1))
 		if(_cachedParams.P < 0 && _cachedParams.H >= 0 && _cachedParams.R >= 0 && _cachedParams.stride_h >= 0 && _cachedParams.pad_h >= 0) {
-			_cachedParams.P = IntUtils.toInt(org.apache.sysml.runtime.util.DnnUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h));
+			_cachedParams.P = (int)(org.apache.sysml.runtime.util.DnnUtils.getP(_cachedParams.H, _cachedParams.R, _cachedParams.stride_h, _cachedParams.pad_h));
 		}
 		if(_cachedParams.Q < 0 && _cachedParams.W >= 0 && _cachedParams.S >= 0 && _cachedParams.stride_w >= 0 && _cachedParams.pad_w >= 0) {
-			_cachedParams.Q = IntUtils.toInt(org.apache.sysml.runtime.util.DnnUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w));
+			_cachedParams.Q = (int)(org.apache.sysml.runtime.util.DnnUtils.getQ(_cachedParams.W, _cachedParams.S, _cachedParams.stride_w, _cachedParams.pad_w));
 		}
 		
 		return _cachedParams;

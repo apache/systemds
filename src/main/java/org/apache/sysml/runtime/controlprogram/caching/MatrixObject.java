@@ -43,7 +43,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 
 
 /**
@@ -314,7 +314,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 					mb = readBlobFromHDFS( fname, rows, cols );
 				else
 				{
-					mb = new MatrixBlock(IntUtils.toInt(rows), IntUtils.toInt(cols), true);
+					mb = new MatrixBlock((int)(rows), (int)(cols), true);
 					LOG.warn("Reading empty matrix partition "+fname);
 				}
 			}
@@ -328,13 +328,13 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				
 				if( _partitionFormat == PDataPartitionFormat.ROW_BLOCK_WISE )
 				{
-					int rix = IntUtils.toInt((pred.rowStart-1)%brlen);
-					mb = mb.slice(rix, rix, IntUtils.toInt(pred.colStart-1), IntUtils.toInt(pred.colEnd-1), new MatrixBlock());
+					int rix = (int)((pred.rowStart-1)%brlen);
+					mb = mb.slice(rix, rix, (int)(pred.colStart-1), (int)(pred.colEnd-1), new MatrixBlock());
 				}
 				if( _partitionFormat == PDataPartitionFormat.COLUMN_BLOCK_WISE )
 				{
-					int cix = IntUtils.toInt((pred.colStart-1)%bclen);
-					mb = mb.slice(IntUtils.toInt(pred.rowStart-1), IntUtils.toInt(pred.rowEnd-1), cix, cix, new MatrixBlock());
+					int cix = (int)((pred.colStart-1)%bclen);
+					mb = mb.slice((int)(pred.rowStart-1), (int)(pred.rowEnd-1), cix, cix, new MatrixBlock());
 				}
 			}
 			
@@ -468,8 +468,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			}
 			
 			//obtain matrix block from RDD
-			int rlen = IntUtils.toInt(mc.getRows());
-			int clen = IntUtils.toInt(mc.getCols());
+			int rlen = (int)(mc.getRows());
+			int clen = (int)(mc.getCols());
 			int brlen = mc.getRowsPerBlock();
 			int bclen = mc.getColsPerBlock();
 			long nnz = mc.getNonZerosBound();

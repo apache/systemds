@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysml.runtime.util.ProgramConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -91,7 +91,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 		
 		//maintain accumulators
 		_aTasks.add( 1 );
-		_aIters.add( IntUtils.toInt(getExecutedIterations()-numIter) );
+		_aIters.add( (int)(getExecutedIterations()-numIter) );
 		
 		//cleanup remaining intermediate variables from buffer pool
 		_ec.getVariables().keySet().stream().filter(v -> !inVars.contains(v))
@@ -115,7 +115,7 @@ public class RemoteParForSparkWorker extends ParWorker implements PairFlatMapFun
 			CodegenUtils.getClassSync(e.getKey(), e.getValue());
 	
 		//parse and setup parfor body program
-		ParForBody body = ProgramConverter.parseParForBody(_prog, IntUtils.toInt(_workerID), true);
+		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)(_workerID), true);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
 		_resultVars  = body.getResultVariables();

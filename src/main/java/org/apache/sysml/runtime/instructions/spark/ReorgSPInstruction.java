@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ReorgSPInstruction extends UnarySPInstruction {
 	// sort-specific attributes (to enable variable attributes)
@@ -170,7 +170,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 				// extract column (if necessary) and sort 
 				if( !singleCol )
 					out = out.filter(new IsBlockInRange(1, mcIn.getRows(), cols[0], cols[0], mcIn))
-						.mapValues(new ExtractColumn(IntUtils.toInt(UtilFunctions.computeCellInBlock(cols[0], mcIn.getColsPerBlock()))));
+						.mapValues(new ExtractColumn((int)(UtilFunctions.computeCellInBlock(cols[0], mcIn.getColsPerBlock()))));
 				
 				//actual index/data sort operation
 				if( ixret ) //sort indexes 
@@ -269,7 +269,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			ret.add(new Tuple2<>(ixOut,blkOut));
 			
 			// insert newly created empty blocks for entire row
-			int numBlocks = IntUtils.toInt( Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock()));
+			int numBlocks = (int)( Math.ceil((double)_mcIn.getRows()/_mcIn.getRowsPerBlock()));
 			for(int i = 1; i <= numBlocks; i++) {
 				if(i != ixOut.getColumnIndex()) {
 					int lrlen = UtilFunctions.computeBlockSize(_mcIn.getRows(), rix, _mcIn.getRowsPerBlock());

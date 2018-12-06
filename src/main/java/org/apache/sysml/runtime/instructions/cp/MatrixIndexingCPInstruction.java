@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.IndexRange;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
@@ -65,8 +65,8 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				//execute right indexing operation (with shallow row copies for range
 				//of entire sparse rows, which is safe due to copy on update)
 				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-				resultBlock = matBlock.slice(IntUtils.toInt(ixrange.rowStart), IntUtils.toInt(ixrange.rowEnd), 
-						IntUtils.toInt(ixrange.colStart), IntUtils.toInt(ixrange.colEnd), false, new MatrixBlock());
+				resultBlock = matBlock.slice((int)(ixrange.rowStart), (int)(ixrange.rowEnd), 
+						(int)(ixrange.colStart), (int)(ixrange.colEnd), false, new MatrixBlock());
 				
 				//unpin rhs input
 				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
@@ -102,7 +102,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 					throw new DMLRuntimeException("Invalid index range of scalar leftindexing: "+ixrange.toString()+"." );
 				ScalarObject scalar = ec.getScalarInput(input2.getName(), ValueType.DOUBLE, input2.isLiteral());
 				resultBlock = (MatrixBlock) matBlock.leftIndexingOperations(scalar, 
-						IntUtils.toInt(ixrange.rowStart), IntUtils.toInt(ixrange.colStart), new MatrixBlock(), updateType);
+						(int)(ixrange.rowStart), (int)(ixrange.colStart), new MatrixBlock(), updateType);
 			}
 
 			//unpin lhs input

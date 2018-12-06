@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 import jcuda.Pointer;
 
@@ -71,8 +71,8 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		int rows = IntUtils.toInt(ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue()); //save cast
-		int cols = IntUtils.toInt(ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue()); //save cast
+		int rows = (int)(ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue()); //save cast
+		int cols = (int)(ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue()); //save cast
 		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 		
 		GPUStatistics.incrementNoOfExecutedGPUInst();

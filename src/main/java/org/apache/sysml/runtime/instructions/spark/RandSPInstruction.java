@@ -65,7 +65,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class RandSPInstruction extends UnarySPInstruction {
@@ -259,7 +259,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			&&  ConfigurationManager.getExecutionMode() != RUNTIME_PLATFORM.SPARK )
 		{
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-				pdf, IntUtils.toInt(lrows), IntUtils.toInt(lcols), rowsInBlock, colsInBlock, 
+				pdf, (int)(lrows), (int)(lcols), rowsInBlock, colsInBlock, 
 				sparsity, minValue, maxValue, pdfParams);
 			MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
 			
@@ -291,7 +291,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
@@ -324,7 +324,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			seedsRDD = sec.getSparkContext()
@@ -382,7 +382,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create offset rdd
 			offsetsRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
@@ -409,7 +409,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			}
 			
 			//for load balancing: degree of parallelism such that ~128MB per partition
-			int numPartitions = IntUtils.toInt( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
+			int numPartitions = (int)( Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1));
 			
 			//create seeds rdd 
 			offsetsRDD = sec.getSparkContext()
@@ -443,14 +443,14 @@ public class RandSPInstruction extends UnarySPInstruction {
 			LOG.trace("Process RandSPInstruction sample with range="+ maxValue +", size="+ lrows +", replace="+ replace + ", seed=" + seed);
 		
 		// sampling rate that guarantees a sample of size >= sampleSizeLowerBound 99.99% of the time.
-		double fraction = SamplingUtils.computeFractionForSampleSize(IntUtils.toInt(lrows), UtilFunctions.toLong(maxValue), replace);
+		double fraction = SamplingUtils.computeFractionForSampleSize((int)(lrows), UtilFunctions.toLong(maxValue), replace);
 		
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
 
 		// divide the population range across numPartitions by creating SampleTasks
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long outputSize = MatrixBlock.estimateSizeDenseInMemory(lrows,1);
-		int numPartitions = IntUtils.toInt( Math.ceil((double)outputSize/hdfsBlockSize));
+		int numPartitions = (int)( Math.ceil((double)outputSize/hdfsBlockSize));
 		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
 
 		ArrayList<SampleTask> offsets = new ArrayList<>();

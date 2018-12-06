@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.instructions.cp.Data;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
 import org.apache.sysml.runtime.io.IOUtilFunctions;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.IntUtils;
+
 
 public abstract class PSRpcObject {
 
@@ -94,7 +94,7 @@ public abstract class PSRpcObject {
 			((MatrixObject)d).acquireReadAndRelease().getExactSizeOnDisk()).sum();
 		if( result > Integer.MAX_VALUE )
 			throw new DMLRuntimeException("Serialized size ("+result+") larger than Integer.MAX_VALUE.");
-		return IntUtils.toInt( result );
+		return (int)( result );
 	}
 
 	private void validateListObject(ListObject lo) {

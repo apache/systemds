@@ -26,7 +26,7 @@ import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.util.IndexRange;
-import org.apache.sysml.utils.IntUtils;
+
 
 public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 	protected final CPOperand rowLower, rowUpper, colLower, colUpper;
@@ -51,10 +51,10 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 
 	protected IndexRange getIndexRange(ExecutionContext ec) {
 		return new IndexRange( //rl, ru, cl, ru
-			IntUtils.toInt(ec.getScalarInput(rowLower).getLongValue()-1),
-			IntUtils.toInt(ec.getScalarInput(rowUpper).getLongValue()-1),
-			IntUtils.toInt(ec.getScalarInput(colLower).getLongValue()-1),
-			IntUtils.toInt(ec.getScalarInput(colUpper).getLongValue()-1));
+			(int)(ec.getScalarInput(rowLower).getLongValue()-1),
+			(int)(ec.getScalarInput(rowUpper).getLongValue()-1),
+			(int)(ec.getScalarInput(colLower).getLongValue()-1),
+			(int)(ec.getScalarInput(colUpper).getLongValue()-1));
 	}
 
 	public static IndexingCPInstruction parseInstruction ( String str ) {

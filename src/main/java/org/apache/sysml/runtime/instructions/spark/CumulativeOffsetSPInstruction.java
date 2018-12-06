@@ -44,7 +44,7 @@ import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
@@ -201,7 +201,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			
 			//lookup offset row and return joined output
 			MatrixBlock off = (ixIn.getRowIndex() == 1) ? new MatrixBlock(1, blkIn.getNumColumns(), _initValue) :
-				_pbc.getBlock(IntUtils.toInt(brix), IntUtils.toInt(ixIn.getColumnIndex())).slice(rix, rix);
+				_pbc.getBlock((int)(brix), (int)(ixIn.getColumnIndex())).slice(rix, rix);
 			return new Tuple2<MatrixIndexes, Tuple2<MatrixBlock,MatrixBlock>>(ixIn, new Tuple2<>(blkIn,off));
 		}
 	}

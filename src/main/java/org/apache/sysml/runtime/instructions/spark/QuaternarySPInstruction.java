@@ -58,7 +58,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.QuaternaryOperator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class QuaternarySPInstruction extends ComputationSPInstruction {
 	private CPOperand _input4 = null;
@@ -375,8 +375,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 				MatrixIndexes ixIn = arg._1();
 				MatrixBlock blkIn = arg._2();
 				MatrixBlock blkOut = new MatrixBlock();
-				MatrixBlock mbU = _pmU.getBlock(IntUtils.toInt(ixIn.getRowIndex()), 1);
-				MatrixBlock mbV = _pmV.getBlock(IntUtils.toInt(ixIn.getColumnIndex()), 1);
+				MatrixBlock mbU = _pmU.getBlock((int)(ixIn.getRowIndex()), 1);
+				MatrixBlock mbV = _pmV.getBlock((int)(ixIn.getColumnIndex()), 1);
 				
 				//execute core operation
 				blkIn.quaternaryOperations(_qop, mbU, mbV, null, blkOut);
@@ -403,8 +403,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock blkIn1 = arg0._2()._1();
 			MatrixBlock blkIn2 = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
-			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock(IntUtils.toInt(ixIn.getRowIndex()), 1) : blkIn2;
-			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock(IntUtils.toInt(ixIn.getColumnIndex()), 1) : blkIn2;
+			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock((int)(ixIn.getRowIndex()), 1) : blkIn2;
+			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock((int)(ixIn.getColumnIndex()), 1) : blkIn2;
 			MatrixBlock mbW = (_qop.hasFourInputs()) ? blkIn2 : null;
 			
 			//execute core operation
@@ -432,8 +432,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			MatrixBlock blkIn2 = arg0._2()._1()._2();
 			MatrixBlock blkIn3 = arg0._2()._2();
 			MatrixBlock blkOut = new MatrixBlock();
-			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock(IntUtils.toInt(ixIn.getRowIndex()), 1) : blkIn2;
-			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock(IntUtils.toInt(ixIn.getColumnIndex()), 1) : 
+			MatrixBlock mbU = (_pmU!=null)?_pmU.getBlock((int)(ixIn.getRowIndex()), 1) : blkIn2;
+			MatrixBlock mbV = (_pmV!=null)?_pmV.getBlock((int)(ixIn.getColumnIndex()), 1) : 
 				              (_pmU!=null)? blkIn2 : blkIn3;
 			MatrixBlock mbW = (_qop.hasFourInputs())? blkIn3 : null;
 			

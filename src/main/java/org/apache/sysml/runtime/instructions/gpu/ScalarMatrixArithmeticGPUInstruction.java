@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUInstruction {
 
@@ -47,8 +47,8 @@ public class ScalarMatrixArithmeticGPUInstruction extends ArithmeticBinaryGPUIns
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 		
 		boolean isTransposed = false;
-		int rlen = IntUtils.toInt(isTransposed ?  in1.getNumColumns() :  in1.getNumRows());
-		int clen = IntUtils.toInt(isTransposed ?  in1.getNumRows() :  in1.getNumColumns());
+		int rlen = (int)(isTransposed ?  in1.getNumColumns() :  in1.getNumRows());
+		int clen = (int)(isTransposed ?  in1.getNumRows() :  in1.getNumColumns());
 		
 		ec.setMetaData(_output.getName(), rlen, clen);
 		

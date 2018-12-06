@@ -48,7 +48,7 @@ import org.apache.sysml.runtime.matrix.data.TripleIndexes;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class RmmSPInstruction extends BinarySPInstruction {
 
@@ -115,7 +115,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 			* ((long) Math.ceil((double)mc2.getCols()/mc2.getColsPerBlock()));
 		double matrix2PSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc2)
 			* ((long) Math.ceil((double)mc1.getRows()/mc1.getRowsPerBlock()));
-		return IntUtils.toInt( Math.max(Math.ceil((matrix1PSize+matrix2PSize)/hdfsBlockSize), 1));
+		return (int)( Math.max(Math.ceil((matrix1PSize+matrix2PSize)/hdfsBlockSize), 1));
 	}
 
 	private static class RmmReplicateFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, TripleIndexes, MatrixBlock> 

@@ -65,7 +65,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.collection.JavaConversions;
 import scala.reflect.ClassTag;
@@ -300,7 +300,7 @@ public class MLContextConversionUtil {
 			frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 		ValueType[] schema = (frameMetadata != null) ?
 			frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]) : 
-			UtilFunctions.nCopies(IntUtils.toInt(mc.getCols()), ValueType.STRING);
+			UtilFunctions.nCopies((int)(mc.getCols()), ValueType.STRING);
 		
 		FrameObject frameObject = new FrameObject(OptimizerUtils.getUniqueTempFileName(),
 			new MetaDataFormat(mc, OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo), schema);
@@ -690,7 +690,7 @@ public class MLContextConversionUtil {
 		try {
 			ValueType[] lschema = null;
 			if (lschema == null)
-				lschema = UtilFunctions.nCopies(IntUtils.toInt(mc.getCols()), ValueType.STRING);
+				lschema = UtilFunctions.nCopies((int)(mc.getCols()), ValueType.STRING);
 			rdd = FrameRDDConverterUtils.textCellToBinaryBlock(jsc(), javaPairRDDText, mc, lschema);
 		} catch (DMLRuntimeException e) {
 			e.printStackTrace();

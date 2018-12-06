@@ -83,7 +83,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.sort.PickFromCompactInputFormat;
-import org.apache.sysml.utils.IntUtils;
+
 
 
 /**
@@ -2339,8 +2339,8 @@ public class Dag<N extends Lop>
 				// generate an instruction that creates a symbol table entry for the new variable
 				//String createInst = prepareVariableInstruction("createvar", node);
 				//out.addPreInstruction(CPInstructionParser.parseSingleInstruction(createInst));
-				int rpb = IntUtils.toInt(oparams.getRowsInBlock());
-				int cpb = IntUtils.toInt(oparams.getColsInBlock());
+				int rpb = (int)(oparams.getRowsInBlock());
+				int cpb = (int)(oparams.getColsInBlock());
 				Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 									        oparams.getLabel(),
 											oparams.getFile_name(), 
@@ -2378,7 +2378,7 @@ public class Dag<N extends Lop>
 								getFilePath() + fnOutParams.getLabel(), 
 								true, fnOut.getDataType(),
 								OutputInfo.outputInfoToString(getOutputInfo(fnOut, false)),
-								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), IntUtils.toInt(fnOutParams.getRowsInBlock()), IntUtils.toInt(fnOutParams.getColsInBlock()), fnOutParams.getNnz()),
+								new MatrixCharacteristics(fnOutParams.getNumRows(), fnOutParams.getNumCols(), (int)(fnOutParams.getRowsInBlock()), (int)(fnOutParams.getColsInBlock()), fnOutParams.getNnz()),
 								oparams.getUpdateType()
 							);
 						
@@ -2484,8 +2484,8 @@ public class Dag<N extends Lop>
 						String tempVarName = oparams.getLabel() + "temp";
 						String tempFileName = getNextUniqueFilename();
 						
-						int rpb = IntUtils.toInt( oparams.getRowsInBlock() );
-						int cpb = IntUtils.toInt( oparams.getColsInBlock() );
+						int rpb = (int)( oparams.getRowsInBlock() );
+						int cpb = (int)( oparams.getColsInBlock() );
 						Instruction createvarInst = VariableCPInstruction.prepareCreateVariableInstruction(
 													tempVarName, 
 													tempFileName, 
@@ -2540,8 +2540,8 @@ public class Dag<N extends Lop>
 						// create a variable to hold the result produced by this "rootNode"
 						oparams.setLabel("pVar" + var_index.getNextID() );
 						
-						int rpb = IntUtils.toInt( oparams.getRowsInBlock() );
-						int cpb = IntUtils.toInt( oparams.getColsInBlock() );
+						int rpb = (int)( oparams.getRowsInBlock() );
+						int cpb = (int)( oparams.getColsInBlock() );
 						Lop fnameLop = ((Data)node).getNamedInputLop(DataExpression.IO_FILENAME);
 						String fnameStr = (fnameLop instanceof Data && ((Data)fnameLop).isLiteral()) ? 
 								           fnameLop.getOutputParameters().getLabel() 

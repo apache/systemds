@@ -71,7 +71,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 import scala.Tuple2;
@@ -195,7 +195,7 @@ public class ParamservUtils {
 	 * @return new sliced matrix block
 	 */
 	public static MatrixBlock sliceMatrixBlock(MatrixBlock mb, long rl, long rh) {
-		return mb.slice(IntUtils.toInt( rl - 1 ), IntUtils.toInt( rh - 1 ));
+		return mb.slice((int)( rl - 1 ), (int)( rh - 1 ));
 	}
 
 	/**
@@ -390,7 +390,7 @@ public class ParamservUtils {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> labelsRDD = (JavaPairRDD<MatrixIndexes, MatrixBlock>)
 			sec.getRDDHandleForMatrixObject(labels, InputInfo.BinaryBlockInputInfo);
 
-		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, IntUtils.toInt( features.getNumRows()));
+		DataPartitionerSparkMapper mapper = new DataPartitionerSparkMapper(scheme, workerNum, sec, (int)( features.getNumRows()));
 		JavaPairRDD<Integer, Tuple2<MatrixBlock, MatrixBlock>> result = ParamservUtils
 			.assembleTrainingData(featuresRDD, labelsRDD) // Combine features and labels into a pair (rowBlockID => (features, labels))
 			.flatMapToPair(mapper) // Do the data partitioning on spark (workerID => (rowBlockID, (single row features, single row labels))

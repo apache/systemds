@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MapmmChainSPInstruction extends SPInstruction {
 	private ChainType _chainType = null;
@@ -169,7 +169,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 			MatrixBlock pmV = _pmV.getBlock(1, 1);
 			MatrixIndexes ixIn = arg0._1();
 			MatrixBlock blkIn = arg0._2();
-			int rowIx = IntUtils.toInt(ixIn.getRowIndex());
+			int rowIx = (int)(ixIn.getRowIndex());
 			//execute mapmmchain operation
 			return blkIn.chainMatrixMultOperations(pmV, 
 					_pmW.getBlock(rowIx,1), new MatrixBlock(), _chainType);

@@ -25,7 +25,7 @@ import org.apache.hadoop.mapred.Partitioner;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.TaggedMatrixBlock;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ResultMergeRemotePartitioning implements Partitioner<ResultMergeTaggedMatrixIndexes, TaggedMatrixBlock> 
 {
@@ -46,7 +46,7 @@ public class ResultMergeRemotePartitioning implements Partitioner<ResultMergeTag
     	//the assumption that there is no sparsity skew between blocks.
     	
     	MatrixIndexes ix = key.getIndexes();
-    	int blockid = IntUtils.toInt(ix.getRowIndex() * _numColBlocks + ix.getColumnIndex());
+    	int blockid = (int)(ix.getRowIndex() * _numColBlocks + ix.getColumnIndex());
     	int partition = blockid % numPartitions;
     	
         //int hash = key.getIndexes().hashCode();
@@ -60,7 +60,7 @@ public class ResultMergeRemotePartitioning implements Partitioner<ResultMergeTag
 	{
 		long[] tmp = MRJobConfiguration.getResultMergeMatrixCharacteristics( job );
 		long clen = tmp[1]; 
-		int bclen = IntUtils.toInt(tmp[3]);
+		int bclen = (int)(tmp[3]);
 		_numColBlocks = clen/bclen + ((clen%bclen!=0)? 1 : 0);
 	}
 }

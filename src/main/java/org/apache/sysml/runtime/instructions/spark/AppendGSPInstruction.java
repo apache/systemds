@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class AppendGSPInstruction extends BinarySPInstruction {
 	private boolean _cbind = true;
@@ -165,8 +165,8 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 			_cbind = cbind;
 			_startIx = cbind ? UtilFunctions.computeBlockIndex(mc1.getCols(), mc1.getColsPerBlock()) :
 				UtilFunctions.computeBlockIndex(mc1.getRows(), mc1.getRowsPerBlock());
-			_blen = IntUtils.toInt(cbind ? mc1.getColsPerBlock() : mc1.getRowsPerBlock());
-			_shiftBy = IntUtils.toInt(cbind ? mc1.getCols()%_blen : mc1.getRows()%_blen); 
+			_blen = (int)(cbind ? mc1.getColsPerBlock() : mc1.getRowsPerBlock());
+			_shiftBy = (int)(cbind ? mc1.getCols()%_blen : mc1.getRows()%_blen); 
 			_outlen = cbind ? mc1.getCols()+mc2.getCols() : mc1.getRows()+mc2.getRows();
 		}
 

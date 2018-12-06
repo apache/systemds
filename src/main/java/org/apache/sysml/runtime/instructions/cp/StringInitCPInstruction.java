@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class StringInitCPInstruction extends UnaryCPInstruction {
 	public static final String DELIM = " ";
@@ -73,7 +73,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 	public void processInstruction( ExecutionContext ec ) {
 		//setup output matrix
 		String outName = output.getName();
-		MatrixBlock outBlk = new MatrixBlock(IntUtils.toInt(_rlen), IntUtils.toInt(_clen), false);
+		MatrixBlock outBlk = new MatrixBlock((int)(_rlen), (int)(_clen), false);
 		
 		//init tokenizer 
 		StringTokenizer st = new StringTokenizer(_data, DELIM);
@@ -87,8 +87,8 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 		for( int i=0; i<len; i++ ){
 			String sval = st.nextToken();
 			Double dval = Double.parseDouble(sval);
-			int rix = IntUtils.toInt(i / _clen);
-			int cix = IntUtils.toInt(i % _clen);
+			int rix = (int)(i / _clen);
+			int cix = (int)(i % _clen);
 			outBlk.quickSetValue(rix, cix, dval);
 		}
 		

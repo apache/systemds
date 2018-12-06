@@ -48,7 +48,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class RemoteDPParWorkerReducer extends ParWorker
@@ -121,8 +121,8 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		_dpf = MRJobConfiguration.getPartitioningFormat( job );
 		MatrixCharacteristics mc = MRJobConfiguration.getPartitionedMatrixSize(job);
 		PartitionFormat pf = new PartitionFormat(_dpf, MRJobConfiguration.getPartitioningSizeN(job));
-		_rlen = IntUtils.toInt(pf.getNumRows(mc));
-		_clen = IntUtils.toInt(pf.getNumColumns(mc));
+		_rlen = (int)(pf.getNumRows(mc));
+		_clen = (int)(pf.getNumColumns(mc));
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_iterVar = MRJobConfiguration.getPartitioningItervar( job );
@@ -130,9 +130,9 @@ public class RemoteDPParWorkerReducer extends ParWorker
 		_info = MRJobConfiguration.getPartitioningOutputInfo( job );
 		_tSparseCol = MRJobConfiguration.getPartitioningTransposedCol( job ); 
 		if( _tSparseCol )
-			_partition = new MatrixBlock(IntUtils.toInt(_clen), _rlen, true);
+			_partition = new MatrixBlock((int)(_clen), _rlen, true);
 		else
-			_partition = new MatrixBlock(IntUtils.toInt(_rlen), _clen, false);
+			_partition = new MatrixBlock((int)(_rlen), _clen, false);
 
 		//Step 1: configure parworker
 		String taskID = job.get(MRConfigurationNames.MR_TASK_ID);
@@ -153,7 +153,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			
 			//create local runtime program
 			String in = MRJobConfiguration.getProgramBlocks(job);
-			ParForBody body = ProgramConverter.parseParForBody(in, IntUtils.toInt(_workerID));
+			ParForBody body = ProgramConverter.parseParForBody(in, (int)(_workerID));
 			_childBlocks = body.getChildBlocks();
 			_ec          = body.getEc();
 			_resultVars  = body.getResultVariables();
@@ -243,8 +243,8 @@ public class RemoteDPParWorkerReducer extends ParWorker
 			while( valueList.hasNext() )
 			{
 				PairWritableBlock pairValue = (PairWritableBlock)valueList.next();
-				int row_offset = IntUtils.toInt(pairValue.indexes.getRowIndex()-1)*_brlen;
-				int col_offset = IntUtils.toInt(pairValue.indexes.getColumnIndex()-1)*_bclen;
+				int row_offset = (int)(pairValue.indexes.getRowIndex()-1)*_brlen;
+				int col_offset = (int)(pairValue.indexes.getColumnIndex()-1)*_bclen;
 				MatrixBlock block = pairValue.block;
 				if( !_partition.isInSparseFormat() ) //DENSE
 				{
@@ -298,7 +298,7 @@ public class RemoteDPParWorkerReducer extends ParWorker
 					PairWritableCell pairValue = (PairWritableCell)valueList.next();
 					if( pairValue.indexes.getColumnIndex()<0 )
 						continue; //cells used to ensure empty partitions
-					_partition.quickSetValue(0, IntUtils.toInt(pairValue.indexes.getColumnIndex()-1), pairValue.cell.getValue());
+					_partition.quickSetValue(0, (int)(pairValue.indexes.getColumnIndex()-1), pairValue.cell.getValue());
 				}
 				break;
 			case COLUMN_WISE:
@@ -308,9 +308,9 @@ public class RemoteDPParWorkerReducer extends ParWorker
 					if( pairValue.indexes.getRowIndex()<0 )
 						continue; //cells used to ensure empty partitions
 					if( _tSparseCol )
-						_partition.appendValue(0,IntUtils.toInt(pairValue.indexes.getRowIndex()-1), pairValue.cell.getValue());
+						_partition.appendValue(0,(int)(pairValue.indexes.getRowIndex()-1), pairValue.cell.getValue());
 					else
-						_partition.quickSetValue(IntUtils.toInt(pairValue.indexes.getRowIndex()-1), 0, pairValue.cell.getValue());
+						_partition.quickSetValue((int)(pairValue.indexes.getRowIndex()-1), 0, pairValue.cell.getValue());
 				}
 				break;
 			default: 

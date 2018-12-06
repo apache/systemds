@@ -76,7 +76,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
@@ -287,7 +287,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private int getParLevel(int workerNum) {
-		return Math.max(IntUtils.toInt(Math.ceil((double)getRemainingCores()/workerNum)), 1);
+		return Math.max((int)(Math.ceil((double)getRemainingCores()/workerNum)), 1);
 	}
 
 	private PSUpdateType getUpdateType() {

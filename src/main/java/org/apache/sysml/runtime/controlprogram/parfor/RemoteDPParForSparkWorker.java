@@ -44,7 +44,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -85,8 +85,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 		_aIters = aiters;
 		
 		//setup matrix block partition meta data
-		_rlen = IntUtils.toInt(dpf.getNumRows(mc));
-		_clen = IntUtils.toInt(dpf.getNumColumns(mc));
+		_rlen = (int)(dpf.getNumRows(mc));
+		_clen = (int)(dpf.getNumColumns(mc));
 		_brlen = mc.getRowsPerBlock();
 		_bclen = mc.getColsPerBlock();
 		_tSparseCol = tSparseCol;
@@ -126,7 +126,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			
 			//maintain accumulators
 			_aTasks.add( 1 );
-			_aIters.add( IntUtils.toInt(getExecutedIterations()-numIter) );
+			_aIters.add( (int)(getExecutedIterations()-numIter) );
 		}
 		
 		//write output if required (matrix indexed write)
@@ -144,7 +144,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			CodegenUtils.getClassSync(e.getKey(), e.getValue());
 	
 		//parse and setup parfor body program
-		ParForBody body = ProgramConverter.parseParForBody(_prog, IntUtils.toInt(_workerID), true);
+		ParForBody body = ProgramConverter.parseParForBody(_prog, (int)(_workerID), true);
 		_childBlocks = body.getChildBlocks();
 		_ec          = body.getEc();
 		_resultVars  = body.getResultVariables();
@@ -200,8 +200,8 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 			long lnnz = 0;
 			for( Writable val : valueList ) {
 				PairWritableBlock pval = (PairWritableBlock) val;
-				int row_offset = IntUtils.toInt(pval.indexes.getRowIndex()-1)*_brlen;
-				int col_offset = IntUtils.toInt(pval.indexes.getColumnIndex()-1)*_bclen;
+				int row_offset = (int)(pval.indexes.getRowIndex()-1)*_brlen;
+				int col_offset = (int)(pval.indexes.getColumnIndex()-1)*_bclen;
 				if( !partition.isInSparseFormat() ) //DENSE
 					partition.copy( row_offset, row_offset+pval.block.getNumRows()-1, 
 						col_offset, col_offset+pval.block.getNumColumns()-1,
@@ -255,7 +255,7 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					PairWritableCell pairValue = (PairWritableCell)valueList.iterator().next();
 					if( pairValue.indexes.getColumnIndex()<0 )
 						continue; //cells used to ensure empty partitions
-					partition.quickSetValue(0, IntUtils.toInt(pairValue.indexes.getColumnIndex()-1), pairValue.cell.getValue());
+					partition.quickSetValue(0, (int)(pairValue.indexes.getColumnIndex()-1), pairValue.cell.getValue());
 				}
 				break;
 			case COLUMN_WISE:
@@ -265,9 +265,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 					if( pairValue.indexes.getRowIndex()<0 )
 						continue; //cells used to ensure empty partitions
 					if( _tSparseCol )
-						partition.appendValue(0,IntUtils.toInt(pairValue.indexes.getRowIndex()-1), pairValue.cell.getValue());
+						partition.appendValue(0,(int)(pairValue.indexes.getRowIndex()-1), pairValue.cell.getValue());
 					else
-						partition.quickSetValue(IntUtils.toInt(pairValue.indexes.getRowIndex()-1), 0, pairValue.cell.getValue());
+						partition.quickSetValue((int)(pairValue.indexes.getRowIndex()-1), 0, pairValue.cell.getValue());
 				}
 				break;
 			default: 

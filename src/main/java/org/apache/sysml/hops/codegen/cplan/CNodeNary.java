@@ -27,7 +27,7 @@ import org.apache.sysml.hops.codegen.template.TemplateUtils;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.runtime.util.DnnUtils;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CNodeNary extends CNode
 {
@@ -231,8 +231,8 @@ public class CNodeNary extends CNode
 		int K = Integer.parseInt(inputs.get(off+9).getVarname());
 		int R = Integer.parseInt(inputs.get(off+11).getVarname());
 		int S = Integer.parseInt(inputs.get(off+12).getVarname());
-		int P = IntUtils.toInt(DnnUtils.getP(H, R, 1, 0));
-		int Q = IntUtils.toInt(DnnUtils.getQ(W, S, 1, 0));
+		int P = (int)(DnnUtils.getP(H, R, 1, 0));
+		int Q = (int)(DnnUtils.getQ(W, S, 1, 0));
 		
 		//construct parameter string
 		return "rix, " + StringUtils.join(

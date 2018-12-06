@@ -38,7 +38,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -150,7 +150,7 @@ public class DataPartitionerRemoteMR extends DataPartitioner
 			    default:
 					//do nothing
 		    }
-		    job.setNumReduceTasks( IntUtils.toInt(Math.min( _numReducers, reducerGroups)) ); 	
+		    job.setNumReduceTasks( (int)(Math.min( _numReducers, reducerGroups)) ); 	
 
 			
 			//disable automatic tasks timeouts and speculative task exec

@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 
@@ -139,11 +139,11 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				//output shallow copy of rhs block
 				if( _cbind ) {
 					ret.add( new Tuple2<>(new MatrixIndexes(ix.getRowIndex(), ix.getColumnIndex()+1),
-						_pm.getBlock(IntUtils.toInt(ix.getRowIndex()), 1)) );
+						_pm.getBlock((int)(ix.getRowIndex()), 1)) );
 				}
 				else { //rbind
 					ret.add( new Tuple2<>(new MatrixIndexes(ix.getRowIndex()+1, ix.getColumnIndex()),
-						_pm.getBlock(1, IntUtils.toInt(ix.getColumnIndex()))) );
+						_pm.getBlock(1, (int)(ix.getColumnIndex()))) );
 				}
 			}
 			//case 3: append operation on boundary block
@@ -156,7 +156,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				
 				MatrixBlock value_in2 = null;
 				if( _cbind ) {
-					value_in2 = _pm.getBlock(IntUtils.toInt(ix.getRowIndex()), 1);
+					value_in2 = _pm.getBlock((int)(ix.getRowIndex()), 1);
 					if(in1.getValue().getNumColumns()+value_in2.getNumColumns()>_bclen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex(), ix.getColumnIndex()+1);
@@ -164,7 +164,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 					}
 				}
 				else { //rbind
-					value_in2 = _pm.getBlock(1, IntUtils.toInt(ix.getColumnIndex()));
+					value_in2 = _pm.getBlock(1, (int)(ix.getColumnIndex()));
 					if(in1.getValue().getNumRows()+value_in2.getNumRows()>_brlen) {
 						IndexedMatrixValue second=new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
 						second.getIndexes().setIndexes(ix.getRowIndex()+1, ix.getColumnIndex());
@@ -229,8 +229,8 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 				}
 				//case 3: append operation on boundary block
 				else {
-					int rowix = _cbind ? IntUtils.toInt(ix.getRowIndex()) : 1;
-					int colix = _cbind ? 1 : IntUtils.toInt(ix.getColumnIndex());
+					int rowix = _cbind ? (int)(ix.getRowIndex()) : 1;
+					int colix = _cbind ? 1 : (int)(ix.getColumnIndex());
 					MatrixBlock in2 = _pm.getBlock(rowix, colix);
 					MatrixBlock out = in1.append(in2, new MatrixBlock(), _cbind);
 					return new Tuple2<>(ix, out);

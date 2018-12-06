@@ -42,7 +42,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.LocalFileUtils;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -163,7 +163,7 @@ public class RemoteParWorkerMapper extends ParWorker  //MapReduceBase not requir
 				
 				//create local runtime program
 				String in = MRJobConfiguration.getProgramBlocks(job);
-				ParForBody body = ProgramConverter.parseParForBody(in, IntUtils.toInt(_workerID));
+				ParForBody body = ProgramConverter.parseParForBody(in, (int)(_workerID));
 				_childBlocks = body.getChildBlocks();
 				_ec          = body.getEc();
 				_resultVars  = body.getResultVariables();

@@ -84,7 +84,7 @@ import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.MLContextProxy;
 import org.apache.sysml.utils.Statistics;
 
@@ -377,7 +377,7 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 			else { //default case
 				MatrixBlock mb = mo.acquireRead(); //pin matrix in memory
-				rdd = toMatrixJavaPairRDD(sc, mb, IntUtils.toInt(mo.getNumRowsPerBlock()), IntUtils.toInt(mo.getNumColumnsPerBlock()), numParts, inclEmpty);
+				rdd = toMatrixJavaPairRDD(sc, mb, (int)(mo.getNumRowsPerBlock()), (int)(mo.getNumColumnsPerBlock()), numParts, inclEmpty);
 				mo.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(mc), true);
 			}
@@ -574,8 +574,8 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for matrix
-			int brlen = IntUtils.toInt( mo.getNumRowsPerBlock() );
-			int bclen = IntUtils.toInt( mo.getNumColumnsPerBlock() );
+			int brlen = (int)( mo.getNumRowsPerBlock() );
+			int bclen = (int)( mo.getNumColumnsPerBlock() );
 
 			//create partitioned matrix block and release memory consumed by input
 			MatrixBlock mb = mo.acquireRead();
@@ -584,7 +584,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), brlen, bclen);
-			int numParts = IntUtils.toInt( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
+			int numParts = (int)( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
 			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
@@ -639,7 +639,7 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(-fo.getBroadcastHandle().getPartitionedBroadcastSize());
 
 			//obtain meta data for frame
-			int bclen = IntUtils.toInt( fo.getNumColumns() );
+			int bclen = (int)( fo.getNumColumns() );
 			int brlen = OptimizerUtils.getDefaultFrameSize();
 
 			//create partitioned frame block and release memory consumed by input
@@ -649,7 +649,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//determine coarse-grained partitioning
 			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(fo.getNumRows(), fo.getNumColumns(), brlen, bclen);
-			int numParts = IntUtils.toInt( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
+			int numParts = (int)( Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart) );
 			Broadcast<PartitionedBlock<FrameBlock>>[] ret = new Broadcast[numParts];
 
 			//create coarse-grained partitioned broadcasts
@@ -745,8 +745,8 @@ public class SparkExecutionContext extends ExecutionContext
 			int maxCol = UtilFunctions.computeBlockSize(mc.getCols(), blockCol+1, mc.getColsPerBlock());
 			//copy sub-matrix to block
 			MatrixBlock block = new MatrixBlock(maxRow, maxCol, mb.isInSparseFormat());
-			int row_offset = IntUtils.toInt(blockRow*mc.getRowsPerBlock());
-			int col_offset = IntUtils.toInt(blockCol*mc.getColsPerBlock());
+			int row_offset = (int)(blockRow*mc.getRowsPerBlock());
+			int col_offset = (int)(blockCol*mc.getColsPerBlock());
 			block = mb.slice( row_offset, row_offset+maxRow-1,
 				col_offset, col_offset+maxCol-1, block );
 			//create key-value pair
@@ -763,7 +763,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//create and write subblocks of matrix
 		int blksize = ConfigurationManager.getBlocksize();
-		for(int blockRow = 0; blockRow < IntUtils.toInt(Math.ceil(src.getNumRows()/(double)blksize)); blockRow++)
+		for(int blockRow = 0; blockRow < (int)(Math.ceil(src.getNumRows()/(double)blksize)); blockRow++)
 		{
 			int maxRow = (blockRow*blksize + blksize < src.getNumRows()) ? blksize : src.getNumRows() - blockRow*blksize;
 			int roffset = blockRow*blksize;
@@ -864,8 +864,8 @@ public class SparkExecutionContext extends ExecutionContext
 				MatrixBlock block = keyval._2();
 				
 				//compute row/column block offsets
-				int row_offset = IntUtils.toInt(ix.getRowIndex()-1)*brlen;
-				int col_offset = IntUtils.toInt(ix.getColumnIndex()-1)*bclen;
+				int row_offset = (int)(ix.getRowIndex()-1)*brlen;
+				int col_offset = (int)(ix.getColumnIndex()-1)*bclen;
 				int rows = block.getNumRows();
 				int cols = block.getNumColumns();
 				
@@ -945,7 +945,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//append cell to dense/sparse target in order to avoid shifting for sparse
 			//note: this append requires a final sort of sparse rows
-			out.appendValue(IntUtils.toInt(ix.getRowIndex()-1), IntUtils.toInt(ix.getColumnIndex()-1), cell.getValue());
+			out.appendValue((int)(ix.getRowIndex()-1), (int)(ix.getColumnIndex()-1), cell.getValue());
 		}
 
 		//post-processing output matrix
@@ -976,7 +976,7 @@ public class SparkExecutionContext extends ExecutionContext
 			//unpack index-block pair
 			MatrixIndexes ix = keyval._1();
 			MatrixBlock block = keyval._2();
-			out.setBlock(IntUtils.toInt(ix.getRowIndex()), IntUtils.toInt(ix.getColumnIndex()), block);
+			out.setBlock((int)(ix.getRowIndex()), (int)(ix.getColumnIndex()), block);
 		}
 
 		if (ConfigurationManager.isStatistics()) {
@@ -1009,7 +1009,7 @@ public class SparkExecutionContext extends ExecutionContext
 		for( Tuple2<Long,FrameBlock> keyval : list )
 		{
 			//unpack index-block pair
-			int ix = IntUtils.toInt(keyval._1() - 1);
+			int ix = (int)(keyval._1() - 1);
 			FrameBlock block = keyval._2();
 
 			//copy into output frame
@@ -1315,7 +1315,7 @@ public class SparkExecutionContext extends ExecutionContext
 		if( pool < 0 ) {
 			pool = _poolBuff.length;
 			_poolBuff = Arrays.copyOf(_poolBuff,
-					IntUtils.toInt(Math.min(2L*pool, Integer.MAX_VALUE)));
+					(int)(Math.min(2L*pool, Integer.MAX_VALUE)));
 		}
 		//mark pool name for in use
 		_poolBuff[pool] = true;

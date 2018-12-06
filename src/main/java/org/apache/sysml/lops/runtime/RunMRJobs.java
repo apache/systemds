@@ -67,7 +67,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 
@@ -493,7 +493,7 @@ public class RunMRJobs
 				RandInstruction lrand = (RandInstruction)ldgInst; 
 				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 																	lrand.getProbabilityDensityFunction(), 
-																	IntUtils.toInt(lrand.getRows()), IntUtils.toInt(lrand.getCols()), 
+																	(int)(lrand.getRows()), (int)(lrand.getCols()), 
 																	lrand.getRowsInBlock(), lrand.getColsInBlock(), 
 																	lrand.getSparsity(), lrand.getMinValue(), lrand.getMaxValue(), 
 																	lrand.getPdfParams());

@@ -57,7 +57,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.data.SparseBlock;
 import org.apache.sysml.runtime.util.IndexRange;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.yarn.ropt.YarnClusterAnalyzer;
 
 public class OptimizerUtils 
@@ -520,7 +520,7 @@ public class OptimizerUtils
 			
 			//correction max number of reducers on yarn clusters
 			if( InfrastructureAnalyzer.isYarnEnabled() )
-				ret = IntUtils.toInt(Math.max( ret, YarnClusterAnalyzer.getNumCores()/2 ));
+				ret = (int)(Math.max( ret, YarnClusterAnalyzer.getNumCores()/2 ));
 		}
 		
 		return ret;
@@ -535,7 +535,7 @@ public class OptimizerUtils
 			
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )
-			ret = IntUtils.toInt(Math.max( ret, YarnClusterAnalyzer.getNumCores() ));
+			ret = (int)(Math.max( ret, YarnClusterAnalyzer.getNumCores() ));
 		
 		return ret;
 	}
@@ -583,7 +583,7 @@ public class OptimizerUtils
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
 				     * PARALLEL_CP_READ_PARALLELISM_MULTIPLIER;
-		return IntUtils.toInt( Math.round(dop) );
+		return (int)( Math.round(dop) );
 	}
 
 	public static int getParallelBinaryReadParallelism()
@@ -594,7 +594,7 @@ public class OptimizerUtils
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
 				     * PARALLEL_CP_READ_PARALLELISM_MULTIPLIER;
-		return IntUtils.toInt( Math.round(dop) );
+		return (int)( Math.round(dop) );
 	}
 	
 	/**
@@ -613,7 +613,7 @@ public class OptimizerUtils
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
 				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;
-		return IntUtils.toInt( Math.round(dop) );
+		return (int)( Math.round(dop) );
 	}
 
 	public static int getParallelBinaryWriteParallelism()
@@ -624,7 +624,7 @@ public class OptimizerUtils
 		//compute degree of parallelism for parallel text read
 		double dop = InfrastructureAnalyzer.getLocalParallelism()
 				     * PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER;
-		return IntUtils.toInt( Math.round(dop) );
+		return (int)( Math.round(dop) );
 	}
 	
 	////////////////////////

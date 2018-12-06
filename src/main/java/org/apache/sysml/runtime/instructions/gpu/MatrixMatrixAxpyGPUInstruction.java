@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.instructions.cp.ScalarObject;
 import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstruction {
 	CPOperand constant = null;
@@ -90,7 +90,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		long rlen2 = in2.getNumRows();
 		long clen2 = in2.getNumColumns();
 		if(isValidMMOperation(rlen1, rlen2, clen1, clen2) || isValidMVOperation(rlen1, rlen2, clen1, clen2)) {
-			ec.setMetaData(_output.getName(), IntUtils.toInt(rlen1), IntUtils.toInt(clen1));
+			ec.setMetaData(_output.getName(), (int)(rlen1), (int)(clen1));
 		}
 		else { 
 			throw new DMLRuntimeException("Incorrect dimensions of inputs in GPU axpy operation. input1:" + rlen1 + " X " + clen1 +

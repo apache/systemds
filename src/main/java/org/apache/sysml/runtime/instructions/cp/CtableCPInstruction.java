@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.LongLongDoubleHashMap.EntryType;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CtableCPInstruction extends ComputationCPInstruction {
 	private final String _outDim1;
@@ -111,7 +111,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			//only create result block if dense; it is important not to aggregate on sparse result
 			//blocks because it would implicitly turn the O(N) algorithm into O(N log N). 
 			if( !sparse )
-				resultBlock = new MatrixBlock(IntUtils.toInt(outputDim1), IntUtils.toInt(outputDim2), false); 
+				resultBlock = new MatrixBlock((int)(outputDim1), (int)(outputDim2), false); 
 		}
 		if( _isExpand ){
 			resultBlock = new MatrixBlock( matBlock1.getNumRows(), Integer.MAX_VALUE, true );
@@ -165,7 +165,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			//we need to respect potentially specified output dimensions here, because we might have 
 			//decided for hash-aggregation just to prevent inefficiency in case of sparse outputs.  
 			if( outputDimsKnown )
-				resultBlock = DataConverter.convertToMatrixBlock( resultMap, IntUtils.toInt(outputDim1), IntUtils.toInt(outputDim2) );
+				resultBlock = DataConverter.convertToMatrixBlock( resultMap, (int)(outputDim1), (int)(outputDim2) );
 			else
 				resultBlock = DataConverter.convertToMatrixBlock( resultMap );
 		}

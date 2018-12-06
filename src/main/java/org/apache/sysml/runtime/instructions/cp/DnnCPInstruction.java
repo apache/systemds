@@ -33,7 +33,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysml.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.util.DnnUtils;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.NativeHelper;
 
 public class DnnCPInstruction extends UnaryCPInstruction {
@@ -268,7 +268,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	}
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
-		return IntUtils.toInt( ec.getScalarInput(aL.get(index).getName(),
+		return (int)( ec.getScalarInput(aL.get(index).getName(),
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue());
 	}
 	
@@ -455,8 +455,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		
 		int R = getScalarInput(ec, _filter_shape, 2);
 		int S = getScalarInput(ec, _filter_shape, 3);
-		int P = IntUtils.toInt( DnnUtils.getP(H, R, stride_h, pad_h) );
-		int Q = IntUtils.toInt( DnnUtils.getQ(W, S, stride_w, pad_w) );
+		int P = (int)( DnnUtils.getP(H, R, stride_h, pad_h) );
+		int Q = (int)( DnnUtils.getQ(W, S, stride_w, pad_w) );
 		
 		DnnParameters params = new DnnParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		params.enableNative = NativeHelper.isNativeLibraryLoaded();
@@ -592,7 +592,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	private void resetNumThreads(DnnParameters params, int numRows, int numCols, double sparsity) {
 		if(ConfigurationManager.isGPU()) {
 			double memBudget1Thread = OptimizerUtils.estimateSizeExactSparsity(numRows, numCols, sparsity);
-			int limitedDegreeOfParallelism = IntUtils.toInt( Math.floor(_intermediateMemoryBudget / memBudget1Thread) );
+			int limitedDegreeOfParallelism = (int)( Math.floor(_intermediateMemoryBudget / memBudget1Thread) );
 			if(params.numThreads > limitedDegreeOfParallelism) {
 				params.numThreads = limitedDegreeOfParallelism;
 				if(!warnedUnderUtilitization)

@@ -49,7 +49,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.Pair;
 import org.apache.sysml.runtime.matrix.mapred.IndexedMatrixValue;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -121,7 +121,7 @@ public class SparkUtils
 			return SparkExecutionContext.getDefaultParallelism(true);
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
-		return IntUtils.toInt( Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1));
+		return (int)( Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1));
 	}
 	
 	/**
@@ -188,7 +188,7 @@ public class SparkUtils
 		//compute degree of parallelism and block ranges
 		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.min(
 				Math.max(mc.getRows(),1), mc.getRowsPerBlock()), Math.min(Math.max(mc.getCols(),1), mc.getColsPerBlock()));
-		int par = IntUtils.toInt(Math.min(4*Math.max(SparkExecutionContext.getDefaultParallelism(true),
+		int par = (int)(Math.min(4*Math.max(SparkExecutionContext.getDefaultParallelism(true),
 				Math.ceil(size/InfrastructureAnalyzer.getHDFSBlockSize())), mc.getNumBlocks()));
 		long pNumBlocks = (long)Math.ceil((double)mc.getNumBlocks()/par);
 		

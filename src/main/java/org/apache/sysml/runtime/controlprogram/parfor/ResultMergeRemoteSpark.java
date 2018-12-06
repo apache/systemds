@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class ResultMergeRemoteSpark extends ResultMerge
@@ -121,7 +121,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 		RDDObject ret = null;
 		
 		//determine degree of parallelism
-		int numRed = IntUtils.toInt(determineNumReducers(rlen, clen, brlen, bclen, _numReducers));
+		int numRed = (int)(determineNumReducers(rlen, clen, brlen, bclen, _numReducers));
 		
 		//sanity check for empty src files
 		if( inputs == null || inputs.length==0  )
@@ -198,7 +198,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 	private static int determineNumReducers(long rlen, long clen, int brlen, int bclen, long numRed) {
 		//set the number of mappers and reducers 
 		long reducerGroups = Math.max(rlen/brlen,1) * Math.max(clen/bclen, 1);
-		return IntUtils.toInt(Math.min( numRed, reducerGroups ));
+		return (int)(Math.min( numRed, reducerGroups ));
 	}
 	
 	@SuppressWarnings("unchecked")

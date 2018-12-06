@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.CMOperator;
 import org.apache.sysml.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 
@@ -105,7 +105,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		
 		CMOperator cm_op = ((CMOperator)_optr); 
 		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID )
-			cm_op = cm_op.setCMAggOp(IntUtils.toInt(order.getLongValue()));
+			cm_op = cm_op.setCMAggOp((int)(order.getLongValue()));
 		
 		CM_COV_Object cmobj = null; 
 		if (input3 == null ) {

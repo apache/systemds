@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import org.apache.sysml.hops.OptimizerUtils;
 import org.apache.sysml.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -59,10 +59,10 @@ public class DRSparkScheme extends DataPartitionSparkScheme {
 			long shiftedPosition = (long) partialPerm.getValue(r, 0);
 
 			// Get the shifted block and position
-			int shiftedBlkID =  IntUtils.toInt(shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE + 1);
+			int shiftedBlkID =  (int)(shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE + 1);
 
 			MatrixBlock indicator = _workerIndicator.getBlock(shiftedBlkID, 1);
-			int workerID = IntUtils.toInt( indicator.getValue(IntUtils.toInt( shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE), 0));
+			int workerID = (int)( indicator.getValue((int)( shiftedPosition / OptimizerUtils.DEFAULT_BLOCKSIZE), 0));
 			return new Tuple2<>(workerID, new Tuple2<>(shiftedPosition, rowMB));
 		}).collect(Collectors.toList());
 	}

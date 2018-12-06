@@ -35,7 +35,7 @@ import org.apache.sysml.runtime.matrix.data.WeightedCell;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public abstract class ExtractGroup implements Serializable 
 {
@@ -66,7 +66,7 @@ public abstract class ExtractGroup implements Serializable
 		if(_op instanceof AggregateOperator && _ngroups > 0 
 			&& OptimizerUtils.isValidCPDimensions(_ngroups, target.getNumColumns()) ) 
 		{
-			MatrixBlock tmp = group.groupedAggOperations(target, null, new MatrixBlock(), IntUtils.toInt(_ngroups), _op);
+			MatrixBlock tmp = group.groupedAggOperations(target, null, new MatrixBlock(), (int)(_ngroups), _op);
 			
 			for(int i=0; i<tmp.getNumRows(); i++) {
 				for( int j=0; j<tmp.getNumColumns(); j++ ) {
@@ -140,7 +140,7 @@ public abstract class ExtractGroup implements Serializable
 				throws Exception 
 		{
 			MatrixIndexes ix = arg._1;
-			MatrixBlock group = _pbm.getBlock(IntUtils.toInt(ix.getRowIndex()), 1);
+			MatrixBlock group = _pbm.getBlock((int)(ix.getRowIndex()), 1);
 			MatrixBlock target = arg._2;
 			
 			return execute(ix, group, target).iterator();

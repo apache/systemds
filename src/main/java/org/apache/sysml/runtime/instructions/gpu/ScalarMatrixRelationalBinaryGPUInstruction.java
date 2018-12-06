@@ -28,7 +28,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ScalarMatrixRelationalBinaryGPUInstruction extends RelationalBinaryGPUInstruction {
 
@@ -46,8 +46,8 @@ public class ScalarMatrixRelationalBinaryGPUInstruction extends RelationalBinary
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
 
-		int rlen = IntUtils.toInt(in1.getNumRows());
-		int clen = IntUtils.toInt(in1.getNumColumns());
+		int rlen = (int)(in1.getNumRows());
+		int clen = (int)(in1.getNumColumns());
 		ec.setMetaData(_output.getName(), rlen, clen);
 
 		ScalarOperator sc_op = (ScalarOperator) _optr;

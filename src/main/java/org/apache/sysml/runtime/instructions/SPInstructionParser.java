@@ -73,6 +73,7 @@ import org.apache.sysml.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction;
 import org.apache.sysml.runtime.instructions.spark.SPInstruction.SPType;
+import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysml.runtime.instructions.spark.Tsmm2SPInstruction;
@@ -405,12 +406,15 @@ public class SPInstructionParser extends InstructionParser
 			case Builtin: 
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
-					if ( parts.length == 3 ) {
+					if ( parts.length == 3 || (parts.length == 5 &&
+							UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryMatrixSPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
 						return BinarySPInstruction.parseInstruction(str);
+					} else {
+						throw new DMLRuntimeException("Error parsing the instruction: " + str);
 					}
 				}
 				else {

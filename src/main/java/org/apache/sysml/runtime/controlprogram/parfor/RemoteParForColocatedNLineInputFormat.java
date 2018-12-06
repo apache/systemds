@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PDataPartition
 import org.apache.sysml.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Specific extension of NLineInputFormat in order to ensure data colocation
@@ -49,7 +49,7 @@ public class RemoteParForColocatedNLineInputFormat extends NLineInputFormat
 		MatrixCharacteristics mc = MRJobConfiguration.getPartitionedMatrixSize(job);
 		PDataPartitionFormat dpf = MRJobConfiguration.getPartitioningFormat(job);
 		PartitionFormat pf = new PartitionFormat(dpf, -1);
-		int blen = IntUtils.toInt(pf.isRowwise() ? pf.getNumRows(mc) : pf.getNumColumns(mc));
+		int blen = (int)(pf.isRowwise() ? pf.getNumRows(mc) : pf.getNumColumns(mc));
 		String fname = MRJobConfiguration.getPartitioningFilename(job);
 
 		//create wrapper splits 

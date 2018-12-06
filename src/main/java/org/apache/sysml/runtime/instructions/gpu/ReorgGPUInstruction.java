@@ -29,7 +29,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ReorgGPUInstruction extends GPUInstruction {
 	private CPOperand _input;
@@ -72,8 +72,8 @@ public class ReorgGPUInstruction extends GPUInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		GPUStatistics.incrementNoOfExecutedGPUInst();
 		MatrixObject mat = getMatrixInputForGPUInstruction(ec, _input.getName());
-		int rlen = IntUtils.toInt(mat.getNumColumns());
-		int clen = IntUtils.toInt(mat.getNumRows());
+		int rlen = (int)(mat.getNumColumns());
+		int clen = (int)(mat.getNumRows());
 		//execute operation
 		ec.setMetaData(_output.getName(), rlen, clen);
 		LibMatrixCUDA.transpose(ec, ec.getGPUContext(0), getExtendedOpcode(), mat, _output.getName());

@@ -57,7 +57,7 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -100,8 +100,8 @@ public class RemoteDPParForMR
 			Path path = new Path( input.getFileName() );
 			long rlen = input.getNumRows();
 			long clen = input.getNumColumns();
-			int brlen = IntUtils.toInt( input.getNumRowsPerBlock());
-			int bclen = IntUtils.toInt( input.getNumColumnsPerBlock());
+			int brlen = (int)( input.getNumRowsPerBlock());
+			int bclen = (int)( input.getNumColumnsPerBlock());
 			MRJobConfiguration.setPartitioningInfo(job, rlen, clen, brlen, bclen, InputInfo.BinaryBlockInputInfo, 
 					oi, dpf._dpf, dpf._N, input.getFileName(), itervar, matrixvar, tSparseCol);
 			job.setInputFormat(InputInfo.BinaryBlockInputInfo.inputFormatClass);
@@ -173,8 +173,8 @@ public class RemoteDPParForMR
 			// Process different counters 
 			Statistics.incrementNoOfExecutedMRJobs();
 			Group pgroup = runjob.getCounters().getGroup(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME);
-			int numTasks = IntUtils.toInt(pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() ));
-			int numIters = IntUtils.toInt(pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() ));
+			int numTasks = (int)(pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() ));
+			int numIters = (int)(pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() ));
 			if( ConfigurationManager.isStatistics() && !InfrastructureAnalyzer.isLocalMode() ) {
 				Statistics.incrementJITCompileTime( pgroup.getCounter( Stat.PARFOR_JITCOMPILE.toString() ) );
 				Statistics.incrementJVMgcCount( pgroup.getCounter( Stat.PARFOR_JVMGC_COUNT.toString() ) );

@@ -25,7 +25,7 @@ import java.util.LinkedList;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -52,15 +52,15 @@ public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integ
 	 */
 	@Override
 	public Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> call(Tuple2<Integer, LinkedList<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>> input) throws Exception {
-		MatrixBlock fmb = new MatrixBlock(input._2.size(), IntUtils.toInt( _fcol ), false);
-		MatrixBlock lmb = new MatrixBlock(input._2.size(), IntUtils.toInt( _lcol ), false);
+		MatrixBlock fmb = new MatrixBlock(input._2.size(), (int)( _fcol ), false);
+		MatrixBlock lmb = new MatrixBlock(input._2.size(), (int)( _lcol ), false);
 
 		for (int i = 0; i < input._2.size(); i++) {
 			MatrixBlock tmpFMB = input._2.get(i)._2._1;
 			MatrixBlock tmpLMB = input._2.get(i)._2._2;
 			// Row-wise aggregation
-			fmb = fmb.leftIndexingOperations(tmpFMB, i, i, 0, IntUtils.toInt( _fcol - 1 ), fmb, MatrixObject.UpdateType.INPLACE_PINNED);
-			lmb = lmb.leftIndexingOperations(tmpLMB, i, i, 0, IntUtils.toInt( _lcol - 1 ), lmb, MatrixObject.UpdateType.INPLACE_PINNED);
+			fmb = fmb.leftIndexingOperations(tmpFMB, i, i, 0, (int)( _fcol - 1 ), fmb, MatrixObject.UpdateType.INPLACE_PINNED);
+			lmb = lmb.leftIndexingOperations(tmpLMB, i, i, 0, (int)( _lcol - 1 ), lmb, MatrixObject.UpdateType.INPLACE_PINNED);
 		}
 		return new Tuple2<>(input._1, new Tuple2<>(fmb, lmb));
 	}

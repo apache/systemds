@@ -49,7 +49,7 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * This pmapmm matrix multiplication instruction is still experimental
@@ -106,8 +106,8 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 					.filter(new IsBlockInRange(i+1, i+NUM_ROWBLOCKS*mc1.getRowsPerBlock(), 1, mc1.getCols(), mc1))
 					.mapToPair(new PMapMMRebaseBlocksFunction(i/mc1.getRowsPerBlock()));
 			
-			int rlen = IntUtils.toInt(Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock()));
-			PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, IntUtils.toInt(mc1.getCols()), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
+			int rlen = (int)(Math.min(mc1.getRows()-i, NUM_ROWBLOCKS*mc1.getRowsPerBlock()));
+			PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(rdd, rlen, (int)(mc1.getCols()), mc1.getRowsPerBlock(), mc1.getColsPerBlock(), -1L);
 			Broadcast<PartitionedBlock<MatrixBlock>> bpmb = sec.getSparkContext().broadcast(pmb);
 			
 			//matrix multiplication
@@ -191,7 +191,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 			
 			//get the right hand side matrix
 			for( int i=1; i<=pm.getNumRowBlocks(); i++ ) {
-				MatrixBlock left = pm.getBlock(i, IntUtils.toInt(ixIn.getRowIndex()));
+				MatrixBlock left = pm.getBlock(i, (int)(ixIn.getRowIndex()));
 			
 				//execute matrix-vector mult
 				OperationsOnMatrixValues.matMult(new MatrixIndexes(i,ixIn.getRowIndex()),

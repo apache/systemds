@@ -50,7 +50,7 @@ import org.apache.sysml.runtime.transform.encode.Encoder;
 import org.apache.sysml.runtime.transform.encode.EncoderFactory;
 import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final int TOSTRING_MAXROWS = 100;
@@ -176,7 +176,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			
 			int ngroups = -1;
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-				ngroups = IntUtils.toInt( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
+				ngroups = (int)( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
 			}
 			
 			// compute the result

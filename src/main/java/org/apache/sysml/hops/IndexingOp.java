@@ -31,7 +31,7 @@ import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
-import org.apache.sysml.utils.IntUtils;
+
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 

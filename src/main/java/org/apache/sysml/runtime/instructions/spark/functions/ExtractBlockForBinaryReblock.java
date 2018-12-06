@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 {
@@ -97,8 +97,8 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 					blk.setNonZeros(in.getNonZeros());
 				}
 				else { //general case
-					for(int i2 = 0; i2 <= IntUtils.toInt(rowUpper-rowLower); i2++)
-						for(int j2 = 0; j2 <= IntUtils.toInt(colUpper-colLower); j2++)
+					for(int i2 = 0; i2 <= (int)(rowUpper-rowLower); i2++)
+						for(int j2 = 0; j2 <= (int)(colUpper-colLower); j2++)
 							blk.appendValue(cixi+i2, cixj+j2, in.quickGetValue(aixi+i2, aixj+j2));
 				}
 				retVal.add(new Tuple2<>(indx, blk));

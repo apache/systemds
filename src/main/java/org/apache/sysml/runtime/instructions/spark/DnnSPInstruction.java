@@ -47,7 +47,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DnnUtils;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.NativeHelper;
 
 import scala.Tuple2;
@@ -215,7 +215,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(name);
 		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
 			MatrixCharacteristics mcOut = new MatrixCharacteristics(mcRdd);
-			mcOut.setColsPerBlock(IntUtils.toInt(mcRdd.getCols()));
+			mcOut.setColsPerBlock((int)(mcRdd.getCols()));
 			mcOut.setRowsPerBlock(numRowsPerBlock); 
 			in1 = RDDAggregateUtils.mergeByKey(in1.flatMapToPair(new ExtractBlockForBinaryReblock(mcRdd, mcOut)));
 			// TODO: Inject checkpoint to avoid doing this repeated for validation set
@@ -267,8 +267,8 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			int K = getScalarInput(ec, _filter_shape, 0);
 			int R = getScalarInput(ec, _filter_shape, 2);
 			int S = getScalarInput(ec, _filter_shape, 3);
-			int P = IntUtils.toInt(DnnUtils.getP(H, R, stride_h, pad_h));
-			int Q = IntUtils.toInt(DnnUtils.getQ(W, S, stride_w, pad_w));
+			int P = (int)(DnnUtils.getP(H, R, stride_h, pad_h));
+			int Q = (int)(DnnUtils.getQ(W, S, stride_w, pad_w));
 			
 			DnnParameters params = new DnnParameters(numRowsPerBlock, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, 1);
 			boolean enableNativeBLAS = NativeHelper.isNativeLibraryLoaded(); 
@@ -287,7 +287,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("The current operator doesnot support large outputs.");
 			}
 			sec.setMetaData(output.getName(), 
-					new MetaDataFormat(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, IntUtils.toInt(numCols), nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+					new MetaDataFormat(new MatrixCharacteristics(mcRdd.getRows(), numCols, numRowsPerBlock, (int)(numCols), nnz), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		}
 		else {
 			throw new DMLRuntimeException("Not implemented: " + instOpcode);
@@ -295,7 +295,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	}
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
-		return IntUtils.toInt( ec.getScalarInput(aL.get(index).getName(),
+		return (int)( ec.getScalarInput(aL.get(index).getName(),
 			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue());
 	}
 	

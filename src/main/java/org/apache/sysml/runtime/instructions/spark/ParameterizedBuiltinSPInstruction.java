@@ -83,7 +83,7 @@ import org.apache.sysml.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysml.runtime.transform.meta.TfOffsetMap;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected HashMap<String, String> params;
@@ -241,7 +241,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( targetVar );
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
-			int ngroups = IntUtils.toInt(getLongParam(ec, Statement.GAGG_NUM_GROUPS));
+			int ngroups = (int)(getLongParam(ec, Statement.GAGG_NUM_GROUPS));
 			
 			//single-block aggregation
 			if( ngroups <= mc1.getRowsPerBlock() && mc1.getCols() <= mc1.getColsPerBlock() ) {
@@ -402,12 +402,12 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				
 				//update output statistics (required for correctness)
 				MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-				mcOut.set(rows?maxDim:mcIn.getRows(), rows?mcIn.getCols():maxDim, IntUtils.toInt(brlen), IntUtils.toInt(bclen), mcIn.getNonZeros());
+				mcOut.set(rows?maxDim:mcIn.getRows(), rows?mcIn.getCols():maxDim, (int)(brlen), (int)(bclen), mcIn.getNonZeros());
 			}
 			else //special case: empty output (ensure valid dims)
 			{
 				int n = emptyReturn ? 1 : 0;
-				MatrixBlock out = new MatrixBlock(rows?n:IntUtils.toInt(mcIn.getRows()), rows?IntUtils.toInt(mcIn.getCols()):n, true); 
+				MatrixBlock out = new MatrixBlock(rows?n:(int)(mcIn.getRows()), rows?(int)(mcIn.getCols()):n, true); 
 				sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 			}
 		}
@@ -467,8 +467,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//repartition input vector for higher degree of parallelism 
 			//(avoid scenarios where few input partitions create huge outputs)
 			MatrixCharacteristics mcTmp = new MatrixCharacteristics(dirRows?lmaxVal:mcIn.getRows(),
-					dirRows?mcIn.getRows():lmaxVal, IntUtils.toInt(brlen), IntUtils.toInt(bclen), mcIn.getRows());
-			int numParts = IntUtils.toInt(Math.min(SparkUtils.getNumPreferredPartitions(mcTmp, in), mcIn.getNumBlocks()));
+					dirRows?mcIn.getRows():lmaxVal, (int)(brlen), (int)(bclen), mcIn.getRows());
+			int numParts = (int)(Math.min(SparkUtils.getNumPreferredPartitions(mcTmp, in), mcIn.getNumBlocks()));
 			if( numParts > in.getNumPartitions()*2 )
 				in = in.repartition(numParts);
 			
@@ -483,7 +483,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			//update output statistics (required for correctness)
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, IntUtils.toInt(brlen), IntUtils.toInt(bclen), -1);
+			mcOut.set(dirRows?lmaxVal:mcIn.getRows(), dirRows?mcIn.getRows():lmaxVal, (int)(brlen), (int)(bclen), -1);
 		}
 		else if ( opcode.equalsIgnoreCase("transformapply") ) 
 		{
@@ -506,7 +506,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			
 			//create encoder broadcast (avoiding replication per task) 
 			Encoder encoder = EncoderFactory.createEncoder(params.get("spec"), colnames,
-				fo.getSchema(), IntUtils.toInt(fo.getNumColumns()), meta);
+				fo.getSchema(), (int)(fo.getNumColumns()), meta);
 			mcOut.setDimension(mcIn.getRows()-((omap!=null)?omap.getNumRmRows():0), encoder.getNumCols()); 
 			Broadcast<Encoder> bmeta = sec.getSparkContext().broadcast(encoder);
 			Broadcast<TfOffsetMap> bomap = (omap!=null) ? sec.getSparkContext().broadcast(omap) : null;
@@ -533,7 +533,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//reblock if necessary (clen > bclen)
 			if( mc.getCols() > mc.getNumColBlocks() ) {
 				in = in.mapToPair(new RDDTransformDecodeExpandFunction(
-						IntUtils.toInt(mc.getCols()), mc.getColsPerBlock()));
+						(int)(mc.getCols()), mc.getColsPerBlock()));
 				in = RDDAggregateUtils.mergeByKey(in, false);
 			}
 			
@@ -680,8 +680,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//prepare inputs (for internal api compatibility)
 			IndexedMatrixValue data = SparkUtils.toIndexedMatrixBlock(arg0._1(),arg0._2());
 			IndexedMatrixValue offsets = _rmRows ?
-				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(IntUtils.toInt(arg0._1().getRowIndex()), 1)) :
-				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, IntUtils.toInt(arg0._1().getColumnIndex())));
+				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock((int)(arg0._1().getRowIndex()), 1)) :
+				SparkUtils.toIndexedMatrixBlock(arg0._1(), _off.getBlock(1, (int)(arg0._1().getColumnIndex())));
 			
 			//execute remove empty operations
 			ArrayList<IndexedMatrixValue> out = new ArrayList<>();
@@ -755,7 +755,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//get all inputs
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock target = arg0._2();		
-			MatrixBlock groups = _pbm.getBlock(IntUtils.toInt(ix.getRowIndex()), 1);
+			MatrixBlock groups = _pbm.getBlock((int)(ix.getRowIndex()), 1);
 			
 			//execute map grouped aggregate operations
 			IndexedMatrixValue in1 = SparkUtils.toIndexedMatrixBlock(ix, target);
@@ -791,7 +791,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			//get all inputs
 			MatrixIndexes ix = arg0._1();
 			MatrixBlock target = arg0._2();
-			MatrixBlock groups = _pbm.getBlock(IntUtils.toInt(ix.getRowIndex()), 1);
+			MatrixBlock groups = _pbm.getBlock((int)(ix.getRowIndex()), 1);
 			
 			//execute map grouped aggregate operations
 			return groups.groupedAggOperations(target, null, new MatrixBlock(), _ngroups, _op);
@@ -966,8 +966,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MatrixBlock inBlk = in._2();
 			
 			//construct expanded block via leftindexing
-			int cl = IntUtils.toInt(UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, 0)-1);
-			int cu = IntUtils.toInt(UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, inBlk.getNumColumns()-1)-1);
+			int cl = (int)(UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, 0)-1);
+			int cu = (int)(UtilFunctions.computeCellIndex(inIx.getColumnIndex(), _bclen, inBlk.getNumColumns()-1)-1);
 			MatrixBlock out = new MatrixBlock(inBlk.getNumRows(), _clen, false);
 			out = out.leftIndexingOperations(inBlk, 0, inBlk.getNumRows()-1, cl, cu, null, UpdateType.INPLACE_PINNED);
 			
@@ -982,7 +982,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 			
 			if ( params.get(Statement.GAGG_NUM_GROUPS) != null) {
-				int ngroups = IntUtils.toInt( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
+				int ngroups = (int)( Double.parseDouble(params.get(Statement.GAGG_NUM_GROUPS)));
 				mcOut.set(ngroups, mc1.getCols(), -1, -1); //grouped aggregate with cell output
 			}
 			else {

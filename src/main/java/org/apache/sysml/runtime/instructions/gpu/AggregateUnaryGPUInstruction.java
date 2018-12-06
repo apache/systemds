@@ -31,7 +31,7 @@ import org.apache.sysml.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysml.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.utils.GPUStatistics;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Implements aggregate unary instructions for CUDA
@@ -78,8 +78,8 @@ public class AggregateUnaryGPUInstruction extends GPUInstruction {
     //get inputs
     MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 
-    int rlen = IntUtils.toInt(in1.getNumRows());
-    int clen = IntUtils.toInt(in1.getNumColumns());
+    int rlen = (int)(in1.getNumRows());
+    int clen = (int)(in1.getNumColumns());
 
     IndexFunction indexFunction = ((AggregateUnaryOperator) _optr).indexFn;
     if (indexFunction instanceof ReduceRow){  // COL{SUM, MAX...}

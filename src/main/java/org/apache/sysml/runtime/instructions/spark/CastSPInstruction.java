@@ -36,7 +36,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class CastSPInstruction extends UnarySPInstruction {
 
@@ -87,7 +87,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		//update schema information for output frame
 		if( opcode.equals(UnaryCP.CAST_AS_FRAME_OPCODE) ) {
 			sec.getFrameObject(output.getName()).setSchema(
-				UtilFunctions.nCopies(IntUtils.toInt(mcIn.getCols()), ValueType.DOUBLE));
+				UtilFunctions.nCopies((int)(mcIn.getCols()), ValueType.DOUBLE));
 		}
 	}
 }

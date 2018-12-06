@@ -67,7 +67,7 @@ import org.apache.sysml.runtime.transform.TfUtils;
 import org.apache.sysml.runtime.util.DataConverter;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.UtilFunctions;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -102,7 +102,7 @@ public class FrameRDDConverterUtils
 		
 		//prepare default schema if needed
 		if( schema == null || schema.length==1 )
-			schema = UtilFunctions.nCopies(IntUtils.toInt(mc.getCols()), ValueType.STRING);
+			schema = UtilFunctions.nCopies((int)(mc.getCols()), ValueType.STRING);
 
 		//convert csv rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<Long, FrameBlock> out = prepinput.mapPartitionsToPair(
@@ -154,7 +154,7 @@ public class FrameRDDConverterUtils
 			JavaPairRDD<Long, Text> input, MatrixCharacteristics mc, ValueType[] schema ) {
 		//prepare default schema if needed
 		if( schema == null || schema.length==1 ) {
-			schema = UtilFunctions.nCopies(IntUtils.toInt(mc.getCols()), 
+			schema = UtilFunctions.nCopies((int)(mc.getCols()), 
 				(schema!=null) ? schema[0] : ValueType.STRING);
 		}
 		
@@ -190,7 +190,7 @@ public class FrameRDDConverterUtils
 		if(mcIn.getCols() > mcIn.getColsPerBlock()) {
 			//split matrix blocks into extended matrix blocks 
 			in = in.flatMapToPair(new MatrixFrameReblockFunction(mcIn));
-			mc.setBlockSize(MatrixFrameReblockFunction.computeBlockSize(mc), IntUtils.toInt(mc.getCols()));
+			mc.setBlockSize(MatrixFrameReblockFunction.computeBlockSize(mc), (int)(mc.getCols()));
 			
 			//shuffle matrix blocks (instead of frame blocks) in order to exploit 
 			//sparse formats (for sparse or wide matrices) during shuffle
@@ -239,8 +239,8 @@ public class FrameRDDConverterUtils
 				df.javaRDD().zipWithIndex(); //zip row index
 
 		//convert data frame to frame schema (prepare once)
-		String[] colnames = new String[IntUtils.toInt(mc.getCols())];
-		ValueType[] fschema = new ValueType[IntUtils.toInt(mc.getCols())];
+		String[] colnames = new String[(int)(mc.getCols())];
+		ValueType[] fschema = new ValueType[(int)(mc.getCols())];
 		int colVect = convertDFSchemaToFrameSchema(df.schema(), colnames, fschema, containsID);
 		out.set(colnames, fschema); //make schema available
 		
@@ -261,7 +261,7 @@ public class FrameRDDConverterUtils
 				
 		//create data frame schema
 		if( schema == null )
-			schema = UtilFunctions.nCopies(IntUtils.toInt(mc.getCols()), ValueType.STRING);
+			schema = UtilFunctions.nCopies((int)(mc.getCols()), ValueType.STRING);
 		StructType dfSchema = convertFrameSchemaToDFSchema(schema, true);
 	
 		//rdd to data frame conversion
@@ -553,7 +553,7 @@ public class FrameRDDConverterUtils
 			_schema = schema;
 			_hasHeader = hasHeader;
 			_delim = delim;
-			_maxRowsPerBlock = Math.max(IntUtils.toInt(FrameBlock.BUFFER_SIZE/_clen), 1);
+			_maxRowsPerBlock = Math.max((int)(FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 
 		@Override
@@ -564,7 +564,7 @@ public class FrameRDDConverterUtils
 
 			long ix = -1;
 			FrameBlock fb = null;
-			String[] tmprow = new String[IntUtils.toInt(_clen)]; 
+			String[] tmprow = new String[(int)(_clen)]; 
 			
 			while( arg0.hasNext() )
 			{
@@ -576,11 +576,11 @@ public class FrameRDDConverterUtils
 					continue;
 				}
 				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
-					_mvMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, IntUtils.toInt(_clen+1)));
+					_mvMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)(_clen+1)));
 					continue;
 				}
 				else if( row.startsWith(TfUtils.TXMTD_NDPREFIX) ) {
-					_ndMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, IntUtils.toInt(_clen+1)));
+					_ndMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)(_clen+1)));
 					continue;
 				}
 				
@@ -717,7 +717,7 @@ public class FrameRDDConverterUtils
 			_schema = schema;
 			_containsID = containsID;
 			_colVect = colVect;
-			_maxRowsPerBlock = Math.max(IntUtils.toInt(FrameBlock.BUFFER_SIZE/_clen), 1);
+			_maxRowsPerBlock = Math.max((int)(FrameBlock.BUFFER_SIZE/_clen), 1);
 		}
 		
 		@Override
@@ -728,7 +728,7 @@ public class FrameRDDConverterUtils
 
 			long ix = -1;
 			FrameBlock fb = null;
-			Object[] tmprow = new Object[IntUtils.toInt(_clen)];
+			Object[] tmprow = new Object[(int)(_clen)];
 			
 			while( arg0.hasNext() )
 			{
@@ -816,7 +816,7 @@ public class FrameRDDConverterUtils
 			_clen = mc.getCols();
 			
 			//determine upper bounded buffer len
-			_bufflen = IntUtils.toInt(Math.min(_rlen*_clen, FrameBlock.BUFFER_SIZE));
+			_bufflen = (int)(Math.min(_rlen*_clen, FrameBlock.BUFFER_SIZE));
 		}
 
 		protected void flushBufferToList( FrameReblockBuffer rbuff,  ArrayList<Tuple2<Long,FrameBlock>> ret ) 
@@ -858,7 +858,7 @@ public class FrameRDDConverterUtils
 				st.reset( strVal );
 				long row = st.nextLong();
 				long col = st.nextLong();
-				Object val = UtilFunctions.stringToObject(_schema[IntUtils.toInt(col-1)], st.nextToken());
+				Object val = UtilFunctions.stringToObject(_schema[(int)(col-1)], st.nextToken());
 				
 				//flush buffer if necessary
 				if( rbuff.getSize() >= rbuff.getCapacity() )
@@ -909,7 +909,7 @@ public class FrameRDDConverterUtils
 			long rowix = (ix.getRowIndex()-1)*_brlen+1;
 
 			//global index within frame block (0-based)
-			long cl = IntUtils.toInt((ix.getColumnIndex()-1)*_bclen);
+			long cl = (int)((ix.getColumnIndex()-1)*_bclen);
 			long cu = Math.min(cl+mb.getNumColumns()-1, _clen);
 
 			//prepare output frame blocks 
@@ -917,8 +917,8 @@ public class FrameRDDConverterUtils
 				int ru = Math.min(i+_maxRowsPerBlock, mb.getNumRows())-1;
 				long rix = UtilFunctions.computeBlockIndex(rowix+i, _maxRowsPerBlock);
 				MatrixIndexes ixout = new MatrixIndexes(rix, 1);
-				MatrixBlock out = new MatrixBlock(ru-i+1, IntUtils.toInt(_clen), sparse);
-				out.copy(0, out.getNumRows()-1, IntUtils.toInt(cl), IntUtils.toInt(cu), 
+				MatrixBlock out = new MatrixBlock(ru-i+1, (int)(_clen), sparse);
+				out.copy(0, out.getNumRows()-1, (int)(cl), (int)(cu), 
 					mb.slice(i, ru, 0, mb.getNumColumns()-1, mbreuse), true);
 				out.examSparsity();
 				ret.add(new Tuple2<>(ixout,out));
@@ -936,8 +936,8 @@ public class FrameRDDConverterUtils
 		 */
 		public static int computeBlockSize(MatrixCharacteristics mc) {
 			int brlen = mc.getRowsPerBlock();
-			int basic = Math.max(IntUtils.toInt(FrameBlock.BUFFER_SIZE/mc.getCols()), 1);
-			int div = IntUtils.toInt(Math.ceil((double)brlen/basic));
+			int basic = Math.max((int)(FrameBlock.BUFFER_SIZE/mc.getCols()), 1);
+			int div = (int)(Math.ceil((double)brlen/basic));
 			while( brlen % div != 0 ) 
 				div++;
 			return brlen / div;
@@ -996,8 +996,8 @@ public class FrameRDDConverterUtils
 			for( long rix=rstartix; rix<=rendix; rix++ ) { //for all row blocks
 				long rpos = UtilFunctions.computeCellIndex(rix, brlen, 0);
 				int lrlen = UtilFunctions.computeBlockSize(rlen, rix, brlen);
-				int fix = IntUtils.toInt((rpos-rowIndex>=0) ? rpos-rowIndex : 0);
-				int fix2 = IntUtils.toInt(Math.min(rpos+lrlen-rowIndex-1,blk.getNumRows()-1));
+				int fix = (int)((rpos-rowIndex>=0) ? rpos-rowIndex : 0);
+				int fix2 = (int)(Math.min(rpos+lrlen-rowIndex-1,blk.getNumRows()-1));
 				int mix = UtilFunctions.computeCellInBlock(rowIndex+fix, brlen);
 				int mix2 = mix + (fix2-fix);
 				for( long cix=1; cix<=cendix; cix++ ) { //for all column blocks
@@ -1005,7 +1005,7 @@ public class FrameRDDConverterUtils
 					int lclen = UtilFunctions.computeBlockSize(clen, cix, bclen);
 					MatrixBlock matrix = new MatrixBlock(lrlen, lclen, false);
 					FrameBlock frame = blk.slice(fix, fix2, 
-							IntUtils.toInt(cpos-1), IntUtils.toInt(cpos+lclen-2), new FrameBlock());
+							(int)(cpos-1), (int)(cpos+lclen-2), new FrameBlock());
 					MatrixBlock mframe = DataConverter.convertToMatrixBlock(frame);
 					ret.add(new Tuple2<>(new MatrixIndexes(rix, cix), 
 							matrix.leftIndexingOperations(mframe, mix, mix2, 0, lclen-1, 

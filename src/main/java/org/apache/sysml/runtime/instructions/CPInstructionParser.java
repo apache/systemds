@@ -393,13 +393,15 @@ public class CPInstructionParser extends InstructionParser
 			case Builtin: 
 				String []parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
-					if ( parts.length == 3 || (parts.length == 4 &&
+					if ( parts.length == 3 || (parts.length == 5 &&
 						UtilFunctions.isIntegerNumber(parts[3])) ) {
 						// B=log(A), y=log(x)
 						return UnaryCPInstruction.parseInstruction(str);
 					} else if ( parts.length == 4 ) {
 						// B=log(A,10), y=log(x,10)
 						return BinaryCPInstruction.parseInstruction(str);
+					} else {
+						throw new DMLRuntimeException("Error parsing the instruction: " + str);
 					}
 				}
 				else {

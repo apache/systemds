@@ -34,7 +34,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 /**
@@ -75,7 +75,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 			
 			//determine degree of parallelism
 			MatrixCharacteristics mc = in.getMatrixCharacteristics();
-			int numRed = IntUtils.toInt(determineNumReducers(inRdd, mc, _numRed));
+			int numRed = (int)(determineNumReducers(inRdd, mc, _numRed));
 	
 			//run spark remote data partition job 
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, _format, _n);

@@ -41,7 +41,7 @@ import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.FastStringTokenizer;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 
 /**
  * Remote data partitioner mapper implementation that does the actual
@@ -336,12 +336,12 @@ public class DataPartitionerRemoteMapper
 				switch( _pdf )
 				{
 					case ROW_WISE:
-						_reuseBlk.reset(1, IntUtils.toInt(cols), sparse, IntUtils.toInt(cols*sparsity));								
+						_reuseBlk.reset(1, (int)(cols), sparse, (int)(cols*sparsity));								
 						for( int i=0; i<rows; i++ )
 						{
 							_longKey.set(row_offset+1+i);
 							_pairKey.setIndexes(1, (col_offset/_bclen+1) );	
-							value2.slice(i, i, 0, IntUtils.toInt(cols-1), _reuseBlk);
+							value2.slice(i, i, 0, (int)(cols-1), _reuseBlk);
 							out.collect(_longKey, _pair);
 							_reuseBlk.reset();
 						}
@@ -362,12 +362,12 @@ public class DataPartitionerRemoteMapper
 						out.collect(_longKey, _pair);
 						break;
 					case COLUMN_WISE:
-						_reuseBlk.reset(IntUtils.toInt(rows), 1, false);
+						_reuseBlk.reset((int)(rows), 1, false);
 						for( int i=0; i<cols; i++ )
 						{
 							_longKey.set(col_offset+1+i);
 							_pairKey.setIndexes(row_offset/_brlen+1, 1);							
-							value2.slice(0, IntUtils.toInt(rows-1), i, i, _reuseBlk);
+							value2.slice(0, (int)(rows-1), i, i, _reuseBlk);
 							out.collect(_longKey, _pair );
 							_reuseBlk.reset();
 						}	
@@ -672,9 +672,9 @@ public class DataPartitionerRemoteMapper
 				long numPartitions = -1;
 				switch( _pdf ){
 					case ROW_WISE: 			 numPartitions = _rlen; break;
-					case ROW_BLOCK_WISE:     numPartitions = IntUtils.toInt(Math.ceil(_rlen/(double)_brlen)); break;
+					case ROW_BLOCK_WISE:     numPartitions = (int)(Math.ceil(_rlen/(double)_brlen)); break;
 					case COLUMN_WISE:        numPartitions = _clen; break;
-					case COLUMN_BLOCK_WISE:  numPartitions = IntUtils.toInt(Math.ceil(_clen/(double)_bclen)); break;
+					case COLUMN_BLOCK_WISE:  numPartitions = (int)(Math.ceil(_clen/(double)_bclen)); break;
 					default:
 						//do nothing
 				}

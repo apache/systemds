@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.InputInfo;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.data.OutputInfo;
 import org.apache.sysml.runtime.util.MapReduceTool;
-import org.apache.sysml.utils.IntUtils;
+
 
 
 /**
@@ -150,7 +150,7 @@ public abstract class DataPartitioner
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
-		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, IntUtils.toInt(brlen), IntUtils.toInt(bclen) ); 
+		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)(brlen), (int)(bclen) ); 
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;
@@ -177,11 +177,11 @@ public abstract class DataPartitioner
 		{
 			case ROW_WISE:
 				//default assumption sparse, but reset per input block anyway
-				tmp = new MatrixBlock( 1, IntUtils.toInt(cols), true, IntUtils.toInt(cols*0.1) );
+				tmp = new MatrixBlock( 1, (int)(cols), true, (int)(cols*0.1) );
 				break;
 			case COLUMN_WISE:
 				//default dense because single column alwyas below SKINNY_MATRIX_TURN_POINT
-				tmp = new MatrixBlock( IntUtils.toInt(rows), 1, false );
+				tmp = new MatrixBlock( (int)(rows), 1, false );
 				break;
 			default:
 				//do nothing

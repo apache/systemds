@@ -50,7 +50,7 @@ import org.apache.sysml.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.Operator;
-import org.apache.sysml.utils.IntUtils;
+
 
 import scala.Tuple2;
 
@@ -89,17 +89,17 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 					_type.isLeft() ? mc.getColsPerBlock()+1 : 1, mc.getCols(), mc))
 			  .mapToPair(new ShiftTSMMIndexesFunction(_type));		
 		PartitionedBlock<MatrixBlock> pmb = SparkExecutionContext.toPartitionedMatrixBlock(tmp1, 
-				IntUtils.toInt(_type.isLeft() ? mc.getRows() : mc.getRows() - mc.getRowsPerBlock()), 
-				IntUtils.toInt(_type.isLeft() ? mc.getCols()-mc.getColsPerBlock() : mc.getCols()), 
+				(int)(_type.isLeft() ? mc.getRows() : mc.getRows() - mc.getRowsPerBlock()), 
+				(int)(_type.isLeft() ? mc.getCols()-mc.getColsPerBlock() : mc.getCols()), 
 				mc.getRowsPerBlock(), mc.getColsPerBlock(), -1L);
 		Broadcast<PartitionedBlock<MatrixBlock>> bpmb = sec.getSparkContext().broadcast(pmb);
 		
 		//step 2: second pass of X, compute tsmm/mapmm and aggregate result blocks
-		int outputDim = IntUtils.toInt(_type.isLeft() ? mc.getCols() : mc.getRows());
+		int outputDim = (int)(_type.isLeft() ? mc.getCols() : mc.getRows());
 		if( OptimizerUtils.estimateSize(outputDim, outputDim) <= 32*1024*1024 ) { //default: <=32MB
 			//output large blocks and reduceAll to avoid skew on combineByKey
 			JavaRDD<MatrixBlock> tmp2 = in.map(
-					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, IntUtils.toInt(mc.getRowsPerBlock())));
+					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)(mc.getRowsPerBlock())));
 			MatrixBlock out = RDDAggregateUtils.sumStable(tmp2);
 		      
 			//put output block into symbol table (no lineage because single block)
@@ -151,8 +151,8 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			if( _type.isLeft() ? ixin.getColumnIndex() == 1 : ixin.getRowIndex() == 1 ) {
 				//execute block mapmm operation for full block only (output two blocks, due to symmetry)
 				MatrixBlock mbin2 = _pb.getValue().getBlock( //lookup broadcast block
-						IntUtils.toInt(_type.isLeft()?ixin.getRowIndex():1), 
-						IntUtils.toInt(_type.isLeft()?1:ixin.getColumnIndex()));
+						(int)(_type.isLeft()?ixin.getRowIndex():1), 
+						(int)(_type.isLeft()?1:ixin.getColumnIndex()));
 				MatrixBlock mbin2t = transpose(mbin2, new MatrixBlock()); //prep for transpose rewrite mm
 				
 				MatrixBlock out2 = (MatrixBlock) OperationsOnMatrixValues.matMult( //mm
@@ -206,25 +206,25 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			
 			//execute block tsmm operation
 			MatrixBlock out1 = mbin.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
-			int ix = IntUtils.toInt((_type.isLeft() ? ixin.getColumnIndex() : ixin.getRowIndex())-1) * _blen;
+			int ix = (int)((_type.isLeft() ? ixin.getColumnIndex() : ixin.getRowIndex())-1) * _blen;
 			out.copy(ix, ix+out1.getNumRows()-1, ix, ix+out1.getNumColumns()-1, out1, true);
 			
 			if( fullBlock ) {
 				//execute block mapmm operation for full block only (output two blocks, due to symmetry)
 				MatrixBlock mbin2 = _pb.getValue().getBlock( //lookup broadcast block
-						IntUtils.toInt(_type.isLeft()?ixin.getRowIndex():1), 
-						IntUtils.toInt(_type.isLeft()?1:ixin.getColumnIndex()));
+						(int)(_type.isLeft()?ixin.getRowIndex():1), 
+						(int)(_type.isLeft()?1:ixin.getColumnIndex()));
 				MatrixBlock mbin2t = transpose(mbin2, new MatrixBlock()); //prep for transpose rewrite mm
 				
 				MatrixBlock out2 = OperationsOnMatrixValues.matMult( //mm
 						_type.isLeft() ? mbin2t : mbin, _type.isLeft() ? mbin : mbin2t, new MatrixBlock(), _op);
 				
 				MatrixIndexes ixout2 = _type.isLeft() ? new MatrixIndexes(2,1) : new MatrixIndexes(1,2);
-				out.copy(IntUtils.toInt(ixout2.getRowIndex()-1)*_blen, IntUtils.toInt(ixout2.getRowIndex()-1)*_blen+out2.getNumRows()-1, 
-						IntUtils.toInt(ixout2.getColumnIndex()-1)*_blen, IntUtils.toInt(ixout2.getColumnIndex()-1)*_blen+out2.getNumColumns()-1, out2, true);
+				out.copy((int)(ixout2.getRowIndex()-1)*_blen, (int)(ixout2.getRowIndex()-1)*_blen+out2.getNumRows()-1, 
+						(int)(ixout2.getColumnIndex()-1)*_blen, (int)(ixout2.getColumnIndex()-1)*_blen+out2.getNumColumns()-1, out2, true);
 				MatrixBlock out3 = transpose(out2, new MatrixBlock()); 
-				out.copy(IntUtils.toInt(ixout2.getColumnIndex()-1)*_blen, IntUtils.toInt(ixout2.getColumnIndex()-1)*_blen+out3.getNumRows()-1, 
-						IntUtils.toInt(ixout2.getRowIndex()-1)*_blen, IntUtils.toInt(ixout2.getRowIndex()-1)*_blen+out3.getNumColumns()-1, out3, true);
+				out.copy((int)(ixout2.getColumnIndex()-1)*_blen, (int)(ixout2.getColumnIndex()-1)*_blen+out3.getNumRows()-1, 
+						(int)(ixout2.getRowIndex()-1)*_blen, (int)(ixout2.getRowIndex()-1)*_blen+out3.getNumColumns()-1, out3, true);
 			}
 			
 			return out;

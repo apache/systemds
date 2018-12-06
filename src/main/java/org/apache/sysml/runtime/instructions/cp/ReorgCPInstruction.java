@@ -32,7 +32,7 @@ import org.apache.sysml.runtime.matrix.data.MatrixBlock;
 import org.apache.sysml.runtime.matrix.operators.Operator;
 import org.apache.sysml.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysml.runtime.util.DataConverter;
-import org.apache.sysml.utils.IntUtils;
+
 
 public class ReorgCPInstruction extends UnaryCPInstruction {
 	// sort-specific attributes (to enable variable attributes)
@@ -131,7 +131,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		if( r_op.fn instanceof SortIndex ) {
 			//additional attributes for sort
 			int[] cols = _col.getDataType().isMatrix() ? DataConverter.convertToIntVector(ec.getMatrixInput(_col.getName())) :
-				new int[]{IntUtils.toInt(ec.getScalarInput(_col).getLongValue())};
+				new int[]{(int)(ec.getScalarInput(_col).getLongValue())};
 			boolean desc = ec.getScalarInput(_desc).getBooleanValue();
 			boolean ixret = ec.getScalarInput(_ixret).getBooleanValue();
 			r_op = r_op.setFn(new SortIndex(cols, desc, ixret));

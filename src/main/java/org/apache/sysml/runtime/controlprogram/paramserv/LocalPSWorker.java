@@ -30,7 +30,7 @@ import org.apache.sysml.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysml.runtime.instructions.cp.ListObject;
-import org.apache.sysml.utils.IntUtils;
+
 import org.apache.sysml.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -54,7 +54,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		incWorkerNumber();
 		try {
 			long dataSize = _features.getNumRows();
-			int batchIter = IntUtils.toInt( Math.ceil((double) dataSize / _batchSize) );
+			int batchIter = (int)( Math.ceil((double) dataSize / _batchSize) );
 
 			switch (_freq) {
 				case BATCH:

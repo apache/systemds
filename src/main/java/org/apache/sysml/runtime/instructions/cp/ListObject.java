@@ -27,7 +27,6 @@ import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysml.utils.IntUtils;
 
 public class ListObject extends Data {
 	private static final long serialVersionUID = 3652422061598967358L;
@@ -53,8 +52,8 @@ public class ListObject extends Data {
 		super(DataType.LIST, vt);
 		_data = data;
 		_names = names;
-		_nCacheable = IntUtils.toInt( data.stream().filter(
-			d -> d instanceof CacheableData).count() );
+		_nCacheable = (int) data.stream().filter(
+			d -> d instanceof CacheableData).count();
 	}
 	
 	public ListObject(ListObject that) {

@@ -54,7 +54,6 @@ import org.apache.sysml.runtime.matrix.mapred.MRConfigurationNames;
 import org.apache.sysml.runtime.matrix.mapred.MRJobConfiguration;
 import org.apache.sysml.runtime.util.MapReduceTool;
 import org.apache.sysml.runtime.util.ProgramConverter;
-import org.apache.sysml.utils.IntUtils;
 import org.apache.sysml.utils.Statistics;
 import org.apache.sysml.yarn.DMLAppMasterUtils;
 
@@ -183,20 +182,20 @@ public class RemoteParForMR
 			// Process different counters 
 			Statistics.incrementNoOfExecutedMRJobs();
 			Group pgroup = runjob.getCounters().getGroup(ParForProgramBlock.PARFOR_COUNTER_GROUP_NAME);
-			int numTasks = IntUtils.toInt(pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() ));
-			int numIters = IntUtils.toInt(pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() ));
+			int numTasks = (int)pgroup.getCounter( Stat.PARFOR_NUMTASKS.toString() );
+			int numIters = (int)pgroup.getCounter( Stat.PARFOR_NUMITERS.toString() );
 			if( ConfigurationManager.isStatistics() && !InfrastructureAnalyzer.isLocalMode() ) {
 				Statistics.incrementJITCompileTime( pgroup.getCounter( Stat.PARFOR_JITCOMPILE.toString() ) );
 				Statistics.incrementJVMgcCount( pgroup.getCounter( Stat.PARFOR_JVMGC_COUNT.toString() ) );
 				Statistics.incrementJVMgcTime( pgroup.getCounter( Stat.PARFOR_JVMGC_TIME.toString() ) );
 				Group cgroup = runjob.getCounters().getGroup(CacheableData.CACHING_COUNTER_GROUP_NAME.toString());
-				CacheStatistics.incrementMemHits(cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_MEM.toString() ));
-				CacheStatistics.incrementFSBuffHits(cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString() ));
-				CacheStatistics.incrementFSHits(cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FS.toString() ));
-				CacheStatistics.incrementHDFSHits(cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_HDFS.toString() ));
-				CacheStatistics.incrementFSBuffWrites(cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FSBUFF.toString() ));
-				CacheStatistics.incrementFSWrites(cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FS.toString() ));
-				CacheStatistics.incrementHDFSWrites(cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS.toString() ));
+				CacheStatistics.incrementMemHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_MEM.toString() ));
+				CacheStatistics.incrementFSBuffHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FSBUFF.toString() ));
+				CacheStatistics.incrementFSHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_FS.toString() ));
+				CacheStatistics.incrementHDFSHits((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_HITS_HDFS.toString() ));
+				CacheStatistics.incrementFSBuffWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FSBUFF.toString() ));
+				CacheStatistics.incrementFSWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_FS.toString() ));
+				CacheStatistics.incrementHDFSWrites((int)cgroup.getCounter( CacheStatistics.Stat.CACHE_WRITES_HDFS.toString() ));
 				CacheStatistics.incrementAcquireRTime(cgroup.getCounter( CacheStatistics.Stat.CACHE_TIME_ACQR.toString() ));
 				CacheStatistics.incrementAcquireMTime(cgroup.getCounter( CacheStatistics.Stat.CACHE_TIME_ACQM.toString() ));
 				CacheStatistics.incrementReleaseTime(cgroup.getCounter( CacheStatistics.Stat.CACHE_TIME_RLS.toString() ));

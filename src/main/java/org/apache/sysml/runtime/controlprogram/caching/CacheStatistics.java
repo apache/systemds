@@ -86,7 +86,7 @@ public class CacheStatistics
 		_numHitsMem.increment();
 	}
 	
-	public static void incrementMemHits(long delta) {
+	public static void incrementMemHits(int delta) {
 		_numHitsMem.add(delta);
 	}
 	
@@ -98,7 +98,7 @@ public class CacheStatistics
 		_numHitsFSBuff.increment();
 	}
 	
-	public static void incrementFSBuffHits( long delta ) {
+	public static void incrementFSBuffHits( int delta ) {
 		_numHitsFSBuff.add(delta);
 	}
 	
@@ -110,7 +110,7 @@ public class CacheStatistics
 		_numHitsFS.increment();
 	}
 	
-	public static void incrementFSHits(long delta) {
+	public static void incrementFSHits(int delta) {
 		_numHitsFS.add(delta);
 	}
 	
@@ -122,7 +122,7 @@ public class CacheStatistics
 		_numHitsHDFS.increment();
 	}
 	
-	public static void incrementHDFSHits(long delta) {
+	public static void incrementHDFSHits(int delta) {
 		_numHitsHDFS.add(delta);
 	}
 	
@@ -134,7 +134,7 @@ public class CacheStatistics
 		_numWritesFSBuff.increment();
 	}
 	
-	public static void incrementFSBuffWrites(long delta) {
+	public static void incrementFSBuffWrites(int delta) {
 		_numWritesFSBuff.add(delta);
 	}
 	
@@ -146,7 +146,7 @@ public class CacheStatistics
 		_numWritesFS.increment();
 	}
 	
-	public static void incrementFSWrites(long delta) {
+	public static void incrementFSWrites(int delta) {
 		_numWritesFS.add(delta);
 	}
 	
@@ -158,7 +158,7 @@ public class CacheStatistics
 		_numWritesHDFS.increment();
 	}
 	
-	public static void incrementHDFSWrites(long delta) {
+	public static void incrementHDFSWrites(int delta) {
 		_numWritesHDFS.add(delta);
 	}
 	

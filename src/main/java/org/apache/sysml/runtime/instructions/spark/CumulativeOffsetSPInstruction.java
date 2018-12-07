@@ -95,8 +95,10 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>> joined = null;
 		
+		boolean isInput2BroadcastVar = false;
 		if( _broadcast && !SparkUtils.isHashPartitioned(inData) ) {
 			//broadcast offsets and broadcast join with data
+			isInput2BroadcastVar = true;
 			PartitionedBroadcast<MatrixBlock> inAgg = sec.getBroadcastForVariable(input2.getName());
 			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, brlen));
 		}
@@ -119,7 +121,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			updateUnaryOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineage(output.getName(), input2.getName(), _broadcast);
+		sec.addLineage(output.getName(), input2.getName(), isInput2BroadcastVar);
 	}
 
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

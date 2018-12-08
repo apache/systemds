@@ -344,8 +344,15 @@ public class DataConverter
 		return convertToDoubleVector(mb, true);
 	}
 	
-	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep )
+	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep ) {
+		return convertToDoubleVector(mb, deep, false);
+	}
+	
+	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep, boolean allowNull )
 	{
+		if( mb.isEmpty() && allowNull )
+			return null;
+		
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 

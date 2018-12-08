@@ -2656,9 +2656,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
 			//e.g., cumsum/cumprod/cummin/cumax/cumsumprod
 			if( op.getNumThreads() > 1 )
-				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+				ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
 			else
-				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
+				ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
 		}
 		else if(!sparse && !isEmptyBlock(false)
 			&& OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {

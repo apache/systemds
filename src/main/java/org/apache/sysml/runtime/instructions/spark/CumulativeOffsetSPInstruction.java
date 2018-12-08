@@ -32,6 +32,7 @@ import scala.Tuple2;
 import org.apache.sysml.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysml.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysml.runtime.functionobjects.Builtin;
+import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.instructions.cp.CPOperand;
 import org.apache.sysml.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -94,8 +95,9 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		//get and join inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>> joined = null;
+		boolean broadcast = _broadcast && !SparkUtils.isHashPartitioned(inData);
 		
-		if( _broadcast && !SparkUtils.isHashPartitioned(inData) ) {
+		if( broadcast ) {
 			//broadcast offsets and broadcast join with data
 			PartitionedBroadcast<MatrixBlock> inAgg = sec.getBroadcastForVariable(input2.getName());
 			joined = inData.mapToPair(new RDDCumSplitLookupFunction(inAgg,_initValue, rlen, brlen));
@@ -119,7 +121,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			updateUnaryOutputMatrixCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.addLineage(output.getName(), input2.getName(), _broadcast);
+		sec.addLineage(output.getName(), input2.getName(), broadcast);
 	}
 
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
@@ -229,7 +231,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 			
 			//blockwise cumagg computation, incl offset aggregation
 			return LibMatrixAgg.cumaggregateUnaryMatrix(dblkIn, blkOut, _uop,
-				DataConverter.convertToDoubleVector(oblkIn));
+				DataConverter.convertToDoubleVector(oblkIn, false,
+				((Builtin)_uop.fn).bFunc == BuiltinCode.CUMSUM));
 		}
 	}
 }

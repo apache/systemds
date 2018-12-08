@@ -294,14 +294,16 @@ public class LibMatrixAgg
 		final int n2 = out.clen;
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.isEmptyBlock(false) && (agg == null || aggtype == AggType.CUM_SUM_PROD ) ) {
+		if( in.isEmpty() && (agg == null || aggtype == AggType.CUM_SUM_PROD) ) {
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
 		}
 		
 		//allocate output arrays (if required)
-		if( !uop.isInplace() || in.isInSparseFormat() ) {
+		if( !uop.isInplace() || in.isInSparseFormat() || in.isEmpty() ) {
 			out.reset(m2, n2, false); //always dense
 			out.allocateDenseBlock();
+			if( in.isEmpty() )
+				in.allocateBlock();
 		}
 		else {
 			out = in;
@@ -340,14 +342,14 @@ public class LibMatrixAgg
 		final int mk = aggtype==AggType.CUM_KAHAN_SUM?2:1;
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.isEmptyBlock(false) ){
+		if( in.isEmpty() ){
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
 		}
 
 		//Timing time = new Timing(true);
 		
 		//allocate output arrays (if required)
-		if( !uop.isInplace() || in.isInSparseFormat() ) {
+		if( !uop.isInplace() || in.isInSparseFormat() || in.isEmpty() ) {
 			out.reset(m2, n2, false); //always dense
 			out.allocateDenseBlock();
 		}

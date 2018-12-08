@@ -973,6 +973,18 @@ class Caffe2DML(BaseSystemMLClassifier):
                 raise TypeError("parfor_parameters should be a dictionary")
         return self
 
+    def get_training_script(self):
+        """
+        Return the training DML script
+        """
+        return self.estimator.get_training_script()
+        
+    def get_prediction_script(self):
+        """
+        Return the prediction DML script
+        """
+        return self.estimator.get_prediction_script()
+    
     def summary(self):
         """
         Print the summary of the network

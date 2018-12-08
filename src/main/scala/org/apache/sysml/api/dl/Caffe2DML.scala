@@ -221,6 +221,9 @@ class Caffe2DML(val sc: SparkContext,
     mloutput = baseFit(df, sc)
     new Caffe2DMLModel(this)
   }
+  // Public methods to be called from the Python APIs:
+  def get_training_script():String = getTrainingScript(true)._1.getScriptString
+  def get_prediction_script():String = new Caffe2DMLModel(this).getPredictionScript(true)._1.getScriptString
   // --------------------------------------------------------------
   // Returns true if last 2 of 4 dimensions are 1.
   // The first dimension refers to number of input datapoints.

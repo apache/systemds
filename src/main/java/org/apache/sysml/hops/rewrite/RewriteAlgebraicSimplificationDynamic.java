@@ -175,6 +175,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyMatrixMultDiag(hop, hi, i);          //e.g., diag(X)%*%Y -> X*Y, if ncol(Y)==1 / -> Y*X if ncol(Y)>1 
 			hi = simplifyDiagMatrixMult(hop, hi, i);          //e.g., diag(X%*%Y)->rowSums(X*t(Y)); if col vector
 			hi = simplifySumDiagToTrace(hi);                  //e.g., sum(diag(X)) -> trace(X); if col vector
+			hi = simplifyLowerTriExtraction(hop, hi, i);      //e.g., X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri
 			hi = pushdownBinaryOperationOnDiag(hop, hi, i);   //e.g., diag(X)*7 -> diag(X*7); if col vector
 			hi = pushdownSumOnAdditiveBinary(hop, hi, i);     //e.g., sum(A+B) -> sum(A)+sum(B); if dims(A)==dims(B)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION) {
@@ -1046,7 +1047,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		if( hi instanceof AggUnaryOp ) 
 		{
 			AggUnaryOp au = (AggUnaryOp) hi;
-			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum	
+			if( au.getOp()==AggOp.SUM && au.getDirection()==Direction.RowCol )	//sum
 			{
 				Hop hi2 = au.getInput().get(0);
 				if( hi2 instanceof ReorgOp && ((ReorgOp)hi2).getOp()==ReOrgOp.DIAG && hi2.getDim2()==1 ) //diagM2V
@@ -1054,7 +1055,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					Hop hi3 = hi2.getInput().get(0);
 					
 					//remove diag operator
-					HopRewriteUtils.replaceChildReference(au, hi2, hi3, 0);	
+					HopRewriteUtils.replaceChildReference(au, hi2, hi3, 0);
 					HopRewriteUtils.cleanupUnreferenced(hi2);
 					
 					//change sum to trace
@@ -1063,9 +1064,35 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					LOG.debug("Applied simplifySumDiagToTrace");
 				}
 			}
-				
 		}
 		
+		return hi;
+	}
+	
+	private static Hop simplifyLowerTriExtraction(Hop parent, Hop hi, int pos) {
+		//pattern: X * cumsum(diag(matrix(1,nrow(X),1))) -> lower.tri (only right)
+		if( HopRewriteUtils.isBinary(hi, OpOp2.MULT) 
+			&& hi.getDim1() == hi.getDim2() && hi.getDim1() > 1 ) {
+			Hop left = hi.getInput().get(0);
+			Hop right = hi.getInput().get(1);
+			
+			if( HopRewriteUtils.isUnary(right, OpOp1.CUMSUM) && right.getParent().size()==1
+				&& HopRewriteUtils.isReorg(right.getInput().get(0), ReOrgOp.DIAG)
+				&& HopRewriteUtils.isDataGenOpWithConstantValue(right.getInput().get(0).getInput().get(0), 1d))
+			{
+				LinkedHashMap<String,Hop> args = new LinkedHashMap<>();
+				args.put("target", left);
+				args.put("diag", new LiteralOp(true));
+				args.put("values", new LiteralOp(true));
+				Hop hnew = HopRewriteUtils.createParameterizedBuiltinOp(
+					left, args, ParamBuiltinOp.LOWER_TRI);
+				HopRewriteUtils.replaceChildReference(parent, hi, hnew);
+				HopRewriteUtils.removeAllChildReferences(right);
+				
+				hi = hnew;
+				LOG.debug("Applied simplifyLowerTriExtraction");
+			}
+		}
 		return hi;
 	}
 	

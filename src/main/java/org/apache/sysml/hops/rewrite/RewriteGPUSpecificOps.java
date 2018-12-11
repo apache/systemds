@@ -176,19 +176,19 @@ public class RewriteGPUSpecificOps extends HopRewriteRuleWithPatternMatcher {
 	// norm = bias_multiply(centered, cache_inv_var)  # shape (N, C*Hin*Win)
 	// # Compute gradients during training
 	// dgamma = util::channel_sums(dout*norm, C, Hin, Win)
-	private static final HopDagPatternMatcher _batchNormDGamma;
-	static {
-		_batchNormDGamma = util_channel_sums(
-				mult(	leaf("dout", MATRIX).fitsOnGPU(3),
-						bias_multiply(bias_add(leaf("X", MATRIX), unaryMinus(leaf("ema_mean", MATRIX))), 
-				leaf("ema_var", MATRIX))), leaf("C", SCALAR), leaf("HW", SCALAR));
-	}
-	private static final Function<Hop, Hop> _batchNormDGammaReplacer = hi -> {
-		LOG.debug("Applied batchNormDGamma rewrite.");
-		Hop newHop = HopRewriteUtils.createDnnOp(_batchNormDGamma, OpOpDnn.BATCH_NORM2D_BACKWARD_DGAMMA, 
-				"ema_mean", "dout", "X", "ema_var");
-		return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
-	};
+//	private static final HopDagPatternMatcher _batchNormDGamma;
+//	static {
+//		_batchNormDGamma = util_channel_sums(
+//				mult(	leaf("dout", MATRIX).fitsOnGPU(3),
+//						bias_multiply(bias_add(leaf("X", MATRIX), unaryMinus(leaf("ema_mean", MATRIX))), 
+//				leaf("ema_var", MATRIX))), leaf("C", SCALAR), leaf("HW", SCALAR));
+//	}
+//	private static final Function<Hop, Hop> _batchNormDGammaReplacer = hi -> {
+//		LOG.debug("Applied batchNormDGamma rewrite.");
+//		Hop newHop = HopRewriteUtils.createDnnOp(_batchNormDGamma, OpOpDnn.BATCH_NORM2D_BACKWARD_DGAMMA, 
+//				"ema_mean", "dout", "X", "ema_var");
+//		return HopRewriteUtils.rewireAllParentChildReferences(hi, newHop);
+//	};
 		
 	// Pattern 3:
 	private static final HopDagPatternMatcher _batchNormTest;

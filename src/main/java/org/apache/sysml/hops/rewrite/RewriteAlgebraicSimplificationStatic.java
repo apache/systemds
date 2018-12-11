@@ -183,6 +183,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 			hi = simplifyOuterSeqExpand(hop, hi, i);             //e.g., outer(v, seq(1,m), "==") -> rexpand(v, max=m, dir=row, ignore=true, cast=false)
 			hi = simplifyBinaryComparisonChain(hop, hi, i);      //e.g., outer(v1,v2,"==")==1 -> outer(v1,v2,"=="), outer(v1,v2,"==")==0 -> outer(v1,v2,"!="), 
+			hi = simplifyCumsumColOrFullAggregates(hi);          //e.g., colSums(cumsum(X)) -> cumSums(X*seq(nrow(X),1))
+			hi = simplifyCumsumReverse(hop, hi, i);              //e.g., rev(cumsum(rev(X))) -> X + colSums(X) - cumsum(X)
+			
 			
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
@@ -1841,6 +1844,48 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 		}
 		
+		return hi;
+	}
+	
+	private static Hop simplifyCumsumColOrFullAggregates(Hop hi) {
+		//pattern: colSums(cumsum(X)) -> cumSums(X*seq(nrow(X),1))
+		if( (HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM, Direction.Col)
+			|| HopRewriteUtils.isAggUnaryOp(hi, AggOp.SUM, Direction.RowCol))
+			&& HopRewriteUtils.isUnary(hi.getInput().get(0), OpOp1.CUMSUM)
+			&& hi.getInput().get(0).getParent().size()==1)
+		{
+			Hop cumsumX = hi.getInput().get(0);
+			Hop X = cumsumX.getInput().get(0);
+			Hop mult = HopRewriteUtils.createBinary(X,
+				HopRewriteUtils.createSeqDataGenOp(X, false), OpOp2.MULT);
+			HopRewriteUtils.replaceChildReference(hi, cumsumX, mult);
+			HopRewriteUtils.removeAllChildReferences(cumsumX);
+			LOG.debug("Applied simplifyCumsumColOrFullAggregates (line "+hi.getBeginLine()+")");
+		}
+		return hi;
+	}
+	
+	private static Hop simplifyCumsumReverse(Hop parent, Hop hi, int pos) {
+		//pattern: rev(cumsum(rev(X))) -> X + colSums(X) - cumsum(X)
+		if( HopRewriteUtils.isReorg(hi, ReOrgOp.REV)
+			&& HopRewriteUtils.isUnary(hi.getInput().get(0), OpOp1.CUMSUM)
+			&& hi.getInput().get(0).getParent().size()==1
+			&& HopRewriteUtils.isReorg(hi.getInput().get(0).getInput().get(0), ReOrgOp.REV)
+			&& hi.getInput().get(0).getInput().get(0).getParent().size()==1)
+		{
+			Hop cumsumX = hi.getInput().get(0);
+			Hop revX = cumsumX.getInput().get(0);
+			Hop X = revX.getInput().get(0);
+			Hop plus = HopRewriteUtils.createBinary(X, HopRewriteUtils
+				.createAggUnaryOp(X, AggOp.SUM, Direction.Col), OpOp2.PLUS);
+			Hop minus = HopRewriteUtils.createBinary(plus,
+				HopRewriteUtils.createUnary(X, OpOp1.CUMSUM), OpOp2.MINUS);
+			HopRewriteUtils.replaceChildReference(parent, hi, minus, pos);
+			HopRewriteUtils.cleanupUnreferenced(hi, cumsumX, revX);
+			
+			hi = minus;
+			LOG.debug("Applied simplifyCumsumReverse (line "+hi.getBeginLine()+")");
+		}
 		return hi;
 	}
 	

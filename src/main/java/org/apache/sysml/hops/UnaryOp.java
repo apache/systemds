@@ -42,6 +42,8 @@ import org.apache.sysml.lops.UnaryCP;
 import org.apache.sysml.parser.Expression.DataType;
 import org.apache.sysml.parser.Expression.ValueType;
 import org.apache.sysml.runtime.matrix.MatrixCharacteristics;
+import org.apache.sysml.runtime.matrix.data.MatrixBlock;
+import org.apache.sysml.runtime.util.UtilFunctions;
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
@@ -562,14 +564,19 @@ public class UnaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz)
 	{
 		double ret = 0;
 		
-		if ( _op == OpOp1.IQM || _op == OpOp1.MEDIAN) {
+		if( _op == OpOp1.IQM || _op == OpOp1.MEDIAN ) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 
+		}
+		else if( isCumulativeUnaryOperation() ) {
+			//account for potential final dense-sparse transformation (worst-case sparse representation)
+			ret += MatrixBlock.estimateSizeSparseInMemory(dim1, dim2,
+				MatrixBlock.SPARSITY_TURN_POINT - UtilFunctions.DOUBLE_EPS);
 		}
 
 		if (isGPUEnabled()) {

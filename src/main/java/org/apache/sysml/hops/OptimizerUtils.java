@@ -914,7 +914,11 @@ public class OptimizerUtils
 	 * @return true if the given matrix characteristics exceed threshold
 	 */
 	public static boolean exceedsCachingThreshold(long dim2, double outMem) {
-		return !(dim2 > 1 && outMem < getLocalMemBudget()
+		//NOTE: We heuristically cache matrices that are close to or larger
+		//than the local memory budget. The different relative fractions 
+		//according to number of columns is reflecting common operations
+		//(e.g., two inputs/one output for binary vector operations)
+		return !(dim2 > 1 && outMem < getLocalMemBudget()/2
 			|| dim2 == 1 && outMem < getLocalMemBudget()/3);
 	}
 	

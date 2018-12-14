@@ -278,29 +278,39 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val ml           = new MLContext(sc)
     updateML(ml)
     val readScript      = dml(dmlRead("X", X_file)).out("X")
-	val res = ml.execute(readScript)
+	  val res = ml.execute(readScript)
     val script = getPredictionScript(isSingleNode)
     val modelPredict = ml.execute(script._1.in(script._2, res.getMatrix("X")))
     return modelPredict.getMatrix(probVar)
   }
+  
+  def replacePredictionWithProb(script: (Script, String), probVar: String, C: Int, H: Int, W: Int): Unit = {
+    // Append prediction code:
+    val newDML = "source(\"nn/util.dml\") as util;\n" + 
+      script._1.getScriptString + 
+      "\nPrediction = util::predict_class(" + probVar + ", " + C + ", " + H + ", " + W + ");"
+    script._1.setScriptString(newDML)
+    
+    // Modify the output variables -> remove probability matrix and add Prediction
+    val outputVariables = new java.util.HashSet[String](script._1.getOutputVariables)
+    outputVariables.remove(probVar)
+    outputVariables.add("Prediction")
+    script._1.clearOutputs()
+    script._1.out(outputVariables.toList)
+  }
 
   def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock = {
-    val Prob = baseTransformHelper(X, sc, probVar, C, H, W)
-    val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W);")
-      .out("Prediction")
-      .in("Prob", Prob.toMatrixBlock, Prob.getMatrixMetadata)
-      .in("C", C)
-      .in("H", H)
-      .in("W", W)
+    val isSingleNode = true
+    val ml           = new MLContext(sc)
+    updateML(ml)
+    val script = getPredictionScript(isSingleNode)
     
-    System.gc();
-    val freeMem = Runtime.getRuntime().freeMemory();
-    if(freeMem < OptimizerUtils.getLocalMemBudget()) {
-    	val LOG = LogFactory.getLog(classOf[BaseSystemMLClassifierModel].getName())
-    	LOG.warn("SystemML local memory budget:" + OptimizerUtils.toMB(OptimizerUtils.getLocalMemBudget()) + " mb. Approximate free memory available:" + OptimizerUtils.toMB(freeMem));
-    }
-    val ret = (new MLContext(sc)).execute(script1).getMatrix("Prediction").toMatrixBlock
-
+    replacePredictionWithProb(script, probVar, C, H, W)
+    
+    // Now execute the prediction script directly
+    val ret = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
+              .getMatrix("Prediction").toMatrixBlock
+              
     if (ret.getNumColumns != 1 && H == 1 && W == 1) {
       throw new RuntimeException("Expected predicted label to be a column vector")
     }
@@ -312,9 +322,6 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val ml           = new MLContext(sc)
     updateML(ml)
     val script = getPredictionScript(isSingleNode)
-    // Uncomment for debugging
-    // ml.setExplainLevel(ExplainLevel.RECOMPILE_RUNTIME)
-    
     val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
     return modelPredict.getMatrix(probVar)
   }

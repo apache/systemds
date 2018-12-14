@@ -126,13 +126,19 @@ public class RDDConverterUtilsExt
 		return df.select(columns.get(0), scala.collection.JavaConversions.asScalaBuffer(columnToSelect).toList());
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen) {
-		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false);
+	// data_type: 0: int, 1: float and 2: double
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, long dataType) {
+		return convertPy4JArrayToMB(data, (int)rlen, (int)clen, false, dataType);
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen) {
-		return convertPy4JArrayToMB(data, rlen, clen, false);
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, int dataType) {
+		return convertPy4JArrayToMB(data, rlen, clen, false, dataType);
 	}
+	
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse, long dataType) {
+		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse, dataType);
+	}
+
 
 	public static MatrixBlock convertSciPyCOOToMB(byte [] data, byte [] row, byte [] col, long rlen, long clen, long nnz) {
 		return convertSciPyCOOToMB(data, row, col, (int)rlen, (int)clen, (int)nnz);
@@ -156,10 +162,6 @@ public class RDDConverterUtilsExt
 		mb.recomputeNonZeros();
 		mb.examSparsity();
 		return mb;
-	}
-
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, long rlen, long clen, boolean isSparse) {
-		return convertPy4JArrayToMB(data, (int) rlen, (int) clen, isSparse);
 	}
 
 	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
@@ -195,7 +197,8 @@ public class RDDConverterUtilsExt
 		ret.examSparsity();
 	}
 
-	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse) {
+	// data_type: 0: int, 1: float and 2: double
+	public static MatrixBlock convertPy4JArrayToMB(byte [] data, int rlen, int clen, boolean isSparse, long dataType) {
 		MatrixBlock mb = new MatrixBlock(rlen, clen, isSparse, -1);
 		if(isSparse) {
 			throw new DMLRuntimeException("Convertion to sparse format not supported");
@@ -207,9 +210,19 @@ public class RDDConverterUtilsExt
 			double [] denseBlock = new double[(int) limit];
 			ByteBuffer buf = ByteBuffer.wrap(data);
 			buf.order(ByteOrder.nativeOrder());
-			for(int i = 0; i < rlen*clen; i++) {
-				denseBlock[i] = buf.getDouble();
+			if(dataType == 0) {
+				for(int i = 0; i < rlen*clen; i++) 
+					denseBlock[i] = (double)buf.getInt();
 			}
+			else if(dataType == 1) {
+				for(int i = 0; i < rlen*clen; i++) 
+					denseBlock[i] = (double)buf.getFloat();
+			}
+			else if(dataType == 2) {
+				for(int i = 0; i < rlen*clen; i++) 
+					denseBlock[i] = buf.getDouble();
+			}
+			
 			mb.init( denseBlock, rlen, clen );
 		}
 		mb.recomputeNonZeros();

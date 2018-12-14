@@ -28,6 +28,7 @@ import os
 import sys
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
+import numpy as np
 
 import unittest
 
@@ -98,6 +99,30 @@ class TestAPI(unittest.TestCase):
         """
         script = dml(script).input(x1=5, x2=3).output("x3")
         self.assertEqual(ml.execute(script).get("x3"), 8)
+
+    def test_numpy_float64(self):
+        script = """
+        x2 = x1 + 2.15
+        """
+        numpy_x1 = np.random.rand(5, 10).astype(np.float64)
+        script = dml(script).input(x1=numpy_x1).output("x2")
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2.15))
+
+    def test_numpy_float32(self):
+        script = """
+        x2 = x1 + 2.15
+        """
+        numpy_x1 = np.random.rand(5, 10).astype(np.float32)
+        script = dml(script).input(x1=numpy_x1).output("x2")
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2.15))
+
+    def test_numpy_int32(self):
+        script = """
+        x2 = x1 + 2
+        """
+        numpy_x1 = np.random.randint(1000, size=(5, 10)).astype(np.int32)
+        script = dml(script).input(x1=numpy_x1).output("x2")
+        self.assertTrue(np.allclose(ml.execute(script).get("x2").toNumPy(), numpy_x1 + 2))
 
     def test_rdd(self):
         sums = """

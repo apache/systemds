@@ -22,6 +22,7 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 
 import org.apache.sysml.conf.ConfigurationManager;
+import org.apache.sysml.hops.rewrite.HopRewriteUtils;
 import org.apache.sysml.lops.Aggregate;
 import org.apache.sysml.lops.Checkpoint;
 import org.apache.sysml.lops.Aggregate.OperationTypes;
@@ -455,8 +456,15 @@ public class UnaryOp extends MultiThreadedHop
 		long bclen = input.getColsInBlock();
 		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
 		OperationTypes aggtype = getCumulativeAggType();
-		
 		Lop X = input.constructLops();
+		
+		//special case single row block (no offsets needed)
+		if( rlen > 0 && clen > 0 && rlen <= brlen ) {
+			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1),
+				new LiteralOp(clen), getCumulativeInitValue()).constructLops();
+			return constructCumOffBinary(X, offset, aggtype, rlen, clen, brlen, bclen);
+		}
+		
 		Lop TEMP = X;
 		ArrayList<Lop> DATA = new ArrayList<>();
 		int level = 0;
@@ -497,21 +505,26 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//split, group and mr cumsum
 		while( level-- > 0  ) {
-			//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
-			//the subsequent offset binary apply of split aggregates against the original data)
-			double initValue = getCumulativeInitValue();
-			boolean broadcast = ALLOW_CUMAGG_BROADCAST
-				&& OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
-				TEMP.getOutputParameters().getNumRows(), TEMP.getOutputParameters().getNumCols()));
-			
-			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP, 
-					DataType.MATRIX, ValueType.DOUBLE, initValue, broadcast, aggtype, ExecType.SPARK);
-			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(binary);
-			TEMP = binary;
+			TEMP = constructCumOffBinary(DATA.get(level),
+				TEMP, aggtype, rlen, clen, brlen, bclen);
 		}
 		
 		return TEMP;
+	}
+	
+	private Lop constructCumOffBinary(Lop data, Lop offset, OperationTypes aggtype, long rlen, long clen, long brlen, long bclen) {
+		//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
+		//the subsequent offset binary apply of split aggregates against the original data)
+		double initValue = getCumulativeInitValue();
+		boolean broadcast = ALLOW_CUMAGG_BROADCAST
+			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
+			offset.getOutputParameters().getNumRows(), offset.getOutputParameters().getNumCols()));
+		
+		CumulativeOffsetBinary binary = new CumulativeOffsetBinary(data, offset, 
+				DataType.MATRIX, ValueType.DOUBLE, initValue, broadcast, aggtype, ExecType.SPARK);
+		binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+		setLineNumbers(binary);
+		return binary;
 	}
 
 	private OperationTypes getCumulativeAggType() {

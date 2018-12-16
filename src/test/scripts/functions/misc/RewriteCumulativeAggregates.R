@@ -37,7 +37,11 @@ if( num == 1 ) {
 } else if( num == 3 ) {
   R = t(as.matrix(colSums(apply(X, 2, cumsum))));
 } else if( num == 4 ) {
-  R = X;
+  if( nrow(X)==1 ) {
+    R = X;
+  } else {
+    R = apply(X, 2, cumsum);
+  }
 }
 
 writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep="")); 

@@ -21,8 +21,11 @@ package org.tugraz.sysds.parser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.tugraz.sysds.runtime.controlprogram.Program;
+
 
 
 public class DMLProgram 
@@ -37,6 +40,11 @@ public class DMLProgram
 		_blocks = new ArrayList<>();
 		_functionBlocks = new HashMap<>();
 		_namespaces = new HashMap<>();
+	}
+	
+	public DMLProgram(String namespace) {
+		this();
+		_namespaces.put(namespace, new DMLProgram());
 	}
 	
 	public HashMap<String,DMLProgram> getNamespaces(){
@@ -91,10 +99,16 @@ public class DMLProgram
 	
 	public ArrayList<FunctionStatementBlock> getFunctionStatementBlocks() {
 		ArrayList<FunctionStatementBlock> ret = new ArrayList<>();
-		
 		for( DMLProgram nsProg : _namespaces.values() )
 			ret.addAll(nsProg._functionBlocks.values());
-		
+		return ret;
+	}
+	
+	public Map<String,FunctionStatementBlock> getNamedFunctionStatementBlocks() {
+		Map<String, FunctionStatementBlock> ret = new HashMap<>();
+		for( DMLProgram nsProg : _namespaces.values() )
+		for( Entry<String, FunctionStatementBlock> e : nsProg._functionBlocks.entrySet() )
+			ret.put(e.getKey(), e.getValue());
 		return ret;
 	}
 
@@ -102,7 +116,6 @@ public class DMLProgram
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespace);
 		if (namespaceProgram == null)
 			throw new LanguageException( "Namespace does not exist." );
-		
 		namespaceProgram._functionBlocks.put(fname, fsb);
 	}
 	

@@ -35,6 +35,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.curator.framework.api.CreateModalPathAndBytesable;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
@@ -443,33 +444,8 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitImportStatement(ImportStatementContext ctx) {
 		String filePath = getWorkingFilePath(UtilFunctions.unquote(ctx.filePath.getText()));
 		String namespace = getNamespaceSafe(ctx.namespace);
-
-		validateNamespace(namespace, filePath, ctx);
-		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
-
-		DMLProgram prog = null;
-		if (!_f2NS.get().containsKey(scriptID)) {
-			_f2NS.get().put(scriptID, namespace);
-			try {
-				prog = (new DMLParserWrapper()).doParse(filePath,
-					_tScripts.get().get(filePath), getQualifiedNamespace(namespace), argVals);
-			}
-			catch (ParseException e) {
-				notifyErrorListeners(e.getMessage(), ctx.start);
-				return;
-			}
-			if(prog == null) {
-				notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
-				return;
-			}
-			setupContextInfo(ctx.info, namespace, filePath, ctx.filePath.getText(), prog);
-		}
-		else {
-			// Skip redundant parsing (to prevent potential infinite recursion) and
-			// create empty program for this context to allow processing to continue.
-			prog = new DMLProgram();
-			setupContextInfo(ctx.info, namespace, filePath, ctx.filePath.getText(), prog);
-		}
+		DMLProgram prog = parseAndAddImportedFunctions(namespace, filePath, ctx);
+		setupContextInfo(ctx.info, namespace, filePath, ctx.filePath.getText(), prog);
 	}
 
 	// -----------------------------------------------------------------
@@ -1620,9 +1596,11 @@ public class DmlSyntacticValidator implements DmlListener {
 			}
 			
 			if( Builtins.contains(functionName, true, false) ) {
-				//load and add builtin DML-bodied function
-				//TODO load file and add to functions
-				throw new NotImplementedException();
+				//load and add builtin DML-bodied functions
+				String filePath = Builtins.getFilePath(functionName);
+				DMLProgram prog = parseAndAddImportedFunctions(namespace, filePath, ctx);
+				info.addNamespaceFunctions(DMLProgram.DEFAULT_NAMESPACE,
+					prog.getNamedFunctionStatementBlocks());
 			}
 		}
 
@@ -1707,4 +1685,32 @@ public class DmlSyntacticValidator implements DmlListener {
 		return true;
 	}
 	
+	private DMLProgram parseAndAddImportedFunctions(String namespace, String filePath, ParserRuleContext ctx) {
+		validateNamespace(namespace, filePath, ctx);
+		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
+
+		DMLProgram prog = null;
+		if (!_f2NS.get().containsKey(scriptID)) {
+			_f2NS.get().put(scriptID, namespace);
+			try {
+				prog = (new DMLParserWrapper()).doParse(filePath,
+					_tScripts.get().get(filePath), getQualifiedNamespace(namespace), argVals);
+			}
+			catch (ParseException e) {
+				notifyErrorListeners(e.getMessage(), ctx.start);
+				return prog;
+			}
+			if(prog == null) {
+				notifyErrorListeners("One or more errors found during importing a program from file " + filePath, ctx.start);
+				return prog;
+			}
+		}
+		else {
+			// Skip redundant parsing (to prevent potential infinite recursion) and
+			// create empty program for this context to allow processing to continue.
+			System.out.println("skip redundant parsing");
+			prog = new DMLProgram();
+		}
+		return prog;
+	}
 }

@@ -216,6 +216,8 @@ public class DMLParserWrapper extends ParserWrapper
 				return null;
 			}
 
+			//TODO process statements recursively to find statement attached blocks
+			
 			if(current instanceof ImportStatement) {
 				// Handle import statements separately
 				if(stmtCtx.info.namespaces != null) {

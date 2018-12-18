@@ -182,6 +182,7 @@ public enum Builtins {
 		_parameterized = parameterized;
 	}
 	
+	private final static String BUILTIN_DIR = "scripts/builtin/";
 	private final static HashMap<String, Builtins> _map = new HashMap<>();
 	
 	static {
@@ -227,5 +228,13 @@ public enum Builtins {
 	public static Builtins get(String name, boolean params) {
 		Builtins tmp = _map.get(name);
 		return tmp != null && (params == tmp.isParameterized()) ? tmp : null;
+	}
+	
+	public static String getFilePath(String name) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(BUILTIN_DIR);
+		sb.append(name);
+		sb.append(".dml");
+		return sb.toString();
 	}
 }

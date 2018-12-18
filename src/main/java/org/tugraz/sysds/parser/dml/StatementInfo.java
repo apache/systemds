@@ -17,9 +17,12 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser.common;
+package org.tugraz.sysds.parser.dml;
 
-import org.tugraz.sysds.parser.Expression;
+import java.util.HashMap;
+
+import org.tugraz.sysds.parser.DMLProgram;
+import org.tugraz.sysds.parser.Statement;
 
 /**
  * This class exists solely to prevent compiler warnings.
@@ -29,12 +32,14 @@ import org.tugraz.sysds.parser.Expression;
  * (R-like and Python-like dialects), and Antlr-generated code assumes that
  * these classes are present in the parser's namespace.
  */
-public class ExpressionInfo {
-	
-	public Expression expr = null;
 
-	// For parfor and for
-	public Expression from = null;
-	public Expression to = null;
-	public Expression increment = null;
+public class StatementInfo {
+	public Statement stmt = null;
+	
+	// Valid only for import statements
+	public HashMap<String,DMLProgram> namespaces = null;
+	
+	// Valid only for function statement
+	//public String namespace = DMLProgram.DEFAULT_NAMESPACE;
+	public String functionName = "";
 }

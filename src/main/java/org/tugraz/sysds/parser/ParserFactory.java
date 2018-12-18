@@ -22,8 +22,8 @@ package org.tugraz.sysds.parser;
 import java.util.Collections;
 import java.util.Map;
 
-import org.tugraz.sysds.parser.common.CommonSyntacticValidator;
 import org.tugraz.sysds.parser.dml.DMLParserWrapper;
+import org.tugraz.sysds.parser.dml.DmlSyntacticValidator;
 
 public class ParserFactory {
 
@@ -40,7 +40,7 @@ public class ParserFactory {
 	public static ParserWrapper createParser(Map<String, String> nsscripts) {
 		// create the parser instance
 		ParserWrapper ret = new DMLParserWrapper();
-		CommonSyntacticValidator.init(nsscripts);
+		DmlSyntacticValidator.init(nsscripts);
 		return ret;
 	}
 }

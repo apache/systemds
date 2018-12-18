@@ -22,8 +22,8 @@ package org.tugraz.sysds.parser;
 import java.util.List;
 
 import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.parser.common.CustomErrorListener;
-import org.tugraz.sysds.parser.common.CustomErrorListener.ParseIssue;
+import org.tugraz.sysds.parser.dml.CustomErrorListener;
+import org.tugraz.sysds.parser.dml.CustomErrorListener.ParseIssue;
 
 /**
  * This exception is thrown when parse issues are encountered.

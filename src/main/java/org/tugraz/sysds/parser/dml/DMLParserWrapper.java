@@ -42,7 +42,6 @@ import org.tugraz.sysds.parser.ImportStatement;
 import org.tugraz.sysds.parser.LanguageException;
 import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.parser.common.CustomErrorListener;
 import org.tugraz.sysds.parser.dml.DmlParser.FunctionStatementContext;
 import org.tugraz.sysds.parser.dml.DmlParser.ProgramrootContext;
 import org.tugraz.sysds.parser.dml.DmlParser.StatementContext;

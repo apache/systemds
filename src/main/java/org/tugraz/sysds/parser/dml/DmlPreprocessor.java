@@ -26,7 +26,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.tugraz.sysds.parser.common.CustomErrorListener;
 import org.tugraz.sysds.parser.dml.DmlParser.AccumulatorAssignmentStatementContext;
 import org.tugraz.sysds.parser.dml.DmlParser.AddSubExpressionContext;
 import org.tugraz.sysds.parser.dml.DmlParser.AssignmentStatementContext;

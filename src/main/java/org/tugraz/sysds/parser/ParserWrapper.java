@@ -33,7 +33,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.tugraz.sysds.parser.common.CustomErrorListener.ParseIssue;
+import org.tugraz.sysds.parser.dml.CustomErrorListener.ParseIssue;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 
 /**

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.parser.common;
+package org.tugraz.sysds.parser.dml;
 
 import java.util.ArrayList;
 import java.util.Collections;

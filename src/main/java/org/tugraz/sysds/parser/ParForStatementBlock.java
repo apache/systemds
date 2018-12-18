@@ -56,7 +56,6 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
 
 /**
  * This ParForStatementBlock is essentially identical to a ForStatementBlock, except an extended validate

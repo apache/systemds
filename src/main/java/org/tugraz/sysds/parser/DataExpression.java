@@ -38,7 +38,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
-import org.tugraz.sysds.parser.common.CustomErrorListener;
+import org.tugraz.sysds.parser.dml.CustomErrorListener;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM;

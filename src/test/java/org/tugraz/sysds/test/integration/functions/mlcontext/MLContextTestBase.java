@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.integration.mlcontext;
+package org.tugraz.sysds.test.integration.functions.mlcontext;
 
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SparkSession;

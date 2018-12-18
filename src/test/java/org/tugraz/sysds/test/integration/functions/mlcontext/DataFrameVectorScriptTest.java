@@ -49,7 +49,6 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.integration.mlcontext.MLContextTestBase;
 import org.tugraz.sysds.test.utils.TestUtils;
 
 

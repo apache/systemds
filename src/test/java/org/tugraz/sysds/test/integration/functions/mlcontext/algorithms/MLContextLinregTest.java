@@ -17,14 +17,14 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.integration.mlcontext.algorithms;
+package org.tugraz.sysds.test.integration.functions.mlcontext.algorithms;
 
 import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.test.integration.mlcontext.MLContextTestBase;
+import org.tugraz.sysds.test.integration.functions.mlcontext.MLContextTestBase;
 
 public class MLContextLinregTest extends MLContextTestBase {
 	protected static Logger log = Logger.getLogger(MLContextLinregTest.class);

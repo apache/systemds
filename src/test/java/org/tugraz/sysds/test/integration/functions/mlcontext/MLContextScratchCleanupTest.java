@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.integration.mlcontext;
+package org.tugraz.sysds.test.integration.functions.mlcontext;
 
 import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
@@ -37,7 +37,7 @@ import org.tugraz.sysds.test.utils.TestUtils;
 
 public class MLContextScratchCleanupTest extends AutomatedTestBase 
 {
-	private final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
+	private final static String TEST_DIR = "functions/mlcontext";
 	private final static String TEST_NAME = "MLContextScratchCleanup";
 
 	private final static int rows = 1123;

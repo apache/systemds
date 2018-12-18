@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.integration.mlcontext;
+package org.tugraz.sysds.test.integration.functions.mlcontext;
 
 import static org.junit.Assert.assertTrue;
 import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.integration.mlcontext;
+package org.tugraz.sysds.test.integration.functions.mlcontext;
 
 import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dml;
 
@@ -48,7 +48,7 @@ import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.test.integration.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
+import org.tugraz.sysds.test.integration.functions.mlcontext.MLContextTest.CommaSeparatedValueStringToDoubleArrayRow;
 
 import scala.collection.Iterator;
 

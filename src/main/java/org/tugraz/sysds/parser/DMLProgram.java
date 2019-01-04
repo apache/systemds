@@ -104,14 +104,25 @@ public class DMLProgram
 		return ret;
 	}
 	
-	public Map<String,FunctionStatementBlock> getNamedFunctionStatementBlocks() {
+	public Map<String,FunctionStatementBlock> getNamedNSFunctionStatementBlocks() {
 		Map<String, FunctionStatementBlock> ret = new HashMap<>();
 		for( DMLProgram nsProg : _namespaces.values() )
 		for( Entry<String, FunctionStatementBlock> e : nsProg._functionBlocks.entrySet() )
 			ret.put(e.getKey(), e.getValue());
 		return ret;
 	}
+	
+	public Map<String,FunctionStatementBlock> getNamedFunctionStatementBlocks() {
+		Map<String, FunctionStatementBlock> ret = new HashMap<>();
+		for( Entry<String, FunctionStatementBlock> e : _functionBlocks.entrySet() )
+			ret.put(e.getKey(), e.getValue());
+		return ret;
+	}
 
+	public void addFunctionStatementBlock(String fname, FunctionStatementBlock fsb) {
+		_functionBlocks.put(fname, fsb);
+	}
+	
 	public void addFunctionStatementBlock( String namespace, String fname, FunctionStatementBlock fsb ) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespace);
 		if (namespaceProgram == null)

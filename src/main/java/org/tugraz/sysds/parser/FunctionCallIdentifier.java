@@ -22,6 +22,9 @@ package org.tugraz.sysds.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Builtins;
+import org.tugraz.sysds.common.Types.DataType;
+
 
 public class FunctionCallIdentifier extends DataIdentifier 
 {
@@ -95,7 +98,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 			raiseValidateError("namespace " + _namespace + " is not defined ", conditional);
 		}
 		FunctionStatementBlock fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
-		if (fblock == null){
+		if (fblock == null && !Builtins.contains(_name, true, false) ){
 			raiseValidateError("function " + _name + " is undefined in namespace " + _namespace, conditional);
 		}
 		
@@ -117,20 +120,30 @@ public class FunctionCallIdentifier extends DataIdentifier
 					_name + " has both parameter types.", conditional);
 		}
 		
-		// Step 4: validate expressions for each passed parameter and defaults
+		// Step 4: validate expressions for each passed parameter
 		for( ParameterExpression paramExpr : _paramExprs ) {
 			if (paramExpr.getExpr() instanceof FunctionCallIdentifier) {
 				raiseValidateError("UDF function call not supported as parameter to function call", false);
 			}
 			paramExpr.getExpr().validateExpression(ids, constVars, conditional);
 		}
+		
+		// Step 5: replace dml-bodied builtin function calls after type inference
+		if( Builtins.contains(_name, true, false) ) {
+			DataType dt = _paramExprs.get(0).getExpr().getOutput().getDataType();
+			_name = (dt.isMatrix() ? "m_" : "s_") +_name;
+			_namespace = DMLProgram.DEFAULT_NAMESPACE;
+			fblock = dmlp.getFunctionStatementBlock(_namespace, _name);
+		}
+		
+		// Step 6: validate default parameters (after block assignment)
 		FunctionStatement fstmt = (FunctionStatement)fblock.getStatement(0);
 		for( Expression expDef : fstmt.getInputDefaults() ) {
 			if( expDef != null )
 				expDef.validateExpression(ids, constVars, conditional);
 		}
 		
-		// Step 5: constant propagation into function call statement
+		// Step 7: constant propagation into function call statement
 		if( !conditional ) {
 			for( ParameterExpression paramExpr : _paramExprs ) {
 				Expression expri = paramExpr.getExpr();
@@ -143,14 +156,14 @@ public class FunctionCallIdentifier extends DataIdentifier
 			}
 		}
 	
-		// Step 6: check correctness of number of arguments and their types 
+		// Step 8: check correctness of number of arguments and their types 
 		if (fstmt.getInputParams().size() < _paramExprs.size()) { 
 			raiseValidateError("function " + _name 
 					+ " has incorrect number of parameters. Function requires " 
 					+ fstmt.getInputParams().size() + " but was called with " + _paramExprs.size(), conditional);
 		}
 		
-		// Step 7: set the outputs for the function
+		// Step 9: set the outputs for the function
 		_outputs = new Identifier[fstmt.getOutputParams().size()];
 		for(int i=0; i < fstmt.getOutputParams().size(); i++) {
 			_outputs[i] = new DataIdentifier(fstmt.getOutputParams().get(i));

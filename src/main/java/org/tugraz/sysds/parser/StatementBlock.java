@@ -197,6 +197,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),
 						fcall.getName());
 				if (fblock == null) {
+					//special-handling builtin functions that are not yet type-customized
+					if( Builtins.contains(fcall.getName(), true, false) )
+						return false;
+					
 					if (DMLProgram.DEFAULT_NAMESPACE.equals(fcall.getNamespace())) {
 						throw new LanguageException(
 								sourceExpr.printErrorLocation() + "Function " + fcall.getName() + "() is undefined.");
@@ -228,7 +232,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null) {
-					throw new LanguageException(sourceExpr.printErrorLocation() + "function " + fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
+					if( Builtins.contains(fcall.getName(), true, false) )
+						return false;
+					throw new LanguageException(sourceExpr.printErrorLocation() + "function " 
+						+ fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
 				}
 
 				//check for unsupported target indexed identifiers (for consistent error handling)

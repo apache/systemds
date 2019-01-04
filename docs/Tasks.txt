@@ -5,7 +5,7 @@ GENERAL NOTES:
 ---
 
 SYSTEMDS-10 Compiler Rework / Misc
- * 11 Support DML-bodied builtin functions
+ * 11 Support DML-bodied builtin functions                                 OK
  * 12 Remove unnecessary HOP/LOP indirections
  * 13 Refactoring test cases into component/integration
  * 14 Travis integration w/ subset of tests
@@ -26,12 +26,15 @@ SYSTEMDS-30 Builtin and Packaging
  * 35 Replace unnecessary dependencies w/ custom
 
 SYSTEMDS-40 Preprocessing builtins
- * 41 SotA normalization primitives
- * 42 SotA outlier detection primitives
- * 
+ * 41 Add new Winsorize builtin function
+ * 42 SotA normalization primitives
+ * 43 SotA outlier detection primitives
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
  * 52 Support for libsvm files (local/distributed) 
  * 
 
+SYSTEMDS-60 Update SystemML improvements
+ * 61 Take over cumulative aggregate improvements
+ * 62 Take over sparsity estimation improvements

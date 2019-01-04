@@ -57,6 +57,7 @@ import org.tugraz.sysds.parser.ExpressionList;
 import org.tugraz.sysds.parser.ForStatement;
 import org.tugraz.sysds.parser.FunctionCallIdentifier;
 import org.tugraz.sysds.parser.FunctionStatement;
+import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.IfStatement;
 import org.tugraz.sysds.parser.ImportStatement;
 import org.tugraz.sysds.parser.IndexedIdentifier;
@@ -154,7 +155,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	protected HashMap<String, String> sources;
 	// Names of new internal and external functions defined in this script (i.e., currentFile)
 	protected Set<String> functions;
-
+	// DML-bodied builtin functions
+	protected DMLProgram builtinFuns;
+	
 	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		this.errorListener = errorListener;
 		currentFile = errorListener.getCurrentFileName();
@@ -162,6 +165,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		this.sourceNamespace = sourceNamespace;
 		sources = new HashMap<>();
 		functions = (null != prepFunctions) ? prepFunctions : new HashSet<>();
+		builtinFuns = new DMLProgram();
 	}
 
 
@@ -609,18 +613,16 @@ public class DmlSyntacticValidator implements DmlListener {
 		ConditionalPredicate predicate = new ConditionalPredicate(ctx.predicate.info.expr);
 		ifStmt.setConditionalPredicate(predicate);
 		ifStmt.setCtxValuesAndFilename(ctx, currentFile);
-
+		
 		if(ctx.ifBody.size() > 0) {
-			for(StatementContext stmtCtx : ctx.ifBody) {
+			for(StatementContext stmtCtx : ctx.ifBody)
 				ifStmt.addStatementBlockIfBody(getStatementBlock(stmtCtx.info.stmt));
-			}
 			ifStmt.mergeStatementBlocksIfBody();
 		}
 
 		if(ctx.elseBody.size() > 0) {
-			for(StatementContext stmtCtx : ctx.elseBody) {
+			for(StatementContext stmtCtx : ctx.elseBody)
 				ifStmt.addStatementBlockElseBody(getStatementBlock(stmtCtx.info.stmt));
-			}
 			ifStmt.mergeStatementBlocksElseBody();
 		}
 
@@ -636,9 +638,8 @@ public class DmlSyntacticValidator implements DmlListener {
 		whileStmt.setCtxValuesAndFilename(ctx, currentFile);
 
 		if(ctx.body.size() > 0) {
-			for(StatementContext stmtCtx : ctx.body) {
+			for(StatementContext stmtCtx : ctx.body)
 				whileStmt.addStatementBlock(getStatementBlock(stmtCtx.info.stmt));
-			}
 			whileStmt.mergeStatementBlocks();
 		}
 
@@ -661,9 +662,8 @@ public class DmlSyntacticValidator implements DmlListener {
 		forStmt.setPredicate(predicate);
 
 		if(ctx.body.size() > 0) {
-			for(StatementContext stmtCtx : ctx.body) {
+			for(StatementContext stmtCtx : ctx.body)
 				forStmt.addStatementBlock(getStatementBlock(stmtCtx.info.stmt));
-			}
 			forStmt.mergeStatementBlocks();
 		}
 		ctx.info.stmt = forStmt;
@@ -692,9 +692,8 @@ public class DmlSyntacticValidator implements DmlListener {
 				incrementExpr, parForParamValues, currentFile);
 		parForStmt.setPredicate(predicate);
 		if(ctx.body.size() > 0) {
-			for(StatementContext stmtCtx : ctx.body) {
+			for(StatementContext stmtCtx : ctx.body)
 				parForStmt.addStatementBlock(getStatementBlock(stmtCtx.info.stmt));
-			}
 			parForStmt.mergeStatementBlocks();
 		}
 		ctx.info.stmt = parForStmt;
@@ -967,7 +966,26 @@ public class DmlSyntacticValidator implements DmlListener {
 
 	@Override public void enterProgramroot(ProgramrootContext ctx) {}
 
-	@Override public void exitProgramroot(ProgramrootContext ctx) {}
+	@Override 
+	public void exitProgramroot(ProgramrootContext ctx) {
+		//take over dml-bodied builtin functions into list of script functions
+		for( Entry<String,FunctionStatementBlock> e : builtinFuns.getNamedFunctionStatementBlocks().entrySet() ) {
+			FunctionStatementContext fn = new FunctionStatementContext();
+			fn.info = new StatementInfo();
+			fn.info.stmt = e.getValue().getStatement(0);
+			fn.info.functionName = e.getKey();
+			//existing user-function overrides builtin function
+			if( !containsFunction(ctx, e.getKey()) )
+				ctx.functionBlocks.add(fn);
+		}
+	}
+	
+	private static boolean containsFunction(ProgramrootContext ctx, String fname) {
+		for( FunctionStatementContext fn : ctx.functionBlocks )
+			if( fn.info.functionName.equals(fname) )
+				return true;
+		return false;
+	}
 
 	@Override public void enterDataIdExpression(DataIdExpressionContext ctx) {}
 
@@ -1597,8 +1615,8 @@ public class DmlSyntacticValidator implements DmlListener {
 				//load and add builtin DML-bodied functions
 				String filePath = Builtins.getFilePath(functionName);
 				DMLProgram prog = parseAndAddImportedFunctions(namespace, filePath, ctx);
-				info.addNamespaceFunctions(DMLProgram.DEFAULT_NAMESPACE,
-					prog.getNamedFunctionStatementBlocks());
+				for( Entry<String,FunctionStatementBlock> f : prog.getNamedFunctionStatementBlocks().entrySet() )
+					builtinFuns.addFunctionStatementBlock(f.getKey(), f.getValue());
 			}
 		}
 
@@ -1706,7 +1724,6 @@ public class DmlSyntacticValidator implements DmlListener {
 		else {
 			// Skip redundant parsing (to prevent potential infinite recursion) and
 			// create empty program for this context to allow processing to continue.
-			System.out.println("skip redundant parsing");
 			prog = new DMLProgram();
 		}
 		return prog;

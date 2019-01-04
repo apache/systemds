@@ -21,5 +21,5 @@ m_sigmoid = function(Matrix[Double] X) return (Matrix[Double] Y) {
 }
 
 s_sigmoid = function(Double x) return (Double y) {
-  y = 1 / (1 + exp(-y));
+  y = 1 / (1 + exp(-x));
 }

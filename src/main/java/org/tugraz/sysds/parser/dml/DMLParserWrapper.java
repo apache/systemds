@@ -42,6 +42,7 @@ import org.tugraz.sysds.parser.ImportStatement;
 import org.tugraz.sysds.parser.LanguageException;
 import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.parser.ParserWrapper;
+import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.dml.DmlParser.FunctionStatementContext;
 import org.tugraz.sysds.parser.dml.DmlParser.ProgramrootContext;
 import org.tugraz.sysds.parser.dml.DmlParser.StatementContext;
@@ -190,61 +191,58 @@ public class DMLParserWrapper extends ParserWrapper
 		return dmlPgm;
 	}
 	
-	private static DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace) {
-
+	private static DMLProgram createDMLProgram(ProgramrootContext ast, String sourceNamespace)
+	{
 		DMLProgram dmlPgm = new DMLProgram();
-		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0) ? sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;
+		String namespace = (sourceNamespace != null && sourceNamespace.length() > 0)
+			? sourceNamespace : DMLProgram.DEFAULT_NAMESPACE;
 		dmlPgm.getNamespaces().put(namespace, dmlPgm);
 
-		// First add all the functions
+		// add all functions from the main script file
 		for(FunctionStatementContext fn : ast.functionBlocks) {
 			FunctionStatementBlock functionStmtBlk = new FunctionStatementBlock();
 			functionStmtBlk.addStatement(fn.info.stmt);
 			try {
 				dmlPgm.addFunctionStatementBlock(namespace, fn.info.functionName, functionStmtBlk);
 			} catch (LanguageException e) {
-				LOG.error("line: " + fn.start.getLine() + ":" + fn.start.getCharPositionInLine() + " cannot process the function " + fn.info.functionName);
+				LOG.error("line: " + fn.start.getLine() + ":" + fn.start.getCharPositionInLine()
+					+ " error processing function " + fn.info.functionName);
 				return null;
 			}
 		}
 
-		// Then add all the statements
+		// add statements from main script file, as well as 
+		// functions from imports and dml-bodied builtin functions
 		for(StatementContext stmtCtx : ast.blocks) {
-			org.tugraz.sysds.parser.Statement current = stmtCtx.info.stmt;
+			Statement current = stmtCtx.info.stmt;
 			if(current == null) {
-				LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot process the statement");
+				LOG.error("line: " + stmtCtx.start.getLine() + ":" 
+					+ stmtCtx.start.getCharPositionInLine() + " error processing statement");
 				return null;
 			}
-
-			//TODO process statements recursively to find statement attached blocks
 			
 			if(current instanceof ImportStatement) {
 				// Handle import statements separately
 				if(stmtCtx.info.namespaces != null) {
 					// Add the DMLProgram entries into current program
-					for(Map.Entry<String, DMLProgram> entry : stmtCtx.info.namespaces.entrySet()) {
-						// TODO handle namespace key already exists for different program value instead of overwriting
-						DMLProgram prog = entry.getValue();
-						if (prog != null && prog.getNamespaces().size() > 0) {
-							dmlPgm.getNamespaces().put(entry.getKey(), prog);
-						}
-						
+					for(Map.Entry<String, DMLProgram> e : stmtCtx.info.namespaces.entrySet()) {
+						addFunctions(dmlPgm, e.getKey(), e.getValue());
 						// Add dependent programs (handle imported script that also imports scripts)
-						for(Map.Entry<String, DMLProgram> dependency : entry.getValue().getNamespaces().entrySet()) {
+						for(Map.Entry<String, DMLProgram> dependency : e.getValue().getNamespaces().entrySet()) {
 							String depNamespace = dependency.getKey();
 							DMLProgram depProgram = dependency.getValue();
-							if (dmlPgm.getNamespaces().get(depNamespace) == null) {
+							if (dmlPgm.getNamespaces().get(depNamespace) == null)
 								dmlPgm.getNamespaces().put(depNamespace, depProgram);
-							}
 						}
 					}
 				}
 				else {
-					LOG.error("line: " + stmtCtx.start.getLine() + ":" + stmtCtx.start.getCharPositionInLine() + " cannot process the import statement");
+					LOG.error("line: " + stmtCtx.start.getLine() + ":" 
+						+ stmtCtx.start.getCharPositionInLine() + " error processing import");
 					return null;
 				}
 			}
-
+			
 			// Now wrap statement into individual statement block
 			// merge statement will take care of merging these blocks
 			dmlPgm.addStatementBlock(getStatementBlock(current));
@@ -255,5 +253,12 @@ public class DMLParserWrapper extends ParserWrapper
 		dmlPgm.mergeStatementBlocks();
 		
 		return dmlPgm;
+	}
+	
+	private static void addFunctions(DMLProgram dmlPgm, String namespace, DMLProgram prog) {
+		// TODO handle namespace key already exists for different program value instead of overwriting
+		if (prog != null && prog.getNamespaces().size() > 0) {
+			dmlPgm.getNamespaces().put(namespace, prog);
+		}
 	}
 }

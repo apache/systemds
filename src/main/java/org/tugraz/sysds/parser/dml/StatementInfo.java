@@ -20,11 +20,8 @@
 package org.tugraz.sysds.parser.dml;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.Statement;
 
 /**
@@ -44,14 +41,4 @@ public class StatementInfo {
 	
 	// Valid only for function statement
 	public String functionName = "";
-	
-	public void addNamespaceFunctions(String namespace, Map<String,FunctionStatementBlock> functions) {
-		if( namespaces == null )
-			namespaces = new HashMap<>();
-		if( !namespaces.containsKey(namespace) )
-			namespaces.put(namespace, new DMLProgram(namespace));
-		DMLProgram prog = namespaces.get(namespace);
-		for( Entry<String,FunctionStatementBlock> e : functions.entrySet() )
-			prog.addFunctionStatementBlock(namespace, e.getKey(), e.getValue());
-	}
 }

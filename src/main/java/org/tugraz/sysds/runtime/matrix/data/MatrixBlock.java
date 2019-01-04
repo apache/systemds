@@ -1619,10 +1619,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param appendOnly ?
 	 */
 	public void merge(MatrixBlock that, boolean appendOnly) {
-		merge(that, appendOnly, false);
+		merge(that, appendOnly, false, true);
 	}
 	
 	public void merge(MatrixBlock that, boolean appendOnly, boolean par) {
+		merge(that, appendOnly, par, true);
+	}
+	
+	public void merge(MatrixBlock that, boolean appendOnly, boolean par, boolean deep) {
 		//check for empty input source (nothing to merge)
 		if( that == null || that.isEmptyBlock(false) )
 			return;
@@ -1643,7 +1647,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		//core matrix block merge (guaranteed non-empty source/target, nnz maintenance not required)
 		long nnz = nonZeros + that.nonZeros;
 		if( sparse )
-			mergeIntoSparse(that, appendOnly);
+			mergeIntoSparse(that, appendOnly, deep);
 		else if( par )
 			mergeIntoDensePar(that);
 		else
@@ -1719,7 +1723,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly) {
+	private void mergeIntoSparse(MatrixBlock that, boolean appendOnly, boolean deep) {
 		SparseBlock a = sparseBlock;
 		final boolean COO = (a instanceof SparseBlockCOO);
 		final int m = rlen;
@@ -1730,7 +1734,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				if( b.isEmpty(i) ) continue;
 				if( !COO && a.isEmpty(i) ) {
 					//copy entire sparse row (no sort required)
-					a.set(i, b.get(i), true);
+					a.set(i, b.get(i), deep);
 				}
 				else {
 					boolean appended = false;
@@ -2649,9 +2653,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( LibMatrixAgg.isSupportedUnaryOperator(op) ) {
 			//e.g., cumsum/cumprod/cummin/cumax/cumsumprod
 			if( op.getNumThreads() > 1 )
-				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+				ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op, op.getNumThreads());
 			else
-				LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
+				ret = LibMatrixAgg.cumaggregateUnaryMatrix(this, ret, op);
 		}
 		else if(!sparse && !isEmptyBlock(false)
 			&& OptimizerUtils.isMaxLocalParallelism(op.getNumThreads())) {

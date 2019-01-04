@@ -87,6 +87,13 @@ public class OutputParameters
 		setDimensions(rows, cols, rows_per_block, cols_per_block, nnz);
 	}
 	
+	public void setDimensions(OutputParameters input) {
+		_num_rows = input._num_rows;
+		_num_cols = input._num_cols;
+		_num_rows_in_block = input._num_rows_in_block;
+		_num_cols_in_block = input._num_cols_in_block;
+	}
+	
 	public Format getFormat() {
 		return matrix_format;
 	}

@@ -227,7 +227,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			else if ( getOpcode().equalsIgnoreCase("rdiag") )
 				mcOut.set(mc1.getRows(), (mc1.getCols()>1)?1:mc1.getRows(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			else if ( getOpcode().equalsIgnoreCase("rsort") ) {
-				boolean ixret = sec.getScalarInput(_ixret.getName()).getBooleanValue();
+				boolean ixret = sec.getScalarInput(_ixret).getBooleanValue();
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 		}

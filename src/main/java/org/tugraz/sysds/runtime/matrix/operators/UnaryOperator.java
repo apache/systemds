@@ -29,12 +29,13 @@ public class UnaryOperator extends Operator
 
 	public final ValueFunction fn;
 	private final int k; //num threads
+	private final boolean inplace;
 
 	public UnaryOperator(ValueFunction p) {
-		this(p, 1); //default single-threaded
+		this(p, 1, false); //default single-threaded
 	}
 	
-	public UnaryOperator(ValueFunction p, int numThreads) {
+	public UnaryOperator(ValueFunction p, int numThreads, boolean inPlace) {
 		super(p instanceof Builtin &&
 			(((Builtin)p).bFunc==Builtin.BuiltinCode.SIN || ((Builtin)p).bFunc==Builtin.BuiltinCode.TAN 
 			// sinh and tanh are zero only at zero, else they are nnz
@@ -44,9 +45,14 @@ public class UnaryOperator extends Operator
 			|| ((Builtin)p).bFunc==Builtin.BuiltinCode.LOG_NZ || ((Builtin)p).bFunc==Builtin.BuiltinCode.SIGN) );
 		fn = p;
 		k = numThreads;
+		inplace = inPlace;
 	}
 	
 	public int getNumThreads() {
 		return k;
+	}
+	
+	public boolean isInplace() {
+		return inplace;
 	}
 }

@@ -288,6 +288,10 @@ public class LibMatrixAgg
 	}
 
 	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop) {
+		return cumaggregateUnaryMatrix(in, out, uop, null);
+	}
+	
+	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, double[] agg) {
 		//prepare meta data 
 		AggType aggtype = getAggType(uop);
 		final int m = in.rlen;
@@ -295,20 +299,27 @@ public class LibMatrixAgg
 		final int n2 = out.clen;
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.isEmptyBlock(false) ){
+		if( in.isEmpty() && (agg == null || aggtype == AggType.CUM_SUM_PROD) ) {
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
 		}
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
+		if( !uop.isInplace() || in.isInSparseFormat() || in.isEmpty() ) {
+			out.reset(m2, n2, false); //always dense
+			out.allocateDenseBlock();
+			if( in.isEmpty() )
+				in.allocateBlock();
+		}
+		else {
+			out = in;
+		}
 		
 		//Timing time = new Timing(true);
 		
 		if( !in.sparse )
-			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, agg, 0, m);
 		else
-			cumaggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, null, 0, m);
+			cumaggregateUnaryMatrixSparse(in, out, aggtype, uop.fn, agg, 0, m);
 		
 		//cleanup output and change representation (if necessary)
 		out.recomputeNonZeros();
@@ -336,15 +347,20 @@ public class LibMatrixAgg
 		final int mk = aggtype==AggType.CUM_KAHAN_SUM?2:1;
 		
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
-		if( in.isEmptyBlock(false) ){
+		if( in.isEmpty() ){
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
-		}	
+		}
 
 		//Timing time = new Timing(true);
 		
 		//allocate output arrays (if required)
-		out.reset(m2, n2, false); //always dense
-		out.allocateDenseBlock();
+		if( !uop.isInplace() || in.isInSparseFormat() || in.isEmpty() ) {
+			out.reset(m2, n2, false); //always dense
+			out.allocateDenseBlock();
+		}
+		else {
+			out = in;
+		}
 		
 		//core multi-threaded unary aggregate computation
 		//(currently: always parallelization over number of rows)
@@ -378,7 +394,7 @@ public class LibMatrixAgg
 					DataConverter.convertToDoubleVector(tmp2.slice(i-1, i-1, 0, n2-1, new MatrixBlock()), false);
 				tasks2.add( new CumAggTask(in, agg, out, aggtype, uop, i*blklen, Math.min((i+1)*blklen, m)) );
 			}
-			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);	
+			List<Future<Long>> taskret2 = pool.invokeAll(tasks2);
 			pool.shutdown();
 			
 			//step 4: aggregate nnz

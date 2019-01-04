@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.lops.CumulativeOffsetBinary;
 import org.tugraz.sysds.lops.CumulativePartialAggregate;
+import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.PickByCount;
@@ -32,9 +33,12 @@ import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
@@ -43,6 +47,9 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 public class UnaryOp extends MultiThreadedHop
 {
+	private static final boolean ALLOW_CUMAGG_BROADCAST = true;
+	private static final boolean ALLOW_CUMAGG_CACHING = false;
+	
 	private OpOp1 _op = null;
 	
 	private UnaryOp() {
@@ -156,7 +163,7 @@ public class UnaryOp extends MultiThreadedHop
 					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
 						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
 					Unary unary1 = new Unary(input.constructLops(),
-						HopsOpOp1LopsU.get(_op), getDataType(), getValueType(), et, k);
+						HopsOpOp1LopsU.get(_op), getDataType(), getValueType(), et, k, false);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);
@@ -232,7 +239,7 @@ public class UnaryOp extends MultiThreadedHop
 		return pick;
 	}
 	
-
+	@SuppressWarnings("unused")
 	private Lop constructLopsSparkCumulativeUnary() 
 	{
 		Hop input = getInput().get(0);
@@ -242,8 +249,15 @@ public class UnaryOp extends MultiThreadedHop
 		long bclen = input.getColsInBlock();
 		boolean force = !dimsKnown() || _etypeForced == ExecType.SPARK;
 		OperationTypes aggtype = getCumulativeAggType();
-		
 		Lop X = input.constructLops();
+		
+		//special case single row block (no offsets needed)
+		if( rlen > 0 && clen > 0 && rlen <= brlen ) {
+			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1),
+				new LiteralOp(clen), getCumulativeInitValue()).constructLops();
+			return constructCumOffBinary(X, offset, aggtype, rlen, clen, brlen, bclen);
+		}
+		
 		Lop TEMP = X;
 		ArrayList<Lop> DATA = new ArrayList<>();
 		int level = 0;
@@ -252,6 +266,13 @@ public class UnaryOp extends MultiThreadedHop
 		while( ((2*OptimizerUtils.estimateSize(TEMP.getOutputParameters().getNumRows(), clen) + OptimizerUtils.estimateSize(1, clen)) 
 			> OptimizerUtils.getLocalMemBudget() && TEMP.getOutputParameters().getNumRows()>1) || force )
 		{
+			//caching within multi-level cascades
+			if( ALLOW_CUMAGG_CACHING && level > 0 ) {
+				Lop oldTEMP = TEMP;
+				TEMP = new Checkpoint(oldTEMP, getDataType(), getValueType(), Checkpoint.getDefaultStorageLevelString());
+				TEMP.getOutputParameters().setDimensions(oldTEMP.getOutputParameters());
+				setLineNumbers(TEMP);
+			}
 			DATA.add(TEMP);
 	
 			//preaggregation per block (for spark, the CumulativePartialAggregate subsumes both
@@ -268,8 +289,8 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//in-memory cum sum (of partial aggregates)
 		if( TEMP.getOutputParameters().getNumRows()!=1 ){
-			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );					
-			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.FP64, ExecType.CP, k);
+			int k = OptimizerUtils.getConstrainedNumThreads( _maxNumThreads );
+			Unary unary1 = new Unary( TEMP, HopsOpOp1LopsU.get(_op), DataType.MATRIX, ValueType.FP64, ExecType.CP, k, true);
 			unary1.getOutputParameters().setDimensions(TEMP.getOutputParameters().getNumRows(), clen, brlen, bclen, -1);
 			setLineNumbers(unary1);
 			TEMP = unary1;
@@ -277,17 +298,26 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//split, group and mr cumsum
 		while( level-- > 0  ) {
-			//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
-			//the subsequent offset binary apply of split aggregates against the original data)
-			double initValue = getCumulativeInitValue();
-			CumulativeOffsetBinary binary = new CumulativeOffsetBinary(DATA.get(level), TEMP, 
-					DataType.MATRIX, ValueType.FP64, initValue, aggtype, ExecType.SPARK);
-			binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
-			setLineNumbers(binary);
-			TEMP = binary;
+			TEMP = constructCumOffBinary(DATA.get(level),
+				TEMP, aggtype, rlen, clen, brlen, bclen);
 		}
 		
 		return TEMP;
+	}
+	
+	private Lop constructCumOffBinary(Lop data, Lop offset, OperationTypes aggtype, long rlen, long clen, long brlen, long bclen) {
+		//(for spark, the CumulativeOffsetBinary subsumes both the split aggregate and 
+		//the subsequent offset binary apply of split aggregates against the original data)
+		double initValue = getCumulativeInitValue();
+		boolean broadcast = ALLOW_CUMAGG_BROADCAST
+			&& OptimizerUtils.checkSparkBroadcastMemoryBudget(OptimizerUtils.estimateSize(
+			offset.getOutputParameters().getNumRows(), offset.getOutputParameters().getNumCols()));
+		
+		CumulativeOffsetBinary binary = new CumulativeOffsetBinary(data, offset, 
+				DataType.MATRIX, ValueType.FP64, initValue, broadcast, aggtype, ExecType.SPARK);
+		binary.getOutputParameters().setDimensions(rlen, clen, brlen, bclen, -1);
+		setLineNumbers(binary);
+		return binary;
 	}
 
 	private OperationTypes getCumulativeAggType() {
@@ -340,14 +370,19 @@ public class UnaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected double computeIntermediateMemEstimate( long dim1, long dim2, long nnz )
+	protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz)
 	{
 		double ret = 0;
 		
-		if ( _op == OpOp1.IQM || _op == OpOp1.MEDIAN) {
+		if( _op == OpOp1.IQM || _op == OpOp1.MEDIAN ) {
 			// buffer (=2*input_size) and output (=input_size) for SORT operation
 			// getMemEstimate works for both cases of known dims and worst-case stats
 			ret = getInput().get(0).getMemEstimate() * 3; 
+		}
+		else if( isCumulativeUnaryOperation() ) {
+			//account for potential final dense-sparse transformation (worst-case sparse representation)
+			ret += MatrixBlock.estimateSizeSparseInMemory(dim1, dim2,
+				MatrixBlock.SPARSITY_TURN_POINT - UtilFunctions.DOUBLE_EPS);
 		}
 
 		if (isGPUEnabled()) {

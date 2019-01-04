@@ -272,6 +272,10 @@ public class LazyWriteBuffer
 		}
 	}
 	
+	public static ExecutorService getUtilThreadPool() {
+		return _fClean != null ? _fClean._pool : null;
+	}
+	
 	/**
 	 * Extended LinkedHashMap with convenience methods for adding and removing
 	 * last/first entries.

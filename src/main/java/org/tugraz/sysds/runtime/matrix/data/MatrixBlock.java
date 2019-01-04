@@ -31,8 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -42,6 +45,7 @@ import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.tugraz.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
@@ -338,6 +342,12 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock allocateDenseBlock() {
 		allocateDenseBlock( true );
 		return this;
+	}
+	
+	public Future<MatrixBlock> allocateBlockAsync() {
+		ExecutorService pool = LazyWriteBuffer.getUtilThreadPool();
+		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
+			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
 	}
 
 	public MatrixBlock allocateBlock() {

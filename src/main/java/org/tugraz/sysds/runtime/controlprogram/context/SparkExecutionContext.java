@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -70,6 +71,7 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTextInputFuncti
 import org.tugraz.sysds.runtime.instructions.spark.functions.CreateSparseBlockFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -843,8 +845,13 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//create output matrix block (w/ lazy allocation)
 			out = new MatrixBlock(rlen, clen, sparse, lnnz);
-
+			
+			//kickoff asynchronous allocation
+			Future<MatrixBlock> fout = out.allocateBlockAsync();
+			
+			//trigger pending RDD operations and collect blocks
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
+			out = IOUtilFunctions.get(fout); //wait for allocation
 
 			//copy blocks one-at-a-time into output matrix block
 			long aNnz = 0;

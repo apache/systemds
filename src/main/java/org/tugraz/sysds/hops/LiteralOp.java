@@ -247,8 +247,10 @@ public class LiteralOp extends Hop
 		switch( getValueType() ) {
 			case BOOLEAN:
 				return String.valueOf(value_boolean);
+			case INT32:
 			case INT64:
 				return String.valueOf(value_long);
+			case FP32:
 			case FP64:
 				return String.valueOf(value_double);
 			case STRING:

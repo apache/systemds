@@ -92,9 +92,8 @@ public class TemplateRow extends TemplateBase
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp)
 				&& TemplateCell.isValidOperation(hop) && hop.getDim1() > 1)
-			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
 			|| HopRewriteUtils.isTernary(hop, OpOp3.PLUS_MULT, OpOp3.MINUS_MULT)
-			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| isValidBinaryNaryCBind(hop)
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
 			|| (hop instanceof AggBinaryOp && hop.dimsKnown() && hop.getDim2()==1 //MV
 				&& hop.getInput().get(0).getDim1()>1 && hop.getInput().get(0).getDim2()>1)
@@ -125,8 +124,7 @@ public class TemplateRow extends TemplateBase
 	public boolean fuse(Hop hop, Hop input) {
 		return !isClosed() && 
 			(  (hop instanceof BinaryOp && isValidBinaryOperation(hop)) 
-			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
-			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| isValidBinaryNaryCBind(hop)
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
 			|| ((hop instanceof UnaryOp || hop instanceof ParameterizedBuiltinOp) 
 				&& TemplateCell.isValidOperation(hop))
@@ -156,8 +154,7 @@ public class TemplateRow extends TemplateBase
 		return !isClosed() &&
 			((hop instanceof BinaryOp && isValidBinaryOperation(hop)
 				&& hop.getDim1() > 1 && input.getDim1()>1)
-			|| (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
-			|| (HopRewriteUtils.isNary(hop, OpOpN.CBIND) && hop.getInput().get(0).isMatrix() && hop.dimsKnown())
+			|| isValidBinaryNaryCBind(hop)
 			|| (HopRewriteUtils.isNary(hop, OpOpN.MIN, OpOpN.MAX) && hop.isMatrix())
 			|| (HopRewriteUtils.isDnn(hop, OpOpDnn.BIASADD, OpOpDnn.BIASMULT)
 				&& hop.getInput().get(0).dimsKnown() && hop.getInput().get(1).dimsKnown()
@@ -189,6 +186,11 @@ public class TemplateRow extends TemplateBase
 		//support for matrix-scalar, matrix-col_vector,
 		//matrix-row_vector, and matrix-matrix
 		return TemplateUtils.isOperationSupported(hop);
+	}
+	
+	private static boolean isValidBinaryNaryCBind(Hop hop) {
+		return (HopRewriteUtils.isBinary(hop, OpOp2.CBIND) || HopRewriteUtils.isNary(hop, OpOpN.CBIND))
+			&& hop.getInput().get(0).isMatrix() && hop.dimsKnown() && hop.getInput().get(0).getDim1()>1;
 	}
 	
 	private static boolean isFuseSkinnyMatrixMult(Hop hop) {

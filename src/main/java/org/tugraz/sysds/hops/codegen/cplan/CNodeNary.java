@@ -53,15 +53,20 @@ public class CNodeNary extends CNode
 						boolean sparseInput = sparseGen && input instanceof CNodeData
 							&& input.getVarname().startsWith("a");
 						String varj = input.getVarname();
-						String pos = (input instanceof CNodeData && input.getDataType().isMatrix()) ? 
-								(!varj.startsWith("b")) ? varj+"i" : TemplateUtils.isMatrix(input) ? 
-								varj + ".pos(rix)" : "0" : "0";
-						sb.append( sparseInput ?
-							"    LibSpoofPrimitives.vectWrite("+varj+"vals, %TMP%, "
-								+varj+"ix, "+pos+", "+off+", "+input._cols+");\n" :
-							"    LibSpoofPrimitives.vectWrite("+(varj.startsWith("b")?varj+".values(rix)":varj)
-								+", %TMP%, "+pos+", "+off+", "+input._cols+");\n");
-						off += input._cols;
+						if( input.getDataType()==DataType.MATRIX ) {
+							String pos = (input instanceof CNodeData) ?
+								!varj.startsWith("b") ? varj+"i" : varj + ".pos(rix)" : "0";
+							sb.append( sparseInput ?
+								"    LibSpoofPrimitives.vectWrite("+varj+"vals, %TMP%, "
+									+varj+"ix, "+pos+", "+off+", "+input._cols+");\n" :
+								"    LibSpoofPrimitives.vectWrite("+(varj.startsWith("b")?varj+".values(rix)":varj)
+									+", %TMP%, "+pos+", "+off+", "+input._cols+");\n");
+							off += input._cols;	
+						}
+						else { //e.g., col vectors -> scalars
+							sb.append("    %TMP%["+off+"] = "+varj+";\n");
+							off ++;
+						}
 					}
 					return sb.toString();
 				case VECT_MAX_POOL:

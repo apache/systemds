@@ -64,17 +64,6 @@ public class WeightedSquaredLoss extends Lop
 	public String toString() {
 		return "Operation = WeightedSquaredLoss";
 	}
-	
-	@Override
-	public String getInstructions(int input1, int input2, int input3, int input4, int output)
-	{
-		return getInstructions(
-				String.valueOf(input1),
-				String.valueOf(input2),
-				String.valueOf(input3),
-				String.valueOf(input4),
-				String.valueOf(output));
-	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String output)

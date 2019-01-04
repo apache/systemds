@@ -65,17 +65,6 @@ public class AppendG extends Lop
 	public String toString() {
 		return " AppendG: ";
 	}
-
-	//called when append executes in MR
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) {
-		return getInstructions(
-				String.valueOf(input_index1),
-				String.valueOf(input_index2),
-				String.valueOf(input_index3),
-				String.valueOf(input_index4),
-				String.valueOf(output_index) );
-	}
 	
 	//called when append executes in SP
 	@Override

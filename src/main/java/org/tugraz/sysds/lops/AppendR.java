@@ -51,15 +51,6 @@ public class AppendR extends Lop
 		return " AppendR: ";
 	}
 
-	//called when append executes in MR
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		return getInstructions(
-				String.valueOf(input_index1),
-				String.valueOf(input_index2),
-				String.valueOf(output_index) );
-	}
-	
 	//called when append executes in CP
 	@Override
 	public String getInstructions(String input1, String input2, String output) {

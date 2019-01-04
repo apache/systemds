@@ -114,19 +114,4 @@ public class CentralMoment extends Lop
 	public String getInstructions(String input1, String input2, String output) {
 		return getInstructions(input1, input2, null, output);
 	}
-	
-	/**
-	 * Function to generate MR central moment instruction, invoked from
-	 * <code>Dag.java:getAggAndOtherInstructions()</code>. This function
-	 * is used for both weighted and unweighted operations.
-	 * 
-	 * input_index: data (in case of weighted: data combined via combinebinary)
-	 * output_index: produced output
-	 * 
-	 * The order for central moment is derived internally in the function.
-	 */
-	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), "", String.valueOf(output_index));
-	}
 }

@@ -66,13 +66,6 @@ public class BinaryUAggChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index1, int output_index) {
-		return getInstructions(
-				String.valueOf(input_index1), 
-				String.valueOf(output_index));
-	}
-	
-	@Override
 	public String getInstructions(String input1, String output)
 	{
 		StringBuilder sb = new StringBuilder();

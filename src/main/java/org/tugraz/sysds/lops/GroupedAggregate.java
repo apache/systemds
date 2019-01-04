@@ -40,8 +40,6 @@ public class GroupedAggregate extends Lop
 	private static final String opcode = "groupedagg";
 	public static final String COMBINEDINPUT = "combinedinput";
 	
-	private boolean _weights = false;	
-	
 	//spark-specific parameters
 	private boolean _broadcastGroups = false;
 	
@@ -166,43 +164,6 @@ public class GroupedAggregate extends Lop
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output));
-		
-		return sb.toString();
-	}
-	
-	@Override
-	public String getInstructions(int input_index, int output_index) 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		
-		sb.append( opcode );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index));
-				
-		// get the aggregate function
-		sb.append( OPERAND_DELIMITOR );
-		Lop funcLop = _inputParams.get(Statement.GAGG_FN); 
-		sb.append( funcLop.prepScalarInputOperand(getExecType()));
-		
-		// get the "optional" parameters
-		if ( _inputParams.get(Statement.GAGG_FN_CM_ORDER) != null ) {
-			sb.append( OPERAND_DELIMITOR );
-			Lop orderLop = _inputParams.get(Statement.GAGG_FN_CM_ORDER); 
-			sb.append( orderLop.prepScalarInputOperand(getExecType()));
-		}
-		
-		// add output_index to instruction
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index) );
-	
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _weights );
-		
-		sb.append( OPERAND_DELIMITOR );
-		Lop ngroups = _inputParams.get(Statement.GAGG_NUM_GROUPS);
-		sb.append( (ngroups!=null)? ngroups.prepScalarInputOperand(getExecType()) : "-1" );
 		
 		return sb.toString();
 	}

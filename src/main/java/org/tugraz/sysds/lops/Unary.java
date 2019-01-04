@@ -328,11 +328,6 @@ public class Unary extends Lop
 		
 		return sb.toString();
 	}
-	
-	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
-	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
@@ -358,74 +353,5 @@ public class Unary extends Lop
 		sb.append( this.prepOutputOperand(output));
 		
 		return sb.toString();
-	}
-	
-	@Override
-	public String getInstructions(int inputIndex1, int inputIndex2, int outputIndex) {
-		if (this.getInputs().size() == 2) {
-			// Unary operators with two inputs
-			// Determine the correct operation, depending on the scalar input
-			Lop linput1 = getInputs().get(0);
-			Lop linput2 = getInputs().get(1);
-			
-			int scalarIndex = -1, matrixIndex = -1;
-			String matrixLabel= null;
-			if( linput1.getDataType() == DataType.MATRIX ) {
-				// inputIndex1 is matrix, and inputIndex2 is scalar
-				scalarIndex = 1;
-				matrixLabel = String.valueOf(inputIndex1);
-			}
-			else {
-				// inputIndex2 is matrix, and inputIndex1 is scalar
-				scalarIndex = 0;
-				matrixLabel = String.valueOf(inputIndex2); 
-				
-				// when the first operand is a scalar, setup the operation type accordingly
-				if (operation == OperationTypes.SUBTRACT)
-					operation = OperationTypes.SUBTRACTRIGHT;
-				else if (operation == OperationTypes.DIVIDE)
-					operation = OperationTypes.Over;
-			}
-			matrixIndex = 1-scalarIndex;
-
-			// Prepare the instruction
-			StringBuilder sb = new StringBuilder();
-			sb.append( getExecType() );
-			sb.append( Lop.OPERAND_DELIMITOR );
-			sb.append( getOpcode() );
-			sb.append( OPERAND_DELIMITOR );
-			
-			if(  operation == OperationTypes.INTDIV || operation == OperationTypes.MODULUS || 
-				 operation == OperationTypes.POW || 
-				 operation == OperationTypes.GREATER_THAN || operation == OperationTypes.GREATER_THAN_OR_EQUALS ||
-				 operation == OperationTypes.LESS_THAN || operation == OperationTypes.LESS_THAN_OR_EQUALS ||
-				 operation == OperationTypes.EQUALS || operation == OperationTypes.NOT_EQUALS )
-			{
-				//TODO discuss w/ Shirish: we should consolidate the other operations (see ScalarInstruction.parseInstruction / BinaryCPInstruction.getScalarOperator)
-				//append both operands
-				sb.append( (linput1.getDataType()==DataType.MATRIX? linput1.prepInputOperand(String.valueOf(inputIndex1)) : linput1.prepScalarInputOperand(getExecType())) );
-				sb.append( OPERAND_DELIMITOR );
-				sb.append( (linput2.getDataType()==DataType.MATRIX? linput2.prepInputOperand(String.valueOf(inputIndex2)) : linput2.prepScalarInputOperand(getExecType())) );
-				sb.append( OPERAND_DELIMITOR );	
-			}
-			else
-			{
-				// append the matrix operand
-				sb.append( getInputs().get(matrixIndex).prepInputOperand(matrixLabel));
-				sb.append( OPERAND_DELIMITOR );
-				
-				// append the scalar operand
-				sb.append( getInputs().get(scalarIndex).prepScalarInputOperand(getExecType()));
-				sb.append( OPERAND_DELIMITOR );
-			}
-			sb.append( prepOutputOperand(outputIndex) );
-			
-			return sb.toString();
-			
-		} else {
-			throw new LopsException(this.printErrorLocation() + "Invalid number of operands ("
-					+ this.getInputs().size() + ") for an Unary opration: "
-					+ operation);
-		}
 	}
 }

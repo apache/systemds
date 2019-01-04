@@ -92,10 +92,4 @@ public class Ternary extends Lop
 		
 		return sb.toString();
 	}
-	
-	@Override
-	public String getInstructions(int input1, int input2, int input3, int output) {
-		return getInstructions(String.valueOf(input1), String.valueOf(input2), 
-				String.valueOf(input3), String.valueOf(output));
-	}
 }

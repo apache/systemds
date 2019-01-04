@@ -77,12 +77,6 @@ public class MMCJ extends Lop
 		return "Operation = MMCJ";
 	}
 
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		return getInstructions(String.valueOf(input_index1), 
-				String.valueOf(input_index2), String.valueOf(output_index));
-	}
-
 	//SPARK instruction generation
 	@Override
 	public String getInstructions(String input1, String input2, String output)

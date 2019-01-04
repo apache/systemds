@@ -269,10 +269,6 @@ public abstract class Lop
 		outputs.add(op);
 	}
 	
-	public int getConsumerCount() {
-		return consumerCount;
-	}
-	
 	public void setConsumerCount(int cc) {
 		consumerCount = cc;
 	}
@@ -295,45 +291,6 @@ public abstract class Lop
 			this.getInputs().get(i).resetVisitStatus();
 		}
 		this.setVisited(Lop.VisitStatus.NOTVISITED);
-	}
-
-	/**
-	 * Method to have recursively print state of Lop graph.
-	 */
-
-	public final void printMe() {
-		if (LOG.isDebugEnabled()){
-			StringBuilder s = new StringBuilder("");
-			if (this.getVisited() != VisitStatus.DONE) {
-				s.append(getType() + ": " + getID() + "\n" ); // hashCode());
-				s.append("Inputs: ");
-				for (int i = 0; i < this.getInputs().size(); i++) {
-					s.append(" " + this.getInputs().get(i).getID() + " ");
-				}
-
-				s.append("\n");
-				s.append("Outputs: ");
-				for (int i = 0; i < this.getOutputs().size(); i++) {
-					s.append(" " + this.getOutputs().get(i).getID() + " ");
-				}
-
-				s.append("\n");
-				s.append(this.toString());
-				s.append("Begin Line: " + _beginLine + ", Begin Column: " + _beginColumn + ", End Line: " + _endLine + ", End Column: " + _endColumn + "\n");
-				s.append("FORMAT:" + this.getOutputParameters().getFormat() + ", rows="
-						+ this.getOutputParameters().getNumRows() + ", cols=" + this.getOutputParameters().getNumCols()
-						+ ", Blocked?: " + this.getOutputParameters().isBlocked() + ", rowsInBlock=" + 
-						this.getOutputParameters().getRowsInBlock() + ", colsInBlock=" + 
-						this.getOutputParameters().getColsInBlock() + "\n");
-				this.setVisited(VisitStatus.DONE);
-				s.append("\n");
-
-				for (int i = 0; i < this.getInputs().size(); i++) {
-					this.getInputs().get(i).printMe();
-				}
-			}
-			LOG.debug(s.toString());
-		}
 	}
 
 	/**
@@ -384,8 +341,7 @@ public abstract class Lop
 	 * 
 	 * @param dag lop DAG
 	 */
-	public final void addToDag(Dag<Lop> dag) 
-	{
+	public final void addToDag(Dag<Lop> dag) {
 		if( dag.addNode(this) )
 			for( Lop l : getInputs() )
 				l.addToDag(dag);
@@ -496,66 +452,6 @@ public abstract class Lop
 	public String getInstructions(String[] inputs, String outputs) {
 		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
 	}
-	
-	
-	public String getInstructions(int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
-	}
-
-	public String getInstructions(int input_index, int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass. Lop Type: " + this.getType());
-	}
-
-	/** Method should be overridden if needed
-	 * 
-	 * @param input_index1 input index 1
-	 * @param input_index2 input index 2
-	 * @param output_index output index
-	 * @return instructions as string
-	 */
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
-	/** Method should be overridden if needed
-	 * 
-	 * @param input_index1 input index 1
-	 * @param input_index2 input index 2
-	 * @param input_index3 input index 3
-	 * @param output_index output index
-	 * @return instructions as string
-	 */
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-	
-	/** Method should be overridden if needed
-	 * 
-	 * @param input_index1 input index 1
-	 * @param input_index2 input index 2
-	 * @param input_index3 input index 3
-	 * @param input_index4 input index 4
-	 * @param output_index output index
-	 * @return instructions as string
-	 */
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
-	/** Method should be overridden if needed
-	 * 
-	 * @param input_index1 input index 1
-	 * @param input_index2 input index 2
-	 * @param input_index3 input index 3
-	 * @param input_index4 input index 4
-	 * @param input_index5 input index 5
-	 * @param output_index output index
-	 * @return instructions as string
-	 */
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int input_index4, int input_index5, int output_index) {
-		throw new LopsException(this.printErrorLocation() + "Should never be invoked in Baseclass");
-	}
-
 
 	/** Method should be overridden if needed
 	 * 

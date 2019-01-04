@@ -101,11 +101,6 @@ public class Aggregate extends Lop
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Aggregate operation: " + operation);
 		}
 	}
-	
-	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
-	}
 
 	@Override
 	public String getInstructions(String input1, String output) 

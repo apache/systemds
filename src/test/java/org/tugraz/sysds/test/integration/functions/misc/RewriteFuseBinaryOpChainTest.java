@@ -129,13 +129,6 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 		testFuseBinaryChain( TEST_NAME4, true, ExecType.CP);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param rewrites
-	 * @param instType
-	 */
-	@SuppressWarnings("unused")
 	private void testFuseBinaryChain( String testname, boolean rewrites, ExecType instType )
 	{	
 		ExecMode platformOld = rtplatform;

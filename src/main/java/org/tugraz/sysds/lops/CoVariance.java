@@ -117,15 +117,4 @@ public class CoVariance extends Lop
 		
 		return sb.toString();
 	}
-
-	/**
-	 * Function to generate MR version of covariance instruction.
-	 * input_index -&gt; denote the "combined" input columns and weights, 
-	 * when applicable.
-	 */
-	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), null, null, String.valueOf(output_index));
-	}
-
 }

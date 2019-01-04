@@ -368,12 +368,6 @@ public class DMLScript
 		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);
-
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("\n********************** LOPS DAG *******************");
-			dmlt.printLops(prog);
-			dmlt.resetLopsDAGVisitStatus(prog);
-		}
 		
 		//Step 7: generate runtime program, incl codegen
 		Program rtprog = dmlt.getRuntimeProgram(prog, dmlconf);

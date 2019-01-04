@@ -165,15 +165,6 @@ public class BinaryM extends Lop
 			   opcode.equals("map^") || opcode.equals("map1-*");
 	}
 	
-	
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		return getInstructions(
-				String.valueOf(input_index1), 
-				String.valueOf(input_index2), 
-				String.valueOf(output_index));
-	}
-	
 	@Override
 	public String getInstructions(String input1, String input2, String output) 
 	{

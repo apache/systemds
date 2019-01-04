@@ -270,11 +270,6 @@ public class PartialAggregate extends Lop
 		
 		return sb.toString();
 	}
-	
-	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
-	}
 
 	public static String getOpcode(Aggregate.OperationTypes op, DirectionTypes dir) 
 	{

@@ -1832,7 +1832,7 @@ public class ParForStatementBlock extends ForStatementBlock
 		public static boolean contains(Collection<ResultVar> list, String varName) {
 			//helper function which is necessary because list.contains checks
 			//varName.equals(rvar) which always returns false because it not a string
-			return list.stream().anyMatch(rvar -> rvar.equals(varName));
+			return list.stream().anyMatch(rvar -> rvar._name.equals(varName));
 		}
 	}
 	

@@ -75,20 +75,6 @@ public class PickByCount extends Lop
 	}
 
 	/*
-	 * This version of getInstruction() must be called only for valuepick (MR) and rangepick
-	 * 
-	 * Example instances:
-	 * valupick:::0:DOUBLE:::1:DOUBLE:::2:DOUBLE
-	 * rangepick:::0:DOUBLE:::0.25:DOUBLE:::1:DOUBLE
-	 * rangepick:::0:DOUBLE:::Var3:DOUBLE:::1:DOUBLE
-	 */
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		return getInstructions(""+input_index1, ""+input_index2, ""+output_index);
-
-	}
-
-	/*
 	 * This version of getInstructions() must be called only for valuepick (CP), IQM (CP)
 	 * 
 	 * Example instances:

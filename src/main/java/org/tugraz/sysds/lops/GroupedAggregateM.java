@@ -71,14 +71,6 @@ public class GroupedAggregateM extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input1, int input2, int output) {
-		return getInstructions(
-			String.valueOf(input1),
-			String.valueOf(input2),
-			String.valueOf(output) );
-	}
-	
-	@Override
 	public String getInstructions(String input1, String input2, String output) 
 	{
 		StringBuilder sb = new StringBuilder();

@@ -6,7 +6,9 @@ GENERAL NOTES:
 
 SYSTEMDS-10 Compiler Rework / Misc
  * 11 Support DML-bodied builtin functions
- * 12 Remove unnecessary HOP/LOP indirections 
+ * 12 Remove unnecessary HOP/LOP indirections
+ * 13 Refactoring test cases into component/integration
+ * 14 Travis integration w/ subset of tests
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks

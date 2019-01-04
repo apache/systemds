@@ -66,11 +66,6 @@ public class CumulativePartialAggregate extends Lop
 	}
 	
 	@Override
-	public String getInstructions(int input_index, int output_index) {
-		return getInstructions(String.valueOf(input_index), String.valueOf(output_index));
-	}
-	
-	@Override
 	public String getInstructions(String input, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );

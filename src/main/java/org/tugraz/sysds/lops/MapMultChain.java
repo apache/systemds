@@ -95,18 +95,6 @@ public class MapMultChain extends Lop
 	public String toString() {
 		return "Operation = MapMMChain";
 	}
-	
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int output_index) {
-		return getInstructions(String.valueOf(input_index1), String.valueOf(input_index2), 
-				null, String.valueOf(output_index));
-	}
-	
-	@Override
-	public String getInstructions(int input_index1, int input_index2, int input_index3, int output_index) {
-		return getInstructions(String.valueOf(input_index1), String.valueOf(input_index2), 
-				String.valueOf(input_index3), String.valueOf(output_index));
-	}
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {

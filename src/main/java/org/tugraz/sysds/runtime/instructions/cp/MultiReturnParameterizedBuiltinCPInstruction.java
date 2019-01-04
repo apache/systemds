@@ -68,7 +68,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 	public void processInstruction(ExecutionContext ec) {
 		//obtain and pin input frame
 		FrameBlock fin = ec.getFrameInput(input1.getName());
-		String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
+		String spec = ec.getScalarInput(input2).getStringValue();
 		String[] colnames = fin.getColumnNames(); 
 		
 		//execute block transform encode

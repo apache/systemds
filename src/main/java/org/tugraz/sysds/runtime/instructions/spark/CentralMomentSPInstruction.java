@@ -100,7 +100,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		
 		//parse 'order' input argument 
 		CPOperand scalarInput = (input3==null ? input2 : input3);
-		ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
+		ScalarObject order = ec.getScalarInput(scalarInput); 
 		CMOperator cop = ((CMOperator)_optr); 
 		if ( cop.getAggOpType() == AggregateOperationTypes.INVALID ) {
 			cop.setCMAggOp((int)order.getLongValue());

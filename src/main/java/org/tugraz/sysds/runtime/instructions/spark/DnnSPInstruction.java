@@ -294,8 +294,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	}
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
-		return (int) ec.getScalarInput(aL.get(index).getName(),
-			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
+		return (int) ec.getScalarInput(aL.get(index)).getLongValue();
 	}
 	
 	private static class RDDConv2dMapMMFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>, MatrixIndexes, MatrixBlock> {

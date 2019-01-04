@@ -58,7 +58,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
-		long off = sec.getScalarInput( _offset.getName(), _offset.getValueType(), _offset.isLiteral()).getLongValue();
+		long off = sec.getScalarInput( _offset).getLongValue();
 		
 		//execute map-append operations (partitioning preserving if #in-blocks = #out-blocks)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;

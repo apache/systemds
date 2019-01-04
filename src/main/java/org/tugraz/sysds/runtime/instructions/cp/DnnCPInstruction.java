@@ -267,8 +267,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	}
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
-		return (int) ec.getScalarInput(aL.get(index).getName(),
-			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
+		return (int) ec.getScalarInput(aL.get(index)).getLongValue();
 	}
 	
 	public void processReluBackwardInstruction(ExecutionContext ec) {
@@ -349,8 +348,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock bias = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
 		MatrixBlock runningMean = ec.getMatrixInput(_in4.getName(), getExtendedOpcode());
 		MatrixBlock runningVar = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
-		String phase = ec.getScalarInput(_in6.getName(), _in6.getValueType(), _in6.isLiteral()).getStringValue();
-		double epsilon = ec.getScalarInput(_in7.getName(), _in7.getValueType(), _in7.isLiteral()).getDoubleValue();
+		String phase = ec.getScalarInput(_in6).getStringValue();
+		double epsilon = ec.getScalarInput(_in7).getDoubleValue();
 		double mu = ec.getScalarInput(_in8.getName(), _in8.getValueType(), _in8.isLiteral()).getDoubleValue();
 		
 		MatrixBlock ret = new MatrixBlock(image.getNumRows(), image.getNumColumns(), false).allocateBlock();
@@ -379,7 +378,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
 		MatrixBlock scale = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
-		double epsilon = ec.getScalarInput(_in4.getName(), _in4.getValueType(), _in4.isLiteral()).getDoubleValue();
+		double epsilon = ec.getScalarInput(_in4).getDoubleValue();
 		MatrixBlock resultSaveMean = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
 		MatrixBlock resultSaveInvVariance = ec.getMatrixInput(_in6.getName(), getExtendedOpcode());
 		

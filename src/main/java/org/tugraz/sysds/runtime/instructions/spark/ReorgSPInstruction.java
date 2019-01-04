@@ -155,9 +155,9 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			
 			//get parameters
 			long[] cols = _col.getDataType().isMatrix() ? DataConverter.convertToLongVector(ec.getMatrixInput(_col.getName())) :
-				new long[]{ec.getScalarInput(_col.getName(), _col.getValueType(), _col.isLiteral()).getLongValue()};
-			boolean desc = ec.getScalarInput(_desc.getName(), _desc.getValueType(), _desc.isLiteral()).getBooleanValue();
-			boolean ixret = ec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
+				new long[]{ec.getScalarInput(_col).getLongValue()};
+			boolean desc = ec.getScalarInput(_desc).getBooleanValue();
+			boolean ixret = ec.getScalarInput(_ixret).getBooleanValue();
 			boolean singleCol = (mcIn.getCols() == 1);
 			out = in1;
 			
@@ -227,7 +227,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			else if ( getOpcode().equalsIgnoreCase("rdiag") )
 				mcOut.set(mc1.getRows(), (mc1.getCols()>1)?1:mc1.getRows(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			else if ( getOpcode().equalsIgnoreCase("rsort") ) {
-				boolean ixret = sec.getScalarInput(_ixret.getName(), _ixret.getValueType(), _ixret.isLiteral()).getBooleanValue();
+				boolean ixret = sec.getScalarInput(_ixret.getName()).getBooleanValue();
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 			}
 		}

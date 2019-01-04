@@ -70,8 +70,8 @@ public class MatrixReshapeGPUInstruction extends GPUInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		int rows = (int)ec.getScalarInput(_opRows.getName(), _opRows.getValueType(), _opRows.isLiteral()).getLongValue(); //save cast
-		int cols = (int)ec.getScalarInput(_opCols.getName(), _opCols.getValueType(), _opCols.isLiteral()).getLongValue(); //save cast
+		int rows = (int)ec.getScalarInput(_opRows).getLongValue(); //save cast
+		int cols = (int)ec.getScalarInput(_opCols).getLongValue(); //save cast
 		BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
 		
 		GPUStatistics.incrementNoOfExecutedGPUInst();

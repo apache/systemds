@@ -82,10 +82,10 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		String opcode = getOpcode();
 		
 		//get indexing range
-		long rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue();
-		long ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue();
-		long cl = ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue();
-		long cu = ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue();
+		long rl = ec.getScalarInput(rowLower).getLongValue();
+		long ru = ec.getScalarInput(rowUpper).getLongValue();
+		long cl = ec.getScalarInput(colLower).getLongValue();
+		long cu = ec.getScalarInput(colUpper).getLongValue();
 		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 		
 		//right indexing

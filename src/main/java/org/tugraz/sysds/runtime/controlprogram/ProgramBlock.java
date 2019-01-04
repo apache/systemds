@@ -297,11 +297,11 @@ public class ProgramBlock implements ParseInfo
 					new MatrixBlock(mbVar, MatrixBlock.DEFAULT_INPLACE_SPARSEBLOCK, true) );
 				moNew.setFileName(mo.getFileName()+Lop.UPDATE_INPLACE_PREFIX+tid);
 				mo.release();
-				moNew.release();
-				moNew.setUpdateType(UpdateType.INPLACE);
 				//cleanup old variable (e.g., remove from buffer pool)
 				if( ec.removeVariable(varname) != null )
 					ec.cleanupCacheableData(mo);
+				moNew.release(); //after old removal to avoid unnecessary evictions
+				moNew.setUpdateType(UpdateType.INPLACE);
 				ec.setVariable(varname, moNew);
 			}
 		}

@@ -23,6 +23,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 
 
@@ -32,6 +33,7 @@ public class CPOperand
 	private ValueType _valueType;
 	private DataType _dataType;
 	private boolean _isLiteral;
+	private ScalarObject _literal;
 	
 	public CPOperand() {
 		this("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -77,8 +79,17 @@ public class CPOperand
 		return _isLiteral;
 	}
 	
+	public ScalarObject getLiteral() {
+		if( !_isLiteral )
+			throw new DMLRuntimeException("CPOperand is not a literal.");
+		if( _literal == null )
+			_literal = ScalarObjectFactory.createScalarObject(_valueType, _name);
+		return _literal;
+	}
+	
 	public void setName(String name) {
 		_name = name;
+		_literal = null;
 	}
 
 	public void split(String str){

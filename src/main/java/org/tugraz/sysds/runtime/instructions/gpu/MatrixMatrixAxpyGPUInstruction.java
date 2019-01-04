@@ -82,7 +82,7 @@ public class MatrixMatrixAxpyGPUInstruction extends ArithmeticBinaryGPUInstructi
 		
 		MatrixObject in1 = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject in2 = getMatrixInputForGPUInstruction(ec, _input2.getName());
-		ScalarObject scalar = ec.getScalarInput(constant.getName(), constant.getValueType(), constant.isLiteral());
+		ScalarObject scalar = ec.getScalarInput(constant);
 		
 		long rlen1 = in1.getNumRows();
 		long clen1 = in1.getNumColumns();

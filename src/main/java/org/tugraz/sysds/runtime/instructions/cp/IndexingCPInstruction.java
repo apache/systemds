@@ -50,10 +50,10 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 
 	protected IndexRange getIndexRange(ExecutionContext ec) {
 		return new IndexRange( //rl, ru, cl, ru
-			(int)(ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral()).getLongValue()-1),
-			(int)(ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral()).getLongValue()-1),
-			(int)(ec.getScalarInput(colLower.getName(), colLower.getValueType(), colLower.isLiteral()).getLongValue()-1),
-			(int)(ec.getScalarInput(colUpper.getName(), colUpper.getValueType(), colUpper.isLiteral()).getLongValue()-1));
+			(int)(ec.getScalarInput(rowLower).getLongValue()-1),
+			(int)(ec.getScalarInput(rowUpper).getLongValue()-1),
+			(int)(ec.getScalarInput(colLower).getLongValue()-1),
+			(int)(ec.getScalarInput(colUpper).getLongValue()-1));
 	}
 
 	public static IndexingCPInstruction parseInstruction ( String str ) {

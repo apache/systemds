@@ -41,8 +41,8 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
-		ScalarObject rl = ec.getScalarInput(rowLower.getName(), rowLower.getValueType(), rowLower.isLiteral());
-		ScalarObject ru = ec.getScalarInput(rowUpper.getName(), rowUpper.getValueType(), rowUpper.isLiteral());
+		ScalarObject rl = ec.getScalarInput(rowLower);
+		ScalarObject ru = ec.getScalarInput(rowUpper);
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {

@@ -38,7 +38,7 @@ public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
 		MatrixBlock inBlock = ec.getMatrixInput(mat.getName(), getExtendedOpcode());
-		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar.getName(), scalar.getValueType(), scalar.isLiteral());
+		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar);
 
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op = sc_op.setConstant(constant.getDoubleValue());

@@ -420,8 +420,8 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject runningMean = getMatrixInputForGPUInstruction(ec, _input4.getName());
 		MatrixObject runningVar = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		
-		String phase = ec.getScalarInput(_input6.getName(), _input6.getValueType(), _input6.isLiteral()).getStringValue();
-		double epsilon = ec.getScalarInput(_input7.getName(), _input7.getValueType(), _input7.isLiteral()).getDoubleValue();
+		String phase = ec.getScalarInput(_input6).getStringValue();
+		double epsilon = ec.getScalarInput(_input7).getDoubleValue();
 		
 		MatrixObject ret = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), image.getNumRows(), image.getNumColumns());
 		
@@ -521,7 +521,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject image = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject dout = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject scale = getMatrixInputForGPUInstruction(ec, _input3.getName());
-		double epsilon = ec.getScalarInput(_input4.getName(), _input4.getValueType(), _input4.isLiteral()).getDoubleValue();
+		double epsilon = ec.getScalarInput(_input4).getDoubleValue();
 		MatrixObject resultSaveMean = getMatrixInputForGPUInstruction(ec, _input5.getName());
 		MatrixObject resultSaveInvVariance = getMatrixInputForGPUInstruction(ec, _input6.getName());
 		
@@ -581,7 +581,7 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject input = getMatrixInputForGPUInstruction(ec, _input1.getName());
 		MatrixObject v = getMatrixInputForGPUInstruction(ec, _input2.getName());
 		MatrixObject v_prev = getMatrixInputForGPUInstruction(ec, _input3.getName());
-		double mu = (int) ec.getScalarInput(_input4.getName(), _input4.getValueType(), _input4.isLiteral()).getDoubleValue();
+		double mu = (int) ec.getScalarInput(_input4).getDoubleValue();
 		int rows = LibMatrixCUDA.toInt(input.getNumRows());
 		int cols = LibMatrixCUDA.toInt(input.getNumColumns());
 		MatrixObject out = getDenseMatrixOutputForGPUInstruction(ec, _output.getName(), rows, cols);
@@ -908,7 +908,6 @@ public class DnnGPUInstruction extends GPUInstruction {
 
 
 	private static int getScalarInput(ExecutionContext ec, ArrayList<CPOperand> aL, int index) {
-		return (int) ec.getScalarInput(aL.get(index).getName(),
-			aL.get(index).getValueType(), aL.get(index).isLiteral()).getLongValue();
+		return (int) ec.getScalarInput(aL.get(index)).getLongValue();
 	}
 }

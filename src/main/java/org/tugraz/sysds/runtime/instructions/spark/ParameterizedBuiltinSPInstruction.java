@@ -190,7 +190,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( targetVar );
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			CPOperand ngrpOp = new CPOperand(params.get(Statement.GAGG_NUM_GROUPS));
-			int ngroups = (int)sec.getScalarInput(ngrpOp.getName(), ngrpOp.getValueType(), ngrpOp.isLiteral()).getLongValue();
+			int ngroups = (int)sec.getScalarInput(ngrpOp).getLongValue();
 			
 			//single-block aggregation
 			if( ngroups <= mc1.getRowsPerBlock() && mc1.getCols() <= mc1.getColsPerBlock() ) {

@@ -83,7 +83,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
 		String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();
 		MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
-		long rlen = sec.getScalarInput(_nrow.getName(), _nrow.getValueType(), _nrow.isLiteral()).getLongValue();
+		long rlen = sec.getScalarInput(_nrow).getLongValue();
 		
 		//get inputs
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );

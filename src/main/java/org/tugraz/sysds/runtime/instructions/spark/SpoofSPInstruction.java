@@ -124,7 +124,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 			else if(_in[i].getDataType()==DataType.SCALAR) {
 				//note: even if literal, it might be compiled as scalar placeholder
-				scalars.add(sec.getScalarInput(_in[i].getName(), _in[i].getValueType(), _in[i].isLiteral()));
+				scalars.add(sec.getScalarInput(_in[i]));
 			}
 		}
 		

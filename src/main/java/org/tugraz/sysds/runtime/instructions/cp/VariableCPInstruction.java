@@ -925,8 +925,7 @@ public class VariableCPInstruction extends CPInstruction {
 	 */
 	private void writeScalarToHDFS(ExecutionContext ec, String fname) {
 		try {
-			ScalarObject scalar = ec.getScalarInput(getInput1().getName(), 
-				getInput1().getValueType(), getInput1().isLiteral());
+			ScalarObject scalar = ec.getScalarInput(getInput1());
 			HDFSTool.writeObjectToHDFS(scalar.getValue(), fname);
 			HDFSTool.writeScalarMetaDataFile(fname +".mtd", getInput1().getValueType());
 

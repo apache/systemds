@@ -100,7 +100,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 
 		CPOperand scalarInput = (input3==null ? input2 : input3);
-		ScalarObject order = ec.getScalarInput(scalarInput.getName(), scalarInput.getValueType(), scalarInput.isLiteral()); 
+		ScalarObject order = ec.getScalarInput(scalarInput); 
 		
 		CMOperator cm_op = ((CMOperator)_optr); 
 		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID )

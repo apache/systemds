@@ -107,7 +107,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			FrameObject fometa = sec.getFrameObject(_outputs.get(1).getName());
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
 					sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
-			String spec = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral()).getStringValue();
+			String spec = ec.getScalarInput(input2).getStringValue();
 			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
 			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(spec) ?

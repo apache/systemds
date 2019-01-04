@@ -88,7 +88,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 					MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
 
 					if ( input2.getDataType() == DataType.SCALAR ) {
-						ScalarObject quantile = ec.getScalarInput(input2.getName(), input2.getValueType(), input2.isLiteral());
+						ScalarObject quantile = ec.getScalarInput(input2.getName());
 						double picked = matBlock.pickValue(quantile.getDoubleValue());
 						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					} 

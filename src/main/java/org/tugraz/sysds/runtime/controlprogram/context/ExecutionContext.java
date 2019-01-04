@@ -426,7 +426,8 @@ public class ExecutionContext {
 	}
 	
 	public ScalarObject getScalarInput(CPOperand input) {
-		return getScalarInput(input.getName(), input.getValueType(), input.isLiteral());
+		return input.isLiteral() ? input.getLiteral() : 
+			getScalarInput(input.getName(), input.getValueType(), false);
 	}
 	
 	public ScalarObject getScalarInput(String name, ValueType vt, boolean isLiteral) {

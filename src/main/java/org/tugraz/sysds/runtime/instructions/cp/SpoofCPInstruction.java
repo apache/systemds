@@ -73,7 +73,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 				inputs.add(ec.getMatrixInput(input.getName(), getExtendedOpcode()));
 			else if(input.getDataType()==DataType.SCALAR) {
 				//note: even if literal, it might be compiled as scalar placeholder
-				scalars.add(ec.getScalarInput(input.getName(), input.getValueType(), input.isLiteral()));
+				scalars.add(ec.getScalarInput(input));
 			}
 		}
 		

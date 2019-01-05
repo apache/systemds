@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -43,6 +44,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import scala.Tuple2;
@@ -110,20 +112,33 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		//(in contrast to cp instructions, w/o weights does not materializes weights of 1)
 		switch( _type ) {
 			case VALUEPICK: {
-				ScalarObject quantile = ec.getScalarInput(input2);
-				double[] wt = getWeightedQuantileSummary(in, mc, quantile.getDoubleValue());
-				ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
+				if( input2.isScalar() ) {
+					ScalarObject quantile = ec.getScalarInput(input2);
+					double[] wt = getWeightedQuantileSummary(in, mc,
+						new double[]{quantile.getDoubleValue()});
+					ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
+				}
+				else {
+					double[] wt = getWeightedQuantileSummary(in, mc, DataConverter
+						.convertToDoubleVector(ec.getMatrixInput(input2.getName())));
+					ec.releaseMatrixInput(input2.getName());
+					int qlen = wt.length/3;
+					MatrixBlock out = new MatrixBlock(qlen,1,false);
+					IntStream.range(0, out.getNumRows())
+						.forEach(i -> out.quickSetValue(i, 0, wt[2*qlen+i+1]));
+					ec.setMatrixOutput(output.getName(), out);
+				}
 				break;
 			}
 			
 			case MEDIAN: {
-				double[] wt = getWeightedQuantileSummary(in, mc, 0.5);
+				double[] wt = getWeightedQuantileSummary(in, mc, new double[]{0.5});
 				ec.setScalarOutput(output.getName(), new DoubleObject(wt[3]));
 				break;
 			}
 			
 			case IQM: {
-				double[] wt = getWeightedQuantileSummary(in, mc, 0.25, 0.75);
+				double[] wt = getWeightedQuantileSummary(in, mc, new double[]{0.25,0.75});
 				long key25 = (long)Math.ceil(wt[1]);
 				long key75 = (long)Math.ceil(wt[2]);
 				JavaPairRDD<MatrixIndexes,MatrixBlock> out = in
@@ -150,7 +165,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	 * @param quantiles one or more quantiles between 0 and 1.
 	 * @return a summary of weighted quantiles
 	 */
-	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, Double... quantiles)
+	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, double[] quantiles)
 	{
 		double[] ret = new double[3*quantiles.length + 1];
 		if( mc.getCols()==2 ) //weighted 

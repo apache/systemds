@@ -8,7 +8,8 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 11 Support DML-bodied builtin functions                            OK
  * 12 Remove unnecessary HOP/LOP indirections
  * 13 Refactoring test cases into component/integration               OK
- * 14 Travis integration w/ subset of tests
+ * 14 Complete removal of external functions from all scripts
+ * 15 Travis integration w/ subset of tests
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks
@@ -26,7 +27,7 @@ SYSTEMDS-30 Builtin and Packaging
  * 35 Replace unnecessary dependencies w/ custom
 
 SYSTEMDS-40 Preprocessing builtins
- * 41 Add new Winsorize builtin function
+ * 41 Add new Winsorize builtin function                              OK
  * 42 SotA normalization primitives
  * 43 SotA outlier detection primitives
 
@@ -38,3 +39,7 @@ SYSTEMDS-50 I/O Formats
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK
  * 62 Take over sparsity estimation improvements
+
+SYSTEMDS-100 Various Fixes
+ * 101 Fix spark quantiles w/ multiple queries                        OK
+ * 

@@ -37,8 +37,8 @@ import org.tugraz.sysds.runtime.transform.TfUtils;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 import org.apache.commons.lang.ArrayUtils;
 
 public class FrameReadMetaTest extends AutomatedTestBase 

@@ -556,6 +556,7 @@ public abstract class Hop implements ParseInfo
 			}
 			case FRAME:
 			case MATRIX:
+			case TENSOR:
 			case LIST:
 			{
 				//1a) mem estimate based on exactly known dimensions and sparsity

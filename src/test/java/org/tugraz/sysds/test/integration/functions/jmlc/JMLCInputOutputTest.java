@@ -28,7 +28,7 @@ import org.tugraz.sysds.api.DMLException;
 import org.tugraz.sysds.api.jmlc.Connection;
 import org.tugraz.sysds.api.jmlc.PreparedScript;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 
 /**
  * Test input and output capabilities of JMLC API.

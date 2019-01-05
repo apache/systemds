@@ -27,7 +27,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.jmlc.Connection;
 import org.tugraz.sysds.api.jmlc.PreparedScript;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.utils.Statistics;
 
 public class JMLCParfor2ForCompileTest extends AutomatedTestBase 

@@ -26,7 +26,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.tugraz.sysds.api.mlcontext.MLContext;
 import org.tugraz.sysds.api.mlcontext.MLContextUtil;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 
 /**
  * Abstract class that can be used for MLContext tests.

@@ -29,9 +29,9 @@ import org.tugraz.sysds.runtime.io.FrameReaderFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
+import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Statistics;
 
 public class TransformFrameEncodeDecodeTest extends AutomatedTestBase 

@@ -39,7 +39,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.TestUtils;
 
 
 public class MLContextParforDatasetTest extends MLContextTestBase

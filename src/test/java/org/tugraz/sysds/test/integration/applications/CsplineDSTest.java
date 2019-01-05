@@ -27,8 +27,8 @@ import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestUtils;
 
 public abstract class CsplineDSTest  extends AutomatedTestBase {
 

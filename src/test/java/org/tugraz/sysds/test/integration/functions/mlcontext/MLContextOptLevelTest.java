@@ -27,7 +27,7 @@ import org.tugraz.sysds.api.mlcontext.MLResults;
 import org.tugraz.sysds.api.mlcontext.Script;
 import org.tugraz.sysds.api.mlcontext.MLContext.ExplainLevel;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.TestUtils;
 
 public class MLContextOptLevelTest extends MLContextTestBase
 {

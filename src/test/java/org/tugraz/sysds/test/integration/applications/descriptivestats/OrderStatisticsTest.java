@@ -22,8 +22,8 @@ package org.tugraz.sysds.test.integration.applications.descriptivestats;
 import java.util.Arrays;
 
 import org.junit.Test;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 public class OrderStatisticsTest extends AutomatedTestBase 
 {

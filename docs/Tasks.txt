@@ -5,9 +5,9 @@ GENERAL NOTES:
 ---
 
 SYSTEMDS-10 Compiler Rework / Misc
- * 11 Support DML-bodied builtin functions                                 OK
+ * 11 Support DML-bodied builtin functions                            OK
  * 12 Remove unnecessary HOP/LOP indirections
- * 13 Refactoring test cases into component/integration
+ * 13 Refactoring test cases into component/integration               OK
  * 14 Travis integration w/ subset of tests
  
 SYSTEMDS-20 New Data Model
@@ -36,5 +36,5 @@ SYSTEMDS-50 I/O Formats
  * 
 
 SYSTEMDS-60 Update SystemML improvements
- * 61 Take over cumulative aggregate improvements
+ * 61 Take over cumulative aggregate improvements                     OK
  * 62 Take over sparsity estimation improvements

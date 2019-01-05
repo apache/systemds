@@ -25,8 +25,8 @@ import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 /**
  * The main purpose of this test is to verify all combinations of

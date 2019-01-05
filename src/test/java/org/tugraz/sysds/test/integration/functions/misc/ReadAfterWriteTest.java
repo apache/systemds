@@ -23,9 +23,9 @@ import java.util.Random;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
+import org.tugraz.sysds.test.TestUtils;
 
 /**
  *   

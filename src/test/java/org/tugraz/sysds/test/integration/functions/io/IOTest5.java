@@ -21,8 +21,8 @@ package org.tugraz.sysds.test.integration.functions.io;
 
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLException;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 
 /**

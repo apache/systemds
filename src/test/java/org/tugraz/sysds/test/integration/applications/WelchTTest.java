@@ -30,8 +30,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
 public abstract class WelchTTest extends AutomatedTestBase {

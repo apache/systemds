@@ -34,9 +34,9 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
+import org.tugraz.sysds.test.TestUtils;
 
 public class FrameSchemaReadTest extends AutomatedTestBase
 {

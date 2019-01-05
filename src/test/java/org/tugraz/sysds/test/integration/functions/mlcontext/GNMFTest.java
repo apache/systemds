@@ -57,7 +57,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
 public class GNMFTest extends MLContextTestBase

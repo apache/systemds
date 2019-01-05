@@ -36,7 +36,7 @@ import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.utils.Statistics;
 
 

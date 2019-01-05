@@ -21,9 +21,9 @@ package org.tugraz.sysds.test.integration.functions.io.matrixmarket;
 
 import org.junit.Test;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
+import org.tugraz.sysds.test.TestUtils;
 
 public class FormatChangeTest extends AutomatedTestBase 
 {

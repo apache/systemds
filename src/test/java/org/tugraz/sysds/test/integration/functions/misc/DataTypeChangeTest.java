@@ -34,8 +34,8 @@ import org.tugraz.sysds.parser.DMLTranslator;
 import org.tugraz.sysds.parser.LanguageException;
 import org.tugraz.sysds.parser.ParserFactory;
 import org.tugraz.sysds.parser.ParserWrapper;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 /**
  * GENERAL NOTE

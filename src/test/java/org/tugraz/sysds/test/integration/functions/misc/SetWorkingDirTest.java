@@ -29,8 +29,8 @@ import java.io.PrintStream;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 /**
  *   

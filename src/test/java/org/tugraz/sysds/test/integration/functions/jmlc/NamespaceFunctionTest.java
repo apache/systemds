@@ -31,8 +31,8 @@ import org.tugraz.sysds.api.jmlc.PreparedScript;
 import org.tugraz.sysds.api.jmlc.ResultVariables;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 public class NamespaceFunctionTest extends AutomatedTestBase 
 {

@@ -25,7 +25,7 @@ import org.tugraz.sysds.api.jmlc.Connection;
 import org.tugraz.sysds.api.jmlc.PreparedScript;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 
 public class InputToStringTest extends AutomatedTestBase 
 {

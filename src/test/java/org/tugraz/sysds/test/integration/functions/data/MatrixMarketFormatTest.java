@@ -29,9 +29,9 @@ import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMFormat;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM.MMSymmetry;
 import org.tugraz.sysds.runtime.matrix.data.IJV;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
+import org.tugraz.sysds.test.TestUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;

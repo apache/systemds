@@ -29,8 +29,8 @@ import org.tugraz.sysds.api.jmlc.PreparedScript;
 import org.tugraz.sysds.api.jmlc.ResultVariables;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.integration.TestConfiguration;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 
 public class ReuseModelVariablesTest extends AutomatedTestBase 
 {

@@ -29,7 +29,7 @@ import java.util.Map;
 
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
+import org.tugraz.sysds.test.AutomatedTestBase;
 
 public abstract class ApplyTransformTest extends AutomatedTestBase{
 	

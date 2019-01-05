@@ -31,8 +31,8 @@ import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.api.mlcontext.MLContext;
 import org.tugraz.sysds.api.mlcontext.Matrix;
 import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.test.integration.AutomatedTestBase;
-import org.tugraz.sysds.test.utils.TestUtils;
+import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestUtils;
 
 
 public class MLContextScratchCleanupTest extends AutomatedTestBase 

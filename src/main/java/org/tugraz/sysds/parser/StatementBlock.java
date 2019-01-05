@@ -88,28 +88,22 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public void addStatement(Statement s){
 		_statements.add(s);
-
 		if (_statements.size() == 1){
-			this._filename      = s.getFilename();
-			this._beginLine 	= s.getBeginLine();
-			this._beginColumn 	= s.getBeginColumn();
+			_filename    = s.getFilename();
+			_beginLine   = s.getBeginLine();
+			_beginColumn = s.getBeginColumn();
 		}
-
-		this._endLine 		= s.getEndLine();
-		this._endColumn		= s.getEndColumn();
-
+		_endLine   = s.getEndLine();
+		_endColumn = s.getEndColumn();
 	}
 
 	public void addStatementBlock(StatementBlock s){
-		for (int i = 0; i < s.getNumStatements(); i++){
+		for (int i = 0; i < s.getNumStatements(); i++)
 			_statements.add(s.getStatement(i));
-		}
-
-		this._beginLine 	= _statements.get(0).getBeginLine();
-		this._beginColumn 	= _statements.get(0).getBeginColumn();
-
-		this._endLine 		= _statements.get(_statements.size() - 1).getEndLine();
-		this._endColumn		= _statements.get(_statements.size() - 1).getEndColumn();
+		_beginLine   = _statements.get(0).getBeginLine();
+		_beginColumn = _statements.get(0).getBeginColumn();
+		_endLine     = _statements.get(_statements.size() - 1).getEndLine();
+		_endColumn   = _statements.get(_statements.size() - 1).getEndColumn();
 	}
 
 	public int getNumStatements(){
@@ -124,8 +118,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _statements;
 	}
 
-	public void setStatements( ArrayList<Statement> s )
-	{
+	public void setStatements( ArrayList<Statement> s ) {
 		_statements = s;
 	}
 

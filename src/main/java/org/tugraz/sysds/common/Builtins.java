@@ -134,6 +134,7 @@ public enum Builtins {
 	TRACE("trace", false),
 	VAR("var", false),
 	XOR("xor", false),
+	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
 	
 	//parameterized builtin functions
 	CDF("cdf", false, true),
@@ -161,6 +162,7 @@ public enum Builtins {
 	TRANSFORMENCODE("transformencode", false, true),
 	TRANSFORMMETA("transformmeta", false, true),
 	UPPER_TRI("upper.tri", false, true);
+	
 	//LIST("LIST", false), TODO both builtin and parameterized builtin 
 
 	Builtins(String name, boolean script) {

@@ -99,6 +99,7 @@ public enum Builtins {
 	NCOL("ncol", false),
 	NROW("nrow", false),
 	OUTER("outer", false),
+	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	PPRED("ppred", false),
 	PROD("prod", false),
 	QR("qr", false),

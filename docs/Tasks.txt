@@ -27,9 +27,10 @@ SYSTEMDS-30 Builtin and Packaging
  * 35 Replace unnecessary dependencies w/ custom
 
 SYSTEMDS-40 Preprocessing builtins
- * 41 Add new Winsorize builtin function                              OK
- * 42 SotA normalization primitives
- * 43 SotA outlier detection primitives
+ * 41 Add new winsorize builtin function                              OK
+ * 42 Add new outlier builtin function                                OK
+ * 43 SotA normalization primitives
+ * 44 SotA outlier detection primitives
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)

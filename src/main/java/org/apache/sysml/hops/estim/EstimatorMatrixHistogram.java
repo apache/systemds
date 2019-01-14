@@ -168,8 +168,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				nnz += (long)h1.cNnz[j] * h2.rNnz[j];
 		}
 		//special case, with hybrid exact and approximate output
-		else if(h1.cNnz1e!=null && h2.rNnz1e != null) {
-			//note: normally h1.getRows()*h2.getCols() would define mnOut
+		else if(h1.cNnz1e!=null || h2.rNnz1e != null) {
+			//NOTE: normally h1.getRows()*h2.getCols() would define mnOut
 			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
 			//that exact and approximate fractions touch different areas
 			long mnOut = _useExtended ?
@@ -177,12 +177,15 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				(long)(h1.getRows()-h1.rN1) * (h2.getCols()-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
+				//zero for non-existing extension vectors
+				int h1c1ej = (h1.cNnz1e != null) ? h1.cNnz1e[j] : 0;
+				int h2r1ej = (h2.rNnz1e != null) ? h2.rNnz1e[j] : 0;
 				//exact fractions, w/o double counting
-				nnz += (long)h1.cNnz1e[j] * h2.rNnz[j];
-				nnz += (long)(h1.cNnz[j]-h1.cNnz1e[j]) * h2.rNnz1e[j];
+				nnz += (long)h1c1ej * h2.rNnz[j];
+				nnz += (long)(h1.cNnz[j]-h1c1ej) * h2r1ej;
 				//approximate fraction, w/o double counting
-				double lsp = (double)(h1.cNnz[j]-h1.cNnz1e[j]) 
-					* (h2.rNnz[j]-h2.rNnz1e[j]) / mnOut;
+				double lsp = (double)(h1.cNnz[j]-h1c1ej) 
+					* (h2.rNnz[j]-h2r1ej) / mnOut;
 				spOutRest = spOutRest + lsp - spOutRest*lsp;
 			}
 			nnz += (long)(spOutRest * mnOut);

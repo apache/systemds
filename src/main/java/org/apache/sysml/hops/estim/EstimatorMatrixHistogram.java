@@ -60,16 +60,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	
 	private MatrixCharacteristics estim(MMNode root, boolean topLevel) {
 		//NOTE: not estimateInputs due to handling of topLevel
-		if( !root.getLeft().isLeaf() )
-			estim(root.getLeft(), false); //obtain synopsis
-		if( root.getRight()!=null && !root.getRight().isLeaf() )
-			estim(root.getRight(), false); //obtain synopsis
-		MatrixHistogram h1 = !root.getLeft().isLeaf() ?
-			(MatrixHistogram)root.getLeft().getSynopsis() :
-			new MatrixHistogram(root.getLeft().getData(), _useExtended);
-		MatrixHistogram h2 = root.getRight() != null ? !root.getRight().isLeaf() ?
-			(MatrixHistogram)root.getRight().getSynopsis() :
-			new MatrixHistogram(root.getRight().getData(), _useExtended) : null;
+		MatrixHistogram h1 = getCachedSynopsis(root.getLeft());
+		MatrixHistogram h2 = getCachedSynopsis(root.getRight());
 		
 		//estimate output sparsity based on input histograms
 		double ret = estimIntern(h1, h2, root.getOp(), root.getMisc());
@@ -108,6 +100,17 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			return estimExactMetaData(m1.getMatrixCharacteristics(), null, op).getSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
+	}
+	
+	private MatrixHistogram getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new MatrixHistogram(node.getData(), _useExtended));
+		else if( !node.isLeaf() )
+			estim(node, false); //recursively obtain synopsis
+		return (MatrixHistogram) node.getSynopsis();
 	}
 	
 	public double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op, long[] misc) {

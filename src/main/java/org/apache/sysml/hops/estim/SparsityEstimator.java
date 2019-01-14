@@ -115,11 +115,4 @@ public abstract class SparsityEstimator
 				throw new HopsException("Opcode is not an exact meta data operation: "+op.name());
 		}
 	}
-	
-	protected void estimateInputs(MMNode root) {
-		if (!root.getLeft().isLeaf())
-			estim(root.getLeft()); // obtain synopsis
-		if (root.getRight()!=null && !root.getRight().isLeaf())
-			estim(root.getRight()); // obtain synopsis
-	}
 }

@@ -46,12 +46,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 {
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		estimateInputs(root);
-		BitsetMatrix m1Map = !root.getLeft().isLeaf() ? (BitsetMatrix) root.getLeft().getSynopsis() :
-			new BitsetMatrix1(root.getLeft().getData());
-		BitsetMatrix m2Map = root.getRight() == null ? null :
-			!root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :
-			new BitsetMatrix1(root.getRight().getData());
+		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
+		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
+		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
@@ -84,6 +81,17 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
+	}
+	
+	private BitsetMatrix getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new BitsetMatrix1(node.getData()));
+		else if( !node.isLeaf() )
+			estim(node); //recursively obtain synopsis
+		return (BitsetMatrix) node.getSynopsis();
 	}
 	
 	private BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {

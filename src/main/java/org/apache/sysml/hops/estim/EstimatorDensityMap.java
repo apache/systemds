@@ -55,14 +55,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		estimateInputs(root);
-		DensityMap m1Map = !root.getLeft().isLeaf() ?
-			(DensityMap)root.getLeft().getSynopsis() : 
-			new DensityMap(root.getLeft().getData(), _b);
-		DensityMap m2Map = root.getRight()==null ? null:
-			!root.getRight().isLeaf() ? 
-			(DensityMap)root.getRight().getSynopsis() :
-			new DensityMap(root.getRight().getData(), _b);
+		DensityMap m1Map = getCachedSynopsis(root.getLeft());
+		DensityMap m2Map = getCachedSynopsis(root.getRight());
 		
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
@@ -92,6 +86,17 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		return estim(m, null, op);
+	}
+	
+	private DensityMap getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new DensityMap(node.getData(), _b));
+		else if( !node.isLeaf() )
+			estim(node); //recursively obtain synopsis
+		return (DensityMap) node.getSynopsis();
 	}
 	
 	/**

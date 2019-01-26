@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import org.junit.Test;
-import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
 import org.apache.sysml.lops.LopProperties.ExecType;
 import org.apache.sysml.runtime.io.FrameReader;

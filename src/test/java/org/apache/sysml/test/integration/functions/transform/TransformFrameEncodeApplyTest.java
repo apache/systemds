@@ -19,6 +19,7 @@
 
 package org.apache.sysml.test.integration.functions.transform;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -292,11 +293,22 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			double[][] R2 = DataConverter.convertToDoubleMatrix(MatrixReaderFactory
 				.createMatrixReader(InputInfo.CSVInputInfo)
 				.readMatrixFromHDFS(output("tfout2"), -1L, -1L, 1000, 1000, -1));
-			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);		
+			TestUtils.compareMatrices(R1, R2, R1.length, R1[0].length, 0);
 			
 			if( rt == RUNTIME_PLATFORM.HYBRID_SPARK ) {
-				assertEquals("Wrong number of executed Spark instructions: " + 
+				assertEquals("Wrong number of executed Spark instructions: " +
 					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
+			}
+			
+			//additional checks for binning as encode-decode impossible
+			//TODO fix distributed binning as well
+			if( type == TransformType.BIN && rt != RUNTIME_PLATFORM.SPARK ) {
+				int[] col3 = new int[]{1,4,2,3,3,2,4};
+				int[] col8 = new int[]{1,2,2,2,2,2,3};
+				for(int i=0; i<7; i++) {
+					Assert.assertEquals(col3[i], R1[i][2], 1e-8);
+					Assert.assertEquals(col8[i], R1[i][7], 1e-8);
+				}
 			}
 		}
 		catch(Exception ex) {

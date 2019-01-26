@@ -62,7 +62,7 @@ public class EncoderFactory
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
 			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
-			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames); 
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames);
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
 					CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1), rcIDs), binIDs)); 
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
@@ -74,15 +74,15 @@ public class EncoderFactory
 			if( !rcIDs.isEmpty() ) {
 				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
-				lencoders.add(ra);	
+				lencoders.add(ra);
 			}
 			if( !ptIDs.isEmpty() )
 				lencoders.add(new EncoderPassThrough(
-						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
+					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));
 			if( !dcIDs.isEmpty() )
 				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length));
 			if( !binIDs.isEmpty() )
-				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, true));
+				lencoders.add(new EncoderBin(jSpec, colnames, schema.length));
 			if( !oIDs.isEmpty() )
 				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length));
 			if( !mvIDs.isEmpty() ) {

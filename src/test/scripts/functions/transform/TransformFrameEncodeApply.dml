@@ -20,7 +20,6 @@
 #-------------------------------------------------------------
 
 F1 = read($DATA, data_type="frame", format="csv");
-
 jspec = read($TFSPEC, data_type="scalar", value_type="string");
 
 [X, M] = transformencode(target=F1, spec=jspec);

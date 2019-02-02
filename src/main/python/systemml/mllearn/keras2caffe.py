@@ -106,7 +106,7 @@ str_keys = ['name', 'type', 'top', 'bottom']
 
 def toKV(key, value):
     return str(key) + ': "' + str(value) + \
-        '"' if key in str_keys else str(key) + ': ' + str(value)
+           '"' if key in str_keys else str(key) + ': ' + str(value)
 
 
 def _parseJSONObject(obj):
@@ -143,7 +143,8 @@ def _parseActivation(layer, customLayerName=None):
                           'type': supportedCaffeActivations[kerasActivation], 'top': layer.name, 'bottom': layer.name}}
     else:
         return {'layer': {'name': layer.name,
-                          'type': supportedCaffeActivations[kerasActivation], 'top': layer.name, 'bottom': _getBottomLayers(layer)}}
+                          'type': supportedCaffeActivations[kerasActivation], 'top': layer.name,
+                          'bottom': _getBottomLayers(layer)}}
 
 
 def _shouldParseActivation(layer):
@@ -184,8 +185,10 @@ def _parseBatchNorm(layer):
     bnName = layer.name + '_1'
     config = layer.get_config()
     bias_term = 'true' if config['center'] else 'false'
-    return [{'layer': {'name': bnName, 'type': 'BatchNorm', 'bottom': _getBottomLayers(layer), 'top': bnName, 'batch_norm_param': {'moving_average_fraction': layer.momentum, 'eps': layer.epsilon}}}, {
-        'layer': {'name': layer.name, 'type': 'Scale', 'bottom': bnName, 'top': layer.name, 'scale_param': {'bias_term': bias_term}}}]
+    return [{'layer': {'name': bnName, 'type': 'BatchNorm', 'bottom': _getBottomLayers(layer), 'top': bnName,
+                       'batch_norm_param': {'moving_average_fraction': layer.momentum, 'eps': layer.epsilon}}}, {
+                'layer': {'name': layer.name, 'type': 'Scale', 'bottom': bnName, 'top': layer.name,
+                          'scale_param': {'bias_term': bias_term}}}]
 
 
 # The special are redirected to their custom parse function in _parseKerasLayer
@@ -206,7 +209,8 @@ def getConvParam(layer):
         0]
     config = layer.get_config()
     return {'num_output': layer.filters, 'bias_term': str(config['use_bias']).lower(
-    ), 'kernel_h': layer.kernel_size[0], 'kernel_w': layer.kernel_size[1], 'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': padding[0], 'pad_w': padding[1]}
+    ), 'kernel_h': layer.kernel_size[0], 'kernel_w': layer.kernel_size[1], 'stride_h': stride[0], 'stride_w': stride[1],
+            'pad_h': padding[0], 'pad_w': padding[1]}
 
 
 def getUpSamplingParam(layer):
@@ -227,11 +231,11 @@ def getPoolingParam(layer, pool='MAX'):
 
 
 def getRecurrentParam(layer):
-    if(not layer.use_bias):
+    if (not layer.use_bias):
         raise Exception('Only use_bias=True supported for recurrent layers')
-    if(keras.activations.serialize(layer.activation) != 'tanh'):
+    if (keras.activations.serialize(layer.activation) != 'tanh'):
         raise Exception('Only tanh activation supported for recurrent layers')
-    if(layer.dropout != 0 or layer.recurrent_dropout != 0):
+    if (layer.dropout != 0 or layer.recurrent_dropout != 0):
         raise Exception('Only dropout not supported for recurrent layers')
     return {'num_output': layer.units, 'return_sequences': str(
         layer.return_sequences).lower()}
@@ -242,27 +246,27 @@ layerParamMapping = {
     keras.layers.InputLayer: lambda l:
     {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l:
-        {'inner_product_param': {'num_output': l.units}},
+    {'inner_product_param': {'num_output': l.units}},
     keras.layers.Dropout: lambda l:
-        {'dropout_param': {'dropout_ratio': l.rate}},
+    {'dropout_param': {'dropout_ratio': l.rate}},
     keras.layers.Add: lambda l:
-        {'eltwise_param': {'operation': 'SUM'}},
+    {'eltwise_param': {'operation': 'SUM'}},
     keras.layers.Concatenate: lambda l:
-        {'concat_param': {'axis': _getCompensatedAxis(l)}},
+    {'concat_param': {'axis': _getCompensatedAxis(l)}},
     keras.layers.Conv2DTranspose: lambda l:
-        {'convolution_param': getConvParam(l)},
+    {'convolution_param': getConvParam(l)},
     keras.layers.UpSampling2D: lambda l:
-        {'upsample_param': getUpSamplingParam(l)},
+    {'upsample_param': getUpSamplingParam(l)},
     keras.layers.Conv2D: lambda l:
-        {'convolution_param': getConvParam(l)},
+    {'convolution_param': getConvParam(l)},
     keras.layers.MaxPooling2D: lambda l:
-        {'pooling_param': getPoolingParam(l, 'MAX')},
+    {'pooling_param': getPoolingParam(l, 'MAX')},
     keras.layers.AveragePooling2D: lambda l:
-        {'pooling_param': getPoolingParam(l, 'AVE')},
+    {'pooling_param': getPoolingParam(l, 'AVE')},
     keras.layers.SimpleRNN: lambda l:
-        {'recurrent_param': getRecurrentParam(l)},
+    {'recurrent_param': getRecurrentParam(l)},
     keras.layers.LSTM: lambda l:
-        {'recurrent_param': getRecurrentParam(l)},
+    {'recurrent_param': getRecurrentParam(l)},
 }
 
 
@@ -305,7 +309,7 @@ def _appendKerasLayers(fileHandle, kerasLayers, batch_size):
 
 def lossLayerStr(layerType, bottomLayer):
     return 'layer {\n  name: "loss"\n  type: "' + layerType + \
-        '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
+           '"\n  bottom: "' + bottomLayer + '"\n  bottom: "label"\n  top: "loss"\n}\n'
 
 
 def _appendKerasLayerWithoutActivation(fileHandle, layer, batch_size):
@@ -327,40 +331,55 @@ def _getExactlyOneBottomLayer(layer):
 def _isMeanSquaredError(loss):
     return loss == 'mean_squared_error' or loss == 'mse' or loss == 'MSE'
 
+def _appendInputLayerIfNecessary(kerasModel):
+    """ Append an Input layer if not present: required for versions 2.1.5 (works with 2.1.5, but not with 2.2.4) and return all the layers  """
+    input_layer = []
+    if not any([isinstance(l, keras.layers.InputLayer) for l in kerasModel.layers]):
+        input_name = kerasModel.layers[0]._inbound_nodes[0].inbound_layers[0].name
+        input_shape = kerasModel.layers[0].input_shape
+        input_layer = [keras.layers.InputLayer(name=input_name, input_shape=input_shape)]
+    return input_layer + kerasModel.layers
+
+def _throwLossException(loss, lastLayerActivation=None):
+    if lastLayerActivation is not None:
+        activationMsg = ' (where last layer activation ' + lastLayerActivation + ')'
+    else:
+        activationMsg = ''
+    raise Exception('Unsupported loss layer ' + str(loss) + activationMsg)
 
 def convertKerasToCaffeNetwork(
         kerasModel, outCaffeNetworkFilePath, batch_size):
     _checkIfValid(kerasModel.layers, lambda layer: False if type(
         layer) in supportedLayers else True, 'Unsupported Layers:')
     with open(outCaffeNetworkFilePath, 'w') as f:
+        layers = _appendInputLayerIfNecessary(kerasModel)
         # Write the parsed layers for all but the last layer
-        _appendKerasLayers(f, kerasModel.layers[:-1], batch_size)
+        _appendKerasLayers(f, layers[:-1], batch_size)
         # Now process the last layer with loss
-        lastLayer = kerasModel.layers[-1]
+        lastLayer = layers[-1]
         if _isMeanSquaredError(kerasModel.loss):
+            # No need to inspect the last layer, just append EuclideanLoss after writing the last layer
             _appendKerasLayers(f, [lastLayer], batch_size)
             f.write(lossLayerStr('EuclideanLoss', lastLayer.name))
         elif kerasModel.loss == 'categorical_crossentropy':
-            _appendKerasLayerWithoutActivation(f, lastLayer, batch_size)
-            bottomLayer = _getExactlyOneBottomLayer(lastLayer) if isinstance(
-                lastLayer, keras.layers.Activation) else lastLayer.name
-            lastLayerActivation = str(
-                keras.activations.serialize(
-                    lastLayer.activation))
-            if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
-                f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+            # Three cases:
+            if isinstance(lastLayer, keras.layers.Softmax):
+                # Case 1: Last layer is a softmax.
+                f.write(lossLayerStr('SoftmaxWithLoss', _getExactlyOneBottomLayer(lastLayer)))
             else:
-                raise Exception('Unsupported loss layer ' +
-                                str(kerasModel.loss) +
-                                ' (where last layer activation ' +
-                                lastLayerActivation +
-                                ').')
+                lastLayerActivation = str(keras.activations.serialize(lastLayer.activation))
+                if lastLayerActivation == 'softmax' and kerasModel.loss == 'categorical_crossentropy':
+                    # Case 2: Last layer activation is softmax.
+                    # First append the last layer without its activation and then append SoftmaxWithLoss
+                    bottomLayer = _getExactlyOneBottomLayer(lastLayer) if isinstance(
+                        lastLayer, keras.layers.Activation) else lastLayer.name
+                    _appendKerasLayerWithoutActivation(f, lastLayer, batch_size)
+                    f.write(lossLayerStr('SoftmaxWithLoss', bottomLayer))
+                else:
+                    # Case 3: Last layer activation is not softmax => Throw error
+                    _throwLossException(kerasModel.loss, lastLayerActivation)
         else:
-            raise Exception('Unsupported loss layer ' +
-                            str(kerasModel.loss) +
-                            ' (where last layer activation ' +
-                            lastLayerActivation +
-                            ').')
+            _throwLossException(kerasModel.loss)
 
 
 def getNumPyMatrixFromKerasWeight(param):
@@ -387,7 +406,8 @@ def evaluateValue(val):
 
 
 def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFilePath,
-                              max_iter, test_iter, test_interval, display, lr_policy, weight_decay, regularization_type):
+                              max_iter, test_iter, test_interval, display, lr_policy, weight_decay,
+                              regularization_type):
     if isinstance(kerasModel.optimizer, keras.optimizers.SGD):
         solver = 'type: "Nesterov"\n' if kerasModel.optimizer.nesterov else 'type: "SGD"\n'
     elif isinstance(kerasModel.optimizer, keras.optimizers.Adagrad):
@@ -489,10 +509,10 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
             layer.name + '_1_bias']
         for i in range(len(inputMatrices)):
             dmlLines = dmlLines + \
-                ['write(' + potentialVar[i] + ', "' + outDirectory +
-                 '/' + potentialVar[i] + '.mtx", format="binary");\n']
+                       ['write(' + potentialVar[i] + ', "' + outDirectory +
+                        '/' + potentialVar[i] + '.mtx", format="binary");\n']
             mat = inputMatrices[i].transpose() if (
-                i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
+                    i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
             py4j.java_gateway.get_method(script_java, "in")(
                 potentialVar[i], convertToMatrixBlock(sc, mat))
     script_java.setScriptString(''.join(dmlLines))

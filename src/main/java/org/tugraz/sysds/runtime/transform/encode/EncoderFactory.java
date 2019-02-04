@@ -56,33 +56,34 @@ public class EncoderFactory
 			List<Encoder> lencoders = new ArrayList<>();
 		
 			//prepare basic id lists (recode, dummycode, pass-through)
-			//note: any dummycode column requires recode as preparation
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_RECODE)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_DUMMYCODE))); 
-			rcIDs = new ArrayList<Integer>(CollectionUtils.union(rcIDs, dcIDs));
-			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames); 
+			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames);
+			//note: any dummycode column requires recode as preparation, unless it follows binning
+			rcIDs = new ArrayList<Integer>(
+				CollectionUtils.union(rcIDs, CollectionUtils.subtract(dcIDs, binIDs)));
 			List<Integer> ptIDs = new ArrayList<Integer>(CollectionUtils.subtract(
-					CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1), rcIDs), binIDs)); 
+					CollectionUtils.subtract(UtilFunctions.getSeqList(1, clen, 1), rcIDs), binIDs));
 			List<Integer> oIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_OMIT))); 
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_OMIT)));
 			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
-					TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_IMPUTE))); 
+					TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_IMPUTE)));
 			
 			//create individual encoders
 			if( !rcIDs.isEmpty() ) {
 				EncoderRecode ra = new EncoderRecode(jSpec, colnames, clen);
 				ra.setColList(ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])));
-				lencoders.add(ra);	
+				lencoders.add(ra);
 			}
 			if( !ptIDs.isEmpty() )
 				lencoders.add(new EncoderPassThrough(
-						ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));	
+					ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])), clen));
+			if( !binIDs.isEmpty() )
+				lencoders.add(new EncoderBin(jSpec, colnames, schema.length));
 			if( !dcIDs.isEmpty() )
 				lencoders.add(new EncoderDummycode(jSpec, colnames, schema.length));
-			if( !binIDs.isEmpty() )
-				lencoders.add(new EncoderBin(jSpec, colnames, schema.length, true));
 			if( !oIDs.isEmpty() )
 				lencoders.add(new EncoderOmit(jSpec, colnames, schema.length));
 			if( !mvIDs.isEmpty() ) {

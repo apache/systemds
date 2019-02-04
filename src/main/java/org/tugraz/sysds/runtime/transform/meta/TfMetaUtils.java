@@ -101,7 +101,7 @@ public class TfMetaUtils
 				ids = true; //file-based transform outputs ids w/o id tags
 			}
 			else
-				attrs = (JSONArray)spec.get(group);			
+				attrs = (JSONArray)spec.get(group);
 			
 			//construct ID list array
 			colList = new int[attrs.size()];
@@ -378,11 +378,11 @@ public class TfMetaUtils
 		try {
 			if( jSpec.containsKey(TfUtils.TXMETHOD_BIN) && jSpec.get(TfUtils.TXMETHOD_BIN) instanceof JSONArray ) {
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));	
+						TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));
 			}
 			else { //internally generates
 				return Arrays.asList(ArrayUtils.toObject(
-						TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));	
+						TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TXMETHOD_BIN)));
 			}
 		}
 		catch(JSONException ex) {

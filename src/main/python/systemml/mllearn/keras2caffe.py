@@ -477,10 +477,30 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
 
 
 def getInputMatrices(layer):
-    if isinstance(layer, keras.layers.LSTM) or isinstance(
-            layer, keras.layers.SimpleRNN):
+    if isinstance(layer, keras.layers.SimpleRNN):
         weights = layer.get_weights()
         return [np.vstack((weights[0], weights[1])), np.matrix(weights[2])]
+    elif isinstance(layer, keras.layers.LSTM):
+        weights = layer.get_weights()
+        W, U, b =  weights[0], weights[1], weights[2]
+        units = W.shape[1]/4
+        if W.shape[1] != U.shape[1]:
+            raise Exception('Number of hidden units of the kernel and the recurrent kernel doesnot match')
+        # Note: For the LSTM layer, Keras weights are laid out in [i, f, c, o] format;
+        # whereas SystemML weights are laid out in [i, f, o, c] format.
+        W_i = W[:, :units]
+        W_f = W[:, units: units * 2]
+        W_c = W[:, units * 2: units * 3]
+        W_o = W[:, units * 3:]
+        U_i = U[:, :units]
+        U_f = U[:, units: units * 2]
+        U_c = U[:, units * 2: units * 3]
+        U_o = U[:, units * 3:]
+        b_i = b[:units]
+        b_f = b[units: units * 2]
+        b_c = b[units * 2: units * 3]
+        b_o = b[units * 3:]
+        return [np.vstack((np.hstack((W_i, W_f, W_o, W_c)), np.hstack((U_i, U_f, U_o, U_c)))).reshape((-1, 4*units)), np.hstack((b_i, b_f, b_o, b_c)).reshape((1, -1))]
     else:
         return [getNumPyMatrixFromKerasWeight(
             param) for param in layer.get_weights()]

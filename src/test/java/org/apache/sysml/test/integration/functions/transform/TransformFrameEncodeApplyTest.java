@@ -31,7 +31,7 @@ import org.apache.sysml.test.integration.TestConfiguration;
 import org.apache.sysml.test.utils.TestUtils;
 import org.apache.sysml.utils.Statistics;
 
-public class TransformFrameEncodeApplyTest extends AutomatedTestBase 
+public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
@@ -39,14 +39,16 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
-	private final static String SPEC1    = "homes3/homes.tfspec_recode.json"; 
-	private final static String SPEC1b   = "homes3/homes.tfspec_recode2.json"; 
+	private final static String SPEC1    = "homes3/homes.tfspec_recode.json";
+	private final static String SPEC1b   = "homes3/homes.tfspec_recode2.json";
 	private final static String SPEC2    = "homes3/homes.tfspec_dummy.json";
 	private final static String SPEC2b   = "homes3/homes.tfspec_dummy2.json";
-	private final static String SPEC3    = "homes3/homes.tfspec_bin.json"; //incl recode
-	private final static String SPEC3b   = "homes3/homes.tfspec_bin2.json"; //incl recode
-	private final static String SPEC6    = "homes3/homes.tfspec_recode_dummy.json"; 
-	private final static String SPEC6b   = "homes3/homes.tfspec_recode_dummy2.json"; 
+	private final static String SPEC3    = "homes3/homes.tfspec_bin.json"; //recode
+	private final static String SPEC3b   = "homes3/homes.tfspec_bin2.json"; //recode
+	private final static String SPEC6    = "homes3/homes.tfspec_recode_dummy.json";
+	private final static String SPEC6b   = "homes3/homes.tfspec_recode_dummy2.json";
+	private final static String SPEC7    = "homes3/homes.tfspec_binDummy.json"; //recode+dummy
+	private final static String SPEC7b   = "homes3/homes.tfspec_binDummy2.json"; //recode+dummy
 	
 	//dataset and transform tasks with missing values
 	private final static String DATASET2 = "homes/homes.csv";
@@ -55,11 +57,15 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 	private final static String SPEC5    = "homes3/homes.tfspec_omit.json";
 	private final static String SPEC5b   = "homes3/homes.tfspec_omit2.json";
 	
+	private static final int[] BIN_col3 = new int[]{1,4,2,3,3,2,4};
+	private static final int[] BIN_col8 = new int[]{1,2,2,2,2,2,3};
+	
 	public enum TransformType {
 		RECODE,
 		DUMMY,
 		RECODE_DUMMY,
 		BIN,
+		BIN_DUMMY,
 		IMPUTE,
 		OMIT,
 	}
@@ -120,14 +126,29 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN, false);
 	}
 	
-	@Test
-	public void testHomesBinningIDsSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, false);
-	}
+//	@Test
+//	public void testHomesBinningIDsSparkCSV() {
+//		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, false);
+//	}
 	
 	@Test
 	public void testHomesBinningIDsHybridCSV() {
 		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN, false);
+	}
+	
+	@Test
+	public void testHomesBinningDummyIDsSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
+	}
+
+//	@Test
+//	public void testHomesBinningDummyIDsSparkCSV() {
+//		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN_DUMMY, false);
+//	}
+	
+	@Test
+	public void testHomesBinningDummyIDsHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN_DUMMY, false);
 	}
 	
 	@Test
@@ -210,14 +231,29 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN, true);
 	}
 	
-	@Test
-	public void testHomesBinningColnamesSparkCSV() {
-		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, true);
-	}
+//	@Test
+//	public void testHomesBinningColnamesSparkCSV() {
+//		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN, true);
+//	}
 	
 	@Test
 	public void testHomesBinningColnamesHybridCSV() {
 		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN, true);
+	}
+	
+	@Test
+	public void testHomesBinningDummyColnamesSingleNodeCSV() {
+		runTransformTest(RUNTIME_PLATFORM.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, true);
+	}
+	
+//	@Test
+//	public void testHomesBinningDummyColnamesSparkCSV() {
+//		runTransformTest(RUNTIME_PLATFORM.SPARK, "csv", TransformType.BIN_DUMMY, true);
+//	}
+	
+	@Test
+	public void testHomesBinningDummyColnamesHybridCSV() {
+		runTransformTest(RUNTIME_PLATFORM.HYBRID_SPARK, "csv", TransformType.BIN_DUMMY, true);
 	}
 	
 	@Test
@@ -266,6 +302,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
 			case OMIT:   SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames?SPEC6b:SPEC6; DATASET = DATASET1; break;
+			case BIN_DUMMY: SPEC = colnames?SPEC7b:SPEC7; DATASET = DATASET1; break;
 		}
 
 		if( !ofmt.equals("csv") )
@@ -302,12 +339,23 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			
 			//additional checks for binning as encode-decode impossible
 			//TODO fix distributed binning as well
-			if( type == TransformType.BIN && rt != RUNTIME_PLATFORM.SPARK ) {
-				int[] col3 = new int[]{1,4,2,3,3,2,4};
-				int[] col8 = new int[]{1,2,2,2,2,2,3};
+			if( type == TransformType.BIN ) {
 				for(int i=0; i<7; i++) {
-					Assert.assertEquals(col3[i], R1[i][2], 1e-8);
-					Assert.assertEquals(col8[i], R1[i][7], 1e-8);
+					Assert.assertEquals(BIN_col3[i], R1[i][2], 1e-8);
+					Assert.assertEquals(BIN_col8[i], R1[i][7], 1e-8);
+				}
+			}
+			else if( type == TransformType.BIN_DUMMY ) {
+				Assert.assertEquals(14, R1[0].length);
+				for(int i=0; i<7; i++) {
+					for(int j=0; j<4; j++) { //check dummy coded
+						Assert.assertEquals((j==BIN_col3[i]-1)?
+							1:0, R1[i][2+j], 1e-8);
+					}
+					for(int j=0; j<3; j++) { //check dummy coded
+						Assert.assertEquals((j==BIN_col8[i]-1)?
+							1:0, R1[i][10+j], 1e-8);
+					}
 				}
 			}
 		}

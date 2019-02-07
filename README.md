@@ -25,4 +25,4 @@ limitations under the License.
 
 **Documentation:** [SystemDS Documentation](http://apache.github.io/systemml/dml-language-reference)<br/>
 
-**Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from [**Apache SystemML**](http://systemml.apache.org/) 1.2 in September 2019. We will continue to support linear algebra programs over matrices, while replacing the underlying data model and compiler, as well as substantially extending the supported functionalities. Until the first release, you can build your own snapshot via Apache Maven: `mvn -DskipTests clean package`.
+**Status and Build:** SystemDS is still in pre-alpha status. The original code base was forked from [**Apache SystemML**](http://systemml.apache.org/) 1.2 in September 2018. We will continue to support linear algebra programs over matrices, while replacing the underlying data model and compiler, as well as substantially extending the supported functionalities. Until the first release, you can build your own snapshot via Apache Maven: `mvn -DskipTests clean package`.

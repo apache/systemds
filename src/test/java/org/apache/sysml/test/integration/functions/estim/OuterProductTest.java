@@ -26,6 +26,7 @@ import org.apache.sysml.hops.estim.EstimatorBitsetMM;
 import org.apache.sysml.hops.estim.EstimatorDensityMap;
 import org.apache.sysml.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysml.hops.estim.EstimatorSample;
+import org.apache.sysml.hops.estim.EstimatorSampleRa;
 import org.apache.sysml.hops.estim.SparsityEstimator;
 import org.apache.sysml.runtime.instructions.InstructionUtils;
 import org.apache.sysml.runtime.matrix.data.MatrixBlock;
@@ -139,14 +140,35 @@ public class OuterProductTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorSample(0.2), m, k, n, case2);
 	}
 	
+	@Test
+	public void testSamplingRaDefCase1() {
+		runSparsityEstimateTest(new EstimatorSampleRa(), m, k, n, case1);
+	}
+	
+	@Test
+	public void testSamplingRaDefCase2() {
+		runSparsityEstimateTest(new EstimatorSampleRa(), m, k, n, case2);
+	}
+	
+	@Test
+	public void testSamplingRa20Case1() {
+		runSparsityEstimateTest(new EstimatorSampleRa(0.2), m, k, n, case1);
+	}
+	
+	@Test
+	public void testSamplingRa20Case2() {
+		runSparsityEstimateTest(new EstimatorSampleRa(0.2), m, k, n, case2);
+	}
+	
 	private void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp[0], 1, 1, "uniform", 3);
-		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 3);
+		MatrixBlock m2 = MatrixBlock.randOperations(k, n, sp[1], 1, 1, "uniform", 7);
 		MatrixBlock m3 = m1.aggregateBinaryOperations(m1, m2, 
 			new MatrixBlock(), InstructionUtils.getMatMultOperator(1));
 		
 		//compare estimated and real sparsity
 		double est = estim.estim(m1, m2);
-		TestUtils.compareScalars(est, m3.getSparsity(), 1e-16);
+		TestUtils.compareScalars(est, m3.getSparsity(),
+			(estim instanceof EstimatorSampleRa)?5e-2:1e-16);
 	}
 }

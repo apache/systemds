@@ -56,7 +56,7 @@ public class EstimatorSample extends SparsityEstimator
 	}
 	
 	public EstimatorSample(double sampleFrac, boolean extended) {
-		if( sampleFrac < 0 || sampleFrac > 1.0 )
+		if( sampleFrac <= 0 || sampleFrac > 1.0 )
 			throw new DMLRuntimeException("Invalid sample fraction: "+sampleFrac);
 		_frac = sampleFrac;
 		_extended = extended;

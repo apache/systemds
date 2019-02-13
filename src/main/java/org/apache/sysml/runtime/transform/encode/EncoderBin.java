@@ -124,6 +124,12 @@ public class EncoderBin extends Encoder
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
+		//allocate frame if necessary
+		int maxLength = 0;
+		for( int j=0; j<_colList.length; j++ )
+			maxLength = Math.max(maxLength, _binMaxs[j].length);
+		meta.ensureAllocatedColumns(maxLength);
+		
 		//serialize the internal state into frame meta data
 		for( int j=0; j<_colList.length; j++ ) {
 			int colID = _colList[j]; //1-based

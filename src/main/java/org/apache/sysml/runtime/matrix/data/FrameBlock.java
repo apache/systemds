@@ -248,8 +248,16 @@ public class FrameBlock implements Writable, CacheBlock, Externalizable
 	 */
 	public void ensureAllocatedColumns(int numRows) {
 		//early abort if already allocated
-		if( _coldata != null && _schema.length == _coldata.length ) 
-			return;		
+		if( _coldata != null && _schema.length == _coldata.length ) {
+			//handle special case that to few rows allocated
+			if( _numRows < numRows ) {
+				String[] tmp = new String[getNumColumns()];
+				int len = numRows - _numRows;
+				for(int i=0; i<len; i++)
+					appendRow(tmp);
+			}
+			return;
+		}
 		//allocate column meta data if necessary
 		if( _colmeta == null || _schema.length != _colmeta.length ) {
 			_colmeta = new ColumnMetadata[_schema.length];

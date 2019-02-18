@@ -1009,8 +1009,8 @@ class Keras2DML(Caffe2DML):
 
     """
 
-    def __init__(self, sparkSession, keras_model, input_shape, transferUsingDF=False, load_keras_weights=True, weights=None, labels=None,
-                 batch_size=64, max_iter=2000, test_iter=10, test_interval=500, display=100, lr_policy="step", weight_decay=5e-4, regularization_type="L2"):
+    def __init__(self, sparkSession, keras_model, input_shape=None, transferUsingDF=False, load_keras_weights=True, weights=None, labels=None,
+                 batch_size=64, max_iter=2000, test_iter=0, test_interval=500, display=100, lr_policy="step", weight_decay=0, regularization_type="L2"):
         """
         Performs training/prediction for a given keras model.
 
@@ -1018,37 +1018,43 @@ class Keras2DML(Caffe2DML):
         ----------
         sparkSession: PySpark SparkSession
         keras_model: keras model
-        input_shape: 3-element list (number of channels, input height, input width)
+        input_shape: 3-element list (number of channels, input height, input width). If not provided, it is inferred from the input shape of the first layer.
         transferUsingDF: whether to pass the input dataset via PySpark DataFrame (default: False)
         load_keras_weights: whether to load weights from the keras_model. If False, the weights will be initialized to random value using NN libraries' init method  (default: True)
         weights: directory whether learned weights are stored (default: None)
         labels: file containing mapping between index and string labels (default: None)
         batch_size: size of the input batch (default: 64)
-        max_iter: maximum number of iterations (default: 1)
-        test_iter: test_iter for caffe solver (default: 10)
+        max_iter: maximum number of iterations (default: 2000)
+        test_iter: test_iter for caffe solver (default: 0)
         test_interval: test_interval for caffe solver (default: 500)
         display: display for caffe solver (default: 100)
         lr_policy: learning rate policy for caffe solver (default: "step")
-        weight_decay: regularation strength (default: 5e-4)
+        weight_decay: regularation strength (default: 0, recommended: 5e-4)
         regularization_type: regularization type (default: "L2")
         """
         from .keras2caffe import convertKerasToCaffeNetwork, convertKerasToCaffeSolver, convertKerasToSystemMLModel
         import tempfile, keras
+        if keras.backend.image_data_format() != 'channels_first':
+            raise Exception('The data format ' + str(keras.backend.image_data_format())
+                            + ' is not supported. Please use keras.backend.set_image_data_format("channels_first")')
         if isinstance(keras_model, keras.models.Sequential):
             # Convert the sequential model to functional model
             if keras_model.model is None:
                 keras_model.build()
             keras_model = keras_model.model
+        if input_shape is None:
+            keras_shape = keras_model.layers[0].input_shape
+            input_shape = [1, 1, 1]
+            if len(keras_shape) > 4 or len(keras_shape) <= 1:
+                raise Exception('Input shape ' + str(keras_shape) + ' is not supported.')
+            for i in range(len(keras_shape)-1):
+                input_shape[i] = keras_shape[i+1] # Ignore batch size
+        elif len(input_shape) > 3 or len(input_shape) == 0:
+            raise Exception('Input shape ' + str(input_shape) + ' is not supported.')
         self.name = keras_model.name
         createJavaObject(sparkSession._sc, 'dummy')
         if not hasattr(keras_model, 'optimizer'):
-            keras_model.compile(
-                loss='categorical_crossentropy',
-                optimizer=keras.optimizers.SGD(
-                    lr=0.01,
-                    momentum=0.95,
-                    decay=5e-4,
-                    nesterov=True))
+            raise Exception('Please compile the model before passing it to Keras2DML')
         convertKerasToCaffeNetwork(
             keras_model,
             self.name + ".proto",

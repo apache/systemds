@@ -56,7 +56,8 @@ except ImportError:
 supportedCaffeActivations = {
     'relu': 'ReLU',
     'softmax': 'Softmax',
-    'sigmoid': 'Sigmoid'}
+    'sigmoid': 'Sigmoid'
+}
 supportedLayers = {
     keras.layers.InputLayer: 'Data',
     keras.layers.Dense: 'InnerProduct',
@@ -70,7 +71,7 @@ supportedLayers = {
     keras.layers.AveragePooling2D: 'Pooling',
     keras.layers.SimpleRNN: 'RNN',
     keras.layers.LSTM: 'LSTM',
-    keras.layers.Flatten: 'None',
+    keras.layers.Flatten: 'Flatten',
     keras.layers.BatchNormalization: 'None',
     keras.layers.Activation: 'None'
 }
@@ -84,9 +85,10 @@ def _getInboundLayers(layer):
     for node in inbound_nodes:
         node_list = node.inbound_layers  # get layers pointing to this node
         in_names = in_names + node_list
+    return list(in_names)
     # For Caffe2DML to reroute any use of Flatten layers
-    return list(chain.from_iterable([_getInboundLayers(l) if isinstance(
-        l, keras.layers.Flatten) else [l] for l in in_names]))
+    #return list(chain.from_iterable([_getInboundLayers(l) if isinstance(
+    #    l, keras.layers.Flatten) else [l] for l in in_names]))
 
 
 def _getCompensatedAxis(layer):
@@ -160,23 +162,19 @@ def _parseKerasLayer(layer):
     elif layerType == keras.layers.Activation:
         return [_parseActivation(layer)]
     param = layerParamMapping[layerType](layer)
-    paramName = param.keys()[0]
+    layerArgs = {}
+    layerArgs['name'] = layer.name
     if layerType == keras.layers.InputLayer:
-        ret = {
-            'layer': {
-                'name': layer.name,
-                'type': 'Data',
-                paramName: param[paramName],
-                'top': layer.name,
-                'top': 'label'}}
+        layerArgs['type'] = 'Data'
+        layerArgs['top'] = 'label' # layer.name: TODO
     else:
-        ret = {
-            'layer': {
-                'name': layer.name,
-                'type': supportedLayers[layerType],
-                'bottom': _getBottomLayers(layer),
-                'top': layer.name,
-                paramName: param[paramName]}}
+        layerArgs['type'] = supportedLayers[layerType]
+        layerArgs['bottom'] = _getBottomLayers(layer)
+        layerArgs['top'] = layer.name
+    if len(param) > 0:
+        paramName = param.keys()[0]
+        layerArgs[paramName] = param[paramName]
+    ret = { 'layer': layerArgs }
     return [ret, _parseActivation(
         layer, layer.name + '_activation')] if _shouldParseActivation(layer) else [ret]
 
@@ -193,7 +191,6 @@ def _parseBatchNorm(layer):
 
 # The special are redirected to their custom parse function in _parseKerasLayer
 specialLayers = {
-    keras.layers.Flatten: lambda x: [],
     keras.layers.BatchNormalization: _parseBatchNorm
 }
 
@@ -241,12 +238,18 @@ def getRecurrentParam(layer):
         layer.return_sequences).lower()}
 
 
+def getInnerProductParam(layer):
+    if len(layer.output_shape) != 2:
+        raise Exception('Only 2-D input is supported for the Dense layer in the current implementation, but found '
+                        + str(layer.input_shape) + '. Consider adding a Flatten before ' + str(layer.name))
+    return {'num_output': layer.units}
+
 # TODO: Update AveragePooling2D when we add maxpooling support
 layerParamMapping = {
     keras.layers.InputLayer: lambda l:
     {'data_param': {'batch_size': l.batch_size}},
     keras.layers.Dense: lambda l:
-    {'inner_product_param': {'num_output': l.units}},
+    {'inner_product_param': getInnerProductParam(l)},
     keras.layers.Dropout: lambda l:
     {'dropout_param': {'dropout_ratio': l.rate}},
     keras.layers.Add: lambda l:
@@ -267,6 +270,7 @@ layerParamMapping = {
     {'recurrent_param': getRecurrentParam(l)},
     keras.layers.LSTM: lambda l:
     {'recurrent_param': getRecurrentParam(l)},
+    keras.layers.Flatten: lambda l: {},
 }
 
 
@@ -475,7 +479,6 @@ def convertKerasToCaffeSolver(kerasModel, caffeNetworkFilePath, outCaffeSolverFi
             raise Exception(
                 'Only sgd (with/without momentum/nesterov), Adam and Adagrad supported.')
 
-
 def getInputMatrices(layer):
     if isinstance(layer, keras.layers.SimpleRNN):
         weights = layer.get_weights()
@@ -501,6 +504,11 @@ def getInputMatrices(layer):
         b_c = b[units * 2: units * 3]
         b_o = b[units * 3:]
         return [np.vstack((np.hstack((W_i, W_f, W_o, W_c)), np.hstack((U_i, U_f, U_o, U_c)))).reshape((-1, 4*units)), np.hstack((b_i, b_f, b_o, b_c)).reshape((1, -1))]
+    elif isinstance(layer, keras.layers.Conv2D):
+        weights = layer.get_weights()
+        #filter = np.swapaxes(weights[0].T, 2, 3)  # convert RSCK => KCRS format
+        filter = np.swapaxes(np.swapaxes(np.swapaxes(weights[0], 1, 3), 0, 1), 1, 2)
+        return [ filter.reshape((filter.shape[0], -1)) , getNumPyMatrixFromKerasWeight(weights[1])]
     else:
         return [getNumPyMatrixFromKerasWeight(
             param) for param in layer.get_weights()]
@@ -535,6 +543,9 @@ def convertKerasToSystemMLModel(spark, kerasModel, outDirectory):
                     i == 1 and type(layer) in biasToTranspose) else inputMatrices[i]
             py4j.java_gateway.get_method(script_java, "in")(
                 potentialVar[i], convertToMatrixBlock(sc, mat))
-    script_java.setScriptString(''.join(dmlLines))
-    ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
-    ml.execute(script_java)
+    script_str = ''.join(dmlLines)
+    if script_str.strip() != '':
+        # Only execute if the script is not empty
+        script_java.setScriptString(script_str)
+        ml = sc._jvm.org.apache.sysml.api.mlcontext.MLContext(sc._jsc)
+        ml.execute(script_java)

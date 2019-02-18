@@ -405,6 +405,24 @@ class Elementwise(val param: LayerParameter, val id: Int, val net: CaffeNetwork)
   override def biasShape(): Array[Int]   = null
 }
 
+class Flatten(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName                       = null
+  override def init(dmlScript: StringBuilder): Unit = {}
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = assign(dmlScript, out, X)
+  override def backward(dmlScript: StringBuilder, outSuffix: String): Unit = assignDoutToDX(dmlScript, outSuffix)
+  override def weightShape(): Array[Int]            = null
+  override def biasShape(): Array[Int]              = null
+  var _childLayers: List[CaffeLayer]                = null
+  var _out: (String, String, String)                = null
+  override def outputShape = {
+    if (_out == null) {
+      if (_childLayers == null) _childLayers = net.getBottomLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
+      _out = (int_mult(_childLayers(0).outputShape._1, _childLayers(0).outputShape._2, _childLayers(0).outputShape._3), "1", "1")
+    }
+    _out
+  }
+}
+
 class Concat(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   override def sourceFileName                       = null
   override def init(dmlScript: StringBuilder): Unit = {}

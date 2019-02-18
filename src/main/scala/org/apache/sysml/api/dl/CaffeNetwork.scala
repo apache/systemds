@@ -249,6 +249,7 @@ class CaffeNetwork(netFilePath: String, val currentPhase: Phase, var numChannels
       case "softmax"         => new Softmax(param, id, this)
       case "rnn"             => new RNN(param, id, this)
       case "lstm"            => new LSTM(param, id, this)
+      case "flatten"         => new Flatten(param, id, this)
       case _                 => throw new LanguageException("Layer of type " + param.getType + " is not supported")
     }
   }

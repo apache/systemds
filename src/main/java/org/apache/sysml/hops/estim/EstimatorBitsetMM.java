@@ -88,7 +88,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			return null;
 		//ensure synopsis is properly cached and reused
 		if( node.isLeaf() && node.getSynopsis() == null )
-			node.setSynopsis(new BitsetMatrix1(node.getData()));
+			node.setSynopsis(createBitset(node.getData()));
 		else if( !node.isLeaf() )
 			estim(node); //recursively obtain synopsis
 		return (BitsetMatrix) node.getSynopsis();

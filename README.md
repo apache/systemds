@@ -35,7 +35,7 @@ SystemML's distinguishing characteristics are:
   2. **Multiple execution modes**, including Spark MLContext API, Spark Batch, Hadoop Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
-The latest version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop 2.6+, and Spark 2.1+.
+The latest version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop 2.7.7+, and Spark 2.1+.
 
 
 ## Algorithm Customizability

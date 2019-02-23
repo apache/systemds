@@ -274,18 +274,44 @@ public class FunctionOp extends Hop
 	{
 		checkAndSetForcedPlatform();
 		
-		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
-			boolean isBuiltinFunction = isBuiltinFunction();
-			// check if there is sufficient memory to execute this function
-			if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("transformencode") ) {
-				_etype = ((_etypeForced==ExecType.SPARK 
-					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
-						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
-			}
-			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
+		if(getFunctionType() == FunctionType.MULTIRETURN_BUILTIN && isBuiltinFunction() &&
+			(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
+			
+			if(getFunctionName().equalsIgnoreCase("lstm_backward")) {
 				if(!ConfigurationManager.isGPU())
 					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
 				_etype = ExecType.GPU;
+			}
+			
+			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
+			
+			if( _etypeForced != null ) {
+				_etype = _etypeForced;
+			}
+			else {	
+				if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+					_etype = findExecTypeByMemEstimate();
+				}
+				else {
+					_etype = REMOTE;
+				}
+				
+				//check for valid CP dimensions and matrix size
+				checkAndSetInvalidCPDimsAndSize();
+			}
+			
+			// Since lstm builtin functions are not supported on Spark
+			_etype = _etype == REMOTE ?  ExecType.CP : _etype;
+			
+			//mark for recompile (forever)
+			setRequiresRecompileIfNecessary();
+		}
+		else if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
+			// check if there is sufficient memory to execute this function
+			if(isBuiltinFunction() && getFunctionName().equalsIgnoreCase("transformencode") ) {
+				_etype = ((_etypeForced==ExecType.SPARK 
+					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
+						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
 			}
 			else {
 				// Since the memory estimate is only conservative, do not throw

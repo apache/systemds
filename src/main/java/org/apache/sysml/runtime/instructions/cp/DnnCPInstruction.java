@@ -103,7 +103,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	public DnnCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
 			CPOperand in6, CPOperand in7, CPOperand in8,
 			CPOperand out, CPOperand out2, CPOperand out3, CPOperand out4, CPOperand out5, String opcode, String istr, 
-			double intermediateMemoryBudget) throws DMLRuntimeException {
+			double intermediateMemoryBudget, int numThreads) throws DMLRuntimeException {
 		super(CPType.Dnn, null, in1, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
@@ -120,7 +120,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		_padding = null;
 		_input_shape = null;
 		_filter_shape = null;
-		_numThreads = 0;
+		_numThreads = numThreads;
 		_intermediateMemoryBudget = intermediateMemoryBudget;
 	}
 
@@ -246,7 +246,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
 			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
 			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d_backward")) {
 			InstructionUtils.checkNumFields(parts, 9);
@@ -259,10 +259,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out = new CPOperand(parts[7]);  // dX
 			CPOperand out2 = new CPOperand(parts[8]); // dScale
 			CPOperand out3 = new CPOperand(parts[9]); // dBias
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 8);
+			InstructionUtils.checkNumFields(parts, 9);
 			CPOperand in1 = new CPOperand(parts[1]); // X
 			CPOperand in2 = new CPOperand(parts[2]); // W
 			CPOperand in3 = new CPOperand(parts[3]); // b
@@ -271,7 +271,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand in6 = new CPOperand(parts[6]); // return_seq
 			CPOperand out = new CPOperand(parts[7]);  // out
 			CPOperand out2 = new CPOperand(parts[8]); // c
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, null, null, null, opcode, str, 0);
+			int numThreads = Integer.parseInt(parts[9]);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, null, null, null, opcode, str, 0, numThreads);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnCPInstruction: " + str);

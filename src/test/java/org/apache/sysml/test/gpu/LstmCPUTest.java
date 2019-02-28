@@ -48,6 +48,46 @@ public class LstmCPUTest extends GPUTests {
 	}
 	
 	@Test
+	public void testLstmForward1() {
+		testLstmCuDNNWithNNLayer(1, 1, 1, 1, "TRUE", 0.2);
+	}
+	
+	@Test
+	public void testLstmForward2() {
+		testLstmCuDNNWithNNLayer(1, 1, 1, 1, "FALSE", 0.1);
+	}
+	
+	@Test
+	public void testLstmForward3() {
+		testLstmCuDNNWithNNLayer(20, 13, 50, 10, "TRUE", 0.15);
+	}
+	
+	@Test
+	public void testLstmForward4() {
+		testLstmCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.1);
+	}
+	
+	@Test
+	public void testLstmForward5() {
+		testLstmCuDNNWithNNLayer(20, 13, 1, 10, "TRUE", 0.5);
+	}
+	
+	@Test
+	public void testLstmForward6() {
+		testLstmCuDNNWithNNLayer(20, 13, 1, 10, "FALSE", 0.3);
+	}
+	
+	@Test
+	public void testLstmForward7() {
+		testLstmCuDNNWithNNLayer(20, 13, 4, 1, "TRUE", 0.8);
+	}
+	
+	@Test
+	public void testLstmForward8() {
+		testLstmCuDNNWithNNLayer(20, 13, 4, 1, "FALSE", 0.9);
+	}
+	
+	@Test
 	public void testLstmForward9() {
 		testLstmCuDNNWithNNLayer(1, 1, 1, 1, "TRUE", 0.9);
 	}
@@ -65,6 +105,16 @@ public class LstmCPUTest extends GPUTests {
 	@Test
 	public void testLstmForward12() {
 		testLstmCuDNNWithNNLayer(20, 13, 50, 10, "FALSE", 0.9);
+	}
+	
+	@Test
+	public void testLstmForward13() {
+		testLstmCuDNNWithNNLayer(20, 1, 4, 10, "TRUE", 0.8);
+	}
+	
+	@Test
+	public void testLstmForward14() {
+		testLstmCuDNNWithNNLayer(20, 1, 4, 10, "FALSE", 0.9);
 	}
 	
 	public void testLstmCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity) {

@@ -39,7 +39,7 @@ import org.apache.sysml.runtime.controlprogram.parfor.opt.CostEstimatorHops;
  * Note: Currently, we support expressions in function arguments along with function calls
  * in expressions with single outputs, leaving multiple outputs handling as it is.
  */
-public class FunctionOp extends Hop
+public class FunctionOp extends MultiThreadedHop
 {
 	public enum FunctionType{
 		DML,
@@ -253,8 +253,14 @@ public class FunctionOp extends Hop
 			tmp.add( in.constructLops() );
 		
 		//construct function call
+		int numThreads = 0;
+		if(getFunctionType() == FunctionType.MULTIRETURN_BUILTIN && isBuiltinFunction() && et == ExecType.CP &&
+				(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
+			numThreads = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+		}
+		
 		Lop fcall = _singleOutFun ? new FunctionCallCPSingle( tmp, _fnamespace, _fname, et ) :
-			new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et);
+			new FunctionCallCP(tmp, _fnamespace, _fname, _inputNames, _outputNames, _outputHops, et, numThreads);
 		setLineNumbers(fcall);
 		setLops(fcall);
 		

@@ -38,10 +38,12 @@ public class FunctionCallCP extends Lop
 	private String[] _inputNames;
 	private String[] _outputNames;
 	private ArrayList<Lop> _outputLops = null;
+	private int _numThreads;
 
 	public FunctionCallCP(ArrayList<Lop> inputs, String fnamespace, String fname, 
-		String[] inputNames, String[] outputNames, ArrayList<Hop> outputHops, ExecType et) {
+		String[] inputNames, String[] outputNames, ArrayList<Hop> outputHops, ExecType et, int numThreads) {
 		this(inputs, fnamespace, fname, inputNames, outputNames, et);
+		_numThreads = numThreads;
 		if(outputHops != null) {
 			_outputLops = new ArrayList<>();
 			setLevel();
@@ -104,6 +106,11 @@ public class FunctionCallCP extends Lop
 			sb.append(_outputNames[i]);
 		}
 		
+		if(_numThreads > 0) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(_numThreads);
+		}
+		
 		return sb.toString();
 	}
 	
@@ -144,6 +151,11 @@ public class FunctionCallCP extends Lop
 		for( String out : _outputNames ) {
 			inst.append(Lop.OPERAND_DELIMITOR);
 			inst.append(out);
+		}
+		
+		if(_numThreads > 0) {
+			inst.append(Lop.OPERAND_DELIMITOR);
+			inst.append(_numThreads);
 		}
 
 		return inst.toString();

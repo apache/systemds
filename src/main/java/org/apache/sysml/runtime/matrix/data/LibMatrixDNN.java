@@ -37,16 +37,16 @@ import org.apache.sysml.runtime.functionobjects.Builtin;
 import org.apache.sysml.runtime.functionobjects.KahanPlus;
 import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
-import org.apache.sysml.runtime.functionobjects.ValueFunction;
+import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
 import org.apache.sysml.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysml.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysml.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DnnUtils;
-import org.apache.sysml.runtime.util.IndexRange;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -282,11 +282,26 @@ public class LibMatrixDNN {
 		return ret;
 	}
 	
-	private static MatrixBlock add(MatrixBlock matBlock1, MatrixBlock matBlock2) {
-		return (MatrixBlock) matBlock1.binaryOperations(new BinaryOperator(Plus.getPlusFnObject()), matBlock2, new MatrixBlock());
+	private static MatrixBlock add(MatrixBlock matBlock1, MatrixBlock matBlock2, boolean inplace) {
+		BinaryOperator bop = new BinaryOperator(Plus.getPlusFnObject());
+//		if(inplace) {
+//			matBlock1.binaryOperationsInPlace(bop, matBlock2);
+//			return matBlock1;
+//		}
+//		else {
+			return (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+//		}
 	}
-	private static MatrixBlock multiply(MatrixBlock matBlock1, MatrixBlock matBlock2) {
-		return (MatrixBlock) matBlock1.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), matBlock2, new MatrixBlock());
+	
+	private static MatrixBlock multiply(MatrixBlock matBlock1, MatrixBlock matBlock2, boolean inplace) {
+		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
+//		if(inplace) {
+//			matBlock1.binaryOperationsInPlace(bop, matBlock2);
+//			return matBlock1;
+//		}
+//		else {
+			return (MatrixBlock) matBlock1.binaryOperations(bop, matBlock2, new MatrixBlock());
+//		}
 	}
 	
 	// sigmoid(0)*c_prev + sigmoid(0)*tanh(0);
@@ -296,8 +311,14 @@ public class LibMatrixDNN {
 	private static MatrixBlock sigmoid(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(sigmoidOp, numThreads, inPlace), new MatrixBlock());
 	}
+	
 	private static MatrixBlock tanh(MatrixBlock in, int numThreads, boolean inPlace) {
 		return (MatrixBlock) in.unaryOperations(new UnaryOperator(tanhOp, numThreads, inPlace), new MatrixBlock());
+	}
+	
+	private static MatrixBlock plusMultiply(MatrixBlock matBlock1, MatrixBlock matBlock2, MatrixBlock matBlock3) {
+		return matBlock1.ternaryOperations(new TernaryOperator(PlusMultiply.getFnObject()), 
+				matBlock2, matBlock3, new MatrixBlock());
 	}
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
@@ -314,19 +335,23 @@ public class LibMatrixDNN {
 		MatrixBlock out_t = null;
 		for(int t = 1; t <= T; t++) {
 			MatrixBlock X_t = X.slice(0, N-1, (t-1)*D, t*D-1, new MatrixBlock());
-			MatrixBlock ifog_raw = add(add(matmult(X_t, W1, numThreads), matmult(out_prev, W2, numThreads)), b);
-			MatrixBlock i = ifog_raw.slice(0, N-1, 0, M-1, new MatrixBlock());
-			MatrixBlock f = ifog_raw.slice(0, N-1, M, 2*M-1, new MatrixBlock());
-			MatrixBlock o = ifog_raw.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			MatrixBlock ifog_raw = add(add(matmult(X_t, W1, numThreads), matmult(out_prev, W2, numThreads), true), b, true);
+			
+			MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
+			ifo = sigmoid(ifo, numThreads, true);
+			MatrixBlock i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
+			MatrixBlock f = ifo.slice(0, N-1, M, 2*M-1, new MatrixBlock());
+			MatrixBlock o = ifo.slice(0, N-1, 2*M, 3*M-1, new MatrixBlock());
+			
 			MatrixBlock g = ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
-			i = sigmoid(i, numThreads, true);
-			f = sigmoid(f, numThreads, true);
-			o = sigmoid(o, numThreads, true);
 			g = tanh(g, numThreads, true);
+			
 			// c_t = f*c_prev + i*g
-			c_t = add(multiply(f, c_prev) , multiply(i, g));
+			c_t = plusMultiply(multiply(f, c_prev, true), i, g);
+			
 			// out_t = o*tanh(c)
-			out_t = multiply(o, tanh(c_t, numThreads, false));
+			out_t = multiply(o, tanh(c_t, numThreads, false), true);
+			
 			if(return_seq) {
 				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, new MatrixBlock(), UpdateType.INPLACE);
 			}

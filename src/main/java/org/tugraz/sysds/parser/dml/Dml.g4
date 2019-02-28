@@ -47,10 +47,10 @@ grammar Dml;
 // For now, we only allow global function definitions (not nested or inside a while block)
 programroot: (blocks+=statement | functionBlocks+=functionStatement)* EOF;
 
-statement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
+statement returns [ org.tugraz.sysds.parser.dml.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.tugraz.sysds.parser.common.StatementInfo();
+       $info = new org.tugraz.sysds.parser.dml.StatementInfo();
 } :
     // ------------------------------------------
     // ImportStatement
@@ -84,19 +84,19 @@ statement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
     // ------------------------------------------
 ;
 
-iterablePredicate returns [ org.tugraz.sysds.parser.common.ExpressionInfo info ]
+iterablePredicate returns [ org.tugraz.sysds.parser.dml.ExpressionInfo info ]
   @init {
          // This actions occurs regardless of how many alternatives in this rule
-         $info = new org.tugraz.sysds.parser.common.ExpressionInfo();
+         $info = new org.tugraz.sysds.parser.dml.ExpressionInfo();
   } :
     from=expression ':' to=expression #IterablePredicateColonExpression
     | ID '(' from=expression ',' to=expression (',' increment=expression)? ')' #IterablePredicateSeqExpression
     ;
 
-functionStatement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
+functionStatement returns [ org.tugraz.sysds.parser.dml.StatementInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.tugraz.sysds.parser.common.StatementInfo();
+       $info = new org.tugraz.sysds.parser.dml.StatementInfo();
 } :
     // ------------------------------------------
     // FunctionStatement & ExternalFunctionStatement
@@ -108,10 +108,10 @@ functionStatement returns [ org.tugraz.sysds.parser.common.StatementInfo info ]
 
 
 // Other data identifiers are typedArgNoAssign, parameterizedExpression and strictParameterizedExpression
-dataIdentifier returns [ org.tugraz.sysds.parser.common.ExpressionInfo dataInfo ]
+dataIdentifier returns [ org.tugraz.sysds.parser.dml.ExpressionInfo dataInfo ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $dataInfo = new org.tugraz.sysds.parser.common.ExpressionInfo();
+       $dataInfo = new org.tugraz.sysds.parser.dml.ExpressionInfo();
        // $dataInfo.expr = new org.tugraz.sysds.parser.DataIdentifier();
 } :
     // ------------------------------------------
@@ -122,10 +122,10 @@ dataIdentifier returns [ org.tugraz.sysds.parser.common.ExpressionInfo dataInfo 
     | COMMANDLINE_NAMED_ID                          # CommandlineParamExpression
     | COMMANDLINE_POSITION_ID                       # CommandlinePositionExpression
 ;
-expression returns [ org.tugraz.sysds.parser.common.ExpressionInfo info ]
+expression returns [ org.tugraz.sysds.parser.dml.ExpressionInfo info ]
 @init {
        // This actions occurs regardless of how many alternatives in this rule
-       $info = new org.tugraz.sysds.parser.common.ExpressionInfo();
+       $info = new org.tugraz.sysds.parser.dml.ExpressionInfo();
        // $info.expr = new org.tugraz.sysds.parser.BinaryExpression(org.tugraz.sysds.parser.Expression.BinaryOp.INVALID);
 } :
     // ------------------------------------------

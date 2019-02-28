@@ -333,10 +333,25 @@ public class LibMatrixDNN {
 		MatrixBlock W2 = W.slice(D, D+M-1);
 		MatrixBlock c_t = null;
 		MatrixBlock out_t = null;
+		
+		boolean profile = true;
+		long t1 = 0, t2 = 0, t3 = 0, t4 = 0, t5 = 0;
 		for(int t = 1; t <= T; t++) {
+			long s =  profile ? System.nanoTime() : 0;
 			MatrixBlock X_t = X.slice(0, N-1, (t-1)*D, t*D-1, new MatrixBlock());
-			MatrixBlock ifog_raw = add(add(matmult(X_t, W1, numThreads), matmult(out_prev, W2, numThreads), true), b, true);
+			if(profile) {
+				long e = System.nanoTime();
+				t1 += e - s;
+			}
 			
+			s =  profile ? System.nanoTime() : 0;
+			MatrixBlock ifog_raw = add(add(matmult(X_t, W1, numThreads), matmult(out_prev, W2, numThreads), true), b, true);
+			if(profile) {
+				long e = System.nanoTime();
+				t2 += e - s;
+			}
+			
+			s =  profile ? System.nanoTime() : 0;
 			MatrixBlock ifo = ifog_raw.slice(0, N-1, 0, 3*M-1, new MatrixBlock());
 			ifo = sigmoid(ifo, numThreads, true);
 			MatrixBlock i = ifo.slice(0, N-1, 0, M-1, new MatrixBlock());
@@ -345,16 +360,30 @@ public class LibMatrixDNN {
 			
 			MatrixBlock g = ifog_raw.slice(0, N-1, 3*M, 4*M-1, new MatrixBlock());
 			g = tanh(g, numThreads, true);
+			if(profile) {
+				long e = System.nanoTime();
+				t3 += e - s;
+			}
 			
+			s =  profile ? System.nanoTime() : 0;
 			// c_t = f*c_prev + i*g
 			c_t = plusMultiply(multiply(f, c_prev, true), i, g);
-			
 			// out_t = o*tanh(c)
 			out_t = multiply(o, tanh(c_t, numThreads, false), true);
+			if(profile) {
+				long e = System.nanoTime();
+				t4 += e - s;
+			}
 			
+			s =  profile ? System.nanoTime() : 0;
 			if(return_seq) {
 				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, new MatrixBlock(), UpdateType.INPLACE);
 			}
+			if(profile) {
+				long e = System.nanoTime();
+				t5 += e - s;
+			}
+			
 			out_prev = out_t;
 			c_prev = c_t;
 			
@@ -369,7 +398,11 @@ public class LibMatrixDNN {
 			c.copy(c_t);
 		else
 			c.copy(c0);
-		
+		System.out.println("Time taken in lstm forward call: [X_t indexing:" + String.format("%.3f", t1*1e-9) + 
+				", ifog_raw computation:" + String.format("%.3f", t2*1e-9) + 
+				", lstm_squash computation:" + String.format("%.3f", t3*1e-9) +  
+				", c_t/out_t computation:" + String.format("%.3f", t4*1e-9) + 
+				", out leftIndexing computation:" + String.format("%.3f", t5*1e-9));
 	}
 	
 	/**

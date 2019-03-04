@@ -624,15 +624,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_rddHandle.setBackReference(null);
 		if( _bcHandle != null )
 			_bcHandle.setBackReference(null);
+		clearGPUData();
+		
+		// change object state EMPTY
+		setDirty(false);
+		setEmpty();
+	}
+	
+	public void clearGPUData() {
 		if( _gpuObjects != null ) {
 			for (GPUObject gObj : _gpuObjects.values())
 				if (gObj != null)
 					gObj.clearData(null, gObj.getGPUContext().EAGER_CUDA_FREE);
 		}
-		
-		// change object state EMPTY
-		setDirty(false);
-		setEmpty();
 	}
 
 	public synchronized void exportData() {

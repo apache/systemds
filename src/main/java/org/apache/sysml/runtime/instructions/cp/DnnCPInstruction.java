@@ -388,8 +388,6 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					+ "but found [" + dc.getNumRows() + "," + dc.getNumColumns() + "]");
 		}
 		
-		MatrixBlock out = new MatrixBlock(N, return_seq ? (T*M) : M, false);
-		MatrixBlock c = new MatrixBlock(N, M, false);
 		MatrixBlock cache_out = new MatrixBlock(T, N*M, false);
 		MatrixBlock cache_c = new MatrixBlock(T, N*M, false);
 		MatrixBlock cache_ifog = new MatrixBlock(T, N*4*M, false);
@@ -401,7 +399,9 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		cache_ifog.allocateDenseBlock();
 		LibMatrixDNN.lstm(X, W, b, out0, c0, 
 				return_seq, N, T, D, M,
-				out,  c, cache_out, cache_c, cache_ifog,
+				// Avoid out and c computation in lstm forward call
+				null, null, 
+				cache_out, cache_c, cache_ifog,
 				_numThreads);
 		
 		MatrixBlock dX = new MatrixBlock(N, T*D, false);

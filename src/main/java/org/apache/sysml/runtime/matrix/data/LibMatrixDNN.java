@@ -20,7 +20,6 @@ package org.apache.sysml.runtime.matrix.data;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +40,6 @@ import org.apache.sysml.runtime.functionobjects.Multiply;
 import org.apache.sysml.runtime.functionobjects.Plus;
 import org.apache.sysml.runtime.functionobjects.PlusMultiply;
 import org.apache.sysml.runtime.functionobjects.Power;
-import org.apache.sysml.runtime.functionobjects.Power2;
 import org.apache.sysml.runtime.functionobjects.SwapIndex;
 import org.apache.sysml.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysml.runtime.instructions.cp.KahanObject;
@@ -56,8 +54,6 @@ import org.apache.sysml.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysml.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysml.runtime.util.CommonThreadPool;
 import org.apache.sysml.runtime.util.DnnUtils;
-
-import com.sun.org.apache.xpath.internal.operations.Minus;
 
 /*
  * This class allows users to invoke deep learning related operations 
@@ -514,7 +510,7 @@ public class LibMatrixDNN {
 	
 	public static void lstm(MatrixBlock X, MatrixBlock W, MatrixBlock b, MatrixBlock out0, MatrixBlock c0, 
 			boolean return_seq, int N, int T, int D, int M,
-			MatrixBlock out, MatrixBlock c, // output 
+			MatrixBlock out, MatrixBlock c, // output: if null, the output and c are not passed back
 			MatrixBlock cache_out, MatrixBlock cache_c, MatrixBlock cache_ifog, // if null, the cache values are not computed
 			int numThreads) {
 		MatrixBlock out_prev = out0;
@@ -624,7 +620,7 @@ public class LibMatrixDNN {
 				updateIfogCache(cache_ifog, ifo, g, t, N, M);
 			}
 			
-			if(return_seq) {
+			if(return_seq && out != null) {
 				out = out.leftIndexingOperations(out_t, 0, N-1, (t-1)*M, t*M-1, out, UpdateType.INPLACE);
 			}
 			out_prev = out_t;
@@ -635,12 +631,14 @@ public class LibMatrixDNN {
 				reshapeAsRowMatrixAndLeftIndex(cache_c, c_t, t-1, N*M);
 			}
 		}
-		if(out_t != null && !return_seq)
+		if(out_t != null && !return_seq && out != null)
 			out.copy(out_t);
-		if(c_t != null)
-			c.copy(c_t);
-		else
-			c.copy(c0);
+		if(c != null) {
+			if(c_t != null)
+				c.copy(c_t);
+			else
+				c.copy(c0);
+		}
 		if(cache_out != null) {
 			cache_out.recomputeNonZeros();
 			cache_c.recomputeNonZeros();

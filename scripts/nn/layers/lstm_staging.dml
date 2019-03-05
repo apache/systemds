@@ -92,12 +92,6 @@ backward = function(matrix[double] dout, matrix[double] dc,
    *      Note: This is *optional* and could just be an empty matrix.
    *  - c0: Initial cell state, of shape (N, M).
    *      Note: This is *optional* and could just be an empty matrix.
-   *  - cache_out: Cache of outputs, of shape (T, N*M).
-   *      Note: This is used for performance during training.
-   *  - cache_c: Cache of cell state, of shape (T, N*M).
-   *      Note: This is used for performance during training.
-   *  - cache_ifog: Cache of intermediate values, of shape (T, N*4*M).
-   *      Note: This is used for performance during training.
    *
    * Outputs:
    *  - dX: Gradient wrt `X`, of shape (N, T*D).

@@ -274,6 +274,24 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			int numThreads = Integer.parseInt(parts[9]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, null, null, null, opcode, str, 0, numThreads);
 		}
+		else if (opcode.equalsIgnoreCase("lstm_backward")) {
+			InstructionUtils.checkNumFields(parts, 14);
+			CPOperand in1 = new CPOperand(parts[1]); // X
+			CPOperand in2 = new CPOperand(parts[2]); // W
+			CPOperand in3 = new CPOperand(parts[3]); // b
+			CPOperand in4 = new CPOperand(parts[4]); // out0
+			CPOperand in5 = new CPOperand(parts[5]); // c0
+			CPOperand in6 = new CPOperand(parts[6]); // return_seq
+			CPOperand in7 = new CPOperand(parts[7]); // dout
+			CPOperand in8 = new CPOperand(parts[8]); // dc
+			CPOperand out = new CPOperand(parts[9]);  // dX
+			CPOperand out2 = new CPOperand(parts[10]); // dW
+			CPOperand out3 = new CPOperand(parts[11]); // db
+			CPOperand out4 = new CPOperand(parts[12]); // dout0
+			CPOperand out5 = new CPOperand(parts[13]); // dc0
+			int numThreads = Integer.parseInt(parts[14]);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0, numThreads);
+		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnCPInstruction: " + str);
 		}
@@ -327,6 +345,88 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
 		ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
 		ec.setMatrixOutput(_out2.getName(), c, getExtendedOpcode());
+	}
+	
+	public void processLstmBackwardInstruction(ExecutionContext ec) {
+		MatrixBlock X = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock W = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock b = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
+		MatrixBlock out0 = ec.getMatrixInput(_in4.getName(), getExtendedOpcode());
+		MatrixBlock c0 = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
+		boolean return_seq = ec.getScalarInput(_in6.getName(), _in6.getValueType(), _in6.isLiteral()).getBooleanValue();
+		MatrixBlock dout = ec.getMatrixInput(_in7.getName(), getExtendedOpcode());
+		MatrixBlock dc = ec.getMatrixInput(_in8.getName(), getExtendedOpcode());
+		
+		int N = X.getNumRows();
+		int TD = X.getNumColumns();
+		int DPlusM = W.getNumRows();
+		int M = W.getNumColumns() / 4;
+		int D = DPlusM - M;
+		int T = TD / D;
+		if(b.getNumRows() != 1 || b.getNumColumns() != M*4) {
+			throw new DMLRuntimeException("Incorrect dimensions of bias in lstm_backward instruction. Expected [1, " + (M*4) + "], "
+					+ "but found [" + b.getNumRows() + "," + b.getNumColumns() + "]");
+		}
+		if(out0.getNumRows() != N) {
+			throw new DMLRuntimeException("Unsupported operation: The batch size of previous iteration " + out0.getNumRows() + 
+					" is different than the batch size of current iteration " + N);
+		}
+		if(out0.getNumColumns() != M) {
+			throw new DMLRuntimeException("Incorrect dimensions of out0 in lstm_backward instruction. Expected [" + N + ", " + M + "], "
+					+ "but found [" + out0.getNumRows() + "," + out0.getNumColumns() + "]");
+		}
+		if(c0.getNumRows() != N || c0.getNumColumns() != M) {
+			throw new DMLRuntimeException("Incorrect dimensions of c0 in lstm_backward instruction. Expected [" + N + ", " + M + "], "
+					+ "but found [" + out0.getNumRows() + "," + out0.getNumColumns() + "]");
+		}
+		if(dout.getNumRows() != N || dout.getNumColumns() != (return_seq ? (T*M) : M)) {
+			throw new DMLRuntimeException("Incorrect dimensions of dout in lstm_backward instruction. Expected [" + N + ", " + (return_seq ? (T*M) : M) + "], "
+					+ "but found [" + dout.getNumRows() + "," + dout.getNumColumns() + "]");
+		}
+		if(dc.getNumRows() != N || dc.getNumColumns() != M) {
+			throw new DMLRuntimeException("Incorrect dimensions of dc in lstm_backward instruction. Expected [" + N + ", " + M + "], "
+					+ "but found [" + dc.getNumRows() + "," + dc.getNumColumns() + "]");
+		}
+		
+		MatrixBlock out = new MatrixBlock(N, return_seq ? (T*M) : M, false);
+		MatrixBlock c = new MatrixBlock(N, M, false);
+		MatrixBlock cache_out = new MatrixBlock(T, N*M, false);
+		MatrixBlock cache_c = new MatrixBlock(T, N*M, false);
+		MatrixBlock cache_ifog = new MatrixBlock(T, N*4*M, false);
+		
+		// In the initial implementation, invoke lstm redundantly.
+		// TODO: Optimize this later.
+		cache_out.allocateDenseBlock();
+		cache_c.allocateDenseBlock();
+		cache_ifog.allocateDenseBlock();
+		LibMatrixDNN.lstm(X, W, b, out0, c0, 
+				return_seq, N, T, D, M,
+				out,  c, cache_out, cache_c, cache_ifog,
+				_numThreads);
+		
+		MatrixBlock dX = new MatrixBlock(N, T*D, false);
+		MatrixBlock dW = new MatrixBlock(D+M, 4*M, false);
+		MatrixBlock db = new MatrixBlock(1, 4*M, false);
+		MatrixBlock dout0 = new MatrixBlock(N, M, false);
+		MatrixBlock dc0 = new MatrixBlock(N, M, false);
+		LibMatrixDNN.lstm_backward(dout, dc, X, W, b, out0, c0, return_seq, N, T, D, M,
+				cache_out, cache_c, cache_ifog, // from forward invocation
+				dX, dW, db, dout0, dc0, // output
+				_numThreads);
+		
+		// release inputs/outputs
+		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in4.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in7.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(_in8.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), dX, getExtendedOpcode());
+		ec.setMatrixOutput(_out2.getName(), dW, getExtendedOpcode());
+		ec.setMatrixOutput(_out3.getName(), db, getExtendedOpcode());
+		ec.setMatrixOutput(_out4.getName(), dout0, getExtendedOpcode());
+		ec.setMatrixOutput(_out5.getName(), dc0, getExtendedOpcode());
 	}
 	
 	public void processReluBackwardInstruction(ExecutionContext ec) {
@@ -496,6 +596,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("lstm")) {
 			processLstmInstruction(ec);
+			return;
+		}
+		else if (instOpcode.equalsIgnoreCase("lstm_backward")) {
+			processLstmBackwardInstruction(ec);
 			return;
 		}
 		

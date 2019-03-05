@@ -282,13 +282,6 @@ public class FunctionOp extends MultiThreadedHop
 		
 		if(getFunctionType() == FunctionType.MULTIRETURN_BUILTIN && isBuiltinFunction() &&
 			(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
-			
-			if(getFunctionName().equalsIgnoreCase("lstm_backward")) {
-				if(!ConfigurationManager.isGPU())
-					throw new RuntimeException("The function " + getFunctionName() + " is only supported on GPU.");
-				_etype = ExecType.GPU;
-			}
-			
 			ExecType REMOTE = OptimizerUtils.isSparkExecutionMode() ? ExecType.SPARK : ExecType.MR;
 			
 			if( _etypeForced != null ) {
@@ -306,7 +299,7 @@ public class FunctionOp extends MultiThreadedHop
 				checkAndSetInvalidCPDimsAndSize();
 			}
 			
-			// Since lstm builtin functions are not supported on Spark
+			// Since lstm builtin functions are not supported on Spark or MR.
 			_etype = _etype == REMOTE ?  ExecType.CP : _etype;
 			
 			//mark for recompile (forever)

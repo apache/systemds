@@ -361,31 +361,31 @@ public class DnnGPUInstruction extends GPUInstruction {
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
 			InstructionUtils.checkNumFields(parts, 8);
-			CPOperand in1 = new CPOperand(parts[1]);
-			CPOperand in2 = new CPOperand(parts[2]);
-			CPOperand in3 = new CPOperand(parts[3]);
-			CPOperand in4 = new CPOperand(parts[4]);
-			CPOperand in5 = new CPOperand(parts[5]);
-			CPOperand in6 = new CPOperand(parts[6]);
-			CPOperand out = new CPOperand(parts[7]);
-			CPOperand out2 = new CPOperand(parts[8]);
+			CPOperand in1 = new CPOperand(parts[1]); // X
+			CPOperand in2 = new CPOperand(parts[2]); // W
+			CPOperand in3 = new CPOperand(parts[3]); // b
+			CPOperand in4 = new CPOperand(parts[4]); // out0
+			CPOperand in5 = new CPOperand(parts[5]); // c0
+			CPOperand in6 = new CPOperand(parts[6]); // return_seq
+			CPOperand out = new CPOperand(parts[7]); // out
+			CPOperand out2 = new CPOperand(parts[8]); // c
 			return new DnnGPUInstruction(in1, in2, in3, in4, in5, in6, out, out2, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm_backward")) {
 			InstructionUtils.checkNumFields(parts, 13);
-			CPOperand in1 = new CPOperand(parts[1]); // image
-			CPOperand in2 = new CPOperand(parts[2]); // scale
-			CPOperand in3 = new CPOperand(parts[3]); // bias
-			CPOperand in4 = new CPOperand(parts[4]); // runningMean
-			CPOperand in5 = new CPOperand(parts[5]); // runningVar
-			CPOperand in6 = new CPOperand(parts[6]); // mode
-			CPOperand in7 = new CPOperand(parts[7]); // epsilon
-			CPOperand in8 = new CPOperand(parts[8]); // exponentialAverageFactor
-			CPOperand out = new CPOperand(parts[9]);  // ret
-			CPOperand out2 = new CPOperand(parts[10]); // retRunningMean
-			CPOperand out3 = new CPOperand(parts[11]); // retRunningVar
-			CPOperand out4 = new CPOperand(parts[12]); // resultSaveMean
-			CPOperand out5 = new CPOperand(parts[13]); // resultSaveInvVariance
+			CPOperand in1 = new CPOperand(parts[1]); // X
+			CPOperand in2 = new CPOperand(parts[2]); // W
+			CPOperand in3 = new CPOperand(parts[3]); // b
+			CPOperand in4 = new CPOperand(parts[4]); // out0
+			CPOperand in5 = new CPOperand(parts[5]); // c0
+			CPOperand in6 = new CPOperand(parts[6]); // return_seq
+			CPOperand in7 = new CPOperand(parts[7]); // dout
+			CPOperand in8 = new CPOperand(parts[8]); // dc
+			CPOperand out = new CPOperand(parts[9]);  // dX
+			CPOperand out2 = new CPOperand(parts[10]); // dW
+			CPOperand out3 = new CPOperand(parts[11]); // db
+			CPOperand out4 = new CPOperand(parts[12]); // dout0
+			CPOperand out5 = new CPOperand(parts[13]); // dc0
 			return new DnnGPUInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
 		}
 		else if (opcode.equalsIgnoreCase("batch_norm2d_test")) {

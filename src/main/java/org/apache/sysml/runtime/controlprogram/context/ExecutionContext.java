@@ -648,8 +648,12 @@ public class ExecutionContext {
 			Statistics.removeCPMemObject(System.identityHashCode(mo));
 		//early abort w/o scan of symbol table if no cleanup required
 		boolean fileExists = (mo.isHDFSFileExists() && mo.getFileName() != null);
-		if( !CacheableData.isCachingActive() && !fileExists )
+		if( !CacheableData.isCachingActive() && !fileExists ) {
+			if ( mo.isCleanupEnabled() && !getVariables().hasReferences(mo) )
+				mo.clearGPUData();
 			return;
+		}
+			
 		
 		try {
 			//compute ref count only if matrix cleanup actually necessary

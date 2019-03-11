@@ -529,6 +529,17 @@ public class InterProceduralAnalysis
 		ArrayList<Hop> inputOps = fop.getInput();
 		String fkey = fop.getFunctionKey();
 		
+		// Throw a controlled exception when the expected number of inputs doesnot match the actual number of inputs 
+		// instead of array out of bounds exception.
+		if(inputOps.size() != funArgNames.length) {
+			String argsList = funArgNames.length > 0 ? funArgNames[0] : "";
+			for( int i=1; i<funArgNames.length; i++ ) {
+				argsList += ", " + funArgNames[i];
+			}
+			throw new HopsException("The function definition has " + funArgNames.length 
+					+ " arguments (" + argsList + "), but the function invocation has " + inputOps.size() + " arguments.");
+		}
+		
 		for( int i=0; i<funArgNames.length; i++ )
 		{
 			//create mapping between input hops and vars

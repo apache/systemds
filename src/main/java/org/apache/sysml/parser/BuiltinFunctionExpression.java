@@ -1717,8 +1717,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				  || (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
 				  || (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
 			{
-				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
-						+ this.getOpCode(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				String str1 = "([" + expr1.getOutput().getDim1() + ", " + expr1.getOutput().getDim2()  + "] and [" 
+						+ expr2.getOutput().getDim1() + ", " + expr2.getOutput().getDim2()  + "])";
+				String str2 = !allowsMV ? " (Note: " + this.getOpCode() + " does not support matrix-vector operations)" : "";
+				raiseValidateError("Mismatch in matrix dimensions " + str1 + " of parameters for function "
+						+ this.getOpCode() + str2, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 	}
@@ -1726,7 +1729,11 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	private void checkMatchingDimensionsQuantile() 
 	{
 		if (getFirstExpr().getOutput().getDim1() != getSecondExpr().getOutput().getDim1()) {
-			raiseValidateError("Mismatch in matrix dimensions for "
+			Expression expr1 = getFirstExpr();
+			Expression expr2 = getSecondExpr();
+			String str1 = "([" + expr1.getOutput().getDim1() + ", " + expr1.getOutput().getDim2()  + "] and [" 
+					+ expr2.getOutput().getDim1() + ", " + expr2.getOutput().getDim2()  + "])";
+			raiseValidateError("Mismatch in matrix dimensions " + str1 + " of parameters for "
 					+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 	}

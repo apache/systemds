@@ -182,8 +182,11 @@ public class RelationalExpression extends Expression
 				  || (!allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2()) 
 				  || (allowsMV && expr1.getOutput().getDim2() != expr2.getOutput().getDim2() && expr2.getOutput().getDim2() != 1) ) 
 			{
-				raiseValidateError("Mismatch in matrix dimensions of parameters for function "
-						+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS);
+				String str1 = "([" + expr1.getOutput().getDim1() + ", " + expr1.getOutput().getDim2()  + "] and [" 
+						+ expr2.getOutput().getDim1() + ", " + expr2.getOutput().getDim2()  + "])";
+				String str2 = !allowsMV ? " (Note: " + this.getOpCode() + " does not support matrix-vector operations)" : "";
+				raiseValidateError("Mismatch in matrix dimensions " + str1 + " of parameters for function "
+						+ this.getOpCode() + str2, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 	}

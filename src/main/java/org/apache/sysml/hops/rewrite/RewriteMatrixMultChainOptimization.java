@@ -35,14 +35,16 @@ import org.apache.sysml.utils.Explain;
 
 /**
  * Rule: Determine the optimal order of execution for a chain of
- * matrix multiplications Solution: Classic Dynamic Programming
- * Approach Currently, the approach based only on matrix dimensions
+ * matrix multiplications 
+ * 
+ * Solution: Classic Dynamic Programming
+ * Approach: Currently, the approach based only on matrix dimensions
  * Goal: To reduce the number of computations in the run-time
  * (map-reduce) layer
  */
 public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 {
-	private static final Log LOG = LogFactory.getLog(RewriteMatrixMultChainOptimization.class.getName());
+	protected static final Log LOG = LogFactory.getLog(RewriteMatrixMultChainOptimization.class.getName());
 	private static final boolean LDEBUG = false;
 	
 	static {
@@ -61,7 +63,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 
 		// Find the optimal order for the chain whose result is the current HOP
 		for( Hop h : roots ) 
-			rule_OptimizeMMChains(h);
+			rule_OptimizeMMChains(h, state);
 		
 		return roots;
 	}
@@ -73,7 +75,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			return null;
 
 		// Find the optimal order for the chain whose result is the current HOP
-		rule_OptimizeMMChains(root);
+		rule_OptimizeMMChains(root, state);
 		
 		return root;
 	}
@@ -84,7 +86,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void rule_OptimizeMMChains(Hop hop) 
+	private void rule_OptimizeMMChains(Hop hop, ProgramRewriteStatus state) 
 	{
 		if( hop.isVisited() )
 			return;
@@ -94,11 +96,11 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		{
 			// Try to find and optimize the chain in which current Hop is the
 			// last operator
-			optimizeMMChain(hop);
+			prepAndOptimizeMMChain(hop, state);
 		}
 		
 		for( Hop hi : hop.getInput() )
-			rule_OptimizeMMChains(hi);
+			rule_OptimizeMMChains(hi, state);
 
 		hop.setVisited();
 	}
@@ -113,7 +115,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * 
 	 * @param hop high-level operator
 	 */
-	private void optimizeMMChain( Hop hop )
+	private void prepAndOptimizeMMChain( Hop hop, ProgramRewriteStatus state )
 	{
 		if( LOG.isTraceEnabled() ) {
 			LOG.trace("MM Chain Optimization for HOP: (" + hop.getClass().getSimpleName()
@@ -149,18 +151,15 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			 *    (either within chain or outside the chain)
 			 */
 			
-			if (    HopRewriteUtils.isMatrixMultiply(h)
-			     && !((AggBinaryOp)hop).hasLeftPMInput() && !h.isVisited() ) 
+			if ( HopRewriteUtils.isMatrixMultiply(h)
+				&& !((AggBinaryOp)hop).hasLeftPMInput() && !h.isVisited() ) 
 			{
 				// check if the output of "h" is used at multiple places. If yes, it can
 				// not be expanded.
-				if( h.getParent().size() > 1 || inputCount(h.getParent().get(0), h) > 1 ) {
-					expandable = false;
+				expandable = !(h.getParent().size() > 1 
+					|| inputCount(h.getParent().get(0), h) > 1);
+				if( !expandable )
 					break;
-				}
-				else {
-					expandable = true;
-				}
 			}
 
 			h.setVisited();
@@ -189,30 +188,31 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			}
 		}
 
-		if( mmChain.size() == 2 ) {
-			// If the chain size is 2, then there is nothing to optimize.
-			return;
-		} 
-		else 
-		{
-			// Step 2: construct dims array
-			double[] dimsArray = new double[mmChain.size() + 1];
-			boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
+		//core mmchain optimization (potentially overridden)
+		if( mmChain.size() == 2 ) 
+			return; //nothing to optimize
+		else
+			optimizeMMChain(hop, mmChain, mmOperators, state);
+	}
+	
+	protected void optimizeMMChain(Hop hop, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators, ProgramRewriteStatus state) {
+		// Step 2: construct dims array
+		double[] dimsArray = new double[mmChain.size() + 1];
+		boolean dimsKnown = getDimsArray( hop, mmChain, dimsArray );
+		
+		if( dimsKnown ) {
+			// Step 3: clear the links among Hops within the identified chain
+			clearLinksWithinChain ( hop, mmOperators );
 			
-			if( dimsKnown ) {
-				// Step 3: clear the links among Hops within the identified chain
-				clearLinksWithinChain ( hop, mmOperators );
-				
-				// Step 4: Find the optimal ordering via dynamic programming.
-				
-				// Invoke Dynamic Programming
-				int size = mmChain.size();
-				int[][] split = mmChainDP(dimsArray, mmChain.size());
-				
-				 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
-				LOG.trace("Optimal MM Chain: ");
-				mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
-			}
+			// Step 4: Find the optimal ordering via dynamic programming.
+			
+			// Invoke Dynamic Programming
+			int size = mmChain.size();
+			int[][] split = mmChainDP(dimsArray, mmChain.size());
+			
+			 // Step 5: Relink the hops using the optimal ordering (split[][]) found from DP.
+			LOG.trace("Optimal MM Chain: ");
+			mmChainRelinkHops(mmOperators.get(0), 0, size - 1, mmChain, mmOperators, 1, split, 1);
 		}
 	}
 	
@@ -244,7 +244,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 				{
 					//recursive cost computation
 					double cost = dpMatrix[i][k] + dpMatrix[k + 1][j] 
-							  + (dimArray[i] * dimArray[k + 1] * dimArray[j + 1]);
+						+ (dimArray[i] * dimArray[k + 1] * dimArray[j + 1]);
 					
 					//prune suboptimal
 					if( cost < dpMatrix[i][j] ) {
@@ -271,7 +271,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * three Hops in mmChain (B,C,D), and two Hops in mmOperators (one for each
 	 * %*%) .
 	 */
-	private void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
+	protected final void mmChainRelinkHops(Hop h, int i, int j, ArrayList<Hop> mmChain, ArrayList<Hop> mmOperators,
 			int opIndex, int[][] split, int level) 
 	{
 		//single matrix - end of recursion
@@ -320,7 +320,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 		}
 	}
 
-	private static void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
+	protected static void clearLinksWithinChain( Hop hop, ArrayList<Hop> operators ) 
 	{
 		for( int i=0; i < operators.size(); i++ ) {
 			Hop op = operators.get(i);
@@ -347,7 +347,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	 * @param dimArray dimension array
 	 * @return true if all dimensions known
 	 */
-	private static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray ) 
+	protected static boolean getDimsArray( Hop hop, ArrayList<Hop> chain, double[] dimsArray )
 	{
 		boolean dimsKnown = true;
 		

@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.sysml.runtime.instructions.gpu.DnnGPUInstruction;
-import org.apache.sysml.runtime.instructions.gpu.DnnGPUInstruction.LstmOperator;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
 

@@ -22,7 +22,6 @@ package org.apache.sysml.hops;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysml.conf.ConfigurationManager;
 import org.apache.sysml.lops.FunctionCallCP;
 import org.apache.sysml.lops.FunctionCallCPSingle;
 import org.apache.sysml.lops.Lop;

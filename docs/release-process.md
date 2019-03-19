@@ -494,3 +494,11 @@ Commit the update to `documentation.html` to publish the website update.
 
 The versioned project documentation is now deployed to the main website, and the
 [Documentation Page](http://systemml.apache.org/documentation) contains a link to the versioned documentation.
+
+## Update Crawler configuration for the search indexing
+
+Create a PR or an issue to update the version number in the crawler configuration. 
+Please see the `start_urls` tag in the file [https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json](https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json).
+If the Algolia team provides us an updated `apiKey` or `indexName` credentials, then please update the corresponding entries in the file 
+[https://github.com/apache/systemml/blob/master/docs/_layouts/global.html](https://github.com/apache/systemml/blob/master/docs/_layouts/global.html) 
+(see for `Algolia search section` in the previously mentioned HTML file).

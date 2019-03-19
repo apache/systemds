@@ -15,10 +15,13 @@
         <link rel="stylesheet" href="css/main.css">
         <link rel="stylesheet" href="css/pygments-default.css">
         <link rel="shortcut icon" href="img/favicon.png">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css" /> 
     </head>
     <body>
         <!--[if lt IE 7]>
-            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
+            <p class="chromeframe">The present browser may not be up-to-date. <a href="http://browsehappy.com/">
+                Please consider upgrading to the latest version</a> or <a href="http://www.google.com/chromeframe/?redirect=true">
+                    install Google Chrome Frame</a> better browsing experience.</p>
         <![endif]-->
 
         <header class="navbar navbar-default navbar-fixed-top" id="topbar">
@@ -93,6 +96,16 @@
                                 {% endif %}
                             </ul>
                         </li>
+                        <!-- How Algolia search works? 
+                        * 1. This service runs the crawler on the docs every 24 hrs and creates index.
+                        * 2. When the user inputs a keyword into this input with `id="s-bar"`, 
+                             a. the keyword will be found out, with the javascript functions resting in cdn. 
+                             b. and related items populate on a nicely formatted dropdown whose styling lies in the cdn.
+                        * 3. When the user clicks on an intersted item in the dropdown link, one will end up at the anchor
+                             link of the item.
+
+                        -->
+                        <li><input id="s-bar" placeholder="Search Docs.."style="margin-top: 20px;"></input></li>
                     </ul>
                 </nav>
             </div>
@@ -254,5 +267,21 @@
                 d.getElementsByTagName('head')[0].appendChild(script);
             }(document));
         </script>
+        <!-- Algolia search section -->
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
+        <script>
+            // Crawler configuration for the search indexing is available at:
+            // https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json
+
+            docsearch({ 
+                apiKey: '78c19564c220d4642a41197baae304ef', 
+                indexName: 'apache_systemml', 
+                inputSelector: "#s-bar", 
+                // For custom styling for the dropdown, please set debug to true
+                // so that the dropdown won't disappear when the inspect tools are 
+                // open.
+                debug: false 
+            });
+        </script>        
     </body>
 </html>

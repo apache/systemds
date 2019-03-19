@@ -61,6 +61,7 @@ h1, h2, h3, h4, h5, h6 {
 pre {
   background-color: #FFF
 }
+
 /* Branding */
 .brand {
   font-weight: normal !important;
@@ -81,7 +82,7 @@ img.logo {
 /* Navigation Bar */
 .navbar {
   background-color: rgba(0, 0, 0, 0.9);
-  height: 68px;
+  /*height: 68px;*/
 }
 
 .navbar-brand {
@@ -96,12 +97,28 @@ img.logo {
   height: 100%;
 }
 
+.navbar-collapse {
+  /*height: 67px !important;*/
+  background: rgba(0,0,0,0);
+}
+
 .navbar-collapse.collapse {
-  height: 67px !important;
+  background: rgba(0, 0, 0, 0);
+  border-top: 0px;
+}
+
+.navbar-collapse.collapsing {
+  background: rgba(0, 0, 0, 0);
+  border-top: 0px;
+}
+
+.navbar-toggle {
+ border-radius: 1px;
 }
 
 .navbar-header {
-  padding-top: 10px;
+  padding-top: 0px;
+  padding-bottom: 10px;
 }
 
 .navbar .container {
@@ -156,6 +173,13 @@ img.logo {
 
 .nav-tabs > li > a, .nav-tabs > li > a:hover {
   color: #333;
+}
+
+/**
+ * Search bar
+ */
+input#s-bar {
+  margin-left: 10px;
 }
 
 /**

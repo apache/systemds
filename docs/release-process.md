@@ -255,22 +255,19 @@ this OS X example.
 
 ## Python Tests
 
-For Spark 1.*, the Python tests at (`src/main/python/tests`) can be executed in the following manner:
+Compile SystemML distribution:
 
-	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_agg_fn.py
-	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_matrix_binary_op.py
-	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mlcontext.py
-	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_df.py
-	PYSPARK_PYTHON=python3 pyspark --driver-class-path SystemML.jar test_mllearn_numpy.py
+	mvn package -P distribution
+	cd src/main/python/tests/
 
-For Spark 2.*, pyspark can't be used to run the Python tests, so they can be executed using
-spark-submit:
+For Spark 2.*, the Python tests at (`src/main/python/tests`) can be executed in the following manner:
 
-	spark-submit --driver-class-path SystemML.jar test_matrix_agg_fn.py
-	spark-submit --driver-class-path SystemML.jar test_matrix_binary_op.py
-	spark-submit --driver-class-path SystemML.jar test_mlcontext.py
-	spark-submit --driver-class-path SystemML.jar test_mllearn_df.py
-	spark-submit --driver-class-path SystemML.jar test_mllearn_numpy.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_agg_fn.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_matrix_binary_op.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mlcontext.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_df.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_mllearn_numpy.py
+	PYSPARK_PYTHON=python3 spark-submit --driver-class-path ../../../../target/SystemML.jar,../../../../target/systemml-*-SNAPSHOT-extra.jar test_nn_numpy.py
 
 
 ## Check LICENSE and NOTICE Files
@@ -385,7 +382,7 @@ file and remove all the `@Ignore` annotations from all the tests. Then run the N
 # Run other GPU Unit Tests 
 
 	rm result.txt
-	for t in AggregateUnaryOpTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests
+	for t in AggregateUnaryOpTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests LstmTest LstmCPUTest
 	do
 		mvn -Dit.test="org.apache.sysml.test.gpu."$t verify -PgpuTests &> tmp.txt
 		SUCCESS=`grep "BUILD SUCCESS" tmp.txt`

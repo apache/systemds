@@ -219,12 +219,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			checkMatrixParam(getFifthExpr());
 			
 			// setup output properties
-			if(getOutputs() == null || getOutputs().length != 2) {
+			if(getOutputs() == null || getOutputs().length != 3) {
 				int numOutputs = getOutputs() == null ? 0 : getOutputs().length;
-				raiseValidateError("The builtin function lstm has two outputs, but instead found: " + numOutputs, conditional);
+				raiseValidateError("The builtin function lstm has three outputs, but instead found: " + numOutputs, conditional);
 			}
 			DataIdentifier out = (DataIdentifier) getOutputs()[0];
 			DataIdentifier cy = (DataIdentifier) getOutputs()[1];
+			DataIdentifier cache = (DataIdentifier) getOutputs()[2];
 			
 			// Output1 - out: If `return_sequences` is True, outputs for all timesteps, else outputs for the final timestep.
 			out.setDataType(DataType.MATRIX);
@@ -238,12 +239,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			cy.setDimensions(getExpr(4).getOutput().getDim1(), getExpr(4).getOutput().getDim2());
 			cy.setBlockDimensions(getExpr(4).getOutput().getRowsInBlock(), getExpr(4).getOutput().getColumnsInBlock());
 			
+			cache.setDataType(DataType.MATRIX);
+			cache.setValueType(ValueType.DOUBLE);
+			cache.setDimensions(1, 1); // Use dummy dimension for now. 
+			cache.setBlockDimensions(getFirstExpr().getOutput().getRowsInBlock(), getFirstExpr().getOutput().getColumnsInBlock());
+			
 			break;
 		}
 		case LSTM_BACKWARD:
 		{
-			// Input: X, W, b, out0, c0, return_sequences, dout, cy
-			checkNumParameters(8);
+			// Input: X, W, b, out0, c0, return_sequences, dout, cy, cache
+			checkNumParameters(9);
 			checkMatrixParam(getFirstExpr());
 			checkMatrixParam(getSecondExpr());
 			checkMatrixParam(getThirdExpr());

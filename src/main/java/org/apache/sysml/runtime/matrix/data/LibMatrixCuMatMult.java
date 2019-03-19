@@ -369,6 +369,9 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 	 */
 	static void denseDenseMatMult(cublasHandle handle, String instName, Pointer C, Pointer A, Pointer B,
 			CuMatMultParameters param) {
+		if(A == null || B == null || C == null) {
+			throw new DMLRuntimeException("The input and output pointers are not allocated.");
+		}
 		long t0 = ConfigurationManager.isFinegrainedStatistics() ? System.nanoTime() : 0;
 		String kernel = null;
 		param.rowToColumnMajor();

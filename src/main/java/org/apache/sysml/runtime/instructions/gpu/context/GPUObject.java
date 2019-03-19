@@ -797,7 +797,7 @@ public class GPUObject {
 		setSparseMatrixCudaPointer(tmp);
 	}
 
-	protected long getSizeOnDevice() {
+	public long getSizeOnDevice() {
 		long rlen = mat.getNumRows();
 		long clen = mat.getNumColumns();
 		long nnz = mat.getNnz();

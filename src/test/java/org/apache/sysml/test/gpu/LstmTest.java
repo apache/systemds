@@ -109,7 +109,7 @@ public class LstmTest extends GPUTests {
 	
 	public void testLstmCuDNNWithNNBuiltinOperator(int N, int T, int D, int M, String returnSequences, double sparsity) {
 		String scriptStr = "source(" + builtinDML + ") as lstm;\n "
-				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		
 		HashMap<String, Object> inputs = new HashMap<>();
 		inputs.put("x", generateInputMatrix(spark, N, T*D, 0, 10, sparsity, seed));
@@ -143,7 +143,7 @@ public class LstmTest extends GPUTests {
 	
 	public void testLstmCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity) {
 		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
-				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		String scriptStr2 = "source(" + nnDML + ") as lstm;\n "
 				+ "[output, c, cache_out, cache_c, cache_ifog] = lstm::forward(x, w, b, " 
 				+ T + ", " + D + ", " + returnSequences + ", out0, c0)";
@@ -237,7 +237,8 @@ public class LstmTest extends GPUTests {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 				
 		String scriptStr = "source(" + builtinDML + ") as lstm;\n "
-				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0);";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0); \n"
+				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0, cache);";
 		
 		HashMap<String, Object> inputs = new HashMap<>();
 		inputs.put("dout", generateInputMatrix(spark, N, returnSequences1 ? T*M : M, 0, 10, sparsity, seed));
@@ -281,7 +282,8 @@ public class LstmTest extends GPUTests {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 		
 		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
-				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0);";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0); \n"
+				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0, cache);";
 		String scriptStr2 = "source(" + nnDML + ") as lstm;\n "
 				+ "[output, c, cache_out, cache_c, cache_ifog] = lstm::forward(x, w, b, " 
 				+ T + ", " + D + ", " + returnSequences + ", out0, c0); \n"

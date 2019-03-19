@@ -255,95 +255,84 @@ trait BaseSystemMLClassifier extends BaseSystemMLEstimator {
   }
 }
 
-trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
-
-  def baseTransform(X_file: String, sc: SparkContext, probVar: String): String = baseTransform(X_file, sc, probVar, -1, 1, 1)
-  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock = baseTransform(X, sc, probVar, -1, 1, 1)
- 
-  def baseTransform(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = {
-    val Prob = baseTransformHelper(X, sc, probVar, C, H, W)
-    val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W); " + dmlWrite("Prediction"))
-      .in("Prob", Prob)
-      .in("C", C)
-      .in("H", H)
-      .in("W", W)
-    val ml           = new MLContext(sc)
+trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {  
+  // Helper method that executes the prediction script:
+  def executePredictionScript(sc: SparkContext, C: Int, H: Int, W: Int, isSingleNode:Boolean, 
+      outputProbability:Boolean, probVar:String, 
+      addInputOutput: (Script, String) => Script): Matrix = {
+    val ml = new MLContext(sc)
     updateML(ml)
-    ml.execute(script1)
-    return "output.mtx"
-  }
-
-  def baseTransformHelper(X_file: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): Matrix = {
-    val isSingleNode = true
-    val ml           = new MLContext(sc)
-    updateML(ml)
-    val readScript      = dml(dmlRead("X", X_file)).out("X")
-	  val res = ml.execute(readScript)
+    // getPredictionScript sets the hyperparameter as well as the output parameter 
     val script = getPredictionScript(isSingleNode)
-    val modelPredict = ml.execute(script._1.in(script._2, res.getMatrix("X")))
-    return modelPredict.getMatrix(probVar)
-  }
-  
-  def replacePredictionWithProb(script: (Script, String), probVar: String, C: Int, H: Int, W: Int): Unit = {
-    // Append prediction code:
-    val newDML = "source(\"nn/util.dml\") as util;\n" + 
-      script._1.getScriptString + 
-      "\nPrediction = util::predict_class(" + probVar + ", " + C + ", " + H + ", " + W + ");"
-    script._1.setScriptString(newDML)
-    
-    // Modify the output variables -> remove probability matrix and add Prediction
-    val outputVariables = new java.util.HashSet[String](script._1.getOutputVariables)
-    outputVariables.remove(probVar)
-    outputVariables.add("Prediction")
-    script._1.clearOutputs()
-    script._1.out(outputVariables.toList)
-  }
-
-  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock = {
-    val isSingleNode = true
-    val ml           = new MLContext(sc)
-    updateML(ml)
-    val script = getPredictionScript(isSingleNode)
-    
-    replacePredictionWithProb(script, probVar, C, H, W)
-    
-    // Now execute the prediction script directly
-    val ret = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
-              .getMatrix("Prediction").toMatrixBlock
-              
-    if (ret.getNumColumns != 1 && H == 1 && W == 1) {
-      throw new RuntimeException("Expected predicted label to be a column vector")
+    if(!outputProbability) {
+      // Append prediction code:
+      val newDML = if(H == 1 && W == 1) {
+        "source(\"nn/util.dml\") as util;\n" +
+        script._1.getScriptString + 
+        "\nPrediction = util::predict_class(" + probVar + ", " + C + ", " + H + ", " + W + ");\n"
+      } else {
+        "\nPrediction = rowIndexMax(" + probVar + ");\n" // predictions are 1-based
+      }
+      script._1.setScriptString(newDML)
+      // Modify the output variables -> remove probability matrix and add Prediction
+      val outputVariables = new java.util.HashSet[String](script._1.getOutputVariables)
+      // Register probVar as output as well to avoid writing of empty meta-data files in scripts like Naive Bayes
+      // outputVariables.remove(probVar)
+      outputVariables.add("Prediction")
+      script._1.clearOutputs()
+      script._1.out(outputVariables.toList)
     }
-    return ret
+    val modelPredict = ml.execute(addInputOutput(script._1, script._2))
+    return modelPredict.getMatrix(if(outputProbability) probVar else "Prediction")
   }
-
-  def baseTransformHelper(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): Matrix = {
-    val isSingleNode = true
-    val ml           = new MLContext(sc)
-    updateML(ml)
-    val script = getPredictionScript(isSingleNode)
-    val modelPredict = ml.execute(script._1.in(script._2, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros)))
-    return modelPredict.getMatrix(probVar)
+  // --------------------------------------------------------------------------------------------------------------
+  // Methods where the input and output probability/predictions are MatrixBlock.
+  def baseTransformHelper(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int, outputProbability:Boolean): MatrixBlock = {
+    val addInputOutput = (script:Script, xVar: String) => {
+      script.in(xVar, X, new MatrixMetadata(X.getNumRows, X.getNumColumns, X.getNonZeros))
+    }
+    return executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput).toMatrixBlock
   }
-
+  // Methods that return probabilities:
   def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock =
     baseTransformProbability(X, sc, probVar, -1, 1, 1)
-
-  def baseTransformProbability(X: String, sc: SparkContext, probVar: String): String =
-    baseTransformProbability(X, sc, probVar, -1, 1, 1)
-    
-  def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock =
-    return baseTransformHelper(X, sc, probVar, C, H, W).toMatrixBlock
-
-  def baseTransformProbability(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = {
-	val Prob =  baseTransformHelper(X, sc, probVar, C, H, W)
-    (new MLContext(sc)).execute(dml(dmlWrite("Prob")).in("Prob", Prob))
+  def baseTransformProbability(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock = 
+    baseTransformHelper(X, sc, probVar, C, H, W, true)
+  // Methods that return predictions:
+  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String): MatrixBlock = 
+    baseTransform(X, sc, probVar, -1, 1, 1)
+  def baseTransform(X: MatrixBlock, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): MatrixBlock = 
+    baseTransformHelper(X, sc, probVar, C, H, W, false)
+  // --------------------------------------------------------------------------------------------------------------
+  // Methods where the input is a file path and output probability/predictions are returned as a file path.
+  def baseTransformHelper(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int, outputProbability:Boolean): String = {
+    val ml = new MLContext(sc)
+    updateML(ml)
+    val addInputOutput = (script:Script, xVar: String) => {
+      // Execution 1: Read X from the file system using MLContext
+      val readScript = dml(dmlRead("X", X)).out("X")
+      script.in(xVar, ml.execute(dml(dmlRead("X", X)).out("X")).getMatrix("X"))
+    }
+    // Execution 2: Execute the prediction script
+    val Prob =  executePredictionScript(sc, C, H, W, true, outputProbability, probVar, addInputOutput)
+    // Execution 3: Execute the write script to dump the matrix Prob  
+    ml.execute(dml(dmlWrite("Prob")).in("Prob", Prob))
     "output.mtx"
   }
-    	    		
+  // Methods that return probabilities:
+  def baseTransformProbability(X: String, sc: SparkContext, probVar: String): String =
+    baseTransformProbability(X, sc, probVar, -1, 1, 1)
+  def baseTransformProbability(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = 
+    baseTransformHelper(X, sc, probVar, C, H, W, true)
+  // Methods that return predictions:
+  def baseTransform(X_file: String, sc: SparkContext, probVar: String): String = 
+    baseTransform(X_file, sc, probVar, -1, 1, 1)
+  def baseTransform(X: String, sc: SparkContext, probVar: String, C: Int, H: Int, W: Int): String = 
+    baseTransformHelper(X, sc, probVar, C, H, W, false)
+  // --------------------------------------------------------------------------------------------------------------
+  // Methods where the input and output probability/predictions are DataFrame.
   def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, probVar: String, outputProb: Boolean = true): DataFrame =
     baseTransform(df, sc, probVar, outputProb, -1, 1, 1)
-
   def baseTransformHelper(df: ScriptsUtils.SparkDataType, sc: SparkContext, probVar: String, outputProb: Boolean, C: Int, H: Int, W: Int): Matrix = {
     val isSingleNode = false
     val ml           = new MLContext(sc)
@@ -356,7 +345,6 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
     val modelPredict = ml.execute(script._1.in(script._2, Xin_bin))
     return modelPredict.getMatrix(probVar)
   }
-
   def baseTransform(df: ScriptsUtils.SparkDataType, sc: SparkContext, probVar: String, outputProb: Boolean, C: Int, H: Int, W: Int): DataFrame = {
     val Prob = baseTransformHelper(df, sc, probVar, outputProb, C, H, W)
     val script1 = dml("source(\"nn/util.dml\") as util; Prediction = util::predict_class(Prob, C, H, W);")
@@ -367,7 +355,6 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       .in("W", W)
     val predLabelOut = (new MLContext(sc)).execute(script1)
     val predictedDF  = predLabelOut.getDataFrame("Prediction").select(RDDConverterUtils.DF_ID_COLUMN, "C1").withColumnRenamed("C1", "prediction")
-
     if (outputProb) {
       val prob    = Prob.toDFVectorWithIDColumn().withColumnRenamed("C1", "probability").select(RDDConverterUtils.DF_ID_COLUMN, "probability")
       val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sparkSession, RDDConverterUtils.DF_ID_COLUMN)
@@ -376,6 +363,5 @@ trait BaseSystemMLClassifierModel extends BaseSystemMLEstimatorModel {
       val dataset = RDDConverterUtilsExt.addIDToDataFrame(df.asInstanceOf[DataFrame], df.sparkSession, RDDConverterUtils.DF_ID_COLUMN)
       return PredictionUtils.joinUsingID(dataset, predictedDF)
     }
-
   }
 }

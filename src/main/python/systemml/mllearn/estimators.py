@@ -314,7 +314,7 @@ class BaseSystemMLEstimator(Estimator):
         output: a java-side object (either MatrixBlock or Java DataFrame)
         """
         if isinstance(X, SUPPORTED_TYPES) and self.transferUsingDF:
-            retDF = DataFrame(output, self.sparkSession)
+            retDF = DataFrame(output, self.sparkSession._wrapped)
             retPDF = retDF.sort('__INDEX').select('prediction').toPandas()
             return retPDF.as_matrix().flatten() if isinstance(X, np.ndarray) else retPDF
         elif isinstance(X, SUPPORTED_TYPES):

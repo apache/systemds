@@ -25,7 +25,7 @@
 #   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_numpy.py`
 
 # Make the `systemml` package importable
-import os
+import os, math
 import sys
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
@@ -42,6 +42,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score, r2_score
 from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, SVM
 from sklearn import linear_model
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
 
 sparkSession = SparkSession.builder.getOrCreate()
 
@@ -57,6 +59,23 @@ def deleteIfExists(fileName):
 		os.remove(fileName)
 	except OSError:
 		pass
+
+def get_classification_data(n_samples=10000, n_features=100, n_clusters_per_class=1, n_classes=10):
+    n_informative = int(math.log(n_classes * n_clusters_per_class, 2)) + 1
+    X, y = make_classification(n_samples=n_samples, n_features=n_features, n_redundant=0, n_informative=n_informative, random_state=1,
+                               n_clusters_per_class=n_clusters_per_class, n_classes=n_classes)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    return X_train, X_test, y_train, y_test
+
+def test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, threshold):
+    if accuracy_score(sklearn_predicted, mllearn_predicted) > threshold:
+        # Our results match that of scikit-learn. No need to measure with the ground truth
+        return True
+    elif accuracy_score(y_test, mllearn_predicted) > accuracy_score(y_test, sklearn_predicted):
+        # We perform better than scikit-learn, ignore the threshold
+        return True
+    else:
+        return False
 
 # Currently not integrated with JUnit test
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
@@ -75,8 +94,17 @@ class TestMLLearn(unittest.TestCase):
         mllearn_predicted = logistic.predict(X_test)
         sklearn_logistic = linear_model.LogisticRegression()
         sklearn_logistic.fit(X_train, y_train)
-        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
-    
+        self.failUnless(test_accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted, y_test, 0.95))
+
+    def test_logistic_random_data(self):
+        X_train, X_test, y_train, y_test = get_classification_data(n_classes=2)
+        logistic = LogisticRegression(sparkSession)
+        logistic.fit(X_train, y_train)
+        mllearn_predicted = logistic.predict(X_test)
+        sklearn_logistic = linear_model.LogisticRegression()
+        sklearn_logistic.fit(X_train, y_train)
+        self.failUnless(test_accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted, y_test, 0.95))
+
     def test_logistic_mlpipeline(self):
         training = sparkSession.createDataFrame([
             ("a b c d e spark", 1.0),
@@ -148,12 +176,10 @@ class TestMLLearn(unittest.TestCase):
         y_test = y_digits[int(.9 * n_samples):]
         svm = SVM(sparkSession, is_multi_class=True, tol=0.0001)
         mllearn_predicted = svm.fit(X_train, y_train).predict(X_test)
-        from sklearn import linear_model, svm
+        from sklearn import svm
         clf = svm.LinearSVC()
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
-        accuracy = accuracy_score(sklearn_predicted, mllearn_predicted)
-        evaluation = 'test_svm accuracy_score(sklearn_predicted, mllearn_predicted) was {}'.format(accuracy)
-        self.failUnless(accuracy > 0.95, evaluation)
+        self.failUnless(test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, 0.95))
 
     def test_naive_bayes(self):
         digits = datasets.load_digits()
@@ -169,8 +195,8 @@ class TestMLLearn(unittest.TestCase):
         from sklearn.naive_bayes import MultinomialNB
         clf = MultinomialNB()
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
-        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
-        
+        self.failUnless(test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, 0.95))
+
     def test_naive_bayes1(self):
         categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
         newsgroups_train = fetch_20newsgroups(subset='train', categories=categories)

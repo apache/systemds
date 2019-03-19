@@ -24,6 +24,7 @@
 #   - Python 2: `PYSPARK_PYTHON=python2 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_df.py`
 #   - Python 3: `PYSPARK_PYTHON=python3 spark-submit --master local[*] --driver-class-path SystemML.jar test_mllearn_df.py`
 
+
 # Make the `systemml` package importable
 import os
 import sys
@@ -45,6 +46,16 @@ from systemml.mllearn import LinearRegression, LogisticRegression, NaiveBayes, S
 
 sparkSession = SparkSession.builder.getOrCreate()
 
+def test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, threshold):
+    if accuracy_score(sklearn_predicted, mllearn_predicted) > threshold:
+        # Our results match that of scikit-learn. No need to measure with the ground truth
+        return True
+    elif accuracy_score(y_test, mllearn_predicted) > accuracy_score(y_test, sklearn_predicted):
+        # We perform better than scikit-learn, ignore the threshold
+        return True
+    else:
+        return False
+
 # Currently not integrated with JUnit test
 # ~/spark-1.6.1-scala-2.11/bin/spark-submit --master local[*] --driver-class-path SystemML.jar test.py
 class TestMLLearn(unittest.TestCase):
@@ -64,7 +75,7 @@ class TestMLLearn(unittest.TestCase):
         mllearn_predicted = logistic.predict(X_test)
         sklearn_logistic = linear_model.LogisticRegression()
         sklearn_logistic.fit(X_train, y_train)
-        self.failUnless(accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted) > 0.95) # We are comparable to a similar algorithm in scikit learn
+        self.failUnless(test_accuracy_score(sklearn_logistic.predict(X_test), mllearn_predicted, y_test, 0.95))
 
     def test_linear_regression(self):
         diabetes = datasets.load_diabetes()
@@ -109,7 +120,7 @@ class TestMLLearn(unittest.TestCase):
         from sklearn import linear_model, svm
         clf = svm.LinearSVC()
         sklearn_predicted = clf.fit(X_train, y_train).predict(X_test)
-        self.failUnless(accuracy_score(sklearn_predicted, mllearn_predicted) > 0.95 )
+        self.failUnless(test_accuracy_score(sklearn_predicted, mllearn_predicted, y_test, 0.95))
 
 
 if __name__ == '__main__':

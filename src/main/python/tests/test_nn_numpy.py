@@ -36,6 +36,8 @@ import sys
 path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 sys.path.insert(0, path)
 
+TEST_GPU = False
+
 import unittest
 
 import numpy as np
@@ -48,20 +50,17 @@ from systemml.mllearn import Keras2DML
 from pyspark.sql import SparkSession
 from pyspark import SparkContext
 from keras.utils import np_utils
-from scipy import stats
-from sklearn.preprocessing import normalize
 from operator import mul
 
 batch_size = 32
 K.set_image_data_format('channels_first')
-# K.set_image_dim_ordering("th")
 
-def get_tensor(shape, random=True):
+def get_tensor(shape):
     if shape[0] is None:
         # Use the first dimension is None, use batch size:
         shape = list(shape)
         shape[0] = batch_size
-    return (np.random.randint(100, size=shape) + 1) / 100
+    return (np.random.randint(1000, size=shape).astype(np.float32) + 1) / 1000
 
 tmp_dir = 'tmp_dir'
 
@@ -94,10 +93,11 @@ def get_sysml_model(keras_model):
     # By performing one-hot encoding outside, we ensure that the ordering of the TF columns
     # matches that of SystemML
     sysml_model.set(train_algo='batch', perform_one_hot_encoding=False)
+    sysml_model.setGPU(TEST_GPU)
     # print('Script:' + str(sysml_model.get_training_script()))
     return sysml_model
 
-def base_test(layers, add_dense=False, test_backward=True):
+def base_test(layers, add_dense=False, test_backward=True, reshuffle_keras_output=False):
     layers = [layers] if not isinstance(layers, list) else layers
     in_shape, output_shape = get_input_output_shape(layers)
     # --------------------------------------
@@ -118,8 +118,8 @@ def base_test(layers, add_dense=False, test_backward=True):
     sysml_model = get_sysml_model(keras_model)
     keras_tensor = get_tensor(in_shape)
     sysml_matrix = keras_tensor.reshape((batch_size, -1))
-    #if len(keras_tensor.shape) == 4:
-    #    keras_tensor = np.flip(keras_tensor, 1)
+    # if len(keras_tensor.shape) == 4:
+    #     keras_tensor = np.flip(keras_tensor, 1)
     # --------------------------------------
     sysml_preds = sysml_model.predict_proba(sysml_matrix)
     if test_backward:
@@ -131,13 +131,14 @@ def base_test(layers, add_dense=False, test_backward=True):
         keras_model.train_on_batch(keras_tensor, one_hot_labels)
         keras_preds = keras_model.predict(keras_tensor)
     # --------------------------------------
-    if len(output_shape) == 4:
+    if len(output_shape) > 4:
+        raise Exception('Unsupported output shape:' + str(output_shape))
+    if len(output_shape) == 4 and reshuffle_keras_output:
+        # This is not required as of Keras 2.1.5 and Tensorflow 1.11.0, but keeping it for backward compatibility.
         # Flatten doesnot respect channel_first, so reshuffle the dimensions:
         keras_preds = keras_preds.reshape((batch_size, output_shape[2], output_shape[3], output_shape[1]))
         keras_preds = np.swapaxes(keras_preds, 2, 3)  # (h,w,c) -> (h,c,w)
         keras_preds = np.swapaxes(keras_preds, 1, 2)  # (h,c,w) -> (c,h,w)
-    elif len(output_shape) > 4:
-        raise Exception('Unsupported output shape:' + str(output_shape))
     # --------------------------------------
     return sysml_preds, keras_preds, keras_model, output_shape
 
@@ -179,8 +180,8 @@ class TestNNLibrary(unittest.TestCase):
     def test_lstm_forward1(self):
         self.failUnless(test_forward(LSTM(2, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(3, 4))))
 
-    #def test_lstm_backward1(self):
-    #    self.failUnless(test_backward(LSTM(2, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(3, 4))))
+    def test_lstm_backward1(self):
+       self.failUnless(test_backward(LSTM(2, return_sequences=True, activation='tanh', stateful=False, recurrent_activation='sigmoid',  input_shape=(3, 4))))
 
     def test_lstm_forward2(self):
         self.failUnless(test_forward(LSTM(10, return_sequences=False, activation='tanh', stateful=False, recurrent_activation='sigmoid', input_shape=(30, 20))))

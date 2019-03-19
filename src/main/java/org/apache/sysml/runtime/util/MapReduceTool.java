@@ -422,6 +422,9 @@ public class MapReduceTool
 		throws IOException 
 	{
 		Path path = new Path(mtdfile);
+		if(path.getName().equals(" .mtd")) {
+			LOG.warn("Performing a write on a empty mtd path:" + mtdfile + ". This can lead to unexpected behavior.");
+		}
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
 			String mtd = metaDataToString(vt, schema, dt, mc, outinfo, formatProperties);
@@ -429,6 +432,7 @@ public class MapReduceTool
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
 		}
+		
 	}
 
 	public static void writeScalarMetaDataFile(String mtdfile, ValueType vt) 

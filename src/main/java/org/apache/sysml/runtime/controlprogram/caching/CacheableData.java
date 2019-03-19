@@ -190,6 +190,16 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
 	
+	// If the cacheable data is an intermediate cache, then this value is set to identify the type of operator that created this cache.
+	// This avoids unnecessary GPU stalling as well as supports hybrid forward/backward calls. 
+	private int     _intermediateCacheType = -1;
+	public void setIntermediateCacheType(int newValue) {
+		_intermediateCacheType = newValue;
+	}
+	public int getIntermediateCacheType() {
+		return _intermediateCacheType;
+	}
+	
 	//spark-specific handles
 	//note: we use the abstraction of LineageObjects for two reasons: (1) to keep track of cleanup
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available

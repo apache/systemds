@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.sysml.runtime.instructions.gpu.DnnGPUInstruction;
-import org.apache.sysml.runtime.instructions.gpu.DnnGPUInstruction.LstmOperator;
 import org.apache.sysml.test.utils.TestUtils;
 import org.junit.Test;
 
@@ -119,7 +117,7 @@ public class LstmCPUTest extends GPUTests {
 	
 	public void testLstmCuDNNWithNNLayer(int N, int T, int D, int M, String returnSequences, double sparsity) {
 		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
-				+ "[output, c] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0)";
 		String scriptStr2 = "source(" + nnDML + ") as lstm;\n "
 				+ "[output, c, cache_out, cache_c, cache_ifog] = lstm::forward(x, w, b, " 
 				+ T + ", " + D + ", " + returnSequences + ", out0, c0)";
@@ -244,7 +242,8 @@ public class LstmCPUTest extends GPUTests {
 		boolean returnSequences1 = returnSequences.equals("TRUE");
 		
 		String scriptStr1 = "source(" + builtinDML + ") as lstm;\n "
-				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0);";
+				+ "[output, c, cache] = lstm::forward(x, w, b, " + returnSequences + ", out0, c0); \n"
+				+ "[dX, dW, db, dout0, dc0] = lstm::backward(dout, dc, x, w, b, " + returnSequences + ", out0, c0, cache);";
 		String scriptStr2 = "source(" + nnDML + ") as lstm;\n "
 				+ "[output, c, cache_out, cache_c, cache_ifog] = lstm::forward(x, w, b, " 
 				+ T + ", " + D + ", " + returnSequences + ", out0, c0); \n"

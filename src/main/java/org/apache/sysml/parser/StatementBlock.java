@@ -976,12 +976,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			throw new LanguageException("Unexpected error.");
 		
 		if ( source instanceof FunctionCallIdentifier ) {
+			// set target properties (based on type info in function call statement return params)
+			FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
+			FunctionStatement fstmt = (FunctionStatement)_dmlProg
+				.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
+			if(targetList.size() != fstmt.getOutputParams().size()) {
+				// throws a controlled error if the builtin functions are used incorrectly
+				fci.raiseValidateError("Incorrect number of outputs for the function " + fci.getNamespace() + "::" +  fci.getName() 
+					+ ":" + targetList.size() + " != " + fstmt.getOutputParams().size(), conditional);
+			}
 			for (int j =0; j< targetList.size(); j++) {
 				DataIdentifier target = targetList.get(j);
-				// set target properties (based on type info in function call statement return params)
-				FunctionCallIdentifier fci = (FunctionCallIdentifier)source;
-				FunctionStatement fstmt = (FunctionStatement)_dmlProg
-					.getFunctionStatementBlock(fci.getNamespace(), fci.getName()).getStatement(0);
 				if (fstmt == null){
 					fci.raiseValidateError(" function " + fci.getName() 
 						+ " is undefined in namespace " + fci.getNamespace(), conditional);

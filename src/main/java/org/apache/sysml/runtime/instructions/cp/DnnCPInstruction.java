@@ -39,6 +39,25 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	private static final Log LOG = LogFactory.getLog(DnnCPInstruction.class.getName());
 	private static boolean warnedUnderUtilitization = false;
 	
+	public static enum LSTM_CACHE_TYPE {
+		CP_NN,
+		GPU_CUDNN,
+		GPU_NN;
+		
+		public static LSTM_CACHE_TYPE fromInteger(int x) {
+			switch(x) {
+				case 0:
+					return CP_NN;
+				case 1:
+					return GPU_CUDNN;
+				case 2:
+					return GPU_NN;
+				default:
+					throw new DMLRuntimeException("Unsupported value:" + x);
+			}
+		}
+	}
+	
 	private final CPOperand _in2;
 	private final CPOperand _in3;
 	private final CPOperand _in4;
@@ -46,6 +65,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	private final CPOperand _in6;
 	private final CPOperand _in7;
 	private final CPOperand _in8;
+	private final CPOperand _in9;
 	private final CPOperand _out2;
 	private final CPOperand _out3;
 	private final CPOperand _out4;
@@ -63,7 +83,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		super(CPType.Dnn, null, in, out, opcode, istr);
 		_in2 = in2;
 		_in3 = in3;
-		_in4 = null; _in5 = null; _in6 = null; _in7 = null; _in8 = null;
+		_in4 = null; _in5 = null; _in6 = null; _in7 = null; _in8 = null; _in9 = null;
 		_out2 = null; _out3 = null; _out4 = null; _out5 = null;
 		_stride = stride;
 		_padding = padding;
@@ -112,6 +132,32 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		_in6 = in6;
 		_in7 = in7;
 		_in8 = in8;
+		_in9 = null;
+		_out2 = out2;
+		_out3 = out3;
+		_out4 = out4;
+		_out5 = out5;
+		_stride = null;
+		_padding = null;
+		_input_shape = null;
+		_filter_shape = null;
+		_numThreads = numThreads;
+		_intermediateMemoryBudget = intermediateMemoryBudget;
+	}
+	
+	public DnnCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
+			CPOperand in6, CPOperand in7, CPOperand in8, CPOperand in9,
+			CPOperand out, CPOperand out2, CPOperand out3, CPOperand out4, CPOperand out5, String opcode, String istr, 
+			double intermediateMemoryBudget, int numThreads) throws DMLRuntimeException {
+		super(CPType.Dnn, null, in1, out, opcode, istr);
+		_in2 = in2;
+		_in3 = in3;
+		_in4 = in4;
+		_in5 = in5;
+		_in6 = in6;
+		_in7 = in7;
+		_in8 = in8;
+		_in9 = in9;
 		_out2 = out2;
 		_out3 = out3;
 		_out4 = out4;
@@ -262,7 +308,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0, 0);
 		}
 		else if (opcode.equalsIgnoreCase("lstm")) {
-			InstructionUtils.checkNumFields(parts, 9);
+			InstructionUtils.checkNumFields(parts, 10);
 			CPOperand in1 = new CPOperand(parts[1]); // X
 			CPOperand in2 = new CPOperand(parts[2]); // W
 			CPOperand in3 = new CPOperand(parts[3]); // b
@@ -271,11 +317,12 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand in6 = new CPOperand(parts[6]); // return_seq
 			CPOperand out = new CPOperand(parts[7]);  // out
 			CPOperand out2 = new CPOperand(parts[8]); // c
-			int numThreads = Integer.parseInt(parts[9]);
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, null, null, null, opcode, str, 0, numThreads);
+			CPOperand out3 = new CPOperand(parts[9]); // cache
+			int numThreads = Integer.parseInt(parts[10]);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0, numThreads);
 		}
 		else if (opcode.equalsIgnoreCase("lstm_backward")) {
-			InstructionUtils.checkNumFields(parts, 14);
+			InstructionUtils.checkNumFields(parts, 15);
 			CPOperand in1 = new CPOperand(parts[1]); // X
 			CPOperand in2 = new CPOperand(parts[2]); // W
 			CPOperand in3 = new CPOperand(parts[3]); // b
@@ -284,13 +331,14 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand in6 = new CPOperand(parts[6]); // return_seq
 			CPOperand in7 = new CPOperand(parts[7]); // dout
 			CPOperand in8 = new CPOperand(parts[8]); // dc
-			CPOperand out = new CPOperand(parts[9]);  // dX
-			CPOperand out2 = new CPOperand(parts[10]); // dW
-			CPOperand out3 = new CPOperand(parts[11]); // db
-			CPOperand out4 = new CPOperand(parts[12]); // dout0
-			CPOperand out5 = new CPOperand(parts[13]); // dc0
-			int numThreads = Integer.parseInt(parts[14]);
-			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0, numThreads);
+			CPOperand in9 = new CPOperand(parts[9]); // cache
+			CPOperand out = new CPOperand(parts[10]);  // dX
+			CPOperand out2 = new CPOperand(parts[11]); // dW
+			CPOperand out3 = new CPOperand(parts[12]); // db
+			CPOperand out4 = new CPOperand(parts[13]); // dout0
+			CPOperand out5 = new CPOperand(parts[14]); // dc0
+			int numThreads = Integer.parseInt(parts[15]);
+			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, in9, out, out2, out3, out4, out5, opcode, str, 0, numThreads);
 		}
 		else {
 			throw new DMLRuntimeException("Unknown opcode while parsing a DnnCPInstruction: " + str);

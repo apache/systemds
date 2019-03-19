@@ -88,6 +88,7 @@ public class DMLConfig
 	public static final String SYNCHRONIZE_GPU      = "sysml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
 	public static final String EAGER_CUDA_FREE		= "sysml.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
 	public static final String GPU_EVICTION_POLICY	= "sysml.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
+	public static final String FORCE_LSTM_CUDNN		= "sysml.gpu.lstm.force.cudnn"; // boolean: should we force a cudnn operator for LSTM
 	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -148,6 +149,7 @@ public class DMLConfig
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
 		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
+		_defaultVals.put(FORCE_LSTM_CUDNN,		 "true" );
 		_defaultVals.put(GPU_RECOMPUTE_ACTIVATIONS, "false" );
 		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
 	}
@@ -432,7 +434,7 @@ public class DMLConfig
 				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
 				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, EVICTION_SHADOW_BUFFERSIZE,
-				GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, GPU_RECOMPUTE_ACTIVATIONS
+				GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, GPU_RECOMPUTE_ACTIVATIONS, FORCE_LSTM_CUDNN
 		}; 
 		
 		StringBuilder sb = new StringBuilder();

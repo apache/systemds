@@ -118,4 +118,7 @@
    <!-- Should perform recomputation of activations such as ReLU to reduce memory consumption. Set this to true
    when performing inference or for training very large networks (default: false) -->
    <sysml.gpu.recompute.activations>false</sysml.gpu.recompute.activations>
+   
+   <!-- Should SystemML runtime force the lstm builtin functions to use the CuDNN kernels (default: true) -->
+   <sysml.gpu.lstm.force.cudnn>true</sysml.gpu.lstm.force.cudnn>
 </root>

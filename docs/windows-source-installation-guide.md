@@ -38,7 +38,7 @@ Using IntelliJ IDEA **File | Open**, select the `<SYSTEMML_HOME>` directory.
   [enable, upgrade, or install that plugin](https://www.jetbrains.com/help/idea/managing-plugins.html) and restart IntelliJ IDEA.
 
 ### IntelliJ Build Configuration
-JDK version 1.8 (u91 or newer) is required for building and developing for IntelliJ IDEA Community Edition.
+JDK version 1.8 (u151 or newer) is required for building and developing for SystemML developement.
 1. Using IntelliJ IDEA, [configure](https://www.jetbrains.com/help/idea/sdk.html) a JDK named "**1.8**", pointing to `<JDK_18_HOME>`.
    * If not already present, add `<JDK_18_HOME>/lib/tools.jar` [to the Classpath](https://www.jetbrains.com/help/idea/sdk.html#manage_sdks) tab
      for the **1.8** JDK.

@@ -986,6 +986,10 @@ class RNN(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends
 class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer with HasWeight with HasBias {
   val return_sequences = param.getRecurrentParam.getReturnSequences
   
+  var _useBuiltinFunction = true
+  def useBuiltinFunction(enabled:Boolean): Unit = {
+    _useBuiltinFunction = enabled
+  }
   // ---------------------------------------------------------
   // Note: since Caffe doesnot have return_sequences, number of output is same as number of neurons
   def M():String = param.getRecurrentParam.getNumOutput.toString
@@ -994,7 +998,7 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   def timesteps():String = bottomLayerOutputShape._1
   def input_features():String = bottomLayerOutputShape._2
   def output_features():Int = param.getRecurrentParam.getNumOutput
-  override def sourceFileName = "lstm"
+  override def sourceFileName = if(_useBuiltinFunction) "lstm_builtin" else "lstm" 
   override def outputShape               = if(return_sequences) (timesteps, output_features.toString, "1") else (output_features.toString, "1", "1")
   override def biasShape(): Array[Int]   = Array(1, 4*M.toInt)
   override def weightShape(): Array[Int] = Array(input_features.toInt + M.toInt, 4*M.toInt)
@@ -1009,17 +1013,24 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     val N:String = null // output_features.toString
     val T = timesteps()
     val D = input_features()
-    invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
+    if(_useBuiltinFunction)
+      invokeForward(dmlScript, List[String](out, c, cache_out), X, weight, bias, return_sequences.toString.toUpperCase, out0, c0)
+    else
+      invokeForward(dmlScript, List[String](out, c, cache_out, cache_c, cache_ifog), X, weight, bias, T, D, return_sequences.toString.toUpperCase, out0, c0)
   }
   
   override def backward(dmlScript: StringBuilder, outSuffix: String) = {
     val T = timesteps()
     val D = input_features()
-    invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
+    if(_useBuiltinFunction)
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
+        T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out)
+    else
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
         T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)
   }
   
-  val cache_out = "cache_out_" + id
+  def cache_out() = if(_useBuiltinFunction) ("lstm_state_" + id) else ("cache_out_" + id)
   val out0 = "out0_" + id
   val dout0 = "dout0_" + id
   val c0 = "cellState0_" + id

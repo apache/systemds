@@ -21,9 +21,9 @@
 
 /*
  * LSTM layer.
+ * 
+ * This implementation uses a built-in operator for higher performance.
  */
-source("nn/layers/sigmoid.dml") as sigmoid
-source("nn/layers/tanh.dml") as tanh
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b, 
                    boolean return_sequences, matrix[double] out0, matrix[double] c0)

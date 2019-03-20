@@ -303,6 +303,10 @@ class Caffe2DML(val sc: SparkContext,
   def setDebugFlags(isDebug:Boolean):Unit = {
     net.getLayers.map(layer => {net.getCaffeLayer(layer).debugLayer = isDebug})
     net.getLayers.map(layer => {net.getCaffeLayer(layer).caffe2dmlObj = this})
+    net.getLayers.filter(layer => net.getCaffeLayer(layer).isInstanceOf[LSTM]).map(layer => {
+      if (inputs.containsKey("$use_builtin_lstm_fn")) 
+        net.getCaffeLayer(layer).asInstanceOf[LSTM].useBuiltinFunction(inputs.get("$use_builtin_lstm_fn").toLowerCase.toBoolean)
+     })
   }
   
   // Comma is included

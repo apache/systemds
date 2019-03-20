@@ -924,7 +924,7 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setWeightsToIgnore(ignore_weights)
 
     def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None,
-            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None):
+            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None, use_builtin_lstm_fn=None):
         """
         Set input to Caffe2DML
 
@@ -938,6 +938,7 @@ class Caffe2DML(BaseSystemMLClassifier):
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
+        use_builtin_lstm_fn: whether to use builtin lstm function for LSTM layer (default: True)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
@@ -949,6 +950,8 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setInput("$test_algo", str(test_algo).lower())
         if parallel_batches is not None:
             self.estimator.setInput("$parallel_batches", str(parallel_batches))
+        if use_builtin_lstm_fn is not None:
+            self.estimator.setInput("$use_builtin_lstm_fn", str(use_builtin_lstm_fn).upper())
         if output_activations is not None:
             self.estimator.setInput(
                 "$output_activations",

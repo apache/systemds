@@ -21,6 +21,8 @@
 
 /*
  * LSTM layer.
+ *
+ * Consider using lstm_builtin.dml for better performance.
  */
 source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/tanh.dml") as tanh

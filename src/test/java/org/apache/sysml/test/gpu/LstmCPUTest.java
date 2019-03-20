@@ -34,7 +34,7 @@ public class LstmCPUTest extends GPUTests {
 	private final static String TEST_NAME = "LstmTests";
 	private final int seed = 42;
 	
-	private final static String builtinDML = "\"nn/layers/lstm_staging.dml\"";
+	private final static String builtinDML = "\"nn/layers/lstm_builtin.dml\"";
 	private final static String nnDML = "\"nn/layers/lstm.dml\"";
 
 	@Override

@@ -21,6 +21,8 @@
 
 /*
  * 2D Convolutional layer.
+ *
+ * Consider using conv2d_builtin.dml for better performance.
  */
 source("nn/util.dml") as util
 

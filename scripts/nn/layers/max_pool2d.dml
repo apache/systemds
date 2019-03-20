@@ -21,6 +21,8 @@
 
 /*
  * Max Pooling layer.
+ *
+ * Consider using max_pool2d_builtin.dml for better performance.
  */
 source("nn/util.dml") as util
 

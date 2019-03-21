@@ -45,22 +45,87 @@ Keras models are parsed based on their layer structure and corresponding weights
 configuration. Be aware that currently this is a translation into Caffe and there will be loss of information from keras models such as 
 intializer information, and other layers which do not exist in Caffe. 
 
+First, install SystemML and other dependencies for the below demo:
+
+```
+pip install systemml keras tensorflow mlxtend
+``` 
+
 To create a Keras2DML object, simply pass the keras object to the Keras2DML constructor. It's also important to note that your models
-should be compiled so that the loss can be accessed for Caffe2DML
+should be compiled so that the loss can be accessed for Caffe2DML.
+
+
 
 ```python
+# pyspark --driver-memory 20g
+
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+import os
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# Import dependencies
+from mlxtend.data import mnist_data
+import numpy as np
+from sklearn.utils import shuffle
+from keras.models import Sequential
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
+from keras import backend as K
+from keras.models import Model
+from keras.optimizers import SGD
+
+# Set channel first layer
+K.set_image_data_format('channels_first')
+
+# Download the MNIST dataset
+X, y = mnist_data()
+X, y = shuffle(X, y)
+
+# Split the data into training and test
+n_samples = len(X)
+X_train = X[:int(.9 * n_samples)]
+y_train = y[:int(.9 * n_samples)]
+X_test = X[int(.9 * n_samples):]
+y_test = y[int(.9 * n_samples):]
+
+# Define Lenet in Keras
+keras_model = Sequential()
+keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(1,28,28), padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Conv2D(64, (5, 5), activation='relu', padding='same'))
+keras_model.add(MaxPooling2D(pool_size=(2, 2)))
+keras_model.add(Flatten())
+keras_model.add(Dense(512, activation='relu'))
+keras_model.add(Dropout(0.5))
+keras_model.add(Dense(10, activation='softmax'))
+keras_model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True))
+keras_model.summary()
+
+# Scale the input features
+scale = 0.00390625
+X_train = X_train*scale
+X_test = X_test*scale
+
+# Train Lenet using SystemML
 from systemml.mllearn import Keras2DML
-import keras
-from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
-
-keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
-keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
-
-sysml_model = Keras2DML(spark, keras_model,input_shape=(3,224,224))
-sysml_model.summary()
+sysml_model = Keras2DML(spark, keras_model, weights='weights_dir')
+# sysml_model.setConfigProperty("sysml.native.blas", "auto")
+# sysml_model.setGPU(True).setForceGPU(True)
+sysml_model.fit(X_train, y_train)
+sysml_model.score(X_test, y_test)
 ```
 
 # Frequently asked questions
+
+#### How can I get the training and prediction DML script for the Keras model?
+
+The training and prediction DML scripts can be generated using `get_training_script()` and `get_prediction_script()` methods.
+
+```python
+from systemml.mllearn import Keras2DML
+sysml_model = Keras2DML(spark, keras_model, input_shape=(3,224,224))
+print(sysml_model.get_training_script())
+```
 
 #### What is the mapping between Keras' parameters and Caffe's solver specification ? 
 
@@ -133,4 +198,10 @@ To monitor loss, please set the parameters `display`, `test_iter` and `test_inte
 For example: for the expression `Keras2DML(..., display=100, test_iter=10, test_interval=500)`, we
 - display the training loss and accuracy every 100 iterations and
 - carry out validation every 500 training iterations and display validation loss and accuracy.
+
+#### How do you ensure that Keras2DML produce same results as other Keras' backend?
+
+To verify that Keras2DML produce same results as other Keras' backend, we have [Python unit tests](https://github.com/apache/systemml/blob/master/src/main/python/tests/test_nn_numpy.py)
+that compare the results of Keras2DML with that of TensorFlow. We assume that Keras team ensure that all their backends are consistent with their TensorFlow backend.
+
 

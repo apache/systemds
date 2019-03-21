@@ -244,3 +244,13 @@ The current set of dependencies other than MKL and OpenBLAS, are as follows:
 
 If CMake cannot detect your OpenBLAS installation, set the `OpenBLAS_HOME` environment variable to the OpenBLAS Home.
 
+
+## Debugging SystemML's native code
+
+To debug issues in SystemML's native code, please use the following flags:
+
+```
+$SPARK_HOME/bin/spark-submit --conf 'spark.driver.extraJavaOptions=-XX:OnError="gdb - %p"' SystemML.jar -f test_conv2d.dml -stats 10 -explain -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W K=$K R=$R S=$S
+```
+
+When it fails, it will start a native debugger.

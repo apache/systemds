@@ -184,13 +184,22 @@ lenet.score(X_test, y_test)
 
 <div data-lang="Keras2DML" markdown="1">
 {% highlight python %}
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+import os
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
 from keras.models import Sequential
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout,Flatten
 from keras import backend as K
 from keras.models import Model
-input_shape = (1,28,28) if K.image_data_format() == 'channels_first' else (28,28, 1)
+from keras.optimizers import SGD
+
+# Set channel first layer
+K.set_image_data_format('channels_first')
+
 keras_model = Sequential()
-keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=input_shape, padding='same'))
+keras_model.add(Conv2D(32, kernel_size=(5, 5), activation='relu', input_shape=(1,28,28), padding='same'))
 keras_model.add(MaxPooling2D(pool_size=(2, 2)))
 keras_model.add(Conv2D(64, (5, 5), activation='relu', padding='same'))
 keras_model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -206,7 +215,7 @@ X_train = X_train*scale
 X_test = X_test*scale
 
 from systemml.mllearn import Keras2DML
-sysml_model = Keras2DML(spark, keras_model, input_shape=(1,28,28), weights='weights_dir')
+sysml_model = Keras2DML(spark, keras_model, weights='weights_dir')
 # sysml_model.setConfigProperty("sysml.native.blas", "auto")
 # sysml_model.setGPU(True).setForceGPU(True)
 sysml_model.summary()
@@ -235,13 +244,22 @@ Will be added soon ...
 
 <div data-lang="Keras2DML" markdown="1">
 {% highlight python %}
+# Disable Tensorflow from using GPU to avoid unnecessary evictions by SystemML runtime
+import os
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+# Set channel first layer
+from keras import backend as K
+K.set_image_data_format('channels_first')
+
 from systemml.mllearn import Keras2DML
 import systemml as sml
 import keras, urllib
 from PIL import Image
 from keras.applications.resnet50 import preprocess_input, decode_predictions, ResNet50
 
-keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(224,224,3))
+keras_model = ResNet50(weights='imagenet',include_top=True,pooling='None',input_shape=(3,224,224))
 keras_model.compile(optimizer='sgd', loss= 'categorical_crossentropy')
 
 sysml_model = Keras2DML(spark,keras_model,input_shape=(3,224,224), weights='weights_dir', labels='https://raw.githubusercontent.com/apache/systemml/master/scripts/nn/examples/caffe2dml/models/imagenet/labels.txt')

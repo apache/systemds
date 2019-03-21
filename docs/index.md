@@ -38,6 +38,31 @@ To download SystemML, visit the [downloads](http://systemml.apache.org/download)
 
 This version of SystemML supports: Java 8+, Scala 2.11+, Python 2.7/3.5+, Hadoop 2.6+, and Spark 2.1+.
 
+## Quick tour of the documentation
+
+* If you are new to SystemML, please refer to the [installation guide](http://systemml.apache.org/install-systemml.html) and try out our [sample notebooks](http://systemml.apache.org/get-started.html#sample-notebook)
+* If you want to invoke one of our [pre-implemented algorithms](algorithms-reference):
+  * Using Python, consider using 
+    * the convenient [mllearn API](http://apache.github.io/systemml/python-reference.html#mllearn-api). The usage is describe in our [beginner's guide](http://apache.github.io/systemml/beginners-guide-python.html#invoke-systemmls-algorithms)  
+    * OR [Spark MLContext](spark-mlcontext-programming-guide) API
+  * Using Java/Scala, consider using 
+    * [Spark MLContext](spark-mlcontext-programming-guide) API for large datasets
+    * OR [JMLC](jmlc) API for in-memory scoring
+  * Via Command-line, follow the usage section in the [Algorithms Reference](algorithms-reference) 
+* If you want to implement a deep neural network, consider
+  * specifying your network in [Keras](https://keras.io/) format and invoking it with our [Keras2DML](beginners-guide-keras2dml) API
+  * OR specifying your network in [Caffe](http://caffe.berkeleyvision.org/) format and invoking it with our [Caffe2DML](beginners-guide-caffe2dml) API
+  * OR Using DML-bodied [NN library](https://github.com/apache/systemml/tree/master/scripts/nn). The usage is described in our [sample notebook](https://github.com/apache/systemml/blob/master/samples/jupyter-notebooks/Deep%20Learning%20Image%20Classification.ipynb)
+* Since training a deep neural network is often compute-bound, you may want to
+  * Enable [native BLAS](native-backend) in SystemML
+  * OR run it [using our GPU backend](gpu)  
+* If you want to implement a custom machine learning algorithm and you are familiar with:
+  * [R](https://www.r-project.org/about.html), consider implementing your algorithm in [DML](dml-language-reference) (recommended)
+  * [Python](https://www.python.org/), you can implement your algorithm in [PyDML](beginners-guide-to-dml-and-pydml) or using the [matrix class](http://apache.github.io/systemml/python-reference.html#matrix-class)
+* If you want to try out SystemML on single machine (for example, your laptop), consider
+  * using the above mentioned APIs with [Apache Spark](https://spark.apache.org/downloads.html) (recommended). Please refer to our [installation guide](http://systemml.apache.org/install-systemml.html).
+  * OR running it using java in [standalone mode](standalone-guide)
+
 ## Running SystemML
 
 * [Beginner's Guide For Python Users](beginners-guide-python) - Beginner's Guide for Python users.

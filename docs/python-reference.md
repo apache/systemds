@@ -368,8 +368,9 @@ beta = ml.execute(script).get('B_out').toNumPy()
 ## mllearn API
 
 mllearn API is designed to be compatible with scikit-learn and MLLib.
-The classes that are part of mllearn API are LogisticRegression, LinearRegression, SVM, NaiveBayes 
-and [Caffe2DML](http://apache.github.io/systemml/beginners-guide-caffe2dml).
+The classes that are part of mllearn API are LogisticRegression, LinearRegression, SVM, NaiveBayes,
+[Keras2DML](http://apache.github.io/systemml/beginners-guide-keras2dml.html) 
+and [Caffe2DML](http://apache.github.io/systemml/beginners-guide-caffe2dml.html).
 
 The below code describes how to use mllearn API for training:
 
@@ -411,7 +412,8 @@ expects that labels have been converted to 1-based value.
 This avoids unnecessary decoding overhead for large dataset if the label columns has already been decoded.
 For scikit-learn API, there is no such requirement.
 
-The table below describes the parameter available for mllearn algorithms:
+The table below describes the parameter available for mllearn algorithms.
+These parameters are also specified in the usage section of the [Algorithms Reference](algorithms-reference):
 
 | Parameters | Description of the Parameters | LogisticRegression | LinearRegression | SVM | NaiveBayes |
 |----------------|-----------------------------------------------------------------------------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----|------------|

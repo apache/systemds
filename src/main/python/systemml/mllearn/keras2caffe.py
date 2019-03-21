@@ -25,7 +25,12 @@
 import numpy as np
 import os
 import math
-from itertools import chain, imap
+from itertools import chain
+try:
+    from itertools import imap
+except ImportError:
+    # Support Python 3x
+    imap = map
 from ..converters import *
 from ..classloader import *
 import keras
@@ -112,7 +117,7 @@ def toKV(key, value):
 
 
 def _parseJSONObject(obj):
-    rootName = obj.keys()[0]
+    rootName = list(obj.keys())[0]
     ret = ['\n', rootName, ' {']
     for key in obj[rootName]:
         if isinstance(obj[rootName][key], dict):
@@ -172,7 +177,7 @@ def _parseKerasLayer(layer):
         layerArgs['bottom'] = _getBottomLayers(layer)
         layerArgs['top'] = layer.name
     if len(param) > 0:
-        paramName = param.keys()[0]
+        paramName = list(param.keys())[0]
         layerArgs[paramName] = param[paramName]
     ret = { 'layer': layerArgs }
     return [ret, _parseActivation(
@@ -194,20 +199,20 @@ specialLayers = {
     keras.layers.BatchNormalization: _parseBatchNorm
 }
 
+def getPadding(kernel_size, padding):
+    if padding.lower() == 'same':
+        return int(kernel_size/2)
+    elif padding.lower() == 'valid':
+        return 0
+    else:
+        raise ValueError('Unsupported padding:' + str(padding))
 
 def getConvParam(layer):
     stride = (1, 1) if layer.strides is None else layer.strides
-    padding = [
-        layer.kernel_size[0] /
-        2,
-        layer.kernel_size[1] /
-        2] if layer.padding == 'same' else [
-        0,
-        0]
     config = layer.get_config()
     return {'num_output': layer.filters, 'bias_term': str(config['use_bias']).lower(
     ), 'kernel_h': layer.kernel_size[0], 'kernel_w': layer.kernel_size[1], 'stride_h': stride[0], 'stride_w': stride[1],
-            'pad_h': padding[0], 'pad_w': padding[1]}
+            'pad_h': getPadding(layer.kernel_size[0], layer.padding), 'pad_w': getPadding(layer.kernel_size[1], layer.padding)}
 
 
 def getUpSamplingParam(layer):
@@ -216,15 +221,9 @@ def getUpSamplingParam(layer):
 
 def getPoolingParam(layer, pool='MAX'):
     stride = (1, 1) if layer.strides is None else layer.strides
-    padding = [
-        layer.pool_size[0] /
-        2,
-        layer.pool_size[1] /
-        2] if layer.padding == 'same' else [
-        0,
-        0]
     return {'pool': pool, 'kernel_h': layer.pool_size[0], 'kernel_w': layer.pool_size[1],
-            'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': padding[0], 'pad_w': padding[1]}
+            'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': getPadding(layer.pool_size[0], layer.padding),
+            'pad_w': getPadding(layer.pool_size[1], layer.padding)}
 
 
 def getRecurrentParam(layer):

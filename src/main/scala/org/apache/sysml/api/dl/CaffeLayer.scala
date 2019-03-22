@@ -1024,7 +1024,7 @@ class LSTM(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
     val D = input_features()
     if(_useBuiltinFunction)
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
-        T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out)
+        return_sequences.toString.toUpperCase, out0, c0, cache_out)
     else
       invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id, dWeight, dBias, dout0, dc0), dout, dc0, X, weight, bias,
         T, D, return_sequences.toString.toUpperCase, out0, c0, cache_out, cache_c, cache_ifog)

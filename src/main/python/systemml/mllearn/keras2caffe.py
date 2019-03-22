@@ -485,7 +485,7 @@ def getInputMatrices(layer):
     elif isinstance(layer, keras.layers.LSTM):
         weights = layer.get_weights()
         W, U, b =  weights[0], weights[1], weights[2]
-        units = W.shape[1]/4
+        units = int(W.shape[1]/4)
         if W.shape[1] != U.shape[1]:
             raise Exception('Number of hidden units of the kernel and the recurrent kernel doesnot match')
         # Note: For the LSTM layer, Keras weights are laid out in [i, f, c, o] format;

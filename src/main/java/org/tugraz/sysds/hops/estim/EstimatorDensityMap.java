@@ -23,6 +23,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -54,23 +55,14 @@ public class EstimatorDensityMap extends SparsityEstimator
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		//recursive density map computation of non-leaf nodes
-		if( !root.getLeft().isLeaf() )
-			estim(root.getLeft()); //obtain synopsis
-		if( !root.getRight().isLeaf() )
-			estim(root.getRight()); //obtain synopsis
-		DensityMap m1Map = !root.getLeft().isLeaf() ?
-			(DensityMap)root.getLeft().getSynopsis() : 
-			new DensityMap(root.getLeft().getData(), _b);
-		DensityMap m2Map = !root.getRight().isLeaf() ?
-			(DensityMap)root.getRight().getSynopsis() :
-			new DensityMap(root.getRight().getData(), _b);
+		DensityMap m1Map = getCachedSynopsis(root.getLeft());
+		DensityMap m2Map = getCachedSynopsis(root.getRight());
 		
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
-			root.getLeft().getRows(), root.getRight().getCols(), outMap.getNonZeros()));
+			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
 	}
 
 	@Override
@@ -81,10 +73,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();
+			return estimExactMetaData(m1.getMatrixCharacteristics(), m2 != null ?
+				m2.getMatrixCharacteristics() : null, op).getSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
-		DensityMap m2Map = (m1 == m2) ? //self product
+		DensityMap m2Map = (m1 == m2 || m2 == null) ? //self product
 			m1Map : new DensityMap(m2, _b);
 		DensityMap outMap = estimIntern(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity( //aggregate output histogram
@@ -96,6 +88,17 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return estim(m, null, op);
 	}
 	
+	private DensityMap getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new DensityMap(node.getData(), _b));
+		else if( !node.isLeaf() )
+			estim(node); //recursively obtain synopsis
+		return (DensityMap) node.getSynopsis();
+	}
+	
 	/**
 	 * Computes the output density map given the density maps of the input operands.
 	 * 
@@ -103,20 +106,21 @@ public class EstimatorDensityMap extends SparsityEstimator
 	 * @param m2Map density map right-hand-side operand
 	 * @return density map
 	 */
-	private DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {
+	public DensityMap estimIntern(DensityMap m1Map, DensityMap m2Map, OpCode op) {
 		switch(op) {
-			case MM:   return estimInternMM(m1Map, m2Map);
-			case MULT: return estimInternMult(m1Map, m2Map);
-			case PLUS: return estimInternPlus(m1Map, m2Map);
+			case MM:      return estimInternMM(m1Map, m2Map);
+			case MULT:    return estimInternMult(m1Map, m2Map);
+			case PLUS:    return estimInternPlus(m1Map, m2Map);
+			case NEQZERO: return m1Map;
+			case EQZERO:  return estimInternEqZero(m1Map);
 			
 			case RBIND:
 			case CBIND:
 				//TODO simple append not possible due to partial blocks at end of m1Map
 			
-			case TRANS:
-			case DIAG:
-			case RESHAPE:
-				//TODO add missing estimators
+			case TRANS:   return estimInternTrans(m1Map);
+			case DIAG:    return estimInternDiag(m1Map);
+			case RESHAPE: return estimInternReshape(m1Map);
 			default:
 				throw new NotImplementedException();
 		}
@@ -180,7 +184,41 @@ public class EstimatorDensityMap extends SparsityEstimator
 			m1Map.getNumColumnsOrig(), _b, true);
 	}
 	
-	private static class DensityMap {
+	private DensityMap estimInternTrans(DensityMap m1Map) {
+		MatrixBlock out = LibMatrixReorg.transpose(m1Map.getMap(), 
+			new MatrixBlock(m1Map.getNumColumns(), m1Map.getNumRows(), false));
+		return new DensityMap(out, m1Map.getNumColumnsOrig(),
+			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
+	}
+	
+	private DensityMap estimInternDiag(DensityMap m1Map) {
+		if( m1Map.getNumColumnsOrig() > 1 )
+			throw new NotImplementedException();
+		m1Map.toNnz();
+		MatrixBlock out = LibMatrixReorg.diag(m1Map.getMap(), 
+			new MatrixBlock(m1Map.getNumRows(), m1Map.getNumRows(), false));
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
+	}
+	
+	private DensityMap estimInternReshape(DensityMap m1Map) {
+		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNonZeros());
+		int b = Math.max(m1Map.getNumRowsOrig(), m1Map.getNumColumnsOrig());
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumColumnsOrig(), b, false);
+	}
+	
+	private DensityMap estimInternEqZero(DensityMap m1Map) {
+		MatrixBlock out = new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), false);
+		m1Map.toSparsity();
+		for(int i=0; i<m1Map.getNumRows(); i++)
+			for(int j=0; j<m1Map.getNumColumns(); j++)
+				out.quickSetValue(i, j, 1-m1Map.get(i, j));
+		return new DensityMap(out, m1Map.getNumRowsOrig(),
+			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
+	}
+	
+	public static class DensityMap {
 		private final MatrixBlock _map;
 		private final int _rlen;
 		private final int _clen;
@@ -193,6 +231,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_b = b;
 			_map = init(in);
 			_scaled = false;
+			if( !isPow2(_b) )
+				System.out.println("WARN: Invalid block size: "+_b);
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
@@ -201,6 +241,12 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_b = b;
 			_map = map;
 			_scaled = scaled;
+			if( !isPow2(_b) )
+				System.out.println("WARN: Invalid block size: "+_b);
+		}
+		
+		public MatrixBlock getMap() {
+			return _map;
 		}
 		
 		public int getNumRows() {
@@ -312,6 +358,11 @@ public class EstimatorDensityMap extends SparsityEstimator
 			}
 			out.recomputeNonZeros();
 			return out;
+		}
+		
+		private boolean isPow2(int value) {
+			double tmp = (Math.log(value) / Math.log(2));
+			return Math.floor(tmp) == Math.ceil(tmp);
 		}
 	}
 }

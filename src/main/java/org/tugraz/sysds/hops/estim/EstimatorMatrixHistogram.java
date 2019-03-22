@@ -19,11 +19,12 @@
 
 package org.tugraz.sysds.hops.estim;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.directory.api.util.exception.NotImplementedException;
+import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
@@ -40,39 +41,43 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 public class EstimatorMatrixHistogram extends SparsityEstimator
 {
 	//internal configurations
-	private static final boolean DEFAULT_USE_EXCEPTS = true;
+	private static final boolean DEFAULT_USE_EXTENDED = true;
+	private static final boolean ADVANCED_SKETCH_PROP = false;
 	
-	private final boolean _useExcepts;
+	private final boolean _useExtended;
 	
 	public EstimatorMatrixHistogram() {
-		this(DEFAULT_USE_EXCEPTS);
+		this(DEFAULT_USE_EXTENDED);
 	}
 	
-	public EstimatorMatrixHistogram(boolean useExcepts) {
-		_useExcepts = useExcepts;
+	public EstimatorMatrixHistogram(boolean useExtended) {
+		_useExtended = useExtended;
 	}
 	
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		//recursive histogram computation of non-leaf nodes
-		if( !root.getLeft().isLeaf() )
-			estim(root.getLeft()); //obtain synopsis
-		if( !root.getRight().isLeaf() )
-			estim(root.getRight()); //obtain synopsis
-		MatrixHistogram h1 = !root.getLeft().isLeaf() ?
-			(MatrixHistogram)root.getLeft().getSynopsis() :
-			new MatrixHistogram(root.getLeft().getData(), _useExcepts);
-		MatrixHistogram h2 = !root.getRight().isLeaf() ?
-			(MatrixHistogram)root.getRight().getSynopsis() :
-			new MatrixHistogram(root.getRight().getData(), _useExcepts);
+		return estim(root, true);
+	}
+	
+	public MatrixCharacteristics estim(MMNode root, boolean topLevel) {
+		//NOTE: not estimateInputs due to handling of topLevel
+		MatrixHistogram h1 = getCachedSynopsis(root.getLeft());
+		MatrixHistogram h2 = getCachedSynopsis(root.getRight());
 		
 		//estimate output sparsity based on input histograms
-		double ret = estimIntern(h1, h2, root.getOp());
-		MatrixHistogram outMap = MatrixHistogram.deriveOutputHistogram(h1, h2, ret, root.getOp());
+		double ret = estimIntern(h1, h2, root.getOp(), root.getMisc());
+		if( topLevel ) { //fast-path final result
+			return MatrixHistogram.deriveOutputCharacteristics(
+				h1, h2, ret, root.getOp(), root.getMisc());
+		}
+		
+		//sketch propagation for intermediates other than final result
+		h2.setData(root.getRight().isLeaf() ? root.getRight().getData() : null);
+		MatrixHistogram outMap = MatrixHistogram
+			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSynopsis(outMap);
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
 			outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
-
 	}
 	
 	@Override 
@@ -85,42 +90,51 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
 				m2.getMatrixCharacteristics(), op).getSparsity();
-		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
+		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
-			h1 : new MatrixHistogram(m2, _useExcepts);
-		return estimIntern(h1, h2, op);
+			h1 : new MatrixHistogram(m2, _useExtended);
+		return estimIntern(h1, h2, op, null);
 	}
 	
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(), null, op).getSparsity();
-		MatrixHistogram h1 = new MatrixHistogram(m1, _useExcepts);
-		return estimIntern(h1, null, op);
+		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
+		return estimIntern(h1, null, op, null);
 	}
 	
-	private double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op) {
+	private MatrixHistogram getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(new MatrixHistogram(node.getData(), _useExtended));
+		else if( !node.isLeaf() )
+			estim(node, false); //recursively obtain synopsis
+		return (MatrixHistogram) node.getSynopsis();
+	}
+	
+	public double estimIntern(MatrixHistogram h1, MatrixHistogram h2, OpCode op, long[] misc) {
 		double msize = (double)h1.getRows()*h1.getCols();
 		switch (op) {
 			case MM:
 				return estimInternMM(h1, h2);
 			case MULT: {
-				final double N1 = h1.getNonZeros();
-				final double N2 = h2.getNonZeros();
-				final long scale = IntStream.range(0, h1.getCols())
-					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+				final double scale = IntStream.range(0, h1.getCols())
+					.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j]).sum()
+					/ h1.getNonZeros() / h2.getNonZeros();
 				return IntStream.range(0, h1.getRows())
-					.mapToDouble(i -> (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2) //collisions
+					.mapToDouble(i -> (double)h1.rNnz[i] * h2.rNnz[i] * scale) //collisions
 					.sum() / msize;
 			}
 			case PLUS: {
-				final double N1 = h1.getNonZeros();
-				final double N2 = h2.getNonZeros();
-				final long scale = IntStream.range(0, h1.getCols())
-					.mapToLong(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+				final double scale = IntStream.range(0, h1.getCols())
+					.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j]).sum()
+					/ h1.getNonZeros() / h2.getNonZeros();
 				return IntStream.range(0, h1.getRows())
-					.mapToDouble(i -> (long)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
-						- (long)h1.rNnz[i] * h2.rNnz[i] * scale / N1 / N2)
+					.mapToDouble(i -> (double)h1.rNnz[i] + h2.rNnz[i] //all minus collisions
+						- (double)h1.rNnz[i] * h2.rNnz[i] * scale)
 					.sum() / msize;
 			}
 			case EQZERO:
@@ -153,29 +167,36 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		//dot(h1.cNnz,h2rNnz) gives the exact number of non-zeros in the output
 		if( h1.rMaxNnz <= 1 || h2.cMaxNnz <= 1 ) {
 			for( int j=0; j<h1.getCols(); j++ )
-				nnz += h1.cNnz[j] * h2.rNnz[j];
+				nnz += (long)h1.cNnz[j] * h2.rNnz[j];
 		}
 		//special case, with hybrid exact and approximate output
-		else if(h1.cNnz1e!=null && h2.rNnz1e != null) {
-			//note: normally h1.getRows()*h2.getCols() would define mnOut
+		else if(h1.cNnz1e!=null || h2.rNnz1e != null) {
+			//NOTE: normally h1.getRows()*h2.getCols() would define mnOut
 			//but by leveraging the knowledge of rows/cols w/ <=1 nnz, we account
 			//that exact and approximate fractions touch different areas
-			long mnOut = (h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1);
+			long mnOut = _useExtended ?
+				(long)(h1.rNonEmpty-h1.rN1) * (h2.cNonEmpty-h2.cN1) :
+				(long)(h1.getRows()-h1.rN1) * (h2.getCols()-h2.cN1);
 			double spOutRest = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
+				//zero for non-existing extension vectors
+				int h1c1ej = (h1.cNnz1e != null) ? h1.cNnz1e[j] : 0;
+				int h2r1ej = (h2.rNnz1e != null) ? h2.rNnz1e[j] : 0;
 				//exact fractions, w/o double counting
-				nnz += h1.cNnz1e[j] * h2.rNnz[j];
-				nnz += (h1.cNnz[j]-h1.cNnz1e[j]) * h2.rNnz1e[j];
+				nnz += (long)h1c1ej * h2.rNnz[j];
+				nnz += (long)(h1.cNnz[j]-h1c1ej) * h2r1ej;
 				//approximate fraction, w/o double counting
-				double lsp = (double)(h1.cNnz[j]-h1.cNnz1e[j]) 
-					* (h2.rNnz[j]-h2.rNnz1e[j]) / mnOut;
+				double lsp = (double)(h1.cNnz[j]-h1c1ej) 
+					* (h2.rNnz[j]-h2r1ej) / mnOut;
 				spOutRest = spOutRest + lsp - spOutRest*lsp;
 			}
 			nnz += (long)(spOutRest * mnOut);
 		}
 		//general case with approximate output
 		else {
-			long mnOut = h1.getRows()*h2.getCols();
+			long mnOut = _useExtended ?
+				(long)h1.rNonEmpty * h2.cNonEmpty :
+				(long)h1.getRows() * h2.getCols();
 			double spOut = 0;
 			for( int j=0; j<h1.getCols(); j++ ) {
 				double lsp = (double) h1.cNnz[j] * h2.rNnz[j] / mnOut;
@@ -184,20 +205,19 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			nnz = (long)(spOut * mnOut);
 		}
 		
-		//exploit upper bound on nnz based on non-empty rows/cols
-		nnz = (h1.rNonEmpty >= 0 && h2.cNonEmpty >= 0) ?
-			Math.min((long)h1.rNonEmpty * h2.cNonEmpty, nnz) : nnz;
-		
-		//exploit lower bound on nnz based on half-full rows/cols
-		nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
-			Math.max((long)h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
+		if( _useExtended ) {
+			//exploit lower bound on nnz based on half-full rows/cols
+			//note: upper bound applied via modified output sizes
+			nnz = (h1.rNdiv2 >= 0 && h2.cNdiv2 >= 0) ?
+				Math.max((long)h1.rNdiv2 * h2.cNdiv2, nnz) : nnz;
+		}
 		
 		//compute final sparsity
 		return OptimizerUtils.getSparsity(
 			h1.getRows(), h2.getCols(), nnz);
 	}
 	
-	private static class MatrixHistogram {
+	public static class MatrixHistogram {
 		// count vectors (the histogram)
 		private final int[] rNnz;    //nnz per row
 		private int[] rNnz1e = null; //nnz per row for cols w/ <= 1 non-zeros
@@ -209,6 +229,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		private final int rNonEmpty, cNonEmpty; //number of non-empty rows/cols (w/ empty is nnz=0)
 		private final int rNdiv2, cNdiv2;       //number of rows/cols with nnz > #cols/2 and #rows/2
 		private boolean fullDiag;               //true if there exists a full diagonal of nonzeros
+		private MatrixBlock _data = null; //optional leaf data
 		
 		public MatrixHistogram(MatrixBlock in, boolean useExcepts) {
 			// 1) allocate basic synopsis
@@ -220,7 +241,12 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				&& in.getNumRows() == in.getNumColumns();
 			
 			// 2) compute basic synopsis details
-			if( !in.isEmpty() ) {
+			if( in.getLength() == in.getNonZeros() ) {
+				//fully dense: constant row/column counts
+				Arrays.fill(rNnz, n);
+				Arrays.fill(cNnz, m);
+			}
+			else if( !in.isEmpty() ) {
 				if( in.isInSparseFormat() ) {
 					SparseBlock a = in.getSparseBlock();
 					for( int i=0; i<m; i++ ) {
@@ -252,7 +278,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			rNdiv2 = rSummary[3]; cNdiv2 = cSummary[3];
 			
 			// 4) compute exception details if necessary (optional)
-			if( useExcepts & !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) ) {
+			if( useExcepts && !in.isEmpty() && (rMaxNnz > 1 || cMaxNnz > 1) 
+				&& in.getLength() != in.getNonZeros() ) { //not fully dense
 				rNnz1e = new int[in.getNumRows()];
 				cNnz1e = new int[in.getNumColumns()];
 				
@@ -295,8 +322,11 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			rMaxNnz = rmax;
 			cMaxNnz = cmax;
 			rN1 = cN1 = -1;
-			rNonEmpty = cNonEmpty = -1;
 			rNdiv2 = cNdiv2 = -1;
+			
+			//update non-zero rows/cols
+			rNonEmpty = (int)Arrays.stream(rNnz).filter(i -> i!=0).count();
+			cNonEmpty = (int)Arrays.stream(cNnz).filter(i -> i!=0).count();
 		}
 		
 		public int getRows() {
@@ -307,25 +337,73 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			return cNnz.length;
 		}
 		
+		public int[] getRowCounts() {
+			return rNnz;
+		}
+		
+		public int[] getColCounts() {
+			return cNnz;
+		}
+		
 		public long getNonZeros() {
 			return getRows() < getCols() ?
 				IntStream.range(0, getRows()).mapToLong(i-> rNnz[i]).sum() :
 				IntStream.range(0, getCols()).mapToLong(i-> cNnz[i]).sum();
 		}
 		
-		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op) {
+		public void setData(MatrixBlock mb) {
+			_data = mb;
+		}
+		
+		public static MatrixHistogram deriveOutputHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
 			switch(op) {
-				case MM:    return deriveMMHistogram(h1, h2, spOut);
-				case MULT:  return deriveMultHistogram(h1, h2);
-				case PLUS:  return derivePlusHistogram(h1, h2);
-				case RBIND: return deriveRbindHistogram(h1, h2);
-				case CBIND: return deriveCbindHistogram(h1, h2);
-				//TODO add missing unary operations
+				case MM:      return deriveMMHistogram(h1, h2, spOut);
+				case MULT:    return deriveMultHistogram(h1, h2);
+				case PLUS:    return derivePlusHistogram(h1, h2);
+				case RBIND:   return deriveRbindHistogram(h1, h2);
+				case CBIND:   return deriveCbindHistogram(h1, h2);
+				case NEQZERO: return h1;
+				case EQZERO:  return deriveEq0Histogram(h1);
+				case DIAG:    return deriveDiagHistogram(h1);
+				case TRANS:   return deriveTransHistogram(h1);
+				case RESHAPE: return deriveReshapeHistogram(h1, (int)misc[0], (int)misc[1]);
 				default:
 					throw new NotImplementedException();
 			}
 		}
 		
+		public static MatrixCharacteristics deriveOutputCharacteristics(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
+			switch(op) {
+				case MM:
+					return new MatrixCharacteristics(h1.getRows(), h2.getCols(),
+						OptimizerUtils.getNnz(h1.getRows(), h2.getCols(), spOut));
+				case MULT:
+				case PLUS:
+				case NEQZERO:
+				case EQZERO:
+					return new MatrixCharacteristics(h1.getRows(), h1.getCols(),
+						OptimizerUtils.getNnz(h1.getRows(), h1.getCols(), spOut));
+				case RBIND:
+					return new MatrixCharacteristics(h1.getRows()+h1.getRows(), h1.getCols(),
+						OptimizerUtils.getNnz(h1.getRows()+h2.getRows(), h1.getCols(), spOut));
+				case CBIND:
+					return new MatrixCharacteristics(h1.getRows(), h1.getCols()+h2.getCols(),
+						OptimizerUtils.getNnz(h1.getRows(), h1.getCols()+h2.getCols(), spOut));
+				case DIAG:
+					int ncol = h1.getCols()==1 ? h1.getRows() : 1;
+					return new MatrixCharacteristics(h1.getRows(), ncol,
+						OptimizerUtils.getNnz(h1.getRows(), ncol, spOut));
+				case TRANS:
+					return new MatrixCharacteristics(h1.getCols(), h1.getRows(), h1.getNonZeros());
+				case RESHAPE:
+					return new MatrixCharacteristics((int)misc[0], (int)misc[1],
+						OptimizerUtils.getNnz((int)misc[0], (int)misc[1], spOut));
+				default:
+					throw new NotImplementedException();
+			}
+		}
+		
+		@SuppressWarnings("unused")
 		private static MatrixHistogram deriveMMHistogram(MatrixHistogram h1, MatrixHistogram h2, double spOut) {
 			//exact propagation if lhs or rhs full diag
 			if( h1.fullDiag ) return h2;
@@ -346,9 +424,25 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 			}
 			int[] cNnz = new int[h2.getCols()];
-			for( int i=0; i<h2.getCols(); i++ ) {
-				cNnz[i] = probRound(nnzOut/nnz2 * h2.cNnz[i], rn);
-				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+			if( ADVANCED_SKETCH_PROP && h1.rMaxNnz <= 1 
+				&& h2._data != null && h2._data.isInSparseFormat() ) {
+				SparseBlock rhs = h2._data.getSparseBlock();
+				for( int j=0; j<h1.getCols(); j++ ) {
+					if( h1.cNnz[j] == 0 || h2.rNnz[j] == 0 )
+						continue;
+					int apos = rhs.pos(j);
+					int alen = rhs.size(j);
+					int[] aix = rhs.indexes(j);
+					int scale = h1.cNnz[j];
+					for(int k=apos; k<apos+alen; k++ )
+						cNnz[aix[k]] += scale;
+				}
+			}
+			else {
+				for( int i=0; i<h2.getCols(); i++ ) {
+					cNnz[i] = probRound(nnzOut/nnz2 * h2.cNnz[i], rn);
+					cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
+				}
 			}
 			
 			//construct new histogram object
@@ -356,39 +450,44 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		
 		private static MatrixHistogram deriveMultHistogram(MatrixHistogram h1, MatrixHistogram h2) {
-			final double N1 = h1.getNonZeros();
-			final double N2 = h2.getNonZeros();
 			final double scaler = IntStream.range(0, h1.getCols())
-				.mapToDouble(j -> (long)h1.cNnz[j] * h2.cNnz[j]).sum();
+				.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j])
+				.sum() / h1.getNonZeros() / h2.getNonZeros();
 			final double scalec = IntStream.range(0, h1.getRows())
-				.mapToDouble(j -> (long)h1.rNnz[j] * h2.rNnz[j]).sum();
+				.mapToDouble(j -> (double)h1.rNnz[j] * h2.rNnz[j])
+				.sum() / h1.getNonZeros() / h2.getNonZeros();
 			int rMaxNnz = 0, cMaxNnz = 0;
 			Random rn = new Random();
 			int[] rNnz = new int[h1.getRows()];
 			for(int i=0; i<h1.getRows(); i++) {
-				rNnz[i] = probRound(h1.rNnz[i] * h2.rNnz[i] * scaler / N1 / N2, rn);
+				rNnz[i] = probRound((double)h1.rNnz[i] * h2.rNnz[i] * scaler, rn);
 				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 			}
 			int[] cNnz = new int[h1.getCols()];
 			for(int i=0; i<h1.getCols(); i++) {
-				cNnz[i] = probRound(h1.cNnz[i] * h2.cNnz[i] * scalec / N1 / N2, rn);
+				cNnz[i] = probRound((double)h1.cNnz[i] * h2.cNnz[i] * scalec, rn);
 				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
 			}
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
 		}
 		
 		private static MatrixHistogram derivePlusHistogram(MatrixHistogram h1, MatrixHistogram h2) {
-			double msize = (double)h1.getRows()*h1.getCols();
+			final double scaler = IntStream.range(0, h1.getCols())
+				.mapToDouble(j -> (double)h1.cNnz[j] * h2.cNnz[j])
+				.sum() / h1.getNonZeros() / h2.getNonZeros();
+			final double scalec = IntStream.range(0, h1.getRows())
+				.mapToDouble(j -> (double)h1.rNnz[j] * h2.rNnz[j])
+				.sum() / h1.getNonZeros() / h2.getNonZeros();
 			int rMaxNnz = 0, cMaxNnz = 0;
 			Random rn = new Random();
 			int[] rNnz = new int[h1.getRows()];
 			for(int i=0; i<h1.getRows(); i++) {
-				rNnz[i] = probRound(h1.rNnz[i]/msize + h2.rNnz[i]/msize - h1.rNnz[i]/msize * h2.rNnz[i]/msize, rn);
+				rNnz[i] = probRound(h1.rNnz[i] + h2.rNnz[i] - (double)h1.rNnz[i] * h2.rNnz[i] * scaler, rn);
 				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
 			}
 			int[] cNnz = new int[h1.getCols()];
 			for(int i=0; i<h1.getCols(); i++) {
-				cNnz[i] = probRound(h1.cNnz[i]/msize + h2.cNnz[i]/msize - h1.cNnz[i]/msize * h2.cNnz[i]/msize, rn);
+				cNnz[i] = probRound(h1.cNnz[i] + h2.cNnz[i] - (double)h1.cNnz[i] * h2.cNnz[i] * scalec, rn);
 				cMaxNnz = Math.max(cMaxNnz, cNnz[i]);
 			}
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
@@ -415,6 +514,89 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			}
 			int[] cNnz = ArrayUtils.addAll(h1.cNnz, h2.cNnz);
 			int cMaxNnz = Math.max(h1.cMaxNnz, h2.cMaxNnz);
+			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+		}
+		
+		private static MatrixHistogram deriveEq0Histogram(MatrixHistogram h1) {
+			final int m = h1.getRows(), n = h1.getCols();
+			int[] rNnz = new int[m], cNnz = new int[n];
+			int rMaxNnz = 0, cMaxNnz = 0;
+			for(int i=0; i<m; i++) {
+				rNnz[i] = n - h1.rNnz[i];
+				rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+			}
+			for(int j=0; j<n; j++) {
+				cNnz[j] = m - h1.cNnz[j];
+				cMaxNnz = Math.max(cMaxNnz, cNnz[j]);
+			}
+			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
+		}
+		
+		private static MatrixHistogram deriveDiagHistogram(MatrixHistogram h1) {
+			if( h1.getCols() == 1 ) { //vector-matrix
+				//shallow copy as row count vector is preserved for rows/cols
+				return new MatrixHistogram(h1.rNnz, null,
+					h1.rNnz, null, h1.rMaxNnz, h1.rMaxNnz);
+			}
+			else { //matrix-vector
+				final int m = h1.getRows(), n = h1.getCols();
+				int[] rNnz = new int[m], cNnz = new int[1];
+				int rMaxNnz = 0; Random rand = new Random();
+				for(int i=0; i<m; i++) {
+					rNnz[i] = probRound((double)h1.getNonZeros()/n, rand);
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+					cNnz[0] += rNnz[i];
+				}
+				return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cNnz[0]);
+			}
+		}
+		
+		private static MatrixHistogram deriveTransHistogram(MatrixHistogram h1) {
+			return new MatrixHistogram(h1.cNnz, h1.cNnz1e, h1.rNnz, h1.rNnz1e, h1.cMaxNnz, h1.rMaxNnz);
+		}
+		
+		private static MatrixHistogram deriveReshapeHistogram(MatrixHistogram h1, int rows, int cols) {
+			if( h1.getRows() == rows )
+				return h1;
+			else if( h1.getCols() % cols != 0 
+				&& h1.getRows() % rows != 0 )
+				return null;
+			
+			//limitation: only applies to scenarios where each input row
+			//maps to N output rows, or N input rows map to 1 output row.
+			//TODO generalize implementation for partial fractions
+			final int m = h1.getRows(), n = h1.getCols();
+			int[] rNnz = new int[rows], cNnz = new int[cols];
+			int rMaxNnz = 0, cMaxNnz = 0;
+			if( h1.getCols() % cols == 0 ) { //1->N rows
+				//scale and replicate row counts
+				int scale = h1.getCols()/cols;
+				for(int i=0, pos=0; i<m; i++, pos+=scale) {
+					for(int j=0; j<scale; j++)
+						rNnz[pos+j] = h1.rNnz[i]/scale;
+					rMaxNnz = Math.max(rMaxNnz, h1.rNnz[i]/scale);
+				}
+				//aggregate column counts
+				for(int j=0; j<n; j++)
+					cNnz[j%cols] += h1.cNnz[j];
+				for(int j=0; j<cols; j++)
+					cMaxNnz = Math.max(cMaxNnz, cNnz[j]);
+			}
+			else if ( h1.getRows() % rows == 0 ) { //N->1 rows
+				int scale = h1.getRows()/rows;
+				//scale and replicate column counts
+				for(int i=0, pos=0; i<n; i++, pos+=scale) {
+					for(int j=0; j<scale; j++)
+						cNnz[pos+j] = h1.cNnz[i]/scale;
+					cMaxNnz = Math.max(cMaxNnz, h1.cNnz[i]/scale);
+				}
+				//aggregate row counts
+				for(int i=0, pos=0; i<m; i+=scale, pos++)
+					for(int i2=0; i2<scale; i2++)
+						rNnz[pos] += h1.rNnz[i+i2];
+				for(int i=0; i<rows; i++)
+					rMaxNnz = Math.max(rMaxNnz, rNnz[i]);
+			}
 			return new MatrixHistogram(rNnz, null, cNnz, null, rMaxNnz, cMaxNnz);
 		}
 		

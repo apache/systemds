@@ -39,7 +39,7 @@ SYSTEMDS-50 I/O Formats
 
 SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK
- * 62 Take over sparsity estimation improvements
+ * 62 Take over sparsity estimation improvements                      OK
  * 63 Take over fixes for transform w/ binning
 
 SYSTEMDS-100 Various Fixes

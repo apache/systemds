@@ -46,15 +46,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 {
 	@Override
 	public MatrixCharacteristics estim(MMNode root) {
-		// recursive density map computation of non-leaf nodes
-		if (!root.getLeft().isLeaf())
-			estim(root.getLeft()); // obtain synopsis
-		if (!root.getRight().isLeaf())
-			estim(root.getRight()); // obtain synopsis
-		BitsetMatrix m1Map = !root.getLeft().isLeaf() ? (BitsetMatrix) root.getLeft().getSynopsis() :
-			new BitsetMatrix1(root.getLeft().getData());
-		BitsetMatrix m2Map = !root.getRight().isLeaf() ? (BitsetMatrix) root.getRight().getSynopsis() :
-			new BitsetMatrix1(root.getRight().getData());
+		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
+		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
+		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix
 		return root.setMatrixCharacteristics(new MatrixCharacteristics(
@@ -71,9 +65,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m1.getMatrixCharacteristics(),
 				m2.getMatrixCharacteristics(), op).getSparsity();
-		BitsetMatrix m1Map = new BitsetMatrix1(m1);
+		BitsetMatrix m1Map = createBitset(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
-			m1Map : new BitsetMatrix1(m2);
+			m1Map : createBitset(m2);
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
@@ -83,10 +77,21 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
 			return estimExactMetaData(m.getMatrixCharacteristics(), null, op).getSparsity();
-		BitsetMatrix m1Map = new BitsetMatrix1(m);
+		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
+	}
+	
+	private BitsetMatrix getCachedSynopsis(MMNode node) {
+		if( node == null )
+			return null;
+		//ensure synopsis is properly cached and reused
+		if( node.isLeaf() && node.getSynopsis() == null )
+			node.setSynopsis(createBitset(node.getData()));
+		else if( !node.isLeaf() )
+			estim(node); //recursively obtain synopsis
+		return (BitsetMatrix) node.getSynopsis();
 	}
 	
 	private BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
@@ -108,7 +113,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 
-	private abstract static class BitsetMatrix {
+	public abstract static class BitsetMatrix {
 		protected final int _rlen;
 		protected final int _clen;
 		protected long _nonZeros;
@@ -199,6 +204,18 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		//protected abstract BitsetMatrix reshape(int rows, int cols, boolean byrow);
 	}
 	
+	public static BitsetMatrix createBitset(int m, int n) {
+		return (long)m*n < Integer.MAX_VALUE ?
+			new BitsetMatrix1(m, n) : //linearized long array
+			new BitsetMatrix2(m, n);  //bitset per row
+	}
+	
+	public static BitsetMatrix createBitset(MatrixBlock in) {
+		return in.getLength() < Integer.MAX_VALUE ?
+			new BitsetMatrix1(in) : //linearized long array
+			new BitsetMatrix2(in);  //bitset per row
+	}
+	
 	/**
 	 * This class represents a boolean matrix and provides key operations.
 	 * In the interest of a cache-conscious matrix multiplication and reduced
@@ -207,7 +224,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	 * not allow for range ORs). However, this implies a maximum size of 16GB.
 	 * 
 	 */
-	private static class BitsetMatrix1 extends BitsetMatrix {
+	public static class BitsetMatrix1 extends BitsetMatrix {
 		//linearized and padded data array in row-major order, where each long
 		//represents 64 boolean values, all rows are aligned at 64 for simple access
 		private final int _rowLen;
@@ -406,8 +423,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 	}
 	
-	@SuppressWarnings("unused")
-	private static class BitsetMatrix2 extends BitsetMatrix {
+	public static class BitsetMatrix2 extends BitsetMatrix {
 		private BitSet[] _data;
 
 		public BitsetMatrix2(int rlen, int clen) {

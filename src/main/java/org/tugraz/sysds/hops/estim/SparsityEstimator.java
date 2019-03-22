@@ -105,9 +105,10 @@ public abstract class SparsityEstimator
 			case RBIND:
 				return new MatrixCharacteristics(mc1.getRows() + mc2.getRows(), 
 					mc1.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
+			case TRANS:
+				return new MatrixCharacteristics(mc1.getCols(), mc1.getRows(), mc1.getNonZeros());
 			// unary operation that preserve sparsity exactly
 			case NEQZERO:
-			case TRANS:
 			case RESHAPE:
 				return mc1;
 			default:

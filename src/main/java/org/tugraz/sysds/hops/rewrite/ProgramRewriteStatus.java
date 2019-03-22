@@ -19,9 +19,10 @@
 
 package org.tugraz.sysds.hops.rewrite;
 
+import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
+
 public class ProgramRewriteStatus 
 {
-	
 	//status of applied rewrites
 	private boolean _rmBranches = false; //removed branches
 	private int _blkSize = -1;
@@ -29,12 +30,17 @@ public class ProgramRewriteStatus
 	
 	//current context
 	private boolean _inParforCtx = false;
+	private LocalVariableMap _vars = null;
 	
-	public ProgramRewriteStatus()
-	{
+	public ProgramRewriteStatus() {
 		_rmBranches = false;
 		_inParforCtx = false;
 		_injectCheckpoints = false;
+	}
+	
+	public ProgramRewriteStatus(LocalVariableMap vars) {
+		this();
+		_vars = vars;
 	}
 	
 	public void setRemovedBranches(){
@@ -67,5 +73,9 @@ public class ProgramRewriteStatus
 	
 	public boolean getInjectedCheckpoints(){
 		return _injectCheckpoints;
+	}
+	
+	public LocalVariableMap getVariables() {
+		return _vars;
 	}
 }

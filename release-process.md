@@ -255,6 +255,12 @@ this OS X example.
 
 ## Python Tests
 
+
+Install Keras and Tensorflow:
+
+	python3 -m pip install --user keras=='2.1.5'
+	python3 -m pip install --user tensorflow=='1.11.0'
+
 Compile SystemML distribution:
 
 	mvn package -P distribution

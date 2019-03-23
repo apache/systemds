@@ -161,11 +161,15 @@ sysml_model.fit(features, labels)
 
 #### What optimizer and loss does Keras2DML use by default if `keras_model` is not compiled ?
 
-If the user does not `compile` the keras model, then we use cross entropy loss and SGD optimizer with nesterov momentum:
+If the user does not `compile` the keras model, then we throw an error.
+
+For classification applications, you can consider using cross entropy loss and SGD optimizer with nesterov momentum:
 
 ```python 
 keras_model.compile(loss='categorical_crossentropy', optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.95, decay=5e-4, nesterov=True))
 ```
+
+Please refer to [Keras's documentation](https://keras.io/losses/) for more detail.
 
 #### What is the learning rate schedule used ?
 

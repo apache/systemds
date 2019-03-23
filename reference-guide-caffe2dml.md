@@ -139,6 +139,36 @@ layer {
 }
 ```
 
+### Padding Layer
+
+Invokes [nn/layers/zero_pad2d.dml](https://github.com/apache/systemml/blob/master/scripts/nn/layers/zero_pad2d.dml) layer.
+ 
+**Optional Parameters:**
+
+- top_pad: Padding for top side (default: 0).
+- bottom_pad: Padding for bottom side (default: 0).
+- left_pad: Padding for left side (default: 0).
+- right_pad: Padding for right side (default: 0).
+- right_pad: Padding for right side (default: 0).
+- pad_value: value to use for padding (default: 0). Only zero padding supported for now.
+
+**Sample Usage:**
+```
+layer {
+  name: "padding1"
+  type: "Padding"
+  bottom: "pool1"
+  top: "padding1"
+  padding_param  {
+    top_pad = 1
+    bottom_pad = 1
+    left_pad = 1
+    right_pad = 1
+    pad_value = 0
+  }
+}
+```
+
 
 ### Deconvolution Layer
 

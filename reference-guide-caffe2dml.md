@@ -450,6 +450,21 @@ layer {
 
 ## Utility Layers
 
+### Flatten Layer
+
+The Flatten layer is a utility layer that flattens an input of shape n * c * h * w to a simple vector output of shape n * (c*h*w).
+
+
+**Sample Usage:**
+```
+layer {
+        name: "flatten_1"
+        type: "Flatten"
+        bottom: "max_pooling2d_2"
+        top: "flatten_1"
+}
+```
+
 ### Eltwise Layer
 
 Element-wise operations such as product or sum between two blobs.

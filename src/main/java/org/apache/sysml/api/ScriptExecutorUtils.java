@@ -104,6 +104,7 @@ public class ScriptExecutorUtils {
 	 * @param api API used to execute the runtime program
 	 * @param performHOPRewrites should perform hop rewrites
 	 * @param maintainSymbolTable whether or not all values should be maintained in the symbol table after execution.
+	 * @param init whether to initialize hadoop execution
 	 * @return compiled runtime program
 	 */
 	public static Program compileRuntimeProgram(String script, Map<String,String> nsscripts, Map<String, String> args, String[] allArgs,

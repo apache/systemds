@@ -517,14 +517,15 @@ public class GPUMemoryManager {
 	}
 	
 	/**
-	 * Clears up the memory used by non-dirty pointers.
+	 * Clears up the memory used by non-dirty pointers except output and locked matrix objects.
+	 * 
+	 * @param outputMatrixObjects list of output matrix objects
 	 */
 	public void clearTemporaryMemory(HashSet<MatrixObject> outputMatrixObjects) {
 		Set<Pointer> donotClearPointers =  new HashSet<>();
 		// First clean up all GPU objects except:
 		// 1. Output matrix objects
 		// 2. GPU objects that are currently being used (i.e. locked)
-		// 3. Matrix object are 
 		Set<GPUObject> allGPUObjects = new HashSet<>(matrixMemoryManager.getGpuObjects());
 		for (GPUObject gpuObj : allGPUObjects) {
 			boolean isOutput = outputMatrixObjects.contains(gpuObj.mat);

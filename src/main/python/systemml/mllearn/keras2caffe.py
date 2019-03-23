@@ -296,7 +296,7 @@ def getDropoutParam(layer):
         if not supported:
             raise Exception('noise_shape=' + str(layer.noise_shape) + ' is not supported for Dropout layer with input_shape='
                             + str(layer.input_shape))
-    return {'dropout_ratio': l.rate}
+    return {'dropout_ratio': layer.rate}
 
 layerParamMapping = {
     keras.layers.InputLayer: lambda l:

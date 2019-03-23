@@ -207,6 +207,7 @@ keras_model.add(Flatten())
 keras_model.add(Dense(512, activation='relu'))
 keras_model.add(Dropout(0.5))
 keras_model.add(Dense(10, activation='softmax'))
+keras_model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True))
 keras_model.summary()
 
 # Scale the input features

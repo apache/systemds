@@ -44,7 +44,7 @@ import unittest
 
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM, UpSampling2D, SimpleRNN, Activation
+from keras.layers import Input, Dense, Conv2D, MaxPooling2D, Dropout, Flatten, LSTM, UpSampling2D, SimpleRNN, Activation, ZeroPadding2D
 from keras.optimizers import SGD
 from keras import backend as K
 from keras.models import Model
@@ -275,6 +275,24 @@ class TestNNLibrary(unittest.TestCase):
 
     def test_upsampling_backward(self):
         self.failUnless(test_backward(UpSampling2D(size=(2, 2), input_shape=(3, 64, 32))))
+
+    def test_zeropadding_forward(self):
+        self.failUnless(test_forward(ZeroPadding2D(padding=1, input_shape=(3, 64, 32))))
+
+    def test_zeropadding_backward(self):
+        self.failUnless(test_backward(ZeroPadding2D(padding=1, input_shape=(3, 64, 32))))
+
+    def test_zeropadding_forward1(self):
+        self.failUnless(test_forward(ZeroPadding2D(padding=(1, 2), input_shape=(3, 64, 32))))
+
+    def test_zeropadding_backward1(self):
+        self.failUnless(test_backward(ZeroPadding2D(padding=(1, 2), input_shape=(3, 64, 32))))
+
+    def test_zeropadding_forward2(self):
+        self.failUnless(test_forward(ZeroPadding2D(padding=((3, 2), (1, 3)), input_shape=(3, 64, 32))))
+
+    def test_zeropadding_backward2(self):
+        self.failUnless(test_backward(ZeroPadding2D(padding=((3, 2), (1, 3)), input_shape=(3, 64, 32))))
 
 if __name__ == '__main__':
     unittest.main()

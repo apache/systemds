@@ -671,6 +671,43 @@ class TanH(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extend
   // -------------------------------------------------
 }
 
+class Padding(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
+  override def sourceFileName                       = {
+    if(param.getPaddingParam.getPadValue == 0) "zero_pad2d"
+    else throw new DMLRuntimeException("Only pad_value = 0 is supported. Found: " + param.getPaddingParam.getPadValue)
+  }
+  override def init(dmlScript: StringBuilder): Unit = {}
+  
+  override def forward(dmlScript: StringBuilder, isPrediction: Boolean) = {
+    if(skipPadding) {
+      assign(dmlScript, out, X)
+    }
+    else {
+      invokeForward(dmlScript, List[String](out), X, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
+    }
+  }
+  override def backward(dmlScript: StringBuilder, outSuffix: String): Unit = {
+    if(skipPadding) {
+      assignDoutToDX(dmlScript, outSuffix)
+    }
+    else {
+      invokeBackward(dmlScript, outSuffix, List[String]("dOut" + id), dout, numChannels, Hin, Win, top_pad, bottom_pad, left_pad, right_pad)
+    }
+  }
+  override def weightShape(): Array[Int]                             = null
+  override def biasShape(): Array[Int]                               = null
+  override def outputShape = (numChannels, int_add(Hin, top_pad, bottom_pad), int_add(Win, left_pad, right_pad))
+  def skipPadding = param.getPaddingParam.getTopPad == 0 && param.getPaddingParam.getBottomPad == 0 && 
+    param.getPaddingParam.getLeftPad == 0 && param.getPaddingParam.getRightPad == 0
+  def top_pad = param.getPaddingParam.getTopPad.toString
+  def bottom_pad = param.getPaddingParam.getBottomPad.toString
+  def left_pad = param.getPaddingParam.getLeftPad.toString
+  def right_pad = param.getPaddingParam.getRightPad.toString
+  def numChannels  = bottomLayerOutputShape._1
+  def Hin          = bottomLayerOutputShape._2
+  def Win          = bottomLayerOutputShape._3
+}
+
 class ReLU(val param: LayerParameter, val id: Int, val net: CaffeNetwork) extends CaffeLayer {
   // TODO: Leaky ReLU: negative_slope [default 0]: specifies whether to leak the negative part by multiplying it with the slope value rather than setting it to 0.
   // -------------------------------------------------

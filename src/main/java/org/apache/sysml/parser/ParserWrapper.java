@@ -53,6 +53,9 @@ public abstract class ParserWrapper {
 	 * @return corresponding statement block
 	 */
 	public static StatementBlock getStatementBlock(Statement current) {
+		if(current == null) {
+			throw new LanguageException("Error occured while parsing the script");
+		}
 		StatementBlock blk = null;
 		if(current instanceof ParForStatement) {
 			blk = new ParForStatementBlock();

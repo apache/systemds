@@ -27,6 +27,8 @@ import org.junit.Test;
 
 /**
  * Test the SystemML deep learning library, `nn`.
+ * 
+ * mvn -Dit.test=org.apache.sysml.test.integration.scripts.nn.NNTest verify
  */
 public class NNTest extends MLContextTestBase {
 

@@ -408,6 +408,7 @@ message LayerParameter {
   
   // Nike:
   optional UpsampleParameter upsample_param = 147;
+  optional PaddingParameter padding_param = 148;
 }
 
 // Message that stores parameters used to apply transformation
@@ -621,6 +622,15 @@ message ConvolutionParameter {
   // implementation; for input blobs with num_axes != 2, this option is
   // ignored and the ND implementation will be used.)
   optional bool force_nd_im2col = 17 [default = false];
+}
+
+// Nike:
+message PaddingParameter {
+  optional uint32 top_pad = 1 [default = 0]; // The top padding height (2D only)
+  optional uint32 bottom_pad = 2 [default = 0]; // The bottom padding height (2D only)
+  optional uint32 left_pad = 3 [default = 0]; // The left_pad padding width (2D only)
+  optional uint32 right_pad = 4 [default = 0]; // The right_pad padding width (2D only)
+  optional float pad_value = 5 [default = 0]; // only zero supported for now
 }
 
 message CropParameter {

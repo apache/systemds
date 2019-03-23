@@ -67,6 +67,8 @@ grad_check::sigmoid()
 grad_check::softmax()
 grad_check::softmax2d()
 grad_check::tanh()
+# TODO: Enable after adding a builtin function. The layer was tested by comparing its results with TensorFlow.
+# grad_check::zero_pad2d()
 print("")
 
 # Example model

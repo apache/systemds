@@ -56,6 +56,12 @@ except ImportError:
 # - To add an activation, simply add the keras type to caffe type in supportedCaffeActivations.
 # - To add a layer, add the corresponding caffe layer type in supportedLayers. If the layer accepts parameters then update layerParamMapping too.
 # - The above logic is implemented in the function converKerasToCaffeNetwork
+#
+#
+# Example guide to add a new layer that does not have a weight and bias (eg: UpSampling2D or ZeroPadding2D):
+# - Add mapping of Keras class to Caffe layer in the supportedLayers map below
+# - Define a helper method that returns Caffe's layer parameter in JSON-like data structure. See getConvParam, getUpSamplingParam, getPaddingParam, etc.
+# - Add mapping of Keras class to Caffe layer parameter in the layerParamMapping map below
 # --------------------------------------------------------------------------------------
 
 supportedCaffeActivations = {
@@ -78,7 +84,8 @@ supportedLayers = {
     keras.layers.LSTM: 'LSTM',
     keras.layers.Flatten: 'Flatten',
     keras.layers.BatchNormalization: 'None',
-    keras.layers.Activation: 'None'
+    keras.layers.Activation: 'None',
+    keras.layers.ZeroPadding2D: 'Padding'
 }
 
 
@@ -199,6 +206,7 @@ specialLayers = {
     keras.layers.BatchNormalization: _parseBatchNorm
 }
 
+# Used by convolution and maxpooling to return the padding value as integer based on type 'same' and 'valid'
 def getPadding(kernel_size, padding):
     if padding.lower() == 'same':
         return int(kernel_size/2)
@@ -207,6 +215,7 @@ def getPadding(kernel_size, padding):
     else:
         raise ValueError('Unsupported padding:' + str(padding))
 
+# Helper method to return Caffe's ConvolutionParameter in JSON-like data structure
 def getConvParam(layer):
     stride = (1, 1) if layer.strides is None else layer.strides
     config = layer.get_config()
@@ -215,17 +224,37 @@ def getConvParam(layer):
             'pad_h': getPadding(layer.kernel_size[0], layer.padding), 'pad_w': getPadding(layer.kernel_size[1], layer.padding)}
 
 
+# Helper method to return newly added UpsampleParameter
+# (search for UpsampleParameter in the file src/main/proto/caffe/caffe.proto) in JSON-like data structure
 def getUpSamplingParam(layer):
     return {'size_h': layer.size[0], 'size_w': layer.size[1]}
 
+# Used by padding to extract different types of possible padding:
+# int: the same symmetric padding is applied to height and width.
+# tuple of 2 ints: interpreted as two different symmetric padding values for height and width: (symmetric_height_pad, symmetric_width_pad)
+# tuple of 2 tuples of 2 ints: interpreted as  ((top_pad, bottom_pad), (left_pad, right_pad))
+def getPaddingTuple(padding):
+    return [padding, padding] if isinstance(padding, int) else [padding[0], padding[1]]
 
+# Helper method to return newly added PaddingParameter
+# (search for UpsampleParameter in the file src/main/proto/caffe/caffe.proto) in JSON-like data structure
+def getPaddingParam(layer):
+    if isinstance(layer.padding, int):
+        padding = getPaddingTuple(layer.padding) + getPaddingTuple(layer.padding)
+    elif hasattr(layer.padding, '__len__') and len(layer.padding) == 2:
+        padding = getPaddingTuple(layer.padding[0]) + getPaddingTuple(layer.padding[1])
+    else:
+        raise ValueError('padding should be either an int, a tuple of 2 ints or or a tuple of 2 tuples of 2 ints. Found: ' + str(layer.padding))
+    return {'top_pad': padding[0], 'bottom_pad': padding[1], 'left_pad': padding[2], 'right_pad': padding[3], 'pad_value':0}
+
+# Helper method to return Caffe's PoolingParameter in JSON-like data structure
 def getPoolingParam(layer, pool='MAX'):
     stride = (1, 1) if layer.strides is None else layer.strides
     return {'pool': pool, 'kernel_h': layer.pool_size[0], 'kernel_w': layer.pool_size[1],
             'stride_h': stride[0], 'stride_w': stride[1], 'pad_h': getPadding(layer.pool_size[0], layer.padding),
             'pad_w': getPadding(layer.pool_size[1], layer.padding)}
 
-
+# Helper method to return Caffe's RecurrentParameter in JSON-like data structure
 def getRecurrentParam(layer):
     if (not layer.use_bias):
         raise Exception('Only use_bias=True supported for recurrent layers')
@@ -236,14 +265,13 @@ def getRecurrentParam(layer):
     return {'num_output': layer.units, 'return_sequences': str(
         layer.return_sequences).lower()}
 
-
+# Helper method to return Caffe's InnerProductParameter in JSON-like data structure
 def getInnerProductParam(layer):
     if len(layer.output_shape) != 2:
         raise Exception('Only 2-D input is supported for the Dense layer in the current implementation, but found '
                         + str(layer.input_shape) + '. Consider adding a Flatten before ' + str(layer.name))
     return {'num_output': layer.units}
 
-# TODO: Update AveragePooling2D when we add maxpooling support
 layerParamMapping = {
     keras.layers.InputLayer: lambda l:
     {'data_param': {'batch_size': l.batch_size}},
@@ -259,6 +287,8 @@ layerParamMapping = {
     {'convolution_param': getConvParam(l)},
     keras.layers.UpSampling2D: lambda l:
     {'upsample_param': getUpSamplingParam(l)},
+    keras.layers.ZeroPadding2D: lambda l:
+    {'padding_param': getPaddingParam(l)},
     keras.layers.Conv2D: lambda l:
     {'convolution_param': getConvParam(l)},
     keras.layers.MaxPooling2D: lambda l:

@@ -51,6 +51,8 @@ trait BaseDMLGenerator {
     try { (v1.toDouble * v2.toDouble * v3.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "*" + v2 + "*" + v3 + ")" }
   def int_mult(v1: String, v2: String): String =
     try { (v1.toDouble * v2.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "*" + v2 + ")" }
+  def int_add(v1: String, v2: String, v3: String): String =
+    try { (v1.toDouble + v2.toDouble + v3.toDouble).toInt.toString } catch { case _: Throwable => "(" + v1 + "+" + v2 + "+" + v3 + ")" }
   def isNumber(x: String): Boolean                                                   = x forall Character.isDigit
   def transpose(x: String): String                                                   = "t(" + x + ")"
   def write(varName: String, fileName: String, format: String): String               = "write(" + varName + ", \"" + fileName + "\", format=\"" + format + "\")\n"
@@ -246,7 +248,7 @@ trait DMLGenerator extends SourceDMLGenerator with NextBatchGenerator {
     // Append source statements for layers as well as solver
     source(net, solver, if (isTraining) Array[String]("l1_reg") else null)
     source(net, solver, if (isTraining) Array[String]("l2_reg") else null)
-    source(dmlScript, numTabs, "util", Caffe2DML.nnDir)
+    source(dmlScript, numTabs, "util", Caffe2DML.nnDir)  
 
     if (isTraining) {
       // Append external built-in function headers:

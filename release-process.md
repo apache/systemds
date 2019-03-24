@@ -388,7 +388,7 @@ file and remove all the `@Ignore` annotations from all the tests. Then run the N
 # Run other GPU Unit Tests 
 
 	rm result.txt
-	for t in AggregateUnaryOpTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests LstmTest LstmCPUTest
+	for t in AggregateUnaryOpTests AggregateTernaryTests  BinaryOpTests  MatrixMatrixElementWiseOpTests  RightIndexingTests AppendTest  MatrixMultiplicationOpTest ReorgOpTests ScalarMatrixElementwiseOpTests UnaryOpTests LstmTest LstmCPUTest
 	do
 		mvn -Dit.test="org.apache.sysml.test.gpu."$t verify -PgpuTests &> tmp.txt
 		SUCCESS=`grep "BUILD SUCCESS" tmp.txt`
@@ -503,8 +503,23 @@ The versioned project documentation is now deployed to the main website, and the
 
 ## Update Crawler configuration for the search indexing
 
-Create a PR or an issue to update the version number in the crawler configuration. 
-Please see the `start_urls` tag in the file [https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json](https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json).
-If the Algolia team provides us an updated `apiKey` or `indexName` credentials, then please update the corresponding entries in the file 
+- Create a PR or an issue to update the version number in the crawler configuration. Please see the `start_urls` tag in the file [https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json](https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json).
+- If the Algolia team provides us an updated `apiKey` or `indexName` credentials, then please update the corresponding entries in the file 
 [https://github.com/apache/systemml/blob/master/docs/_layouts/global.html](https://github.com/apache/systemml/blob/master/docs/_layouts/global.html) 
 (see for `Algolia search section` in the previously mentioned HTML file).
+
+## Upload Python package to PyPI
+
+Download the released `systemml-*-python.tar.gz` and `systemml-*-python.tar.gz`.
+
+	$ wget https://dist.apache.org/repos/dist/release/systemml/1.0.0/systemml-1.0.0-python.tar.gz
+	$ wget https://dist.apache.org/repos/dist/release/systemml/1.0.0/systemml-1.0.0-python.tar.gz.asc
+	
+Rename the files to remove `-python` suffix.
+
+	$ mv systemml-1.0.0-python.tar.gz systemml-1.0.0.tar.gz
+	$ mv systemml-1.0.0-python.tar.gz.asc systemml-1.0.0.tar.gz.asc
+
+Upload the Python package to PyPI using [twine](https://pypi.org/project/twine/).
+
+	$ twine upload -u systemml systemml-1.0.0.tar.gz systemml-1.0.0.tar.gz.asc 

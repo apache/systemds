@@ -42,6 +42,9 @@ Step 1: Prepare the release.
 
 	# Extract latest code to a directory
 	<GitRepoHome>
+	
+	# Check if there are any untracked files (created by the unit tests) and remove them to avoid packing them in the artifacts
+	git status
 
 	# Go to dev/release directory
 	cd <GitRepoHome>/dev/release

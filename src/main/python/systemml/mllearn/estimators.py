@@ -922,7 +922,8 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setWeightsToIgnore(ignore_weights)
 
     def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None,
-            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None, use_builtin_lstm_fn=None):
+            output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None, use_builtin_lstm_fn=None,
+            perform_fused_backward_update=None):
         """
         Set input to Caffe2DML
 
@@ -933,10 +934,11 @@ class Caffe2DML(BaseSystemMLClassifier):
         test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
         parallel_batches: number of parallel batches
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
-        perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: False)
+        perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: True)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         use_builtin_lstm_fn: whether to use builtin lstm function for LSTM layer (default: True)
+        perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: True)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
@@ -950,6 +952,8 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setInput("$parallel_batches", str(parallel_batches))
         if use_builtin_lstm_fn is not None:
             self.estimator.setInput("$use_builtin_lstm_fn", str(use_builtin_lstm_fn).upper())
+        if perform_fused_backward_update is not None:
+            self.estimator.setInput("$perform_fused_backward_update", str(perform_fused_backward_update).upper())
         if output_activations is not None:
             self.estimator.setInput(
                 "$output_activations",

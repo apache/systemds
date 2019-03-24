@@ -370,6 +370,7 @@ class BatchNorm(val param: LayerParameter, val id: Int, val net: CaffeNetwork) e
       val topLayers = net.getTopLayers(param.getName).map(l => net.getCaffeLayer(l)).toList
       if (topLayers.length != 1 && !topLayers(0).isInstanceOf[Scale]) throw new LanguageException("Only one top layer of type Scale allowed for BatchNorm")
       scaleLayer = topLayers(0).asInstanceOf[Scale]
+      scaleLayer.isPartOfBatchNorm = true
     }
   def numChannels = bottomLayerOutputShape._1
   def Hin         = bottomLayerOutputShape._2
@@ -385,6 +386,7 @@ class Scale(val param: LayerParameter, val id: Int, val net: CaffeNetwork) exten
   override def backward(dmlScript: StringBuilder, outSuffix: String): Unit = assignDoutToDX(dmlScript, outSuffix)
   override def weightShape(): Array[Int]                                   = Array(bottomLayerOutputShape._1.toInt, 1)
   override def biasShape(): Array[Int]                                     = Array(bottomLayerOutputShape._1.toInt, 1)
+  var isPartOfBatchNorm = false
 }
 // ------------------------------------------------------------------
 

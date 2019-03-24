@@ -23,6 +23,7 @@ import java.util.HashMap;
 import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.DMLRuntimeException;
 import org.apache.sysml.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
+import org.apache.sysml.runtime.instructions.gpu.AggregateTernaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.ArithmeticBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinBinaryGPUInstruction;
 import org.apache.sysml.runtime.instructions.gpu.BuiltinUnaryGPUInstruction;
@@ -43,6 +44,9 @@ public class GPUInstructionParser  extends InstructionParser
 	static final HashMap<String, GPUINSTRUCTION_TYPE> String2GPUInstructionType;
 	static {
 		String2GPUInstructionType = new HashMap<>();
+		
+		String2GPUInstructionType.put( "tak+*"   , GPUINSTRUCTION_TYPE.AggregateTernary);
+		String2GPUInstructionType.put( "tack+*"  , GPUINSTRUCTION_TYPE.AggregateTernary);
 
 		// Neural Network Operators
 		String2GPUInstructionType.put( "relu_backward",          GPUINSTRUCTION_TYPE.Dnn);
@@ -179,6 +183,9 @@ public class GPUInstructionParser  extends InstructionParser
 		switch(gputype) {
 			case AggregateUnary:
 				return AggregateUnaryGPUInstruction.parseInstruction(str);
+				
+			case AggregateTernary:
+				return AggregateTernaryGPUInstruction.parseInstruction(str);
 
 			case AggregateBinary:
 				return AggregateBinaryGPUInstruction.parseInstruction(str);

@@ -93,8 +93,11 @@ public class AggUnaryOp extends MultiThreadedHop
 			return false;
 		
 		try {
-			if( isTernaryAggregateRewriteApplicable() || isUnaryAggregateOuterCPRewriteApplicable() ) {
+			if(isUnaryAggregateOuterCPRewriteApplicable()) {
 				return false;
+			}
+			else if(isTernaryAggregateRewriteApplicable()) {
+				return true;
 			}
 			else if ((_op == AggOp.SUM    && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
 					 || (_op == AggOp.SUM_SQ && (_direction == Direction.RowCol || _direction == Direction.Row || _direction == Direction.Col))
@@ -498,10 +501,6 @@ public class AggUnaryOp extends MultiThreadedHop
 	{
 		boolean ret = false;
 		
-		// TODO: Disable ternary aggregate rewrite on GPU backend.
-		if(!ConfigurationManager.isGPU())
-			return false;
-		
 		//currently we support only sum over binary multiply but potentially 
 		//it can be generalized to any RC aggregate over two common binary operations
 		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES && _op == AggOp.SUM &&
@@ -713,8 +712,6 @@ public class AggUnaryOp extends MultiThreadedHop
 		// The execution type of a unary aggregate instruction should depend on the execution type of inputs to avoid OOM
 		// Since we only support matrix-vector and not vector-matrix, checking the execution type of input1 should suffice.
 		ExecType et_input = input1.optFindExecType();
-		// Because ternary aggregate are not supported on GPU
-		et_input = et_input == ExecType.GPU ? ExecType.CP :  et_input;
 		DirectionTypes dir = HopsDirection2Lops.get(_direction);
 		
 		return new TernaryAggregate(in1, in2, in3, Aggregate.OperationTypes.KahanSum, 

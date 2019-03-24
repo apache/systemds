@@ -984,7 +984,7 @@ public class LibMatrixCUDA {
 	 * @param n								size of array
 	 * @return	the reduced value
 	 */
-	private static double reduceAll(GPUContext gCtx, String instName, String kernelFunction, Pointer in, int n) {
+	public static double reduceAll(GPUContext gCtx, String instName, String kernelFunction, Pointer in, int n) {
 		if(LOG.isTraceEnabled()) {
 			LOG.trace("GPU : reduceAll for " + kernelFunction + ", GPUContext=" + gCtx);
 		}
@@ -1529,6 +1529,17 @@ public class LibMatrixCUDA {
 				ExecutionConfig.getConfigForSimpleMatrixOperations(maxRlen, maxClen),
 				a, b, c, maxRlen, maxClen, vecStatusA, vecStatusB, getBinaryOp(op.fn));
 		if (ConfigurationManager.isFinegrainedStatistics()) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_MATRIX_MATRIX_CELLWISE_OP_KERNEL, System.nanoTime() - t0);
+	}
+	
+	public static void denseMatrixMatrixOp(GPUContext gCtx, String instName, 
+			Pointer A, Pointer B,
+			int rlenA, int clenA, int rlenB, int clenB, 
+			Pointer C, BinaryOperator op) {
+		int vecStatusA = LibMatrixCUDA.getVectorStatus(rlenA, clenA).code();
+		int vecStatusB = LibMatrixCUDA.getVectorStatus(rlenB, clenB).code();
+		int maxRlen = Math.max(rlenA, rlenB);
+		int maxClen = Math.max(clenA, clenB);
+		matrixMatrixOp(gCtx, instName, A, B, maxRlen, maxClen, vecStatusA, vecStatusB, C, op);
 	}
 
 	/**

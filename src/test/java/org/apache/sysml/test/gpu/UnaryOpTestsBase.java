@@ -102,5 +102,23 @@ public abstract class UnaryOpTestsBase extends GPUTests {
 		//assertHeavyHitterPresent(heavyHitterOpCode);
 		assertEqualObjects(outCPU.get(0), outGPU.get(0));
 	}
+	
+	public void testTernaryUnaryOpMatrixOutput(String scriptStr, String heavyHitterOpCode, 
+			String inStr1, String inStr2, String inStr3,  
+			String outStr,
+			int row, int column, double sparsity) {
+		int seed = 99;
+		Matrix in1 = generateInputMatrix(spark, row, column, sparsity, seed);
+		Matrix in2 = generateInputMatrix(spark, row, column, sparsity, seed);
+		Matrix in3 = generateInputMatrix(spark, row, column, sparsity, seed);
+		HashMap<String, Object> inputs = new HashMap<>();
+		inputs.put(inStr1, in1);
+		inputs.put(inStr2, in2);
+		inputs.put(inStr3, in3);
+		List<Object> outCPU = runOnCPU(spark, scriptStr, inputs, Arrays.asList(outStr));
+		List<Object> outGPU = runOnGPU(spark, scriptStr, inputs, Arrays.asList(outStr));
+		assertHeavyHitterPresent(heavyHitterOpCode);
+		assertEqualObjects(outCPU.get(0), outGPU.get(0));
+	}
 
 }

@@ -36,6 +36,7 @@ import org.apache.sysml.utils.Statistics;
 public abstract class GPUInstruction extends Instruction {
 	public enum GPUINSTRUCTION_TYPE {
 		AggregateUnary,
+		AggregateTernary,
 		AggregateBinary,
 		RelationalBinary,
 		Dnn,

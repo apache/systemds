@@ -162,4 +162,5 @@ public class AggregateUnaryOpTests extends UnaryOpTestsBase {
 	public void colSumsqs() {
 		testUnaryOpMatrixOutput("out = colSums(in1*in1)", "gpu_uacsqk+", "in1", "out");
 	}
+	
 }

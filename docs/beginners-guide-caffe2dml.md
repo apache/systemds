@@ -161,7 +161,7 @@ Iter:2000, validation loss:173.66147359346, validation accuracy:97.4897540983606
 
 Unlike Caffe where default train and test algorithm is `minibatch`, you can specify the
 algorithm using the parameters `train_algo` and `test_algo` (valid values are: `minibatch`, `allreduce_parallel_batches`, 
-and `allreduce`). Here are some common settings:
+`looped_minibatch`, and `allreduce`). Here are some common settings:
 
 |                                                                          | PySpark script                                                                                                                           | Changes to Network/Solver                                              |
 |--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|

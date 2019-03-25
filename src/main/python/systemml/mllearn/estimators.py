@@ -923,22 +923,23 @@ class Caffe2DML(BaseSystemMLClassifier):
 
     def set(self, debug=None, train_algo=None, test_algo=None, parallel_batches=None,
             output_activations=None, perform_one_hot_encoding=None, parfor_parameters=None, inline_nn_library=None, use_builtin_lstm_fn=None,
-            perform_fused_backward_update=None):
+            perform_fused_backward_update=None, weight_parallel_batches=None):
         """
         Set input to Caffe2DML
 
         Parameters
         ----------
         debug: to add debugging DML code such as classification report, print DML script, etc (default: False)
-        train_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
-        test_algo: can be minibatch, batch, allreduce_parallel_batches or allreduce (default: minibatch)
-        parallel_batches: number of parallel batches
+        train_algo: can be minibatch, batch, allreduce_parallel_batches, looped_minibatch or allreduce (default: minibatch)
+        test_algo: can be minibatch, batch, allreduce_parallel_batches, looped_minibatch or allreduce (default: minibatch)
+        parallel_batches: number of parallel batches (required for allreduce_parallel_batches or looped_minibatch)
         output_activations: (developer flag) directory to output activations of each layer as csv while prediction. To be used only in batch mode (default: None)
         perform_one_hot_encoding: should perform one-hot encoding in DML using table function (default: True)
         parfor_parameters: dictionary for parfor parameters when using allreduce-style algorithms (default: "")
         inline_nn_library: whether to inline the NN library when generating DML using Caffe2DML (default: False)
         use_builtin_lstm_fn: whether to use builtin lstm function for LSTM layer (default: True)
         perform_fused_backward_update: whether to perform update immediately after backward pass at the script level. Supported for minibatch and batch algorithms. (default: True)
+        weight_parallel_batches: whether to multiply 1/parallel_batches to gradients before performing SGD update (default: True)
         """
         if debug is not None:
             self.estimator.setInput("$debug", str(debug).upper())
@@ -954,6 +955,8 @@ class Caffe2DML(BaseSystemMLClassifier):
             self.estimator.setInput("$use_builtin_lstm_fn", str(use_builtin_lstm_fn).upper())
         if perform_fused_backward_update is not None:
             self.estimator.setInput("$perform_fused_backward_update", str(perform_fused_backward_update).upper())
+        if weight_parallel_batches is not None:
+            self.estimator.setInput("$weight_parallel_batches", str(weight_parallel_batches).upper())
         if output_activations is not None:
             self.estimator.setInput(
                 "$output_activations",

@@ -208,4 +208,37 @@ For example: for the expression `Keras2DML(..., display=100, test_iter=10, test_
 To verify that Keras2DML produce same results as other Keras' backend, we have [Python unit tests](https://github.com/apache/systemml/blob/master/src/main/python/tests/test_nn_numpy.py)
 that compare the results of Keras2DML with that of TensorFlow. We assume that Keras team ensure that all their backends are consistent with their TensorFlow backend.
 
+#### How can I train very deep models on GPU?
 
+Unlike Keras where default train and test algorithm is `minibatch`, you can specify the
+algorithm using the parameters `train_algo` and `test_algo` (valid values are: `minibatch`, `allreduce_parallel_batches`, 
+`looped_minibatch`, and `allreduce`). Here are some common settings:
+
+|                                                                          | PySpark script                                                                                                                           | Changes to Network/Solver                                              |
+|--------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| Single-node CPU execution (similar to Caffe with solver_mode: CPU)       | `lenet.set(train_algo="minibatch", test_algo="minibatch")`                                                                               | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Single-node single-GPU execution                                         | `lenet.set(train_algo="minibatch", test_algo="minibatch").setGPU(True).setForceGPU(True)`                                                | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Single-node multi-GPU execution (similar to Caffe with solver_mode: GPU) | `lenet.set(train_algo="allreduce_parallel_batches", test_algo="minibatch", parallel_batches=num_gpu).setGPU(True).setForceGPU(True)`     | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+| Distributed prediction                                                   | `lenet.set(test_algo="allreduce")`                                                                                                       |                                                                        |
+| Distributed synchronous training                                         | `lenet.set(train_algo="allreduce_parallel_batches", parallel_batches=num_cluster_cores)`                                                 | Ensure that `batch_size` is set to appropriate value (for example: 64) |
+
+Here are high-level guidelines to train very deep models on GPU with Keras2DML (and Caffe2DML):
+
+1. If there exists at least one layer/operator that does not fit on the device, please allow SystemML's optimizer to perform operator placement based on the memory estimates `sysml_model.setGPU(True)`.
+2. If each individual layer/operator fits on the device but not the entire network with a batch size of 1, then 
+- Rely on SystemML's GPU Memory Manager to perform automatic eviction (recommended): `sysml_model.setGPU(True) # Optional: .setForceGPU(True)`
+- Or enable Nvidia's Unified Memory:  `sysml_model.setConfigProperty('sysml.gpu.memory.allocator', 'unified_memory')`
+3. If the entire neural network does not fit in the GPU memory with the user-specified `batch_size`, but fits in the GPU memory with `local_batch_size` such that `1 << local_batch_size < batch_size`, then
+- Use either of the above two options.
+- Or enable `train_algo` that performs multiple forward-backward pass with batch size `local_batch_size`, aggregate gradients and finally updates the model: 
+```python
+sysml_model = Keras2DML(spark, keras_model, batch_size=local_batch_size)
+sysml_model.set(train_algo="looped_minibatch", parallel_batches=int(batch_size/local_batch_size))
+sysml_model.setGPU(True).setForceGPU(True)
+```
+- Or add `int(batch_size/local_batch_size)` GPUs and perform single-node multi-GPU training with batch size `local_batch_size`:
+```python
+sysml_model = Keras2DML(spark, keras_model, batch_size=local_batch_size)
+sysml_model.set(train_algo="allreduce_parallel_batches", parallel_batches=int(batch_size/local_batch_size))
+sysml_model.setGPU(True).setForceGPU(True)
+```

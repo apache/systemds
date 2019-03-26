@@ -153,6 +153,16 @@ class BaseSystemMLEstimator(Estimator):
         self.estimator.setConfigProperty(propertyName, propertyValue)
         return self
 
+    def getConfigProperty(self, propertyName):
+        """
+        Get configuration property, such as getConfigProperty("sysml.localtmpdir").
+
+        Parameters
+        ----------
+        propertyName: String
+        """
+        return self.estimator.getConfigProperty(propertyName)
+
     def _fit_df(self):
         global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
@@ -1076,6 +1086,7 @@ class Keras2DML(Caffe2DML):
             weight_decay,
             regularization_type)
         self.weights = tempfile.mkdtemp() if weights is None else weights
+        self.keras_model = keras_model
         if load_keras_weights:
             convertKerasToSystemMLModel(
                 sparkSession, keras_model, self.weights)
@@ -1100,6 +1111,75 @@ class Keras2DML(Caffe2DML):
     def close(self):
         import shutil
         shutil.rmtree(weights)
+
+    def print_network_summary(self, overhead=0.3, optimal_batch_size=32):
+        """
+        Utility method to reason about different setup depending on the memory estimates of the model.
+        It ignores memory required for temporary memory such as reserve space, workspace. Use overhead to tweak that.
+
+        Parameters
+        ----------
+        overhead: fraction of memory to ignore. Used for initialization device drivers (default: 0.3)
+        optimal_batch_size: batch size that saturates the GPU device memory (default: 32)
+        """
+        from keras import backend as K
+        wide_network = False
+        wide_layer = None
+        wide_layer_mem_count = 0
+        model_mem_count = 0
+        precision = self.getConfigProperty('sysml.floating.point.precision')
+        if precision == 'double':
+            num_bytes = 8
+        elif precision == 'single':
+            num_bytes = 4
+        else:
+            raise ValueError('Unsupported value for sysml.floating.point.precision property: ' + precision)
+        num_devices = self.sc._jvm.org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool.getDeviceCount()
+        gpu_mem = self.sc._jvm.org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool.initialGPUMemBudget()
+        gpu_mem = math.floor((gpu_mem * overhead)/ num_bytes)
+        print(self.keras_model.summary())
+        for l in self.keras_model.layers:
+            single_layer_mem = 1
+            for s in l.output_shape:
+                if s is None:
+                    continue
+                single_layer_mem *= s
+            for p in set(l.trainable_weights):
+                single_layer_mem += K.count_params(p)
+            for p in set(l.non_trainable_weights):
+                single_layer_mem += K.count_params(p)
+            if not wide_network and (single_layer_mem > gpu_mem):
+                wide_network, wide_layer, wide_layer_mem_count = True, l, single_layer_mem
+            model_mem_count += single_layer_mem
+        # Find the maximum batch size without eviction for given precision
+        batch_size_no_eviction = math.floor(float(gpu_mem) / model_mem_count)
+        def to_gb(num_cells):
+            return np.round((num_cells*num_bytes) / (1024.0 ** 3), 3)
+        if batch_size_no_eviction > 0 and batch_size_no_eviction >= optimal_batch_size:
+            # Use optimal_batch_size that guarantees saturation
+            print('In-memory network: The model fits in the GPU memory with the batch size of ' + str(batch_size_no_eviction) +
+                  ' which is greater than or equal to ' + str(optimal_batch_size) + '.')
+        elif batch_size_no_eviction > 0:
+            print('Almost in-memory network: The model fits in the GPU memory with the batch size of ' + str(batch_size_no_eviction) +
+                  ' which is less than ' + str(optimal_batch_size) + '.')
+            print('For training with larger batch sizes, consider using:')
+            print('Option 1: Single GPU training: sysml_model.fit(batch_size=' + str(batch_size_no_eviction) + ')')
+            print('Option 2: Looped-minibatch single GPU training: sysml_model.set(train_algo=\'looped_minibatch\', '
+                  'parallel_batches=int(batch_size/' + str(batch_size_no_eviction) + ')).fit(batch_size=' + str(batch_size_no_eviction) + ')')
+            if num_devices > 1:
+                print('Option 3: Multiple GPU training: sysml_model.set(train_algo=\'allreduce_parallel_batches\', parallel_batches=' +
+                      str(num_devices) + ').fit(batch_size=' + str(batch_size_no_eviction) + ')')
+        elif wide_network:
+            print('Wide network: The layer ' + str(wide_layer.name) + ' requires ' + to_gb(wide_layer_mem_count) + 'GB + ' +
+                  'potentially additional memory for temporary state/variables. Donot use \'setForceGPU\' and rely on' +
+                  ' SystemML\'s optimizer for scheduling operator on the device based on memory estimates (enabled by default).')
+        else:
+            print('Very deep network: All layers fit in the GPU memory, but the model doesn\'t. If you prefer, you can' +
+                  ' \'setForceGPU\' and rely on:')
+            print('Option 1: SystemML\'s GPU Memory Manager to perform on-demand eviction (enabled by default)')
+            print('Option 2: Nvidia\'s Unified Memory to perform on-demand eviction: sysml_model.setConfigProperty('
+                  '\'sysml.gpu.memory.allocator\', \'unified_memory\')')
+
 
     def fit(self, X, y=None, batch_size=32, epochs=1, validation_split=0.0, validation_data=None):
         # verbose, callbacks flags are not supported

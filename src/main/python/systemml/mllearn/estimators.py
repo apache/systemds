@@ -1199,7 +1199,7 @@ class Keras2DML(Caffe2DML):
                 y_val = convertToMatrixBlock(self.sc, y_val)
                 self.estimator.setValidationData(convertToMatrixBlock(self.sc, X_val), y_val)
         if y is not None:
-            super(BaseSystemMLEstimator, self).fit(X, y)
+            super(Keras2DML, self).fit(X, y)
         else:
-            super(BaseSystemMLEstimator, self).fit(X)
+            super(Keras2DML, self).fit(X)
 

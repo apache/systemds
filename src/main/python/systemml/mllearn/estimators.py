@@ -1112,9 +1112,9 @@ class Keras2DML(Caffe2DML):
         import shutil
         shutil.rmtree(weights)
 
-    def print_network_summary(self, overhead=0.3, optimal_batch_size=32):
+    def print_network_summary_gpu(self, overhead=0.3, optimal_batch_size=32):
         """
-        Utility method to reason about different setup depending on the memory estimates of the model.
+        Utility method to reason about different GPU setup depending on the memory estimates of the model.
         It ignores memory required for temporary memory such as reserve space, workspace. Use overhead to tweak that.
 
         Parameters
@@ -1137,6 +1137,10 @@ class Keras2DML(Caffe2DML):
         num_devices = self.sc._jvm.org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool.getDeviceCount()
         gpu_mem = self.sc._jvm.org.apache.sysml.runtime.instructions.gpu.context.GPUContextPool.initialGPUMemBudget()
         gpu_mem = math.floor((gpu_mem * overhead)/ num_bytes)
+        def to_gb(num_cells):
+            return np.round((num_cells*num_bytes) / (1024.0 ** 3), 3)
+        print('There are ' + str(num_devices) + ' GPUs each with ' + str(to_gb(gpu_mem)) + 'GB memory (after discounting' +
+              ' the overhead).')
         print(self.keras_model.summary())
         for l in self.keras_model.layers:
             single_layer_mem = 1
@@ -1153,8 +1157,6 @@ class Keras2DML(Caffe2DML):
             model_mem_count += single_layer_mem
         # Find the maximum batch size without eviction for given precision
         batch_size_no_eviction = math.floor(float(gpu_mem) / model_mem_count)
-        def to_gb(num_cells):
-            return np.round((num_cells*num_bytes) / (1024.0 ** 3), 3)
         if batch_size_no_eviction > 0 and batch_size_no_eviction >= optimal_batch_size:
             # Use optimal_batch_size that guarantees saturation
             print('In-memory network: The model fits in the GPU memory with the batch size of ' + str(batch_size_no_eviction) +

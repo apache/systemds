@@ -228,5 +228,5 @@ sysml_model.fit(X, y, batch_size=local_batch_size)
 
 Keras2DML has a utility method to print these guidelines depending on the network:
 ```python
-sysml_model.print_network_summary()
+sysml_model.print_network_summary_gpu()
 ```

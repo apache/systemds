@@ -93,6 +93,7 @@ class LearningRatePolicy(lr_policy: String = "exp", base_lr: Double = 0.01) {
   def setStepsize(step1: Double): Unit = step = step1
   def setPower(power1: Double): Unit   = power = power1
   def updateLearningRate(dmlScript: StringBuilder): Unit = {
+    dmlScript.append("# Learning rate\n")
     val new_lr = lr_policy.toLowerCase match {
       case "fixed"   => base_lr.toString
       case "step"    => "(" + base_lr + " * " + gamma + " ^ " + " floor(e/" + step + "))"

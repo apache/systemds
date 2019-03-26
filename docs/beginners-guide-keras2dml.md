@@ -132,7 +132,6 @@ print(sysml_model.get_training_script())
 |                                                        | Specified via the given parameter in the Keras2DML constructor | From input Keras' model                                                                 | Corresponding parameter in the Caffe solver file |
 |--------------------------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------------------------------------|
 | Solver type                                            |                                                                | `type(keras_model.optimizer)`. Supported types: `keras.optimizers.{SGD, Adagrad, Adam}` | `type`                                           |
-| Maximum number of iterations                           | `max_iter`                                                     | The `epoch` parameter in the `fit` method is not supported.                             | `max_iter`                                       |
 | Validation dataset                                     | `test_iter` (explained in the below section)                   | The `validation_data` parameter in the `fit` method is not supported.                   | `test_iter`                                      |
 | Monitoring the loss                                    | `display, test_interval` (explained in the below section)      | The `LossHistory` callback in the `fit` method is not supported.                        | `display, test_interval`                         |
 | Learning rate schedule                                 | `lr_policy`                                                    | The `LearningRateScheduler` callback in the `fit` method is not supported.              | `lr_policy` (default: step)                      |
@@ -143,21 +142,11 @@ print(sysml_model.get_training_script())
 | If type of the optimizer is `keras.optimizers.Adam`    |                                                                | `beta_1, beta_2, epsilon`. The parameter `amsgrad` is not supported.                    | `momentum, momentum2, delta`                     |
 | If type of the optimizer is `keras.optimizers.Adagrad` |                                                                | `epsilon`                                                                               | `delta`                                          |
 
-#### How do I specify the batch size and the number of epochs ?
+#### How do I specify the batch size and the number of epochs?
 
-Since Keras2DML is a mllearn API, it doesnot accept the batch size and number of epochs as the parameter in the `fit` method.
-Instead, these parameters are passed via `batch_size` and `max_iter` parameters in the Keras2DML constructor.
-For example, the equivalent Python code for `keras_model.fit(features, labels, epochs=10, batch_size=64)` is as follows:
+Like Keras, the user can provide `batch_size` and `epochs` via the `fit` method. For example: `sysml_model.fit(features, labels, epochs=10, batch_size=64)`.
 
-```python
-from systemml.mllearn import Keras2DML
-epochs = 10
-batch_size = 64
-num_samples = features.shape[0]
-max_iter = int(epochs*math.ceil(num_samples/batch_size))
-sysml_model = Keras2DML(spark, keras_model, batch_size=batch_size, max_iter=max_iter, ...)
-sysml_model.fit(features, labels)
-``` 
+Note, we do not support `verbose` and `callbacks` parameters in our `fit` method. Please use SparkContext's `setLogLevel` method to control the verbosity.
 
 #### What optimizer and loss does Keras2DML use by default if `keras_model` is not compiled ?
 
@@ -184,17 +173,9 @@ Instead one can set the custom learning rate schedule to one of the following sc
 
 #### How to set the size of the validation dataset ?
 
-The size of the validation dataset is determined by the parameters `test_iter` and the batch size. For example: If the batch size is 64 and 
-`test_iter` is set to 10 in the `Keras2DML`'s constructor, then the validation size is 640. This setting generates following DML code internally:
-
-```python
-num_images = nrow(y_full)
-BATCH_SIZE = 64
-num_validation = 10 * BATCH_SIZE
-X = X_full[(num_validation+1):num_images,]; y = y_full[(num_validation+1):num_images,]
-X_val = X_full[1:num_validation,]; y_val = y_full[1:num_validation,]
-num_images = nrow(y)
-``` 
+Like Keras, the validation dataset can be set in two ways:
+1. `validation_split` parameter (of type `float` between 0 and 1) in the `fit` method: It is the fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch.
+2. `validation_data` parameter (of type `(x_val, y_val)` where `x_val` and `y_val` are NumPy arrays) in the `fit` method: on which to evaluate the loss at the end of each epoch. The model will not be trained on this data.  validation_data will override validation_split.
 
 #### How to monitor loss via command-line ?
 
@@ -232,13 +213,15 @@ Here are high-level guidelines to train very deep models on GPU with Keras2DML (
 - Use either of the above two options.
 - Or enable `train_algo` that performs multiple forward-backward pass with batch size `local_batch_size`, aggregate gradients and finally updates the model: 
 ```python
-sysml_model = Keras2DML(spark, keras_model, batch_size=local_batch_size)
+sysml_model = Keras2DML(spark, keras_model)
 sysml_model.set(train_algo="looped_minibatch", parallel_batches=int(batch_size/local_batch_size))
 sysml_model.setGPU(True).setForceGPU(True)
+sysml_model.fit(X, y, batch_size=local_batch_size)
 ```
 - Or add `int(batch_size/local_batch_size)` GPUs and perform single-node multi-GPU training with batch size `local_batch_size`:
 ```python
-sysml_model = Keras2DML(spark, keras_model, batch_size=local_batch_size)
+sysml_model = Keras2DML(spark, keras_model)
 sysml_model.set(train_algo="allreduce_parallel_batches", parallel_batches=int(batch_size/local_batch_size))
 sysml_model.setGPU(True).setForceGPU(True)
+sysml_model.fit(X, y, batch_size=local_batch_size)
 ```

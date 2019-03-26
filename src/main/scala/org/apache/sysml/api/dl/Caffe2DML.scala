@@ -724,7 +724,7 @@ class Caffe2DML(val sc: SparkContext,
     }
     else {
       // Else just print the epoch or iter
-      print(iterString)
+      tabDMLScript.append(print(iterString))
     }
   }
   

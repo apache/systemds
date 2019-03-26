@@ -333,6 +333,14 @@ class Caffe2DML(val sc: SparkContext,
       defaultVal
     }
   }
+  def getModifiedSolverParamDouble(key:String, defaultVal:Double):Double = {
+    if(modifiedSolverParam.containsKey(key)) {
+      modifiedSolverParam.get(key).toDouble
+    }
+    else {
+      defaultVal
+    }
+  }
   def getMaxIter():String = {
     val isEpochSet = getModifiedSolverParamInt("epochs", -1) >= 0
     if(isEpochSet) {
@@ -579,7 +587,7 @@ class Caffe2DML(val sc: SparkContext,
 
     // Set input/output variables and execute the script
     val script = dml(trainingScript).in(inputs)
-    if(getModifiedSolverParamInt("validation_split", -1) != -1 && _X_val_mb != null) {
+    if(getModifiedSolverParamDouble("validation_split", -1) != -1 && _X_val_mb != null) {
       script.in(Caffe2DML.XVal, _X_val_mb).in(Caffe2DML.yVal, _y_val_mb)
     }
     net.getLayers.map(net.getCaffeLayer(_)).filter(_.weight != null).map(l => script.out(l.weight))
@@ -630,7 +638,7 @@ class Caffe2DML(val sc: SparkContext,
   // Helper code to generate DML that creates training and validation data. 
   // Initializes Caffe2DML.X, Caffe2DML.y, Caffe2DML.XVal, Caffe2DML.yVal and Caffe2DML.numImages
   private def trainTestSplit(numValidationBatches: Int): Unit = {
-    val keras_validation_split = getModifiedSolverParamInt("validation_split", -1)
+    val keras_validation_split = getModifiedSolverParamDouble("validation_split", -1)
     if(keras_validation_split >= 1) {
       throw new DMLRuntimeException("validation_split should be between [0, 1), but provided " + keras_validation_split)
     }
@@ -710,7 +718,7 @@ class Caffe2DML(val sc: SparkContext,
   // Helper utility to generate DML script that displays Keras2DML's validation loss
   private def displayKerasValidationLoss(lossLayer: IsLossLayer, performOneHotEncoding:Boolean, cond:String, 
       iterString:String): Unit = {
-    if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
+    if(getModifiedSolverParamDouble("validation_split", -1) != 0 || _X_val_mb != null) {
       // Only display loss if validation data is provided
       displayValidationLoss(lossLayer, performOneHotEncoding, cond, iterString)
     }

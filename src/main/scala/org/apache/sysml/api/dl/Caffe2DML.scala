@@ -209,16 +209,20 @@ class Caffe2DML(val sc: SparkContext,
     val that = new Caffe2DML(sc, solverParam, solver, net, lrPolicy, numChannels, height, width)
     copyValues(that, extra)
   }
+  var numInputRows = -1
   def fit(X_file: String, y_file: String): Caffe2DMLModel = {
+    numInputRows = -1
     mloutput = baseFit(X_file, y_file, sc)
     new Caffe2DMLModel(this)
   }
   // Note: will update the y_mb as this will be called by Python mllearn
   def fit(X_mb: MatrixBlock, y_mb: MatrixBlock): Caffe2DMLModel = {
+    numInputRows = X_mb.getNumRows
     mloutput = baseFit(X_mb, y_mb, sc)
     new Caffe2DMLModel(this)
   }
   def fit(df: ScriptsUtils.SparkDataType): Caffe2DMLModel = {
+    numInputRows = -1
     mloutput = baseFit(df, sc)
     new Caffe2DMLModel(this)
   }
@@ -256,10 +260,8 @@ class Caffe2DML(val sc: SparkContext,
   def getTrainAlgo(): String = if (inputs.containsKey("$train_algo")) inputs.get("$train_algo") else Caffe2DML.MINIBATCH_ALGORITHM
   def getTestAlgo(): String  = if (inputs.containsKey("$test_algo")) inputs.get("$test_algo") else Caffe2DML.MINIBATCH_ALGORITHM
 
-  // Prints the summary of network
-  def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
-    val layers = net.getLayers .map(l => (l, net.getCaffeLayer(l)))
-    val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
+  def getBatchSize():Int = {
+    val layers = net.getLayers.map(l => (l, net.getCaffeLayer(l)))
     val batchSizes = layers.filter(l => l._2.isInstanceOf[Data]).map(l => l._2.asInstanceOf[Data].getBatchSize).distinct
     if(batchSizes.size > 1) {
       Caffe2DML.LOG.warn("Multiple data layers with different batch sizes:" + batchSizes.mkString(",") + ". Using the batch size:" + batchSizes.get(0))
@@ -267,7 +269,13 @@ class Caffe2DML(val sc: SparkContext,
     else if(batchSizes.size == 0) {
       Caffe2DML.LOG.warn("No data layers found and hence ignoring the memory computation.")
     }
-    val batchSize = if(batchSizes.size > 0) batchSizes.get(0) else -1 
+    if(batchSizes.size > 0) batchSizes.get(0) else -1
+  }
+  // Prints the summary of network
+  def summary(sparkSession: org.apache.spark.sql.SparkSession): Unit = {
+    val layers = net.getLayers.map(l => (l, net.getCaffeLayer(l)))
+    val numDataLayers = layers.filter(l => l._2.isInstanceOf[Data]).length
+    val batchSize = getBatchSize() 
     val header = Seq("Name", "Type", "Output", "Weight", "Bias", "Top", "Bottom", "Memory* (train/test)")
     val entries = layers
       .map(l => {
@@ -329,7 +337,7 @@ class Caffe2DML(val sc: SparkContext,
     val isEpochSet = getModifiedSolverParamInt("epochs", -1) >= 0
     if(isEpochSet) {
       // Set by Keras2DML
-      nrow(Caffe2DML.X)*getModifiedSolverParamInt("epochs", -1)
+      nrow(Caffe2DML.X) + "*" + getModifiedSolverParamInt("epochs", -1)
     }
     else {
       solverParam.getMaxIter.toString
@@ -403,19 +411,23 @@ class Caffe2DML(val sc: SparkContext,
         if(isKeras2DML) {
           // Keras2DML script generation for minibatch algorithm
           assign(tabDMLScript, "iter", "1")
+          assign(tabDMLScript, "epochs", epochs.toString)
           assign(tabDMLScript, "steps_per_epochs", ceil(nrow(Caffe2DML.X) + "/" + Caffe2DML.batchSize))
-          forBlock("e", "1", epochs.toString) {
+          // Keras2DML generates two loops: one for epoch and inner minibatch training loop for iterating within a epoch
+          forBlock("e", "1", "epochs") {
             assign(tabDMLScript, "start_index", "1")
-            forBlock("j", "1", "(steps_per_epochs-1)") {
-              rightIndexing(tabDMLScript, "Xb", Caffe2DML.X, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
-              rightIndexing(tabDMLScript, "yb", Caffe2DML.y, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
+            val batchSize = getBatchSize()
+            if(batchSize > 0 && numInputRows > 0 && numInputRows % batchSize == 0) {
+              // Avoids dynamic recompilation + reduces the script size
+              innerMinibatchTrainingLoop("steps_per_epochs")
+            }
+            else {
+              // Avoids dynamic recompilation
+              innerMinibatchTrainingLoop("(steps_per_epochs-1)")
+              getTrainingBatch(tabDMLScript)
               forwardBackwardUpdate
               increment("iter")
-              assign(tabDMLScript, "start_index", "start_index + " + Caffe2DML.batchSize)
             }
-            getTrainingBatch(tabDMLScript)
-            forwardBackwardUpdate
-            increment("iter")
             if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
               displayValidationLoss(lossLayers(0), performOneHotEncoding, 
                       null, "\"Epoch:\" + e + \"/\" + " + epochs)
@@ -427,6 +439,7 @@ class Caffe2DML(val sc: SparkContext,
           // Caffe2DML script generation
           assign(tabDMLScript, "e", "0")
           assign(tabDMLScript, "max_iter", ifdef("$max_iter", getMaxIter))
+          // Caffe2DML generates only one loop that iterates for specified number of iterations
           forBlock("iter", "1", "max_iter") {
             getTrainingBatch(tabDMLScript)
             forwardBackwardUpdate
@@ -446,9 +459,14 @@ class Caffe2DML(val sc: SparkContext,
         }
       }
       case Caffe2DML.BATCH_ALGORITHM => {
-        assign(tabDMLScript, "max_iter", ifdef("$max_iter", getMaxIter))
-        assign(tabDMLScript, "max_epochs", ceil("(max_iter*" + Caffe2DML.batchSize + ")/" + Caffe2DML.numImages))
-        forBlock("e", "1", "max_epochs") {
+        if(isKeras2DML) {
+          assign(tabDMLScript, "epochs", epochs.toString)
+        }
+        else {
+          assign(tabDMLScript, "max_iter", ifdef("$max_iter", getMaxIter))
+          assign(tabDMLScript, "epochs", ceil("(max_iter*" + Caffe2DML.batchSize + ")/" + Caffe2DML.numImages))
+        }
+        forBlock("e", "1", "epochs") {
           assign(tabDMLScript, "iter", "num_batches_per_epoch*e")
           assign(tabDMLScript, "Xb", Caffe2DML.X)
           assign(tabDMLScript, "yb", Caffe2DML.y)
@@ -582,6 +600,15 @@ class Caffe2DML(val sc: SparkContext,
   // ================================================================================================
   // -------------------------------------------------------------------------------------------
   // Helper functions to generate DML
+  private def innerMinibatchTrainingLoop(numSteps:String):Unit = {
+    forBlock("j", "1", numSteps) {
+      rightIndexing(tabDMLScript, "Xb", Caffe2DML.X, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
+      rightIndexing(tabDMLScript, "yb", Caffe2DML.y, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
+      forwardBackwardUpdate
+      increment("iter")
+      assign(tabDMLScript, "start_index", "start_index + " + Caffe2DML.batchSize)
+    }
+  }
   private def increment(variable:String) = {
     assign(tabDMLScript, variable, variable + " + 1")
   }

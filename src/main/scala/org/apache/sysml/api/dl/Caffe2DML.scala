@@ -404,8 +404,16 @@ class Caffe2DML(val sc: SparkContext,
     }
     // ----------------------------------------------------------------------------
     val epochs = getModifiedSolverParamInt("epochs", -1)
+    val epochPrefix = "\"Epoch:\" + e + \"/\" + " + epochs
+    val iterPrefix = "\"Iter:\" + iter"
+    val iterCaffeDisplayCondition = "iter  %% " + solverParam.getDisplay + " == 0"
+    val iterCaffeValidationCondition = "iter  %% " + solverParam.getTestInterval + " == 0"
+    val noCondition = null
     val isKeras2DML = (epochs > 0)
-    // Main logic
+    // Main script generation logic based on train_algo parameter
+    // The below code relies on control structure generation helper utilities (such as forBlock and ifBlock) and
+    // helper methods that encapsulate block of code (such as forward, backward, update, getBatchSize, etc).
+    // The latter helper methods are used instead of operator overloading to simplify debugging and avoid IDE-related issues. We can revisit this if necessary.
     getTrainAlgo.toLowerCase match {
       case Caffe2DML.MINIBATCH_ALGORITHM => {
         if(isKeras2DML) {
@@ -419,7 +427,7 @@ class Caffe2DML(val sc: SparkContext,
             val batchSize = getBatchSize()
             if(batchSize > 0 && numInputRows > 0 && numInputRows % batchSize == 0) {
               // Avoids dynamic recompilation + reduces the script size
-              innerMinibatchTrainingLoop("steps_per_epochs")
+              innerMinibatchTrainingLoop(if(numInputRows == batchSize) "1" else "steps_per_epochs")
             }
             else {
               // Avoids dynamic recompilation
@@ -428,10 +436,7 @@ class Caffe2DML(val sc: SparkContext,
               forwardBackwardUpdate
               increment("iter")
             }
-            if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
-              displayValidationLoss(lossLayers(0), performOneHotEncoding, 
-                      null, "\"Epoch:\" + e + \"/\" + " + epochs)
-            }
+            displayKerasValidationLoss(lossLayers(0), performOneHotEncoding, noCondition, epochPrefix)
             lrPolicy.updateLearningRate(tabDMLScript)
           }
         }
@@ -444,15 +449,14 @@ class Caffe2DML(val sc: SparkContext,
             getTrainingBatch(tabDMLScript)
             forwardBackwardUpdate
             if(solverParam.getDisplay > 0) {
-              displayTrainingLoss(lossLayers(0), performOneHotEncoding, 
-                  "iter  %% " + solverParam.getDisplay + " == 0")
+              displayTrainingLoss(lossLayers(0), performOneHotEncoding, iterCaffeDisplayCondition)
               if(shouldValidate) {
-                displayValidationLoss(lossLayers(0), performOneHotEncoding, 
-                      "iter  %% " + solverParam.getTestInterval + " == 0")
+                displayValidationLoss(lossLayers(0), performOneHotEncoding, iterCaffeValidationCondition)
               }
             }
             performSnapshot
-            ifBlock("iter %% num_batches_per_epoch == 0") { // After every epoch, update the learning rate
+            ifBlock("iter %% num_batches_per_epoch == 0") { 
+              // After every epoch, update the learning rate
               increment("e"); lrPolicy.updateLearningRate(tabDMLScript)
             }
           }
@@ -472,17 +476,14 @@ class Caffe2DML(val sc: SparkContext,
           assign(tabDMLScript, "yb", Caffe2DML.y)
           forwardBackwardUpdate
           if(isKeras2DML) {
-            if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
-              displayValidationLoss(lossLayers(0), performOneHotEncoding, 
-                      null, "\"Epoch:\" + e + \"/\" + " + epochs)
-            }
+            displayKerasValidationLoss(lossLayers(0), performOneHotEncoding, noCondition, epochPrefix)
           }
           else {
             if(solverParam.getDisplay > 0) {
               // Show training/validation loss every epoch
               displayTrainingLoss(lossLayers(0), performOneHotEncoding)
               if(shouldValidate)
-                displayValidationLoss(lossLayers(0), performOneHotEncoding, null)
+                displayValidationLoss(lossLayers(0), performOneHotEncoding, noCondition)
             }
             performSnapshot
           }
@@ -522,17 +523,14 @@ class Caffe2DML(val sc: SparkContext,
           }
           aggregateAggGradients
           update
+          val iterMatrix = matrix("seq(iter, iter+parallel_batches-1)", "parallel_batches", "1")
+          val validationCondition = sum(iterMatrix + " %% " + solverParam.getTestInterval + " == 0") + " > 0"
           if(isKeras2DML) {
-            if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
-              displayValidationLoss(lossLayers(0), performOneHotEncoding, 
-                      null, "\"Iter:\" + iter")
-            }
+            displayKerasValidationLoss(lossLayers(0), performOneHotEncoding, validationCondition, iterPrefix)
           }
           else {
             if(solverParam.getDisplay > 0 && shouldValidate) {
-              val iterMatrix = matrix("seq(iter, iter+parallel_batches-1)", "parallel_batches", "1")
-              displayValidationLoss(lossLayers(0), performOneHotEncoding,
-                    sum(iterMatrix + " %% " + solverParam.getTestInterval + " == 0") + " > 0")
+              displayValidationLoss(lossLayers(0), performOneHotEncoding, validationCondition)
             }
             performSnapshot
           }
@@ -558,18 +556,13 @@ class Caffe2DML(val sc: SparkContext,
           update
           // -------------------------------------------------------
           if(isKeras2DML) {
-            if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
-              displayValidationLoss(lossLayers(0), performOneHotEncoding, 
-                      null, "\"Iter:\" + iter")
-            }
+            displayKerasValidationLoss(lossLayers(0), performOneHotEncoding, iterCaffeValidationCondition, iterPrefix)
           }
           else {
             if(solverParam.getDisplay > 0) {
-              displayTrainingLoss(lossLayers(0), performOneHotEncoding, 
-                  "iter  %% " + solverParam.getDisplay + " == 0", true)
+              displayTrainingLoss(lossLayers(0), performOneHotEncoding, iterCaffeDisplayCondition, true)
               if(shouldValidate) 
-                displayValidationLoss(lossLayers(0), performOneHotEncoding,
-                      "iter  %% " + solverParam.getTestInterval + " == 0")
+                displayValidationLoss(lossLayers(0), performOneHotEncoding, iterCaffeValidationCondition)
             }
             performSnapshot
           }
@@ -601,12 +594,20 @@ class Caffe2DML(val sc: SparkContext,
   // -------------------------------------------------------------------------------------------
   // Helper functions to generate DML
   private def innerMinibatchTrainingLoop(numSteps:String):Unit = {
-    forBlock("j", "1", numSteps) {
+    def innerMinibatchTrainingLoopBody():Unit = {
       rightIndexing(tabDMLScript, "Xb", Caffe2DML.X, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
       rightIndexing(tabDMLScript, "yb", Caffe2DML.y, "start_index", "(start_index+" + Caffe2DML.batchSize + "-1)")
       forwardBackwardUpdate
       increment("iter")
       assign(tabDMLScript, "start_index", "start_index + " + Caffe2DML.batchSize)
+    }
+    if(numSteps.equals("1")) {
+      innerMinibatchTrainingLoopBody
+    }
+    else {
+      forBlock("j", "1", numSteps) {
+        innerMinibatchTrainingLoopBody
+      }
     }
   }
   private def increment(variable:String) = {
@@ -625,27 +626,33 @@ class Caffe2DML(val sc: SparkContext,
     }
     // -------------------------------------------------------
   }
+  
+  // Helper code to generate DML that creates training and validation data. 
   // Initializes Caffe2DML.X, Caffe2DML.y, Caffe2DML.XVal, Caffe2DML.yVal and Caffe2DML.numImages
   private def trainTestSplit(numValidationBatches: Int): Unit = {
     val keras_validation_split = getModifiedSolverParamInt("validation_split", -1)
+    if(keras_validation_split >= 1) {
+      throw new DMLRuntimeException("validation_split should be between [0, 1), but provided " + keras_validation_split)
+    }
     if(keras_validation_split != -1) {
       // Invoked via Keras2DML
       if(_X_val_mb != null) {
-        // Use _X_val_mb and _y_val_mb
+        // Since validation data is provided via Keras2DML, use that.
         assign(tabDMLScript, Caffe2DML.XVal, "read(\" \")")
         assign(tabDMLScript, Caffe2DML.yVal, "read(\" \")")
       }
-      else if(keras_validation_split == 0) {
-        assign(tabDMLScript, Caffe2DML.X, "X_full")
-        assign(tabDMLScript, Caffe2DML.y, "y_full")
-      }
-      else {
-        // Use keras_validation_split 
+      else if(keras_validation_split > 0) {
+        // Since validation data is not provided via Keras2DML but validation_split is provided, split the training dataset
         assign(tabDMLScript, Caffe2DML.numValidationImages, Caffe2DML.numImages + " * " + keras_validation_split)
         rightIndexing(tabDMLScript, Caffe2DML.X, "X_full", int_add(Caffe2DML.numValidationImages, "1"), Caffe2DML.numImages)
         rightIndexing(tabDMLScript, Caffe2DML.y, "y_full", int_add(Caffe2DML.numValidationImages, "1"), Caffe2DML.numImages)
         rightIndexing(tabDMLScript, Caffe2DML.XVal, "X_full", "1", Caffe2DML.numValidationImages)
         rightIndexing(tabDMLScript, Caffe2DML.yVal, "y_full", "1", Caffe2DML.numValidationImages)
+      }
+      else {
+        // keras_validation_split <= 0 and no validation data is provided via Keras2DML, do not split the training dataset
+        assign(tabDMLScript, Caffe2DML.X, "X_full")
+        assign(tabDMLScript, Caffe2DML.y, "y_full")
       }
     }
     else {
@@ -700,6 +707,20 @@ class Caffe2DML(val sc: SparkContext,
     }
   }
   
+  // Helper utility to generate DML script that displays Keras2DML's validation loss
+  private def displayKerasValidationLoss(lossLayer: IsLossLayer, performOneHotEncoding:Boolean, cond:String, 
+      iterString:String): Unit = {
+    if(getModifiedSolverParamInt("validation_split", -1) != 0 || _X_val_mb != null) {
+      // Only display loss if validation data is provided
+      displayValidationLoss(lossLayer, performOneHotEncoding, cond, iterString)
+    }
+    else {
+      // Else just print the epoch or iter
+      print(iterString)
+    }
+  }
+  
+  // Helper utility to generate DML script that displays the validation loss based on test_algo
   private def displayValidationLoss(lossLayer: IsLossLayer, performOneHotEncoding:Boolean, cond:String, 
       iterString:String="\"Iter:\" + iter"): Unit = {
     if (trainAlgoContainsParfor && testAlgoContainsParfor) {

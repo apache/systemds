@@ -55,5 +55,8 @@ limitations under the License.
   * [Kaplan-Meier Survival Analysis](algorithms-survival-analysis.html#kaplan-meier-survival-analysis)
   * [Cox Proportional Hazard Regression Model](algorithms-survival-analysis.html#cox-proportional-hazard-regression-model)
 
+* [Factorization Machines](algorithms-factorization-machines.html)
+  * [Factorization Machine](algorithms-factorization-machines.html#core-model)
+  
 * [Bibliography](algorithms-bibliography.html)
 

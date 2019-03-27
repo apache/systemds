@@ -39,6 +39,7 @@ import org.apache.sysml.api.mlcontext.ScriptFactory._
 import org.apache.spark.sql._
 import org.apache.sysml.api.mlcontext.MLContext.ExplainLevel
 import org.apache.sysml.hops.OptimizerUtils;
+import org.apache.sysml.conf.{ConfigurationManager, DMLConfig}
 
 import java.util.HashMap
 
@@ -130,9 +131,19 @@ trait BaseSystemMLEstimatorOrModel {
   def setStatistics(statistics1: Boolean): BaseSystemMLEstimatorOrModel                           = { statistics = statistics1; this }
   def setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters1: Int): BaseSystemMLEstimatorOrModel = { statisticsMaxHeavyHitters = statisticsMaxHeavyHitters1; this }
   def setConfigProperty(key: String, value: String): BaseSystemMLEstimatorOrModel                 = { config.put(key, value); this }
+  var localDmlConfig:DMLConfig = null
+  def getConfigProperty(key: String): String = {
+    if(config.containsKey())
+      return config.get(key)
+    if(localDmlConfig == null) {
+      localDmlConfig = ConfigurationManager.getDMLConfig()
+    }
+    return localDmlConfig.getTextValue(key)
+  }
+  
   def updateML(ml: MLContext): Unit = {
-	System.gc();
-	ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
+	  System.gc();
+	  ml.setGPU(enableGPU); ml.setForceGPU(forceGPU);
     ml.setExplain(explain); ml.setExplainLevel(explainLevel);
     ml.setStatistics(statistics); ml.setStatisticsMaxHeavyHitters(statisticsMaxHeavyHitters);
     config.map(x => ml.setConfigProperty(x._1, x._2))

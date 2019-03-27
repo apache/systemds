@@ -153,6 +153,16 @@ class BaseSystemMLEstimator(Estimator):
         self.estimator.setConfigProperty(propertyName, propertyValue)
         return self
 
+    def getConfigProperty(self, propertyName):
+        """
+        Get configuration property, such as getConfigProperty("sysml.localtmpdir").
+
+        Parameters
+        ----------
+        propertyName: String
+        """
+        return self.estimator.getConfigProperty(propertyName)
+
     def _fit_df(self):
         global default_jvm_stdout, default_jvm_stdout_parallel_flush
         try:
@@ -1018,7 +1028,7 @@ class Keras2DML(Caffe2DML):
     """
 
     def __init__(self, sparkSession, keras_model, input_shape=None, transferUsingDF=False, load_keras_weights=True, weights=None, labels=None,
-                 batch_size=64, max_iter=2000, test_iter=0, test_interval=500, display=100, lr_policy="step", weight_decay=0, regularization_type="L2"):
+                 lr_policy="step", weight_decay=0, regularization_type="L2"):
         """
         Performs training/prediction for a given keras model.
 
@@ -1031,11 +1041,6 @@ class Keras2DML(Caffe2DML):
         load_keras_weights: whether to load weights from the keras_model. If False, the weights will be initialized to random value using NN libraries' init method  (default: True)
         weights: directory whether learned weights are stored (default: None)
         labels: file containing mapping between index and string labels (default: None)
-        batch_size: size of the input batch (default: 64)
-        max_iter: maximum number of iterations (default: 2000)
-        test_iter: test_iter for caffe solver (default: 0)
-        test_interval: test_interval for caffe solver (default: 500)
-        display: display for caffe solver (default: 100)
         lr_policy: learning rate policy for caffe solver (default: "step")
         weight_decay: regularation strength (default: 0, recommended: 5e-4)
         regularization_type: regularization type (default: "L2")
@@ -1063,6 +1068,8 @@ class Keras2DML(Caffe2DML):
         createJavaObject(sparkSession._sc, 'dummy')
         if not hasattr(keras_model, 'optimizer'):
             raise Exception('Please compile the model before passing it to Keras2DML')
+        # Default values for Caffe solver. These will be overriden by the fit method.
+        batch_size, max_iter, test_iter, test_interval, display = 32, 2000, 0, 500, 100
         convertKerasToCaffeNetwork(
             keras_model,
             self.name + ".proto",
@@ -1079,6 +1086,7 @@ class Keras2DML(Caffe2DML):
             weight_decay,
             regularization_type)
         self.weights = tempfile.mkdtemp() if weights is None else weights
+        self.keras_model = keras_model
         if load_keras_weights:
             convertKerasToSystemMLModel(
                 sparkSession, keras_model, self.weights)
@@ -1103,3 +1111,24 @@ class Keras2DML(Caffe2DML):
     def close(self):
         import shutil
         shutil.rmtree(weights)
+
+    def fit(self, X, y=None, batch_size=32, epochs=1, validation_split=0.0, validation_data=None):
+        # verbose, callbacks flags are not supported
+        self.estimator.modifySolverParam("batch_size", str(batch_size))
+        self.estimator.modifySolverParam("epochs", str(epochs))
+        self.estimator.modifySolverParam("validation_split", str(validation_split))
+        if batch_size <= 0 or epochs <= 0 or validation_split < 0:
+            raise ValueError('Incorrect parameters to fit method: batch_size=' +  str(batch_size) + ', epochs=' +
+                             str(epochs) + ', validation_split=' + str(validation_split))
+        if validation_data is not None:
+            X_val, y_val = validation_data[0], validation_data[1]
+            if isinstance(y_val, np.ndarray) and len(y_val.shape) == 1:
+                # Since we know that mllearn always needs a column vector
+                y_val = np.matrix(y_val).T
+                y_val = convertToMatrixBlock(self.sc, y_val)
+                self.estimator.setValidationData(convertToMatrixBlock(self.sc, X_val), y_val)
+        if y is not None:
+            super(Keras2DML, self).fit(X, y)
+        else:
+            super(Keras2DML, self).fit(X)
+

@@ -185,6 +185,16 @@ $ ./bin/x86_64/linux/release/deviceQuery
 $ ./bin/x86_64/linux/release/bandwidthTest 
 $ ./bin/x86_64/linux/release/matrixMulCUBLAS 
 ```
+- Test CUDA and CuDNN with SystemML
+```
+$ git clone https://github.com/apache/systemml.git
+$ cd systemml
+$ mvn -Dit.test=org.apache.sysml.test.gpu.AggregateTernaryTests verify -PgpuTests
+$ mvn -Dit.test=org.apache.sysml.test.gpu.NeuralNetworkOpTests verify -PgpuTests
+```
+
+If you get an `java.lang.UnsatisfiedLinkError: libcusparse.so.9.0: cannot open shared object file: No such file or directory` error, then
+CUDA toolkit is not installed correctly or it is not included in the `LD_LIBRARY_PATH`.
 
 ### How to install CUDA 9 on Centos 7 with yum?
 

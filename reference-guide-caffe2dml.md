@@ -1137,17 +1137,17 @@ class           precision       recall          f1-score        num_true_labels
 
 #### Design document of Caffe2DML
 
-1. Caffe2DML is designed to fit well into the mllearn framework. Hence, the key methods that were to be implemented are:
+Caffe2DML is designed to fit well into the mllearn framework. Hence, the key methods that were to be implemented are:
 - `getTrainingScript` for the `Estimator` class.
 - `getPredictionScript` for the `Model` class.
 
 These methods should be the starting point of any developer to understand the DML generated for training and prediction respectively.
 
-2. To simplify the DML generation in `getTrainingScript` and `getPredictionScript method`, we use DMLGenerator interface. 
+To simplify the DML generation in `getTrainingScript` and `getPredictionScript method`, we use DMLGenerator interface. 
 This interface generates DML string for common operations such as loops (such as if, for, while) as well as built-in functions (read, write), etc. 
 Also, this interface helps in "code reading" of the Caffe2DML class.
 
-3. Here is an analogy for SystemML developers to think of various moving components of Caffe2DML:
+Here is an analogy for SystemML developers to think of various moving components of Caffe2DML:
 - Like `Dml.g4` in the `org.apache.sysml.parser.dml` package, `caffe.proto` in the `src/main/proto/caffe` directory
 is used to generate classes to parse the input files.
 
@@ -1187,7 +1187,7 @@ trait CaffeSolver {
 }
 ```
 
-4. To simplify the traversal of the network, we created a Network interface:
+To simplify the traversal of the network, we created a Network interface:
 ```
 trait Network {
   def getLayers(): List[String]
@@ -1198,8 +1198,8 @@ trait Network {
 }
 ```
 
-5. One of the key design restriction of Caffe2DML is that every layer is identified uniquely by its name.
+One of the key design restriction of Caffe2DML is that every layer is identified uniquely by its name.
 This restriction simplifies the code significantly.
 To shield from network files that violates this restriction, Caffe2DML performs rewrites in CaffeNetwork class (search for condition 1-5 in Caffe2DML class).
 
-6. Like Caffe, Caffe2DML also expects the layers to be in sorted order.
+Like Caffe, Caffe2DML also expects the layers to be in sorted order.

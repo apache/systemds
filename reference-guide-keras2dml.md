@@ -30,9 +30,29 @@ limitations under the License.
 
 # Layers supported in Keras2DML
 
-TODO:
+If a Keras layer or a hyperparameter is not supported, we throw an error informing that the layer is not supported.
+We follow the Keras specification very closely during DML generation and compare the results of our layers (both forward and backward) with Tensorflow to validate that.
+
+- Following layers are not supported but will be supported in near future: `Reshape, Permute, RepeatVector, ActivityRegularization, Masking, SpatialDropout1D, SpatialDropout2D, SeparableConv1D, SeparableConv2D, DepthwiseConv2D, Cropping1D, Cropping2D, GRU and Embedding`.
+- Following layers are not supported by their 2D variants exists (consider using them instead): `UpSampling1D, ZeroPadding1D, MaxPooling1D, AveragePooling1D and Conv1D`.
+- Specialized `CuDNNGRU and CuDNNLSTM` layers are not required in SystemML. Instead use `LSTM` layer. 
+- We do not have immediate plans to support the following layers: `Lambda, SpatialDropout3D, Conv3D, Conv3DTranspose, Cropping3D, UpSampling3D, ZeroPadding3D, MaxPooling3D, AveragePooling3D and ConvLSTM2D*`.
 
 # Frequently asked questions
+
+#### How do I specify the batch size, the number of epochs and the validation dataset?
+
+Like Keras, the user can provide `batch_size` and `epochs` via the `fit` method. 
+
+```python
+# Either:
+sysml_model.fit(features, labels, epochs=10, batch_size=64, validation_split=0.3)
+# Or
+sysml_model.fit(features, labels, epochs=10, batch_size=64, validation_data=(Xval_numpy, yval_numpy))
+```
+
+Note, we do not support `verbose` and `callbacks` parameters in our `fit` method. Please use SparkContext's `setLogLevel` method to control the verbosity.
+
 
 #### How can I get the training and prediction DML script for the Keras model?
 
@@ -49,8 +69,6 @@ print(sysml_model.get_training_script())
 |                                                        | Specified via the given parameter in the Keras2DML constructor | From input Keras' model                                                                 | Corresponding parameter in the Caffe solver file |
 |--------------------------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------------------|--------------------------------------------------|
 | Solver type                                            |                                                                | `type(keras_model.optimizer)`. Supported types: `keras.optimizers.{SGD, Adagrad, Adam}` | `type`                                           |
-| Validation dataset                                     | `test_iter` (explained in the below section)                   | The `validation_data` parameter in the `fit` method is not supported.                   | `test_iter`                                      |
-| Monitoring the loss                                    | `display, test_interval` (explained in the below section)      | The `LossHistory` callback in the `fit` method is not supported.                        | `display, test_interval`                         |
 | Learning rate schedule                                 | `lr_policy`                                                    | The `LearningRateScheduler` callback in the `fit` method is not supported.              | `lr_policy` (default: step)                      |
 | Base learning rate                                     |                                                                | `keras_model.optimizer.lr`                                                              | `base_lr`                                        |
 | Learning rate decay over each update                   |                                                                | `keras_model.optimizer.decay`                                                           | `gamma`                                          |
@@ -58,12 +76,6 @@ print(sysml_model.get_training_script())
 | If type of the optimizer is `keras.optimizers.SGD`     |                                                                | `momentum, nesterov`                                                                    | `momentum, type`                                 |
 | If type of the optimizer is `keras.optimizers.Adam`    |                                                                | `beta_1, beta_2, epsilon`. The parameter `amsgrad` is not supported.                    | `momentum, momentum2, delta`                     |
 | If type of the optimizer is `keras.optimizers.Adagrad` |                                                                | `epsilon`                                                                               | `delta`                                          |
-
-#### How do I specify the batch size and the number of epochs?
-
-Like Keras, the user can provide `batch_size` and `epochs` via the `fit` method. For example: `sysml_model.fit(features, labels, epochs=10, batch_size=64)`.
-
-Note, we do not support `verbose` and `callbacks` parameters in our `fit` method. Please use SparkContext's `setLogLevel` method to control the verbosity.
 
 #### What optimizer and loss does Keras2DML use by default if `keras_model` is not compiled ?
 

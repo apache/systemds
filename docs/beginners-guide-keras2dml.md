@@ -177,13 +177,6 @@ Like Keras, the validation dataset can be set in two ways:
 1. `validation_split` parameter (of type `float` between 0 and 1) in the `fit` method: It is the fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch.
 2. `validation_data` parameter (of type `(x_val, y_val)` where `x_val` and `y_val` are NumPy arrays) in the `fit` method: on which to evaluate the loss at the end of each epoch. The model will not be trained on this data.  validation_data will override validation_split.
 
-#### How to monitor loss via command-line ?
-
-To monitor loss, please set the parameters `display`, `test_iter` and `test_interval` in the `Keras2DML`'s constructor.  
-For example: for the expression `Keras2DML(..., display=100, test_iter=10, test_interval=500)`, we
-- display the training loss and accuracy every 100 iterations and
-- carry out validation every 500 training iterations and display validation loss and accuracy.
-
 #### How do you ensure that Keras2DML produce same results as other Keras' backend?
 
 To verify that Keras2DML produce same results as other Keras' backend, we have [Python unit tests](https://github.com/apache/systemml/blob/master/src/main/python/tests/test_nn_numpy.py)
@@ -224,9 +217,4 @@ sysml_model = Keras2DML(spark, keras_model)
 sysml_model.set(train_algo="allreduce_parallel_batches", parallel_batches=int(batch_size/local_batch_size))
 sysml_model.setGPU(True).setForceGPU(True)
 sysml_model.fit(X, y, batch_size=local_batch_size)
-```
-
-Keras2DML has a utility method to print these guidelines depending on the network:
-```python
-sysml_model.print_network_summary_gpu()
 ```

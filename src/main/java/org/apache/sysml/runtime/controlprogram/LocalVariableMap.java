@@ -19,6 +19,7 @@
 
 package org.apache.sysml.runtime.controlprogram;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,6 +48,8 @@ public class LocalVariableMap implements Cloneable
 	
 	//variable map data and id
 	private final HashMap<String, Data> localMap;
+	private final ArrayList<Data> listValues;
+	private final ArrayList<Data> nonListValues;
 	private final long localID;
 	
 	//optional set of registered outputs
@@ -54,11 +57,35 @@ public class LocalVariableMap implements Cloneable
 	
 	public LocalVariableMap() {
 		localMap = new HashMap<>();
+		listValues = new ArrayList<>();
+		nonListValues = new ArrayList<>();
 		localID = _seq.getNextID();
+	}
+	
+	private void addValue(Data val) {
+		if(val != null) {
+			if(val instanceof ListObject)
+				listValues.add(val);
+			else
+				nonListValues.add(val);
+		}
+	}
+	private void removeValue(Data val) {
+		if(val != null) {
+			if(val instanceof ListObject)
+				listValues.remove(val);
+			else
+				nonListValues.remove(val);
+		}
 	}
 	
 	public LocalVariableMap(LocalVariableMap vars) {
 		localMap = new HashMap<>(vars.localMap);
+		listValues = new ArrayList<>();
+		nonListValues = new ArrayList<>();
+		for(Data val : vars.localMap.values()) {
+			addValue(val);
+		}
 		localID = _seq.getNextID();
 	}
 
@@ -88,34 +115,61 @@ public class LocalVariableMap implements Cloneable
 	 * @param val the data value object (such as envelope)
 	 */
 	public void put(String name, Data val) {
+		if(localMap.containsKey(name))
+			removeValue(localMap.get(name));
 		localMap.put( name, val );
+		addValue(val);
 	}
 	
 	public void putAll(Map<String, Data> vals) {
-		localMap.putAll(vals);
+		for(Entry<String, Data> kv : vals.entrySet()) {
+			localMap.put(kv.getKey(), kv.getValue());
+		}
 	}
 
 	public Data remove( String name ) {
-		return localMap.remove( name );
+		Data ret = localMap.remove( name );
+		removeValue(ret);
+		return ret;
 	}
 
 	public void removeAll() {
 		localMap.clear();
+		listValues.clear();
+		nonListValues.clear();
 	}
 	
 	public void removeAllIn(Set<String> blacklist) {
-		localMap.entrySet().removeIf(
-			e -> blacklist.contains(e.getKey()));
+		for(String e : blacklist) {
+			if(localMap.containsKey(e)) {
+				remove(e);
+			}
+		}
 	}
 	
 	public void removeAllNotIn(Set<String> blacklist) {
-		localMap.entrySet().removeIf(
-			e -> !blacklist.contains(e.getKey()));
+		HashSet<String> removeKeys = new HashSet<>();
+		for(String e : localMap.keySet()) {
+			if(!blacklist.contains(e)) {
+				removeKeys.add(e);
+			}
+		}
+		for(String e : removeKeys) {
+			remove(e);
+		}
 	}
 
 	public boolean hasReferences( Data d ) {
-		return localMap.values().stream().anyMatch(e -> (e instanceof ListObject) ?
-			((ListObject)e).getData().contains(d) : e == d);
+		if(nonListValues.contains(d)) {
+			return true;
+		}
+		else if(listValues.size() > 1) {
+			return listValues.stream().anyMatch(e -> (e instanceof ListObject) ?
+					((ListObject)e).getData().contains(d) : e == d);
+		}
+		else {
+			return false;
+		}
 	}
 	
 	public void setRegisteredOutputs(HashSet<String> outputs) {

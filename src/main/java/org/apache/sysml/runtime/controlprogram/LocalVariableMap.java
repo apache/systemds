@@ -48,9 +48,14 @@ public class LocalVariableMap implements Cloneable
 	
 	//variable map data and id
 	private final HashMap<String, Data> localMap;
+	private final long localID;
+	
+	// ------------------------------------------------------------------------------------
+	// Data structures that improve performance of rmvar by maintaining the values of localMap.
+	// With this change, ResNet-200 performance improved the runtime from 55 seconds to 31 seconds. 
 	private final ArrayList<Data> listValues;
 	private final ArrayList<Data> nonListValues;
-	private final long localID;
+	// ------------------------------------------------------------------------------------
 	
 	//optional set of registered outputs
 	private HashSet<String> outputs = null;

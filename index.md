@@ -76,8 +76,8 @@ for running SystemML from Spark via Scala, Python, or Java.
 machine in R-like and Python-like declarative languages.
 * [JMLC](jmlc) - Java Machine Learning Connector.
 * [Deep Learning with SystemML](deep-learning)
-  * *Experimental* Caffe2DML API for Deep Learning ([beginner's guide](beginners-guide-caffe2dml), [reference guide](reference-guide-caffe2dml)) - Converts a Caffe specification to DML.
-  * *Experimental* [Keras2DML API](beginners-guide-keras2dml) for Deep Learning.
+  * Keras2DML API for Deep Learning ([beginner's guide](beginners-guide-keras2dml), [reference guide](reference-guide-keras2dml)) - Converts a Keras model to DML.
+  * Caffe2DML API for Deep Learning ([beginner's guide](beginners-guide-caffe2dml), [reference guide](reference-guide-caffe2dml)) - Converts a Caffe specification to DML.
 
 ## Language Guides
 

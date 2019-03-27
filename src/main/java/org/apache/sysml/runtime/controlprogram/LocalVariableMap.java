@@ -88,7 +88,7 @@ public class LocalVariableMap implements Cloneable
 		localMap = new HashMap<>(vars.localMap);
 		listValues = new ArrayList<>();
 		nonListValues = new ArrayList<>();
-		for(Data val : vars.localMap.values()) {
+		for(Data val : localMap.values()) {
 			addValue(val);
 		}
 		localID = _seq.getNextID();
@@ -128,7 +128,7 @@ public class LocalVariableMap implements Cloneable
 	
 	public void putAll(Map<String, Data> vals) {
 		for(Entry<String, Data> kv : vals.entrySet()) {
-			localMap.put(kv.getKey(), kv.getValue());
+			put(kv.getKey(), kv.getValue());
 		}
 	}
 
@@ -168,7 +168,7 @@ public class LocalVariableMap implements Cloneable
 		if(nonListValues.contains(d)) {
 			return true;
 		}
-		else if(listValues.size() > 1) {
+		else if(listValues.size() > 0) {
 			return listValues.stream().anyMatch(e -> (e instanceof ListObject) ?
 					((ListObject)e).getData().contains(d) : e == d);
 		}

@@ -110,9 +110,9 @@ trait Network {
 
 5. One of the key design restriction of Caffe2DML is that every layer is identified uniquely by its name.
 This restriction simplifies the code significantly.
-To shield from network files that violates this restriction, Caffe2DML performs rewrites in CaffeNetwork class (search for condition 1-5).
+To shield from network files that violates this restriction, Caffe2DML performs rewrites in CaffeNetwork class (search for condition 1-5 in Caffe2DML class).
 
-6. Caffe2DML also expects the layers to be in sorted order.
+6. Like Caffe, Caffe2DML also expects the layers to be in sorted order.
 
 ***************************************************************************************/
 object Caffe2DML {

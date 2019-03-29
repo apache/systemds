@@ -303,6 +303,9 @@ public class CSRPointer {
 		r.val = gCtx.allocate(null, getDataTypeSizeOf(nnz2));
 		r.rowPtr = gCtx.allocate(null, getIntSizeOf(rows + 1));
 		r.colInd = gCtx.allocate(null, getIntSizeOf(nnz2));
+		GPUMemoryManager.postAllocateMemset0(r.val, getDataTypeSizeOf(nnz2), null);
+		GPUMemoryManager.postAllocateMemset0(r.rowPtr, getIntSizeOf(rows + 1), null);
+		GPUMemoryManager.postAllocateMemset0(r.colInd, getIntSizeOf(nnz2), null);
 		return r;
 	}
 

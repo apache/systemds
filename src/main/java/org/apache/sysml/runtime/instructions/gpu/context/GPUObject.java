@@ -434,9 +434,15 @@ public class GPUObject {
 			start = System.nanoTime();
 		if (getJcudaSparseMatrixPtr() == null || !isAllocated())
 			throw new DMLRuntimeException("Expected allocated sparse matrix before sparseToDense() call");
-
-		sparseToColumnMajorDense();
-		denseColumnMajorToRowMajor();
+		if(getJcudaSparseMatrixPtr().nnz == 0) {
+			long size = ((long) mat.getNumRows()) * getDataTypeSizeOf(mat.getNumColumns());
+			setDensePointer(allocate(size));
+			GPUMemoryManager.postAllocateMemset0(getDensePointer(), size, instructionName);
+		}
+		else {
+			sparseToColumnMajorDense();
+			denseColumnMajorToRowMajor();
+		}
 		if (ConfigurationManager.isStatistics())
 			end = System.nanoTime();
 		if (instructionName != null && ConfigurationManager.isFinegrainedStatistics())
@@ -445,6 +451,10 @@ public class GPUObject {
 			GPUStatistics.cudaSparseToDenseTime.add(end - start);
 		if (ConfigurationManager.isStatistics())
 			GPUStatistics.cudaSparseToDenseCount.add(1);
+	}
+	
+	private static long getDataTypeSizeOf(long numElems) {
+		return numElems * ((long) LibMatrixCUDA.sizeOfDataType);
 	}
 
 	/**
@@ -521,10 +531,14 @@ public class GPUObject {
 		setDensePointer(allocate(size));
 		// The "fill" kernel is called which treats the matrix "jcudaDensePtr" like a vector and fills it with value "v"
 		// If the fill value is 0, no need to call the special kernel, the allocate memsets the allocated region to 0
-		if (v != 0)
+		if (v != 0) {
 			getGPUContext().getKernels()
 			.launchKernel("fill", ExecutionConfig.getConfigForSimpleVectorOperations(numElems),
 					getDensePointer(), v, numElems);
+		}
+		else {
+			GPUMemoryManager.postAllocateMemset0(getDensePointer(), size, null);
+		}
 	}
 
 	/**

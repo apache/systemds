@@ -96,6 +96,7 @@ public class DMLConfig
 	public static final String GPU_MEMORY_ALLOCATOR = "sysml.gpu.memory.allocator"; // String to specify the memory allocator to use. Supported values are: cuda, unified_memory
 	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
 	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
+	public static final String GPU_FORCE_MEMSET_ZERO = "sysml.gpu.force.memSetZero";
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysml.gpu.eviction.shadow.bufferSize";
 	public static final String GPU_RECOMPUTE_ACTIVATIONS = "sysml.gpu.recompute.activations";
 
@@ -140,6 +141,7 @@ public class DMLConfig
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
 		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
+		_defaultVals.put(GPU_FORCE_MEMSET_ZERO,  "true" );
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.5" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
@@ -431,7 +433,7 @@ public class DMLConfig
 				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
 				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
 				COMPRESSED_LINALG, 
-				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
+				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS, GPU_FORCE_MEMSET_ZERO,
 				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
 				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, EVICTION_SHADOW_BUFFERSIZE,
 				GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR, GPU_RECOMPUTE_ACTIVATIONS, FORCE_LSTM_CUDNN

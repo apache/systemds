@@ -57,6 +57,7 @@ public class GPUMemoryManager {
 	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10, 11}; // Avoids printing too much text while debugging
 	
 	private final boolean PRINT_GPU_MEMORY_INFO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
+	public static boolean GPU_FORCE_MEMSET_ZERO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.GPU_FORCE_MEMSET_ZERO);
 	
 	protected final GPUMemoryAllocator allocator;
 	/*****************************************************************************************/
@@ -141,6 +142,7 @@ public class GPUMemoryManager {
 	private static final double WARN_UTILIZATION_FACTOR = 0.7;
 	
 	public GPUMemoryManager(GPUContext gpuCtx) {
+		GPU_FORCE_MEMSET_ZERO = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.GPU_FORCE_MEMSET_ZERO);
 		matrixMemoryManager = new GPUMatrixMemoryManager(this);
 		lazyCudaFreeMemoryManager = new GPULazyCudaFreeMemoryManager(this);
 		String allocatorType = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.GPU_MEMORY_ALLOCATOR);
@@ -361,10 +363,20 @@ public class GPUMemoryManager {
 					+ toString());
 		}
 		
-		long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
-		cudaMemset(A, 0, size);
-		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
+		if(GPU_FORCE_MEMSET_ZERO) {
+			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
+			cudaMemset(A, 0, size);
+			addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
+		}
 		return A;
+	}
+	
+	public static void postAllocateMemset0(Pointer A, long size, String opcode) {
+		if(!GPU_FORCE_MEMSET_ZERO) {
+			long t0 = ConfigurationManager.isStatistics() ? System.nanoTime() : 0;
+			cudaMemset(A, 0, size);
+			addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
+		}
 	}
 	
 	private int worstCaseContiguousMemorySizeCompare(GPUObject o1, GPUObject o2) {
@@ -553,7 +565,7 @@ public class GPUMemoryManager {
 	 * @param instructionLevelTimer member of GPUInstruction
 	 * @param startTime start time
 	 */
-	private void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
+	private static void addMiscTime(String opcode, LongAdder globalGPUTimer, LongAdder globalGPUCounter, String instructionLevelTimer, long startTime) {
 		if(ConfigurationManager.isStatistics()) {
 			long totalTime = System.nanoTime() - startTime;
 			globalGPUTimer.add(totalTime);

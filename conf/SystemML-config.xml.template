@@ -121,4 +121,7 @@
    
    <!-- Should SystemML runtime force the lstm builtin functions to use the CuDNN kernels (default: true) -->
    <sysml.gpu.lstm.force.cudnn>true</sysml.gpu.lstm.force.cudnn>
+   
+   <!-- Should SystemML GPU memory manager force memSet(0) for the allocated arrays (default: true) -->
+   <sysml.gpu.force.memSetZero>true</sysml.gpu.force.memSetZero>
 </root>

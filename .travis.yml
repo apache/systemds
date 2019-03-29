@@ -46,7 +46,8 @@ before_script:
 
 script:
 #  - mvn clean verify jacoco:report coveralls:report
-  - mvn clean verify
+# The -q parameter tells mvn not to display anything other than ERROR level log messages. This is required because travis kills the job after the log length exceeds its maximum log length (usually 4 MB).
+  - mvn -q clean verify
 
 after_success:
 #  -  mvn test jacoco:report coveralls:report

@@ -75,6 +75,11 @@ public class PreparedScript implements ConfigurableAPI
 	private final HashSet<String> _outVarnames;
 	private final HashMap<String,Data> _inVarReuse;
 	
+	private String name = "";
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 	//internal state (reused)
 	private final Program _prog;
 	private final LocalVariableMap _vars;
@@ -130,6 +135,19 @@ public class PreparedScript implements ConfigurableAPI
 		_dmlconf = dmlconf;
 		_cconf = cconf;
 	}
+	
+	public void clearPinnedData() {
+		this._inVarReuse.clear();
+	}
+	
+	public boolean hasPinnedData() { 
+		return _inVarReuse.keySet().size() > 0; 
+	}
+	
+	public void setGpuContext(GPUContext gCtx) { 
+		this._gpuCtx.set(0, gCtx); 
+	}
+	
 	
 	/**
 	 * Sets a boolean flag indicating if runtime statistics should be gathered

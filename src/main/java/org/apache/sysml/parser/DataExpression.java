@@ -44,6 +44,7 @@ import org.apache.sysml.runtime.util.UtilFunctions;
 import org.apache.sysml.utils.JSONHelper;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONObject;
+import org.apache.sysml.parser.Expression.DataOp;
 
 
 public class DataExpression extends DataIdentifier 

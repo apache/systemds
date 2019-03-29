@@ -370,6 +370,57 @@ public class Connection implements Closeable
 	// Read matrices
 	////////////////////////////////////////////
 	
+	public MatrixBlock readMatrix(String fname) throws IOException {
+		try {
+			String fnamemtd = DataExpression.getMTDFileName(fname);
+			JSONObject jmtd = new DataExpression().readMetadataFile(fnamemtd, false);
+
+			//parse json meta data
+			long rows = jmtd.getLong(DataExpression.READROWPARAM);
+			long cols = jmtd.getLong(DataExpression.READCOLPARAM);
+			int brlen = jmtd.containsKey(DataExpression.ROWBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.ROWBLOCKCOUNTPARAM) : -1;
+			int bclen = jmtd.containsKey(DataExpression.COLUMNBLOCKCOUNTPARAM)?
+					jmtd.getInt(DataExpression.COLUMNBLOCKCOUNTPARAM) : -1;
+			long nnz = jmtd.containsKey(DataExpression.READNNZPARAM)?
+					jmtd.getLong(DataExpression.READNNZPARAM) : -1;
+			String format = jmtd.getString(DataExpression.FORMAT_TYPE);
+			InputInfo iinfo = InputInfo.stringExternalToInputInfo(format);
+			return readMatrix(fname, iinfo, rows, cols, brlen, bclen, nnz);
+		} catch (Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
+	/**
+	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
+	 * NOTE: this call currently only supports default configurations for CSV.
+	 *
+	 * @param fname the filename of the input matrix
+	 * @param iinfo InputInfo object
+	 * @param rows number of rows in the matrix
+	 * @param cols number of columns in the matrix
+	 * @param brlen number of rows per block
+	 * @param bclen number of columns per block
+	 * @param nnz number of non-zero values, -1 indicates unknown
+	 * @return matrix as a two-dimensional double array
+	 * @throws IOException if IOException occurs
+	 */
+	public MatrixBlock readMatrix(String fname, InputInfo iinfo, long rows, long cols, int brlen, int bclen, long nnz)
+			throws IOException
+	{
+		setLocalConfigs();
+
+		try {
+			MatrixReader reader = MatrixReaderFactory.createMatrixReader(iinfo);
+			return reader.readMatrixFromHDFS(fname, rows, cols, brlen, bclen, nnz);
+
+		}
+		catch(Exception ex) {
+			throw new IOException(ex);
+		}
+	}
+	
 	/**
 	 * Reads an input matrix in arbitrary format from HDFS into a dense double array.
 	 * NOTE: this call currently only supports default configurations for CSV.

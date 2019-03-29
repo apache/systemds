@@ -131,6 +131,10 @@ public class LocalVariableMap implements Cloneable
 			put(kv.getKey(), kv.getValue());
 		}
 	}
+	
+	public void putAll(LocalVariableMap vars) { 
+		putAll(vars.localMap); 
+	}
 
 	public Data remove( String name ) {
 		Data ret = localMap.remove( name );

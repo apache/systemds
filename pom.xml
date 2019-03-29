@@ -72,6 +72,7 @@
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
+		<serving.scope>provided</serving.scope>
 		<jcuda.version>0.9.0d</jcuda.version>
 		<!-- OS-specific JVM arguments for running integration tests -->
 		<integrationTestExtraJVMArgs />
@@ -1257,6 +1258,36 @@
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>3.2.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-http_2.11</artifactId>
+		    <version>10.1.3</version>
+		    <scope>${serving.scope}</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-actor_2.11</artifactId>
+		    <version>2.5.14</version>
+			<scope>${serving.scope}</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-stream_2.11</artifactId>
+		    <version>2.5.14</version>
+			<scope>${serving.scope}</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.typesafe</groupId>
+		    <artifactId>config</artifactId>
+		    <version>1.2.0</version>
+			<scope>${serving.scope}</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.typesafe.akka</groupId>
+		    <artifactId>akka-http-spray-json-experimental_2.11</artifactId>
+		    <version>2.4.11.2</version>
+			<scope>${serving.scope}</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.jcuda</groupId>

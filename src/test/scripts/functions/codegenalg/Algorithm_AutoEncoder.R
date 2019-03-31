@@ -51,6 +51,7 @@ W1_rand = readMM(paste(args[1], "W1_rand.mtx", sep=""));
 W2_rand = readMM(paste(args[1], "W2_rand.mtx", sep=""));
 W3_rand = readMM(paste(args[1], "W3_rand.mtx", sep=""));
 W4_rand = readMM(paste(args[1], "W4_rand.mtx", sep=""));
+order_rand = readMM(paste(args[1], "order_rand.mtx", sep=""));
 
 num_hidden1 = as.integer(args[2])    #$H1
 num_hidden2 = as.integer(args[3])    #$H2
@@ -68,11 +69,11 @@ n = nrow(X)
 m = ncol(X)
 
 #randomly reordering rows
-permut = table(seq(from=1,to=n,by=1), order(runif(n, min=0, max=1)))
+#permut = table(seq(from=1,to=n,by=1), order(runif(n, min=0, max=1)))
+permut = table(seq(from=1,to=n,by=1), order(order_rand))
 permut = as.data.frame.matrix(permut)
 permut = data.matrix(permut)
 X = (permut %*% X)
-
 #z-transform, whitening operator is better
 means = t(as.matrix(colSums(X)))/n
 csx2 = t(as.matrix(colSums(X^2)))/n
@@ -82,13 +83,13 @@ X = (X - matrix(1, nrow(X),1) %*% means)/(matrix(1,nrow(X),1) %*% stds)
 #W1 = sqrt(6)/sqrt(m + num_hidden1) * t(matrix(data=1,m, num_hidden1) * runif(m, min=-1, max=1))
 W1 = sqrt(6)/sqrt(m + num_hidden1) * W1_rand
 b1 = matrix(0, num_hidden1, 1)
-#W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * t(matrix(data=1,num_hidden1, num_hidden2) * runif(num_hidden1, min=-1, max=1)) #Rand(rows=num_hidden2, cols=num_hidden1, min=-1, max=1, pdf="uniform")
+#W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * t(matrix(data=1,num_hidden1, num_hidden2) * runif(num_hidden1, min=-1, max=1))
 W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * W2_rand
 b2 = matrix(0, num_hidden2, 2)
-#W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * t(matrix(data=1,num_hidden2, num_hidden1) * runif(num_hidden2, min=-1, max=1)) #Rand(rows=num_hidden1, cols=num_hidden2, min=-1, max=1, pdf="uniform")
+#W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * t(matrix(data=1,num_hidden2, num_hidden1) * runif(num_hidden2, min=-1, max=1))
 W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * W3_rand
 b3 = matrix(0, num_hidden1, 1)
-#W4 = sqrt(6)/sqrt(num_hidden2 + m) * t(matrix(data=1,num_hidden1,m) * runif(num_hidden1, min=-1, max=1)) #Rand(rows=m, cols=num_hidden1, min=-1, max=1, pdf="uniform")
+#W4 = sqrt(6)/sqrt(num_hidden2 + m) * t(matrix(data=1,num_hidden1,m) * runif(num_hidden1, min=-1, max=1))
 W4 = sqrt(6)/sqrt(num_hidden2 + m) * W4_rand
 b4 = matrix(0, m, 1)
 
@@ -123,7 +124,6 @@ while( iter < max_iterations ){
     #E = tmp_ff[9]
     # inputs: X, W1, b1, W2, b2, W3, b3, W4, b4, X_batch
     H1_in = t(W1 %*% t(X_batch) + b1 %*% matrix(1,ncol(b1),nrow(X_batch)))
-
     H1 = func(H1_in)
     H1_prime = func1(H1_in)
 
@@ -138,6 +138,7 @@ while( iter < max_iterations ){
     Yhat_in = t(W4 %*% t(H3) + b4%*% matrix(1,ncol(b4),nrow(H3)))
     Yhat = func(Yhat_in)
     Yhat_prime = func1(Yhat_in)
+
     E = Yhat - X_batch
 
     #  1        2           3      4        5         6        7      8
@@ -164,10 +165,9 @@ while( iter < max_iterations ){
     W2_grad = t(delta2) %*% H1
     W1_grad = t(delta1) %*% X_batch
 
-    o = obj(E)
+    ob = obj(E)
     epochs = iter / num_iters_per_epoch
-    #print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", epochs, beg, end, o)
-    print(table(epochs, o, deparse.level=2), zero.print = ".")
+    #print(table(epochs, ob), zero.print = "0")
 
     #update
     local_step = step / nrow(X_batch)
@@ -220,11 +220,12 @@ while( iter < max_iterations ){
 
         full_o = obj(full_E)
         epochs = iter %/% num_iters_per_epoch
-        print(table(epochs, full_o, deparse.level=2), zero.print=".")
+        #print(table(epochs, full_o, deparse.level=2), zero.print=".")
         #print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
     }
 }
 
+#print.table(W1, digits=3)
 writeMM(as(W1,"CsparseMatrix"), paste(args[6], "W1", sep=""));
 writeMM(as(b1,"CsparseMatrix"), paste(args[6], "b1", sep=""));
 writeMM(as(W2,"CsparseMatrix"), paste(args[6], "W2", sep=""));

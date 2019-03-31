@@ -150,11 +150,17 @@ num_hidden1 = $H1
 num_hidden2 = $H2
 max_epochs = $EPOCH
 W1_rand = read($W1_rand)
+W2_rand = read($W2_rand)
+W3_rand = read($W3_rand)
+W4_rand = read($W4_rand)
+order_rand = read($order_rand)
+
 n = nrow(X)
 m = ncol(X)
 
 #randomly reordering rows
-permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
+#permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
+permut = table(seq(1,n,1), order(target=order_rand, by=1, index.return=TRUE), n, n)
 X = permut %*% X
 
 #z-transform, whitening operator is better
@@ -164,11 +170,11 @@ X = (X - means)/stds
 
 W1 = sqrt(6)/sqrt(m + num_hidden1) * W1_rand #Rand(rows=num_hidden1, cols=m, min=-1, max=1, pdf="uniform")
 b1 = matrix(0, rows=num_hidden1, cols=1)
-W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * Rand(rows=num_hidden2, cols=num_hidden1, min=-1, max=1, pdf="uniform")
+W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * W2_rand #Rand(rows=num_hidden2, cols=num_hidden1, min=-1, max=1, pdf="uniform")
 b2 = matrix(0, rows=num_hidden2, cols=1)
-W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * Rand(rows=num_hidden1, cols=num_hidden2, min=-1, max=1, pdf="uniform")
+W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * W3_rand #Rand(rows=num_hidden1, cols=num_hidden2, min=-1, max=1, pdf="uniform")
 b3 = matrix(0, rows=num_hidden1, cols=1)
-W4 = sqrt(6)/sqrt(num_hidden2 + m) * Rand(rows=m, cols=num_hidden1, min=-1, max=1, pdf="uniform")
+W4 = sqrt(6)/sqrt(num_hidden2 + m) * W4_rand #Rand(rows=m, cols=num_hidden1, min=-1, max=1, pdf="uniform")
 b4 = matrix(0, rows=m, cols=1)
 
 upd_W1 = matrix(0, rows=nrow(W1), cols=ncol(W1))

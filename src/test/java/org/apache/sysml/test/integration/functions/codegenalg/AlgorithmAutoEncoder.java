@@ -20,7 +20,9 @@
 package org.apache.sysml.test.integration.functions.codegenalg;
 
 import java.io.File;
+import java.util.HashMap;
 
+import org.apache.sysml.runtime.matrix.data.MatrixValue;
 import org.junit.Test;
 import org.apache.sysml.api.DMLScript;
 import org.apache.sysml.api.DMLScript.RUNTIME_PLATFORM;
@@ -45,15 +47,16 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 
     private enum TestType { DEFAULT,FUSE_ALL,FUSE_NO_REDUNDANCY }
 
-    private final static int rows = 2468;
+    private final static int rows = 2468;//2468;
     private final static int cols = 784;
 
     private final static double sparsity1 = 0.7; //dense
     private final static double sparsity2 = 0.1; //sparse
+    private final static double eps       = 1e-5;
 
     private final static int H1 = 500;
     private final static int H2 = 2;
-    private final static double epochs = 2;
+    private final static double epochs = 100;
 
     private TestType currentTestType = TestType.DEFAULT;
 
@@ -70,6 +73,102 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
     public void testAutoEncoder256DenseCP() {
         runAutoEncoderTest(256, false, false, ExecType.CP, TestType.DEFAULT);
     }
+
+    @Test
+    public void testAutoEncoder256DenseRewritesCP() {
+        runAutoEncoderTest(256, false, true, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder256SparseCP() {
+        runAutoEncoderTest(256, true, false, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder256SparseRewritesCP() {
+        runAutoEncoderTest(256, true, true, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseCP() {
+        runAutoEncoderTest(512, false, false, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesCP() {
+        runAutoEncoderTest(512, false, true, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseCP() {
+        runAutoEncoderTest(512, true, false, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesCP() {
+        runAutoEncoderTest(512, true, true, ExecType.CP, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder256DenseRewritesSpark() {
+        runAutoEncoderTest(256, false, true, ExecType.SPARK, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder256SparseRewritesSpark() {
+        runAutoEncoderTest(256, true, true, ExecType.SPARK, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesSpark() {
+        runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesSpark() {
+        runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.DEFAULT);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesCPFuseAll() {
+        runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_ALL);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesCPFuseAll() {
+        runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_ALL);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesSparkFuseAll() {
+        runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_ALL);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesSparkFuseAll() {
+        runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_ALL);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesCPFuseNoRedundancy() {
+        runAutoEncoderTest(512, false, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesCPFuseNoRedundancy() {
+        runAutoEncoderTest(512, true, true, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
+    }
+
+    @Test
+    public void testAutoEncoder512DenseRewritesSparkFuseNoRedundancy() {
+        runAutoEncoderTest(512, false, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+    }
+
+    @Test
+    public void testAutoEncoder512SparseRewritesSparkFuseNoRedundancy() {
+        runAutoEncoderTest(512, true, true, ExecType.SPARK, TestType.FUSE_NO_REDUNDANCY);
+    }
+
 
     private void runAutoEncoderTest(int batchsize, boolean sparse, boolean rewrites, ExecType instType, TestType testType)
     {
@@ -91,6 +190,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
                     "H1="+H1, "H2="+H2, "EPOCH="+epochs, "BATCH="+batchsize,
                     "W1_rand="+input("W1_rand"),"W2_rand="+input("W2_rand"),
                     "W3_rand="+input("W3_rand"), "W4_rand="+input("W4_rand"),
+                    "order_rand="+input("order_rand"),
                     "W1_out="+output("W1"), "b1_out="+output("b1"),
                     "W2_out="+output("W2"), "b2_out="+output("b2"),
                     "W3_out="+output("W3"), "b3_out="+output("b3"),
@@ -104,18 +204,45 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
             writeInputMatrixWithMTD("X", X, true);
 
             //generate rand matrices for W1, W2, W3, W4 here itself for passing onto both DML and R scripts
-            double[][] W1_rand = getRandomMatrix(H1, cols, 0, 1, sparse?sparsity2:sparsity1, 714);
+            double[][] W1_rand = getRandomMatrix(H1, cols, 0, 1, sparse?sparsity2:sparsity1, 800);
             writeInputMatrixWithMTD("W1_rand", W1_rand, true);
-            double[][] W2_rand = getRandomMatrix(H2, H1, 0, 1, sparse?sparsity2:sparsity1, 714);
+            double[][] W2_rand = getRandomMatrix(H2, H1, 0, 1, sparse?sparsity2:sparsity1, 900);
             writeInputMatrixWithMTD("W2_rand", W2_rand, true);
-            double[][] W3_rand = getRandomMatrix(H1, H2, 0, 1, sparse?sparsity2:sparsity1, 714);
+            double[][] W3_rand = getRandomMatrix(H1, H2, 0, 1, sparse?sparsity2:sparsity1, 589);
             writeInputMatrixWithMTD("W3_rand", W3_rand, true);
-            double[][] W4_rand = getRandomMatrix(cols, H1, 0, 1, sparse?sparsity2:sparsity1, 714);
+            double[][] W4_rand = getRandomMatrix(cols, H1, 0, 1, sparse?sparsity2:sparsity1, 150);
             writeInputMatrixWithMTD("W4_rand", W4_rand, true);
+            double[][] order_rand = getRandomMatrix(rows, 1, 0, 1, sparse?sparsity2:sparsity1, 143);
+            writeInputMatrixWithMTD("order_rand", order_rand, true); //for the permut operation on input X
 
             //run script
             runTest(true, false, null, -1);
-            //runRScript(true);
+            runRScript(true);
+
+            HashMap<MatrixValue.CellIndex, Double> dmlW1 = readDMLMatrixFromHDFS("W1");
+            HashMap<MatrixValue.CellIndex, Double> dmlW2 = readDMLMatrixFromHDFS("W2");
+            HashMap<MatrixValue.CellIndex, Double> dmlW3 = readDMLMatrixFromHDFS("W3");
+            HashMap<MatrixValue.CellIndex, Double> dmlW4 = readDMLMatrixFromHDFS("W4");
+            HashMap<MatrixValue.CellIndex, Double> dmlb1 = readDMLMatrixFromHDFS("b1");
+            HashMap<MatrixValue.CellIndex, Double> dmlb2 = readDMLMatrixFromHDFS("b2");
+            HashMap<MatrixValue.CellIndex, Double> dmlb3 = readDMLMatrixFromHDFS("b3");
+            HashMap<MatrixValue.CellIndex, Double> dmlb4 = readDMLMatrixFromHDFS("b4");
+            HashMap<MatrixValue.CellIndex, Double> rW1  = readRMatrixFromFS("W1");
+            HashMap<MatrixValue.CellIndex, Double> rW2  = readRMatrixFromFS("W2");
+            HashMap<MatrixValue.CellIndex, Double> rW3  = readRMatrixFromFS("W3");
+            HashMap<MatrixValue.CellIndex, Double> rW4  = readRMatrixFromFS("W4");
+            HashMap<MatrixValue.CellIndex, Double> rb1  = readRMatrixFromFS("b1");
+            HashMap<MatrixValue.CellIndex, Double> rb2  = readRMatrixFromFS("b2");
+            HashMap<MatrixValue.CellIndex, Double> rb3  = readRMatrixFromFS("b3");
+            HashMap<MatrixValue.CellIndex, Double> rb4  = readRMatrixFromFS("b4");
+            TestUtils.compareMatrices(dmlW1, rW1, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlW2, rW2, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlW3, rW3, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlW4, rW4, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlb1, rb1, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlb2, rb2, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlb3, rb3, eps, "Stat-DML", "Stat-R");
+            TestUtils.compareMatrices(dmlb4, rb4, eps, "Stat-DML", "Stat-R");
 
             assertTrue(heavyHittersContainsSubString("spoof")
                     || heavyHittersContainsSubString("sp_spoof"));

@@ -72,7 +72,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		}
 		
 		//sketch propagation for intermediates other than final result
-		h2.setData(root.getRight().isLeaf() ? root.getRight().getData() : null);
+		if( h2 != null && root.getRight() != null )
+			h2.setData(root.getRight().isLeaf() ? root.getRight().getData() : null);
 		MatrixHistogram outMap = MatrixHistogram
 			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSynopsis(outMap);

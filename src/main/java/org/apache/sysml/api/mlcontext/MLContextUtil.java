@@ -1255,7 +1255,7 @@ public final class MLContextUtil {
 			}
 			scriptExecutor.setMaintainSymbolTable(mlCtx.isMaintainSymbolTable());
 
-			Long time = System.currentTimeMillis();
+			Long time = new Long(System.currentTimeMillis());
 			if ((script.getName() == null) || (script.getName().equals(""))) {
 				script.setName(time.toString());
 			}

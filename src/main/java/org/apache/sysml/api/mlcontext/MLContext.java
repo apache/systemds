@@ -334,7 +334,7 @@ public class MLContext implements ConfigurableAPI
 		try {
 			executionScript = script;
 
-			Long time = new Long((new Date()).getTime());
+			Long time = System.currentTimeMillis();
 			if ((script.getName() == null) || (script.getName().equals(""))) {
 				script.setName(time.toString());
 			}

@@ -66,6 +66,10 @@ public class IDSequence
 	}
 	
 	public void reset() {
-		_current.set(0);
+		reset(0);
+	}
+	
+	public void reset(long value) {
+		_current.set(value);
 	}
 }

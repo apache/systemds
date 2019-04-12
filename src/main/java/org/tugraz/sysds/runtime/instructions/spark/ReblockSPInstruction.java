@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,6 +39,9 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesMM;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -48,7 +51,9 @@ import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 
-public class ReblockSPInstruction extends UnarySPInstruction {
+import java.util.ArrayList;
+
+public class ReblockSPInstruction extends UnarySPInstruction implements LineageTraceable {
 	private int brlen;
 	private int bclen;
 	private boolean outputEmptyBlocks;
@@ -100,7 +105,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			if( input1.getDataType() == DataType.MATRIX )
 				Recompiler.executeInMemoryMatrixReblock(sec, input1.getName(), output.getName());
 			else if( input1.getDataType() == DataType.FRAME )
-				Recompiler.executeInMemoryFrameReblock(sec, input1.getName(), output.getName());	
+				Recompiler.executeInMemoryFrameReblock(sec, input1.getName(), output.getName());
 			return;
 		}
 		
@@ -142,8 +147,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			String delim = ",";
 			boolean fill = false;
 			double fillValue = 0;
-			if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV 
-			   && mo.getFileFormatProperties() != null ) 
+			if(mo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
+			   && mo.getFileFormatProperties() != null )
 			{
 				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) mo.getFileFormatProperties();
 				hasHeader = props.hasHeader();
@@ -156,7 +161,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			csvInstruction.processInstruction(sec);
 			return;
 		}
-		else if(iinfo == InputInfo.BinaryCellInputInfo) 
+		else if(iinfo == InputInfo.BinaryCellInputInfo)
 		{
 			JavaPairRDD<MatrixIndexes, MatrixCell> binaryCells = (JavaPairRDD<MatrixIndexes, MatrixCell>) sec.getRDDHandleForMatrixObject(mo, iinfo);
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), binaryCells, mcOut, outputEmptyBlocks);
@@ -165,7 +170,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}
-		else if(iinfo == InputInfo.BinaryBlockInputInfo) 
+		else if(iinfo == InputInfo.BinaryBlockInputInfo)
 		{
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
@@ -190,18 +195,18 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processFrameReblockInstruction(SparkExecutionContext sec, InputInfo iinfo) 
+	protected void processFrameReblockInstruction(SparkExecutionContext sec, InputInfo iinfo)
 	{
 		FrameObject fo = sec.getFrameObject(input1.getName());
 		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
 		
 		if(iinfo == InputInfo.TextCellInputInfo ) {
 			//get the input textcell rdd
-			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>) 
+			JavaPairRDD<LongWritable, Text> lines = (JavaPairRDD<LongWritable, Text>)
 				sec.getRDDHandleForFrameObject(fo, iinfo);
 			
 			//convert textcell to binary block
-			JavaPairRDD<Long, FrameBlock> out = 
+			JavaPairRDD<Long, FrameBlock> out =
 				FrameRDDConverterUtils.textCellToBinaryBlock(sec.getSparkContext(), lines, mcOut, fo.getSchema());
 			
 			//put output RDD handle into symbol table
@@ -217,7 +222,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			boolean fill = false;
 			double fillValue = 0;
 			if(fo.getFileFormatProperties() instanceof FileFormatPropertiesCSV
-				&& fo.getFileFormatProperties() != null ) 
+				&& fo.getFileFormatProperties() != null )
 			{
 				FileFormatPropertiesCSV props = (FileFormatPropertiesCSV) fo.getFileFormatProperties();
 				hasHeader = props.hasHeader();
@@ -233,5 +238,18 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			throw new DMLRuntimeException("The given InputInfo is not implemented "
 				+ "for ReblockSPInstruction: " + InputInfo.inputInfoToString(iinfo));
 		}
+	}
+
+	@Override
+	public LineageItem getLineageItem() {
+		ArrayList<LineageItem> lineages = new ArrayList<>();
+		if (input1 != null)
+			lineages.add(Lineage.getOrCreate(input1));
+		if (input2 != null)
+			lineages.add(Lineage.getOrCreate(input2));
+		if (input3 != null)
+			lineages.add(Lineage.getOrCreate(input3));
+		
+		return new LineageItem(output, lineages, getOpcode());
 	}
 }

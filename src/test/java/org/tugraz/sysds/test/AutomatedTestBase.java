@@ -706,6 +706,10 @@ public abstract class AutomatedTestBase
 		return TestUtils.readDMLScalarFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
 
+	protected static String readDMLLineageFromHDFS(String fileName) {
+		return TestUtils.readDMLString(baseDirectory + OUTPUT_DIR + fileName + ".lineage");
+	}
+
 
 	protected static FrameBlock readDMLFrameFromHDFS(String fileName, InputInfo iinfo) throws IOException {
 		//read frame data from hdfs

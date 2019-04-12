@@ -122,7 +122,15 @@ public class CLIOptionsParserTest {
 		Assert.assertEquals(true, o.stats);
 	}
 
-	@Test
+    @Test
+    public void testLineage() throws Exception {
+        String cl = "systemml -f test.dml -lineage";
+        String[] args = cl.split(" ");
+        DMLOptions o = DMLOptions.parseCLArguments(args);
+        Assert.assertEquals(true, o.lineage);
+    }
+
+    @Test
 	public void testGPUForce() throws Exception {
 		String cl = "systemml -f test.dml -gpu force";
 		String[] args = cl.split(" ");

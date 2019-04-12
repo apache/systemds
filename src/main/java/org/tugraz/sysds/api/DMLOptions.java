@@ -57,6 +57,7 @@ public class DMLOptions {
 	public String               filePath      = null;             // path to script
 	public String               script        = null;             // the script itself
 	public boolean              help          = false;            // whether to print the usage option
+	public boolean              lineage       = false;            // whether compute lineage trace
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -81,6 +82,7 @@ public class DMLOptions {
 			", filePath='" + filePath + '\'' +
 			", script='" + script + '\'' +
 			", help=" + help +
+			", lineage=" + lineage +
 			'}';
 	}
 	
@@ -99,6 +101,7 @@ public class DMLOptions {
 
 		DMLOptions dmlOptions = new DMLOptions(options);
 		dmlOptions.help = line.hasOption("help");
+		dmlOptions.lineage = line.hasOption("lineage");
 		dmlOptions.debug = line.hasOption("debug");
 		dmlOptions.gpu = line.hasOption("gpu");
 		if (dmlOptions.gpu) {
@@ -230,7 +233,9 @@ public class DMLOptions {
 			.isRequired().hasArg().create("s");
 		Option helpOpt = OptionBuilder.withDescription("shows usage message")
 			.create("help");
-		
+		Option lineageOpt = OptionBuilder.withDescription("computes lineage traces")
+			.hasOptionalArg().create("lineage");
+
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
@@ -240,7 +245,8 @@ public class DMLOptions {
 		options.addOption(gpuOpt);
 		options.addOption(debugOpt);
 		options.addOption(pythonOpt);
-		
+		options.addOption(lineageOpt);
+
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()
 			.addOption(scriptOpt).addOption(fileOpt).addOption(cleanOpt).addOption(helpOpt);

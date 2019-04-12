@@ -55,6 +55,14 @@ public class CPOperand
 		_isLiteral = literal;
 	}
 
+	public CPOperand(CPOperand variable){
+		_name = variable._name;
+		_valueType = variable._valueType;
+		_dataType = variable._dataType;
+		_isLiteral = variable._isLiteral;
+		_literal = variable._literal;
+	}
+
 	public String getName() {
 		return _name;
 	}

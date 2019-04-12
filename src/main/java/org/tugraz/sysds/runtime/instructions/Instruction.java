@@ -25,6 +25,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 
 
 public abstract class Instruction 
@@ -235,6 +236,7 @@ public abstract class Instruction
 	 * @param ec execution context
 	 */
 	public void postprocessInstruction(ExecutionContext ec) {
-		//do nothing
+		if (DMLScript.LINEAGE)
+			Lineage.trace(this, ec);
 	}
 }

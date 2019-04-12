@@ -95,7 +95,8 @@ public class DMLScript
 	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                        // number of bytes to use for shadow buffer
 	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                          // fraction of available GPU memory to use
 	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                // GPU memory allocator to use
-	
+	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                  // whether compute lineage trace
+
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
 	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
 	// whether to synchronize GPU after every instruction
@@ -194,6 +195,7 @@ public class DMLScript
 			FORCE_ACCELERATOR   = dmlOptions.forceGPU;
 			EXPLAIN             = dmlOptions.explainType;
 			EXEC_MODE           = dmlOptions.execMode;
+			LINEAGE             = dmlOptions.lineage;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

@@ -80,8 +80,8 @@ public class VariableCPInstruction extends CPInstruction {
 	 *	    allocate a new file object with name FP, and associate it with variable x
 	 *     createvar x FP [dimensions] [formatinfo]
 	 */
-	
-	private enum VariableOperationCode 
+
+	public enum VariableOperationCode
 	{
 		CreateVariable, 
 		AssignVariable, 
@@ -222,11 +222,15 @@ public class VariableCPInstruction extends CPInstruction {
 		return (opcode == VariableOperationCode.RemoveVariable 
 			|| opcode == VariableOperationCode.RemoveVariableAndFile);
 	}
-	
+
 	public boolean isAssignVariable() {
 		return (opcode == VariableOperationCode.AssignVariable);
 	}
-	
+
+	public VariableOperationCode getVariableOpcode() {
+		return this.opcode;
+	}
+
 	public FileFormatProperties getFormatProperties() {
 		return _formatProperties;
 	}

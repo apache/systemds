@@ -213,7 +213,7 @@ public class GPUInstructionParser  extends InstructionParser
 				
 			case ArithmeticBinary:
 				String opcode = InstructionUtils.getOpCode(str);
-				if( opcode.equals("+*") || opcode.equals("-*")  )
+				if( Objects.equals(opcode,"+*") || Objects.equals(opcode,"-*")  )
 					return MatrixMatrixAxpyGPUInstruction.parseInstruction(str);
 				else
 					return ArithmeticBinaryGPUInstruction.parseInstruction(str);

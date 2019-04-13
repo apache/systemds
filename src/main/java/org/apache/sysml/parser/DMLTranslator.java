@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -606,8 +607,8 @@ public class DMLTranslator
 				
 				String execType = ((ExternalFunctionStatement) fstmt)
 						.getOtherParams().get(ExternalFunctionStatement.EXEC_TYPE);
-				boolean isCP = (execType.equals(ExternalFunctionStatement.IN_MEMORY)) ? true : false;
-				
+				boolean isCP = (Objects.equals(execType,ExternalFunctionStatement.IN_MEMORY)) ? true : false;
+			
 				StringBuilder buff = new StringBuilder();
 				buff.append(config.getTextValue(DMLConfig.SCRATCH_SPACE));
 				buff.append(Lop.FILE_SEPARATOR);

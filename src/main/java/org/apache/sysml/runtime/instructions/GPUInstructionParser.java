@@ -19,6 +19,7 @@
 package org.apache.sysml.runtime.instructions;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 import org.apache.sysml.lops.RightIndex;
 import org.apache.sysml.runtime.DMLRuntimeException;

@@ -33,7 +33,7 @@ numFeatures = ncol(D)
 
 # Compute the feature counts for each class
 classFeatureCounts = matrix(0, rows=numClasses, cols=numFeatures)
-parfor (i in 1:numFeatures, opt=CONSTRAINED, mode=REMOTE_MR) {
+parfor (i in 1:numFeatures, opt=CONSTRAINED, mode=REMOTE_SPARK) {
   Col = D[,i]
   classFeatureCounts[,i] = aggregate(target=Col, groups=C, fn="sum")
 }

@@ -32,13 +32,8 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-/**
- * 
- * 
- */
 public class ParForNaiveBayesTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "parfor_naive-bayes";
 	private final static String TEST_DIR = "applications/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForNaiveBayesTest.class.getSimpleName() + "/";

@@ -26,7 +26,7 @@ W = m;
 
 R = matrix(0, rows=n,cols=n); 
 
-parfor( i in 1:(n-1), par=4, mode=REMOTE_MR, opt=NONE )
+parfor( i in 1:(n-1), par=4, mode=REMOTE_SPARK, opt=NONE )
 {
    X = V[,i];                 
    m2X = moment(X,2);

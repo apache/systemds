@@ -33,41 +33,36 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class ParForCorrelationTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "parfor_corr";
 	private final static String TEST_DIR = "applications/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForCorrelationTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 3578;  
-	private final static int cols1 = 20;      // # of columns in each vector  
+	private final static int rows = 3578;
+	private final static int cols1 = 20;      // # of columns in each vector
 	
-	private final static double minVal=0;    // minimum value in each vector 
-	private final static double maxVal=1000; // maximum value in each vector 
+	private final static double minVal=0;    // minimum value in each vector
+	private final static double maxVal=1000; // maximum value in each vector
 
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );
 	}
 
 	@Test
-	public void testForCorrleationSerialSerialCP() 
-	{
+	public void testForCorrleationSerialSerialCP() {
 		runParForCorrelationTest(false, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false, false, false);
 	}
 	
 	@Test
-	public void testParForCorrleationLocalLocalCP() 
-	{
+	public void testParForCorrleationLocalLocalCP() {
 		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false, false, false);
 	}
 	
 	@Test
-	public void testParForCorrleationLocalLocalCPWithStats() 
-	{
+	public void testParForCorrleationLocalLocalCPWithStats() {
 		runParForCorrelationTest(true, PExecMode.LOCAL, PExecMode.LOCAL, ExecType.CP, false, false, true);
 	}
 
@@ -141,14 +136,12 @@ public class ParForCorrelationTest extends AutomatedTestBase
 		double[][] V = getRandomMatrix(rows, cols, minVal, maxVal, 1.0, seed);
 		writeInputMatrix("V", V, true);
 
-		try
-		{
+		try {
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
 			runRScript(true);
 		}
-		finally
-		{
+		finally {
 			DMLScript.STATISTICS = oldStatistics;
 			rtplatform = oldPlatform;
 		}

@@ -25,12 +25,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class L2SVMTest extends AutomatedTestBase 
+@RunWith(value = Parameterized.class)
+public class L2SVMTest extends AutomatedTestBase 
 {
 	protected final static String TEST_DIR = "applications/l2svm/";
 	protected final static String TEST_NAME = "L2SVM";
@@ -61,7 +65,8 @@ public abstract class L2SVMTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testL2SVM()
+	@Test
+	public void testL2SVM()
 	{
 		System.out.println("------------ BEGIN " + TEST_NAME 
 			+ " TEST WITH {" + numRecords + ", " + numFeatures

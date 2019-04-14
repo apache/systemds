@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications.descriptivestats;
+package org.tugraz.sysds.test.applications;
 
 import java.util.HashMap;
 
@@ -28,54 +28,60 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 
-public class BivariateOrdinalOrdinalTest extends AutomatedTestBase 
+public class BivariateScaleScaleTest extends AutomatedTestBase 
 {
-	
-	private final static String TEST_DIR = "applications/descriptivestats/";
-	private final static String TEST_ORDINAL_ORDINAL = "OrdinalOrdinal";
-	private final static String TEST_ORDINAL_ORDINAL_WEIGHTS = "OrdinalOrdinalWithWeightsTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + BivariateOrdinalOrdinalTest.class.getSimpleName() + "/";
 
-	private final static double eps = 1e-9;
-	private final static int rows = 10000;
-	private final static int ncatA = 100; // # of categories in A
-	private final static int ncatB = 75; // # of categories in B
-	private int maxW = 100;    // maximum weight
+	private final static String TEST_DIR = "applications/descriptivestats/";
+	private final static String TEST_SCALE_SCALE = "ScaleScale";
+	private final static String TEST_SCALE_SCALE_WEIGHTS = "ScaleScalePearsonRWithWeightsTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BivariateScaleScaleTest.class.getSimpleName() + "/";
+	
+	private final static double eps = 1e-10;
+	
+	private final static int rows = 100000;      // # of rows in each vector
+	private final static double minVal=0;       // minimum value in each vector 
+	private final static double maxVal=10000;    // maximum value in each vector 
+	private int maxW = 1000;    // maximum weight
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_ORDINAL_ORDINAL, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_ORDINAL_ORDINAL, 
-					new String[] { "Spearman"+".scalar" }));
-		addTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS, 
-				new TestConfiguration(TEST_CLASS_DIR, TEST_ORDINAL_ORDINAL_WEIGHTS, 
-					new String[] { "Spearman"+".scalar" }));
+		addTestConfiguration(TEST_SCALE_SCALE, new TestConfiguration(TEST_CLASS_DIR,
+				TEST_SCALE_SCALE, new String[] { "PearsonR" + ".scalar" }));
+		addTestConfiguration(TEST_SCALE_SCALE_WEIGHTS, new TestConfiguration(
+				TEST_CLASS_DIR, "ScaleScalePearsonRWithWeightsTest",
+				new String[] { "PearsonR" + ".scalar" }));
 	}
 	
 	@Test
-	public void testOrdinalOrdinal() {
-		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL);
+	public void testPearsonR() {
+
+		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
-		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".dml";
-		programArgs = new String[]{"-args", input("A"),
-			Integer.toString(rows), input("B"), output("Spearman")};
+		String SS_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE + ".dml";
+		programArgs = new String[]{"-args",  input("X"), 
+			Integer.toString(rows), input("Y"), output("PearsonR") };
 		
-		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL + ".R";
+		fullRScriptName = SS_HOME + TEST_SCALE_SCALE + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis()+1);
-		TestUtils.floor(A);
-		TestUtils.floor(B);
+		long seed = System.currentTimeMillis();
+		//System.out.println("Seed = " + seed);
+        double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed);
+        double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, seed+1);
 
-		writeInputMatrix("A", A, true);
-		writeInputMatrix("B", B, true);
+		writeInputMatrix("X", X, true);
+		writeInputMatrix("Y", Y, true);
 
-		runTest(true, false, null, -1);
+		boolean exceptionExpected = false;
+		/*
+		 * Expected number of jobs:
+		 */
+		// int expectedNumberOfJobs = 5; // This will cause failure
+		runTest(true, exceptionExpected, null, -1);
 		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
@@ -97,32 +103,40 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testOrdinalOrdinalWithWeights() {
-		TestConfiguration config = getTestConfiguration(TEST_ORDINAL_ORDINAL_WEIGHTS);
+	public void testPearsonRWithWeights() {
+
+		TestConfiguration config = getTestConfiguration(TEST_SCALE_SCALE_WEIGHTS);
 		config.addVariable("rows", rows);
 		loadTestConfiguration(config);
 
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */
-		String OO_HOME = SCRIPT_DIR + TEST_DIR;	
-		fullDMLScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".dml";
-		programArgs = new String[]{"-args", input("A"),
-			Integer.toString(rows), input("B"), input("WM"), output("Spearman")};
-
-		fullRScriptName = OO_HOME + TEST_ORDINAL_ORDINAL_WEIGHTS + ".R";
+		String SS_HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".dml";
+		programArgs = new String[]{"-args",  input("X"),
+			Integer.toString(rows), input("Y"), input("WM"), output("PearsonR") };
+		
+		fullRScriptName = SS_HOME + TEST_SCALE_SCALE_WEIGHTS + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-		double[][] A = getRandomMatrix(rows, 1, 1, ncatA, 1, System.currentTimeMillis());
-		double[][] B = getRandomMatrix(rows, 1, 1, ncatB, 1, System.currentTimeMillis());
+		double[][] X = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
+		double[][] Y = getRandomMatrix(rows, 1, minVal, maxVal, 0.1, System.currentTimeMillis());
 		double[][] WM = getRandomMatrix(rows, 1, 1, maxW, 1, System.currentTimeMillis());
-		TestUtils.floor(A);
-		TestUtils.floor(B);
 		TestUtils.floor(WM);
 
-		writeInputMatrix("A", A, true);
-		writeInputMatrix("B", B, true);
+		writeInputMatrix("X", X, true);
+		writeInputMatrix("Y", Y, true);
 		writeInputMatrix("WM", WM, true);
+		createHelperMatrix();
 		
-		runTest(true, false, null, -1);
+		boolean exceptionExpected = false;
+		/*
+		 * Expected number of jobs:
+		 * Mean etc - 2 jobs (reblock & gmr)
+		 * Cov etc - 2 jobs
+		 * Final output write - 1 job
+		 */
+		//int expectedNumberOfJobs = 6;
+		runTest(true, exceptionExpected, null, -1);
 		runRScript(true);
 		
 		for(String file: config.getOutputFiles())
@@ -141,6 +155,7 @@ public class BivariateOrdinalOrdinalTest extends AutomatedTestBase
 			}
 			TestUtils.compareMatrices(dmlfile, rfile, eps, file+"-DML", file+"-R");
 		}
+
 	}
 	
 }

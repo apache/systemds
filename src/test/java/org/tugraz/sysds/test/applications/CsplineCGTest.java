@@ -24,12 +24,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class CsplineCGTest extends AutomatedTestBase {
+@RunWith(value = Parameterized.class)
+public class CsplineCGTest extends AutomatedTestBase {
     protected final static String TEST_DIR = "applications/cspline/";
     protected final static String TEST_NAME = "CsplineCG";
     protected String TEST_CLASS_DIR = TEST_DIR + CsplineCGTest.class.getSimpleName() + "/";
@@ -51,7 +55,9 @@ public abstract class CsplineCGTest extends AutomatedTestBase {
     public void setUp() {
         addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
-    protected void testCsplineCG()
+
+    @Test
+    public void testCsplineCG()
     {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim
 				+ "} ------------");

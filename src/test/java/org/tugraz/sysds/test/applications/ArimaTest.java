@@ -25,13 +25,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class ArimaTest extends AutomatedTestBase {
+@RunWith(value = Parameterized.class)
+public class ArimaTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/arima_box-jenkins/";
 	protected final static String TEST_NAME1 = "arima";
@@ -70,7 +74,8 @@ public abstract class ArimaTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME2);
 	}
 	
-	protected void testArima() {
+	@Test
+	public void testArima() {
 		System.out.println("------------ BEGIN " + TEST_NAME1 + " TEST WITH {" +
 			max_func_invoc + ", " + 
 			p + ", " + 

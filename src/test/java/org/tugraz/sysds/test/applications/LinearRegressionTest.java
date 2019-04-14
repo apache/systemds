@@ -25,12 +25,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class LinearRegressionTest extends AutomatedTestBase {
+@RunWith(value = Parameterized.class)
+public class LinearRegressionTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/linear_regression/";
 	protected final static String TEST_NAME = "LinearRegression";
@@ -38,7 +42,7 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
 
 	protected int numRecords, numFeatures;
 	protected double sparsity;
-    
+	
 	public LinearRegressionTest(int rows, int cols, double sp) {
 		numRecords = rows;
 		numFeatures = cols;
@@ -55,21 +59,22 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
 	   return Arrays.asList(data);
 	 }
 	 
-    @Override
-    public void setUp()
-    {
-        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-    }
-    
-    protected void testLinearRegression() {
+	@Override
+	public void setUp()
+	{
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
+	
+	@Test
+	public void testLinearRegression() {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numFeatures
 				+ ", " + sparsity + "} ------------");
 		
-    	int rows = numRecords;
-        int cols = numFeatures;
-        
-        getAndLoadTestConfiguration(TEST_NAME);
-        
+		int rows = numRecords;
+		int cols = numFeatures;
+		
+		getAndLoadTestConfiguration(TEST_NAME);
+		
 		List<String> proArgs = new ArrayList<String>();
 		
 		proArgs.add("-stats");
@@ -79,16 +84,16 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
 		proArgs.add(Double.toString(Math.pow(10, -8)));
 		proArgs.add(output("w"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-        
+		
 		fullDMLScriptName = getScript();
 		
 		rCmd = getRCmd(inputDir(), Double.toString(Math.pow(10, -8)), expectedDir());
 
-        double[][] v = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
-        double[][] y = getRandomMatrix(rows, 1, 1, 10, 1, -1);
-        writeInputMatrixWithMTD("v", v, true);
-        writeInputMatrixWithMTD("y", y, true);
-        
+		double[][] v = getRandomMatrix(rows, cols, 0, 1, sparsity, -1);
+		double[][] y = getRandomMatrix(rows, 1, 1, 10, 1, -1);
+		writeInputMatrixWithMTD("v", v, true);
+		writeInputMatrixWithMTD("y", y, true);
+		
 		/*
 		 * Expected number of jobs:
 		 * Rand - 1 job 
@@ -98,11 +103,11 @@ public abstract class LinearRegressionTest extends AutomatedTestBase {
 		 */
 		int expectedNumberOfJobs = 16;
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
-        
+		
 		runRScript(true);
-        
-        HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-        HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
-        TestUtils.compareMatrices(wR, wSYSTEMML, Math.pow(10, -10), "wR", "wSYSTEMML");
-    }
+		
+		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
+		HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
+		TestUtils.compareMatrices(wR, wSYSTEMML, Math.pow(10, -10), "wR", "wSYSTEMML");
+	}
 }

@@ -25,12 +25,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class NaiveBayesTest  extends AutomatedTestBase{
+@RunWith(value = Parameterized.class)
+public class NaiveBayesTest  extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/naive-bayes/";
 	protected final static String TEST_NAME = "naive-bayes";
@@ -67,7 +71,8 @@ public abstract class NaiveBayesTest  extends AutomatedTestBase{
 		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
-	 protected void testNaiveBayes()
+	 @Test
+	 public void testNaiveBayes()
 	 {
 		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRecords + ", "
 					+ numFeatures + ", " + numClasses + ", " + sparsity + "} ------------");

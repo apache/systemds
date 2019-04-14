@@ -25,12 +25,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class LinearLogRegTest extends AutomatedTestBase
+@RunWith(value = Parameterized.class)
+public class LinearLogRegTest extends AutomatedTestBase
 {
 	
     protected final static String TEST_DIR = "applications/linearLogReg/";
@@ -63,7 +67,8 @@ public abstract class LinearLogRegTest extends AutomatedTestBase
     	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
-    protected void testLinearLogReg() {
+    @Test
+    public void testLinearLogReg() {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numFeatures
 				+ ", " + numTestRecords + ", " + sparsity + "} ------------");
 		

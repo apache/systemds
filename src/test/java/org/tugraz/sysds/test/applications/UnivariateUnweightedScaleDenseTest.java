@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications.descriptivestats;
+package org.tugraz.sysds.test.applications;
 
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ExecMode;

@@ -25,48 +25,53 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class CsplineDSTest  extends AutomatedTestBase {
+@RunWith(value = Parameterized.class)
+public class CsplineDSTest  extends AutomatedTestBase {
 
-    protected final static String TEST_DIR = "applications/cspline/";
-    protected final static String TEST_NAME = "CsplineDS";
-    protected String TEST_CLASS_DIR = TEST_DIR + CsplineDSTest.class.getSimpleName() + "/";
+	protected final static String TEST_DIR = "applications/cspline/";
+	protected final static String TEST_NAME = "CsplineDS";
+	protected String TEST_CLASS_DIR = TEST_DIR + CsplineDSTest.class.getSimpleName() + "/";
 
-    protected int numRecords, numDim;
+	protected int numRecords, numDim;
 
-    public CsplineDSTest(int rows, int cols) {
-        numRecords = rows;
-        numDim = 1; // we have cubic spline which is always one dimensional
-    }
+	public CsplineDSTest(int rows, int cols) {
+		numRecords = rows;
+		numDim = 1; // we have cubic spline which is always one dimensional
+	}
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        Object[][] data = new Object[][] {
-                {10, 1},
-                {100, 1},
-                {1000, 1},
-        };
-        return Arrays.asList(data);
-    }
+	@Parameters
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] {
+				{10, 1},
+				{100, 1},
+				{1000, 1},
+		};
+		return Arrays.asList(data);
+	}
 
-    @Override
-    public void setUp() {
-        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-    }
-
-    protected void testCsplineDS()
-    {
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
+	
+	@Test
+	public void testCsplineDS()
+	{
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + numRecords + ", " + numDim
 				+ "} ------------");
 
-        int rows = numRecords;
-        int cols = numDim;
+		int rows = numRecords;
+		int cols = numDim;
 
-        getAndLoadTestConfiguration(TEST_NAME);
+		getAndLoadTestConfiguration(TEST_NAME);
 
 		List<String> proArgs = new ArrayList<String>();
 		proArgs.add("-nvargs");
@@ -81,27 +86,27 @@ public abstract class CsplineDSTest  extends AutomatedTestBase {
 		
 		rCmd = getRCmd(input("X.mtx"), input("Y.mtx"), Double.toString(4.5), expected("pred_y"));
 
-        double[][] X = new double[rows][cols];
+		double[][] X = new double[rows][cols];
 
-        // X axis is given in the increasing order
-        for (int rid = 0; rid < rows; rid++) {
-            for (int cid = 0; cid < cols; cid++) {
-                X[rid][cid] = rid+1;
-            }
-        }
+		// X axis is given in the increasing order
+		for (int rid = 0; rid < rows; rid++) {
+			for (int cid = 0; cid < cols; cid++) {
+				X[rid][cid] = rid+1;
+			}
+		}
 
-        double[][] Y = getRandomMatrix(rows, cols, 0, 5, 1.0, -1);
+		double[][] Y = getRandomMatrix(rows, cols, 0, 5, 1.0, -1);
 
-        writeInputMatrixWithMTD("X", X, true);
-        writeInputMatrixWithMTD("Y", Y, true);
+		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("Y", Y, true);
 
-        runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-        runRScript(true);
+		runRScript(true);
 
-        HashMap<CellIndex, Double> priorR = readRMatrixFromFS("pred_y");
-        HashMap<CellIndex, Double> priorSYSTEMML= readDMLMatrixFromHDFS("pred_y");
+		HashMap<CellIndex, Double> priorR = readRMatrixFromFS("pred_y");
+		HashMap<CellIndex, Double> priorSYSTEMML= readDMLMatrixFromHDFS("pred_y");
 
-        TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "k_R", "k_SYSTEMML");
-    }
+		TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "k_R", "k_SYSTEMML");
+	}
 }

@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -34,7 +35,7 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
 @RunWith(value = Parameterized.class)
-public abstract class WelchTTest extends AutomatedTestBase {
+public class WelchTTest extends AutomatedTestBase {
 	
 	protected final static String TEST_DIR = "applications/welchTTest/";
 	protected final static String TEST_NAME = "welchTTest";
@@ -59,7 +60,8 @@ public abstract class WelchTTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testWelchTTest() {
+	@Test
+	public void testWelchTTest() {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numAttr + ", " + numPosSamples + ", " + numNegSamples + "} ------------");
 		
 		getAndLoadTestConfiguration(TEST_NAME);

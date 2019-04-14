@@ -25,30 +25,34 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class NaiveBayesParforTest  extends AutomatedTestBase{
+@RunWith(value = Parameterized.class)
+public class NaiveBayesParforTest  extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/naive-bayes-parfor/";
 	protected final static String TEST_NAME = "naive-bayes";
 	protected String TEST_CLASS_DIR = TEST_DIR + NaiveBayesParforTest.class.getSimpleName() + "/";
 
 	protected int numRecords, numFeatures, numClasses;
-    protected double sparsity;
-    
-    public NaiveBayesParforTest(int rows, int cols, int nc, double sp) {
+	protected double sparsity;
+
+	public NaiveBayesParforTest(int rows, int cols, int nc, double sp) {
 		numRecords = rows;
 		numFeatures = cols;
 		numClasses = nc;
 		sparsity = sp;
 	}
-    
-    @Parameters
-	 public static Collection<Object[]> data() {
-	   Object[][] data = new Object[][] { 
+
+	@Parameters
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] { 
 			   //sparse tests (sparsity=0.01)
 			   {100, 50, 10, 0.01}, // example running time: 3.5s (dml: .3s)
 			   {1000, 500, 10, 0.01}, // example running time: 5s (dml: .8s)
@@ -59,16 +63,17 @@ public abstract class NaiveBayesParforTest  extends AutomatedTestBase{
 			   {1000, 500, 10, 0.7}, // example running time: 6s (dml: .7s)
 			   {10000, 750, 10, 0.7} // example running time: 61s (dml: 5.6s)
 			   };
-	   return Arrays.asList(data);
-	 }
-	 
-	 @Override
-	 public void setUp() {
-		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-	 }
-	 
-	 protected void testNaiveBayes()
-	 {
+		return Arrays.asList(data);
+	}
+
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
+	
+	@Test
+	public void testNaiveBayes()
+	{
 		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRecords + ", "
 					+ numFeatures + ", " + numClasses + ", " + sparsity + "} ------------");
 		 
@@ -77,9 +82,9 @@ public abstract class NaiveBayesParforTest  extends AutomatedTestBase{
 		 int classes = numClasses;
 		 double sparsity = this.sparsity;
 		 double laplace_correction = 1;
-	        
+
 		 getAndLoadTestConfiguration(TEST_NAME);
-	     
+
 		 List<String> proArgs = new ArrayList<String>();
 		 proArgs.add("-stats");
 		 proArgs.add("-nvargs");

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,26 +17,27 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications.dml;
+package org.tugraz.sysds.test.applications;
+
+import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.tugraz.sysds.test.applications.GLMTest;
+import org.tugraz.sysds.api.mlcontext.Script;
+import org.tugraz.sysds.test.functions.mlcontext.MLContextTestBase;
 
-@RunWith(value = Parameterized.class)
-public class GLMDMLTest extends GLMTest {
+/**
+ * Test the SystemML deep learning library, `nn`.
+ */
+public class NNTest extends MLContextTestBase {
 
-	public GLMDMLTest(int numRecords_, int numFeatures_, int distFamilyType_, double distParam_, int linkType_,
-			double linkPower_, double intercept_, double logFeatureVarianceDisbalance_, double avgLinearForm_,
-			double stdevLinearForm_, double dispersion_) {
-		super(numRecords_, numFeatures_, distFamilyType_, distParam_, linkType_, linkPower_, intercept_,
-				logFeatureVarianceDisbalance_, avgLinearForm_, stdevLinearForm_, dispersion_);
-		TEST_CLASS_DIR = TEST_DIR + GLMDMLTest.class.getSimpleName() + "/";
-	}
+	private static final String TEST_SCRIPT = "scripts/nn/test/run_tests.dml";
+	private static final String ERROR_STRING = "ERROR:";
 
 	@Test
-	public void testGLMDml() {
-		testGLM();
+	public void testNNLibrary() {
+		Script script = dmlFromFile(TEST_SCRIPT);
+		setUnexpectedStdOut(ERROR_STRING);
+		ml.execute(script);
 	}
+
 }

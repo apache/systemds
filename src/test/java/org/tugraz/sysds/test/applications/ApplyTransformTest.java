@@ -27,11 +27,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 
-public abstract class ApplyTransformTest extends AutomatedTestBase{
+@RunWith(value = Parameterized.class)
+public class ApplyTransformTest extends AutomatedTestBase{
 	
 	protected final static String TEST_DIR = "applications/apply-transform/";
 	protected final static String TEST_NAME = "apply-transform";
@@ -65,18 +69,19 @@ public abstract class ApplyTransformTest extends AutomatedTestBase{
 	   return Arrays.asList(data);
 	 }
 
-	 @Override
-		public void setUp() {
-	    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-		}
+	@Override
+	public void setUp() {
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
 
-	    protected void testApplyTransform() {
-		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + X + ", " + missing_value_maps
+	@Test
+	public void testApplyTransform() {
+		System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" + X + ", " + missing_value_maps
 					+ ", " + binning_maps + ", " + dummy_coding_maps + ", " + normalization_maps + "} ------------");
-		 
-		 getAndLoadTestConfiguration(TEST_NAME);
-		 
-		 List<String> proArgs = new ArrayList<String>();
+		
+		getAndLoadTestConfiguration(TEST_NAME);
+		
+		List<String> proArgs = new ArrayList<String>();
 		proArgs.add("-stats");
 		 proArgs.add("-nvargs");
 		 proArgs.add("X=" + sourceDirectory + X);

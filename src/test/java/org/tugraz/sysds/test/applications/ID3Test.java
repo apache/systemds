@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -33,7 +36,8 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Statistics;
 
-public abstract class ID3Test extends AutomatedTestBase
+@RunWith(value = Parameterized.class)
+public class ID3Test extends AutomatedTestBase
 {
 	
     protected final static String TEST_DIR = "applications/id3/";
@@ -60,7 +64,8 @@ public abstract class ID3Test extends AutomatedTestBase
     	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
     
-    protected void testID3() 
+    @Test
+    public void testID3() 
     {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRecords + ", "
 				+ numFeatures + "} ------------");

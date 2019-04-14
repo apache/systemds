@@ -23,12 +23,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-
-public abstract class HITSTest extends AutomatedTestBase 
+public class HITSTest extends AutomatedTestBase 
 {
 	protected final static String TEST_DIR = "applications/hits/";
 	protected final static String TEST_NAME = "HITS";
@@ -39,7 +39,8 @@ public abstract class HITSTest extends AutomatedTestBase
 		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	}
 	
-	protected void testHits() {
+	@Test
+	public void testHits() {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST ------------");
 		
 		int rows = 1000;

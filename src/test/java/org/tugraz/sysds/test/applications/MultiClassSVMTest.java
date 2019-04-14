@@ -25,13 +25,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class MultiClassSVMTest  extends AutomatedTestBase
-{	
+@RunWith(value = Parameterized.class)
+public class MultiClassSVMTest  extends AutomatedTestBase
+{
 	protected final static String TEST_DIR = "applications/m-svm/";
 	protected final static String TEST_NAME = "m-svm";
 	protected String TEST_CLASS_DIR = TEST_DIR + MultiClassSVMTest.class.getSimpleName() + "/";
@@ -73,7 +77,8 @@ public abstract class MultiClassSVMTest  extends AutomatedTestBase
 		 addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
 	 }
 	 
-	 protected void testMultiClassSVM() 
+	 @Test
+	 public void testMultiClassSVM() 
 	 {
 		 System.out.println("------------ BEGIN " + TEST_NAME + " TEST WITH {" +
 				 _numRecords + ", " + 

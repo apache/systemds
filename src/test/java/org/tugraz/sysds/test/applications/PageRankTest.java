@@ -24,12 +24,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-public abstract class PageRankTest extends AutomatedTestBase {
+@RunWith(value = Parameterized.class)
+public class PageRankTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "applications/page_rank/";
 	protected final static String TEST_NAME = "PageRank";
@@ -53,7 +57,8 @@ public abstract class PageRankTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "p" }));
 	}
 
-	protected void testPageRank() {
+	@Test
+	public void testPageRank() {
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRows + ", "
 				+ numCols + "} ------------");
 

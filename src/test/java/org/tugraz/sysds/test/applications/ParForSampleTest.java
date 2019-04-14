@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.applications.parfor;
+package org.tugraz.sysds.test.applications;
 
 import java.util.HashMap;
 import java.util.HashSet;

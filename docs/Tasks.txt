@@ -10,6 +10,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 13 Refactoring test cases into component/integration               OK
  * 14 Complete removal of external functions from all scripts
  * 15 Travis integration w/ subset of tests
+ * 16 Remove instruction patching
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks
@@ -41,6 +42,17 @@ SYSTEMDS-60 Update SystemML improvements
  * 61 Take over cumulative aggregate improvements                     OK
  * 62 Take over sparsity estimation improvements                      OK
  * 63 Take over fixes for transform w/ binning
+
+SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
+ * 71 Basic collection of lineage traces															OK
+ * 72 Serialization and deserialization of lineage traces
+ * 73 Deduplication of lineage traces
+ * 74 Performance features lineage tracing
+ * 75 Reuse cache based on lineage traces
+
+SYSTEMDS-80 Improved distributed operations
+ * 81 Avoid unnecessary replication on rmm
+ * 82 Avoid unnecessary replication on binary
 
 SYSTEMDS-100 Various Fixes
  * 101 Fix spark quantiles w/ multiple queries                        OK

@@ -327,25 +327,14 @@
 					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 
-					<!-- Run (num cores) test harness classes in parallel, each in a separate 
-						process -->
-					<forkCount>1C</forkCount>
-					<reuseForks>true</reuseForks>
-
-					<!-- Third argument prevents Java from popping up lots of windows on 
-						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
-						-Djava.awt.headless=true</argLine>
-
 					<includes>
-						<!-- All tests are integration tests as far as Maven is concerned. -->
+						<include>**/component/*.java</include>
+						
 					</includes>
 
 					<excludes>
-						<exclude>**/slowtest/**</exclude>
-						<exclude>**/integration/**</exclude>
-						<exclude>**/test/unit/**</exclude>
-						<exclude>**/test/gpu/**</exclude>
+						<exclude>**/functions/**.java</exclude>
+						<exclude>**/applications/**.java</exclude>
 					</excludes>
 
 				</configuration>
@@ -355,11 +344,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 
-				<!-- *** HACK ALERT *** HACK ALERT *** HACK ALERT *** -->
-				<!-- Failsafe 2.18 has a bug in computing # cores, so use 2.17 -->
-				<version>2.17</version><!--$NO-MVN-MAN-VER$ -->
-				<!-- *** END HACK *** -->
-
+				<version>2.17</version>
+				
 				<executions>
 					<execution>
 						<goals>
@@ -370,55 +356,16 @@
 				</executions>
 				<configuration>
 
-					<!-- STDERR/STDOUT to individual .txt files instead of console -->
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 
-					<!-- Tests are grouped into suites, one suite per package. -->
-					<parallel>suites</parallel>
-					<threadCount>1</threadCount>
-
-					<!-- 2 processes per test -->
-					<forkCount>0.5C</forkCount>
-					<reuseForks>false</reuseForks>
-
-					<!-- Limit Spark log output-->
-					<systemPropertyVariables>
-					  <log4j.configuration>file:${basedir}/conf/log4j-silent.properties</log4j.configuration>
-					</systemPropertyVariables>
-					
-					<!-- Last argument prevents Java from popping up lots of windows on 
-						MacOS -->
-					<argLine>-Dfile.encoding=UTF-8 -Xmx2g -Xms2g -Xmn200m
-						${integrationTestExtraJVMArgs}
-						-Djava.awt.headless=true</argLine>
-
 					<includes>
-						<include>${gpuTestsPath}</include> <!-- Path for GPU integration tests, enabled for gpuTests profile -->
-						<!-- <include>**/integration/applications/**/*Suite.java</include> -->
-						<!-- <include>**/integration/conversion/*Suite.java</include> -->
-						<!-- <include>**/integration/functions/data/*Suite.java</include> -->
-						<include>**/integration/functions/estim/*Suite.java</include>
-						<include>**/integration/functions/external/*Suite.java</include>
-						<include>**/integration/functions/frame/*Suite.java</include>
-						<include>**/integration/functions/io/*Suite.java</include>
-						<include>**/integration/functions/jmlc/*Suite.java</include>
-						<include>**/integration/functions/misc/*Suite.java</include>
-						<include>**/integration/functions/parfor/*Suite.java</include>
-						<include>**/integration/functions/sparse/*Suite.java</include>
-						<include>**/integration/functions/tensor/*Suite.java</include>
-						<include>**/integration/functions/updateinplace/*Suite.java</include>
-						<include>**/integration/functions/vect/*Suite.java</include>
-						<!-- <include>**/integration/functions/codegenalg/*Suite.java</include> -->
-						<!-- <include>**/integration/functions/**/*Test*.java</include> -->
-						<include>**/integration/mlcontext/*Suite.java</include>
-						<!-- <include>**/integration/mlcontext/algorithms/*Suite.java</include> -->
-						<include>**/integration/scripts/nn/*Suite.java</include>
-						<!-- <include>**/integration/scalability/**/*Test.java</include> -->
+						<include>**/component/*.java</include>
+						
 					</includes>
 
 					<excludes>
-						<exclude>**/slowtest/**</exclude>
-						<exclude>**/integration/functions/data/*Test*.java</exclude>
+						<exclude>**/functions/**.java</exclude>
+						<exclude>**/applications/**.java</exclude>
 					</excludes>
 
 				</configuration>

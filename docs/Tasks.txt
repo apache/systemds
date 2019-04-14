@@ -44,7 +44,7 @@ SYSTEMDS-60 Update SystemML improvements
  * 63 Take over fixes for transform w/ binning
 
 SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
- * 71 Basic collection of lineage traces															OK
+ * 71 Basic collection of lineage traces                              OK
  * 72 Serialization and deserialization of lineage traces
  * 73 Deduplication of lineage traces
  * 74 Performance features lineage tracing
@@ -57,3 +57,4 @@ SYSTEMDS-80 Improved distributed operations
 SYSTEMDS-100 Various Fixes
  * 101 Fix spark quantiles w/ multiple queries                        OK
  * 102 Fix parser issue after refactoring                             OK
+ * 103 Fix handling of builtin functions w/ matching udfs             OK

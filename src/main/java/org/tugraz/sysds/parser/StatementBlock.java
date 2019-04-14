@@ -249,57 +249,57 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 
-    private boolean rIsInlineableFunction( FunctionStatementBlock fblock, DMLProgram prog )
-    {
-    	boolean ret = true;
-
-    	//reject external functions and function bodies with multiple blocks
-    	if(    fblock.getStatements().isEmpty() //empty blocks
-    		|| ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 )
-    	{
+	private boolean rIsInlineableFunction( FunctionStatementBlock fblock, DMLProgram prog )
+	{
+		boolean ret = true;
+	
+		//reject external functions and function bodies with multiple blocks
+		if(    fblock.getStatements().isEmpty() //empty blocks
+			|| ((FunctionStatement)fblock.getStatement(0)).getBody().size() > 1 )
+		{
 			return false;
 		}
-
-    	//reject control flow and non-inlinable functions
-    	if(!fblock.getStatements().isEmpty() && !((FunctionStatement)fblock.getStatement(0)).getBody().isEmpty())
-    	{
-    		StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
-
-    		//reject control flow blocks
-        	if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
+		
+		//reject control flow and non-inlinable functions
+		if(!fblock.getStatements().isEmpty() && !((FunctionStatement)fblock.getStatement(0)).getBody().isEmpty())
+		{
+			StatementBlock stmtBlock = ((FunctionStatement)fblock.getStatement(0)).getBody().get(0);
+		
+			//reject control flow blocks
+			if (stmtBlock instanceof IfStatementBlock || stmtBlock instanceof WhileStatementBlock || stmtBlock instanceof ForStatementBlock)
 				 return false;
-
-        	//recursively check that functions are inlinable
-        	for( Statement s : stmtBlock.getStatements() ){
-        		if( s instanceof AssignmentStatement && ((AssignmentStatement)s).getSource() instanceof FunctionCallIdentifier )
-        		{
-        			AssignmentStatement as = (AssignmentStatement)s;
-        			FunctionCallIdentifier fcall = (FunctionCallIdentifier) as.getSource();
-    				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-    				ret &= rIsInlineableFunction(fblock2, prog);
-    				if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && as.getSource().toString().contains("read"))
-    					return false;
-
-    				if( !ret ) return false;
-        		}
-        		else if( s instanceof MultiAssignmentStatement ) {
-        			MultiAssignmentStatement mas = (MultiAssignmentStatement)s;
-        			if( mas.getSource() instanceof FunctionCallIdentifier ) {
-        				FunctionCallIdentifier fcall = (FunctionCallIdentifier) ((MultiAssignmentStatement)s).getSource();
-        				FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
-        				ret &= rIsInlineableFunction(fblock2, prog);
-        				if( !ret ) return false;
-        			}
-        			else if( mas.getSource() instanceof BuiltinFunctionExpression
-        				&& ((BuiltinFunctionExpression)mas.getSource()).multipleReturns() ) {
-        				return false;
-        			}
-        		}
-        	}
+			
+			//recursively check that functions are inlinable
+			for( Statement s : stmtBlock.getStatements() ){
+				if( s instanceof AssignmentStatement && ((AssignmentStatement)s).getSource() instanceof FunctionCallIdentifier )
+				{
+					AssignmentStatement as = (AssignmentStatement)s;
+					FunctionCallIdentifier fcall = (FunctionCallIdentifier) as.getSource();
+					FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+					ret &= rIsInlineableFunction(fblock2, prog);
+					if( as.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && as.getSource().toString().contains("read"))
+						return false;
+			
+					if( !ret ) return false;
+				}
+				else if( s instanceof MultiAssignmentStatement ) {
+					MultiAssignmentStatement mas = (MultiAssignmentStatement)s;
+					if( mas.getSource() instanceof FunctionCallIdentifier ) {
+						FunctionCallIdentifier fcall = (FunctionCallIdentifier) ((MultiAssignmentStatement)s).getSource();
+						FunctionStatementBlock fblock2 = prog.getFunctionStatementBlock(fcall.getNamespace(), fcall.getName());
+						ret &= rIsInlineableFunction(fblock2, prog);
+						if( !ret ) return false;
+					}
+					else if( mas.getSource() instanceof BuiltinFunctionExpression
+						&& ((BuiltinFunctionExpression)mas.getSource()).multipleReturns() ) {
+						return false;
+					}
+				}
+			}
 		}
-
-    	return ret;
-    }
+	
+		return ret;
+	}
 
 	public static ArrayList<StatementBlock> mergeFunctionCalls(ArrayList<StatementBlock> body, DMLProgram dmlProg) 
 	{

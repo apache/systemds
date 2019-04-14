@@ -129,7 +129,8 @@ public class FunctionCallIdentifier extends DataIdentifier
 		}
 		
 		// Step 5: replace dml-bodied builtin function calls after type inference
-		if( Builtins.contains(_name, true, false) ) {
+		if( Builtins.contains(_name, true, false)
+			&& _namespace.equals(DMLProgram.DEFAULT_NAMESPACE) ) {
 			DataType dt = _paramExprs.get(0).getExpr().getOutput().getDataType();
 			_name = (dt.isMatrix() ? "m_" : "s_") +_name;
 			_namespace = DMLProgram.DEFAULT_NAMESPACE;

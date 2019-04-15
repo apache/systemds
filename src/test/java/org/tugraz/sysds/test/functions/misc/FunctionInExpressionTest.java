@@ -29,9 +29,9 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class FunctionInExpressionTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "FunInExpression1"; 
-	private final static String TEST_NAME2 = "FunInExpression2"; 
-	private final static String TEST_NAME3 = "FunInExpression3"; 
+	private final static String TEST_NAME1 = "FunInExpression1";
+	private final static String TEST_NAME2 = "FunInExpression2";
+	private final static String TEST_NAME3 = "FunInExpression3";
 	private final static String TEST_NAME4 = "FunInExpression4";
 	private final static String TEST_NAME5 = "FunInExpression5";
 	private final static String TEST_NAME6 = "FunInExpression6";

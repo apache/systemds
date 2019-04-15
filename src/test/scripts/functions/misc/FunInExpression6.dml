@@ -19,12 +19,13 @@
 #
 #-------------------------------------------------------------
 
-
-orderExternal = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B)
-			    implemented in (classname="org.apache.sysml.udf.lib.OrderWrapper",exectype="mem")
+foo = function( Matrix[Double] A ) return (Matrix[Double] B) {
+   while(FALSE){}
+	 B = order(target=A, by=7);
+}
 
 A = matrix( 0.07, rows=10, cols=10 );
-R = orderExternal(A*A, 7, TRUE) + 7;
+R = foo(A*A) + 7;
 R = as.matrix( sum( sqrt(R-7) ) );
 
 write( R, $1 ); #ordered input

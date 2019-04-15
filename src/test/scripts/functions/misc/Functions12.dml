@@ -25,10 +25,6 @@ source("./src/test/scripts/functions/misc/FunctionsL2.dml") as Functions
 M1 = matrix("1 2 3 4", rows=2, cols=2)
 M2 = matrix("5 6 7 8", rows=2, cols=2)
 
-# Use imported external function t
-now = Functions::t()
-print("Time is " + now)
-
 # Built-in transpose accessible since imported override
 result = t(M2)
 nothing = Functions::printMatrix(result)

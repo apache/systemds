@@ -19,13 +19,9 @@
 #
 #-------------------------------------------------------------
 
-
-orderExternal = externalFunction(Matrix[Double] A, Integer col, Boolean desc) return (Matrix[Double] B)
-			    implemented in (classname="org.apache.sysml.udf.lib.OrderWrapper",exectype="mem")
-
 foo = function( Matrix[Double] A ) return (Matrix[Double] B) {
    for( i in 1:ncol(A) ) {
-      B = orderExternal(A, i, TRUE);
+      B = order(target=A, by=i);
    }
 }
 

@@ -19,10 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# External function definition override (t built-in matrix transpose)
-t = externalFunction() return (double B) 
-    implemented in (classname="org.apache.sysml.udf.lib.TimeWrapper", exectype="mem")
-
 # Multiple return function definition override (qr built-in matrix QR decomposition)
 qr = function(matrix[double] M) return (double minVal, double maxVal) {
     minVal = min(M)

@@ -28,7 +28,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class ReadMMTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "ReadMMTest";
 	private final static String TEST_DIR = "functions/io/matrixmarket/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ReadMMTest.class.getSimpleName() + "/";

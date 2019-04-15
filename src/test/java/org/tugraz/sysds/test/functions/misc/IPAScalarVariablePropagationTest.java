@@ -74,13 +74,15 @@ public class IPAScalarVariablePropagationTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 
 			//run test, incl expected MR jobs (in case if IPA 0 due to scalar propagation)
-			runTest(true, false, null, IPA ? 0 : 28);
+			runTest(true, false, null, IPA ? 0 : 35);
 			
 			//check for applied rewrites (in both cases, we expect the rewrites to happen:
 			// - without IPA it should be marked for recompilation and recompiled per iteration
 			// - with IPA the scalar rank should be directly propagated into the function
-			Assert.assertTrue("Missing opcode wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
-			Assert.assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
+			Assert.assertTrue("Missing opcode wdivmm",
+				Statistics.getCPHeavyHitterOpCodes().contains(WeightedDivMM.OPCODE_CP));
+			Assert.assertTrue("Missing opcode wcemm",
+				Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

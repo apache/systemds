@@ -29,7 +29,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class FunctionInliningTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "function_chain_inlining";
 	private final static String TEST_NAME2 = "function_chain_non_inlining";
@@ -84,11 +83,6 @@ public class FunctionInliningTest extends AutomatedTestBase
 		runInliningTest(TEST_NAME3, false);
 	}
 
-	/**
-	 * 
-	 * @param testname
-	 * @param IPA
-	 */
 	private void runInliningTest( String testname, boolean IPA )
 	{	
 		boolean oldIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
@@ -100,7 +94,7 @@ public class FunctionInliningTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{/*"-explain",*/"-args",String.valueOf(rows),
+			programArgs = new String[] {"-explain","-args",String.valueOf(rows),
 				String.valueOf(cols), String.valueOf(val), output("Rout") };
 
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
@@ -112,16 +106,16 @@ public class FunctionInliningTest extends AutomatedTestBase
 			double ret = HDFSTool.readDoubleFromHDFSFile(output("Rout"));
 			Assert.assertEquals(Double.valueOf(rows*cols*val*6), Double.valueOf(ret));
 			
-			//compiled MR jobs
-			int expectNumCompiled = IPA ? 0 : (testname.equals(TEST_NAME1)?2: //2GMR in foo1 and foo2 (not removed w/o IPA)
-				(testname.equals(TEST_NAME2)?4: //3GMR in foo1 and foo2, 1GMR for subsequent sum  
-				5 )); //5GMR in foo1-foo5 (not removed w/o IPA)
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			//compiled spark instructions
+			int expectNumCompiled = IPA ? 0 : (testname.equals(TEST_NAME1)?3: //foo1 and foo2 (not removed w/o IPA)
+				(testname.equals(TEST_NAME2)?4:15));
+			Assert.assertEquals("Unexpected number of compiled Spark instructions.", 
 				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//check executed MR jobs
 			int expectNumExecuted = 0; //executed jobs should always be 0 due to dynamic recompilation
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedSPInst());
+			Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 		}
 		catch(Exception ex)
 		{

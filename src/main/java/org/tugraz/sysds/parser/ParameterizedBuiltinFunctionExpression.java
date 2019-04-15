@@ -228,7 +228,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			validateCastAsString(output, conditional);
 			break;
 		
-		case LIST:
+		case LISTNV:
 			validateNamedList(output, conditional);
 			break;
 

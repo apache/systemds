@@ -86,7 +86,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		return _dmlProg;
 	}
 
-	public void addStatement(Statement s){
+	public void addStatement(Statement s) {
 		_statements.add(s);
 		if (_statements.size() == 1){
 			_filename    = s.getFilename();

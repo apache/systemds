@@ -1972,7 +1972,7 @@ public class DMLTranslator
 					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
 				break;
 			
-			case LIST:
+			case LISTNV:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);
 				break;

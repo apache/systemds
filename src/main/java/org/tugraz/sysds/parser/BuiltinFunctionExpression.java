@@ -1797,8 +1797,9 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		// check if the function name is built-in function
 		//	(assign built-in function op if function is built-in
-		return !Builtins.contains(functionName, false, false) ? null :
-			new BuiltinFunctionExpression(ctx, Builtins.get(functionName), paramExprsPassed, filename);
+		return (Builtins.contains(functionName, false, false) 
+			&& paramExprsPassed.stream().allMatch(p -> p.getName()==null)) ? //all unnamed
+			new BuiltinFunctionExpression(ctx, Builtins.get(functionName), paramExprsPassed, filename) : null;
 	}
 	
 	/**

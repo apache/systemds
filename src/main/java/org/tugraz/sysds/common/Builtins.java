@@ -84,7 +84,7 @@ public enum Builtins {
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
 	LENGTH("length", false),
-	LIST("list", false),
+	LIST("list", false),  //note: builtin and parbuiltin
 	LOG("log", false),
 	LSTM("lstm", false),
 	LSTM_BACKWARD("lstm_backward", false),
@@ -141,6 +141,7 @@ public enum Builtins {
 	CDF("cdf", false, true),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
 	INVCDF("icdf", false, true),
+	LISTNV("list", false, true), //note: builtin and parbuiltin
 	LOWER_TRI("lower.tri", false, true),
 	ORDER("order", false, true),
 	PARAMSERV("paramserv", false, true),
@@ -164,8 +165,6 @@ public enum Builtins {
 	TRANSFORMMETA("transformmeta", false, true),
 	UPPER_TRI("upper.tri", false, true);
 	
-	//LIST("LIST", false), TODO both builtin and parameterized builtin 
-
 	Builtins(String name, boolean script) {
 		this(name, null, script, false);
 	}
@@ -219,17 +218,21 @@ public enum Builtins {
 	}
 	
 	public static boolean contains(String name, boolean script, boolean parameterized) {
-		Builtins tmp = _map.get(name);
+		Builtins tmp = get(name);
 		return tmp != null && script == tmp.isScript()
 			&& parameterized == tmp.isParameterized();
 	}
 	
 	public static Builtins get(String name) {
+		if( name.equals("list") )
+			return LIST; //unparameterized
 		return _map.get(name);
 	}
 	
 	public static Builtins get(String name, boolean params) {
-		Builtins tmp = _map.get(name);
+		if( name.equals("list") )
+			return params ? LISTNV : LIST;
+		Builtins tmp = get(name);
 		return tmp != null && (params == tmp.isParameterized()) ? tmp : null;
 	}
 	

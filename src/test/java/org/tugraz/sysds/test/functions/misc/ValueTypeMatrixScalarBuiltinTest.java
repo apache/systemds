@@ -26,7 +26,7 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 
 public class ValueTypeMatrixScalarBuiltinTest extends AutomatedTestBase
-{	
+{
 	private final static String TEST_NAME1 = "ValueTypeMaxLeftScalar";
 	private final static String TEST_NAME2 = "ValueTypeMaxRightScalar";
 	private final static String TEST_NAME3 = "ValueTypeLogLeftScalar";

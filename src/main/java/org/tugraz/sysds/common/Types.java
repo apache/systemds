@@ -16,6 +16,8 @@
 
 package org.tugraz.sysds.common;
 
+import org.tugraz.sysds.runtime.DMLRuntimeException;
+
 public class Types
 {
 	/**
@@ -71,6 +73,16 @@ public class Types
 				case INT64:   return "INT";
 				case BOOLEAN: return "BOOLEAN";
 				default:      return toString();
+			}
+		}
+		public static ValueType fromExternalString(String value) {
+			String lvalue = (value != null) ? value.toUpperCase() : null;
+			switch(lvalue) {
+				case "DOUBLE":   return FP64;
+				case "INT":      return INT64;
+				case "BOOLEAN" : return BOOLEAN;
+				default:
+					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
 		}
 	}

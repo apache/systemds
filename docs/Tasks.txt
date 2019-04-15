@@ -59,3 +59,4 @@ SYSTEMDS-100 Various Fixes
  * 102 Fix parser issue after refactoring                             OK
  * 103 Fix handling of builtin functions w/ matching udfs             OK
  * 104 Fix failing tests due to incorrect parfor parameters           OK
+ * 105 Fix all application/function tests (various issues)

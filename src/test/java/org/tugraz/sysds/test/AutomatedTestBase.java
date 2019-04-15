@@ -772,7 +772,7 @@ public abstract class AutomatedTestBase
 		try {
 			String fname = baseDirectory + OUTPUT_DIR + fileName +".mtd";
 			JSONObject meta = new DataExpression().readMetadataFile(fname, false);
-			return ValueType.valueOf(meta.get(DataExpression.VALUETYPEPARAM).toString().toUpperCase());
+			return ValueType.fromExternalString(meta.get(DataExpression.VALUETYPEPARAM).toString());
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

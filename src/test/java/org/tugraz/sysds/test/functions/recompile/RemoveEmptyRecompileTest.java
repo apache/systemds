@@ -275,11 +275,11 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			//CHECK compiled MR jobs
 			int expectNumCompiled = 21; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+					            expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 			//CHECK executed MR jobs
 			int expectNumExecuted = 0;
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+		                        expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//CHECK rewrite application 
 			//(for minus_left we replace X-Y with 0-Y and hence still execute -)

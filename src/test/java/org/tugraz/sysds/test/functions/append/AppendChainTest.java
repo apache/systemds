@@ -149,18 +149,16 @@ public class AppendChainTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
 			Assert.assertEquals("Wrong number of executed MR jobs.",
-					             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
+				expectedExecutedMRJobs, Statistics.getNoOfExecutedSPInst());
 			
 			//compare result data
-			for(String file: config.getOutputFiles())
-			{
+			for(String file: config.getOutputFiles()) {
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
 				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 			}
 		}
-		finally
-		{
+		finally {
 			rtplatform = prevPlfm;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}

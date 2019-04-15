@@ -813,9 +813,9 @@ public class UaggOuterChainTest extends AutomatedTestBase
 				int expectedNumCompiled = 2; //reblock+gmr if uaggouterchain; otherwise 3
 				if(sumType == SumType.SUM_ALL)
 					expectedNumCompiled = 3;  // scaler to matrix conversion.
-				int expectedNumExecuted = expectedNumCompiled; 
-				checkNumCompiledMRJobs(expectedNumCompiled); 
-				checkNumExecutedMRJobs(expectedNumExecuted); 	
+				int expectedNumExecuted = expectedNumCompiled;
+				checkNumCompiledSparkInst(expectedNumCompiled);
+				checkNumExecutedSparkInst(expectedNumExecuted);
 			}
 			
 			//check statistics for right operator in cp and spark

@@ -33,7 +33,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "parfor_pr_resultmerge1a"; //MR w/o compare
 	private final static String TEST_NAME2 = "parfor_pr_resultmerge1b"; //MR w/ compare
 	private final static String TEST_NAME3 = "parfor_pr_resultmerge1c"; //Spark w/o compare
@@ -166,7 +165,7 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 			
 			//compare num MR jobs
 			int expectedMRJobs = ( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) ? 0 : 2; 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedMRJobs, Statistics.getNoOfExecutedMRJobs());	
+			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedMRJobs, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
@@ -176,7 +175,7 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 		finally
 		{
 			rtplatform = oldRT;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseSparkConfig;	
+			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseSparkConfig;
 		}
 	}
 }

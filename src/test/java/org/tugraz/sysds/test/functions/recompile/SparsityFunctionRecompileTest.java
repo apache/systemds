@@ -194,36 +194,32 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled MR jobs (changed 07/2015 due to better sparsity inference)
 			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-					                 + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge)
-					                 + (IPA ? 0 : (testname.equals(TEST_NAME2)?3:1)); //GMR ua(+), 3x for if
+				+ ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge)
+				+ (IPA ? 0 : (testname.equals(TEST_NAME2)?3:1)); //GMR ua(+), 3x for if
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+					            expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed MR jobs (changed 07/2015 due to better sparsity inference)
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(2x resultmerge) 
 			else            expectNumExecuted = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-					                              + ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge) 
-					                              + (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+)
+				+ ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge) 
+				+ (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+)
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 
-			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			Assert.assertEquals(Double.valueOf(val), dmlfile.get(new CellIndex(1,1)));
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			ex.printStackTrace();
 			Assert.fail("Failed to run test: "+ex.getMessage());
 		}
-		finally
-		{
+		finally {
 			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;
 		}
 	}
-	
 }

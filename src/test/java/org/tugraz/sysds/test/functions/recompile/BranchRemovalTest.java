@@ -139,12 +139,12 @@ public class BranchRemovalTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed MR jobs
 			int expectedNumCompiled = 5; //reblock, 3xGMR (append), write
-			int expectedNumExecuted = 0;			
+			int expectedNumExecuted = 0;
 			if( branchRemoval )
 				expectedNumCompiled = 1; //reblock
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled);
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
 		finally {
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;

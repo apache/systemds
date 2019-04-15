@@ -213,10 +213,8 @@ public class CTableSequenceTest extends AutomatedTestBase
 			
 			//w/ rewrite: 4 instead of 6 because seq and aggregation are not required for ctable_expand
 			//2 for CP due to reblock jobs for input and table
-			if(et != ExecType.SPARK) {
-				int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 4 : 6))+(withAgg ? 1 : 0);
-				checkNumCompiledMRJobs(expectedNumCompiled);
-			}
+			int expectedNumCompiled = ((et==ExecType.CP) ? 2 :(rewrite ? 4 : 6))+(withAgg ? 1 : 0);
+			checkNumCompiledSparkInst(expectedNumCompiled);
 		}
 		finally {
 			rtplatform = platformOld;

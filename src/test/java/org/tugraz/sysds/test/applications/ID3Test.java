@@ -97,21 +97,21 @@ public class ID3Test extends AutomatedTestBase
         //run tests
         //(changed expected MR from 62 to 66 because we now also count MR jobs in predicates)
         //(changed expected MR from 66 to 68 because we now rewrite sum(v1*v2) to t(v1)%*%v2 which rarely creates more jobs due to MMCJ incompatibility of other operations)
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, 70); //max 68 compiled jobs		
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, 70); //max 68 compiled jobs
 		runRScript(true);
-        
+
 		//check also num actually executed jobs
 		if(AutomatedTestBase.rtplatform != ExecMode.SPARK) {
-			long actualMR = Statistics.getNoOfExecutedMRJobs();
+			long actualMR = Statistics.getNoOfExecutedSPInst();
 			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
 		}
-				
+		
 		//compare results
         HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");
         HashMap<CellIndex, Double> nSYSTEMML= readDMLMatrixFromHDFS("nodes");
         HashMap<CellIndex, Double> eR = readRMatrixFromFS("edges");
         HashMap<CellIndex, Double> eSYSTEMML= readDMLMatrixFromHDFS("edges");
         TestUtils.compareMatrices(nR, nSYSTEMML, Math.pow(10, -14), "nR", "nSYSTEMML");
-        TestUtils.compareMatrices(eR, eSYSTEMML, Math.pow(10, -14), "eR", "eSYSTEMML");      
+        TestUtils.compareMatrices(eR, eSYSTEMML, Math.pow(10, -14), "eR", "eSYSTEMML");
     }
 }

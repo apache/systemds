@@ -242,7 +242,7 @@ public class FullCummaxTest extends AutomatedTestBase
 	
 			runTest(true, false, null, -1); 
 			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
+				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedSPInst());
 			
 			runRScript(true); 
 		

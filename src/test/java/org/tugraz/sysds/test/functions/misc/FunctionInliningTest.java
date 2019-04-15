@@ -114,14 +114,14 @@ public class FunctionInliningTest extends AutomatedTestBase
 			
 			//compiled MR jobs
 			int expectNumCompiled = IPA ? 0 : (testname.equals(TEST_NAME1)?2: //2GMR in foo1 and foo2 (not removed w/o IPA)
-				                               (testname.equals(TEST_NAME2)?4: //3GMR in foo1 and foo2, 1GMR for subsequent sum  
-				                            	5 )); //5GMR in foo1-foo5 (not removed w/o IPA)			
+				(testname.equals(TEST_NAME2)?4: //3GMR in foo1 and foo2, 1GMR for subsequent sum  
+				5 )); //5GMR in foo1-foo5 (not removed w/o IPA)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//check executed MR jobs
 			int expectNumExecuted = 0; //executed jobs should always be 0 due to dynamic recompilation
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 		}
 		catch(Exception ex)
 		{

@@ -141,22 +141,22 @@ public class RandRecompileTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
 			
 			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			runTest(true, exceptionExpected, null, -1);
 			
 			//CHECK compiled MR jobs
 			int expectNumCompiled = -1;
 			if( IPA ) expectNumCompiled = 0; 
 			else      expectNumCompiled = 2;//rand, GMR
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+			Assert.assertEquals("Unexpected number of compiled MR jobs.",
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0;
 			else if( IPA )  expectNumExecuted = 0; 
 			else            expectNumExecuted = 2; //rand, GMR
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());		
+			Assert.assertEquals("Unexpected number of executed MR jobs.",
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 		}
 		finally
 		{

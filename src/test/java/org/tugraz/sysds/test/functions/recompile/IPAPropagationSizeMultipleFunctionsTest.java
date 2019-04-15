@@ -140,10 +140,10 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			//check expected number of compiled and executed MR jobs
 			int expectedNumCompiled = (IPA) ? ((TEST_NAME.equals(TEST_NAME5))?2:1) : 
 				(TEST_NAME.equals(TEST_NAME5)?5:4); //reblock, 2xGMR foo, GMR 
-			int expectedNumExecuted = 0;			
+			int expectedNumExecuted = 0;
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled); 
+			checkNumExecutedSparkInst(expectedNumExecuted); 
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

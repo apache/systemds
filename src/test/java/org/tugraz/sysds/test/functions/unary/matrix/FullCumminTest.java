@@ -242,20 +242,19 @@ public class FullCumminTest extends AutomatedTestBase
 	
 			runTest(true, false, null, -1); 
 			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedMRJobs());
+				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedSPInst());
 			
-			runRScript(true); 
+			runRScript(true);
 		
-			//compare matrices 
+			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("B");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
-	}	
+	}
 }

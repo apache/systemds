@@ -1139,7 +1139,7 @@ public abstract class AutomatedTestBase
 	 *            specifies a maximum limit for the number of MR jobs. If set to
 	 *            -1 there is no limit.
 	 */
-	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxMRJobs) {
+	protected void runTest(boolean newWay, boolean exceptionExpected, Class<?> expectedException, String errMessage, int maxSparkInst) {
 
 		String executionFile = sourceDirectory + selectedTest + ".dml";
 
@@ -1211,9 +1211,9 @@ public abstract class AutomatedTestBase
 			DMLScript.main(dmlScriptArgs);
 
 			/** check number of MR jobs */
-			if (maxMRJobs > -1 && maxMRJobs < Statistics.getNoOfCompiledMRJobs())
-				fail("Limit of MR jobs is exceeded: expected: " + maxMRJobs + ", occurred: "
-						+ Statistics.getNoOfCompiledMRJobs());
+			if (maxSparkInst > -1 && maxSparkInst < Statistics.getNoOfCompiledSPInst())
+				fail("Limit of MR jobs is exceeded: expected: " + maxSparkInst + ", occurred: "
+						+ Statistics.getNoOfCompiledSPInst());
 
 			if (exceptionExpected)
 				fail("expected exception which has not been raised: " + expectedException);
@@ -1371,47 +1371,6 @@ public abstract class AutomatedTestBase
 				TestUtils.compareDMLMatrixWithJavaMatrixRowsOutOfOrder(comparisonFiles[i], outputDirectories[i], epsilon);
 			}
 		}
-	}
-
-	/**
-	 * Checks that the number of map-reduce jobs that the current test case has
-	 * compiled is equal to the expected number. Generates a JUnit error message
-	 * if the number is out of line.
-	 *
-	 * @param expectedNumCompiled
-	 *            number of map-reduce jobs that the current test case is
-	 *            expected to compile
-	 */
-	protected void checkNumCompiledMRJobs(int expectedNumCompiled) {
-
-		if( OptimizerUtils.isSparkExecutionMode() ) {
-			// Skip MapReduce-related checks when running in Spark mode.
-			return;
-		}
-
-		assertEquals("Unexpected number of compiled MR jobs.",
-				expectedNumCompiled, Statistics.getNoOfCompiledMRJobs());
-	}
-
-	/**
-	 * Checks that the number of map-reduce jobs that the current test case has
-	 * executed (as opposed to compiling into the execution plan) is equal to
-	 * the expected number. Generates a JUnit error message if the number is out
-	 * of line.
-	 *
-	 * @param expectedNumExecuted
-	 *            number of map-reduce jobs that the current test case is
-	 *            expected to run
-	 */
-	protected void checkNumExecutedMRJobs(int expectedNumExecuted) {
-
-		if( OptimizerUtils.isSparkExecutionMode() ) {
-			// Skip MapReduce-related checks when running in Spark mode.
-			return;
-		}
-
-		assertEquals("Unexpected number of executed MR jobs.",
-				expectedNumExecuted, Statistics.getNoOfExecutedMRJobs());
 	}
 
 	/**

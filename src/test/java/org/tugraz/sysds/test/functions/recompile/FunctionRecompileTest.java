@@ -106,15 +106,15 @@ public class FunctionRecompileTest extends AutomatedTestBase
 			if( IPA ) expectNumCompiled = 1; //reblock
 			else      expectNumCompiled = 5; //reblock, GMR,GMR,GMR,GMR (last two should piggybacked)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-				expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0;
 			else if( IPA )  expectNumExecuted = 1; //reblock
 			else            expectNumExecuted = 41; //reblock, 10*(GMR,GMR,GMR, GMR) (last two should piggybacked)
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-				expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+			Assert.assertEquals("Unexpected number of executed MR jobs.",
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

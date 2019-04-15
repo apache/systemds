@@ -263,11 +263,11 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			
 			//compiled MR jobs
 			int expectNumCompiled = IPA ? 0 : 4; 
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+			Assert.assertEquals("Unexpected number of compiled MR jobs.", expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//check executed MR jobs (should always be 0 due to dynamic recompilation)
 			int expectNumExecuted = 0;
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
+			Assert.assertEquals("Unexpected number of executed MR jobs.", expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			String stdErrString = baos.toString();
 			if (stdErrString != null && stdErrString.length() > 0)

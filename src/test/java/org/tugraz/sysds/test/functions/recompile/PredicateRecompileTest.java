@@ -277,28 +277,28 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed MR jobs
 			if( recompile ) {
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 
-					1 - ((evalExpr || constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand
+				Assert.assertEquals("Unexpected number of executed Spark instructions.",
+					0, Statistics.getNoOfExecutedSPInst()); 
 			}
 			else
 			{
 				if( IPA ) {
 					//old expected numbers before IPA
 					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
-							4 - ((evalExpr||constFold)?4:0), Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body
+						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+							4 - ((evalExpr||constFold)?4:0), Statistics.getNoOfExecutedSPInst()); //rand, 2xgmr while pred, 1x gmr while body
 					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
-							3 - ((evalExpr||constFold)?3:0), Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
+						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+							3 - ((evalExpr||constFold)?3:0), Statistics.getNoOfExecutedSPInst()); //rand, 1xgmr if pred, 1x gmr if body
 				}
 				else {
 					//old expected numbers before IPA
 					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
-							4 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 2xgmr while pred, 1x gmr while body
+						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+							5 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedSPInst()); //rand, 2xgmr while pred, 1x gmr while body
 					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed MR jobs.", 
-							3 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedMRJobs()); //rand, 1xgmr if pred, 1x gmr if body
+						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+							3 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedSPInst()); //rand, 1xgmr if pred, 1x gmr if body
 				}
 			}
 			

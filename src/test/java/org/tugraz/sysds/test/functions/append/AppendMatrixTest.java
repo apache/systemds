@@ -210,7 +210,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			runRScript(true);
 			Assert.assertEquals("Wrong number of executed MR jobs.",
-					            expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
+				expectedExecutedMRJobs, Statistics.getNoOfExecutedSPInst());
 	
 			for(String file: config.getOutputFiles())
 			{

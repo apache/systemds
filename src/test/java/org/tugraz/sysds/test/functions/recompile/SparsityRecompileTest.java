@@ -66,56 +66,47 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testWhileRecompile() 
-	{
+	public void testWhileRecompile() {
 		runRecompileTest(TEST_NAME1, true);
 	}
 	
 	@Test
-	public void testWhileNoRecompile() 
-	{
+	public void testWhileNoRecompile() {
 		runRecompileTest(TEST_NAME1, false);
 	}
 	
 	@Test
-	public void testIfRecompile() 
-	{
+	public void testIfRecompile() {
 		runRecompileTest(TEST_NAME2, true);
 	}
 	
 	@Test
-	public void testIfNoRecompile() 
-	{
+	public void testIfNoRecompile() {
 		runRecompileTest(TEST_NAME2, false);
 	}
 	
 	@Test
-	public void testForRecompile() 
-	{
+	public void testForRecompile() {
 		runRecompileTest(TEST_NAME3, true);
 	}
 	
 	@Test
-	public void testForNoRecompile() 
-	{
+	public void testForNoRecompile() {
 		runRecompileTest(TEST_NAME3, false);
 	}
 	
 	@Test
-	public void testParForRecompile() 
-	{
+	public void testParForRecompile() {
 		runRecompileTest(TEST_NAME4, true);
 	}
 	
 	@Test
-	public void testParForNoRecompile() 
-	{
+	public void testParForNoRecompile() {
 		runRecompileTest(TEST_NAME4, false);
 	}
 
-	
 	private void runRecompileTest( String testname, boolean recompile )
-	{	
+	{
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		
 		try
@@ -140,30 +131,27 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled MR jobs
 			int expectNumCompiled =   (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-	                                + (testname.equals(TEST_NAME4)?2:0);//(+2 resultmerge)
+				+ (testname.equals(TEST_NAME4)?2:0);//(+2 resultmerge)
 			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledMRJobs());
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
 			//CHECK executed MR jobs
 			int expectNumExecuted = -1;
 			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
 			else            expectNumExecuted =  (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if)
-					                              + ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
+						+ ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
 			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		                        expectNumExecuted, Statistics.getNoOfExecutedMRJobs());
-
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			Assert.assertEquals((Double)val, dmlfile.get(new CellIndex(1,1)));
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 			//Assert.fail("Failed to run test: "+ex.getMessage());
 		}
-		finally
-		{
+		finally {
 			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 		}
 	}

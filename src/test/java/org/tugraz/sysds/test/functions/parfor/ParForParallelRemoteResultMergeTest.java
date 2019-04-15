@@ -119,11 +119,11 @@ public class ParForParallelRemoteResultMergeTest extends AutomatedTestBase
 		
 		//compare num MR jobs
 		if( TEST_NAME.equals(TEST_NAME1) ) //2 results
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-					  			3, Statistics.getNoOfExecutedMRJobs());	
+			Assert.assertEquals("Unexpected number of executed MR jobs.",
+				3, Statistics.getNoOfExecutedSPInst());
 		else if ( TEST_NAME.equals(TEST_NAME2) ) //32 results
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		  			            33, Statistics.getNoOfExecutedMRJobs());
+			Assert.assertEquals("Unexpected number of executed MR jobs.",
+				33, Statistics.getNoOfExecutedSPInst());
 		//compare matrices
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");

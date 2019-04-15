@@ -285,8 +285,8 @@ public class MapMultChainTest extends AutomatedTestBase
 			//into the GMR for mapmult because the additional CP r' does not create a cut anymore.
 			int expectedNumCompiled = (sumProductRewrites)?2:3; //GMR Reblock, 2x(GMR mapmult, incl write) -> GMR Reblock, GMR mapmultchain+write
 			int expectedNumExecuted = expectedNumCompiled;
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted);
+			checkNumCompiledSparkInst(expectedNumCompiled); 
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
 		finally
 		{

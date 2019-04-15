@@ -100,8 +100,8 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 			int expectedNumCompiled = branchRemoval ? 0 : 1; //rand
 			int expectedNumExecuted = 0;
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled);
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
 		finally {
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagBranchRemoval;

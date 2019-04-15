@@ -131,11 +131,11 @@ public class BinUaggChainTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check compiled/executed jobs
-			if( rtplatform != ExecMode.SPARK ) {
+			if( rtplatform != ExecMode.SINGLE_NODE ) {
 				int expectedNumCompiled = (singleBlock)?1:3; 
 				int expectedNumExecuted = (singleBlock)?1:3; 
-				checkNumCompiledMRJobs(expectedNumCompiled); 
-				checkNumExecutedMRJobs(expectedNumExecuted); 	
+				checkNumCompiledSparkInst(expectedNumCompiled);
+				checkNumExecutedSparkInst(expectedNumExecuted);
 			}
 		}
 		finally

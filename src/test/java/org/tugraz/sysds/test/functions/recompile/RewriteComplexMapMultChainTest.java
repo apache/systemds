@@ -118,8 +118,8 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			int expectedNumCompiled = (et==ExecType.CP)?1:(singleCol?4:6); //mapmultchain if single column
 			int expectedNumExecuted = (et==ExecType.CP)?0:(singleCol?4:6); //mapmultchain if single column
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled); 
+			checkNumExecutedSparkInst(expectedNumExecuted); 
 		}
 		finally
 		{

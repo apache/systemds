@@ -110,13 +110,8 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 		runRemoveEmptyTest(TEST_NAME5, true);
 	}
 
-	/**
-	 * 
-	 * @param type
-	 * @param empty
-	 */
 	private void runRemoveEmptyTest( String TEST_NAME, boolean rewrite )
-	{	
+	{
 		getAndLoadTestConfiguration(TEST_NAME);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		
@@ -140,15 +135,12 @@ public class RemoveEmptyPotpourriTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
 			if( TEST_NAME.equals(TEST_NAME5) ) {
-				Assert.assertTrue(Statistics.getNoOfExecutedMRJobs()==0);
+				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 				Assert.assertTrue(Statistics.getNoOfExecutedSPInst()==0);
 			}
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
 	}
-	
-
 }

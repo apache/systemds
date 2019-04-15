@@ -60,10 +60,6 @@ public class Statistics
 	
 	//heavy hitter counts and times 
 	private static final ConcurrentHashMap<String,InstStats>_instStats = new ConcurrentHashMap<>();
-	
-	// number of compiled/executed MR jobs
-	private static final LongAdder numExecutedMRJobs = new LongAdder();
-	private static final LongAdder numCompiledMRJobs = new LongAdder();
 
 	// number of compiled/executed SP instructions
 	private static final LongAdder numExecutedSPInst = new LongAdder();
@@ -135,10 +131,6 @@ public class Statistics
 	private static final LongAdder lTotalUIPVar = new LongAdder();
 	private static final LongAdder lTotalLix = new LongAdder();
 	private static final LongAdder lTotalLixUIP = new LongAdder();
-
-	public static synchronized long getNoOfExecutedMRJobs() {
-		return numExecutedMRJobs.longValue();
-	}
 	
 	private static LongAdder numNativeFailures = new LongAdder();
 	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
@@ -163,22 +155,6 @@ public class Statistics
 		// Note: all the native calls have a fallback to Java; so if the user wants she can recompile SystemML by 
 		// commenting this exception and everything should work fine.
 		throw new RuntimeException("Unexpected ERROR: OOM caused during JNI transfer. Please disable native BLAS by setting enviroment variable: SYSTEMML_BLAS=none");
-	}
-	
-	public static void incrementNoOfExecutedMRJobs() {
-		numExecutedMRJobs.increment();
-	}
-	
-	public static void decrementNoOfExecutedMRJobs() {
-		numExecutedMRJobs.decrement();
-	}
-
-	public static long getNoOfCompiledMRJobs() {
-		return numCompiledMRJobs.longValue();
-	}
-	
-	public static void incrementNoOfCompiledMRJobs() {
-		numCompiledMRJobs.increment();
 	}
 
 	public static long getNoOfExecutedSPInst() {
@@ -228,18 +204,13 @@ public class Statistics
 	public static void resetNoOfCompiledJobs( int count ) {
 		//reset both mr/sp for multiple tests within one jvm
 		numCompiledSPInst.reset();
-		numCompiledMRJobs.reset();
 		if( OptimizerUtils.isSparkExecutionMode() )
 			numCompiledSPInst.add(count);
-		else
-			numCompiledMRJobs.add(count);
 	}
 
 	public static void resetNoOfExecutedJobs() {
 		//reset both mr/sp for multiple tests within one jvm
 		numExecutedSPInst.reset();
-		numExecutedMRJobs.reset();
-		
 		if( DMLScript.USE_ACCELERATOR )
 			GPUStatistics.setNoOfExecutedGPUInst(0);
 	}
@@ -934,11 +905,6 @@ public class Statistics
 			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
 				sb.append("Number of compiled Spark inst:\t" + getNoOfCompiledSPInst() + ".\n");
 			sb.append("Number of executed Spark inst:\t" + getNoOfExecutedSPInst() + ".\n");
-		}
-		else {
-			if( DMLScript.STATISTICS ) //moved into stats on Shiv's request
-				sb.append("Number of compiled MR Jobs:\t" + getNoOfCompiledMRJobs() + ".\n");
-			sb.append("Number of executed MR Jobs:\t" + getNoOfExecutedMRJobs() + ".\n");
 		}
 
 		if( DMLScript.USE_ACCELERATOR && DMLScript.STATISTICS)

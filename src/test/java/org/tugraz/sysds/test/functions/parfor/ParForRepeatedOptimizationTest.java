@@ -171,15 +171,14 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
-			Assert.assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedMRJobs()); 
+			Assert.assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 		}
-		finally
-		{
+		finally {
 			//reset optimizer flags to pre-test configuration
 			rtplatform = platformOld;
 			OptimizerUtils.MEM_UTIL_FACTOR = memfactorOld;

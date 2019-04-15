@@ -99,10 +99,10 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed MR jobs
 			int expectedNumCompiled = (estSizeEval?1:2); //rand, write
-			int expectedNumExecuted = 0;			
+			int expectedNumExecuted = 0;
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled);
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
 		finally
 		{

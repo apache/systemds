@@ -103,8 +103,8 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			int expectedNumCompiled = (rewrites&&IPA)?1:3; //(GMR mm+, GMR append,) GMR sum
 			int expectedNumExecuted = rewrites?0:IPA?2:1; //(GMR mm+, GMR append) 
 			
-			checkNumCompiledMRJobs(expectedNumCompiled); 
-			checkNumExecutedMRJobs(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled);
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
 		finally
 		{

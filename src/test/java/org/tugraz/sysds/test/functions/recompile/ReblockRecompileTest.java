@@ -124,10 +124,10 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, -1); //0 due to recompile 
 		runRScript(true);
 		
-		Assert.assertEquals("Unexpected number of executed MR jobs.", 
-				  			0, Statistics.getNoOfExecutedMRJobs());
+		Assert.assertEquals("Unexpected number of executed MR jobs.",
+			0, Statistics.getNoOfExecutedSPInst());
 		
-		//compare matrices		
+		//compare matrices
 		try 
 		{
 			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo, rows, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);

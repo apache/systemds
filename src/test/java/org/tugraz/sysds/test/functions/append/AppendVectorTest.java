@@ -112,24 +112,20 @@ public class AppendVectorTest extends AutomatedTestBase
 			int expectedExecutedMRJobs = 0;
 			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
 			Assert.assertEquals("Wrong number of executed MR jobs.",
-					             expectedExecutedMRJobs, Statistics.getNoOfExecutedMRJobs());
+				expectedExecutedMRJobs, Statistics.getNoOfExecutedSPInst());
 		
 			runRScript(true);
-			//disableOutAndExpectedDeletion();
-		
-			for(String file: config.getOutputFiles())
-			{
+			
+			for(String file: config.getOutputFiles()) {
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
-			//	System.out.println(file+"-DML: "+dmlfile);
-			//	System.out.println(file+"-R: "+rfile);
 				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 			}
-	    }
-	    finally {
+		}
+		finally {
 			rtplatform = prevPlfm;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-	    }
+		}
 	}
    
 }

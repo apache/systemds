@@ -39,41 +39,39 @@ import org.tugraz.sysds.utils.Statistics;
 @RunWith(value = Parameterized.class)
 public class ID3Test extends AutomatedTestBase
 {
-	
-    protected final static String TEST_DIR = "applications/id3/";
-    protected final static String TEST_NAME = "id3";
-    protected String TEST_CLASS_DIR = TEST_DIR + ID3Test.class.getSimpleName() + "/";
+	protected final static String TEST_DIR = "applications/id3/";
+	protected final static String TEST_NAME = "id3";
+	protected String TEST_CLASS_DIR = TEST_DIR + ID3Test.class.getSimpleName() + "/";
 
-    protected int numRecords, numFeatures;
-    
+	protected int numRecords, numFeatures;
+	
 	public ID3Test(int numRecords, int numFeatures) {
 		this.numRecords = numRecords;
 		this.numFeatures = numFeatures;
 	}
 	
 	@Parameters
-	 public static Collection<Object[]> data() {
-	   //TODO fix R script (values in 'nodes' for different settings incorrect, e.g., with minSplit=10 instead of 2)	 
-	   Object[][] data = new Object[][] { {100, 50}, {1000, 50} };
-	   return Arrays.asList(data);
-	 }
+	public static Collection<Object[]> data() {
+		Object[][] data = new Object[][] { {100, 50}, {1000, 50} };
+		return Arrays.asList(data);
+	}
 
-    @Override
-    public void setUp()
-    {
-    	addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-    }
-    
-    @Test
-    public void testID3() 
-    {
+	@Override
+	public void setUp()
+	{
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+	}
+	
+	@Test
+	public void testID3() 
+	{
 		System.out.println("------------ BEGIN " + TEST_NAME + " TEST {" + numRecords + ", "
 				+ numFeatures + "} ------------");
 		
-    	int rows = numRecords;			// # of rows in the training data 
-        int cols = numFeatures;
-        
-        getAndLoadTestConfiguration(TEST_NAME);
+		int rows = numRecords; // # of rows in the training data 
+		int cols = numFeatures;
+		
+		getAndLoadTestConfiguration(TEST_NAME);
 
 		List<String> proArgs = new ArrayList<String>();
 		proArgs.add("-explain");
@@ -88,30 +86,28 @@ public class ID3Test extends AutomatedTestBase
 		
 		rCmd = getRCmd(inputDir(), expectedDir());
 
-        // prepare training data set
-        double[][] X = TestUtils.round(getRandomMatrix(rows, cols, 1, 10, 1.0, 3));
-        double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 1, 10, 1.0, 7));
-        writeInputMatrixWithMTD("X", X, true);
-        writeInputMatrixWithMTD("y", y, true);
-        
-        //run tests
-        //(changed expected MR from 62 to 66 because we now also count MR jobs in predicates)
-        //(changed expected MR from 66 to 68 because we now rewrite sum(v1*v2) to t(v1)%*%v2 which rarely creates more jobs due to MMCJ incompatibility of other operations)
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, 70); //max 68 compiled jobs
+		// prepare training data set
+		double[][] X = TestUtils.round(getRandomMatrix(rows, cols, 1, 10, 1.0, 3));
+		double[][] y = TestUtils.round(getRandomMatrix(rows, 1, 1, 10, 1.0, 7));
+		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("y", y, true);
+		
+		//run tests
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, 129); //max 68 compiled jobs
 		runRScript(true);
 
 		//check also num actually executed jobs
 		if(AutomatedTestBase.rtplatform != ExecMode.SPARK) {
-			long actualMR = Statistics.getNoOfExecutedSPInst();
-			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualMR+".", 0, actualMR);
+			long actualSP = Statistics.getNoOfExecutedSPInst();
+			Assert.assertEquals("Wrong number of executed jobs: expected 2 but executed "+actualSP+".", 2, actualSP);
 		}
 		
 		//compare results
-        HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");
-        HashMap<CellIndex, Double> nSYSTEMML= readDMLMatrixFromHDFS("nodes");
-        HashMap<CellIndex, Double> eR = readRMatrixFromFS("edges");
-        HashMap<CellIndex, Double> eSYSTEMML= readDMLMatrixFromHDFS("edges");
-        TestUtils.compareMatrices(nR, nSYSTEMML, Math.pow(10, -14), "nR", "nSYSTEMML");
-        TestUtils.compareMatrices(eR, eSYSTEMML, Math.pow(10, -14), "eR", "eSYSTEMML");
-    }
+		HashMap<CellIndex, Double> nR = readRMatrixFromFS("nodes");
+		HashMap<CellIndex, Double> nSYSTEMML= readDMLMatrixFromHDFS("nodes");
+		HashMap<CellIndex, Double> eR = readRMatrixFromFS("edges");
+		HashMap<CellIndex, Double> eSYSTEMML= readDMLMatrixFromHDFS("edges");
+		TestUtils.compareMatrices(nR, nSYSTEMML, Math.pow(10, -14), "nR", "nSYSTEMML");
+		TestUtils.compareMatrices(eR, eSYSTEMML, Math.pow(10, -14), "eR", "eSYSTEMML");
+	}
 }

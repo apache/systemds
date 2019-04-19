@@ -67,6 +67,7 @@ public class WelchTTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		List<String> proArgs = new ArrayList<String>();
+		proArgs.add("-explain");
 		proArgs.add("-args");
 		proArgs.add(input("posSamples"));
 		proArgs.add(input("negSamples"));
@@ -86,9 +87,9 @@ public class WelchTTest extends AutomatedTestBase {
 		MatrixCharacteristics mc2 = new MatrixCharacteristics(numNegSamples,numAttr,-1,-1);
 		writeInputMatrixWithMTD("negSamples", negSamples, true, mc2);
 		
-		int expectedNumberOfJobs = 1;
+		int expectedNumberOfJobs = 2;
 		
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs); 
+		runTest(true, EXCEPTION_NOT_EXPECTED, null, expectedNumberOfJobs);
 		
 		runRScript(true);
 

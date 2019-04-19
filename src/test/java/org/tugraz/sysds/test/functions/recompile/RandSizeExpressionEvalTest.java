@@ -101,7 +101,7 @@ public class RandSizeExpressionEvalTest extends AutomatedTestBase
 			}
 			else {
 				Assert.assertEquals("Unexpected number of executed MR jobs.",
-					2, Statistics.getNoOfExecutedSPInst()); //Rand, GMR (sum)
+					3, Statistics.getNoOfExecutedSPInst());
 			}
 		}
 		finally {

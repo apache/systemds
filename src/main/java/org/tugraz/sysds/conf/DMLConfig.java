@@ -54,7 +54,7 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig
 {
-	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemML-config.xml";
+	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemDS-config.xml";
 	
 	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
 	
@@ -407,7 +407,7 @@ public class DMLConfig
 				config = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
 			} catch (FileNotFoundException fnfe) {
 				LOG.info("Using internal default configuration settings.  If you wish to " +
-						 "customize any settings, please supply a `SystemML-config.xml` file.");
+						 "customize any settings, please supply a `SystemDS-config.xml` file.");
 				config = new DMLConfig();
 			} catch (ParseException e) {
 				throw e;

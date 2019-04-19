@@ -21,7 +21,7 @@ package org.tugraz.sysds.api;
 
 /**
  * This interface defines the programmatic access to dml configuration properties
- * (as defined in SystemML-config.xml) to ensure API consistency across all APIs.
+ * (as defined in SystemDS-config.xml) to ensure API consistency across all APIs.
  */
 public interface ConfigurableAPI 
 {

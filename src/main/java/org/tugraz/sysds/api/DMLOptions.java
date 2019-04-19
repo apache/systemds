@@ -203,7 +203,7 @@ public class DMLOptions {
 			.withDescription("specifies positional parameters; first value will replace $1 in DML program; $2 will replace 2nd and so on")
 			.hasArgs().create("args");
 		Option configOpt = OptionBuilder.withArgName("filename")
-			.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemML-config.xml")
+			.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemDS-config.xml")
 			.hasArg().create("config");
 		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemML working directories (FS, DFS); all other flags are ignored in this mode. \n")
 			.create("clean");

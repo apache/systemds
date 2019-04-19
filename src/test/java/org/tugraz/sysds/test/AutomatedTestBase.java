@@ -158,7 +158,7 @@ public abstract class AutomatedTestBase
 	 * Location of the SystemML config file that we use as a template when
 	 * generating the configs for each test case.
 	 */
-	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemML-config.xml");
+	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
 
 	/**
 	 * Location under which we create local temporary directories for test cases.
@@ -331,7 +331,7 @@ public abstract class AutomatedTestBase
 	 * @return the location of the current test case's SystemML config file
 	 */
 	protected File getCurConfigFile() {
-		return new File(getCurLocalTempDir(), "SystemML-config.xml");
+		return new File(getCurLocalTempDir(), "SystemDS-config.xml");
 	}
 
 	/**

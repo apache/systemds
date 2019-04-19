@@ -119,7 +119,7 @@ $SPARK_HOME/bin/spark-submit \
      ${conf} \
      ${SYSTEMML_HOME}/${project.artifactId}-${project.version}.jar \
          -f ${f} \
-         -config ${SYSTEMML_HOME}/SystemML-config.xml \
+         -config ${SYSTEMML_HOME}/SystemDS-config.xml \
          -exec HYBRID \
          $explain \
          $stats \

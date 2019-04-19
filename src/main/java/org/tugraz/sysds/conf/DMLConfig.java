@@ -114,7 +114,7 @@ public class DMLConfig
 	static
 	{
 		_defaultVals = new HashMap<>();
-		_defaultVals.put(LOCAL_TMP_DIR,          "/tmp/systemml" );
+		_defaultVals.put(LOCAL_TMP_DIR,          "/tmp/systemds" );
 		_defaultVals.put(SCRATCH_SPACE,          "scratch_space" );
 		_defaultVals.put(OPTIMIZATION_LEVEL,     String.valueOf(OptimizerUtils.DEFAULT_OPTLEVEL.ordinal()) );
 		_defaultVals.put(NUM_REDUCERS,           "10" );

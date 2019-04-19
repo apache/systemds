@@ -19,7 +19,7 @@
 
 <root>
    <!-- local fs tmp working directory-->
-   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysml.localtmpdir>/tmp/systemds</sysml.localtmpdir>
 
    <!-- hdfs tmp working directory--> 
    <sysml.scratch>scratch_space</sysml.scratch> 
@@ -36,7 +36,7 @@
    <!-- default block dim for binary block files -->
    <sysml.defaultblocksize>1000</sysml.defaultblocksize> 
 
-   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
+   <!-- run systemds control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
    <sysml.yarn.appmaster>false</sysml.yarn.appmaster>
 
    <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->

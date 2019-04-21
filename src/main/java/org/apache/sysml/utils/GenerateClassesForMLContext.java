@@ -204,7 +204,7 @@ public class GenerateClassesForMLContext {
 				ClassPool pool = ClassPool.getDefault();
 				CtClass subDirClass = pool.get(fullSubDirClassName);
 				String subDirName = subdir.getName();
-				subDirName = subDirName.replaceAll("-", "_");
+				subDirName = subDirName.replace("-", "_");
 				subDirName = subDirName.toLowerCase();
 
 				System.out.println("Adding " + subDirName + "() to " + ctMLContext.getName());

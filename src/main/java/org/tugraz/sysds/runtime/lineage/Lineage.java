@@ -30,7 +30,6 @@ import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Explain;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -43,37 +42,41 @@ public class Lineage {
 	}
 	
 	public static void trace(Instruction inst, ExecutionContext ec) {
+		if (!(inst instanceof LineageTraceable))
+			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
+		
+		LineageItem li = ((LineageTraceable) inst).getLineageItem();
+		
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
+			
 			switch (vcp_inst.getVariableOpcode()) {
+				case AssignVariable:
+				case CopyVariable:
+				case Read:
 				case CreateVariable: {
-					createVariableInstruction(vcp_inst);
+					addLineageItem(li);
 					break;
 				}
 				case RemoveVariable: {
-					removeInstruction(vcp_inst);
-					break;
-				}
-				case AssignVariable:
-				case CopyVariable: {
-					copyInstruction(vcp_inst);
+					for (CPOperand input : vcp_inst.getInputs())
+						removeLineageItem(input.getName());
 					break;
 				}
 				case Write: {
-					writeInstruction(vcp_inst, ec);
+					addLineageItem(li);
+					processWriteLI(vcp_inst, ec);
 					break;
 				}
 				case MoveVariable: {
-					moveInstruction(vcp_inst);
+					processMoveLI(li);
 					break;
 				}
 				default:
 					throw new DMLRuntimeException("Unknown VariableCPInstruction (" + inst.getOpcode() + ") traced.");
 			}
-		} else if (inst instanceof LineageTraceable) {
-			addLineageItem(((LineageTraceable) inst).getLineageItem());
 		} else
-			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
+			addLineageItem(li);
 	}
 	
 	public static void removeLineageItem(String key) {
@@ -85,25 +88,15 @@ public class Lineage {
 	}
 	
 	public static void addLineageItem(LineageItem li) {
-		if (lineage_traces.get(li.getKey()) != null) {
-			removeInputLinks(lineage_traces.get(li.getKey()));
-			lineage_traces.remove(li.getKey());
+		if (lineage_traces.get(li.getName()) != null) {
+			removeInputLinks(lineage_traces.get(li.getName()));
+			lineage_traces.remove(li.getName());
 		}
-		lineage_traces.put(li.getKey(), li);
+		lineage_traces.put(li.getName(), li);
 	}
 	
-	public static LineageItem getOrCreate(CPOperand variable) {
-		if (variable == null)
-			return null;
-		if (!lineage_traces.containsKey(variable.getName()))
-			return new LineageItem(variable);
-		return lineage_traces.get(variable.getName());
-	}
-	
-	private static void writeInstruction(VariableCPInstruction inst, ExecutionContext ec) {
-		LineageItem li = lineage_traces.get(inst.getInput1().getName());
-		String desc = Explain.explain(li);
-		
+	private static void processWriteLI(VariableCPInstruction inst, ExecutionContext ec) {
+		String desc = Explain.explain(get(inst.getInput1()));
 		String fname = ec.getScalarInput(inst.getInput2().getName(), Types.ValueType.STRING, inst.getInput2().isLiteral()).getStringValue();
 		fname += ".lineage";
 		
@@ -120,44 +113,19 @@ public class Lineage {
 		}
 	}
 	
-	private static void removeInstruction(VariableCPInstruction inst) {
-		for (CPOperand input : inst.getInputs())
-			removeLineageItem(input.getName());
+	private static void processMoveLI(LineageItem li) {
+		if (li.getName().equals("__pred"))
+			removeLineageItem(li.getInputs().get(0).getName());
+		else
+			addLineageItem(li);
 	}
 	
-	private static void moveInstruction(VariableCPInstruction inst) {
-		if (inst.getInput2().getName().equals("__pred")) {
-			removeLineageItem(inst.getInput1().getName());
-		} else {
-			ArrayList<LineageItem> lineages = new ArrayList<>();
-			if (lineage_traces.containsKey(inst.getInput1().getName()))
-				lineages.add(lineage_traces.get(inst.getInput1().getName()));
-			else {
-				lineages.add(getOrCreate(inst.getInput1()));
-				if (inst.getInput3() != null)
-					lineages.add(getOrCreate(inst.getInput3()));
-			}
-			addLineageItem(new LineageItem(inst.getInput2(), lineages, inst.getOpcode()));
-		}
-	}
-	
-	private static void copyInstruction(VariableCPInstruction inst) {
-		ArrayList<LineageItem> lineages = new ArrayList<>();
-		if (lineage_traces.containsKey(inst.getInput1().getName())) {
-			lineages.add(lineage_traces.get(inst.getInput1().getName()));
-		} else {
-			lineages.add(getOrCreate(inst.getInput1()));
-		}
-		addLineageItem(new LineageItem(inst.getInput2(), lineages, inst.getOpcode()));
-	}
-	
-	private static void createVariableInstruction(VariableCPInstruction inst) {
-		ArrayList<LineageItem> lineages = new ArrayList<>();
-		lineages.add(lineage_traces.getOrDefault(inst.getInput2(),
-				new LineageItem(inst.getInput2())));
-		lineages.add(lineage_traces.getOrDefault(inst.getInput3(),
-				new LineageItem(inst.getInput3())));
-		addLineageItem(new LineageItem(inst.getInput1(), lineages, inst.getOpcode()));
+	public static LineageItem getOrCreate(CPOperand variable) {
+		if (variable == null)
+			return null;
+		if (!lineage_traces.containsKey(variable.getName()))
+			return new LineageItem(variable.getName(), variable.getLineageLiteral());
+		return lineage_traces.get(variable.getName());
 	}
 	
 	public static LineageItem get(CPOperand variable) {
@@ -166,14 +134,19 @@ public class Lineage {
 		return lineage_traces.get(variable.getName());
 	}
 	
+	public static boolean contains(CPOperand variable) {
+		return lineage_traces.containsKey(variable.getName());
+	}
+	
 	private static void removeInputLinks(LineageItem li) {
 		if (li.getOutputs().isEmpty()) {
 			List<LineageItem> inputs = li.getInputs();
 			li.removeAllInputs();
-			for (LineageItem input : inputs) {
-				input.getOutputs().remove(li);
-				removeInputLinks(input);
-			}
+			if (inputs != null)
+				for (LineageItem input : inputs) {
+					input.getOutputs().remove(li);
+					removeInputLinks(input);
+				}
 		}
 	}
 }

@@ -25,7 +25,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.LiteralOp;
@@ -599,27 +598,12 @@ public class Explain
 		StringBuilder sb = new StringBuilder();
 		String offset = createOffset(level);
 
-		for( LineageItem input : li.getInputs() )
-			sb.append(explainLineageItem(input, level));
+		if (li.getInputs() != null)
+			for( LineageItem input : li.getInputs() )
+				sb.append(explainLineageItem(input, level));
 
-		//indentation
 		sb.append(offset);
-
-		//li id
-		sb.append("(").append(li.getId()).append(") ");
-
-		if (li.getOpcode().isEmpty())
-			sb.append(li.getKey());
-		else {
-			//operation string
-			sb.append(li.getOpcode()).append(" ");
-
-			String ids = li.getInputs().stream()
-					.map(i -> String.format("(%d)", i.getId()))
-					.collect(Collectors.joining(" "));
-			sb.append(ids);
-		}
-
+		sb.append(li.toString());
 		sb.append('\n');
 
 		li.setVisited();

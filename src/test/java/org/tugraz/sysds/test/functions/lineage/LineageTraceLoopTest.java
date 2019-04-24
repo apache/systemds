@@ -16,9 +16,6 @@
 
 package org.tugraz.sysds.test.functions.lineage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
@@ -27,14 +24,21 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Explain;
 
-public class LineageTraceTest extends AutomatedTestBase {
+import java.util.ArrayList;
+import java.util.List;
+
+public class LineageTraceLoopTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME = "LineageTrace";
-	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME = "LineageTraceLoop";
+	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceLoopTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
 	protected static final int numFeatures = 5;
+	
+	public LineageTraceLoopTest() {
+		
+	}
 	
 	@Override
 	public void setUp() {
@@ -42,7 +46,7 @@ public class LineageTraceTest extends AutomatedTestBase {
 	}
 	
 	@Test
-	public void testLineageTrace() {
+	public void testLineageTraceLoop() {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		

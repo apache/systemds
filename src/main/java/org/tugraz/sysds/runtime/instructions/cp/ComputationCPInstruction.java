@@ -80,11 +80,11 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 		ArrayList<LineageItem> lineages = new ArrayList<>();
 		if (input1 != null)
 			lineages.add(Lineage.getOrCreate(input1));
-        if (input2 != null)
+		if (input2 != null)
 			lineages.add(Lineage.getOrCreate(input2));
 		if (input3 != null)
 			lineages.add(Lineage.getOrCreate(input3));
 
-		return new LineageItem(output, lineages, getOpcode());
+		return new LineageItem(output.getName(), lineages, getOpcode());
 	}
 }

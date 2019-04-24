@@ -249,7 +249,7 @@ public class ReblockSPInstruction extends UnarySPInstruction implements LineageT
 			lineages.add(Lineage.getOrCreate(input2));
 		if (input3 != null)
 			lineages.add(Lineage.getOrCreate(input3));
-		
-		return new LineageItem(output, lineages, getOpcode());
+
+		return new LineageItem(output.getName(), lineages, getOpcode());
 	}
 }

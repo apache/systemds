@@ -22,8 +22,10 @@ import java.util.List;
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.parser.LineageParser;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestUtils;
+import org.tugraz.sysds.utils.Explain;
 
 public class LineageTraceSelfReferenceTest extends AutomatedTestBase {
 	
@@ -44,15 +46,15 @@ public class LineageTraceSelfReferenceTest extends AutomatedTestBase {
 	}
 	
 	@Test
-	public void testLineageTrace() {
+	public void testLineageTraceSelfReference() {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
 			System.out.println("------------ BEGIN " + TEST_NAME + "------------");
 			
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+//			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
+//			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
 			
 			int rows = numRecords;
 			int cols = numFeatures;
@@ -74,32 +76,17 @@ public class LineageTraceSelfReferenceTest extends AutomatedTestBase {
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("X", X, true);
 			
-			String expected_X_lineage =
-					"(0) target/testTemp/functions/lineage/LineageTraceSelfReferenceTest/in/X\n" +
-							"(1) false\n" +
-							"(2) createvar (0) (1)\n" +
-							"(6) rblk (2)\n" +
-							"(9) cpvar (6)\n" +
-							"(19) 7\n" +
-							"(20) + (9) (19)\n" +
-							"(21) cpvar (20)\n" +
-							"(34) * (21) (21)\n" +
-							"(38) * (34) (21)\n" +
-							"(39) cpvar (38)\n" +
-							"(52) 7\n" +
-							"(53) + (39) (52)\n" +
-							"(54) cpvar (53)\n";
-			String expected_Y_lineage =
-					expected_X_lineage + "(63) tsmm (54)\n";
-			
 			LineageItem.resetIDSequence();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
 			String X_lineage = readDMLLineageFromHDFS("X");
 			String Y_lineage = readDMLLineageFromHDFS("Y");
 			
-			TestUtils.compareScalars(expected_X_lineage, X_lineage);
-			TestUtils.compareScalars(expected_Y_lineage, Y_lineage);
+			LineageItem X_li = LineageParser.parseLineageTrace(X_lineage);
+			LineageItem Y_li = LineageParser.parseLineageTrace(Y_lineage);
+			
+			TestUtils.compareScalars(X_lineage, Explain.explain(X_li));
+			TestUtils.compareScalars(Y_lineage, Explain.explain(Y_li));
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

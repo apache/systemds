@@ -132,4 +132,16 @@ public class CPOperand
 		return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
 	}
 
+	public String getLineageLiteral() {
+		if( !isLiteral() )
+			throw new DMLRuntimeException("CPOperand is not a literal.");
+		StringBuilder sb = new StringBuilder(getName());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(getDataType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(getValueType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(isLiteral());
+		return sb.toString();
+	}
 }

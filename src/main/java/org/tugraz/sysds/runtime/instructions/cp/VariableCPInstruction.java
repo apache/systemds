@@ -48,6 +48,9 @@ import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.io.WriterMatrixMarket;
 import org.tugraz.sysds.runtime.io.WriterTextCSV;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -61,7 +64,7 @@ import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
 
-public class VariableCPInstruction extends CPInstruction {
+public class VariableCPInstruction extends CPInstruction implements LineageTraceable {
 
 	/*
 	 * Supported Operations
@@ -228,7 +231,7 @@ public class VariableCPInstruction extends CPInstruction {
 	}
 
 	public VariableOperationCode getVariableOpcode() {
-		return this.opcode;
+		return opcode;
 	}
 
 	public FileFormatProperties getFormatProperties() {
@@ -1110,7 +1113,49 @@ public class VariableCPInstruction extends CPInstruction {
 			instString = sb.toString();
 		}
 	}
-
+	
+	@Override
+	public LineageItem getLineageItem() {
+		switch (getVariableOpcode()) {
+			case CreateVariable:
+			case Read:
+				return new LineageItem(getInput1().getName(), toString(), getOpcode());
+			case AssignVariable:
+			case CopyVariable: {
+				ArrayList<LineageItem> lineages = new ArrayList<>();
+				if (Lineage.contains(getInput1()))
+					lineages.add(Lineage.get(getInput1()));
+				else
+					lineages.add(Lineage.getOrCreate(getInput1()));
+				return new LineageItem(getInput2().getName(), lineages, getOpcode());
+			}
+			case Write: {
+				ArrayList<LineageItem> lineages = new ArrayList<>();
+				for (CPOperand input : getInputs())
+					if (!input.getName().isEmpty())
+						lineages.add(Lineage.getOrCreate(input));
+				if (_formatProperties != null && !_formatProperties.getDescription().isEmpty())
+					lineages.add(new LineageItem(_formatProperties.getDescription()));
+				return new LineageItem(getInput1().getName(), lineages, getOpcode());
+			}
+			case MoveVariable: {
+				ArrayList<LineageItem> lineages = new ArrayList<>();
+				if (Lineage.contains(getInput1()))
+					lineages.add(Lineage.get(getInput1()));
+				else {
+					lineages.add(Lineage.getOrCreate(getInput1()));
+					if (getInput3() != null)
+						lineages.add(Lineage.getOrCreate(getInput3()));
+				}
+				return new LineageItem(getInput2().getName(), lineages, getOpcode());
+			}
+			case RemoveVariable:
+			default:
+				return null;
+		}
+	}
+	
+	
 	public boolean isVariableCastInstruction()
 	{
 		return ( opcode == VariableOperationCode.CastAsScalarVariable  ||

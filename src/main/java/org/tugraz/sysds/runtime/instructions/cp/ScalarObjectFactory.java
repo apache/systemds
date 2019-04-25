@@ -101,6 +101,16 @@ public abstract class ScalarObjectFactory
 		}
 	}
 	
+	public static LiteralOp createLiteralOp(ValueType vt, String value) {
+		switch( vt ) {
+			case FP64:    return new LiteralOp(Double.parseDouble(value));
+			case INT64:   return new LiteralOp(Long.parseLong(value));
+			case BOOLEAN: return new LiteralOp(Boolean.parseBoolean(value));
+			case STRING:  return new LiteralOp(value);
+			default: throw new RuntimeException("Unsupported scalar value type: "+vt.name());
+		}
+	}
+	
 	public static IntObject castToLong(ScalarObject so) {
 		//note: cast with robustness for various combinations of value types
 		return new IntObject(!(so instanceof StringObject) ?

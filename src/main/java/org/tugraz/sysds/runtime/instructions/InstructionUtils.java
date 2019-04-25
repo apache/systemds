@@ -21,6 +21,8 @@ package org.tugraz.sysds.runtime.instructions;
 
 import java.util.StringTokenizer;
 
+import org.tugraz.sysds.hops.Hop.AggOp;
+import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.lops.AppendM;
 import org.tugraz.sysds.lops.BinaryM;
 import org.tugraz.sysds.lops.GroupedAggregateM;
@@ -200,16 +202,24 @@ public class InstructionUtils
 		return str.substring(ix1+1, ix2);
 	}
 
-	public static SPType getSPType( String str ) {
-		return SPInstructionParser.String2SPInstructionType.get( getOpCode(str) ); 
+	public static SPType getSPType(String str) {
+		return SPInstructionParser.String2SPInstructionType.get(getOpCode(str));
 	}
 
-	public static CPType getCPType( String str ) {
-		return CPInstructionParser.String2CPInstructionType.get( getOpCode(str) ); 
+	public static CPType getCPType(String str) {
+		return CPInstructionParser.String2CPInstructionType.get(getOpCode(str));
+	}
+	
+	public static SPType getSPTypeByOpcode(String opcode) {
+		return SPInstructionParser.String2SPInstructionType.get(opcode);
+	}
+	
+	public static CPType getCPTypeByOpcode( String opcode ) {
+		return CPInstructionParser.String2CPInstructionType.get(opcode);
 	}
 
 	public static GPUINSTRUCTION_TYPE getGPUType( String str ) {
-		return GPUInstructionParser.String2GPUInstructionType.get( getOpCode(str) ); 
+		return GPUInstructionParser.String2GPUInstructionType.get(getOpCode(str));
 	}
 
 	public static boolean isBuiltinFunction( String opcode ) {
@@ -789,32 +799,106 @@ public class InstructionUtils
 		
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
 	}
-
-	public static String deriveAggregateOperatorOpcode(String opcode)
-	{
-		if ( opcode.equalsIgnoreCase("uak+") || opcode.equalsIgnoreCase("uark+") || opcode.equalsIgnoreCase("uack+"))
-			return "ak+";
-		else if ( opcode.equalsIgnoreCase("uasqk+") || opcode.equalsIgnoreCase("uarsqk+") || opcode.equalsIgnoreCase("uacsqk+") )
-			return "asqk+";
-		else if ( opcode.equalsIgnoreCase("uamean") || opcode.equalsIgnoreCase("uarmean") || opcode.equalsIgnoreCase("uacmean") )
-			return "amean";
-		else if ( opcode.equalsIgnoreCase("uavar") || opcode.equalsIgnoreCase("uarvar") || opcode.equalsIgnoreCase("uacvar") )
-			return "avar";
-		else if ( opcode.equalsIgnoreCase("ua+") || opcode.equalsIgnoreCase("uar+") || opcode.equalsIgnoreCase("uac+") )
-			return "a+";
-		else if ( opcode.equalsIgnoreCase("ua*") || opcode.equalsIgnoreCase("uar*") || opcode.equalsIgnoreCase("uac*") )
-			return "a*";
-		else if ( opcode.equalsIgnoreCase("uatrace") || opcode.equalsIgnoreCase("uaktrace") ) 
-			return "aktrace";
-		else if ( opcode.equalsIgnoreCase("uamax") || opcode.equalsIgnoreCase("uarmax") || opcode.equalsIgnoreCase("uacmax") )
-			return "amax";
-		else if ( opcode.equalsIgnoreCase("uamin") || opcode.equalsIgnoreCase("uarmin") || opcode.equalsIgnoreCase("uacmin") )
-			return "amin";
-		else if (opcode.equalsIgnoreCase("uarimax") )
-			return "arimax";
-		else if (opcode.equalsIgnoreCase("uarimin") )
-			return "arimin";
 	
+	public static String deriveAggregateOperatorOpcode(String opcode) {
+		switch( opcode ) {
+			case "uak+":
+			case"uark+":
+			case "uack+":    return "ak+";
+			case "ua+":
+			case "uar+":
+			case "uac+":     return "a+";
+			case "uatrace":
+			case "uaktrace": return "aktrace";
+			case "uasqk+":
+			case "uarsqk+":
+			case "uacsqk+":  return "asqk+";
+			case "uamean":
+			case "uarmean":
+			case "uacmean":  return "amean";
+			case "uavar":
+			case "uarvar":
+			case "uacvar":   return "avar";
+			case "ua*":
+			case "uar*":
+			case "uac*":     return "a*";
+			case "uamax":
+			case "uarmax":
+			case "uacmax":   return "amax";
+			case "uamin":
+			case "uarmin":
+			case "uacmin":   return "amin";
+			case "uarimax":  return "arimax";
+			case "uarimin":  return "arimin";
+		}
+		return null;
+	}
+	
+	public static AggOp getAggOp(String opcode) {
+		switch( opcode ) {
+			case "uak+":
+			case"uark+":
+			case "uack+":
+			case "ua+":
+			case "uar+":
+			case "uac+":
+			case "uatrace":
+			case "uaktrace": return AggOp.SUM;
+			case "uasqk+":
+			case "uarsqk+":
+			case "uacsqk+":  return AggOp.SUM_SQ;
+			case "uamean":
+			case "uarmean":
+			case "uacmean":  return AggOp.MEAN;
+			case "uavar":
+			case "uarvar":
+			case "uacvar":   return AggOp.VAR;
+			case "ua*":
+			case "uar*":
+			case "uac*":     return AggOp.PROD;
+			case "uamax":
+			case "uarmax":
+			case "uacmax":   return AggOp.MAX;
+			case "uamin":
+			case "uarmin":
+			case "uacmin":   return AggOp.MIN;
+			case "uarimax":  return AggOp.MAXINDEX;
+			case "uarimin":  return AggOp.MININDEX;
+		}
+		return null;
+	}
+	
+	public static Direction getAggDirection(String opcode) {
+		switch( opcode ) {
+			case "uak+":
+			case "ua+":
+			case "uatrace":
+			case "uaktrace":
+			case "uasqk+":
+			case "uamean":
+			case "uavar":
+			case "ua*":
+			case "uamax":
+			case "uamin":    return Direction.RowCol;
+			case"uark+":
+			case "uar+":
+			case "uarsqk+":
+			case "uarmean":
+			case "uar*":
+			case "uarmax":
+			case "uarmin":
+			case "uarimax":
+			case "uarimin":  return Direction.Row;
+			case "uack+":
+			case "uac+":
+			case "uacsqk+":
+			case "uacmean":
+			case "uarvar":
+			case "uacvar":
+			case "uac*":
+			case "uacmax":
+			case "uacmin":   return Direction.Col;
+		}
 		return null;
 	}
 

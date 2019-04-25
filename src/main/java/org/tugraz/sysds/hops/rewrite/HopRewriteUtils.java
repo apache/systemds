@@ -70,6 +70,7 @@ import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
@@ -558,6 +559,10 @@ public class HopRewriteUtils
 		return reorg;
 	}
 	
+	public static UnaryOp createUnary(Hop input, String type) {
+		return createUnary(input, Hop.getUnaryOpCode(type));
+	}
+	
 	public static UnaryOp createUnary(Hop input, OpOp1 type) 
 	{
 		DataType dt = (type==OpOp1.CAST_AS_SCALAR) ? DataType.SCALAR : 
@@ -581,6 +586,10 @@ public class HopRewriteUtils
 		return createBinary(new LiteralOp(0), input, OpOp2.MINUS);
 	}
 	
+	public static BinaryOp createBinary(Hop input1, Hop input2, String op) {
+		return createBinary(input1, input2, Hop.getBinaryOpCode(op), false);
+	}
+	
 	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op) {
 		return createBinary(input1, input2, op, false);
 	}
@@ -602,6 +611,12 @@ public class HopRewriteUtils
 	
 	public static AggUnaryOp createSum( Hop input ) {
 		return createAggUnaryOp(input, AggOp.SUM, Direction.RowCol);
+	}
+	
+	public static AggUnaryOp createAggUnaryOp( Hop input, String op ) {
+		return createAggUnaryOp(input,
+			InstructionUtils.getAggOp(op),
+			InstructionUtils.getAggDirection(op));
 	}
 	
 	public static AggUnaryOp createAggUnaryOp( Hop input, AggOp op, Direction dir ) {

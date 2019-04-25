@@ -27,6 +27,7 @@ import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
+import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -112,14 +113,13 @@ public class DataOp extends Hop
 	 * @param inputParameters input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
-			DataOpTypes dop, HashMap<String, Hop> inputParameters) {
+			DataOpTypes dop, HashMap<String, Hop> params) {
 		super(l, dt, vt);
 
 		_dataop = dop;
 
 		int index = 0;
-		for( Entry<String, Hop> e : inputParameters.entrySet() ) 
-		{
+		for( Entry<String, Hop> e : params.entrySet() ) {
 			String s = e.getKey();
 			Hop input = e.getValue();
 			getInput().add(input);
@@ -131,6 +131,13 @@ public class DataOp extends Hop
 		if (dop == DataOpTypes.TRANSIENTREAD ){
 			setInputFormatType(FileFormatTypes.BINARY);
 		}
+		
+		if( params.containsKey(DataExpression.READROWPARAM) )
+			setDim1(((LiteralOp)params.get(DataExpression.READROWPARAM)).getLongValue());
+		if( params.containsKey(DataExpression.READCOLPARAM) )
+			setDim2(((LiteralOp)params.get(DataExpression.READCOLPARAM)).getLongValue());
+		if( params.containsKey(DataExpression.READNNZPARAM) )
+			setNnz(((LiteralOp)params.get(DataExpression.READNNZPARAM)).getLongValue());
 	}
 	
 	// WRITE operation
@@ -235,8 +242,7 @@ public class DataOp extends Hop
 		return _fileName;
 	}
 
-	public int getParameterIndex(String name)
-	{
+	public int getParameterIndex(String name) {
 		return _paramIndexMap.get(name);
 	}
 	

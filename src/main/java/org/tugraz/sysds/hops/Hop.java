@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -1319,7 +1320,9 @@ public abstract class Hop implements ParseInfo
 		HopsOpOpNLops.put(OpOpN.LIST, Nary.OperationType.LIST);
 	}
 
-	protected static final HashMap<Hop.OpOp1, String> HopsOpOp12String;
+	protected static final HashMap<OpOp1, String> HopsOpOp12String;
+	protected static final HashMap<String, OpOp1> HopsStringOpOp1;
+	
 	static {
 		HopsOpOp12String = new HashMap<>();
 		HopsOpOp12String.put(OpOp1.ABS, "abs");
@@ -1351,8 +1354,16 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp12String.put(OpOp1.INVERSE, "inv");
 		HopsOpOp12String.put(OpOp1.SPROP, "sprop");
 		HopsOpOp12String.put(OpOp1.SIGMOID, "sigmoid");
+		
+		HopsStringOpOp1 = new HashMap<>();
+		for( Entry<OpOp1,String> e : HopsOpOp12String.entrySet() )
+			HopsStringOpOp1.put(e.getValue(), e.getKey());
 	}
 
+	public static OpOp1 getUnaryOpCode(String op) {
+		return HopsStringOpOp1.get(op);
+	}
+	
 	protected static final HashMap<Hop.ParamBuiltinOp, org.tugraz.sysds.lops.ParameterizedBuiltin.OperationTypes> HopsParameterizedBuiltinLops;
 	static {
 		HopsParameterizedBuiltinLops = new HashMap<>();
@@ -1372,7 +1383,8 @@ public abstract class Hop implements ParseInfo
 		HopsParameterizedBuiltinLops.put(ParamBuiltinOp.PARAMSERV, ParameterizedBuiltin.OperationTypes.PARAMSERV);
 	}
 
-	protected static final HashMap<Hop.OpOp2, String> HopsOpOp2String;
+	protected static final HashMap<OpOp2, String> HopsOpOp2String;
+	protected static final HashMap<String,OpOp2> HopsStringOpOp2;
 	static {
 		HopsOpOp2String = new HashMap<>();
 		HopsOpOp2String.put(OpOp2.PLUS, "+");
@@ -1413,12 +1425,20 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp2String.put(OpOp2.BITWXOR, "bitwXor");
 		HopsOpOp2String.put(OpOp2.BITWSHIFTL, "bitwShiftL");
 		HopsOpOp2String.put(OpOp2.BITWSHIFTR, "bitwShiftR");
+		
+		HopsStringOpOp2 = new HashMap<>();
+		for( Entry<OpOp2,String> e : HopsOpOp2String.entrySet() )
+			HopsStringOpOp2.put(e.getValue(), e.getKey());
 	}
 	
 	public static String getBinaryOpCode(OpOp2 op) {
 		return HopsOpOp2String.get(op);
 	}
-
+	
+	public static OpOp2 getBinaryOpCode(String op) {
+		return HopsStringOpOp2.get(op);
+	}
+	
 	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;
 	static {
 		HopsOpOp3String = new HashMap<>();

@@ -122,6 +122,18 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public double getSparsity() {
 		return sparsity;
 	}
+	
+	public String getPdf() {
+		return pdf;
+	}
+	
+	public String getPdfParams() {
+		return pdfParams;
+	}
+	
+	public long getSeed() {
+		return seed;
+	}
 
 	public static DataGenCPInstruction parseInstruction(String str)
 	{

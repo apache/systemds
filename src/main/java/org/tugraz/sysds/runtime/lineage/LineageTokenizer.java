@@ -15,7 +15,7 @@
  */
 
 
-package org.tugraz.sysds.parser;
+package org.tugraz.sysds.runtime.lineage;
 
 import org.tugraz.sysds.parser.ParseException;
 

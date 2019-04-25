@@ -30,8 +30,9 @@ SYSTEMDS-30 Builtin and Packaging
 SYSTEMDS-40 Preprocessing builtins
  * 41 Add new winsorize builtin function                              OK
  * 42 Add new outlier builtin function                                OK
- * 43 SotA normalization primitives
- * 44 SotA outlier detection primitives
+ * 43 Add new scale builtin function                                  OK
+ * 44 SotA normalization primitives
+ * 45 SotA outlier detection primitives
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)
@@ -49,6 +50,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 73 Deduplication of lineage traces
  * 74 Performance features lineage tracing
  * 75 Reuse cache based on lineage traces
+ * 76 Generate runtime plan from lineage trace                        OK
 
 SYSTEMDS-80 Improved distributed operations
  * 81 Avoid unnecessary replication on rmm

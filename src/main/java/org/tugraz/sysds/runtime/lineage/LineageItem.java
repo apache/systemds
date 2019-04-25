@@ -19,6 +19,7 @@ package org.tugraz.sysds.runtime.lineage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LineageItem {
@@ -27,7 +28,7 @@ public class LineageItem {
 	private final long _id;
 	private final String _opcode;
 	private final String _name;
-	private final String _representation;
+	private final String _data;
 	private List<LineageItem> _inputs;
 	private List<LineageItem> _outputs;
 	private boolean _visited = false;
@@ -38,40 +39,40 @@ public class LineageItem {
 		_id = id;
 		_opcode = li._opcode;
 		_name = li._name;
-		_representation = li._representation;
+		_data = li._data;
 		_inputs = li._inputs;
 		_outputs = li._outputs;
 	}
 	
-	public LineageItem(long id, String name, String representation) {
-		this(id, name, representation, null, "");
+	public LineageItem(long id, String name, String data) {
+		this(id, name, data, null, "");
 	}
 	
 	public LineageItem(long id, String name, List<LineageItem> inputs, String opcode) {
 		this(id, name, "", inputs, opcode);
 	}
 	
-	public LineageItem(String name, String representation) {
-		this(_idSeq.getNextID(), name, representation, null, "");
+	public LineageItem(String name, String data) {
+		this(_idSeq.getNextID(), name, data, null, "");
 	}
 	
-	public LineageItem(String name, String representation, String opcode) {
-		this(_idSeq.getNextID(), name, representation, null, opcode);
+	public LineageItem(String name, String data, String opcode) {
+		this(_idSeq.getNextID(), name, data, null, opcode);
 	}
 	
-	public LineageItem(String name, String representation, List<LineageItem> inputs, String opcode) {
-		this(_idSeq.getNextID(), name, representation, inputs, opcode);
+	public LineageItem(String name, String data, List<LineageItem> inputs, String opcode) {
+		this(_idSeq.getNextID(), name, data, inputs, opcode);
 	}
 	
 	public LineageItem(String name, List<LineageItem> inputs, String opcode) {
 		this(_idSeq.getNextID(), name, "", inputs, opcode);
 	}
 	
-	public LineageItem(long id, String name, String representation, List<LineageItem> inputs, String opcode) {
+	public LineageItem(long id, String name, String data, List<LineageItem> inputs, String opcode) {
 		_id = id;
 		_opcode = opcode;
 		_name = name;
-		_representation = representation;
+		_data = data;
 		
 		if (inputs != null) {
 			_inputs = new ArrayList<>(inputs);
@@ -90,7 +91,7 @@ public class LineageItem {
 		_id = id;
 		_opcode = "";
 		_name = name;
-		_representation = name;
+		_data = name;
 		_inputs = null;
 		_outputs = new ArrayList<>();
 	}
@@ -111,8 +112,8 @@ public class LineageItem {
 		return _name;
 	}
 	
-	public String getRepresentation() {
-		return _representation;
+	public String getData() {
+		return _data;
 	}
 	
 	public boolean isVisited() {
@@ -133,6 +134,17 @@ public class LineageItem {
 	
 	public String getOpcode() {
 		return _opcode;
+	}
+	
+	public LineageItemType getType() {
+		if (isLeaf() && isInstruction())
+			return LineageItemType.Creation;
+		else if (isLeaf() && !isInstruction())
+			return LineageItemType.Literal;
+		else if (!isLeaf() && isInstruction())
+			return LineageItemType.Instruction;
+		else
+			throw new DMLRuntimeException("An inner node could not be a literal!");
 	}
 	
 	@Override

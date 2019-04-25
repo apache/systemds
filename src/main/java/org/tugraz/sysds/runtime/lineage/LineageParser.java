@@ -15,15 +15,13 @@
  */
 
 
-package org.tugraz.sysds.parser;
+package org.tugraz.sysds.runtime.lineage;
 
 
+import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionParser;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.lineage.LineageItem;
-import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
-import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 
 import java.util.ArrayList;
 import java.util.HashMap;

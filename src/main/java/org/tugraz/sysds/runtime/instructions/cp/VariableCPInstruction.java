@@ -229,6 +229,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	public boolean isAssignVariable() {
 		return (opcode == VariableOperationCode.AssignVariable);
 	}
+	
+	public boolean isCreateVariable() {
+		return (opcode == VariableOperationCode.CreateVariable);
+	}
 
 	public VariableOperationCode getVariableOpcode() {
 		return opcode;
@@ -1155,14 +1159,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 	}
 	
-	
-	public boolean isVariableCastInstruction()
-	{
-		return ( opcode == VariableOperationCode.CastAsScalarVariable  ||
-				 opcode == VariableOperationCode.CastAsMatrixVariable  ||
-				 opcode == VariableOperationCode.CastAsFrameVariable   ||
-				 opcode == VariableOperationCode.CastAsIntegerVariable ||
-				 opcode == VariableOperationCode.CastAsDoubleVariable  ||
-				 opcode == VariableOperationCode.CastAsBooleanVariable );
+	public boolean isVariableCastInstruction() {
+		return opcode == VariableOperationCode.CastAsScalarVariable
+			|| opcode == VariableOperationCode.CastAsMatrixVariable
+			|| opcode == VariableOperationCode.CastAsFrameVariable
+			|| opcode == VariableOperationCode.CastAsIntegerVariable
+			|| opcode == VariableOperationCode.CastAsDoubleVariable
+			|| opcode == VariableOperationCode.CastAsBooleanVariable;
 	}
 }

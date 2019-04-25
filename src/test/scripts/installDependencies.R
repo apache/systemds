@@ -31,3 +31,4 @@ custom_install("psych");
 custom_install("moments");
 custom_install("batch");
 custom_install("matrixStats");
+custom_install("outliers");

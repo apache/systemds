@@ -157,6 +157,7 @@ public enum Builtins {
 	QEXP("qexp", false, true),
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
+	SCALE("scale", true, false),     //TODO parameterize center & scale
 	TOSTRING("toString", false, true),
 	TRANSFORMAPPLY("transformapply", false, true),
 	TRANSFORMCOLMAP("transformcolmap", false, true),

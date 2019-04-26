@@ -110,18 +110,16 @@ public class LineageItemUtils {
 			root.getInputs().get(0).getId() : root.getId();
 		String varname = LVARPREFIX + rootId;
 		
-		//generate empty program block
-		ExecutionContext ec = ExecutionContextFactory.createContext();
-		ProgramBlock pb = new ProgramBlock(new Program());
-		
 		//recursively construct hops 
 		root.resetVisitStatus();
 		HashMap<Long, Hop> operands = new HashMap<>();
-		rConstructHops(root, pb, operands);
+		rConstructHops(root, operands);
 		Hop out = HopRewriteUtils.createTransientWrite(
 			varname, operands.get(rootId));
 		
 		//generate instructions for temporary hops
+		ExecutionContext ec = ExecutionContextFactory.createContext();
+		ProgramBlock pb = new ProgramBlock(new Program());
 		Dag<Lop> dag = new Dag<>();
 		Lop lops = out.constructLops();
 		lops.addToDag( dag );
@@ -133,14 +131,14 @@ public class LineageItemUtils {
 		return ec.getVariable(varname);
 	}
 	
-	private static void rConstructHops(LineageItem item, ProgramBlock pb, HashMap<Long,Hop> operands) {
+	private static void rConstructHops(LineageItem item, HashMap<Long,Hop> operands) {
 		if( item.isVisited() )
 			return;
 		
 		//recursively process children (ordering by data dependencies)
 		if( !item.isLeaf() )
 			for( LineageItem c : item.getInputs() )
-				rConstructHops(c, pb, operands);
+				rConstructHops(c, operands);
 		
 		//process current lineage item
 		//NOTE: we generate instructions from hops (but without rewrites) to automatically
@@ -214,7 +212,6 @@ public class LineageItemUtils {
 							throw new DMLRuntimeException("Unsupported instruction "
 								+ "type: "+ctype.name()+" ("+item.getOpcode()+").");
 					}
-					break;
 				}
 				else if( stype == SPType.Reblock ) {
 					Hop input = operands.get(item.getInputs().get(0).getId());
@@ -224,14 +221,12 @@ public class LineageItemUtils {
 				}
 				else 
 					throw new DMLRuntimeException("Unsupported instruction: "+item.getOpcode());
+				break;
 			}
 			case Literal: {
-				//TODO why is this empty string handling necessary - check tracing
-				if( !item.getData().trim().isEmpty() ) {
-					CPOperand op = new CPOperand(item.getData());
-					operands.put(item.getId(), ScalarObjectFactory
-						.createLiteralOp(op.getValueType(), op.getName()));
-				}
+				CPOperand op = new CPOperand(item.getData());
+				operands.put(item.getId(), ScalarObjectFactory
+					.createLiteralOp(op.getValueType(), op.getName()));
 				break;
 			}
 		}

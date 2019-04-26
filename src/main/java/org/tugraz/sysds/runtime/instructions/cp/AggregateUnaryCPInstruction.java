@@ -27,17 +27,19 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.utils.Explain;
 
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 {
 	public enum AUType {
-		NROW, NCOL, LENGTH, EXISTS,
+		NROW, NCOL, LENGTH, EXISTS, LINEAGE,
 		DEFAULT;
 		public boolean isMeta() {
 			return this != DEFAULT;
@@ -63,7 +65,8 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		CPOperand out = new CPOperand(parts[2]);
 		
 		if(opcode.equalsIgnoreCase("nrow") || opcode.equalsIgnoreCase("ncol") 
-			|| opcode.equalsIgnoreCase("length") || opcode.equalsIgnoreCase("exists")){
+			|| opcode.equalsIgnoreCase("length") || opcode.equalsIgnoreCase("exists")
+			|| opcode.equalsIgnoreCase("lineage")){
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		}
@@ -79,72 +82,86 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		String output_name = output.getName();
 		String opcode = getOpcode();
 		
-		if( _type.isMeta() && _type!=AUType.EXISTS ) //nrow/ncol/length
-		{
-			//check existence of input variable
-			if( !ec.getVariables().keySet().contains(input1.getName()) )
-				throw new DMLRuntimeException("Variable '"+input1.getName()+"' does not exist.");
-			
-			//get meta data information
-			long rval = -1;
-			if (input1.getDataType() == DataType.LIST && _type == AUType.LENGTH ) {
-				rval = ((ListObject)ec.getVariable(input1.getName())).getLength();
-			}
-			else if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
-				MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
-				rval = getSizeMetaData(_type, mc);
-	
-				//check for valid output, and acquire read if necessary
-				//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
-				//we however, support unspecified input sizes, which requires a read to obtain the
-				//required meta data)
-				//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
-				if( !mc.dimsKnown() ) //invalid nrow/ncol/length
-				{
-					if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE 
-						|| input1.getDataType() == DataType.FRAME )
+		switch( _type ) {
+			case NROW:
+			case NCOL:
+			case LENGTH: {
+				//check existence of input variable
+				if( !ec.getVariables().keySet().contains(input1.getName()) )
+					throw new DMLRuntimeException("Variable '"+input1.getName()+"' does not exist.");
+				
+				//get meta data information
+				long rval = -1;
+				if (input1.getDataType() == DataType.LIST && _type == AUType.LENGTH ) {
+					rval = ((ListObject)ec.getVariable(input1.getName())).getLength();
+				}
+				else if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
+					MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
+					rval = getSizeMetaData(_type, mc);
+		
+					//check for valid output, and acquire read if necessary
+					//(Use case: In case of forced exec type singlenode, there are no reblocks. For csv
+					//we however, support unspecified input sizes, which requires a read to obtain the
+					//required meta data)
+					//Note: check on matrix characteristics to cover incorrect length (-1*-1 -> 1)
+					if( !mc.dimsKnown() ) //invalid nrow/ncol/length
 					{
-						//read the input matrix/frame and explicitly refresh meta data
-						CacheableData<?> obj = ec.getCacheableData(input1.getName());
-						obj.acquireRead();
-						obj.refreshMetaData();
-						obj.release();
-						
-						//update meta data information
-						mc = ec.getMatrixCharacteristics(input1.getName());
-						rval = getSizeMetaData(_type, mc);
-					}
-					else {
-						throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
+						if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE 
+							|| input1.getDataType() == DataType.FRAME )
+						{
+							//read the input matrix/frame and explicitly refresh meta data
+							CacheableData<?> obj = ec.getCacheableData(input1.getName());
+							obj.acquireRead();
+							obj.refreshMetaData();
+							obj.release();
+							
+							//update meta data information
+							mc = ec.getMatrixCharacteristics(input1.getName());
+							rval = getSizeMetaData(_type, mc);
+						}
+						else {
+							throw new DMLRuntimeException("Invalid meta data returned by '"+opcode+"': "+rval + ":" + instString);
+						}
 					}
 				}
+				
+				//create and set output scalar
+				ec.setScalarOutput(output_name, new IntObject(rval));
+				break;
 			}
-			
-			//create and set output scalar
-			ec.setScalarOutput(output_name, new IntObject(rval));
-		}
-		else if( _type == AUType.EXISTS ) {
-			//probe existence of variable in symbol table w/o error
-			String varName = !input1.isScalar() ? input1.getName() :
-				ec.getScalarInput(input1).getStringValue();
-			boolean rval = ec.getVariables().keySet().contains(varName);
-			//create and set output scalar
-			ec.setScalarOutput(output_name, new BooleanObject(rval));
-		}
-		else { //DEFAULT
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-			AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
-			
-			MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
-				matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
-			
-			ec.releaseMatrixInput(input1.getName());
-			if(output.getDataType() == DataType.SCALAR){
-				DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
-				ec.setScalarOutput(output_name, ret);
-			} else{
-				// since the computed value is a scalar, allocate a "temp" output matrix
-				ec.setMatrixOutput(output_name, resultBlock);
+			case EXISTS: {
+				//probe existence of variable in symbol table w/o error
+				String varName = !input1.isScalar() ? input1.getName() :
+					ec.getScalarInput(input1).getStringValue();
+				boolean rval = ec.getVariables().keySet().contains(varName);
+				//create and set output scalar
+				ec.setScalarOutput(output_name, new BooleanObject(rval));
+				break;
+			}
+			case LINEAGE: {
+				//serialize lineage and set output scalar
+				if( Lineage.get(input1) == null )
+					throw new DMLRuntimeException("Lineage trace "
+						+ "for variable "+input1.getName()+" unavailable.");
+				ec.setScalarOutput(output_name, new StringObject(
+					Explain.explain(Lineage.get(input1))));
+				break;
+			}
+			default: {
+				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+				AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
+				
+				MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
+					matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+				
+				ec.releaseMatrixInput(input1.getName());
+				if(output.getDataType() == DataType.SCALAR){
+					DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
+					ec.setScalarOutput(output_name, ret);
+				} else{
+					// since the computed value is a scalar, allocate a "temp" output matrix
+					ec.setMatrixOutput(output_name, resultBlock);
+				}
 			}
 		}
 	}

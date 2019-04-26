@@ -51,6 +51,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 74 Performance features lineage tracing
  * 75 Reuse cache based on lineage traces
  * 76 Generate runtime plan from lineage trace                        OK
+ * 77 New builtin function for obtaining lineage                      OK
 
 SYSTEMDS-80 Improved distributed operations
  * 81 Avoid unnecessary replication on rmm

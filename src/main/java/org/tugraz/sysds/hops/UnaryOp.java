@@ -344,13 +344,11 @@ public class UnaryOp extends MultiThreadedHop
 	
 		
 	@Override
-	public void computeMemEstimate(MemoTable memo)
-	{
+	public void computeMemEstimate(MemoTable memo) {
 		//overwrites default hops behavior
 		super.computeMemEstimate(memo);
 
-		if( _op == Hop.OpOp1.NROW || _op == Hop.OpOp1.NCOL ) //specific case for meta data ops
-		{
+		if( isMetadataOperation() ) {
 			_memEstimate = OptimizerUtils.INT_SIZE;
 			//_outputMemEstimate = OptimizerUtils.INT_SIZE;
 			//_processingMemEstimate = 0;
@@ -453,6 +451,14 @@ public class UnaryOp extends MultiThreadedHop
 			|| _op == OpOp1.SIGMOID);
 	}
 	
+	public boolean isMetadataOperation() {
+		return _op == OpOp1.NROW
+			|| _op == OpOp1.NCOL
+			|| _op == OpOp1.LENGTH
+			|| _op == OpOp1.EXISTS
+			|| _op == OpOp1.LINEAGE;
+	}
+	
 	@Override
 	protected ExecType optFindExecType() 
 	{
@@ -503,7 +509,7 @@ public class UnaryOp extends MultiThreadedHop
 		//ensure cp exec type for single-node operations
 		if( _op == OpOp1.PRINT || _op == OpOp1.ASSERT || _op == OpOp1.STOP
 			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.SVD
-			|| getInput().get(0).getDataType() == DataType.LIST )
+			|| getInput().get(0).getDataType() == DataType.LIST || isMetadataOperation() )
 		{
 			_etype = ExecType.CP;
 		}

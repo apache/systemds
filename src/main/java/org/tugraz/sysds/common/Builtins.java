@@ -84,6 +84,7 @@ public enum Builtins {
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
 	LENGTH("length", false),
+	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin
 	LOG("log", false),
 	LSTM("lstm", false),

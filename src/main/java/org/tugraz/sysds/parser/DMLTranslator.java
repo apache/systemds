@@ -73,6 +73,7 @@ import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.compile.Dag;
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Builtins;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -2227,6 +2228,13 @@ public class DMLTranslator
 				target.getValueType(), Hop.OpOp1.LENGTH, expr) : new LiteralOp(expr.getDim1()*expr.getDim2());
 			break;
 
+		case LINEAGE:
+			//construct hop and enable lineage tracing if necessary
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), Hop.OpOp1.LINEAGE, expr);
+			DMLScript.LINEAGE = true;
+			break;
+			
 		case LIST:
 			currBuiltinOp = new NaryOp(target.getName(), DataType.LIST, ValueType.UNKNOWN,
 				OpOpN.LIST, processAllExpressions(source.getAllExpr(), hops));

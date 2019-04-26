@@ -25,19 +25,12 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
-
-/**
- * Lop to perform unary scalar operations. Example a = !b
- * 
- */
-
 public class UnaryCP extends Lop 
 {
-	
 	public enum OperationTypes {
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SQRT, LOG, EXP, SINH, COSH, TANH,
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN, 
-		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX
+		PRINT, ASSERT, NROW, NCOL, LENGTH, EXISTS, LINEAGE, ROUND, STOP, CEIL, FLOOR, CUMSUM, SOFTMAX
 	}
 	
 	public static final String CAST_AS_SCALAR_OPCODE = "castdts";
@@ -136,7 +129,7 @@ public class UnaryCP extends Lop
 			return CAST_AS_MATRIX_OPCODE;
 
 		case CAST_AS_FRAME:
-			return CAST_AS_FRAME_OPCODE;	
+			return CAST_AS_FRAME_OPCODE;
 			
 		case STOP:
 			return "stop";
@@ -168,7 +161,8 @@ public class UnaryCP extends Lop
 		case NCOL:   return "ncol";
 		case LENGTH: return "length";
 		case EXISTS: return "exists";
-
+		case LINEAGE: return "lineage";
+		
 		case SOFTMAX:
 			return "softmax";
 			
@@ -188,9 +182,8 @@ public class UnaryCP extends Lop
 		sb.append(getInputs().get(0).prepScalarInputOperand(getExecType()));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
 		
 		return sb.toString();
-
 	}
 }

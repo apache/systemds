@@ -986,7 +986,7 @@ public abstract class Hop implements ParseInfo
 		NOT, ABS, SIN, COS, TAN, ASIN, ACOS, ATAN, SINH, COSH, TANH, SIGN, SQRT, LOG, EXP, 
 		CAST_AS_SCALAR, CAST_AS_MATRIX, CAST_AS_FRAME, CAST_AS_DOUBLE, CAST_AS_INT, CAST_AS_BOOLEAN,
 		PRINT, ASSERT, EIGEN, NROW, NCOL, LENGTH, ROUND, IQM, STOP, CEIL, FLOOR, MEDIAN, INVERSE, CHOLESKY,
-		SVD, EXISTS,
+		SVD, EXISTS, LINEAGE,
 		//cumulative sums, products, extreme values
 		CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD,
 		//fused ML-specific operators for performance 
@@ -1286,6 +1286,7 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp1LopsUS.put(OpOp1.NCOL, org.tugraz.sysds.lops.UnaryCP.OperationTypes.NCOL);
 		HopsOpOp1LopsUS.put(OpOp1.LENGTH, org.tugraz.sysds.lops.UnaryCP.OperationTypes.LENGTH);
 		HopsOpOp1LopsUS.put(OpOp1.EXISTS, org.tugraz.sysds.lops.UnaryCP.OperationTypes.EXISTS);
+		HopsOpOp1LopsUS.put(OpOp1.LINEAGE, org.tugraz.sysds.lops.UnaryCP.OperationTypes.LINEAGE);
 		HopsOpOp1LopsUS.put(OpOp1.PRINT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.PRINT);
 		HopsOpOp1LopsUS.put(OpOp1.ASSERT, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ASSERT);
 		HopsOpOp1LopsUS.put(OpOp1.ROUND, org.tugraz.sysds.lops.UnaryCP.OperationTypes.ROUND);

@@ -851,6 +851,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlockDimensions (0, 0);
 			output.setValueType(ValueType.INT64);
 			break;
+		
+		case LINEAGE:
+			checkNumParameters(1);
+			checkDataTypeParam(getFirstExpr(),
+				DataType.MATRIX, DataType.FRAME, DataType.LIST);
+			output.setDataType(DataType.SCALAR);
+			output.setDimensions(0, 0);
+			output.setBlockDimensions (0, 0);
+			output.setValueType(ValueType.STRING);
+			break;
 			
 		case LIST:
 			output.setDataType(DataType.LIST);

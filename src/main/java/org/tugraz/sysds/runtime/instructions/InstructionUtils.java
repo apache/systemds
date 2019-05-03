@@ -26,6 +26,7 @@ import org.tugraz.sysds.hops.Hop.Direction;
 import org.tugraz.sysds.lops.AppendM;
 import org.tugraz.sysds.lops.BinaryM;
 import org.tugraz.sysds.lops.GroupedAggregateM;
+import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.MapMult;
 import org.tugraz.sysds.lops.MapMultChain;
 import org.tugraz.sysds.lops.PMMJ;
@@ -966,5 +967,23 @@ public class InstructionUtils
 		default:
 			throw new DMLRuntimeException("Invalid Aggregate Operation in GroupedAggregateInstruction: " + op);
 		}
+	}
+	
+	public static String replaceOperand(String instStr, int operand, String newValue) {
+		//split instruction and check for correctness
+		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
+		if( operand >= parts.length )
+			throw new DMLRuntimeException("Operand position "
+				+ operand + " exceeds the length of the instruction.");
+		
+		//replace and reconstruct string
+		parts[operand] = newValue;
+		StringBuilder sb = new StringBuilder(instStr.length());
+		sb.append(parts[0]);
+		for( int i=1; i<parts.length; i++ ) {
+			sb.append(Lop.OPERAND_DELIMITOR);
+			sb.append(parts[i]);
+		}
+		return sb.toString();
 	}
 }

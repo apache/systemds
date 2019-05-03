@@ -15,12 +15,42 @@
 # limitations under the License.
 #
 #-------------------------------------------------------------
+max_iteration = 100;
 
-X = rand(rows=$3, cols=$4, seed=7);
+X = read($1);
+i = 0;
 
-R = X;
-for(i in 1:7)
-  R = R + 1 / 2;
-R = R + X;
+while(i < max_iteration) {
+  if (i %% 2 == 1)
+    X = X * X * X;
+  else
+    X = X + 7;
 
-write(R, $2);
+  if (sum(X) > 500)
+    X = X / 2;
+
+  i = i + 1;
+}
+X = t(X) %*% X;
+write(X, $2, format="text");
+
+
+while (FALSE) {}
+
+
+Z = read($1);
+i = 0;
+
+while(i < max_iteration) {
+  if (i %% 2 == 1)
+    Z = Z * Z * Z;
+  else
+    Z = Z + 7;
+
+  if (sum(Z) > 500)
+    Z = Z / 2;
+
+  i = i + 1;
+}
+Z = t(Z) %*% Z;
+write(Z, $3, format="text");

@@ -24,30 +24,51 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
 import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Explain;
 
 public class LineageTraceTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME = "LineageTrace";
+	protected static final String TEST_NAME1 = "LineageTrace1";
+	protected static final String TEST_NAME2 = "LineageTrace2";
+	protected static final String TEST_NAME3 = "LineageTrace3";
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
 	protected static final int numFeatures = 5;
 	
+	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
 	}
 	
 	@Test
-	public void testLineageTrace() {
+	public void testLineageTrace1() {
+		testLineageTrace(TEST_NAME1);
+	}
+	
+	@Test
+	public void testLineageTrace2() {
+		testLineageTrace(TEST_NAME2);
+	}
+	
+	@Test
+	public void testLineageTrace3() {
+		testLineageTrace(TEST_NAME3);
+	}
+	
+	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + TEST_NAME + "------------");
+			System.out.println("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
@@ -55,7 +76,7 @@ public class LineageTraceTest extends AutomatedTestBase {
 			int rows = numRecords;
 			int cols = numFeatures;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(testname);
 			
 			List<String> proArgs = new ArrayList<String>();
 			

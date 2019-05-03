@@ -115,7 +115,7 @@ public class LineageItemUtils {
 		HashMap<Long, Hop> operands = new HashMap<>();
 		rConstructHops(root, operands);
 		Hop out = HopRewriteUtils.createTransientWrite(
-			varname, operands.get(rootId));
+				varname, operands.get(rootId));
 		
 		//generate instructions for temporary hops
 		ExecutionContext ec = ExecutionContextFactory.createContext();

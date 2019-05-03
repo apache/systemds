@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class LineageItem {
 	private static IDSequence _idSeq = new IDSequence();
@@ -32,6 +33,7 @@ public class LineageItem {
 	private List<LineageItem> _inputs;
 	private List<LineageItem> _outputs;
 	private boolean _visited = false;
+	private int _hash = 0;
 	
 	public enum LineageItemType {Literal, Creation, Instruction}
 	
@@ -150,6 +152,56 @@ public class LineageItem {
 	@Override
 	public String toString() {
 		return LineageItemUtils.explainSingleLineageItem(this);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof LineageItem))
+			return false;
+		
+		resetVisitStatus();
+		boolean ret = equalsLI((LineageItem) o);
+		resetVisitStatus();
+		return ret;
+	}
+	
+	private boolean equalsLI(LineageItem that) {
+		if (isVisited())
+			return true;
+		
+		boolean ret = _opcode.equals(that._opcode);
+		
+		//If this is LineageItemType.Creation, remove _name in _data
+		if (getType() == LineageItemType.Creation) {
+			String this_data = _data.replace(_name, "");
+			String that_data = that._data.replace(that._name, "");
+			ret &= this_data.equals(that_data);
+		} else
+			ret &= _data.equals(that._data);
+		
+		if (_inputs != null)
+			for (int i = 0; i < _inputs.size(); i++)
+				ret &= _inputs.get(i).equalsLI(that._inputs.get(i));
+		
+		setVisited();
+		return ret;
+	}
+	
+	@Override
+	public int hashCode() {
+		if (_hash == 0) {
+			//compute hash over opcode and all inputs
+			int h = _opcode.hashCode();
+			if (_inputs != null)
+				for (LineageItem li : _inputs)
+					h = UtilFunctions.intHashCode(h, li.hashCode());
+			
+			//if Creation type, remove _name in _data
+			_hash = UtilFunctions.intHashCode(h, 
+				((getType() == LineageItemType.Creation) ?
+				_data.replace(_name, "") : _data).hashCode());
+		}
+		return _hash;
 	}
 	
 	public boolean isLeaf() {

@@ -16,7 +16,6 @@
 #
 #-------------------------------------------------------------
 
-#TODO handle unspecified seed
 X = rand(rows=$3, cols=$4, seed=7);
 
 R = X;

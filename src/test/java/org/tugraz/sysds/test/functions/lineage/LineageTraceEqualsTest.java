@@ -16,42 +16,52 @@
 
 package org.tugraz.sysds.test.functions.lineage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
 import org.tugraz.sysds.test.AutomatedTestBase;
+import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Explain;
 
-import java.util.ArrayList;
-import java.util.List;
+import static junit.framework.TestCase.assertTrue;
 
-public class LineageTraceLoopTest extends AutomatedTestBase {
+public class LineageTraceEqualsTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME = "LineageTraceLoop";
-	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceLoopTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "LineageTraceEquals1";
+	protected static final String TEST_NAME2 = "LineageTraceEquals2";
+	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceEqualsTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
 	protected static final int numFeatures = 5;
 	
-	public LineageTraceLoopTest() {
-		
-	}
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 	}
 	
 	@Test
-	public void testLineageTraceLoop() {
+	public void testLineageTrace1() {
+		testLineageTrace(TEST_NAME1);
+	}
+	
+	@Test
+	public void testLineageTrace2() { testLineageTrace(TEST_NAME2); }
+	
+	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + TEST_NAME + "------------");
+			System.out.println("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
@@ -59,34 +69,35 @@ public class LineageTraceLoopTest extends AutomatedTestBase {
 			int rows = numRecords;
 			int cols = numFeatures;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(testname);
 			
 			List<String> proArgs = new ArrayList<String>();
 			
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
+//			proArgs.add("-explain");
 			proArgs.add("-args");
-			proArgs.add(input("X"));
+			proArgs.add(input("M"));
 			proArgs.add(output("X"));
-			proArgs.add(output("Y"));
+			proArgs.add(output("Z"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			
 			fullDMLScriptName = getScript();
 			
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
-			writeInputMatrixWithMTD("X", X, true);
+			double[][] m = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
+			writeInputMatrixWithMTD("M", m, true);
 			
 			LineageItem.resetIDSequence();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
 			String X_lineage = readDMLLineageFromHDFS("X");
-			String Y_lineage = readDMLLineageFromHDFS("Y");
+			String Z_lineage = readDMLLineageFromHDFS("Z");
 			
 			LineageItem X_li = LineageParser.parseLineageTrace(X_lineage);
-			LineageItem Y_li = LineageParser.parseLineageTrace(Y_lineage);
+			LineageItem Z_li = LineageParser.parseLineageTrace(Z_lineage);
 			
-			TestUtils.compareScalars(X_lineage, Explain.explain(X_li));
-			TestUtils.compareScalars(Y_lineage, Explain.explain(Y_li));
+			assertTrue(X_li.hashCode() == Z_li.hashCode());
+			assertTrue(X_li.equals(Z_li));
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

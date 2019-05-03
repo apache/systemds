@@ -45,6 +45,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private final double minValue, maxValue, sparsity;
 	private final String pdf, pdfParams;
 	private final long seed;
+	private long runtimeSeed;
 
 	// sequence specific attributes
 	private final CPOperand seq_from, seq_to, seq_incr;
@@ -134,7 +135,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public long getSeed() {
 		return seed;
 	}
-
+	
 	public static DataGenCPInstruction parseInstruction(String str)
 	{
 		DataGenMethod method = DataGenMethod.INVALID;
@@ -223,15 +224,17 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			//generate pseudo-random seed (because not specified) 
 			long lSeed = seed; //seed per invocation
-			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
+			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) {
 				lSeed = DataGenOp.generateRandomSeed();
+				runtimeSeed = lSeed;
+			}
 			
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 			
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 				pdf, (int) lrows, (int) lcols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
-			soresBlock = MatrixBlock.randOperations(rgen, seed, numThreads);
+			soresBlock = MatrixBlock.randOperations(rgen, lSeed, numThreads);
 		}
 		else if ( method == DataGenMethod.SEQ ) 
 		{
@@ -279,6 +282,13 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	
 	@Override
 	public LineageItem getLineageItem() {
-		return new LineageItem(output.getName(), instString, getOpcode());
+		String tmpInstStr = instString;
+		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
+			int position = (method == DataGenMethod.RAND) ? 9 :
+				(method == DataGenMethod.SAMPLE) ? 5 : 0;
+			tmpInstStr = InstructionUtils.replaceOperand(
+				tmpInstStr, position, String.valueOf(runtimeSeed));
+		}
+		return new LineageItem(output.getName(), tmpInstStr, getOpcode());
 	}
 }

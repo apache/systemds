@@ -39,6 +39,8 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 	protected static final String TEST_NAME1 = "LineageTraceExec1"; //rand - matrix result
 	protected static final String TEST_NAME2 = "LineageTraceExec2"; //rand - scalar result
 	protected static final String TEST_NAME3 = "LineageTraceExec3"; //read - matrix result
+	protected static final String TEST_NAME4 = "LineageTraceExec4"; //rand - matrix result - unspecified seed
+	protected static final String TEST_NAME5 = "LineageTraceExec5"; //rand - scalar result - unspecified seed
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceExecTest.class.getSimpleName() + "/";
 	
@@ -55,6 +57,8 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -72,7 +76,17 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		testLineageTraceExec(TEST_NAME3);
 	}
 	
-	private void testLineageTraceExec(String testname) {
+	@Test
+	public void testLineageTraceExec4() {
+		testLineageTraceExec(TEST_NAME4);
+	}
+	
+	@Test
+	public void testLineageTraceExec5() {
+		testLineageTraceExec(TEST_NAME5);
+	}
+		
+		private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
 		getAndLoadTestConfiguration(testname);
@@ -101,7 +115,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		LineageItem R = LineageParser.parseLineageTrace(Rtrace);
 		Data ret = LineageItemUtils.computeByLineage(R);
 		
-		if( testname.equals(TEST_NAME2) ) {
+		if( testname.equals(TEST_NAME2) || testname.equals(TEST_NAME5)) {
 			double val1 = readDMLScalarFromHDFS("R").get(new CellIndex(1,1));
 			double val2 = ((ScalarObject)ret).getDoubleValue();
 			TestUtils.compareScalars(val1, val2, 1e-6);

@@ -30,31 +30,39 @@ import java.util.List;
 public class LineageTraceRandomTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME = "LineageTraceRandom";
+	protected static final String TEST_NAME1 = "LineageTraceRandom1";
+	protected static final String TEST_NAME2 = "LineageTraceRandom2";
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceRandomTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME1);
+		addTestConfiguration(TEST_CLASS_DIR, TEST_NAME2);
 	}
 	
 	@Test
-	public void testLineageTraceRandom() {
+	public void testLineageTraceRandom1() { testLineageTraceRandom(TEST_NAME1); }
+
+	@Test
+	public void testLineageTraceRandom2() { testLineageTraceRandom(TEST_NAME2); }
+	
+	private void testLineageTraceRandom(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		
 		try {
-			System.out.println("------------ BEGIN " + TEST_NAME + "------------");
+			System.out.println("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
 			
-			getAndLoadTestConfiguration(TEST_NAME);
+			getAndLoadTestConfiguration(testname);
 			
 			List<String> proArgs = new ArrayList<String>();
 			
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
+			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			proArgs.add(output("Y"));

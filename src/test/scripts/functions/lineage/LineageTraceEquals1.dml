@@ -16,11 +16,16 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=$3, cols=$4, seed=7);
+X = read($1);
+X = X * 3;
+X = X + 5;
+# print(lineage(X))
+write(X, $2, format="text");
 
-R = X;
-for(i in 1:7)
-  R = R + 1 / 2;
-R = R + X;
+while (FALSE) {}
 
-write(R, $2);
+Z = read($1);
+Z = Z * 3;
+Z = Z + 5;
+# print(lineage(Z))
+write(Z, $3, format="text");

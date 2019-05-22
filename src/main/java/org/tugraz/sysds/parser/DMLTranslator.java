@@ -1094,6 +1094,13 @@ public class DMLTranslator
 						}
 						else
 							target.setProperties(source.getOutput());
+
+						if (source instanceof BuiltinFunctionExpression){
+							BuiltinFunctionExpression BuiltinSource = (BuiltinFunctionExpression)source;
+							if (BuiltinSource.getOpCode() == Builtins.TIME)
+								sb.setSplitDag(true);
+						}
+
 						ids.put(target.getName(), ae);
 						
 						//add transient write if needed
@@ -2494,6 +2501,10 @@ public class DMLTranslator
 			randParams.put(Statement.SEQ_INCR, (expr3!=null)?expr3 : new LiteralOp(1)); 
 			//note incr: default -1 (for from>to) handled during runtime
 			currBuiltinOp = new DataGenOp(DataGenMethod.SEQ, target, randParams);
+			break;
+
+		case TIME:
+			currBuiltinOp = new DataGenOp(DataGenMethod.TIME, target);
 			break;
 			
 		case SAMPLE: 

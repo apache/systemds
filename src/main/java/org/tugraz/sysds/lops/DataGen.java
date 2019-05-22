@@ -40,6 +40,7 @@ public class DataGen extends Lop
 	public static final String SEQ_OPCODE    = "seq"; //sequence
 	public static final String SINIT_OPCODE  = "sinit"; //string initialize
 	public static final String SAMPLE_OPCODE = "sample"; //sample.int
+	public static final String TIME_OPCODE = "time"; //time
 	
 	private int _numThreads = 1;
 	
@@ -110,6 +111,8 @@ public class DataGen extends Lop
 				return getSeqInstructionCPSpark(output);
 			case SAMPLE:
 				return getSampleInstructionCPSpark(output);
+			case TIME:
+				return getTimeInstructionCP(output);
 				
 			default:
 				throw new LopsException("Unknown data generation method: " + method);
@@ -285,6 +288,20 @@ public class DataGen extends Lop
 		sb.append( rowsInBlockString );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( colsInBlockString );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( prepOutputOperand(output) );
+		
+		return sb.toString();
+	}
+	
+	private String getTimeInstructionCP(String output)
+	{
+		if (method != DataGenMethod.TIME )
+			throw new LopsException("Invalid instruction generation for data generation method " + method);
+		StringBuilder sb = new StringBuilder();
+		sb.append( getExecType() );
+		sb.append( Lop.OPERAND_DELIMITOR );
+		sb.append( "time" );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		sb.append( prepOutputOperand(output) );
 		

@@ -63,3 +63,6 @@ SYSTEMDS-100 Various Fixes
  * 103 Fix handling of builtin functions w/ matching udfs             OK
  * 104 Fix failing tests due to incorrect parfor parameters           OK
  * 105 Fix all application/function tests (various issues)
+ 
+SYSTEMDS-110 New Builtin Functions
+ * 111 Time builtin function for script-level measurements						OK

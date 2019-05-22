@@ -159,6 +159,7 @@ public enum Builtins {
 	REPLACE("replace", false, true),
 	RMEMPTY("removeEmpty", false, true),
 	SCALE("scale", true, false),     //TODO parameterize center & scale
+	TIME("time", false),
 	TOSTRING("toString", false, true),
 	TRANSFORMAPPLY("transformapply", false, true),
 	TRANSFORMCOLMAP("transformcolmap", false, true),

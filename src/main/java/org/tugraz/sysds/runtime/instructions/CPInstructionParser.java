@@ -269,6 +269,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( DataGen.SEQ_OPCODE    , CPType.Rand);
 		String2CPInstructionType.put( DataGen.SINIT_OPCODE  , CPType.StringInit);
 		String2CPInstructionType.put( DataGen.SAMPLE_OPCODE , CPType.Rand);
+		String2CPInstructionType.put( DataGen.TIME_OPCODE   , CPType.Rand);
 		
 		String2CPInstructionType.put( "ctable", 		CPType.Ctable);
 		String2CPInstructionType.put( "ctableexpand", 	CPType.Ctable);

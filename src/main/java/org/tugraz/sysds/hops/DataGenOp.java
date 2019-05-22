@@ -114,6 +114,22 @@ public class DataGenOp extends MultiThreadedHop
 		refreshSizeInformation();
 	}
 
+	public DataGenOp(DataGenMethod mthd, DataIdentifier id)
+	{
+		super(id.getName(), DataType.SCALAR, ValueType.INT64);
+		
+		_id = id;
+		_op = mthd;
+
+		//generate base dir
+		String scratch = ConfigurationManager.getScratchSpace();
+		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR 
+			+ Lop.FILE_SEPARATOR + Lop.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
+		
+		//compute unknown dims and nnz
+		refreshSizeInformation();
+	}
+
 	@Override
 	public void checkArity() {
 		int sz = _input.size();
@@ -283,8 +299,9 @@ public class DataGenOp extends MultiThreadedHop
 		
 		//always force string initialization into CP (not supported in MR)
 		//similarly, sample is currently not supported in MR either
-		if( _op == DataGenMethod.SINIT )
+		if( _op == DataGenMethod.SINIT || _op == DataGenMethod.TIME ) {
 			_etype = ExecType.CP;
+		}
 		
 		return _etype;
 	}
@@ -331,6 +348,12 @@ public class DataGenOp extends MultiThreadedHop
 				setDim2(1);
 				_incr = incr;
 			}
+		}
+		else if (_op == DataGenMethod.TIME ) {
+			setDim1(0);
+			setDim2(0);
+			_dataType = DataType.SCALAR;
+			_valueType = ValueType.INT64;
 		}
 		
 		//refresh nnz information (for seq, sparsity is always -1)
@@ -469,12 +492,19 @@ public class DataGenOp extends MultiThreadedHop
 		if( !(that instanceof DataGenOp) )
 			return false;
 		
-		DataGenOp that2 = (DataGenOp)that;	
+		 // NOTE:
+		 // This compare() method currently is invoked from Hops RewriteCommonSubexpressionElimination,
+		 // which tries to merge two hops if this function returns true. However, two TIME hops should
+		 // never be merged, and hence returning false.
+		if (_op == DataGenMethod.TIME)
+			return false;
+		
+		DataGenOp that2 = (DataGenOp)that;
 		boolean ret = (  _op == that2._op
-				      && _sparsity == that2._sparsity
-				      && _baseDir.equals(that2._baseDir)
-					  && _paramIndexMap!=null && that2._paramIndexMap!=null
-					  && _maxNumThreads == that2._maxNumThreads );
+			&& _sparsity == that2._sparsity
+			&& _baseDir.equals(that2._baseDir)
+			&& _paramIndexMap!=null && that2._paramIndexMap!=null
+			&& _maxNumThreads == that2._maxNumThreads );
 		
 		if( ret )
 		{

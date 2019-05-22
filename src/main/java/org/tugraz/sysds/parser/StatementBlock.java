@@ -176,6 +176,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				// for now, ensure that an assignment statement containing a read from csv ends up in own statement block
 				if(astmt.getSource().toString().contains(DataExpression.FORMAT_TYPE + "=" + DataExpression.FORMAT_TYPE_VALUE_CSV) && astmt.getSource().toString().contains("read"))
 					return false;
+				if (astmt.controlStatement())
+					return false;
 				sourceExpr = astmt.getSource();
 			}
 			else

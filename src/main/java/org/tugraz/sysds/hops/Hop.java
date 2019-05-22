@@ -1046,7 +1046,7 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	public enum DataGenMethod {
-		RAND, SEQ, SINIT, SAMPLE, INVALID
+		RAND, SEQ, SINIT, SAMPLE, INVALID, TIME
 	}
 
 	public enum ParamBuiltinOp {

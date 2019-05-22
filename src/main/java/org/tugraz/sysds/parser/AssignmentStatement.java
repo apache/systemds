@@ -22,6 +22,7 @@ package org.tugraz.sysds.parser;
 import java.util.ArrayList;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.tugraz.sysds.common.Builtins;
 
 public class AssignmentStatement extends Statement
 {
@@ -94,6 +95,8 @@ public class AssignmentStatement extends Statement
 	public boolean controlStatement() {
 		// for now, ensure that function call ends up in different statement block
 		if (_source instanceof FunctionCallIdentifier)
+			return true;
+		if (_source.toString().contains(Builtins.TIME.toString()))
 			return true;
 		
 		return false;

@@ -1352,6 +1352,9 @@ public class Recompiler
 				if( !(initUnknown & d.dimsKnown()) )
 					d.refreshSizeInformation();
 			}
+			else if (d.getOp() == DataGenMethod.TIME) {
+				d.refreshSizeInformation();
+			}
 			else {
 				throw new DMLRuntimeException("Unexpected data generation method: " + d.getOp());
 			}

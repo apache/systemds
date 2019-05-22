@@ -95,6 +95,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		this(op, mthd, in, out, rows, cols, rpb, cpb, 0, 1, 1.0, -1, 
 			null, null, 1, seqFrom, seqTo, seqIncr, false, opcode, istr);
 	}
+	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand out, String opcode, String istr) {
+		this(op, mthd, null, out, null, null, 0, 0, 0, 0, 0, 0, 
+			null, null, 1, null, null, null, false, opcode, istr);
+	}
 
 	public long getRows() {
 		return rows.isLiteral() ? Long.parseLong(rows.getName()) : -1;
@@ -157,6 +161,11 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			// 7 operands: range, size, replace, seed, rpb, cpb, outvar
 			InstructionUtils.checkNumFields ( s, 7 ); 
 		}
+		else if ( opcode.equalsIgnoreCase(DataGen.TIME_OPCODE) ) {
+			method = DataGenMethod.TIME;
+			// 1 operand: outvar
+			InstructionUtils.checkNumFields ( s, 1 ); 
+		}
 		
 		CPOperand out = new CPOperand(s[s.length-1]);
 		Operator op = null;
@@ -207,6 +216,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			return new DataGenCPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, seed, opcode, str);
 		}
+		else if ( method == DataGenMethod.TIME) 
+		{
+			return new DataGenCPInstruction(op, method, out, opcode, str);
+		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
 	}
@@ -215,6 +228,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public void processInstruction( ExecutionContext ec )
 	{
 		MatrixBlock soresBlock = null;
+		ScalarObject soresScalar = null;
 		
 		//process specific datagen operator
 		if ( method == DataGenMethod.RAND ) {
@@ -264,13 +278,20 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			
 			soresBlock = MatrixBlock.sampleOperations(range, (int)lrows, replace, seed);
 		}
+		else if ( method == DataGenMethod.TIME ) {
+			soresScalar = new IntObject(System.nanoTime());
+		}
 		
-		//guarded sparse block representation change
-		if( soresBlock.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
-			soresBlock.examSparsity();
+		if( output.isMatrix() ) {
+			//guarded sparse block representation change
+			if( soresBlock.getInMemorySize() < OptimizerUtils.SAFE_REP_CHANGE_THRES )
+				soresBlock.examSparsity();
 		
-		//release created output
-		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+			//release created output
+			ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+		}
+		else if( output.isScalar() )
+			ec.setScalarOutput(output.getName(), soresScalar);
 	}
 	
 	private static void checkValidDimensions(long rows, long cols) {

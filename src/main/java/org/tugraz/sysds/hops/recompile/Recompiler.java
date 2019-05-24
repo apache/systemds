@@ -68,6 +68,7 @@ import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -444,24 +445,21 @@ public class Recompiler
 	public static void recompileProgramBlockInstructions(ProgramBlock pb) 
 		throws IOException
 	{
-		if( pb instanceof WhileProgramBlock )
-		{
+		if( pb instanceof WhileProgramBlock ) {
 			//recompile while predicate instructions
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) pb.getStatementBlock();
 			if( wsb!=null && wsb.getPredicateHops()!=null )
 				wpb.setPredicate(recompileHopsDagInstructions(wsb.getPredicateHops()));
 		}
-		else if( pb instanceof IfProgramBlock )
-		{
+		else if( pb instanceof IfProgramBlock ) {
 			//recompile if predicate instructions
 			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock isb = (IfStatementBlock) pb.getStatementBlock();
 			if( isb!=null && isb.getPredicateHops()!=null )
 				ipb.setPredicate(recompileHopsDagInstructions(isb.getPredicateHops()));
 		}
-		else if( pb instanceof ForProgramBlock )
-		{
+		else if( pb instanceof ForProgramBlock ) {
 			//recompile for/parfor predicate instructions
 			ForProgramBlock fpb = (ForProgramBlock)pb;
 			ForStatementBlock fsb = (ForStatementBlock) pb.getStatementBlock();
@@ -472,12 +470,12 @@ public class Recompiler
 			if( fsb!=null && fsb.getIncrementHops()!=null )
 				fpb.setIncrementInstructions(recompileHopsDagInstructions(fsb.getIncrementHops()));
 		}
-		else
-		{
+		else if( pb instanceof BasicProgramBlock ) {
 			//recompile last-level program block instructions
-			StatementBlock sb = pb.getStatementBlock();
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			StatementBlock sb = bpb.getStatementBlock();
 			if( sb!=null && sb.getHops()!=null ) {
-				pb.setInstructions(recompileHopsDagInstructions(sb, sb.getHops()));
+				bpb.setInstructions(recompileHopsDagInstructions(sb, sb.getHops()));
 			}
 		}
 	}
@@ -601,8 +599,7 @@ public class Recompiler
 	private static void rRecompileProgramBlock( ProgramBlock pb, LocalVariableMap vars, 
 		RecompileStatus status, long tid, ResetType resetRecompile ) 
 	{
-		if (pb instanceof WhileProgramBlock)
-		{
+		if (pb instanceof WhileProgramBlock) {
 			WhileProgramBlock wpb = (WhileProgramBlock)pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) wpb.getStatementBlock();
 			//recompile predicate
@@ -623,9 +620,8 @@ public class Recompiler
 			}
 			removeUpdatedScalars(vars, wsb);
 		}
-		else if (pb instanceof IfProgramBlock)
-		{
-			IfProgramBlock ipb = (IfProgramBlock)pb;	
+		else if (pb instanceof IfProgramBlock) {
+			IfProgramBlock ipb = (IfProgramBlock)pb;
 			IfStatementBlock isb = (IfStatementBlock)ipb.getStatementBlock();
 			//recompile predicate
 			recompileIfPredicate(ipb, isb, vars, status, tid, resetRecompile);
@@ -642,14 +638,13 @@ public class Recompiler
 			reconcileUpdatedCallVarsIf(oldStatus, status, statusElse, isb);
 			removeUpdatedScalars(vars, ipb.getStatementBlock());
 		}
-		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
-		{ 
-			ForProgramBlock fpb = (ForProgramBlock)pb;	
+		else if (pb instanceof ForProgramBlock) { //includes ParFORProgramBlock
+			ForProgramBlock fpb = (ForProgramBlock)pb;
 			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 			//recompile predicates
 			recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
 			//remove updated scalars because in loop
-			removeUpdatedScalars(vars, fpb.getStatementBlock()); 
+			removeUpdatedScalars(vars, fpb.getStatementBlock());
 			//copy vars for later compare
 			LocalVariableMap oldVars = (LocalVariableMap) vars.clone();
 			RecompileStatus oldStatus = (RecompileStatus) status.clone();
@@ -660,25 +655,25 @@ public class Recompiler
 				//second pass with unknowns if required
 				recompileForPredicates(fpb, fsb, vars, status, tid, resetRecompile);
 				for( ProgramBlock pb2 : fpb.getChildBlocks() )
-					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);		
+					rRecompileProgramBlock(pb2, vars, status, tid, resetRecompile);
 			}
 			removeUpdatedScalars(vars, fpb.getStatementBlock());
-		}		
+		}
 		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
 		{
 			//do nothing
 		}
-		else
-		{
+		else if( pb instanceof ProgramBlock ) {
 			StatementBlock sb = pb.getStatementBlock();
-			ArrayList<Instruction> tmp = pb.getInstructions();
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			ArrayList<Instruction> tmp = bpb.getInstructions();
 			if( sb == null ) 
 				return;
 			
 			//recompile all for stats propagation and recompile flags
 			tmp = Recompiler.recompileHopsDag(
 				sb, sb.getHops(), vars, status, true, false, tid);
-			pb.setInstructions( tmp );
+			bpb.setInstructions( tmp );
 			
 			//propagate stats across hops (should be executed on clone of vars)
 			Recompiler.extractDAGOutputStatistics(sb.getHops(), vars);
@@ -1013,7 +1008,7 @@ public class Recompiler
 			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;
 			WhileStatementBlock sbTmp = (WhileStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
-			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true, true)) )			
+			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getPredicate(), true)) )
 				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );
 			
 			//recompile body
@@ -1025,63 +1020,59 @@ public class Recompiler
 			IfProgramBlock pbTmp = (IfProgramBlock)pb;	
 			IfStatementBlock sbTmp = (IfStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
-			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getPredicate(), true, true)) )			
-				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );				
+			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getPredicate(), true)) )
+				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );
 			//recompile body
 			for( ProgramBlock pb2 : pbTmp.getChildBlocksIfBody() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 			for( ProgramBlock pb2 : pbTmp.getChildBlocksElseBody() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
-		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
-		{ 
-			ForProgramBlock pbTmp = (ForProgramBlock)pb;	
+		else if (pb instanceof ForProgramBlock) { //includes ParFORProgramBlock
+			ForProgramBlock pbTmp = (ForProgramBlock)pb;
 			ForStatementBlock sbTmp = (ForStatementBlock) pbTmp.getStatementBlock();
 			//recompile predicate
-			if( sbTmp!=null && sbTmp.getFromHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getFromInstructions(), true, true)) )
-				pbTmp.setFromInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getFromHops(), tid, et) );				
-			if( sbTmp!=null && sbTmp.getToHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getToInstructions(), true, true)) )
-				pbTmp.setToInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getToHops(), tid, et) );				
-			if( sbTmp!=null && sbTmp.getIncrementHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsMRJobInstruction(pbTmp.getIncrementInstructions(), true, true)) )
-				pbTmp.setIncrementInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getIncrementHops(), tid, et) );				
+			if( sbTmp!=null && sbTmp.getFromHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getFromInstructions(), true)) )
+				pbTmp.setFromInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getFromHops(), tid, et) );
+			if( sbTmp!=null && sbTmp.getToHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getToInstructions(), true)) )
+				pbTmp.setToInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getToHops(), tid, et) );
+			if( sbTmp!=null && sbTmp.getIncrementHops() != null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getIncrementInstructions(), true)) )
+				pbTmp.setIncrementInstructions( Recompiler.recompileHopsDag2Forced(sbTmp.getIncrementHops(), tid, et) );
 			//recompile body
 			for( ProgramBlock pb2 : pbTmp.getChildBlocks() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}		
-		else if (  pb instanceof FunctionProgramBlock )//includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP
-		{
+		else if (  pb instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock tmp = (FunctionProgramBlock)pb;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() )
 				rRecompileProgramBlock2Forced(pb2, tid, fnStack, et);
 		}
-		else 
-		{	
-			StatementBlock sb = pb.getStatementBlock();
+		else if( pb instanceof BasicProgramBlock )
+		{
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			StatementBlock sb = bpb.getStatementBlock();
 			
 			//recompile hops dag to CP (note selective recompile 'if CP and no MR inst' 
 			//would be invalid with permutation matrix mult across multiple dags)
-			if(	sb != null ) {
-				ArrayList<Instruction> tmp = pb.getInstructions();
+			if( sb != null ) {
+				ArrayList<Instruction> tmp = bpb.getInstructions();
 				tmp = Recompiler.recompileHopsDag2Forced(sb, sb.getHops(), tid, et);
-				pb.setInstructions( tmp );
+				bpb.setInstructions( tmp );
 			}
 			
 			//recompile functions
-			if( OptTreeConverter.containsFunctionCallInstruction(pb) )
+			if( OptTreeConverter.containsFunctionCallInstruction(bpb) )
 			{
-				ArrayList<Instruction> tmp = pb.getInstructions();
+				ArrayList<Instruction> tmp = bpb.getInstructions();
 				for( Instruction inst : tmp )
-					if( inst instanceof FunctionCallCPInstruction )
-					{
+					if( inst instanceof FunctionCallCPInstruction ) {
 						FunctionCallCPInstruction func = (FunctionCallCPInstruction)inst;
 						String fname = func.getFunctionName();
 						String fnamespace = func.getNamespace();
 						String fKey = DMLProgram.constructFunctionKey(fnamespace, fname);
 						
-						if( !fnStack.contains(fKey) ) //memoization for multiple calls, recursion
-						{
+						if( !fnStack.contains(fKey) ) { //memoization for multiple calls, recursion
 							fnStack.add(fKey);
-							
 							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnamespace, fname);
 							rRecompileProgramBlock2Forced(fpb, tid, fnStack, et); //recompile chains of functions
 						}

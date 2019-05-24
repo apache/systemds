@@ -46,7 +46,7 @@ public class IfProgramBlock extends ProgramBlock
 	}
 	
 	public ArrayList<ProgramBlock> getChildBlocksIfBody() { 
-		return _childBlocksIfBody; 
+		return getChildBlocks();
 	}
 
 	public void setChildBlocksIfBody(ArrayList<ProgramBlock> blocks) { 
@@ -69,18 +69,6 @@ public class IfProgramBlock extends ProgramBlock
 		_childBlocksElseBody.add(pb); 
 	}
 	
-	public void setExitInstructions2(ArrayList<Instruction> exitInstructions){
-		_exitInstructions = exitInstructions;
-	}
-
-	public void setExitInstructions1(ArrayList<Instruction> predicate){
-		_predicate = predicate;
-	}
-	
-	public void addExitInstruction(Instruction inst){
-		_exitInstructions.add(inst);
-	}
-	
 	public ArrayList<Instruction> getPredicate(){
 		return _predicate;
 	}
@@ -89,8 +77,14 @@ public class IfProgramBlock extends ProgramBlock
 		_predicate = predicate;
 	}
 	
-	public ArrayList<Instruction> getExitInstructions(){
-		return _exitInstructions;
+	@Override
+	public ArrayList<ProgramBlock> getChildBlocks() {
+		return _childBlocksIfBody;
+	}
+	
+	@Override
+	public boolean isNested() {
+		return true;
 	}
 	
 	@Override

@@ -85,6 +85,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -243,14 +244,12 @@ public class SpoofCompiler
 	
 	public static void generateCodeFromProgramBlock(ProgramBlock current)
 	{
-		if (current instanceof FunctionProgramBlock)
-		{
+		if (current instanceof FunctionProgramBlock) {
 			FunctionProgramBlock fsb = (FunctionProgramBlock)current;
 			for (ProgramBlock pb : fsb.getChildBlocks())
 				generateCodeFromProgramBlock(pb);
 		}
-		else if (current instanceof WhileProgramBlock)
-		{
+		else if (current instanceof WhileProgramBlock) {
 			WhileProgramBlock wpb = (WhileProgramBlock) current;
 			WhileStatementBlock wsb = (WhileStatementBlock)wpb.getStatementBlock();
 			
@@ -259,8 +258,7 @@ public class SpoofCompiler
 			for (ProgramBlock sb : wpb.getChildBlocks())
 				generateCodeFromProgramBlock(sb);
 		}
-		else if (current instanceof IfProgramBlock)
-		{
+		else if (current instanceof IfProgramBlock) {
 			IfProgramBlock ipb = (IfProgramBlock) current;
 			IfStatementBlock isb = (IfStatementBlock) ipb.getStatementBlock();
 			if( isb!=null && isb.getPredicateHops()!=null )
@@ -270,8 +268,7 @@ public class SpoofCompiler
 			for (ProgramBlock pb : ipb.getChildBlocksElseBody())
 				generateCodeFromProgramBlock(pb);
 		}
-		else if (current instanceof ForProgramBlock) //incl parfor
-		{
+		else if (current instanceof ForProgramBlock) { //incl parfor
 			ForProgramBlock fpb = (ForProgramBlock) current;
 			ForStatementBlock fsb = (ForStatementBlock) fpb.getStatementBlock();
 			if( fsb!=null && fsb.getFromHops()!=null )
@@ -283,10 +280,10 @@ public class SpoofCompiler
 			for (ProgramBlock pb : fpb.getChildBlocks())
 				generateCodeFromProgramBlock(pb);
 		}
-		else //generic (last-level)
-		{
+		else if( current instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) current;
 			StatementBlock sb = current.getStatementBlock();
-			current.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.getHops()) );
+			bpb.setInstructions( generateCodeFromHopDAGsToInst(sb, sb.getHops()) );
 		}
 	}
 

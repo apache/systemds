@@ -41,6 +41,7 @@ import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
@@ -96,8 +97,7 @@ public class ProgramRecompiler
 	 */
 	public static void rFindAndRecompileIndexingHOP( StatementBlock sb, ProgramBlock pb, String var, ExecutionContext ec, boolean force )
 	{
-		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock )
-		{
+		if( pb instanceof IfProgramBlock && sb instanceof IfStatementBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement is = (IfStatement) sb.getStatement(0);
@@ -106,26 +106,22 @@ public class ProgramRecompiler
 				ipb.setPredicate( rFindAndRecompileIndexingHOP(isb.getPredicateHops(),ipb.getPredicate(),var,ec,force) );
 			//process if branch
 			int len = is.getIfBody().size(); 
-			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ )
-			{
+			for( int i=0; i<ipb.getChildBlocksIfBody().size() && i<len; i++ ) {
 				ProgramBlock lpb = ipb.getChildBlocksIfBody().get(i);
 				StatementBlock lsb = is.getIfBody().get(i);
 				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec,force);
 			}
 			//process else branch
-			if( ipb.getChildBlocksElseBody() != null )
-			{
+			if( ipb.getChildBlocksElseBody() != null ) {
 				int len2 = is.getElseBody().size();
-				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ )
-				{
+				for( int i=0; i<ipb.getChildBlocksElseBody().size() && i<len2; i++ ) {
 					ProgramBlock lpb = ipb.getChildBlocksElseBody().get(i);
 					StatementBlock lsb = is.getElseBody().get(i);
 					rFindAndRecompileIndexingHOP(lsb,lpb,var,ec,force);
 				}
-			}				
+			}
 		}
-		else if( pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock )
-		{
+		else if( pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement ws = (WhileStatement) sb.getStatement(0);
@@ -139,10 +135,9 @@ public class ProgramRecompiler
 				ProgramBlock lpb = wpb.getChildBlocks().get(i);
 				StatementBlock lsb = ws.getBody().get(i);
 				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec, force);
-			}			
+			}
 		}
-		else if( pb instanceof ForProgramBlock && sb instanceof ForStatementBlock ) //for or parfor
-		{
+		else if( pb instanceof ForProgramBlock && sb instanceof ForStatementBlock ) { //for or parfor
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock)sb;
 			ForStatement fs = (ForStatement) fsb.getStatement(0);
@@ -154,40 +149,36 @@ public class ProgramRecompiler
 				fpb.setIncrementInstructions( rFindAndRecompileIndexingHOP(fsb.getIncrementHops(),fpb.getIncrementInstructions(),var,ec,force) );
 			//process body
 			int len = fs.getBody().size(); //robustness for potentially added problem blocks
-			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ )
-			{
+			for( int i=0; i<fpb.getChildBlocks().size() && i<len; i++ ) {
 				ProgramBlock lpb = fpb.getChildBlocks().get(i);
 				StatementBlock lsb = fs.getBody().get(i);
 				rFindAndRecompileIndexingHOP(lsb,lpb,var,ec, force);
-			}	
+			}
 		}
-		else //last level program block
-		{
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
 			try
 			{
 				//process actual hops
 				boolean ret = false;
 				Hop.resetVisitStatus(sb.getHops());
-				if( force )
-				{
+				if( force ) {
 					//set forced execution type
 					for( Hop h : sb.getHops() )
 						ret |= rFindAndSetCPIndexingHOP(h, var);
 				}
-				else
-				{
+				else {
 					//release forced execution type
 					for( Hop h : sb.getHops() )
 						ret |= rFindAndReleaseIndexingHOP(h, var);
 				}
 				
 				//recompilation on-demand
-				if( ret )
-				{
+				if( ret ) {
 					//construct new instructions
 					ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
 						sb, sb.getHops(), ec.getVariables(), null, true, false, 0);
-					pb.setInstructions( newInst ); 
+					bpb.setInstructions( newInst ); 
 				}
 			}
 			catch(Exception ex)
@@ -313,8 +304,7 @@ public class ProgramRecompiler
 
 	public static boolean containsAtLeastOneFunction( ProgramBlock pb )
 	{
-		if( pb instanceof IfProgramBlock )
-		{
+		if( pb instanceof IfProgramBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			for( ProgramBlock lpb : ipb.getChildBlocksIfBody() )
 				if( containsAtLeastOneFunction(lpb) )
@@ -323,29 +313,27 @@ public class ProgramRecompiler
 				if( containsAtLeastOneFunction(lpb) )
 					return true;
 		}
-		else if( pb instanceof WhileProgramBlock )
-		{
+		else if( pb instanceof WhileProgramBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			for( ProgramBlock lpb : wpb.getChildBlocks() )
 				if( containsAtLeastOneFunction(lpb) )
 					return true;
 		}
-		else if( pb instanceof ForProgramBlock ) //incl parfor
-		{
+		else if( pb instanceof ForProgramBlock ) { //incl parfor
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			for( ProgramBlock lpb : fpb.getChildBlocks() )
 				if( containsAtLeastOneFunction(lpb) )
 					return true;
 		}
-		else
-		{
-			if( pb.getInstructions() != null )
-				for( Instruction inst : pb.getInstructions() )
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			if( bpb.getInstructions() != null )
+				for( Instruction inst : bpb.getInstructions() )
 					if( inst instanceof FunctionCallCPInstruction )
 						return true;
 		}
 		
-		return false;	
+		return false;
 	}
 
 	private static ArrayList<Instruction> rFindAndRecompileIndexingHOP( Hop hop, ArrayList<Instruction> in, String var, ExecutionContext ec, boolean force ) 

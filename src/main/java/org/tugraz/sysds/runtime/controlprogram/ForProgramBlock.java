@@ -38,13 +38,11 @@ public class ForProgramBlock extends ProgramBlock
 	protected ArrayList<Instruction> _fromInstructions;
 	protected ArrayList<Instruction> _toInstructions;
 	protected ArrayList<Instruction> _incrementInstructions;
-	protected ArrayList <Instruction> _exitInstructions;
 	protected ArrayList<ProgramBlock> _childBlocks;
 	protected final String _iterPredVar; 
 	
 	public ForProgramBlock(Program prog, String iterPredVar) {
 		super(prog);
-		_exitInstructions = new ArrayList<>();
 		_childBlocks = new ArrayList<>();
 		_iterPredVar = iterPredVar;
 	}
@@ -72,21 +70,9 @@ public class ForProgramBlock extends ProgramBlock
 	public void setIncrementInstructions(ArrayList<Instruction> instructions) {
 		_incrementInstructions = instructions;
 	}
-
-	public ArrayList<Instruction> getExitInstructions() {
-		return _exitInstructions;
-	}
-	
-	public void setExitInstructions(ArrayList<Instruction> inst) {
-		_exitInstructions = inst;
-	}
 	
 	public void addProgramBlock(ProgramBlock childBlock) {
 		_childBlocks.add(childBlock);
-	}
-	
-	public ArrayList<ProgramBlock> getChildBlocks() {
-		return _childBlocks;
 	}
 	
 	public void setChildBlocks(ArrayList<ProgramBlock> pbs) {
@@ -97,7 +83,17 @@ public class ForProgramBlock extends ProgramBlock
 		return _iterPredVar;
 	}
 	
-	@Override	
+	@Override
+	public ArrayList<ProgramBlock> getChildBlocks() {
+		return _childBlocks;
+	}
+	
+	@Override
+	public boolean isNested() {
+		return true;
+	}
+	
+	@Override
 	public void execute(ExecutionContext ec) {
 		// evaluate from, to, incr only once (assumption: known at for entry)
 		IntObject from = executePredicateInstructions( 1, _fromInstructions, ec );
@@ -138,14 +134,6 @@ public class ForProgramBlock extends ProgramBlock
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating for program block", e);
-		}
-		
-		//execute exit instructions
-		try {
-			executeInstructions(_exitInstructions, ec);	
-		}
-		catch (Exception e){
-			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating for exit instructions", e);
 		}
 	}
 

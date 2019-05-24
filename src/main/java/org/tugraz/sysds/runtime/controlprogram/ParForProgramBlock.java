@@ -679,9 +679,6 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( _execMode == PExecMode.REMOTE_SPARK_DP )
 			ProgramRecompiler.rFindAndRecompileIndexingHOP(sb, this, _colocatedDPMatrix, ec, false); 
 		resetOptimizerFlags(); //after release, deletes dp_varnames
-		
-		//execute exit instructions (usually empty)
-		executeInstructions(_exitInstructions, ec);
 	}
 
 

@@ -80,6 +80,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.Expression.FormatType;
 import org.tugraz.sysds.parser.PrintStatement.PRINTTYPE;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -622,7 +623,7 @@ public class DMLTranslator
 		else {
 	
 			// handle general case
-			ProgramBlock rtpb = new ProgramBlock(prog);
+			BasicProgramBlock rtpb = new BasicProgramBlock(prog);
 		
 			// DAGs for Lops
 			dag = new Dag<>();

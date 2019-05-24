@@ -45,6 +45,7 @@ import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -131,8 +132,7 @@ public class OptTreeConverter
 	{
 		OptNode node = null;
 		
-		if( pb instanceof IfProgramBlock )
-		{
+		if( pb instanceof IfProgramBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			node = new OptNode( NodeType.IF );
 			if(storeObjs)
@@ -145,16 +145,14 @@ public class OptTreeConverter
 			for( ProgramBlock lpb : ipb.getChildBlocksIfBody() )
 				ifn.addChild( rCreateOptNode(lpb,vars,topLevel, storeObjs) );
 			//process else condition
-			if( ipb.getChildBlocksElseBody() != null && ipb.getChildBlocksElseBody().size()>0 )
-			{
+			if( ipb.getChildBlocksElseBody() != null && ipb.getChildBlocksElseBody().size()>0 ) {
 				OptNode efn = new OptNode(NodeType.GENERIC);
 				node.addChild( efn );
 				for( ProgramBlock lpb : ipb.getChildBlocksElseBody() )
 					efn.addChild( rCreateOptNode(lpb,vars,topLevel, storeObjs) );
-			}				
+			}
 		}
-		else if( pb instanceof WhileProgramBlock )
-		{
+		else if( pb instanceof WhileProgramBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			node = new OptNode( NodeType.WHILE );
 			if(storeObjs)
@@ -165,10 +163,8 @@ public class OptTreeConverter
 			//process body
 			for( ProgramBlock lpb : wpb.getChildBlocks() )
 				node.addChild( rCreateOptNode(lpb,vars,topLevel,storeObjs) );
-			
 		}
-		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) )
-		{
+		else if( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock) ) {
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			node = new OptNode( NodeType.FOR );
 			if(storeObjs)
@@ -187,8 +183,7 @@ public class OptTreeConverter
 			for( ProgramBlock lpb : fpb.getChildBlocks() )
 				node.addChild( rCreateOptNode(lpb,vars,topLevel,storeObjs) );
 		}
-		else if( pb instanceof ParForProgramBlock )
-		{
+		else if( pb instanceof ParForProgramBlock ) {
 			ParForProgramBlock fpb = (ParForProgramBlock) pb;
 			node = new OptNode( NodeType.PARFOR );
 			if(storeObjs)
@@ -198,8 +193,7 @@ public class OptTreeConverter
 			node.addParam(ParamType.NUM_ITERATIONS, (N!=-1) ? 
 				String.valueOf(N) : String.valueOf(CostEstimator.FACTOR_NUM_ITERATIONS));
 			
-			switch(fpb.getExecMode())
-			{
+			switch(fpb.getExecMode()) {
 				case LOCAL:
 					node.setExecType(ExecType.CP);
 					break;
@@ -211,8 +205,7 @@ public class OptTreeConverter
 					node.setExecType(null);
 			}
 			
-			if( !topLevel )
-			{
+			if( !topLevel ) {
 				node.addChilds( createOptNodes( fpb.getFromInstructions(), vars, storeObjs ) );
 				node.addChilds( createOptNodes( fpb.getToInstructions(), vars, storeObjs ) );
 				node.addChilds( createOptNodes( fpb.getIncrementInstructions(), vars, storeObjs ) );
@@ -220,16 +213,16 @@ public class OptTreeConverter
 			
 			//process body
 			for( ProgramBlock lpb : fpb.getChildBlocks() )
-				node.addChild( rCreateOptNode(lpb,vars,false,storeObjs) );			
+				node.addChild( rCreateOptNode(lpb,vars,false,storeObjs) );
 			
 			//parameters, add required parameters
 		}
-		else //last level program block
-		{
+		else if ( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
 			node = new OptNode(NodeType.GENERIC);
 			if(storeObjs)
 				_rtMap.putMapping(pb, node);
-			node.addChilds( createOptNodes(pb.getInstructions(), vars, storeObjs) );
+			node.addChilds( createOptNodes(bpb.getInstructions(), vars, storeObjs) );
 			node.setExecType(ExecType.CP);
 		}
 			
@@ -422,8 +415,8 @@ public class OptTreeConverter
 			node.addParam(ParamType.RESULT_MERGE, lparams.get(ParForStatementBlock.RESULT_MERGE));
 			//TODO task size
 		}
-		else //last level program block
-		{
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
 			sb = pb.getStatementBlock();
 			
 			//process all hops
@@ -436,7 +429,7 @@ public class OptTreeConverter
 			//TODO remove this workaround once this information can be obtained from hops/lops compiler
 			if( node.isCPOnly() ) {
 				boolean isSparkExec = OptimizerUtils.isSparkExecutionMode();
-				if( isSparkExec && containsMRJobInstruction(pb, false, true))
+				if( isSparkExec && containsSparkInstruction(bpb, false))
 					node.setExecType(ExecType.SPARK);
 			}
 		}
@@ -553,17 +546,16 @@ public class OptTreeConverter
 		if (pb instanceof WhileProgramBlock)
 		{
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
-			ret = containsMRJobInstruction(tmp.getPredicate(), true, true);
+			ret = containsSparkInstruction(tmp.getPredicate(), true);
 			if( ret ) return ret;
 			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
-		else if (pb instanceof IfProgramBlock)
-		{
-			IfProgramBlock tmp = (IfProgramBlock)pb;	
-			ret = containsMRJobInstruction(tmp.getPredicate(), true, true);
+		else if (pb instanceof IfProgramBlock) {
+			IfProgramBlock tmp = (IfProgramBlock)pb;
+			ret = containsSparkInstruction(tmp.getPredicate(), true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
@@ -574,42 +566,39 @@ public class OptTreeConverter
 				if( ret ) return ret;
 			}
 		}
-		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
-		{ 
-			ForProgramBlock tmp = (ForProgramBlock)pb;	
-			ret = containsMRJobInstruction(tmp.getFromInstructions(), true, true);
-			ret |= containsMRJobInstruction(tmp.getToInstructions(), true, true);
-			ret |= containsMRJobInstruction(tmp.getIncrementInstructions(), true, true);
+		else if (pb instanceof ForProgramBlock) { //includes ParFORProgramBlock
+			ForProgramBlock tmp = (ForProgramBlock)pb;
+			ret = containsSparkInstruction(tmp.getFromInstructions(), true);
+			ret |= containsSparkInstruction(tmp.getToInstructions(), true);
+			ret |= containsSparkInstruction(tmp.getIncrementInstructions(), true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
 				ret = rContainsMRJobInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
-		else if (  pb instanceof FunctionProgramBlock ) //includes ExternalFunctionProgramBlock and ExternalFunctionProgramBlockCP)
-		{
+		else if (  pb instanceof FunctionProgramBlock ) {
 			//do nothing
 		}
-		else 
-		{
-			ret =   containsMRJobInstruction(pb, true, true)
-				|| (inclFunctions && containsFunctionCallInstruction(pb));
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			ret =   containsSparkInstruction(bpb, true)
+				|| (inclFunctions && containsFunctionCallInstruction(bpb));
 		}
 
 		return ret;
 	}
 
-	public static boolean containsMRJobInstruction( ProgramBlock pb, boolean inclCPFile, boolean inclSpark ) {
-		return containsMRJobInstruction(pb.getInstructions(), inclCPFile, inclSpark);
+	public static boolean containsSparkInstruction( BasicProgramBlock pb, boolean inclCPFile ) {
+		return containsSparkInstruction(pb.getInstructions(), inclCPFile);
 	}
 
-	public static boolean containsMRJobInstruction( ArrayList<Instruction> instSet, boolean inclCPFile, boolean inclSpark ) {
-		return instSet.stream().anyMatch(inst -> 
-			(inclSpark && inst instanceof SPInstruction)
+	public static boolean containsSparkInstruction( ArrayList<Instruction> instSet, boolean inclCPFile ) {
+		return instSet.stream().anyMatch(inst -> inst instanceof SPInstruction
 			|| (inclCPFile && inst instanceof MatrixIndexingCPFileInstruction));
 	}
 
-	public static boolean containsFunctionCallInstruction( ProgramBlock pb ) {
+	public static boolean containsFunctionCallInstruction( BasicProgramBlock pb ) {
 		return pb.getInstructions().stream()
 			.anyMatch(inst -> inst instanceof FunctionCallCPInstruction);
 	}

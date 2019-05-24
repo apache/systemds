@@ -35,8 +35,8 @@ import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -55,7 +55,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 	private static final String TMP_VARNAME = "__cf_tmp";
 	
 	//reuse basic execution runtime
-	private ProgramBlock     _tmpPB = null;
+	private BasicProgramBlock _tmpPB = null;
 	private ExecutionContext _tmpEC = null;
 	
 	
@@ -157,7 +157,7 @@ public class RewriteConstantFolding extends HopRewriteRule
 		
 		//execute instructions
 		ExecutionContext ec = getExecutionContext();
-		ProgramBlock pb = getProgramBlock();
+		BasicProgramBlock pb = getProgramBlock();
 		pb.setInstructions( inst );
 		
 		pb.execute( ec );
@@ -181,9 +181,9 @@ public class RewriteConstantFolding extends HopRewriteRule
 		return literal;
 	}
 	
-	private ProgramBlock getProgramBlock() {
+	private BasicProgramBlock getProgramBlock() {
 		if( _tmpPB == null )
-			_tmpPB = new ProgramBlock( new Program() );
+			_tmpPB = new BasicProgramBlock( new Program() );
 		return _tmpPB;
 	}
 	

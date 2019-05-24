@@ -28,6 +28,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.DMLProgram;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -90,16 +91,14 @@ public abstract class CostEstimator
 	private double rGetTimeEstimate(ProgramBlock pb, HashMap<String,VarStats> stats, HashSet<String> memoFunc, boolean recursive) {
 		double ret = 0;
 		
-		if (pb instanceof WhileProgramBlock)
-		{
+		if (pb instanceof WhileProgramBlock) {
 			WhileProgramBlock tmp = (WhileProgramBlock)pb;
 			if( recursive )
 				for (ProgramBlock pb2 : tmp.getChildBlocks())
 					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			ret *= DEFAULT_NUMITER;
 		}
-		else if (pb instanceof IfProgramBlock)
-		{
+		else if (pb instanceof IfProgramBlock) {
 			IfProgramBlock tmp = (IfProgramBlock)pb;
 			if( recursive ) {
 				for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() )
@@ -107,29 +106,28 @@ public abstract class CostEstimator
 				if( tmp.getChildBlocksElseBody()!=null )
 					for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
 						ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
-						ret /= 2; //weighted sum	
+						ret /= 2; //weighted sum
 					}
 			}
 		}
-		else if (pb instanceof ForProgramBlock) //includes ParFORProgramBlock
-		{ 
-			ForProgramBlock tmp = (ForProgramBlock)pb;	
+		else if (pb instanceof ForProgramBlock) { //includes ParFORProgramBlock
+			ForProgramBlock tmp = (ForProgramBlock)pb;
 			if( recursive )
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
 					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 			
 			ret *= getNumIterations(stats, tmp);
-		}		
-		else if ( pb instanceof FunctionProgramBlock ) //see generic
-		{
+		}
+		else if ( pb instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock tmp = (FunctionProgramBlock) pb;
 			if( recursive )
 				for( ProgramBlock pb2 : tmp.getChildBlocks() )
 					ret += rGetTimeEstimate(pb2, stats, memoFunc, recursive);
 		}
-		else 
-		{	
-			ArrayList<Instruction> tmp = pb.getInstructions();
+		else if( pb instanceof BasicProgramBlock ) 
+		{
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			ArrayList<Instruction> tmp = bpb.getInstructions();
 			
 			for( Instruction inst : tmp )
 			{
@@ -162,7 +160,7 @@ public abstract class CostEstimator
 							memoFunc.add(fkey);
 							Program prog = pb.getProgram();
 							FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
-							                            finst.getNamespace(), finst.getFunctionName());
+								finst.getNamespace(), finst.getFunctionName());
 							ret += rGetTimeEstimate(fpb, stats, memoFunc, recursive);
 							memoFunc.remove(fkey);
 							

@@ -65,8 +65,14 @@ public class WhileProgramBlock extends ProgramBlock
 		_predicate = predicate;
 	}
 	
-	public ArrayList<Instruction> getExitInstructions() { 
-		return _exitInstructions; 
+	@Override
+	public ArrayList<ProgramBlock> getChildBlocks() {
+		return _childBlocks;
+	}
+	
+	@Override
+	public boolean isNested() {
+		return true;
 	}
 	
 	private BooleanObject executePredicate(ExecutionContext ec) 
@@ -127,10 +133,6 @@ public class WhileProgramBlock extends ProgramBlock
 		catch(Exception e) {
 			throw new DMLRuntimeException(printBlockErrorLocation() + "Error executing while exit instructions.", e);
 		}
-	}
-	
-	public ArrayList<ProgramBlock> getChildBlocks() {
-		return _childBlocks;
 	}
 	
 	public void setChildBlocks(ArrayList<ProgramBlock> childs) {

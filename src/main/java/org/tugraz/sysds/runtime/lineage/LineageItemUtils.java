@@ -33,8 +33,8 @@ import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -119,7 +119,7 @@ public class LineageItemUtils {
 		
 		//generate instructions for temporary hops
 		ExecutionContext ec = ExecutionContextFactory.createContext();
-		ProgramBlock pb = new ProgramBlock(new Program());
+		BasicProgramBlock pb = new BasicProgramBlock(new Program());
 		Dag<Lop> dag = new Dag<>();
 		Lop lops = out.constructLops();
 		lops.addToDag( dag );

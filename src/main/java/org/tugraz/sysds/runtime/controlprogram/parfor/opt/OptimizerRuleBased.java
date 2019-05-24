@@ -62,6 +62,7 @@ import org.tugraz.sysds.parser.ParForStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
@@ -739,7 +740,7 @@ public class OptimizerRuleBased extends Optimizer
 		OptNode nParent = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid);
 		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid);
 		StatementBlock sb = (StatementBlock) o[0];
-		ProgramBlock pb = (ProgramBlock) o[1];
+		BasicProgramBlock pb = (BasicProgramBlock) o[1];
 		
 		//keep modified estimated of partitioned rix (in same dag as lix)
 		HashMap<Hop, Double> estRix = getPartitionedRIXEstimates(nParent);
@@ -747,7 +748,7 @@ public class OptimizerRuleBased extends Optimizer
 		//construct new instructions
 		ArrayList<Instruction> newInst = Recompiler.recompileHopsDag(
 			sb, sb.getHops(), vars, null, false, false, 0);
-		pb.setInstructions( newInst );   
+		pb.setInstructions( newInst );
 		
 		//reset all rix estimated (modified by recompile)
 		resetPartitionRIXEstimates( estRix );
@@ -2473,7 +2474,7 @@ public class OptimizerRuleBased extends Optimizer
 	{
 		if( n.getNodeType() == NodeType.FUNCCALL)
 		{
-			FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());	
+			FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 			
 			String[] names = n.getParam(ParamType.OPSTRING).split(Program.KEY_DELIM);
 			String fnamespace = names[0];
@@ -2485,14 +2486,14 @@ public class OptimizerRuleBased extends Optimizer
 				n.addParam(ParamType.OPSTRING, DMLProgram.constructFunctionKey(fnamespace,newName));
 				
 				//set instruction function name
-				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());	
-				ProgramBlock pb = (ProgramBlock) OptTreeConverter.getAbstractPlanMapping().getMappedProg(parentID)[1];
-				ArrayList<Instruction> instArr = pb.getInstructions();				
-				for( int i=0; i<instArr.size(); i++ )
-				{
+				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
+				BasicProgramBlock pb = (BasicProgramBlock) OptTreeConverter
+					.getAbstractPlanMapping().getMappedProg(parentID)[1];
+				
+				ArrayList<Instruction> instArr = pb.getInstructions();
+				for( int i=0; i<instArr.size(); i++ ) {
 					Instruction inst = instArr.get(i);
-					if( inst instanceof FunctionCallCPInstruction ) 
-					{
+					if( inst instanceof FunctionCallCPInstruction ) {
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
 						if( oldName.equals(fci.getFunctionName()) )
 							instArr.set(i, FunctionCallCPInstruction.parseInstruction(fci.toString().replaceAll(oldName, newName)));

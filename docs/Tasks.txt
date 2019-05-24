@@ -11,6 +11,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 14 Complete removal of external functions from all scripts
  * 15 Travis integration w/ subset of tests
  * 16 Remove instruction patching
+ * 17 Refactoring of program block hierarchy                          OK
  
 SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks
@@ -65,4 +66,5 @@ SYSTEMDS-100 Various Fixes
  * 105 Fix all application/function tests (various issues)
  
 SYSTEMDS-110 New Builtin Functions
- * 111 Time builtin function for script-level measurements						OK
+ * 111 Time builtin function for script-level measurements            OK
+ 

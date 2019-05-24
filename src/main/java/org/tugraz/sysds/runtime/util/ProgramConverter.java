@@ -52,6 +52,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -241,17 +242,19 @@ public class ProgramConverter
 			else if( pb instanceof IfProgramBlock ) {
 				tmpPB = createDeepCopyIfProgramBlock((IfProgramBlock) pb, pid, IDPrefix, prog, fnStack, fnCreated, plain, forceDeepCopy);
 			}
-			else { //last-level program block
-				tmpPB = new ProgramBlock(prog); // general case use for most PBs
+			else if( pb instanceof BasicProgramBlock ) { //last-level program block
+				BasicProgramBlock bpb = (BasicProgramBlock) pb;
+				tmpPB = new BasicProgramBlock(prog); // general case use for most PBs
 				
 				//for recompile in the master node JVM
-				tmpPB.setStatementBlock(createStatementBlockCopy(pb.getStatementBlock(), pid, plain, forceDeepCopy)); 
-				//tmpPB.setStatementBlock(pb.getStatementBlock()); 
+				tmpPB.setStatementBlock(createStatementBlockCopy(bpb.getStatementBlock(), pid, plain, forceDeepCopy)); 
 				tmpPB.setThreadID(pid);
+				
+				//copy instructions
+				((BasicProgramBlock)tmpPB).setInstructions(
+					createDeepCopyInstructionSet(bpb.getInstructions(),
+					pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 			}
-
-			//copy instructions
-			tmpPB.setInstructions( createDeepCopyInstructionSet(pb.getInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 			
 			//copy symbol table
 			//tmpPB.setVariables( pb.getVariables() ); //implicit cloning
@@ -267,7 +270,6 @@ public class ProgramConverter
 		WhileProgramBlock tmpPB = new WhileProgramBlock(prog, predinst);
 		tmpPB.setStatementBlock( createWhileStatementBlockCopy((WhileStatementBlock) wpb.getStatementBlock(), pid, plain, forceDeepCopy) );
 		tmpPB.setThreadID(pid);
-		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(wpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true));
 		tmpPB.setChildBlocks(rcreateDeepCopyProgramBlocks(wpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		return tmpPB;
 	}
@@ -277,7 +279,6 @@ public class ProgramConverter
 		IfProgramBlock tmpPB = new IfProgramBlock(prog, predinst);
 		tmpPB.setStatementBlock( createIfStatementBlockCopy((IfStatementBlock)ipb.getStatementBlock(), pid, plain, forceDeepCopy ) );
 		tmpPB.setThreadID(pid);
-		tmpPB.setExitInstructions2( createDeepCopyInstructionSet(ipb.getExitInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true));
 		tmpPB.setChildBlocksIfBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksIfBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		tmpPB.setChildBlocksElseBody(rcreateDeepCopyProgramBlocks(ipb.getChildBlocksElseBody(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy));
 		return tmpPB;
@@ -290,7 +291,6 @@ public class ProgramConverter
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(fpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(fpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(fpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
-		tmpPB.setExitInstructions( createDeepCopyInstructionSet(fpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, forceDeepCopy) );
 		return tmpPB;
 	}
@@ -300,7 +300,6 @@ public class ProgramConverter
 		tmpPB.setFromInstructions( fpb.getFromInstructions() );
 		tmpPB.setToInstructions( fpb.getToInstructions() );
 		tmpPB.setIncrementInstructions( fpb.getIncrementInstructions() );
-		tmpPB.setExitInstructions( fpb.getExitInstructions() );
 		tmpPB.setChildBlocks( fpb.getChildBlocks() );
 		return tmpPB;
 	}
@@ -322,8 +321,7 @@ public class ProgramConverter
 		tmpPB.setFromInstructions( createDeepCopyInstructionSet(pfpb.getFromInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setToInstructions( createDeepCopyInstructionSet(pfpb.getToInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
 		tmpPB.setIncrementInstructions( createDeepCopyInstructionSet(pfpb.getIncrementInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
-		tmpPB.setExitInstructions( createDeepCopyInstructionSet(pfpb.getExitInstructions(), pid, IDPrefix, prog, fnStack, fnCreated, plain, true) );
-
+		
 		//NOTE: Normally, no recursive copy because (1) copied on each execution in this PB anyway 
 		//and (2) leave placeholders as they are. However, if plain, an explicit deep copy is requested.
 		if( plain || forceDeepCopy )
@@ -793,8 +791,9 @@ public class ProgramConverter
 				if( ipb.getChildBlocksElseBody() != null )
 					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand);
 			}
-			else { //all generic program blocks
-				for( Instruction inst : pb.getInstructions() )
+			else if( pb instanceof BasicProgramBlock ) { 
+				BasicProgramBlock bpb = (BasicProgramBlock) pb;
+				for( Instruction inst : bpb.getInstructions() )
 					if( inst instanceof FunctionCallCPInstruction ) {
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
 						String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(), fci.getFunctionName());
@@ -1059,23 +1058,17 @@ public class ProgramConverter
 			sb.append(PB_BEGIN);
 		
 		//handle body
-		if( pb instanceof WhileProgramBlock )
-		{
+		if( pb instanceof WhileProgramBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			sb.append(INST_BEGIN);
 			sb.append( serializeInstructions( wpb.getPredicate(), clsMap ) );
-			sb.append(INST_END);
-			sb.append( COMPONENTS_DELIM );
-			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions( wpb.getExitInstructions(), clsMap ) );
 			sb.append(INST_END);
 			sb.append( COMPONENTS_DELIM );
 			sb.append(PBS_BEGIN);
 			sb.append( rSerializeProgramBlocks( wpb.getChildBlocks(), clsMap) );
 			sb.append(PBS_END);
 		}
-		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock ) )
-		{
+		else if ( pb instanceof ForProgramBlock && !(pb instanceof ParForProgramBlock ) ) {
 			ForProgramBlock fpb = (ForProgramBlock) pb; 
 			sb.append( fpb.getIterVar() );
 			sb.append( COMPONENTS_DELIM );
@@ -1091,16 +1084,11 @@ public class ProgramConverter
 			sb.append( serializeInstructions(fpb.getIncrementInstructions(), clsMap) );
 			sb.append(INST_END);
 			sb.append( COMPONENTS_DELIM );
-			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions(fpb.getExitInstructions(), clsMap) );
-			sb.append(INST_END);
-			sb.append( COMPONENTS_DELIM );
 			sb.append(PBS_BEGIN);
 			sb.append( rSerializeProgramBlocks(fpb.getChildBlocks(), clsMap) );
 			sb.append(PBS_END);
 		}
-		else if ( pb instanceof ParForProgramBlock )
-		{	
+		else if ( pb instanceof ParForProgramBlock ) {
 			ParForProgramBlock pfpb = (ParForProgramBlock) pb; 
 			
 			//check for nested remote ParFOR
@@ -1124,24 +1112,15 @@ public class ProgramConverter
 			sb.append(INST_BEGIN);
 			sb.append( serializeInstructions(pfpb.getIncrementInstructions(), clsMap) );
 			sb.append(INST_END);
-			sb.append( COMPONENTS_DELIM );	
-			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions(pfpb.getExitInstructions(), clsMap) );
-			sb.append(INST_END);
 			sb.append( COMPONENTS_DELIM );
 			sb.append(PBS_BEGIN);
 			sb.append( rSerializeProgramBlocks( pfpb.getChildBlocks(), clsMap ) );
 			sb.append(PBS_END);
-		}				
-		else if ( pb instanceof IfProgramBlock )
-		{
+		}
+		else if ( pb instanceof IfProgramBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			sb.append(INST_BEGIN);
 			sb.append( serializeInstructions(ipb.getPredicate(), clsMap) );
-			sb.append(INST_END);
-			sb.append( COMPONENTS_DELIM );
-			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions(ipb.getExitInstructions(), clsMap) );
 			sb.append(INST_END);
 			sb.append( COMPONENTS_DELIM );
 			sb.append(PBS_BEGIN);
@@ -1152,30 +1131,24 @@ public class ProgramConverter
 			sb.append( rSerializeProgramBlocks(ipb.getChildBlocksElseBody(), clsMap) );
 			sb.append(PBS_END);
 		}
-		else if( pb instanceof FunctionProgramBlock )
-		{
+		else if( pb instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock fpb = (FunctionProgramBlock) pb;
-			
 			sb.append( serializeDataIdentifiers( fpb.getInputParams() ) );
 			sb.append( COMPONENTS_DELIM );
 			sb.append( serializeDataIdentifiers( fpb.getOutputParams() ) );
-			sb.append( COMPONENTS_DELIM );
-			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions(fpb.getInstructions(), clsMap) );
-			sb.append(INST_END);
 			sb.append( COMPONENTS_DELIM );
 			sb.append(PBS_BEGIN);
 			sb.append( rSerializeProgramBlocks(fpb.getChildBlocks(), clsMap) );
 			sb.append(PBS_END);
 			sb.append( COMPONENTS_DELIM );
 		}
-		else //all generic program blocks
-		{
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
 			sb.append(INST_BEGIN);
-			sb.append( serializeInstructions(pb.getInstructions(), clsMap) );
+			sb.append( serializeInstructions(
+				bpb.getInstructions(), clsMap) );
 			sb.append(INST_END);
 		}
-		
 		
 		//handle end
 		sb.append(PB_END);
@@ -1384,9 +1357,6 @@ public class ProgramConverter
 		ArrayList<Instruction> to = parseInstructions(st.nextToken(),id);
 		ArrayList<Instruction> incr = parseInstructions(st.nextToken(),id);
 		
-		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
-		
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 		
@@ -1394,7 +1364,6 @@ public class ProgramConverter
 		fpb.setFromInstructions(from);
 		fpb.setToInstructions(to);
 		fpb.setIncrementInstructions(incr);
-		fpb.setExitInstructions(exit);
 		fpb.setChildBlocks(pbs);
 		
 		return fpb;
@@ -1414,9 +1383,6 @@ public class ProgramConverter
 		ArrayList<Instruction> to = parseInstructions(st.nextToken(), 0);
 		ArrayList<Instruction> incr = parseInstructions(st.nextToken(), 0);
 		
-		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken(), 0);
-		
 		//program blocks //reset id to preinit state, replaced during exec
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, 0); 
 		
@@ -1425,7 +1391,6 @@ public class ProgramConverter
 		pfpb.setFromInstructions(from);
 		pfpb.setToInstructions(to);
 		pfpb.setIncrementInstructions(incr);
-		pfpb.setExitInstructions(exit);
 		pfpb.setChildBlocks(pbs);
 		
 		return pfpb;
@@ -1438,15 +1403,11 @@ public class ProgramConverter
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 		
-		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
-		
 		//program blocks: if and else
 		ArrayList<ProgramBlock> pbs1 = rParseProgramBlocks(st.nextToken(), prog, id);
 		ArrayList<ProgramBlock> pbs2 = rParseProgramBlocks(st.nextToken(), prog, id);
 		
 		IfProgramBlock ipb = new IfProgramBlock(prog,inst);
-		ipb.setExitInstructions2(exit);
 		ipb.setChildBlocksIfBody(pbs1);
 		ipb.setChildBlocksElseBody(pbs2);
 		
@@ -1460,9 +1421,6 @@ public class ProgramConverter
 		//inputs and outputs
 		ArrayList<DataIdentifier> dat1 = parseDataIdentifiers(st.nextToken());
 		ArrayList<DataIdentifier> dat2 = parseDataIdentifiers(st.nextToken());
-		
-		//instructions
-		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
@@ -1470,7 +1428,6 @@ public class ProgramConverter
 		ArrayList<DataIdentifier> tmp1 = new ArrayList<>(dat1);
 		ArrayList<DataIdentifier> tmp2 = new ArrayList<>(dat2);
 		FunctionProgramBlock fpb = new FunctionProgramBlock(prog, tmp1, tmp2);
-		fpb.setInstructions(inst);
 		fpb.setChildBlocks(pbs);
 		
 		return fpb;
@@ -1479,7 +1436,7 @@ public class ProgramConverter
 	private static ProgramBlock rParseGenericProgramBlock( String in, Program prog, int id ) {
 		String lin = in.substring( PB_BEGIN.length(),in.length()- PB_END.length());
 		StringTokenizer st = new StringTokenizer(lin,COMPONENTS_DELIM);
-		ProgramBlock pb = new ProgramBlock(prog);
+		BasicProgramBlock pb = new BasicProgramBlock(prog);
 		pb.setInstructions(parseInstructions(st.nextToken(),id));
 		return pb;
 	}

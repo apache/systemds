@@ -49,15 +49,14 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.utils.Statistics;
 
 
-public class ProgramBlock implements ParseInfo
+public abstract class ProgramBlock implements ParseInfo
 {
 	public static final String PRED_VAR = "__pred";
 	
 	protected static final Log LOG = LogFactory.getLog(ProgramBlock.class.getName());
 	private static final boolean CHECK_MATRIX_SPARSITY = false;
 
-	protected Program _prog;		// pointer to Program this ProgramBlock is part of
-	protected ArrayList<Instruction> _inst;
+	protected Program _prog; // pointer to Program this ProgramBlock is part of
 
 	//additional attributes for recompile
 	protected StatementBlock _sb = null;
@@ -65,7 +64,6 @@ public class ProgramBlock implements ParseInfo
 
 	public ProgramBlock(Program prog) {
 		_prog = prog;
-		_inst = new ArrayList<>();
 	}
 
 	////////////////////////////////////////////////
@@ -88,33 +86,25 @@ public class ProgramBlock implements ParseInfo
 		_sb = sb;
 	}
 
-	public  ArrayList<Instruction> getInstructions() {
-		return _inst;
-	}
-
-	public Instruction getInstruction(int i) {
-		return _inst.get(i);
-	}
-
-	public  void setInstructions( ArrayList<Instruction> inst ) {
-		_inst = inst;
-	}
-
-	public void addInstruction(Instruction inst) {
-		_inst.add(inst);
-	}
-
-	public void addInstructions(ArrayList<Instruction> inst) {
-		_inst.addAll(inst);
-	}
-
-	public int getNumInstructions() {
-		return _inst.size();
-	}
-
 	public void setThreadID( long id ){
 		_tid = id;
 	}
+	
+	/**
+	 * Get the list of child program blocks if nested;
+	 * otherwise this method returns null.
+	 * 
+	 * @return list of program blocks
+	 */
+	public abstract ArrayList<ProgramBlock> getChildBlocks();
+	
+	/**
+	 * Indicates if the program block is nested, i.e., 
+	 * if it contains other program blocks (e.g., loops).
+	 * 
+	 * @return true if nested
+	 */
+	public abstract boolean isNested();
 
 
 	//////////////////////////////////////////////////////////
@@ -126,36 +116,7 @@ public class ProgramBlock implements ParseInfo
 	 *
 	 * @param ec execution context
 	 */
-	public void execute(ExecutionContext ec)
-	{
-		ArrayList<Instruction> tmp = _inst;
-
-		//dynamically recompile instructions if enabled and required
-		try
-		{
-			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			if(    ConfigurationManager.isDynamicRecompilation()
-				&& _sb != null
-				&& _sb.requiresRecompilation() )
-			{
-				tmp = Recompiler.recompileHopsDag(
-					_sb, _sb.getHops(), ec.getVariables(), null, false, true, _tid);
-			}
-			if( DMLScript.STATISTICS ){
-				long t1 = System.nanoTime();
-				Statistics.incrementHOPRecompileTime(t1-t0);
-				if( tmp!=_inst )
-					Statistics.incrementHOPRecompileSB();
-			}
-		}
-		catch(Exception ex)
-		{
-			throw new DMLRuntimeException("Unable to recompile program block.", ex);
-		}
-
-		//actual instruction execution
-		executeInstructions(tmp, ec);
-	}
+	public abstract void execute(ExecutionContext ec);
 
 	/**
 	 * Executes given predicate instructions (incl recompilation if required)
@@ -188,8 +149,7 @@ public class ProgramBlock implements ParseInfo
 					Statistics.incrementHOPRecompilePred();
 			}
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new DMLRuntimeException("Unable to recompile predicate instructions.", ex);
 		}
 
@@ -219,8 +179,8 @@ public class ProgramBlock implements ParseInfo
 		if( ret.getValueType() != retType )
 			switch( retType ) {
 				case BOOLEAN: ret = new BooleanObject(ret.getBooleanValue()); break;
-				case INT64:	  ret = new IntObject(ret.getLongValue()); break;
-				case FP64:  ret = new DoubleObject(ret.getDoubleValue()); break;
+				case INT64:   ret = new IntObject(ret.getLongValue()); break;
+				case FP64:    ret = new DoubleObject(ret.getDoubleValue()); break;
 				case STRING:  ret = new StringObject(ret.getStringValue()); break;
 				default:
 					//do nothing
@@ -272,7 +232,7 @@ public class ProgramBlock implements ParseInfo
 			if ( e instanceof DMLScriptException)
 				throw (DMLScriptException)e;
 			else
-				throw new DMLRuntimeException(this.printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
+				throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating instruction: " + currInst.toString() , e);
 		}
 	}
 

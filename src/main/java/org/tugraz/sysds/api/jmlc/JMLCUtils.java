@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -86,9 +87,10 @@ public class JMLCUtils
 			for( ProgramBlock pbc : fpb.getChildBlocks() )
 				rCleanupRuntimeProgram(pbc,outputs);
 		}
-		else {
-			pb.setInstructions(cleanupRuntimeInstructions(
-				pb.getInstructions(), outputs));
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			bpb.setInstructions(cleanupRuntimeInstructions(
+				bpb.getInstructions(), outputs));
 		}
 	}
 	

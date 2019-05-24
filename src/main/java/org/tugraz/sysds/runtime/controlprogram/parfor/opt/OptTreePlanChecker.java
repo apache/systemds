@@ -36,6 +36,7 @@ import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -53,35 +54,29 @@ public class OptTreePlanChecker
 		Program prog = pb.getProgram();
 		DMLProgram dprog = sb.getDMLProg();
 		
-		if (pb instanceof FunctionProgramBlock && sb instanceof FunctionStatementBlock )
-		{
+		if (pb instanceof FunctionProgramBlock && sb instanceof FunctionStatementBlock ) {
 			FunctionProgramBlock fpb = (FunctionProgramBlock)pb;
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			for( int i=0; i<fpb.getChildBlocks().size(); i++ )
-			{
+			for( int i=0; i<fpb.getChildBlocks().size(); i++ ) {
 				ProgramBlock pbc = fpb.getChildBlocks().get(i);
 				StatementBlock sbc = fstmt.getBody().get(i);
 				checkProgramCorrectness(pbc, sbc, fnStack);
 			}
-			//checkLinksProgramStatementBlock(fpb, fsb);
 		}
-		else if (pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock)
-		{
+		else if (pb instanceof WhileProgramBlock && sb instanceof WhileStatementBlock) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pb;
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
 			checkHopDagCorrectness(prog, dprog, wsb.getPredicateHops(), wpb.getPredicate(), fnStack);
-			for( int i=0; i<wpb.getChildBlocks().size(); i++ )
-			{
+			for( int i=0; i<wpb.getChildBlocks().size(); i++ ) {
 				ProgramBlock pbc = wpb.getChildBlocks().get(i);
 				StatementBlock sbc = wstmt.getBody().get(i);
 				checkProgramCorrectness(pbc, sbc, fnStack);
 			}
 			checkLinksProgramStatementBlock(wpb, wsb);
-		}	
-		else if (pb instanceof IfProgramBlock && sb instanceof IfStatementBlock)
-		{
+		}
+		else if (pb instanceof IfProgramBlock && sb instanceof IfStatementBlock) {
 			IfProgramBlock ipb = (IfProgramBlock) pb;
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement) isb.getStatement(0);
@@ -91,34 +86,31 @@ public class OptTreePlanChecker
 				StatementBlock sbc = istmt.getIfBody().get(i);
 				checkProgramCorrectness(pbc, sbc, fnStack);
 			}
-			for( int i=0; i<ipb.getChildBlocksElseBody().size(); i++ ) {			
+			for( int i=0; i<ipb.getChildBlocksElseBody().size(); i++ ) {
 				ProgramBlock pbc = ipb.getChildBlocksElseBody().get(i);
 				StatementBlock sbc = istmt.getElseBody().get(i);
 				checkProgramCorrectness(pbc, sbc, fnStack);
 			}
 			checkLinksProgramStatementBlock(ipb, isb);
 		}
-		else if (pb instanceof ForProgramBlock && sb instanceof ForStatementBlock) //incl parfor
-		{
+		else if (pb instanceof ForProgramBlock && sb instanceof ForStatementBlock) { //incl parfor
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement) sb.getStatement(0);
 			checkHopDagCorrectness(prog, dprog, fsb.getFromHops(), fpb.getFromInstructions(), fnStack);
 			checkHopDagCorrectness(prog, dprog, fsb.getToHops(), fpb.getToInstructions(), fnStack);
 			checkHopDagCorrectness(prog, dprog, fsb.getIncrementHops(), fpb.getIncrementInstructions(), fnStack);
-			for( int i=0; i<fpb.getChildBlocks().size(); i++ ) {			
+			for( int i=0; i<fpb.getChildBlocks().size(); i++ ) {
 				ProgramBlock pbc = fpb.getChildBlocks().get(i);
 				StatementBlock sbc = fstmt.getBody().get(i);
 				checkProgramCorrectness(pbc, sbc, fnStack);
 			}
 			checkLinksProgramStatementBlock(fpb, fsb);
 		}
-		else
-		{
-			checkHopDagCorrectness(prog, dprog, sb.getHops(), pb.getInstructions(), fnStack);
-			//checkLinksProgramStatementBlock(pb, sb);
+		else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			checkHopDagCorrectness(prog, dprog, sb.getHops(), bpb.getInstructions(), fnStack);
 		}
-		
 	}
 
 	private static void checkHopDagCorrectness( Program prog, DMLProgram dprog, ArrayList<Hop> roots, ArrayList<Instruction> inst, Set<String> fnStack ) {

@@ -82,8 +82,14 @@ public class FunctionProgramBlock extends ProgramBlock
 		_childBlocks = pbs;
 	}
 	
+	@Override
 	public ArrayList<ProgramBlock> getChildBlocks() {
 		return _childBlocks;
+	}
+	
+	@Override
+	public boolean isNested() {
+		return true;
 	}
 	
 	@Override

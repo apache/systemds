@@ -53,6 +53,7 @@ import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.parser.ParseException;
 import org.tugraz.sysds.parser.Statement;
+import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
@@ -1121,8 +1122,9 @@ public final class MLContextUtil {
 			ForProgramBlock fpb = (ForProgramBlock) pb;
 			for (ProgramBlock pbc : fpb.getChildBlocks())
 				deleteRemoveVariableInstructions(pbc);
-		} else {
-			ArrayList<Instruction> instructions = pb.getInstructions();
+		} else if( pb instanceof BasicProgramBlock ) {
+			BasicProgramBlock bpb = (BasicProgramBlock) pb;
+			ArrayList<Instruction> instructions = bpb.getInstructions();
 			deleteRemoveVariableInstructions(instructions);
 		}
 	}

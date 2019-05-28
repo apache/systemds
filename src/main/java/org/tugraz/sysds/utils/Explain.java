@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.tugraz.sysds.hops.Hop;
@@ -354,15 +355,39 @@ public class Explain
 	}
 
 	public static String explain( LineageItem li ) {
-		return explain(li, 0);
+		li.resetVisitStatus();
+		String s = explain(li, 0);
+		s += rExplainDedupItems(li, new ArrayList<>());
+		li.resetVisitStatus();
+		return s;
 	}
 
-	public static String explain( LineageItem li, int level ) {
+	private static String explain( LineageItem li, int level ) {
 		li.resetVisitStatus();
 		String ret = explainLineageItem(li, level);
 		li.resetVisitStatus();
 		return ret;
 	}
+	
+	private static String rExplainDedupItems(LineageItem li, List<String> paths) {
+		if (li.isVisited())
+			return "";
+		StringBuilder sb = new StringBuilder();
+		
+		if (li.getType() == LineageItem.LineageItemType.Dedup && !paths.contains(li.getData())) {
+			sb.append("\n").append("dedup").append(li.getData()).append(":\n");
+			sb.append(Explain.explain(li, 0));
+			paths.add(li.getData());
+		}
+		
+		if (li.getInputs() != null)
+			for (LineageItem in : li.getInputs())
+				sb.append(rExplainDedupItems(in, paths));
+		
+		li.setVisited();
+		return sb.toString();
+	}
+	
 
 	public static String explainCPlan( CNodeTpl cplan ) {
 		StringBuilder sb = new StringBuilder();

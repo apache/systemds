@@ -58,6 +58,7 @@ public class DMLOptions {
 	public String               script        = null;             // the script itself
 	public boolean              help          = false;            // whether to print the usage option
 	public boolean              lineage       = false;            // whether compute lineage trace
+	public boolean              lineage_dedup = false;             // whether deduplicate lineage items
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -101,7 +102,13 @@ public class DMLOptions {
 
 		DMLOptions dmlOptions = new DMLOptions(options);
 		dmlOptions.help = line.hasOption("help");
-		dmlOptions.lineage = line.hasOption("lineage");
+		if (line.hasOption("lineage")){
+			dmlOptions.lineage = true;
+			String lineageType = line.getOptionValue("lineage");
+			if (lineageType != null){
+				dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+			}
+		}
 		dmlOptions.debug = line.hasOption("debug");
 		dmlOptions.gpu = line.hasOption("gpu");
 		if (dmlOptions.gpu) {

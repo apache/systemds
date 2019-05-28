@@ -128,7 +128,17 @@ public class CLIOptionsParserTest {
         String[] args = cl.split(" ");
         DMLOptions o = DMLOptions.parseCLArguments(args);
         Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(false, o.lineage_dedup);
     }
+    
+	@Test
+	public void testLineageDedup() throws Exception {
+		String cl = "systemml -f test.dml -lineage dedup";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_dedup);
+	}
 
     @Test
 	public void testGPUForce() throws Exception {

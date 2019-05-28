@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -86,21 +86,21 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 	public enum VariableOperationCode
 	{
-		CreateVariable, 
-		AssignVariable, 
+		CreateVariable,
+		AssignVariable,
 		CopyVariable,
 		MoveVariable,
 		RemoveVariable,
 		RemoveVariableAndFile,
-		CastAsScalarVariable, 
-		CastAsMatrixVariable, 
+		CastAsScalarVariable,
+		CastAsMatrixVariable,
 		CastAsFrameVariable,
 		CastAsDoubleVariable,
 		CastAsIntegerVariable,
 		CastAsBooleanVariable,
-		Write, 
-		Read, 
-		SetFileName, 
+		Write,
+		Read,
+		SetFileName,
 	}
 	
 	private static final IDSequence _uniqueVarID = new IDSequence(true);
@@ -165,37 +165,37 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else if ( str.equalsIgnoreCase("mvvar"))
 			return VariableOperationCode.MoveVariable;
 		
-		else if ( str.equalsIgnoreCase("rmvar") ) 
+		else if ( str.equalsIgnoreCase("rmvar") )
 			return VariableOperationCode.RemoveVariable;
 		
-		else if ( str.equalsIgnoreCase("rmfilevar") ) 
+		else if ( str.equalsIgnoreCase("rmfilevar") )
 			return VariableOperationCode.RemoveVariableAndFile;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_SCALAR_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_SCALAR_OPCODE) )
 			return VariableOperationCode.CastAsScalarVariable;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE) )
 			return VariableOperationCode.CastAsMatrixVariable;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) )
 			return VariableOperationCode.CastAsFrameVariable;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_DOUBLE_OPCODE) )
 			return VariableOperationCode.CastAsDoubleVariable;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_INT_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_INT_OPCODE) )
 			return VariableOperationCode.CastAsIntegerVariable;
 		
-		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_BOOLEAN_OPCODE) ) 
+		else if ( str.equalsIgnoreCase(UnaryCP.CAST_AS_BOOLEAN_OPCODE) )
 			return VariableOperationCode.CastAsBooleanVariable;
 		
-		else if ( str.equalsIgnoreCase("write") ) 
+		else if ( str.equalsIgnoreCase("write") )
 			return VariableOperationCode.Write;
 		
-		else if ( str.equalsIgnoreCase("read") ) 
+		else if ( str.equalsIgnoreCase("read") )
 			return VariableOperationCode.Read;
 		
-		else if ( str.equalsIgnoreCase("setfilename") ) 
+		else if ( str.equalsIgnoreCase("setfilename") )
 			return VariableOperationCode.SetFileName;
 		
 		else
@@ -204,7 +204,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	
 	/**
 	 * Checks if this instruction is a remove instruction for varName
-	 * 
+	 *
 	 * @param varName variable name
 	 * @return true if rmvar instruction including varName
 	 */
@@ -222,7 +222,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	public boolean isRemoveVariable() {
-		return (opcode == VariableOperationCode.RemoveVariable 
+		return (opcode == VariableOperationCode.RemoveVariable
 			|| opcode == VariableOperationCode.RemoveVariableAndFile);
 	}
 
@@ -320,7 +320,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch (voc) {
 		
 		case CreateVariable:
-			// variable name 
+			// variable name
 			DataType dt = DataType.valueOf(parts[4]);
 			ValueType vt = dt==DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
 			int extSchema = (dt==DataType.FRAME && parts.length>=13) ? 1 : 0;
@@ -330,7 +330,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// file name override flag (always literal)
 			in3 = new CPOperand(parts[3], ValueType.BOOLEAN, DataType.SCALAR);
 			
-			// format 
+			// format
 			String fmt = parts[5];
 			if ( fmt.equalsIgnoreCase("csv") ) {
 				// Cretevar instructions for CSV format either has 13 or 14 inputs.
@@ -431,9 +431,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		case CastAsFrameVariable:
 		case CastAsDoubleVariable:
 		case CastAsIntegerVariable:
-		case CastAsBooleanVariable:			
-			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type 
-			out = new CPOperand(parts[2]); // output variable name 
+		case CastAsBooleanVariable:
+			in1 = new CPOperand(parts[1]); // first operand is a variable name => string value type
+			out = new CPOperand(parts[2]); // output variable name
 			break;
 	
 		case Write:
@@ -453,7 +453,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				in4 = new CPOperand(parts[4]); // description
 			}
 			VariableCPInstruction inst = new VariableCPInstruction(
-				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str); 
+				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str);
 			inst.addInput(in4);
 			
 			return inst;
@@ -477,8 +477,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		switch ( opcode ) 
-		{ 
+		switch ( opcode )
+		{
 		case CreateVariable:
 			
 			if ( getInput1().getDataType() == DataType.MATRIX ) {
@@ -541,12 +541,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			break;
 			
 		case RemoveVariableAndFile:
-			 // Remove the variable from HashMap _variables, and possibly delete the data on disk. 
+			 // Remove the variable from HashMap _variables, and possibly delete the data on disk.
 			boolean del = ( (BooleanObject) ec.getScalarInput(getInput2().getName(), getInput2().getValueType(), true) ).getBooleanValue();
 			MatrixObject m = (MatrixObject) ec.removeVariable(getInput1().getName());
 			
 			if ( !del ) {
-				// HDFS file should be retailed after clearData(), 
+				// HDFS file should be retailed after clearData(),
 				// therefore data must be exported if dirty flag is set
 				if ( m.isDirty() )
 					m.exportData();
@@ -574,7 +574,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast frame '"+getInput1().getName()+"' of dimension ("+fBlock.getNumRows()+" x "+fBlock.getNumColumns()+") to scalar.");
 				Object value = fBlock.get(0,0);
 				ec.releaseFrameInput(getInput1().getName());
-				ec.setScalarOutput(output.getName(), 
+				ec.setScalarOutput(output.getName(),
 						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
 			else if( getInput1().getDataType().isMatrix() ) {
@@ -625,7 +625,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					if( tmp instanceof ScalarObject && tmp.getValueType()!=ValueType.STRING ) {
 						MatrixBlock out = new MatrixBlock(((ScalarObject)tmp).getDoubleValue());
 						ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
-					} 
+					}
 					else {
 						ec.setVariable(output.getName(), tmp);
 					}
@@ -653,7 +653,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			ec.setFrameOutput(output.getName(), out);
 			break;
 		}
-		case CastAsDoubleVariable:{ 
+		case CastAsDoubleVariable:{
 			ScalarObject in = ec.getScalarInput(getInput1());
 			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToDouble(in));
 			break;
@@ -663,7 +663,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			ec.setScalarOutput(output.getName(), ScalarObjectFactory.castToLong(in));
 			break;
 		}
-		case CastAsBooleanVariable:{ 
+		case CastAsBooleanVariable:{
 			ScalarObject scalarInput = ec.getScalarInput(getInput1());
 			ec.setScalarOutput(output.getName(), new BooleanObject(scalarInput.getBooleanValue()));
 			break;
@@ -720,14 +720,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		default:
 			throw new DMLRuntimeException("Unknown opcode: " + opcode );
 		}
-	}	
+	}
 	
 	/**
 	 * Handler for mvvar instructions.
 	 * Example: mvvar &lt;srcvar&gt; &lt;destFile&gt; &lt;format&gt;
-	 * Move the file pointed by srcvar to destFile. 
+	 * Move the file pointed by srcvar to destFile.
 	 * Currently, applicable only when format=binaryblock.
-	 *  
+	 *
 	 * @param ec execution context
 	 */
 	@SuppressWarnings("rawtypes")
@@ -747,7 +747,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			if( getInput2().getDataType().isMatrix() || getInput2().getDataType().isFrame() ) {
 				// remove existing variable bound to target name
 				Data tgt = ec.removeVariable(getInput2().getName());
-					
+				
 				//cleanup matrix data on fs/hdfs (if necessary)
 				if( tgt != null )
 					ec.cleanupDataObject(tgt);
@@ -759,7 +759,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			// example instruction: mvvar <srcVar> <destFile> <format>
-			if ( ec.getVariable(getInput1().getName()) == null ) 
+			if ( ec.getVariable(getInput1().getName()) == null )
 				throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
 			
 			Object object = ec.getVariable(getInput1().getName());
@@ -773,10 +773,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 			else
 				if(object instanceof MatrixObject)
-					throw new DMLRuntimeException("Unexpected formats while copying: from matrix blocks [" 
+					throw new DMLRuntimeException("Unexpected formats while copying: from matrix blocks ["
 							+ ((MatrixObject)object).getNumRowsPerBlock() + "," + ((MatrixObject)object).getNumColumnsPerBlock() + "] to " + getInput3().getName());
 				else if (object instanceof FrameObject)
-					throw new DMLRuntimeException("Unexpected formats while copying: from fram object [" 
+					throw new DMLRuntimeException("Unexpected formats while copying: from fram object ["
 							+ ((FrameObject)object).getNumColumns() + "," + ((FrameObject)object).getNumColumns() + "] to " + getInput3().getName());
 		}
 	}
@@ -784,14 +784,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	/**
 	 * Handler for cpvar instructions.
 	 * Example: cpvar &lt;srcvar&gt; &lt;destvar&gt;
-	 * 
+	 *
 	 * @param ec execution context
 	 */
 	private void processCopyInstruction(ExecutionContext ec) {
 		// get source variable 
 		Data dd = ec.getVariable(getInput1().getName());
-			
-		if ( dd == null ) 
+		
+		if ( dd == null )
 			throw new DMLRuntimeException("Unexpected error: could not find a data object for variable name:" + getInput1().getName() + ", while processing instruction " +this.toString());
 			
 		// remove existing variable bound to target name
@@ -807,11 +807,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	
 	/**
 	 * Handler for write instructions.
-	 * 
+	 *
 	 * Non-native formats like MM and CSV are handled through specialized helper functions.
-	 * The default behavior is to write out the specified matrix from the instruction, in 
+	 * The default behavior is to write out the specified matrix from the instruction, in
 	 * the format given by the corresponding symbol table entry.
-	 * 
+	 *
 	 * @param ec execution context
 	 */
 	private void processWriteInstruction(ExecutionContext ec) {
@@ -825,7 +825,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
 			String outFmt = getInput3().getName();
-			if (outFmt.equalsIgnoreCase("matrixmarket")) 
+			if (outFmt.equalsIgnoreCase("matrixmarket"))
 				writeMMFile(ec, fname);
 			else if (outFmt.equalsIgnoreCase("csv") )
 				writeCSVFile(ec, fname);
@@ -843,9 +843,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	/**
-	 * Remove variable instruction externalized as a static function in order to allow various 
+	 * Remove variable instruction externalized as a static function in order to allow various
 	 * cleanup procedures to use the same codepath as the actual rmVar instruction
-	 * 
+	 *
 	 * @param ec execution context
 	 * @param varname variable name
 	 */
@@ -859,7 +859,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	
 	/**
 	 * Helper function to write CSV files to HDFS.
-	 * 
+	 *
 	 * @param ec execution context
 	 * @param fname file name
 	 */
@@ -897,7 +897,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	
 	/**
 	 * Helper function to write MM files to HDFS.
-	 * 
+	 *
 	 * @param ec execution context
 	 * @param fname file name
 	 */
@@ -914,7 +914,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
-					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(), 
+					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),
 						fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
@@ -930,7 +930,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	/**
 	 * Helper function to write scalars to HDFS based on its value type.
-	 * 
+	 *
 	 * @param ec execution context
 	 * @param fname file name
 	 */
@@ -1027,7 +1027,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append("createvar");
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(varName); 
+		sb.append(varName);
 		sb.append(Lop.OPERAND_DELIMITOR);
 		sb.append(fileName);		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
 									// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
@@ -1064,7 +1064,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String str = sb.toString();
 
 		return parseInstruction(str);
-	}	
+	}
 	
 	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
 		StringBuilder sb = new StringBuilder();
@@ -1093,7 +1093,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String str = sb.toString();
 
 		return parseInstruction(str);
-	}	
+	}
 	
 	@Override
 	public void updateInstructionThreadID(String pattern, String replace) {
@@ -1104,14 +1104,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			getInput2().setName(getInput2().getName().replaceAll(pattern, replace));
 
 			// Find a start position of file name string.
-			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS); 
+			int iPos = StringUtils.ordinalIndexOf(instString, Lop.OPERAND_DELIMITOR, CREATEVAR_FILE_NAME_VAR_POS);
 			// Find a end position of file name string.
 			int iPos2 = StringUtils.indexOf(instString, Lop.OPERAND_DELIMITOR, iPos+1);
 			
 			StringBuilder sb = new StringBuilder();
 			sb.append(instString.substring(0,iPos+1));			// It takes first part before file name.
 			// This will replace 'pattern' with 'replace' string from file name.
-			sb.append(ProgramConverter.saveReplaceFilenameThreadID(instString.substring(iPos+1, iPos2+1), pattern, replace));  
+			sb.append(ProgramConverter.saveReplaceFilenameThreadID(instString.substring(iPos+1, iPos2+1), pattern, replace));
 			sb.append(instString.substring(iPos2+1));			// It takes last part after file name.
 			
 			instString = sb.toString();
@@ -1124,14 +1124,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case CreateVariable:
 			case Read:
 				return new LineageItem(getInput1().getName(), toString(), getOpcode());
-			case AssignVariable:
+			case AssignVariable:{
+				ArrayList<LineageItem> lineages = new ArrayList<>();
+				lineages.add(Lineage.getOrCreate(getInput1()));
+				return new LineageItem(getInput2().getName(), getOpcode(), lineages);
+			}
 			case CopyVariable: {
 				ArrayList<LineageItem> lineages = new ArrayList<>();
-				if (Lineage.contains(getInput1()))
-					lineages.add(Lineage.get(getInput1()));
-				else
-					lineages.add(Lineage.getOrCreate(getInput1()));
-				return new LineageItem(getInput2().getName(), lineages, getOpcode());
+				if (!Lineage.contains(getInput1()))
+					throw new DMLRuntimeException("Could not find LineageItem for " + getInput1().getName());
+				lineages.add(Lineage.get(getInput1()));
+				return new LineageItem(getInput2().getName(), getOpcode(), lineages);
 			}
 			case Write: {
 				ArrayList<LineageItem> lineages = new ArrayList<>();
@@ -1140,7 +1143,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						lineages.add(Lineage.getOrCreate(input));
 				if (_formatProperties != null && !_formatProperties.getDescription().isEmpty())
 					lineages.add(new LineageItem(_formatProperties.getDescription()));
-				return new LineageItem(getInput1().getName(), lineages, getOpcode());
+				return new LineageItem(getInput1().getName(), getOpcode(), lineages);
 			}
 			case MoveVariable: {
 				ArrayList<LineageItem> lineages = new ArrayList<>();
@@ -1151,7 +1154,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					if (getInput3() != null)
 						lineages.add(Lineage.getOrCreate(getInput3()));
 				}
-				return new LineageItem(getInput2().getName(), lineages, getOpcode());
+				return new LineageItem(getInput2().getName(), getOpcode(), lineages);
 			}
 			case RemoveVariable:
 			default:

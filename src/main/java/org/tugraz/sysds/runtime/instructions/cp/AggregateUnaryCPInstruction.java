@@ -28,6 +28,8 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -143,8 +145,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				if( Lineage.get(input1) == null )
 					throw new DMLRuntimeException("Lineage trace "
 						+ "for variable "+input1.getName()+" unavailable.");
+				
+				LineageItem li = DMLScript.LINEAGE_DEDUP ?
+						LineageItemUtils.rDecompress(Lineage.get(input1)) :
+						Lineage.get(input1);
+				
 				ec.setScalarOutput(output_name, new StringObject(
-					Explain.explain(Lineage.get(input1))));
+						Explain.explain(li)));
 				break;
 			}
 			default: {

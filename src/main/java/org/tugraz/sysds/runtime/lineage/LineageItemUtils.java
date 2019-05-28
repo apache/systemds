@@ -17,6 +17,11 @@
 
 package org.tugraz.sysds.runtime.lineage;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
+import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -47,8 +52,12 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.tugraz.sysds.runtime.util.HDFSTool;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class LineageItemUtils {
@@ -64,6 +73,8 @@ public class LineageItemUtils {
 					return LineageItemType.Literal;
 				case "I":
 					return LineageItemType.Instruction;
+				case "D":
+					return LineageItemType.Dedup;
 				default:
 					throw new DMLRuntimeException("Unknown LineageItemType given!");
 			}
@@ -79,6 +90,8 @@ public class LineageItemUtils {
 				return "L";
 			case Instruction:
 				return "I";
+			case Dedup:
+				return "D";
 			default:
 				throw new DMLRuntimeException("Unknown LineageItemType given!");
 		}
@@ -96,7 +109,11 @@ public class LineageItemUtils {
 		if (li.isLeaf()) {
 			sb.append(li.getData()).append(" ");
 		} else {
-			sb.append(li.getOpcode()).append(" ");
+			if (li.getType() == LineageItemType.Dedup)
+				sb.append(li.getOpcode()).append(li.getData()).append(" ");
+			else
+				sb.append(li.getOpcode()).append(" ");
+			
 			String ids = li.getInputs().stream()
 					.map(i -> String.format("(%d)", i.getId()))
 					.collect(Collectors.joining(" "));
@@ -106,8 +123,8 @@ public class LineageItemUtils {
 	}
 	
 	public static Data computeByLineage(LineageItem root) {
-		long rootId = root.getOpcode().equals("write") ? 
-			root.getInputs().get(0).getId() : root.getId();
+		long rootId = root.getOpcode().equals("write") ?
+				root.getInputs().get(0).getId() : root.getId();
 		String varname = LVARPREFIX + rootId;
 		
 		//recursively construct hops 
@@ -122,33 +139,33 @@ public class LineageItemUtils {
 		BasicProgramBlock pb = new BasicProgramBlock(new Program());
 		Dag<Lop> dag = new Dag<>();
 		Lop lops = out.constructLops();
-		lops.addToDag( dag );
+		lops.addToDag(dag);
 		pb.setInstructions(dag.getJobs(null,
-			ConfigurationManager.getDMLConfig()));
+				ConfigurationManager.getDMLConfig()));
 		
 		//execute instructions and get result
 		pb.execute(ec);
 		return ec.getVariable(varname);
 	}
 	
-	private static void rConstructHops(LineageItem item, HashMap<Long,Hop> operands) {
-		if( item.isVisited() )
+	private static void rConstructHops(LineageItem item, HashMap<Long, Hop> operands) {
+		if (item.isVisited())
 			return;
 		
 		//recursively process children (ordering by data dependencies)
-		if( !item.isLeaf() )
-			for( LineageItem c : item.getInputs() )
+		if (!item.isLeaf())
+			for (LineageItem c : item.getInputs())
 				rConstructHops(c, operands);
 		
 		//process current lineage item
 		//NOTE: we generate instructions from hops (but without rewrites) to automatically
 		//handle execution types, rmvar instructions, and rewiring of inputs/outputs
-		switch( item.getType() ) {
+		switch (item.getType()) {
 			case Creation: {
 				Instruction inst = InstructionParser.parseSingleInstruction(item.getData());
 				
-				if( inst instanceof DataGenCPInstruction ) {
-					DataGenCPInstruction rand = (DataGenCPInstruction)inst;
+				if (inst instanceof DataGenCPInstruction) {
+					DataGenCPInstruction rand = (DataGenCPInstruction) inst;
 					HashMap<String, Hop> params = new HashMap<>();
 					params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
 					params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
@@ -161,12 +178,11 @@ public class LineageItemUtils {
 					Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
 					datagen.setOutputBlocksizes(rand.getRowsInBlock(), rand.getColsInBlock());
 					operands.put(item.getId(), datagen);
-				}
-				else if( inst instanceof VariableCPInstruction
-					&& ((VariableCPInstruction)inst).isCreateVariable()) {
+				} else if (inst instanceof VariableCPInstruction
+						&& ((VariableCPInstruction) inst).isCreateVariable()) {
 					String parts[] = InstructionUtils.getInstructionPartsWithValueType(inst.toString());
 					DataType dt = DataType.valueOf(parts[4]);
-					ValueType vt = dt==DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
+					ValueType vt = dt == DataType.MATRIX ? ValueType.FP64 : ValueType.STRING;
 					HashMap<String, Hop> params = new HashMap<>();
 					params.put(DataExpression.IO_FILENAME, new LiteralOp(parts[2]));
 					params.put(DataExpression.READROWPARAM, new LiteralOp(Long.parseLong(parts[6])));
@@ -183,8 +199,8 @@ public class LineageItemUtils {
 				CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
 				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
 				
-				if( ctype != null ) {
-					switch( ctype ) {
+				if (ctype != null) {
+					switch (ctype) {
 						case AggregateUnary: {
 							Hop input = operands.get(item.getInputs().get(0).getId());
 							Hop aggunary = HopRewriteUtils.createAggUnaryOp(input, item.getOpcode());
@@ -210,26 +226,99 @@ public class LineageItemUtils {
 						}
 						default:
 							throw new DMLRuntimeException("Unsupported instruction "
-								+ "type: "+ctype.name()+" ("+item.getOpcode()+").");
+									+ "type: " + ctype.name() + " (" + item.getOpcode() + ").");
 					}
-				}
-				else if( stype == SPType.Reblock ) {
+				} else if (stype == SPType.Reblock) {
 					Hop input = operands.get(item.getInputs().get(0).getId());
 					input.setOutputBlocksizes(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 					input.setRequiresReblock(true);
 					operands.put(item.getId(), input);
-				}
-				else 
-					throw new DMLRuntimeException("Unsupported instruction: "+item.getOpcode());
+				} else
+					throw new DMLRuntimeException("Unsupported instruction: " + item.getOpcode());
 				break;
 			}
 			case Literal: {
 				CPOperand op = new CPOperand(item.getData());
 				operands.put(item.getId(), ScalarObjectFactory
-					.createLiteralOp(op.getValueType(), op.getName()));
+						.createLiteralOp(op.getValueType(), op.getName()));
 				break;
 			}
+			case Dedup: {
+				throw new NotImplementedException();
+			}
 		}
+		
+		item.setVisited();
+	}
+	
+	public static void removeInputLinks(LineageItem li) {
+		if (li.getOutputs().isEmpty()) {
+			List<LineageItem> inputs = li.getInputs();
+			li.removeAllInputs();
+			if (inputs != null)
+				for (LineageItem input : inputs) {
+					input.getOutputs().remove(li);
+					removeInputLinks(input);
+				}
+		}
+	}
+	
+	public static LineageItem rDecompress(LineageItem item) {
+		if (item.getType() == LineageItemType.Dedup) {
+			LineageItem dedupInput = rDecompress(item.getInputs().get(0));
+			ArrayList<LineageItem> inputs = new ArrayList<>();
+			
+			for (LineageItem li : item.getInputs().get(1).getInputs())
+				inputs.add(rDecompress(li));
+			
+			LineageItem li = new LineageItem(item.getInputs().get(1).getName(),
+					item.getInputs().get(1).getData(),
+					item.getInputs().get(1).getOpcode(),
+					inputs);
+			
+			li.resetVisitStatus();
+			rSetDedupInputOntoOutput(item.getName(), li, dedupInput);
+			li.resetVisitStatus();
+			return li;
+		} else {
+			ArrayList<LineageItem> inputs = new ArrayList<>();
+			if (item.getInputs() != null) {
+				for (LineageItem li : item.getInputs())
+					inputs.add(rDecompress(li));
+			}
+			return new LineageItem(item.getName(), item.getData(), item.getOpcode(), inputs);
+		}
+	}
+	
+	public static void writeTraceToHDFS(String trace, String fname) {
+		try {
+			HDFSTool.writeStringToHDFS(trace, fname);
+			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
+			if (fs instanceof LocalFileSystem) {
+				Path path = new Path(fname);
+				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+			}
+			
+		} catch (IOException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+	
+	private static void rSetDedupInputOntoOutput(String name, LineageItem item, LineageItem dedupInput) {
+		if (item.isVisited())
+			return;
+		
+		if (item.getInputs() != null && !item.getInputs().isEmpty())
+			for (int i = 0; i < item.getInputs().size(); i++) {
+				LineageItem li = item.getInputs().get(i);
+				
+				if (li.getName().equals(name)) {
+					item.getInputs().set(i, dedupInput);
+					dedupInput.getOutputs().add(item);
+				}
+				
+				rSetDedupInputOntoOutput(name, li, dedupInput);
+			}
 		
 		item.setVisited();
 	}

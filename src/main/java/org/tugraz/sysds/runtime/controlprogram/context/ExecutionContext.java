@@ -43,6 +43,7 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.tugraz.sysds.runtime.lineage.LineagePath;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -69,7 +70,8 @@ public class ExecutionContext {
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
 	protected List<GPUContext> _gpuContexts = new ArrayList<>();
-
+	protected LineagePath _lineagePath = new LineagePath();
+	
 	protected ExecutionContext()
 	{
 		//protected constructor to force use of ExecutionContextFactory
@@ -83,6 +85,10 @@ public class ExecutionContext {
 		else
 			_variables = null;
 		_prog = prog;
+	}
+	
+	public LineagePath getLineagePath(){
+		return _lineagePath;
 	}
 	
 	public Program getProgram(){

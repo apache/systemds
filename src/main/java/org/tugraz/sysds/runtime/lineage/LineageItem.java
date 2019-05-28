@@ -30,47 +30,29 @@ public class LineageItem {
 	private final String _opcode;
 	private final String _name;
 	private final String _data;
-	private List<LineageItem> _inputs;
-	private List<LineageItem> _outputs;
+	private final List<LineageItem> _inputs;
+	private final List<LineageItem> _outputs;
 	private boolean _visited = false;
 	private int _hash = 0;
 	
-	public enum LineageItemType {Literal, Creation, Instruction}
+	public enum LineageItemType {Literal, Creation, Instruction, Dedup}
+	public static final String dedupItemOpcode = "dedup";
 	
-	public LineageItem(long id, LineageItem li) {
-		_id = id;
-		_opcode = li._opcode;
-		_name = li._name;
-		_data = li._data;
-		_inputs = li._inputs;
-		_outputs = li._outputs;
-	}
+	public LineageItem(long id, String name, String data) { this(id, name, data, "", null); }
 	
-	public LineageItem(long id, String name, String data) {
-		this(id, name, data, null, "");
-	}
+	public LineageItem(long id, String name,  String opcode, List<LineageItem> inputs) { this(id, name, "", opcode ,inputs); }
 	
-	public LineageItem(long id, String name, List<LineageItem> inputs, String opcode) {
-		this(id, name, "", inputs, opcode);
-	}
+	public LineageItem(String name) { this(_idSeq.getNextID(), name, name, "", null); }
 	
-	public LineageItem(String name, String data) {
-		this(_idSeq.getNextID(), name, data, null, "");
-	}
+	public LineageItem(String name, String data) { this(_idSeq.getNextID(), name, data, "", null); }
 	
-	public LineageItem(String name, String data, String opcode) {
-		this(_idSeq.getNextID(), name, data, null, opcode);
-	}
+	public LineageItem(String name, String data, String opcode) { this(_idSeq.getNextID(), name, data, opcode, null); }
 	
-	public LineageItem(String name, String data, List<LineageItem> inputs, String opcode) {
-		this(_idSeq.getNextID(), name, data, inputs, opcode);
-	}
+	public LineageItem(String name, String opcode, List<LineageItem> inputs) { this(_idSeq.getNextID(), name, "", opcode, inputs); }
+
+	public LineageItem(String name, String data, String opcode, List<LineageItem> inputs) { this(_idSeq.getNextID(), name, data, opcode, inputs); }
 	
-	public LineageItem(String name, List<LineageItem> inputs, String opcode) {
-		this(_idSeq.getNextID(), name, "", inputs, opcode);
-	}
-	
-	public LineageItem(long id, String name, String data, List<LineageItem> inputs, String opcode) {
+	public LineageItem(long id, String name, String data, String opcode, List<LineageItem> inputs) {
 		_id = id;
 		_opcode = opcode;
 		_name = name;
@@ -85,17 +67,31 @@ public class LineageItem {
 		_outputs = new ArrayList<>();
 	}
 	
-	public LineageItem(String name) {
-		this(_idSeq.getNextID(), name);
+	public LineageItem(long id, LineageItem li) {
+		_id = id;
+		_opcode = li._opcode;
+		_name = li._name;
+		_data = li._data;
+		_inputs = li._inputs;
+		_outputs = li._outputs;
 	}
 	
-	public LineageItem(long id, String name) {
-		_id = id;
-		_opcode = "";
-		_name = name;
-		_data = name;
-		_inputs = null;
+	public LineageItem(LineageItem other) {
+		_id = _idSeq.getNextID();
+		_opcode = other._opcode;
+		_name = other._name;
+		_data = other._data;
+		_visited = other._visited;
+		_hash = other._hash;
 		_outputs = new ArrayList<>();
+		_inputs = new ArrayList<>();
+		
+		if (other._inputs != null)
+			for (LineageItem li : other._inputs) {
+				LineageItem input = new LineageItem(li);
+				_inputs.add(input);
+				input._outputs.add(this);
+			}
 	}
 	
 	public List<LineageItem> getInputs() {
@@ -103,7 +99,8 @@ public class LineageItem {
 	}
 	
 	public void removeAllInputs() {
-		_inputs = new ArrayList<>();
+		if (_inputs != null)
+			_inputs.clear();
 	}
 	
 	public List<LineageItem> getOutputs() {
@@ -139,6 +136,8 @@ public class LineageItem {
 	}
 	
 	public LineageItemType getType() {
+		if (_opcode.equals(dedupItemOpcode))
+			return LineageItemType.Dedup;
 		if (isLeaf() && isInstruction())
 			return LineageItemType.Creation;
 		else if (isLeaf() && !isInstruction())

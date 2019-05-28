@@ -22,6 +22,7 @@ package org.tugraz.sysds.runtime.controlprogram;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -32,6 +33,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -112,10 +114,17 @@ public class ForProgramBlock extends ProgramBlock
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
+			// observe all distinct paths, compute a LineageDedupBlock and stores them globally
+			if (DMLScript.LINEAGE_DEDUP)
+				Lineage.computeDedupBlock(this, ec);
+			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(from, to, incr);
 			for( IntObject iterVar : seqIter ) 
 			{
+				if (DMLScript.LINEAGE_DEDUP)
+					ec.getLineagePath().clearLastBranch();
+				
 				//set iteration variable
 				ec.setVariable(_iterPredVar, iterVar); 
 				
@@ -123,7 +132,14 @@ public class ForProgramBlock extends ProgramBlock
 				for(int i=0 ; i < this._childBlocks.size() ; i++) {
 					_childBlocks.get(i).execute(ec);
 				}
+				
+				if (DMLScript.LINEAGE_DEDUP)
+					Lineage.tracePath(ec.getLineagePath().getLastBranch());
 			}
+			
+			// clear current LineageDedupBlock
+			if (DMLScript.LINEAGE_DEDUP)
+				Lineage.clearDedupBlock(ec);
 			
 			// reset update-in-place variables
 			resetUpdateInPlaceVariableFlags(ec, flags);

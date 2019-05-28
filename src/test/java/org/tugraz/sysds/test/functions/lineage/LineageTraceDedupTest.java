@@ -16,10 +16,8 @@
 
 package org.tugraz.sysds.test.functions.lineage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
+import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -27,14 +25,17 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-import static junit.framework.TestCase.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
 
-public class LineageTraceEqualsTest extends AutomatedTestBase {
+import static junit.framework.TestCase.assertEquals;
+
+public class LineageTraceDedupTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
-	protected static final String TEST_NAME1 = "LineageTraceEquals1";
-	protected static final String TEST_NAME2 = "LineageTraceEquals2";
-	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceEqualsTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME1 = "LineageTraceDedup1";
+	protected static final String TEST_NAME2 = "LineageTraceDedup2";
+	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceDedupTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
 	protected static final int numFeatures = 5;
@@ -53,53 +54,68 @@ public class LineageTraceEqualsTest extends AutomatedTestBase {
 	}
 	
 	@Test
-	public void testLineageTrace2() { testLineageTrace(TEST_NAME2); }
+	public void testLineageTrace2() {
+		testLineageTrace(TEST_NAME2);
+	}
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		Types.ExecMode old_rtplatform = AutomatedTestBase.rtplatform;
 		
 		try {
 			System.out.println("------------ BEGIN " + testname + "------------");
 			
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+			AutomatedTestBase.rtplatform = Types.ExecMode.SINGLE_NODE;
 			
 			int rows = numRecords;
 			int cols = numFeatures;
 			
 			getAndLoadTestConfiguration(testname);
-			
-			List<String> proArgs = new ArrayList<String>();
-			
-			proArgs.add("-stats");
-			proArgs.add("-lineage");
-//			proArgs.add("-explain");
-			proArgs.add("-args");
-			proArgs.add(input("M"));
-			proArgs.add(output("X"));
-			proArgs.add(output("Z"));
-			programArgs = proArgs.toArray(new String[proArgs.size()]);
+			double[][] m = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			
 			fullDMLScriptName = getScript();
+			writeInputMatrixWithMTD("X", m, true);
+			List<String> proArgs;
+
+			// w/o lineage deduplication
+			proArgs = new ArrayList<String>();
+			proArgs.add("-stats");
+			proArgs.add("-lineage");
+			proArgs.add("-args");
+			proArgs.add(input("X"));
+			proArgs.add(output("R"));
+			programArgs = proArgs.toArray(new String[proArgs.size()]);
+
+			LineageItem.resetIDSequence();
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+
+			String trace = readDMLLineageFromHDFS("R");
+			LineageItem li = LineageParser.parseLineageTrace(trace);
 			
-			double[][] m = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
-			writeInputMatrixWithMTD("M", m, true);
+			// w/ lineage deduplication
+			proArgs = new ArrayList<String>();
+			proArgs.add("-stats");
+			proArgs.add("-lineage");
+			proArgs.add("dedup");
+			proArgs.add("-explain");
+			proArgs.add("-args");
+			proArgs.add(input("X"));
+			proArgs.add(output("R"));
+			programArgs = proArgs.toArray(new String[proArgs.size()]);
 			
 			LineageItem.resetIDSequence();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
-			String X_lineage = readDMLLineageFromHDFS("X");
-			String Z_lineage = readDMLLineageFromHDFS("Z");
-			
-			LineageItem X_li = LineageParser.parseLineageTrace(X_lineage);
-			LineageItem Z_li = LineageParser.parseLineageTrace(Z_lineage);
-			
-			assertTrue(X_li.hashCode() == Z_li.hashCode());
-			assertTrue(X_li.equals(Z_li));
+			String dedup_trace = readDMLLineageFromHDFS("R");
+			LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
+			assertEquals(dedup_li, li);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			AutomatedTestBase.rtplatform = old_rtplatform;
 		}
 	}
 }

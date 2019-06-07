@@ -98,6 +98,7 @@ public enum Builtins {
 	MEDIAN("median", false),
 	MOMENT("moment", "centralMoment", false),
 	NCOL("ncol", false),
+	NORMALIZE("normalize", true),
 	NROW("nrow", false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite

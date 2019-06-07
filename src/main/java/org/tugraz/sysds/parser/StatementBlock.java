@@ -1023,9 +1023,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				s.getIdentifier().setFormatType(FormatType.MM);
 			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
 				s.getIdentifier().setFormatType(FormatType.CSV);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM)){
+				s.getIdentifier().setFormatType(FormatType.LIBSVM);
 			} else{
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text, mm, csv; invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+						+ " can only be a string with one of following values: binary, text, mm, csv, libsvm; invalid format: '"+ft+"'.", false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
 		//case of unspecified format parameter, use default
@@ -1058,9 +1060,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				s.getTarget().setFormatType(FormatType.MM);
 			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV)){
 				s.getTarget().setFormatType(FormatType.CSV);
+			} else if (ft.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM)){
+				s.getTarget().setFormatType(FormatType.LIBSVM);
 			} else{
 				raiseValidateError("IO statement parameter " + DataExpression.FORMAT_TYPE
-						+ " can only be a string with one of following values: binary, text, mm, csv", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
+						+ " can only be a string with one of following values: binary, text, mm, csv, libsvm", conditionalValidate, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		} else {
 			dataExpr.addVarParam(DataExpression.FORMAT_TYPE,

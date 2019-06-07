@@ -84,6 +84,12 @@ public class MatrixReaderFactory
 			else
 				reader = new ReaderTextCSV( props.formatProperties!=null ? (FileFormatPropertiesCSV)props.formatProperties : new FileFormatPropertiesCSV());
 		}
+		else if( iinfo == InputInfo.LIBSVMInputInfo) {
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_READ_TEXTFORMATS) && MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR )
+				reader = new ReaderTextLIBSVMParallel();
+			else
+				reader = new ReaderTextLIBSVM();
+		}
 		else if( iinfo == InputInfo.BinaryCellInputInfo ) 
 			reader = new ReaderBinaryCell();
 		else if( iinfo == InputInfo.BinaryBlockInputInfo ) {

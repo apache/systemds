@@ -60,6 +60,8 @@ public class OutputInfo implements Serializable
 			SequenceFileOutputFormat.class, LongWritable.class, FrameBlock.class);
 
 	public static final OutputInfo CSVOutputInfo = null;
+	public static final OutputInfo LIBSVMOutputInfo = new OutputInfo (TextOutputFormat.class, 
+			NullWritable.class, Text.class);
 	
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
@@ -72,6 +74,8 @@ public class OutputInfo implements Serializable
 			return InputInfo.TextCellInputInfo;
 		else if ( oi == OutputInfo.CSVOutputInfo)
 			return InputInfo.CSVInputInfo;
+		else if ( oi == OutputInfo.LIBSVMOutputInfo)
+			return InputInfo.LIBSVMInputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + oi);
 	}
@@ -87,6 +91,8 @@ public class OutputInfo implements Serializable
 			return BinaryBlockOutputInfo;
 		else if ( str.equalsIgnoreCase("csv") )
 			return CSVOutputInfo;
+		else if ( str.equalsIgnoreCase("libsvm") )
+			return LIBSVMOutputInfo;
 		return null;
 	}
 	
@@ -101,6 +107,8 @@ public class OutputInfo implements Serializable
 			return "binaryblock";
 		else if ( oi == CSVOutputInfo )
 			return "csv";
+		else if ( oi == LIBSVMOutputInfo)
+			return "libsvm";
 		else
 			throw new DMLRuntimeException("Unrecognized outputInfo: " + oi);
 	}
@@ -113,6 +121,8 @@ public class OutputInfo implements Serializable
 			return DataExpression.FORMAT_TYPE_VALUE_MATRIXMARKET;
 		else if( oinfo == OutputInfo.CSVOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_CSV;
+		else if( oinfo == OutputInfo.LIBSVMOutputInfo)
+			return DataExpression.FORMAT_TYPE_VALUE_LIBSVM;
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo 
 				|| oinfo == OutputInfo.BinaryCellOutputInfo )
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;

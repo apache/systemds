@@ -58,6 +58,12 @@ public class MatrixWriterFactory
 			else
 				writer = new WriterTextCSV((FileFormatPropertiesCSV)props);
 		}
+		else if( oinfo == OutputInfo.LIBSVMOutputInfo) {
+			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+				writer = new WriterTextLIBSVMParallel();
+			else
+				writer = new WriterTextLIBSVM();
+		}
 		else if( oinfo == OutputInfo.BinaryCellOutputInfo ) {
 			writer = new WriterBinaryCell();
 		}

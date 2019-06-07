@@ -121,11 +121,11 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		else {
 			//copy new values
 			System.arraycopy(that.values(), 0, values, 0, thatSize);
-			System.arraycopy(that.indexes(), 0, indexes, 0, thatSize);	
+			System.arraycopy(that.indexes(), 0, indexes, 0, thatSize);
 		}
 		size = thatSize;
 	}
-
+	
 	@Override
 	public void reset(int estnns, int maxnns) {
 		estimatedNzs = estnns;

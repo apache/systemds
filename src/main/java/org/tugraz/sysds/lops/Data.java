@@ -158,6 +158,8 @@ public class Data extends Lop
 			this.outParams.setFormat(Format.MM);
 		else if (type == FileFormatTypes.CSV )
 			this.outParams.setFormat(Format.CSV);
+		else if (type == FileFormatTypes.LIBSVM )
+			this.outParams.setFormat(Format.LIBSVM);
 		else 
 			throw new LopsException("Unexpected format: " + type);
 		setLopProperties();
@@ -323,6 +325,8 @@ public class Data extends Lop
 					fmt = "textcell";
 				else if (oparams.getFormat() == Format.CSV)
 					fmt = "csv";
+				else if (oparams.getFormat() == Format.LIBSVM)
+					fmt = "libsvm";
 				else if ( oparams.getFormat() == Format.BINARY ){
 					if ( oparams.getRowsInBlock() > 0 || oparams.getColsInBlock() > 0 )
 						fmt = "binaryblock"; 
@@ -372,6 +376,18 @@ public class Data extends Lop
 				}
 			}
 			
+			if(oparams.getFormat() == Format.LIBSVM) {
+				Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE);
+				
+				if (sparseLop.isVariable())
+					throw new LopsException(this.printErrorLocation()
+							+ "Parameter " + DataExpression.DELIM_SPARSE
+							+ " must be a literal for a seq operation.");
+
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(sparseLop.getBooleanValue());
+			}
+			
 		}
 
 		if (operation == OperationTypes.WRITE) {
@@ -417,6 +433,8 @@ public class Data extends Lop
 				fmt = "matrixmarket";
 			else if ( oparams.getFormat() == Format.CSV )
 				fmt = "csv";
+			else if ( oparams.getFormat() == Format.LIBSVM )
+				fmt = "libsvm";
 			else { //binary
 				fmt = ( getDataType() == DataType.FRAME || oparams.getRowsInBlock() > 0 
 					|| oparams.getColsInBlock() > 0 ) ? "binaryblock" : "binarycell";
@@ -453,6 +471,10 @@ public class Data extends Lop
 			if ( oparams.getFormat() == Format.CSV ) {
 				sb.append( OPERAND_DELIMITOR );
 				sb.append( createVarCSVHelper() );
+			}
+			// Format-specific properties
+			if ( oparams.getFormat() == Format.LIBSVM ) { 
+				sb.append( createVarLIBSVMHelper() );
 			}
 			
 			// Frame-specific properties
@@ -517,6 +539,30 @@ public class Data extends Lop
 			sb.append(headerLop.getBooleanValue());
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(delimLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(sparseLop.getBooleanValue());
+		}
+		return sb.toString();
+	}
+
+	private String createVarLIBSVMHelper() {
+		StringBuilder sb = new StringBuilder();
+		if ( operation == OperationTypes.READ ) {
+			Data naLop = (Data) getNamedInputLop(DataExpression.DELIM_NA_STRINGS);
+			
+			if ( naLop != null ) {
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(naLop.getStringValue());
+			}
+		}
+		else { // (operation == OperationTypes.WRITE) 
+			Data sparseLop = (Data) getNamedInputLop(DataExpression.DELIM_SPARSE); 
+			
+			if (sparseLop.isVariable())
+				throw new LopsException(this.printErrorLocation()
+						+ "Parameter " + DataExpression.DELIM_SPARSE
+						+ " must be a literal for a seq operation.");
+			
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(sparseLop.getBooleanValue());
 		}

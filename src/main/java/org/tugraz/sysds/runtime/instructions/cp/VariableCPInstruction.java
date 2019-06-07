@@ -115,7 +115,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	// Frame related members
 	private final String _schema;
 	
-	// CSV related members (used only in createvar instructions)
+	// CSV and LIBSVM related members (used only in createvar instructions)
 	private final FileFormatProperties _formatProperties;
 
 	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
@@ -305,9 +305,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				throw new DMLRuntimeException("Invalid number of operands in mvvar instruction: " + str);
 		}
 		else if ( voc == VariableOperationCode.Write ) {
-			// All write instructions have 3 parameters, except in case of delimited/csv file.
+			// All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
-			if ( parts.length != 5 && parts.length != 8 )
+			// Write instructions for libsvm files also include one additional parameters (sparse)
+			// TODO - replace hardcoded numbers with more sophisticated code
+			if ( parts.length != 5 && parts.length != 6 && parts.length != 8 )
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
@@ -448,7 +450,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				boolean sparse = Boolean.parseBoolean(parts[6]);
 				fprops = new FileFormatPropertiesCSV(hasHeader, delim, sparse);
 				in4 = new CPOperand(parts[7]); // description
-			} else {
+			} 
+			else if ( in3.getName().equalsIgnoreCase("libsvm") ) {
+				fprops = new FileFormatProperties();
+			} 
+			else {
 				fprops = new FileFormatProperties();
 				in4 = new CPOperand(parts[4]); // description
 			}
@@ -817,8 +823,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	private void processWriteInstruction(ExecutionContext ec) {
 		//get filename (literal or variable expression)
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
-		String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
-		_formatProperties.setDescription(desc);
+		if (!getInput3().getName().equalsIgnoreCase("libsvm"))
+		{
+			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
+			_formatProperties.setDescription(desc);
+		}
 		
 		if( getInput1().getDataType() == DataType.SCALAR ) {
 			writeScalarToHDFS(ec, fname);
@@ -894,6 +903,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 		}
 	}
+	
 	
 	/**
 	 * Helper function to write MM files to HDFS.

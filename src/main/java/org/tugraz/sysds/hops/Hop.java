@@ -1057,7 +1057,7 @@ public abstract class Hop implements ParseInfo
 	}
 
 	public enum FileFormatTypes {
-		TEXT, BINARY, MM, CSV
+		TEXT, BINARY, MM, CSV, LIBSVM
 	}
 
 	public enum DataOpTypes {

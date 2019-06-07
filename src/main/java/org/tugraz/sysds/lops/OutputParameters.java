@@ -30,7 +30,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 public class OutputParameters 
 {
 	public enum Format {
-		TEXT, BINARY, MM, CSV
+		TEXT, BINARY, MM, CSV, LIBSVM
 	}
 
 	private boolean _blocked = true;

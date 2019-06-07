@@ -75,6 +75,7 @@ public class DataExpression extends DataIdentifier
 	public static final String FORMAT_TYPE_VALUE_BINARY = "binary";
 	public static final String FORMAT_TYPE_VALUE_CSV = "csv";
 	public static final String FORMAT_TYPE_VALUE_MATRIXMARKET = "mm";
+	public static final String FORMAT_TYPE_VALUE_LIBSVM = "libsvm";
 	
 	public static final String ROWBLOCKCOUNTPARAM = "rows_in_block";
 	public static final String COLUMNBLOCKCOUNTPARAM = "cols_in_block";
@@ -118,7 +119,7 @@ public class DataExpression extends DataIdentifier
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 	};
 		
-	/* Default Values for delimited (CSV) files */
+	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
 	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;
 	public static final boolean DEFAULT_DELIM_FILL = true;
@@ -165,6 +166,10 @@ public class DataExpression extends DataIdentifier
 			if (functionName.equals("read.csv"))
 				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
 						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_CSV, parseInfo));
+
+			if (functionName.equals("read.libsvm"))
+				dataExpr.addVarParam(DataExpression.FORMAT_TYPE,
+						new StringIdentifier(DataExpression.FORMAT_TYPE_VALUE_LIBSVM, parseInfo));
 
 			// validate the filename is the first parameter
 			if (passedParamExprs.size() < 1){
@@ -630,9 +635,9 @@ public class DataExpression extends DataIdentifier
 			
 			// check if file is delimited format
 			if (formatTypeString == null && shouldReadMTD ) {
-				if (checkHasDelimitedFormat(inputFileName, conditional)) {
-					addVarParam(FORMAT_TYPE, new StringIdentifier(FORMAT_TYPE_VALUE_CSV, this));
-					formatTypeString = FORMAT_TYPE_VALUE_CSV;
+				formatTypeString = checkHasDelimitedFormat(inputFileName, conditional);
+				if (formatTypeString != null) {
+					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
 					inferredFormatType = true;
 				}
 			}
@@ -810,6 +815,33 @@ public class DataExpression extends DataIdentifier
 					}
 				}		
 			} 
+
+			boolean islibsvm = false;
+			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM));
+			if (islibsvm){
+				 // Handle libsvm file format
+				shouldReadMTD = true;
+				
+				// only allow IO_FILENAME, READROWPARAM, READCOLPARAM   
+				// as valid parameters
+				if( !inferredFormatType ){
+					for (String key : _varParams.keySet()){
+						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
+								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
+								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) 
+								|| key.equals(VALUETYPEPARAM) ))
+						{	
+							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
+									   + READROWPARAM     + "," 
+									   + READCOLPARAM;
+							
+							raiseValidateError("Invalid parameter " + key + " in read statement: " +
+									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+						}
+					}
+				}
+			}
+			
 	        dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -882,6 +914,11 @@ public class DataExpression extends DataIdentifier
 				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) )
 				{
 					getOutput().setFormatType(FormatType.MM);
+					format = 1;
+				} 
+				else if ( fmt.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)) 
+				{
+					getOutput().setFormatType(FormatType.LIBSVM);
 					format = 1;
 				} else {
 					raiseValidateError("Invalid format '" + fmt+ "' in statement: " + this.toString(), conditional);
@@ -961,6 +998,12 @@ public class DataExpression extends DataIdentifier
 					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 				}
 			}
+
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)){
+				if (getVarParam(DELIM_SPARSE) == null) {
+					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
+				}
+			}
 			
 			/* NOTE MB: disabled filename concatenation because we now support dynamic rewrite
 			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
@@ -994,7 +1037,9 @@ public class DataExpression extends DataIdentifier
 				getOutput().setBlockDimensions(-1, -1);
 			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase("binary"))
 				getOutput().setBlockDimensions(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)))
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_MATRIXMARKET) || 
+					(getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)) ||
+					 getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM))
 				getOutput().setBlockDimensions(-1, -1);
 			
 			else{
@@ -1849,15 +1894,19 @@ public class DataExpression extends DataIdentifier
 		return false;
 	}
 	
-	public boolean checkHasDelimitedFormat(String filename, boolean conditional) {
+	public String checkHasDelimitedFormat(String filename, boolean conditional) {
 		// if the MTD file exists, check the format is not binary 
 		JSONObject mtdObject = readMetadataFile(filename + ".mtd", conditional);
 		if (mtdObject != null) {
 			String formatTypeString = (String)JSONHelper.get(mtdObject,FORMAT_TYPE);
-			return (formatTypeString != null ) && 
-				formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV);
+			if ((formatTypeString != null ) && 
+				(formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_CSV)
+				|| formatTypeString.equalsIgnoreCase(FORMAT_TYPE_VALUE_LIBSVM)))
+				return formatTypeString;
+			else
+				return null;
 		}
-		return false;
+		return null;
 		// The file format must be specified either in .mtd file or in read() statement
 		// Therefore, one need not actually read the data to infer the format.
 	}

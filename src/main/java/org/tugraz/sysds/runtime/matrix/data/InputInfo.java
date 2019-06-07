@@ -73,6 +73,9 @@ public class InputInfo implements Serializable
 	
 	public static final InputInfo CSVInputInfo=new InputInfo(TextInputFormat.class, 
 			 LongWritable.class, Text.class);
+
+	public static final InputInfo LIBSVMInputInfo=new InputInfo(TextInputFormat.class, 
+			 LongWritable.class, Text.class);
 	
 	public static OutputInfo getMatchingOutputInfo(InputInfo ii) {
 		if ( ii == InputInfo.BinaryBlockInputInfo )
@@ -85,6 +88,8 @@ public class InputInfo implements Serializable
 			return OutputInfo.TextCellOutputInfo;
 		else if ( ii == InputInfo.CSVInputInfo)
 			return OutputInfo.CSVOutputInfo;
+		else if ( ii == InputInfo.LIBSVMInputInfo)
+			return OutputInfo.LIBSVMOutputInfo;
 		else 
 			throw new DMLRuntimeException("Unrecognized output info: " + ii);
 	}
@@ -104,6 +109,8 @@ public class InputInfo implements Serializable
 		}
 		else if ( str.equalsIgnoreCase("csv"))
 			return CSVInputInfo;
+		else if ( str.equalsIgnoreCase("libsvm"))
+			return LIBSVMInputInfo;
 		return null;
 	}
 
@@ -114,6 +121,8 @@ public class InputInfo implements Serializable
 			return InputInfo.MatrixMarketInputInfo;
 		else if( DataExpression.FORMAT_TYPE_VALUE_CSV.equals(str) )
 			return InputInfo.CSVInputInfo; 
+		else if( DataExpression.FORMAT_TYPE_VALUE_LIBSVM.equals(str) )
+			return InputInfo.LIBSVMInputInfo; 
 		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) )
 			return InputInfo.BinaryBlockInputInfo; 		
 		return null;
@@ -130,6 +139,8 @@ public class InputInfo implements Serializable
 			return "matrixmarket";
 		else if ( ii == CSVInputInfo )
 			return "csv";
+		else if ( ii == LIBSVMInputInfo)
+			return "libsvm";
 		else
 			throw new DMLRuntimeException("Unrecognized inputInfo: " + ii);
 	}

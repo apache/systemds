@@ -71,10 +71,10 @@ public abstract class Expression implements ParseInfo
 	}
 
 	/**
-	 * Format types (text, binary, matrix market, csv, unknown).
+	 * Format types (text, binary, matrix market, csv, libsvm, unknown).
 	 */
 	public enum FormatType {
-		TEXT, BINARY, MM, CSV
+		TEXT, BINARY, MM, CSV, LIBSVM
 	}
 	
 	protected static final Log LOG = LogFactory.getLog(Expression.class.getName());
@@ -224,6 +224,9 @@ public abstract class Expression implements ParseInfo
 		}
 		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_CSV))  {
 			return FileFormatTypes.CSV;
+		}
+		if (format.equalsIgnoreCase(DataExpression.FORMAT_TYPE_VALUE_LIBSVM))  {
+			return FileFormatTypes.LIBSVM;
 		}
 		// ToDo : throw parse exception for invalid / unsupported format type
 		return FileFormatTypes.TEXT;

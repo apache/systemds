@@ -770,6 +770,8 @@ public class OptimizerUtils
 		long bsize = MatrixBlock.estimateSizeOnDisk(rows, cols, nnz);
 		if( oinfo == OutputInfo.TextCellOutputInfo || oinfo == OutputInfo.MatrixMarketOutputInfo )
 			return bsize * 3;
+		else if( oinfo == OutputInfo.LIBSVMOutputInfo )
+			return (long)Math.round(bsize * 2.5);
 		else if( oinfo == OutputInfo.CSVOutputInfo )
 			return bsize * 2;
 		

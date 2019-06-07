@@ -73,6 +73,8 @@ public class IOUtilFunctions
 	//to allow matrices with zero rows and columns (consistent with R)
 	public static final String EMPTY_TEXT_LINE = "0 0 0\n";
 	private static final char CSV_QUOTE_CHAR = '"';
+	public static final String LIBSVM_DELIM = " ";
+	public static final String LIBSVM_INDEX_DELIM = ":";
 	
 	public static FileSystem getFileSystem(String fname) throws IOException {
 		return getFileSystem(new Path(fname),

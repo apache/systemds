@@ -999,6 +999,7 @@ public class DMLTranslator
 					case TEXT:
 					case MM:
 					case CSV:
+					case LIBSVM:
 						// write output in textcell format
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), -1, -1);
 						break;

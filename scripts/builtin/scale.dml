@@ -19,23 +19,19 @@
 m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) return (Matrix[Double] Y) {
   # This function centers scales and performs z-score on the input matrix X
 
-  if (center) {
-    cm = colMeans(X);
-    X = X - cm;
-  }
+  if( center )
+    X = X - colMeans(X);
 
   if (scale) {
     N = nrow(X);
-    cvars = (colSums(X^2));
-    if (center == TRUE) {
-      cm = colMeans(X);
-      cvars = (cvars - N*(cm^2))/(N-1);
-    }
+    if( center )
+      cvars = (colSums(X^2) - N*(colMeans(X)^2))/(N-1);
     else
-      cvars = cvars/(N-1);
+      cvars = colSums(X^2)/(N-1);
 
-    X = X/sqrt(cvars);
-    X = replace(target=X, pattern=NaN, replacement=0); #replace NaNs with 0's
+    #scale by std-dev and replace NaNs with 0's
+    X = replace(target=X/sqrt(cvars),
+      pattern=NaN, replacement=0);
   }
   Y = X;
 }

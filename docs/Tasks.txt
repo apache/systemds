@@ -34,6 +34,8 @@ SYSTEMDS-40 Preprocessing builtins
  * 43 Add new scale builtin function                                  OK
  * 44 SotA normalization primitives
  * 45 SotA outlier detection primitives
+ * 46 Generalization of quantiles
+
 
 SYSTEMDS-50 I/O Formats
  * 51 Support for homogeneous JSON (local/distributed)

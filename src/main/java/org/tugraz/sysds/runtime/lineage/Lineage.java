@@ -81,4 +81,8 @@ public class Lineage {
 	public static void clearDedupBlock() {
 		_activeDedupBlock.pop();
 	}
+	
+	public static void resetLineageMaps() {
+		_globalLineages.resetLineageMaps();
+	}
 }

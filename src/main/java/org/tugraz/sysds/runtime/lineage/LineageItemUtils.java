@@ -56,8 +56,8 @@ import org.tugraz.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public class LineageItemUtils {
@@ -114,9 +114,9 @@ public class LineageItemUtils {
 			else
 				sb.append(li.getOpcode()).append(" ");
 			
-			String ids = li.getInputs().stream()
-					.map(i -> String.format("(%d)", i.getId()))
-					.collect(Collectors.joining(" "));
+			String ids = Arrays.stream(li.getInputs())
+				.map(i -> String.format("(%d)", i.getId()))
+				.collect(Collectors.joining(" "));
 			sb.append(ids);
 		}
 		return sb.toString().trim();
@@ -124,7 +124,7 @@ public class LineageItemUtils {
 	
 	public static Data computeByLineage(LineageItem root) {
 		long rootId = root.getOpcode().equals("write") ?
-				root.getInputs().get(0).getId() : root.getId();
+				root.getInputs()[0].getId() : root.getId();
 		String varname = LVARPREFIX + rootId;
 		
 		//recursively construct hops 
@@ -202,26 +202,26 @@ public class LineageItemUtils {
 				if (ctype != null) {
 					switch (ctype) {
 						case AggregateUnary: {
-							Hop input = operands.get(item.getInputs().get(0).getId());
+							Hop input = operands.get(item.getInputs()[0].getId());
 							Hop aggunary = HopRewriteUtils.createAggUnaryOp(input, item.getOpcode());
 							operands.put(item.getId(), aggunary);
 							break;
 						}
 						case Unary: {
-							Hop input = operands.get(item.getInputs().get(0).getId());
+							Hop input = operands.get(item.getInputs()[0].getId());
 							Hop unary = HopRewriteUtils.createUnary(input, item.getOpcode());
 							operands.put(item.getId(), unary);
 							break;
 						}
 						case Binary: {
-							Hop input1 = operands.get(item.getInputs().get(0).getId());
-							Hop input2 = operands.get(item.getInputs().get(1).getId());
+							Hop input1 = operands.get(item.getInputs()[0].getId());
+							Hop input2 = operands.get(item.getInputs()[1].getId());
 							Hop binary = HopRewriteUtils.createBinary(input1, input2, item.getOpcode());
 							operands.put(item.getId(), binary);
 							break;
 						}
 						case Variable: { //cpvar, write
-							operands.put(item.getId(), operands.get(item.getInputs().get(0).getId()));
+							operands.put(item.getId(), operands.get(item.getInputs()[0].getId()));
 							break;
 						}
 						default:
@@ -229,7 +229,7 @@ public class LineageItemUtils {
 									+ "type: " + ctype.name() + " (" + item.getOpcode() + ").");
 					}
 				} else if (stype == SPType.Reblock) {
-					Hop input = operands.get(item.getInputs().get(0).getId());
+					Hop input = operands.get(item.getInputs()[0].getId());
 					input.setOutputBlocksizes(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 					input.setRequiresReblock(true);
 					operands.put(item.getId(), input);
@@ -251,30 +251,17 @@ public class LineageItemUtils {
 		item.setVisited();
 	}
 	
-	public static void removeInputLinks(LineageItem li) {
-		if (li.getOutputs().isEmpty()) {
-			List<LineageItem> inputs = li.getInputs();
-			li.removeAllInputs();
-			if (inputs != null)
-				for (LineageItem input : inputs) {
-					input.getOutputs().remove(li);
-					removeInputLinks(input);
-				}
-		}
-	}
-	
 	public static LineageItem rDecompress(LineageItem item) {
 		if (item.getType() == LineageItemType.Dedup) {
-			LineageItem dedupInput = rDecompress(item.getInputs().get(0));
+			LineageItem dedupInput = rDecompress(item.getInputs()[0]);
 			ArrayList<LineageItem> inputs = new ArrayList<>();
 			
-			for (LineageItem li : item.getInputs().get(1).getInputs())
+			for (LineageItem li : item.getInputs()[1].getInputs())
 				inputs.add(rDecompress(li));
 			
-			LineageItem li = new LineageItem(item.getInputs().get(1).getName(),
-					item.getInputs().get(1).getData(),
-					item.getInputs().get(1).getOpcode(),
-					inputs);
+			LineageItem li = new LineageItem(item.getInputs()[1].getName(),
+				item.getInputs()[1].getData(),
+				item.getInputs()[1].getOpcode(), inputs.toArray(new LineageItem[0]));
 			
 			li.resetVisitStatus();
 			rSetDedupInputOntoOutput(item.getName(), li, dedupInput);
@@ -286,7 +273,8 @@ public class LineageItemUtils {
 				for (LineageItem li : item.getInputs())
 					inputs.add(rDecompress(li));
 			}
-			return new LineageItem(item.getName(), item.getData(), item.getOpcode(), inputs);
+			return new LineageItem(item.getName(), item.getData(),
+				item.getOpcode(), inputs.toArray(new LineageItem[0]));
 		}
 	}
 	
@@ -308,14 +296,12 @@ public class LineageItemUtils {
 		if (item.isVisited())
 			return;
 		
-		if (item.getInputs() != null && !item.getInputs().isEmpty())
-			for (int i = 0; i < item.getInputs().size(); i++) {
-				LineageItem li = item.getInputs().get(i);
+		if (item.getInputs() != null)
+			for (int i = 0; i < item.getInputs().length; i++) {
+				LineageItem li = item.getInputs()[i];
 				
-				if (li.getName().equals(name)) {
-					item.getInputs().set(i, dedupInput);
-					dedupInput.getOutputs().add(item);
-				}
+				if (li.getName().equals(name))
+					item.getInputs()[i] = dedupInput;
 				
 				rSetDedupInputOntoOutput(name, li, dedupInput);
 			}

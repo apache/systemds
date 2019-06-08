@@ -9,15 +9,13 @@ import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.utils.Explain;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.tugraz.sysds.runtime.lineage.LineageItemUtils.removeInputLinks;
 
 public class LineageMap {
 	
 	private Map<String, LineageItem> _traces = new HashMap<>();
+	private Map<String, LineageItem> _literals = new HashMap<>();
 	
 	public LineageMap() {
 	}
@@ -34,11 +32,6 @@ public class LineageMap {
 		
 		LineageItem li = ((LineageTraceable) inst).getLineageItem();
 		
-		//ensure no new lineage item is placed on top of items that 
-		//are marked visited (other the reset is not guaranteed to work)
-		if( li != null && li.getInputs() != null )
-			LineageItem.resetVisitStatus(li.getInputs());
-		
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
 			
@@ -50,7 +43,8 @@ public class LineageMap {
 				}
 				case Read:
 				case CreateVariable: {
-					addLineageItem(li);
+					if( li != null )
+						addLineageItem(li);
 					break;
 				}
 				case RemoveVariable: {
@@ -71,15 +65,15 @@ public class LineageMap {
 			}
 		} else
 			addLineageItem(li);
+		
 	}
 	
 	public void processDedupItem(LineageMap lm, Long path) {
 		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
 			if (_traces.containsKey(entry.getKey())) {
-				ArrayList<LineageItem> list = new ArrayList<>();
-				list.add(_traces.get(entry.getKey()));
-				list.add(entry.getValue());
-				addLineageItem(new LineageItem(entry.getKey(), path.toString(), LineageItem.dedupItemOpcode, list));
+				addLineageItem(new LineageItem(entry.getKey(),
+					path.toString(), LineageItem.dedupItemOpcode,
+					new LineageItem[] {_traces.get(entry.getKey()), entry.getValue()}));
 			}
 		}
 	}
@@ -87,9 +81,19 @@ public class LineageMap {
 	public LineageItem getOrCreate(CPOperand variable) {
 		if (variable == null)
 			return null;
-		if (!_traces.containsKey(variable.getName()))
-			return new LineageItem(variable.getName(), variable.getLineageLiteral());
-		return _traces.get(variable.getName());
+		String varname = variable.getName();
+		//handle literals (never in traces)
+		if( variable.isLiteral() ) {
+			LineageItem ret = _literals.get(varname);
+			if( ret == null )
+				_literals.put(varname, ret = new LineageItem(
+					varname, variable.getLineageLiteral()));
+			return ret;
+		}
+		//handle variables
+		LineageItem ret = _traces.get(variable.getName());
+		return (ret != null) ? ret : 
+			new LineageItem(varname, variable.getLineageLiteral());
 	}
 	
 	public LineageItem get(CPOperand variable) {
@@ -106,30 +110,25 @@ public class LineageMap {
 		return _traces.containsKey(key);
 	}
 	
+	public void resetLineageMaps() {
+		_traces.clear();
+		_literals.clear();
+	}
+	
 	private void processCopyLI(LineageItem li) {
-		if (li.getInputs().size() != 1)
+		if (li.getInputs().length != 1)
 			throw new DMLRuntimeException("AssignVariable and CopyVariable must have one input lineage item!");
-		
-		if (_traces.get(li.getName()) != null) {
-			removeInputLinks(_traces.get(li.getName()));
-			_traces.remove(li.getName());
-		}
-		_traces.put(li.getName(), li.getInputs().get(0));
+		//add item or overwrite existing item
+		_traces.put(li.getName(), li.getInputs()[0]);
 	}
 	
 	private void removeLineageItem(String key) {
-		if (!_traces.containsKey(key))
-			return;
-		
-		removeInputLinks(_traces.get(key));
+		//remove item if present
 		_traces.remove(key);
 	}
 	
 	private void addLineageItem(LineageItem li) {
-		if (_traces.get(li.getName()) != null) {
-			removeInputLinks(_traces.get(li.getName()));
-			_traces.remove(li.getName());
-		}
+		//add item or overwrite existing item
 		_traces.put(li.getName(), li);
 	}
 	
@@ -146,7 +145,7 @@ public class LineageMap {
 	
 	private void processMoveLI(LineageItem li) {
 		if (li.getName().equals("__pred"))
-			removeLineageItem(li.getInputs().get(0).getName());
+			removeLineageItem(li.getInputs()[0].getName());
 		else
 			addLineageItem(li);
 	}

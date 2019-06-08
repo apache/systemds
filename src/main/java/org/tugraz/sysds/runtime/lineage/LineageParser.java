@@ -90,6 +90,6 @@ public class LineageParser {
 			} else
 				throw new ParseException("Invalid format for LineageItem reference");
 		}
-		return new LineageItem(id, null, opcode, inputs);
+		return new LineageItem(id, null, opcode, inputs.toArray(new LineageItem[0]));
 	}
 }

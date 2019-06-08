@@ -19,6 +19,7 @@ package org.tugraz.sysds.test.functions.lineage;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -119,6 +120,7 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			LineageItem.resetIDSequence();
+			Lineage.resetLineageMaps();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			String trace = readDMLLineageFromHDFS("R");

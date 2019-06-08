@@ -341,11 +341,11 @@ public class Explain
 		return ret;
 	}
 
-	public static String explainLineageItems( ArrayList<LineageItem> lis ) {
+	public static String explainLineageItems( LineageItem[] lis ) {
 		return explainLineageItems(lis, 0);
 	}
 
-	public static String explainLineageItems( ArrayList<LineageItem> lis, int level ) {
+	public static String explainLineageItems( LineageItem[] lis, int level ) {
 		StringBuilder sb = new StringBuilder();
 		LineageItem.resetVisitStatus(lis);
 		for( LineageItem li : lis )

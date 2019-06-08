@@ -21,55 +21,64 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
+
 public class Lineage {
-	
-	private static LineageMap _globalLineages = new LineageMap();
-	private static LineageDedupBlock _initDedupBlock = null;
-	private static LineageDedupBlock _activeDedupBlock = null;
+	private static final LineageMap _globalLineages = new LineageMap();
+	private static final Stack<LineageDedupBlock> _initDedupBlock = new Stack<>();
+	private static final Stack<LineageDedupBlock> _activeDedupBlock = new Stack<>();
+	private static final Map<ForProgramBlock, LineageDedupBlock> _dedupBlocks = new HashMap<>();
 	
 	private Lineage() {
+		
 	}
 	
 	public static void trace(Instruction inst, ExecutionContext ec) {
-		if (_activeDedupBlock == null)
+		if (_activeDedupBlock.empty())
 			_globalLineages.trace(inst, ec);
 	}
 	
-	public static void tracePath(Long path) {
-		LineageMap lm = _activeDedupBlock.getMap(path);
-		_globalLineages.processDedupItem(lm, path);
+	public static void tracePath(int block, Long path) {
+		LineageMap lm = _activeDedupBlock.peek().getMap(block, path);
+		if (lm != null)
+			_globalLineages.processDedupItem(lm, path);
 	}
 	
 	public static LineageItem getOrCreate(CPOperand variable) {
-		if (_initDedupBlock != null)
-			return _initDedupBlock.getActiveMap().getOrCreate(variable);
-		else
-			return _globalLineages.getOrCreate(variable);
+		return _initDedupBlock.empty() ?
+			_globalLineages.getOrCreate(variable) :
+			_initDedupBlock.peek().getActiveMap().getOrCreate(variable);
 	}
 	
 	public static boolean contains(CPOperand variable) {
-		return _initDedupBlock != null ?
-				_initDedupBlock.getActiveMap().containsKey(variable.getName()) :
-				_globalLineages.containsKey(variable.getName());
+		return _initDedupBlock.empty() ?
+			_globalLineages.containsKey(variable.getName()) :
+			_initDedupBlock.peek().getActiveMap().containsKey(variable.getName());
 	}
 	
 	public static LineageItem get(CPOperand variable) {
-		return _initDedupBlock != null ?
-				_initDedupBlock.getActiveMap().get(variable) :
-				_globalLineages.get(variable);
+		return _initDedupBlock.empty() ?
+			_globalLineages.get(variable) :
+			_initDedupBlock.peek().getActiveMap().get(variable);
 	}
 	
-	public static void setInitDedupBlock(LineageDedupBlock ldb) {
-		_initDedupBlock = ldb;
+	public static void pushInitDedupBlock(LineageDedupBlock ldb) {
+		_initDedupBlock.push(ldb);
+	}
+	
+	public static LineageDedupBlock popInitDedupBlock() {
+		return _initDedupBlock.pop();
 	}
 	
 	public static void computeDedupBlock(ForProgramBlock fpb, ExecutionContext ec) {
-		_activeDedupBlock = LineageDedupUtils.computeDistinctPaths(fpb, ec);
-		ec.getLineagePath().initLastBranch();
+		if (!_dedupBlocks.containsKey(fpb))
+			_dedupBlocks.put(fpb, LineageDedupUtils.computeDedupBlock(fpb, ec));
+		_activeDedupBlock.push(_dedupBlocks.get(fpb));
 	}
 	
-	public static void clearDedupBlock(ExecutionContext ec) {
-		_activeDedupBlock = null;
-		ec.getLineagePath().removeLastBranch();
+	public static void clearDedupBlock() {
+		_activeDedupBlock.pop();
 	}
 }

@@ -34,6 +34,7 @@ import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineagePath;
 
 public class ForProgramBlock extends ProgramBlock
 {
@@ -108,38 +109,51 @@ public class ForProgramBlock extends ProgramBlock
 			throw new DMLRuntimeException(printBlockErrorLocation() +  "Expression for increment "
 				+ "of variable '" + _iterPredVar + "' must evaluate to a non-zero value.");
 		
+		int currentDedupBlock = 0;
+		LineagePath currentLineagePath = new LineagePath();
+		
 		// execute for loop
-		try 
+		try
 		{
 			// prepare update in-place variables
 			UpdateType[] flags = prepareUpdateInPlaceVariables(ec, _tid);
 			
 			// observe all distinct paths, compute a LineageDedupBlock and stores them globally
-			if (DMLScript.LINEAGE_DEDUP)
+			if (DMLScript.LINEAGE_DEDUP) {
 				Lineage.computeDedupBlock(this, ec);
+				currentLineagePath = ec.getLineagePath();
+				ec.getLineagePath().initLastBranch();
+			}
 			
 			// run for loop body for each instance of predicate sequence 
 			SequenceIterator seqIter = new SequenceIterator(from, to, incr);
-			for( IntObject iterVar : seqIter ) 
-			{
-				if (DMLScript.LINEAGE_DEDUP)
+			for (IntObject iterVar : seqIter) {
+				if (DMLScript.LINEAGE_DEDUP) {
 					ec.getLineagePath().clearLastBranch();
-				
-				//set iteration variable
-				ec.setVariable(_iterPredVar, iterVar); 
-				
-				//execute all child blocks
-				for(int i=0 ; i < this._childBlocks.size() ; i++) {
-					_childBlocks.get(i).execute(ec);
+					currentDedupBlock = 0;
 				}
 				
-				if (DMLScript.LINEAGE_DEDUP)
-					Lineage.tracePath(ec.getLineagePath().getLastBranch());
+				//set iteration variable
+				ec.setVariable(_iterPredVar, iterVar);
+				
+				//execute all child blocks
+				for (int i = 0; i < _childBlocks.size(); i++) {
+					_childBlocks.get(i).execute(ec);
+					
+					if (DMLScript.LINEAGE_DEDUP && (
+						// Current ProgramBlock is last or next ProgramBlock is ForProgramBlock
+						i + 1 == _childBlocks.size() || _childBlocks.get(i + 1) instanceof ForProgramBlock)) {
+						Lineage.tracePath(currentDedupBlock++, ec.getLineagePath().getLastBranch());
+						ec.getLineagePath().clearLastBranch();
+					}
+				}
 			}
 			
 			// clear current LineageDedupBlock
-			if (DMLScript.LINEAGE_DEDUP)
-				Lineage.clearDedupBlock(ec);
+			if (DMLScript.LINEAGE_DEDUP) {
+				Lineage.clearDedupBlock();
+				ec.setLineagePath(currentLineagePath);
+			}
 			
 			// reset update-in-place variables
 			resetUpdateInPlaceVariableFlags(ec, flags);
@@ -153,7 +167,7 @@ public class ForProgramBlock extends ProgramBlock
 		}
 	}
 
-	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec ) 
+	protected IntObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec )
 	{
 		ScalarObject tmp = null;
 		IntObject ret = null;
@@ -165,7 +179,7 @@ public class ForProgramBlock extends ProgramBlock
 				ForStatementBlock fsb = (ForStatementBlock)_sb;
 				Hop predHops = null;
 				boolean recompile = false;
-				if (pos == 1){ 
+				if (pos == 1){
 					predHops = fsb.getFromHops();
 					recompile = fsb.requiresFromRecompilation();
 				}
@@ -182,21 +196,20 @@ public class ForProgramBlock extends ProgramBlock
 			else
 				tmp = (IntObject) executePredicate(instructions, null, false, ValueType.INT64, ec);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			String predNameStr = null;
-			if 		(pos == 1) predNameStr = "from";
+			if (pos == 1) predNameStr = "from";
 			else if (pos == 2) predNameStr = "to";
 			else if (pos == 3) predNameStr = "increment";
-			
-			throw new DMLRuntimeException(this.printBlockErrorLocation() +"Error evaluating '" + predNameStr + "' predicate", ex);
+			throw new DMLRuntimeException(printBlockErrorLocation() 
+				+"Error evaluating '" + predNameStr + "' predicate", ex);
 		}
 		
 		//final check of resulting int object (guaranteed to be non-null, see executePredicate)
 		if( tmp instanceof IntObject )
 			ret = (IntObject)tmp;
 		else //downcast to int if necessary
-			ret = new IntObject(tmp.getLongValue()); 
+			ret = new IntObject(tmp.getLongValue());
 		
 		return ret;
 	}
@@ -237,7 +250,7 @@ public class ForProgramBlock extends ProgramBlock
 		@Override
 		public Iterator<IntObject> iterator() {
 			if( _inuse )
-				throw new RuntimeException("Unsupported reuse of iterator.");				
+				throw new RuntimeException("Unsupported reuse of iterator.");
 			_inuse = true;
 			return this;
 		}

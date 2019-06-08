@@ -91,6 +91,10 @@ public class ExecutionContext {
 		return _lineagePath;
 	}
 	
+	public void setLineagePath(LineagePath lp){
+		_lineagePath = lp;
+	}
+
 	public Program getProgram(){
 		return _prog;
 	}

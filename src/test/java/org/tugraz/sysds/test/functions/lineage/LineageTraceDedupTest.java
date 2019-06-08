@@ -35,6 +35,10 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "LineageTraceDedup1";
 	protected static final String TEST_NAME2 = "LineageTraceDedup2";
+	protected static final String TEST_NAME3 = "LineageTraceDedup3";
+	protected static final String TEST_NAME4 = "LineageTraceDedup4";
+	protected static final String TEST_NAME5 = "LineageTraceDedup5";
+	protected static final String TEST_NAME6 = "LineageTraceDedup6";
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceDedupTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
@@ -46,6 +50,10 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6));
 	}
 	
 	@Test
@@ -57,6 +65,27 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 	public void testLineageTrace2() {
 		testLineageTrace(TEST_NAME2);
 	}
+	
+	@Test
+	public void testLineageTrace3() {
+		testLineageTrace(TEST_NAME3);
+	}
+	
+	@Test
+	public void testLineageTrace4() {
+		testLineageTrace(TEST_NAME4);
+	}
+	
+	@Test
+	public void testLineageTrace5() {
+		testLineageTrace(TEST_NAME5);
+	}
+	
+	@Test
+	public void testLineageTrace6() {
+		testLineageTrace(TEST_NAME6);
+	}
+	
 	
 	public void testLineageTrace(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

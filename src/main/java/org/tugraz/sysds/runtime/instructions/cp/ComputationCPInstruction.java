@@ -76,7 +76,7 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 	}
 
 	@Override
-	public LineageItem getLineageItem() {
+	public LineageItem[] getLineageItems() {
 		ArrayList<LineageItem> lineages = new ArrayList<>();
 		if (input1 != null)
 			lineages.add(Lineage.getOrCreate(input1));
@@ -84,7 +84,7 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 			lineages.add(Lineage.getOrCreate(input2));
 		if (input3 != null)
 			lineages.add(Lineage.getOrCreate(input3));
-		return new LineageItem(output.getName(),
-			getOpcode(), lineages.toArray(new LineageItem[0]));
+		return new LineageItem[]{new LineageItem(output.getName(),
+				getOpcode(), lineages.toArray(new LineageItem[0]))};
 	}
 }

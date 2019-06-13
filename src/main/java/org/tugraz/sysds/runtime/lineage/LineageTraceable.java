@@ -16,5 +16,5 @@
 package org.tugraz.sysds.runtime.lineage;
 
 public interface LineageTraceable {
-	public LineageItem getLineageItem();
+	public LineageItem[] getLineageItems();
 }

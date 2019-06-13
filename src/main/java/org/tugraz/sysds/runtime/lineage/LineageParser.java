@@ -57,7 +57,13 @@ public class LineageParser {
 					if (!(inst instanceof LineageTraceable))
 						throw new ParseException("Invalid Instruction (" + inst.getOpcode() + ") traced");
 					
-					li = new LineageItem(id, ((LineageTraceable) inst).getLineageItem());
+					LineageItem[] items = ((LineageTraceable) inst).getLineageItems();
+					if (items == null)
+						throw new ParseException("Instruction without output (" + inst.getOpcode() + ") not supported");
+					if (items.length != 1)
+						throw new ParseException("Instruction with multiple outputs (" + inst.getOpcode() + ") not supported");
+					
+					li = new LineageItem(id, items[0]);
 					break;
 				
 				case Literal:

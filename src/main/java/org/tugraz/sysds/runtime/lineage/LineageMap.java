@@ -30,8 +30,62 @@ public class LineageMap {
 		if (!(inst instanceof LineageTraceable))
 			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
 		
-		LineageItem li = ((LineageTraceable) inst).getLineageItem();
-		
+		LineageItem[] items = ((LineageTraceable) inst).getLineageItems();
+		if (items == null || items.length < 1)
+			trace(inst, ec, null);
+		else
+			for (LineageItem li : items)
+				trace(inst, ec, li);
+	}
+	
+	public void processDedupItem(LineageMap lm, Long path) {
+		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
+			if (_traces.containsKey(entry.getKey())) {
+				addLineageItem(new LineageItem(entry.getKey(),
+					path.toString(), LineageItem.dedupItemOpcode,
+					new LineageItem[]{_traces.get(entry.getKey()), entry.getValue()}));
+			}
+		}
+	}
+	
+	public LineageItem getOrCreate(CPOperand variable) {
+		if (variable == null)
+			return null;
+		String varname = variable.getName();
+		//handle literals (never in traces)
+		if (variable.isLiteral()) {
+			LineageItem ret = _literals.get(varname);
+			if (ret == null)
+				_literals.put(varname, ret = new LineageItem(
+					varname, variable.getLineageLiteral()));
+			return ret;
+		}
+		//handle variables
+		LineageItem ret = _traces.get(variable.getName());
+		return (ret != null) ? ret :
+			new LineageItem(varname, variable.getLineageLiteral());
+	}
+	
+	public LineageItem get(CPOperand variable) {
+		if (variable == null)
+			return null;
+		return _traces.get(variable.getName());
+	}
+	
+	public boolean contains(CPOperand variable) {
+		return _traces.containsKey(variable.getName());
+	}
+	
+	public boolean containsKey(String key) {
+		return _traces.containsKey(key);
+	}
+	
+	public void resetLineageMaps() {
+		_traces.clear();
+		_literals.clear();
+	}
+	
+	private void trace(Instruction inst, ExecutionContext ec, LineageItem li) {
 		if (inst instanceof VariableCPInstruction) {
 			VariableCPInstruction vcp_inst = ((VariableCPInstruction) inst);
 			
@@ -43,7 +97,7 @@ public class LineageMap {
 				}
 				case Read:
 				case CreateVariable: {
-					if( li != null )
+					if (li != null)
 						addLineageItem(li);
 					break;
 				}
@@ -68,52 +122,6 @@ public class LineageMap {
 		
 	}
 	
-	public void processDedupItem(LineageMap lm, Long path) {
-		for (Map.Entry<String, LineageItem> entry : lm._traces.entrySet()) {
-			if (_traces.containsKey(entry.getKey())) {
-				addLineageItem(new LineageItem(entry.getKey(),
-					path.toString(), LineageItem.dedupItemOpcode,
-					new LineageItem[] {_traces.get(entry.getKey()), entry.getValue()}));
-			}
-		}
-	}
-	
-	public LineageItem getOrCreate(CPOperand variable) {
-		if (variable == null)
-			return null;
-		String varname = variable.getName();
-		//handle literals (never in traces)
-		if( variable.isLiteral() ) {
-			LineageItem ret = _literals.get(varname);
-			if( ret == null )
-				_literals.put(varname, ret = new LineageItem(
-					varname, variable.getLineageLiteral()));
-			return ret;
-		}
-		//handle variables
-		LineageItem ret = _traces.get(variable.getName());
-		return (ret != null) ? ret : 
-			new LineageItem(varname, variable.getLineageLiteral());
-	}
-	
-	public LineageItem get(CPOperand variable) {
-		if (variable == null)
-			return null;
-		return _traces.get(variable.getName());
-	}
-	
-	public boolean contains(CPOperand variable) {
-		return _traces.containsKey(variable.getName());
-	}
-	
-	public boolean containsKey(String key) {
-		return _traces.containsKey(key);
-	}
-	
-	public void resetLineageMaps() {
-		_traces.clear();
-		_literals.clear();
-	}
 	
 	private void processCopyLI(LineageItem li) {
 		if (li.getInputs().length != 1)

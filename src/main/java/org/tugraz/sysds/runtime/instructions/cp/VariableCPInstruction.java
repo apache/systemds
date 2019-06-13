@@ -1129,22 +1129,28 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 	
 	@Override
-	public LineageItem getLineageItem() {
+	public LineageItem[] getLineageItems() {
+		LineageItem li = null;
 		switch (getVariableOpcode()) {
 			case CreateVariable:
-				if( !getInput1().getName().contains(org.tugraz.sysds.lops.Data.PREAD_PREFIX) )
-					return null; //otherwise fall through
-			case Read:
-				return new LineageItem(getInput1().getName(), toString(), getOpcode());
-			case AssignVariable:{
-				return new LineageItem(getInput2().getName(), getOpcode(),
-					new LineageItem[] {Lineage.getOrCreate(getInput1())});
+				if (!getInput1().getName().contains(org.tugraz.sysds.lops.Data.PREAD_PREFIX))
+					break; //otherwise fall through
+			
+			case Read: {
+				li = new LineageItem(getInput1().getName(), toString(), getOpcode());
+				break;
+			}
+			case AssignVariable: {
+				li = new LineageItem(getInput2().getName(), getOpcode(),
+						new LineageItem[]{Lineage.getOrCreate(getInput1())});
+				break;
 			}
 			case CopyVariable: {
 				if (!Lineage.contains(getInput1()))
 					throw new DMLRuntimeException("Could not find LineageItem for " + getInput1().getName());
-				return new LineageItem(getInput2().getName(), getOpcode(),
-					new LineageItem[] {Lineage.get(getInput1())});
+				li = new LineageItem(getInput2().getName(), getOpcode(),
+						new LineageItem[]{Lineage.get(getInput1())});
+				break;
 			}
 			case Write: {
 				ArrayList<LineageItem> lineages = new ArrayList<>();
@@ -1153,8 +1159,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						lineages.add(Lineage.getOrCreate(input));
 				if (_formatProperties != null && !_formatProperties.getDescription().isEmpty())
 					lineages.add(new LineageItem(_formatProperties.getDescription()));
-				return new LineageItem(getInput1().getName(),
-					getOpcode(), lineages.toArray(new LineageItem[0]));
+				li = new LineageItem(getInput1().getName(),
+						getOpcode(), lineages.toArray(new LineageItem[0]));
+				break;
 			}
 			case MoveVariable: {
 				ArrayList<LineageItem> lineages = new ArrayList<>();
@@ -1165,13 +1172,16 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					if (getInput3() != null)
 						lineages.add(Lineage.getOrCreate(getInput3()));
 				}
-				return new LineageItem(getInput2().getName(), 
-					getOpcode(), lineages.toArray(new LineageItem[0]));
+				li = new LineageItem(getInput2().getName(),
+						getOpcode(), lineages.toArray(new LineageItem[0]));
+				break;
 			}
 			case RemoveVariable:
 			default:
-				return null;
 		}
+		
+		return (li == null) ? null :
+			new LineageItem[]{li};
 	}
 	
 	public boolean isVariableCastInstruction() {

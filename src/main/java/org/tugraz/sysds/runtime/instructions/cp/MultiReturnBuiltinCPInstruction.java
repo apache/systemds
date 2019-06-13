@@ -26,6 +26,8 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.matrix.data.LibCommonsMath;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
@@ -106,5 +108,23 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		for(int i=0; i < _outputs.size(); i++) {
 			ec.setMatrixOutput(_outputs.get(i).getName(), out[i], getExtendedOpcode());
 		}
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems() {
+		ArrayList<LineageItem> lineages = new ArrayList<>();
+		if (input1 != null)
+			lineages.add(Lineage.getOrCreate(input1));
+		if (input2 != null)
+			lineages.add(Lineage.getOrCreate(input2));
+		if (input3 != null)
+			lineages.add(Lineage.getOrCreate(input3));
+		
+		ArrayList<LineageItem> items = new ArrayList<>();
+		for (CPOperand out : _outputs) {
+			items.add(new LineageItem(out.getName(),
+					getOpcode(), lineages.toArray(new LineageItem[0])));
+		}
+		return items.toArray(new LineageItem[items.size()]);
 	}
 }

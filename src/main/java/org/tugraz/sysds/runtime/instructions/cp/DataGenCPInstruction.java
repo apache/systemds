@@ -302,7 +302,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 	
 	@Override
-	public LineageItem getLineageItem() {
+	public LineageItem[] getLineageItems() {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			int position = (method == DataGenMethod.RAND) ? 9 :
@@ -310,6 +310,6 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));
 		}
-		return new LineageItem(output.getName(), tmpInstStr, getOpcode());
+		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
 	}
 }

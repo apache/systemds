@@ -241,7 +241,7 @@ public class ReblockSPInstruction extends UnarySPInstruction implements LineageT
 	}
 
 	@Override
-	public LineageItem getLineageItem() {
+	public LineageItem[] getLineageItems() {
 		ArrayList<LineageItem> lineages = new ArrayList<>();
 		if (input1 != null)
 			lineages.add(Lineage.getOrCreate(input1));
@@ -250,6 +250,6 @@ public class ReblockSPInstruction extends UnarySPInstruction implements LineageT
 		if (input3 != null)
 			lineages.add(Lineage.getOrCreate(input3));
 
-		return new LineageItem(output.getName(), getOpcode(), lineages.toArray(new LineageItem[0]));
+		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(), lineages.toArray(new LineageItem[0]))};
 	}
 }

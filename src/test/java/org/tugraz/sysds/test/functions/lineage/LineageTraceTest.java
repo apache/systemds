@@ -34,6 +34,7 @@ public class LineageTraceTest extends AutomatedTestBase {
 	protected static final String TEST_NAME1 = "LineageTrace1";
 	protected static final String TEST_NAME2 = "LineageTrace2";
 	protected static final String TEST_NAME3 = "LineageTrace3";
+	protected static final String TEST_NAME4 = "LineageTrace4";
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceTest.class.getSimpleName() + "/";
 	
 	protected static final int numRecords = 10;
@@ -46,6 +47,7 @@ public class LineageTraceTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
 	}
 	
 	@Test
@@ -61,6 +63,11 @@ public class LineageTraceTest extends AutomatedTestBase {
 	@Test
 	public void testLineageTrace3() {
 		testLineageTrace(TEST_NAME3);
+	}
+	
+	@Test
+	public void testLineageTrace4() {
+		testLineageTrace(TEST_NAME4);
 	}
 	
 	public void testLineageTrace(String testname) {

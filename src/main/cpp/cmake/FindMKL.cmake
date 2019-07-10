@@ -38,7 +38,7 @@ option(MKL_MULTI_THREADED  "Use multi-threading"   ON)
 
 # ---[ Root folders
 set(INTEL_ROOT "/opt/intel" CACHE PATH "Folder contains intel libs")
-find_path(MKL_ROOT include/mkl.h PATHS $ENV{MKLROOT} ${INTEL_ROOT}/mkl
+find_path(MKL_ROOT include/mkl.h PATHS $ENV{MKLROOT} $ENV{MKL_ROOT} ${INTEL_ROOT}/mkl
                                    DOC "Folder contains MKL")
 
 # ---[ Find include dir
@@ -122,6 +122,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MKL DEFAULT_MSG ${__looked_for})
 
 if(MKL_FOUND)
+  set(MKL_LIBRARIES \"${MKL_LIBRARIES}\")
   message(STATUS "Found MKL (include: ${MKL_INCLUDE_DIR}, lib: ${MKL_LIBRARIES}")
 endif()
 

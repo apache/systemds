@@ -17,7 +17,6 @@
  * under the License.
  */
 
-#include "config.h"
 #include "libmatrixmult.h"
 #include "libmatrixdnn.h"
 #include <cstdlib>

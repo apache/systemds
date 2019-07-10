@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2020 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +25,8 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -45,7 +49,7 @@ import org.apache.commons.lang.SystemUtils;
  */
 public class NativeHelper {
 	
-	public static enum NativeBlasState {
+	public enum NativeBlasState {
 		NOT_ATTEMPTED_LOADING_NATIVE_BLAS,
 		SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE,
 		SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_NOT_IN_USE,
@@ -54,12 +58,22 @@ public class NativeHelper {
 	
 	public static NativeBlasState CURRENT_NATIVE_BLAS_STATE = NativeBlasState.NOT_ATTEMPTED_LOADING_NATIVE_BLAS;
 	private static String blasType;
-	private static final Log LOG = LogFactory.getLog(NativeHelper.class.getName());
-	
+
 	// Useful for deciding whether to use native BLAS in parfor environment.
 	private static int maxNumThreads = -1;
 	private static boolean setMaxNumThreads = false;
-	
+
+	// local flag for debug output
+	private static final boolean LTRACE = false;
+	private static final Log LOG = LogFactory.getLog(NativeHelper.class.getName());
+
+	static {
+		// for internal debugging only
+		if( LTRACE ) {
+			Logger.getLogger(NativeHelper.class.getName()).setLevel(Level.TRACE);
+		}
+	}
+
 	/**
 	 * Called by Statistics to print the loaded BLAS.
 	 * 
@@ -77,16 +91,22 @@ public class NativeHelper {
 	public static boolean isNativeLibraryLoaded() {
 		if(!isBLASLoaded()) {
 			DMLConfig dmlConfig = ConfigurationManager.getDMLConfig();
-			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS).trim().toLowerCase();
+			String userSpecifiedBLAS = (dmlConfig == null) ? "auto" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS)
+					.trim().toLowerCase();
 			String customLibPath = (dmlConfig == null) ? "none" : dmlConfig.getTextValue(DMLConfig.NATIVE_BLAS_DIR).trim();
 			performLoading(customLibPath, userSpecifiedBLAS);
 		}
+
 		if(maxNumThreads == -1)
 			maxNumThreads = OptimizerUtils.getConstrainedNumThreads(-1);
-		if(CURRENT_NATIVE_BLAS_STATE == NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE && !setMaxNumThreads && maxNumThreads != -1) {
-			// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
-			// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
-			// We can revisit this decision later and hence I would not recommend removing this method. 
+
+		if(CURRENT_NATIVE_BLAS_STATE == NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE && !setMaxNumThreads
+				&& maxNumThreads != -1) {
+			/* This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as
+			 * each has different tradeoffs. In current implementation, we always use GetPrimitiveArrayCritical as it
+			 * has proven to be fastest.
+			 * We can revisit this decision later and hence I would not recommend removing this method.
+			 * */
 			setMaxNumThreads(maxNumThreads);
 			setMaxNumThreads = true;
 		}
@@ -101,7 +121,8 @@ public class NativeHelper {
 	 */
 	public static void initialize(String customLibPath, String userSpecifiedBLAS) {
 		if(isBLASLoaded() && isSupportedBLAS(userSpecifiedBLAS) && !blasType.equalsIgnoreCase(userSpecifiedBLAS)) {
-			throw new DMLRuntimeException("Cannot replace previously loaded blas \"" + blasType + "\" with \"" + userSpecifiedBLAS + "\".");
+			throw new DMLRuntimeException("Cannot replace previously loaded blas \"" + blasType + "\" with \"" +
+					userSpecifiedBLAS + "\".");
 		}
 		else if(isBLASLoaded() && userSpecifiedBLAS.equalsIgnoreCase("none")) {
 			CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_NOT_IN_USE;
@@ -141,7 +162,8 @@ public class NativeHelper {
 	
 	/**
 	 * Check if native BLAS libraries have been successfully loaded
-	 * @return true if CURRENT_NATIVE_BLAS_STATE is SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE or SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_NOT_IN_USE
+	 * @return true if CURRENT_NATIVE_BLAS_STATE is SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE or
+	 * 		   SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_NOT_IN_USE
 	 */
 	private static boolean isBLASLoaded() {
 		return CURRENT_NATIVE_BLAS_STATE == NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE || 
@@ -163,9 +185,8 @@ public class NativeHelper {
 
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void performLoading(String customLibPath, String userSpecifiedBLAS) {
-		// Only Linux supported for BLAS
-//		if(!SystemUtils.IS_OS_LINUX)
-//			return;
+		if((customLibPath != null) && customLibPath.equalsIgnoreCase("none"))
+				customLibPath = null;
 
 		// attemptedLoading variable ensures that we don't try to load SystemDS and other dependencies
 		// again and again especially in the parfor (hence the double-checking with synchronized).
@@ -180,20 +201,19 @@ public class NativeHelper {
 						blas = new String[] { "mkl", "openblas" };
 					}
 
-
 					if(SystemUtils.IS_OS_WINDOWS) {
-						if (checkAndLoadBLAS(customLibPath + "\\lib", blas) &&
-//								loadLibraryHelper(customLibPath + "\\bin\\systemds_" + blasType + "-Windows-AMD64.dll")) {
-//								loadLibraryHelper("systemds_" + blasType + "-Windows-AMD64.lib")) {
-//																loadLibraryHelper(customLibPath + "\\systemds_" + blasType + "-Windows-AMD64.dll")) {
-								loadBLAS(customLibPath, "systemds_" + blasType + "-Windows-AMD64", ""))
+						if (checkAndLoadBLAS(customLibPath, blas) &&
+								(loadLibraryHelper("systemds_" + blasType + "-Windows-AMD64") ||
+								loadBLAS(customLibPath, "systemds_" + blasType + "-Windows-AMD64", null))
+						)
 						{
 							LOG.info("Using native blas: " + blasType + getNativeBLASPath());
 							CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
 						}
 					}
 					else {
-						if (checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemds_" + blasType + "-Linux-x86_64.so")) {
+						if (checkAndLoadBLAS(customLibPath, blas) &&
+								loadLibraryHelper("libsystemds_" + blasType + "-Linux-x86_64.so")) {
 							LOG.info("Using native blas: " + blasType + getNativeBLASPath());
 							CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
 						}
@@ -205,31 +225,27 @@ public class NativeHelper {
 				LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
 		}
 		else if(LOG.isDebugEnabled() && !isSupportedBLAS(userSpecifiedBLAS)) {
-			LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'sysds.native.blas'=" + userSpecifiedBLAS + ".");
+			LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'sysds.native.blas'=" +
+					userSpecifiedBLAS + ".");
 		}
 	}
 	
 	private static boolean checkAndLoadBLAS(String customLibPath, String [] listBLAS) {
 		if(customLibPath != null && customLibPath.equalsIgnoreCase("none"))
 			customLibPath = null;
-		
+
 		boolean isLoaded = false;
-		for(int i = 0; i < listBLAS.length; i++) {
-			String blas = listBLAS[i];
-			if(blas.equalsIgnoreCase("mkl")) {
-				if(SystemUtils.IS_OS_WINDOWS)
-					isLoaded = true;
-//					isLoaded = loadBLAS(customLibPath, "mkl_rt.dll", null);
-				else
+		for (String blas : listBLAS) {
+			if (blas.equalsIgnoreCase("mkl")) {
 					isLoaded = loadBLAS(customLibPath, "mkl_rt", null);
-			}
-			else if(blas.equalsIgnoreCase("openblas")) {
-				boolean isGompLoaded = loadBLAS(customLibPath, "gomp", "gomp required for loading OpenBLAS-enabled SystemDS library");
-				if(isGompLoaded) {
+			} else if (blas.equalsIgnoreCase("openblas")) {
+				// no need for gomp on windows
+				if (SystemUtils.IS_OS_WINDOWS || loadBLAS(customLibPath, "gomp",
+						"gomp required for loading OpenBLAS-enabled SystemDS library")) {
 					isLoaded = loadBLAS(customLibPath, "openblas", null);
 				}
 			}
-			if(isLoaded) {
+			if (isLoaded) {
 				blasType = blas;
 				break;
 			}
@@ -253,7 +269,7 @@ public class NativeHelper {
 				Vector<String> libraries = (Vector<String>) loadedLibraryNamesField.get(ClassLoader.getSystemClassLoader());
 				LOG.debug("List of native libraries loaded:" + libraries);
 				for(String library : libraries) {
-					if(library.contains("libmkl_rt") || library.contains("libopenblas")) {
+					if(library.contains("mkl_rt") || library.contains("libopenblas")) {
 						blasPathAndHint = " from the path " + library;
 						break;
 					}
@@ -281,7 +297,7 @@ public class NativeHelper {
 	 */
 	private static boolean loadBLAS(String customLibPath, String blas, String optionalMsg) {
 		// First attempt to load from custom library path
-		if(customLibPath != null) {
+		if((customLibPath != null) && (!customLibPath.equalsIgnoreCase("none"))) {
 			String libPath = customLibPath + File.separator + System.mapLibraryName(blas);
 			try {
 				System.load(libPath);
@@ -301,6 +317,7 @@ public class NativeHelper {
 			return true;
 		}
 		catch (UnsatisfiedLinkError e) {
+			System.out.println(System.getProperty("java.library.path"));
 			if(optionalMsg != null)
 				LOG.debug("Unable to load " + blas + "(" + optionalMsg + "):" + e.getMessage());
 			else
@@ -312,11 +329,9 @@ public class NativeHelper {
 
 	private static boolean loadLibraryHelper(String path)  {
 		OutputStream out = null;
-		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+path))
-		{
+		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+path)) {
 			// This logic is added because Java does not allow to load library from a resource file.
-			if(in != null)
-			{
+			if(in != null) {
 				File temp = File.createTempFile(path, "");
 				temp.deleteOnExit();
 				out = FileUtils.openOutputStream(temp);
@@ -339,9 +354,11 @@ public class NativeHelper {
 	// TODO: Add pmm, wsloss, mmchain, etc.
 	
 	//double-precision matrix multiply dense-dense
-	public static native boolean dmmdd(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	public static native boolean dmmdd(double [] m1, double [] m2, double [] ret, int m1rlen, int m1clen, int m2clen,
+									   int numThreads);
 	//single-precision matrix multiply dense-dense
-	public static native boolean smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen, int numThreads);
+	public static native boolean smmdd(FloatBuffer m1, FloatBuffer m2, FloatBuffer ret, int m1rlen, int m1clen, int m2clen,
+									   int numThreads);
 	//transpose-self matrix multiply
 	public static native boolean tsmm(double[] m1, double[] ret, int m1rlen, int m1clen, boolean leftTrans, int numThreads);
 
@@ -349,35 +366,50 @@ public class NativeHelper {
 	// LibMatrixDNN operations:
 	// N = number of images, C = number of channels, H = image height, W = image width
 	// K = number of filters, R = filter height, S = filter width
-	// TODO: case not handled: sparse filters (which will only be executed in Java). Since filters are relatively smaller, this is a low priority.
+	// TODO: case not handled: sparse filters (which will only be executed in Java). Since filters are relatively smaller,
+	//  this is a low priority.
 
 	// Returns -1 if failures or returns number of nonzeros
 	// Called by DnnCPInstruction if both input and filter are dense
 	public static native int conv2dDense(double [] input, double [] filter, double [] ret, int N, int C, int H, int W, 
 			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+
 	public static native int dconv2dBiasAddDense(double [] input, double [] bias, double [] filter, double [] ret, int N,
-		int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+		int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q,
+												 int numThreads);
+
 	public static native int sconv2dBiasAddDense(FloatBuffer input, FloatBuffer bias, FloatBuffer filter, FloatBuffer ret,
-		int N, int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+		int N, int C, int H, int W, int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q,
+												 int numThreads);
+
 	// Called by DnnCPInstruction if both input and filter are dense
-	public static native int conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	public static native int conv2dBackwardFilterDense(double [] input, double [] dout, double [] ret, int N, int C,
+													   int H, int W, int K, int R, int S, int stride_h, int stride_w,
+													   int pad_h, int pad_w, int P, int Q, int numThreads);
+
 	// If both filter and dout are dense, then called by DnnCPInstruction
 	// Else, called by LibMatrixDNN's thread if filter is dense. dout[n] is converted to dense if sparse.
-	public static native int conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	public static native int conv2dBackwardDataDense(double [] filter, double [] dout, double [] ret, int N, int C,
+													 int H, int W, int K, int R, int S, int stride_h, int stride_w,
+													 int pad_h, int pad_w, int P, int Q, int numThreads);
 
 	// Currently only supported with numThreads = 1 and sparse input
 	// Called by LibMatrixDNN's thread if input is sparse. dout[n] is converted to dense if sparse.
-	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals, double [] rotatedDoutPtr, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	public static native boolean conv2dBackwardFilterSparseDense(int apos, int alen, int[] aix, double[] avals,
+																 double [] rotatedDoutPtr, double [] ret, int N, int C,
+																 int H, int W, int K, int R, int S, int stride_h,
+																 int stride_w, int pad_h, int pad_w, int P, int Q,
+																 int numThreads);
+
 	// Called by LibMatrixDNN's thread if input is sparse and filter is dense
-	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter, double [] ret, int N, int C, int H, int W, 
-			int K, int R, int S, int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q, int numThreads);
+	public static native boolean conv2dSparse(int apos, int alen, int[] aix, double[] avals, double [] filter,
+											  double [] ret, int N, int C, int H, int W, int K, int R, int S,
+											  int stride_h, int stride_w, int pad_h, int pad_w, int P, int Q,
+											  int numThreads);
 	// ----------------------------------------------------------------------------------------------------------------
 
-	// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has different tradeoffs.
-	// In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be fastest. 
-	// We can revisit this decision later and hence I would not recommend removing this method. 
+	// This method helps us decide whether to use GetPrimitiveArrayCritical or GetDoubleArrayElements in JNI as each has
+	// different tradeoffs. In current implementation, we always use GetPrimitiveArrayCritical as it has proven to be
+	// fastest. We can revisit this decision later and hence I would not recommend removing this method.
 	private static native void setMaxNumThreads(int numThreads);
 }

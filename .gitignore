@@ -90,3 +90,11 @@ Gemfile.lock
 **/metastore_db
 derby.log
 /systemds/
+
+# native cpp code build artifacts
+src/main/cpp/build
+src/main/cpp/bin
+src/main/cpp/lib
+
+# legacy dml 
+*.dmlt

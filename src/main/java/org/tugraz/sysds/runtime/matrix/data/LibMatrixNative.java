@@ -130,7 +130,7 @@ public class LibMatrixNative
 			if( NativeHelper.tsmm(m1.getDenseBlockValues(), 
 				ret.getDenseBlockValues(), m1.rlen, m1.clen, leftTrans, k) ) 
 			{
-				LOG.info("Using native TSMM()");
+				// ToDo: add native tsmm() to stats
 				long nnz = (ret.clen==1) ? ret.recomputeNonZeros() :
 					LibMatrixMult.copyUpperToLowerTriangle(ret);
 				ret.setNonZeros(nnz);

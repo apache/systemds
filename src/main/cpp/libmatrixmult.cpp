@@ -18,7 +18,6 @@
  */
 
 #include "libmatrixmult.h"
-#include "config.h"
 #include "omp.h"
 #include <cmath>
 #include <cstdlib>

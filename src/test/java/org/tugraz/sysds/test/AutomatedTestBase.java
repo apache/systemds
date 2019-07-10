@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2019 Graz University of Technology
+ * Modifications Copyright 2020 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -38,6 +38,7 @@ import java.util.HashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.SparkSession.Builder;
 import org.apache.wink.json4j.JSONObject;
@@ -68,7 +69,6 @@ import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.ParameterBuilder;
 import org.tugraz.sysds.utils.Statistics;
-
 
 /**
  * <p>
@@ -103,27 +103,34 @@ public abstract class AutomatedTestBase {
 	// is the root of this project.
 	static {
 
-		String osname = System.getProperty("os.name").toLowerCase();
-		if(osname.contains("win")) {
-			System.err.printf("AutomatedTestBase has detected a Windows OS and is overriding\n"
+		/* For testing MKL BLAS on Windows run "mklvars.bat intel64" or "compilervars.bat intel64" (this script
+		 * comes with the mkl software package and sets the env var MKLROOT). Then start SystemDS or
+		 * your IDE from that environment (e.g. from that command prompt).
+		 * Alternatively you can set MKLROOT and your PATH variables manually to make it permanent.
+		 * Same for Linux but with compilervars.sh intel64.
+		 * For OpenBLAS point your PATH to the shared library.
+		 */
+
+		// the JNI implementation will be in a SO/DLL in that directory
+		// after a successful mvn package
+		appendToJavaLibraryPath("target" + File.separator + "classes" + File.separator + "lib");
+
+		if(SystemUtils.IS_OS_WINDOWS) {
+			System.err.println("AutomatedTestBase has detected a Windows OS and is overriding\n"
 				+ "hadoop.home.dir and java.library.path.\n");
 			String cwd = System.getProperty("user.dir");
+			System.setProperty("hadoop.home.dir", cwd + File.separator + "src" + File.separator + "test" +
+					File.separator + "config" +
+					File.separator + "hadoop_bin_windows");
 
-			System.setProperty("hadoop.home.dir", cwd + File.separator + "\\src\\test\\config\\hadoop_bin_windows");
+			appendToJavaLibraryPath(cwd);
+			appendToJavaLibraryPath(cwd + File.separator + "src" + File.separator + "test" + File.separator + "config" +
+					File.separator + "hadoop_bin_windows" + File.separator + "bin");
+			appendToJavaLibraryPath("lib");
 
 			if(TEST_GPU) {
 				String CUDA_LIBRARY_PATH = System.getenv("CUDA_PATH") + File.separator + "bin";
-				System.setProperty("java.library.path",
-					cwd + File.separator + "\\src\\test\\config\\hadoop_bin_windows\\bin" + File.pathSeparator + "/lib"
-						+ File.pathSeparator + CUDA_LIBRARY_PATH);
-			}
-			else {
-				System.setProperty("java.library.path",
-					cwd + File.separator + "\\src\\test\\config\\hadoop_bin_windows\\bin"
-				// For testing BLAS on Windows
-				// + File.pathSeparator + "C:\\Program Files
-				// (x86)\\IntelSWTools\\compilers_and_libraries_2017.0.109\\windows\\redist\\intel64_win\\mkl"
-				);
+				appendToJavaLibraryPath(CUDA_LIBRARY_PATH);
 			}
 
 			// Need to muck around with the classloader to get it to use the new
@@ -1803,5 +1810,10 @@ public abstract class AutomatedTestBase {
 		} catch (DMLRuntimeException e) {
 			return "N/A";
 		}
+	}
+
+	public static void appendToJavaLibraryPath(String additional_path) {
+		String current_path = System.getProperty("java.library.path");
+		System.setProperty("java.library.path", current_path + File.pathSeparator + additional_path);
 	}
 }

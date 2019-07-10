@@ -192,7 +192,7 @@ SYSTEMDS-230 Lineage Integration
  * 236 Extended multi-level lineage cache for statement blocks        OK
 
 SYSTEMDS-240 GPU Backend Improvements
- * 241 Dense GPU cumulative aggregates 
+ * 241 Dense GPU cumulative aggregates                                OK
 
 SYSTEMDS-250 Extended Slice Finding
  * 251 Alternative slice enumeration approach                         OK

@@ -1702,9 +1702,13 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 	
 	private DMLProgram parseAndAddImportedFunctions(String namespace, String filePath, ParserRuleContext ctx) {
-		validateNamespace(namespace, filePath, ctx);
+		//validate namespace w/ awareness of dml-bodied builtin functions
+		String ifilePath = DMLProgram.DEFAULT_NAMESPACE.equals(namespace) ?
+			DMLProgram.DEFAULT_NAMESPACE_PATH : filePath;
+		validateNamespace(namespace, ifilePath, ctx);
+		
+		//read and parse namespace files
 		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);
-
 		DMLProgram prog = null;
 		if (!_f2NS.get().containsKey(scriptID)) {
 			_f2NS.get().put(scriptID, namespace);

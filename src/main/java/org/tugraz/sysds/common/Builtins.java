@@ -27,7 +27,8 @@ import java.util.HashMap;
  * builtin functions.
  * 
  * To add a new builtin script function, simply add the definition here
- * as well as a dml file in script/builtin with a matching name.
+ * as well as a dml file in scripts/builtin with a matching name. On 
+ * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
 	//builtin functions

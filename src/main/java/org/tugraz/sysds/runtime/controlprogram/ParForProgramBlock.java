@@ -262,7 +262,12 @@ public class ParForProgramBlock extends ForProgramBlock
 		LOCAL_FILE,      // out-of-core result merge (file format dependent)
 		LOCAL_AUTOMATIC, // decides between MEM and FILE based on the size of the output matrix 
 		REMOTE_SPARK,    // remote Spark parallel result merge
-		UNSPECIFIED,
+		UNSPECIFIED;
+		public boolean isLocal() {
+			return this == LOCAL_MEM 
+				|| this == LOCAL_FILE
+				|| this == LOCAL_AUTOMATIC;
+		}
 	}
 	
 	//optimizer
@@ -1285,27 +1290,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	{
 		ResultMerge rm = null;
 		
-		//determine degree of parallelism
-		int maxMap = -1, maxRed = -1;
-		if( OptimizerUtils.isSparkExecutionMode() ) {
-			maxMap = (int) SparkExecutionContext.getDefaultParallelism(true);
-			maxRed = maxMap; //equal map/reduce
-		}
-		else {
-			int numReducers = ConfigurationManager.getNumReducers();
-			maxMap = InfrastructureAnalyzer.getRemoteParallelMapTasks();
-			maxRed = Math.min(numReducers,
-				InfrastructureAnalyzer.getRemoteParallelReduceTasks());
-			//correction max number of reducers on yarn clusters
-			if( InfrastructureAnalyzer.isYarnEnabled() ) {
-				maxMap = (int)Math.max( maxMap, YarnClusterAnalyzer.getNumCores() );
-				maxRed = (int)Math.max( maxRed, YarnClusterAnalyzer.getNumCores()/2 );
-			}
-		}
-		int numMap = Math.max(_numThreads, maxMap);
-		int numRed = maxRed;
-		
-		//create result merge implementation
+		//create result merge implementation (determine degree of parallelism 
+		//only for spark to avoid unnecessary spark context creation)
 		switch( prm )
 		{
 			case LOCAL_MEM:
@@ -1318,6 +1304,9 @@ public class ParForProgramBlock extends ForProgramBlock
 				rm = new ResultMergeLocalAutomatic( out, in, fname, accum );
 				break;
 			case REMOTE_SPARK:
+				int numMap = (int) Math.max(_numThreads,
+					SparkExecutionContext.getDefaultParallelism(true));
+				int numRed = numMap; //equal map/reduce
 				rm = new ResultMergeRemoteSpark( out, in,
 					fname, accum, ec, numMap, numRed );
 				break;

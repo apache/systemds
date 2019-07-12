@@ -72,3 +72,6 @@ SYSTEMDS-110 New Builtin Functions
  * 111 Time builtin function for script-level measurements            OK
  * 112 Image data augmentation builtin functions                      OK
  
+SYSTEMDS-120 Performance Features
+ * 121 Avoid spark context creation on parfor result merge            OK
+ * 122 Reduce thread contention on parfor left indexing

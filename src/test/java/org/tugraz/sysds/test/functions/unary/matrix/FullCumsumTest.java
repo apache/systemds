@@ -35,10 +35,6 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Statistics;
 
-/**
- * 
- * 
- */
 public class FullCumsumTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "Cumsum";
@@ -69,133 +65,102 @@ public class FullCumsumTest extends AutomatedTestBase
 	}
 
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 
 	@Test
-	public void testCumsumColVectorDenseCP() 
-	{
+	public void testCumsumColVectorDenseCP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseCP() 
-	{
+	public void testCumsumRowVectorDenseCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseNoRewritesCP() 
-	{
+	public void testCumsumRowVectorDenseNoRewritesCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixDenseCP() 
-	{
+	public void testCumsumMatrixDenseCP() {
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumColVectorSparseCP() 
-	{
+	public void testCumsumColVectorSparseCP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseCP() 
-	{
+	public void testCumsumRowVectorSparseCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseNoRewritesCP() 
-	{
+	public void testCumsumRowVectorSparseNoRewritesCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixSparseCP() 
-	{
+	public void testCumsumMatrixSparseCP() {
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumsumColVectorDenseSP() 
-	{
+	public void testCumsumColVectorDenseSP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseSP() 
-	{
+	public void testCumsumRowVectorDenseSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorDenseNoRewritesSP() 
-	{
+	public void testCumsumRowVectorDenseNoRewritesSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixDenseSP() 
-	{
+	public void testCumsumMatrixDenseSP() {
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumColVectorSparseSP() 
-	{
+	public void testCumsumColVectorSparseSP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseSP() 
-	{
+	public void testCumsumRowVectorSparseSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumsumRowVectorSparseNoRewritesSP() 
-	{
+	public void testCumsumRowVectorSparseNoRewritesSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumsumMatrixSparseSP() 
-	{
+	public void testCumsumMatrixSparseSP() {
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
 	}
 	
-	/**
-	 * 
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
-	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType)
-	{
+	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType) {
 		//by default we apply algebraic simplification rewrites
 		runColAggregateOperationTest(type, sparse, instType, true);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;
@@ -218,11 +183,8 @@ public class FullCumsumTest extends AutomatedTestBase
 			int rows = (type==InputType.ROW_VECTOR) ? 1 : rowsMatrix;
 			double sparsity = (sparse) ? spSparse : spDense;
 			
-			String TEST_CACHE_DIR = "";
-			if (TEST_CACHE_ENABLED)
-			{
-				TEST_CACHE_DIR = type.ordinal() + "_" + sparsity + "/";
-			}
+			String TEST_CACHE_DIR = !TEST_CACHE_ENABLED ? "" :
+				type.ordinal() + "_" + sparsity + "/";
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config, TEST_CACHE_DIR);
@@ -240,7 +202,7 @@ public class FullCumsumTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 	
 			runTest(true, false, null, -1); 
-			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
+			if( instType==ExecType.CP ) //in CP no spark jobs should be executed
 				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedSPInst());
 			
 			runRScript(true); 

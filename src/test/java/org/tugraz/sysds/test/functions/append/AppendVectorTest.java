@@ -76,43 +76,40 @@ public class AppendVectorTest extends AutomatedTestBase
 	public void commonAppendTest(ExecMode platform, int rows, int cols)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-	    
+	
 		ExecMode prevPlfm=rtplatform;
 		
-	    rtplatform = platform;
-	    boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-	    if( rtplatform == ExecMode.SPARK )
+		rtplatform = platform;
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == ExecMode.SPARK )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-	    try {
-	        config.addVariable("rows", rows);
-	        config.addVariable("cols", cols);
-	          
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+		try {
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols);
+	
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args",  input("A"), 
-					Long.toString(rows), Long.toString(cols),
-								input("B"),
-		                        output("C") };
+			programArgs = new String[]{"-explain", "-args",
+					input("A"), Long.toString(rows), 
+					Long.toString(cols), input("B"), output("C") };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " "+ expectedDir();
+					inputDir() + " "+ expectedDir();
 	
 			Random rand=new Random(System.currentTimeMillis());
 			double sparsity=rand.nextDouble();
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("A", A, true);
-	        sparsity=rand.nextDouble();
-	        double[][] B= getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("B", B, true);
-	        
-	        boolean exceptionExpected = false;
-	        int expectedCompiledMRJobs = 1;
-			int expectedExecutedMRJobs = 0;
-			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
-				expectedExecutedMRJobs, Statistics.getNoOfExecutedSPInst());
+			writeInputMatrix("A", A, true);
+			sparsity=rand.nextDouble();
+			double[][] B= getRandomMatrix(rows, 1, min, max, sparsity, System.currentTimeMillis());
+			writeInputMatrix("B", B, true);
+			
+			boolean exceptionExpected = false;
+			int numExpectedJobs = (platform == ExecMode.SINGLE_NODE) ? 0 : 6;
+			runTest(true, exceptionExpected, null, numExpectedJobs);
+			Assert.assertEquals("Wrong number of executed Spark jobs.",
+				numExpectedJobs, Statistics.getNoOfExecutedSPInst());
 		
 			runRScript(true);
 			
@@ -127,5 +124,4 @@ public class AppendVectorTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-   
 }

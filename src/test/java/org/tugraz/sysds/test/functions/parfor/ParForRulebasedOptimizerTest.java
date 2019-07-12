@@ -40,9 +40,9 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 	private final static int rows2 = 10000; //large MR
 	
 	private final static int cols11 = 50;  //small single parfor
-	private final static int cols12 = 500; //large single parfor	
+	private final static int cols12 = 500; //large single parfor
 	
-	private final static int cols21 = 5;  //small nested parfor
+	private final static int cols21 = 8;  //small nested parfor
 	private final static int cols22 = 50; //large nested parfor
 	private final static int cols31 = 2;  //small nested parfor
 	private final static int cols32 = 8; //large nested parfor

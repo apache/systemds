@@ -74,4 +74,4 @@ SYSTEMDS-110 New Builtin Functions
  
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK
- * 122 Reduce thread contention on parfor left indexing
+ * 122 Reduce thread contention on parfor left indexing               OK

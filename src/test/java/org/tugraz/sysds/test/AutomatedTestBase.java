@@ -1210,9 +1210,8 @@ public abstract class AutomatedTestBase
 			System.out.println("arguments to DMLScript: " + Arrays.toString(dmlScriptArgs));
 			DMLScript.main(dmlScriptArgs);
 
-			/** check number of MR jobs */
 			if (maxSparkInst > -1 && maxSparkInst < Statistics.getNoOfCompiledSPInst())
-				fail("Limit of MR jobs is exceeded: expected: " + maxSparkInst + ", occurred: "
+				fail("Limit of Spark jobs is exceeded: expected: " + maxSparkInst + ", occurred: "
 						+ Statistics.getNoOfCompiledSPInst());
 
 			if (exceptionExpected)

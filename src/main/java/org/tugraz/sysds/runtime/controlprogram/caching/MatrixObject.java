@@ -403,7 +403,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	// ***     ONLY CALLED BY THE SUPERCLASS     ***
 	// ***                                       ***
 	// *********************************************
-		
+	
 	@Override
 	protected boolean isBelowCachingThreshold() {
 		return LazyWriteBuffer.getCacheBlockSize(_data) <= CACHING_THRESHOLD

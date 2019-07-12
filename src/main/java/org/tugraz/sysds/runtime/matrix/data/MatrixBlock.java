@@ -123,7 +123,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	//default sparse block type for update in place: compressed sparse rows, to prevent serialization
 	public static final SparseBlock.Type DEFAULT_INPLACE_SPARSEBLOCK = SparseBlock.Type.CSR;
 	//allowed overhead for shallow serialize in terms of in-memory-size/x <= serialized-size 
-	public static final double MAX_SHALLOW_SERIALIZE_OVERHEAD = 1.3;
+	public static final double MAX_SHALLOW_SERIALIZE_OVERHEAD = 2; //2x size of serialized
 	//flag if MCSR blocks that do not qualify for shallow serialize should be converted to CSR
 	public static final boolean CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE = true;
 	//basic header (int rlen, int clen, byte type)

@@ -90,6 +90,10 @@ public enum Builtins {
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin
+	LM("lm", true),
+	LMCG("lmCG", true),
+	LMDS("lmDS", true),
+	LMPREDICT("lmpredict", true),
 	LOG("log", false),
 	LSTM("lstm", false),
 	LSTM_BACKWARD("lstm_backward", false),

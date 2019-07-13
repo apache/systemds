@@ -71,6 +71,7 @@ SYSTEMDS-100 Various Fixes
 SYSTEMDS-110 New Builtin Functions
  * 111 Time builtin function for script-level measurements            OK
  * 112 Image data augmentation builtin functions                      OK
+ * 113 Builtin functions for linear regression algorithms             OK
  
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK

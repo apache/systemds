@@ -90,6 +90,7 @@ public class InterProceduralAnalysis
 	protected static final boolean PROPAGATE_SCALAR_VARS_INTO_FUN = true; //propagate scalar variables into functions that are called once
 	protected static final boolean PROPAGATE_SCALAR_LITERALS      = true; //propagate and replace scalar literals into functions
 	protected static final boolean APPLY_STATIC_REWRITES          = true; //apply static hop dag and statement block rewrites
+	protected static final boolean APPLY_DYNAMIC_REWRITES         = true; //apply dynamic hop dag and statement block rewrites
 	protected static final int     INLINING_MAX_NUM_OPS           = 10;    //inline single-statement functions w/ #ops <= threshold, other than dataops and literals
 	protected static final boolean ELIMINATE_DEAD_CODE            = true; //remove dead code (e.g., assigments) not used later on
 	
@@ -136,7 +137,7 @@ public class InterProceduralAnalysis
 		//note: apply rewrites last because statement block rewrites
 		//might merge relevant statement blocks in special cases, which 
 		//would require an update of the function call graph
-		_passes.add(new IPAPassApplyStaticHopRewrites());
+		_passes.add(new IPAPassApplyStaticAndDynamicHopRewrites());
 	}
 	
 	public InterProceduralAnalysis(StatementBlock sb) {

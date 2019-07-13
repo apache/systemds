@@ -32,18 +32,22 @@ import org.tugraz.sysds.parser.LanguageException;
  * in order to simplify statistic propagation.
  * 
  */
-public class IPAPassApplyStaticHopRewrites extends IPAPass
+public class IPAPassApplyStaticAndDynamicHopRewrites extends IPAPass
 {
 	@Override
+	@SuppressWarnings("unused")
 	public boolean isApplicable(FunctionCallGraph fgraph) {
-		return InterProceduralAnalysis.APPLY_STATIC_REWRITES;
+		return InterProceduralAnalysis.APPLY_STATIC_REWRITES
+			|| InterProceduralAnalysis.APPLY_DYNAMIC_REWRITES;
 	}
 	
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) {
 		try {
 			//construct rewriter w/o checkpoint injection to avoid redundancy
-			ProgramRewriter rewriter = new ProgramRewriter(true, false);
+			ProgramRewriter rewriter = new ProgramRewriter(
+				InterProceduralAnalysis.APPLY_STATIC_REWRITES,
+				InterProceduralAnalysis.APPLY_DYNAMIC_REWRITES);
 			rewriter.removeStatementBlockRewrite(RewriteInjectSparkLoopCheckpointing.class);
 			
 			//rewrite program hop dags and statement blocks

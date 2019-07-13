@@ -59,22 +59,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes ) 
 	{
 		//step 1: propagate final literals across main program
-		LocalVariableMap constants = new LocalVariableMap();
-		for( StatementBlock sb : prog.getStatementBlocks() ) {
-			//delete update constant variables
-			constants.removeAllIn(sb.variablesUpdated().getVariableNames());
-			//literal replacement
-			rReplaceLiterals(sb, constants);
-			//extract literal assignments
-			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
-				for( Hop root : sb.getHops() )
-					if( HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
-						&& root.getInput().get(0) instanceof LiteralOp) {
-						constants.put(root.getName(), ScalarObjectFactory
-							.createScalarObject((LiteralOp)root.getInput().get(0)));
-					}
-			}
-		}
+		rReplaceLiterals(prog.getStatementBlocks(), prog, fgraph, fcallSizes);
 		
 		//step 2: propagate literals into functions
 		for( String fkey : fgraph.getReachableFunctions() ) {
@@ -95,12 +80,35 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 					if( fcallSizes.isSafeLiteral(fkey, j) ) {
 						LiteralOp lit = (LiteralOp) first.getInput().get(j);
 						callVars.put(finputs.get(j).getName(), ScalarObjectFactory
-								.createScalarObject(lit.getValueType(), lit));
+							.createScalarObject(lit.getValueType(), lit));
 					}
 				
-				//propagate and replace literals
+				//propagate constant function arguments into function
 				for( StatementBlock sb : fstmt.getBody() )
 					rReplaceLiterals(sb, callVars);
+				
+				//propagate final literals across function
+				rReplaceLiterals(fstmt.getBody(), prog, fgraph, fcallSizes);
+			}
+		}
+	}
+	
+	private void rReplaceLiterals(List<StatementBlock> sbs, DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
+		LocalVariableMap constants = new LocalVariableMap();
+		//propagate final literals across statement blocks
+		for( StatementBlock sb : sbs ) {
+			//delete update constant variables
+			constants.removeAllIn(sb.variablesUpdated().getVariableNames());
+			//literal replacement
+			rReplaceLiterals(sb, constants);
+			//extract literal assignments
+			if( HopRewriteUtils.isLastLevelStatementBlock(sb) ) {
+				for( Hop root : sb.getHops() )
+					if( HopRewriteUtils.isData(root, DataOpTypes.TRANSIENTWRITE)
+						&& root.getInput().get(0) instanceof LiteralOp) {
+						constants.put(root.getName(), ScalarObjectFactory
+							.createScalarObject((LiteralOp)root.getInput().get(0)));
+					}
 			}
 		}
 	}
@@ -164,7 +172,7 @@ public class IPAPassPropagateReplaceLiterals extends IPAPass
 		
 		try {
 			root.resetVisitStatus();
-			Recompiler.rReplaceLiterals(root, constants, true);	
+			Recompiler.rReplaceLiterals(root, constants, true);
 			root.resetVisitStatus();
 		}
 		catch(Exception ex) {

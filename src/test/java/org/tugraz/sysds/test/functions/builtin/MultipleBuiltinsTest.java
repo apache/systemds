@@ -53,11 +53,7 @@ public class MultipleBuiltinsTest extends AutomatedTestBase
 
 	private void runMultipleBuiltinsTest(boolean defaultProb, ExecType instType)
 	{
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
+		ExecMode platformOld = setExecMode(instType);
 		
 		try
 		{

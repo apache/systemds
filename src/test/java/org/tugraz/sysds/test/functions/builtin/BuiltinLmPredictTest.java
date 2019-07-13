@@ -65,12 +65,8 @@ public class BuiltinLmPredictTest extends AutomatedTestBase
 
 	private void runLmTest(boolean sparse, ExecType instType)
 	{
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-
+		ExecMode platformOld = setExecMode(instType);
+		
 		try
 		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

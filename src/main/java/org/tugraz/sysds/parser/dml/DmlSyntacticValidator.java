@@ -1106,13 +1106,13 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 
 	protected void validateNamespace(String namespace, String filePath, ParserRuleContext ctx) {
-		if (!sources.containsKey(namespace)) {
-			sources.put(namespace, filePath);
-		}
-		else if (!sources.get(namespace).equals(filePath)) {
-			// Only throw an exception if the filepath is different
-			// If the filepath is same, ignore the statement. This is useful for repeated definition of common dml files such as source("nn/util.dml") as util
-			notifyErrorListeners("Namespace Conflict: '" + namespace + "' already defined as " + sources.get(namespace), ctx.start);
+		// error out if different scripts from different file paths are bound to the same namespace
+		if( !DMLProgram.DEFAULT_NAMESPACE.equals(namespace) ) {
+			if( sources.containsKey(namespace) && !sources.get(namespace).equals(filePath) )
+				notifyErrorListeners("Namespace Conflict: '" + namespace 
+					+ "' already defined as " + sources.get(namespace), ctx.start);
+			else
+				sources.put(namespace, filePath);
 		}
 	}
 	
@@ -1703,9 +1703,7 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	private DMLProgram parseAndAddImportedFunctions(String namespace, String filePath, ParserRuleContext ctx) {
 		//validate namespace w/ awareness of dml-bodied builtin functions
-		String ifilePath = DMLProgram.DEFAULT_NAMESPACE.equals(namespace) ?
-			DMLProgram.DEFAULT_NAMESPACE_PATH : filePath;
-		validateNamespace(namespace, ifilePath, ctx);
+		validateNamespace(namespace, filePath, ctx);
 		
 		//read and parse namespace files
 		String scriptID = DMLProgram.constructFunctionKey(namespace, filePath);

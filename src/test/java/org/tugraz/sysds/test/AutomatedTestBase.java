@@ -46,6 +46,7 @@ import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -344,6 +345,17 @@ public abstract class AutomatedTestBase
 		return CONFIG_TEMPLATE_FILE;
 	}
 
+	protected ExecMode setExecMode(ExecType instType) {
+		ExecMode platformOld = rtplatform;
+		switch( instType ) {
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.HYBRID; break;
+		}
+		if( rtplatform != ExecMode.SINGLE_NODE )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		return platformOld;
+	}
+	
 	/**
 	 * <p>
 	 * Generates a random matrix with the specified characteristics and returns

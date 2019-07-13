@@ -34,7 +34,6 @@ public class DMLProgram
 	private HashMap<String, FunctionStatementBlock> _functionBlocks;
 	private HashMap<String,DMLProgram> _namespaces;
 	public static final String DEFAULT_NAMESPACE = ".defaultNS";
-	public static final String DEFAULT_NAMESPACE_PATH = "./scripts/builtin";
 	public static final String INTERNAL_NAMESPACE = "_internal"; // used for multi-return builtin functions
 	
 	public DMLProgram(){

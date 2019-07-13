@@ -125,11 +125,7 @@ public class BuiltinScaleTest extends AutomatedTestBase
 	
 	private void runScaleTest(boolean sparse, boolean center, boolean scale, ExecType instType)
 	{
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
+		ExecMode platformOld = setExecMode(instType);
 		
 		try
 		{

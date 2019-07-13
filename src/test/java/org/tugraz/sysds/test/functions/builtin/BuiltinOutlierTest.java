@@ -86,11 +86,7 @@ public class BuiltinOutlierTest extends AutomatedTestBase
 
 	private void runOutlierTest(boolean sparse, boolean opposite, ExecType instType)
 	{
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
+		ExecMode platformOld = setExecMode(instType);
 		
 		try
 		{

@@ -109,12 +109,8 @@ public class BuiltinLmTest extends AutomatedTestBase
 
 	private void runLmTest(boolean sparse, ExecType instType, LinregType linregAlgo)
 	{
-		ExecMode platformOld = rtplatform;
-		switch( instType ) {
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-
+		ExecMode platformOld = setExecMode(instType);
+		
 		String dml_test_name = TEST_NAME;
 		switch (linregAlgo) {
 			case AUTO: break;

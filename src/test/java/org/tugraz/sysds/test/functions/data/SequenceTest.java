@@ -42,7 +42,6 @@ import java.util.HashMap;
 @RunWith(value = Parameterized.class)
 public class SequenceTest extends AutomatedTestBase 
 {
-
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_NAME = "Sequence";
 	private final static String TEST_CLASS_DIR = TEST_DIR + SequenceTest.class.getSimpleName() + "/";
@@ -53,62 +52,41 @@ public class SequenceTest extends AutomatedTestBase
 	
 	private TEST_TYPE test_type;
 	private double from, to, incr;
-	private boolean isPyDml;
 	
-	public SequenceTest(TEST_TYPE tp, double f, double t, double i, boolean isPyDml) {
+	public SequenceTest(TEST_TYPE tp, double f, double t, double i) {
 		//numInputs = ni;
 		test_type = tp;
 		from = f;
 		to = t;
 		incr = i;
-		this.isPyDml = isPyDml;
 	}
 	
 	@Parameters
 	public static Collection<Object[]> data() {
 		Object[][] data = new Object[][] { 
-				// DML - 3 inputs
-				{TEST_TYPE.THREE_INPUTS, 1, 2000, 1, false},
-				{TEST_TYPE.THREE_INPUTS, 2000, 1, -1, false},
-				{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1, false},
-				{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1, false},
-				{TEST_TYPE.THREE_INPUTS, 4000, 0, -3, false},
+			// DML - 3 inputs
+			{TEST_TYPE.THREE_INPUTS, 1, 2000, 1},
+			{TEST_TYPE.THREE_INPUTS, 2000, 1, -1},
+			{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1},
+			{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1},
+			{TEST_TYPE.THREE_INPUTS, 4000, 0, -3},
 
-				// PyDML - 3 inputs
-				{TEST_TYPE.THREE_INPUTS, 1, 2000, 1, true},
-				{TEST_TYPE.THREE_INPUTS, 2000, 1, -1, true},
-				{TEST_TYPE.THREE_INPUTS, 0, 150, 0.1, true},
-				{TEST_TYPE.THREE_INPUTS, 150, 0, -0.1, true},
-				{TEST_TYPE.THREE_INPUTS, 4000, 0, -3, true},
+			// DML - 2 inputs
+			{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN},
+			{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN},
+			{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN},
+			{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN},
+			{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN},
 
-				// DML - 2 inputs
-				{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN, false},
-				{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN, false},
-				{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN, false},
-				{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN, false},
-				{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN, false},
-
-				// PyDML - 2 inputs
-				{TEST_TYPE.TWO_INPUTS, 1, 2000, Double.NaN, true},
-				{TEST_TYPE.TWO_INPUTS, 2000, 1, Double.NaN, true},
-				{TEST_TYPE.TWO_INPUTS, 0, 150, Double.NaN, true},
-				{TEST_TYPE.TWO_INPUTS, 150, 0, Double.NaN, true},
-				{TEST_TYPE.TWO_INPUTS, 4, 4, Double.NaN, true},
-
-				// DML - Error
-				{TEST_TYPE.ERROR, 1, 2000, -1, false},
-				{TEST_TYPE.ERROR, 150, 0, 1, false},
-
-				// PyDML - Error
-				{TEST_TYPE.ERROR, 1, 2000, -1, true},
-				{TEST_TYPE.ERROR, 150, 0, 1, true}
-				};
+			// DML - Error
+			{TEST_TYPE.ERROR, 1, 2000, -1},
+			{TEST_TYPE.ERROR, 150, 0, 1},
+		};
 		return Arrays.asList(data);
 	}
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"A"})); 
 	}
@@ -125,12 +103,7 @@ public class SequenceTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			
 			if ( test_type == TEST_TYPE.THREE_INPUTS || test_type == TEST_TYPE.ERROR ) {
-				if (isPyDml) {
-					fullDMLScriptName = HOME + "Range" + ".pydml";
-				} else {
-					fullDMLScriptName = HOME + TEST_NAME + ".dml";
-				}
-
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
 				fullRScriptName = HOME + TEST_NAME + ".R";
 				
 				programArgs = new String[]{"-args", Double.toString(from), 
@@ -143,11 +116,7 @@ public class SequenceTest extends AutomatedTestBase
 					exceptionExpected = true;
 			}
 			else {
-				if (isPyDml) {
-					fullDMLScriptName = HOME + "Range" + "2inputs.pydml";
-				} else {
-					fullDMLScriptName = HOME + TEST_NAME + "2inputs.dml";
-				}
+				fullDMLScriptName = HOME + TEST_NAME + "2inputs.dml";
 				fullRScriptName = HOME + TEST_NAME + "2inputs.R";
 				
 				programArgs = new String[]{"-args", Double.toString(from),
@@ -177,7 +146,6 @@ public class SequenceTest extends AutomatedTestBase
 			finally {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			}
-			 
 			
 			if ( !exceptionExpected ) {
 				runRScript(true);
@@ -187,18 +155,13 @@ public class SequenceTest extends AutomatedTestBase
 				
 				dmlfile = readDMLMatrixFromHDFS("A_HYBRID");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HYBRID", "A-R");
-			
-				dmlfile = readDMLMatrixFromHDFS("A_HADOOP");
-				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-HADOOP", "A-R");
 				
 				dmlfile = readDMLMatrixFromHDFS("A_SPARK");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "A-SPARK", "A-R");
 			}
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 		}
 	}
-	
 }

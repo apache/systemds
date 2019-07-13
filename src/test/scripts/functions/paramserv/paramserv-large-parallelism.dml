@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 source("src/test/scripts/functions/paramserv/mnist_lenet_paramserv_minimum_version.dml") as mnist_lenet
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 
 # Generate the training data
 [images, labels, C, Hin, Win] = mnist_lenet::generate_dummy_data()

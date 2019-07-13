@@ -20,6 +20,7 @@
 package org.tugraz.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -90,7 +91,7 @@ public class Program
 		
 		HashMap<String,FunctionProgramBlock> namespaceFunctBlocks = _namespaceFunctions.get(namespace);
 		if (namespaceFunctBlocks == null)
-			throw new DMLRuntimeException("namespace " + namespace + " is undefined");
+			throw new DMLRuntimeException("namespace " + namespace + " is undefined.");
 		FunctionProgramBlock retVal = namespaceFunctBlocks.get(fname);
 		if (retVal == null)
 			throw new DMLRuntimeException("function " + fname + " is undefined in namespace " + namespace);

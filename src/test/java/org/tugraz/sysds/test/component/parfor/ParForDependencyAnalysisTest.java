@@ -59,7 +59,7 @@ import org.tugraz.sysds.test.TestConfiguration;
  * * scoping (create object in loop, but used afterwards)
  *    44: dep   
  * * application testcases
- *    45: no, 46: no, 47 no, 50: no (w/ check=0 on i2), 51: dep, 52: dep
+ *    45: no, 46: no, 47 no, 51: dep, 52: dep
  * * general parfor validate (e.g., expressions)
  *    48: no, 48b: err, 48c: no
  * * functions
@@ -71,7 +71,7 @@ import org.tugraz.sysds.test.TestConfiguration;
  */
 public class ParForDependencyAnalysisTest extends AutomatedTestBase
 {
-	private static final String TEST_DIR = "functions/parfor/";
+	private static final String TEST_DIR = "component/parfor/";
 	private static final String HOME = SCRIPT_DIR + TEST_DIR;
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParForDependencyAnalysisTest.class.getSimpleName() + "/";
 	
@@ -291,9 +291,6 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	
 	@Test
 	public void testDependencyAnalysis49b() { runTest("parfor49b.dml", true); }
-	
-	@Test
-	public void testDependencyAnalysis50() { runTest("parfor50.dml", false); }
 	
 	@Test
 	public void testDependencyAnalysis51() { runTest("parfor51.dml", true); }

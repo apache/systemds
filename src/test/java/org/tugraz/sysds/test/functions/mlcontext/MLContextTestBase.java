@@ -57,7 +57,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		Class<? extends MLContextTestBase> clazz = this.getClass();
-		String dir = (testDir == null) ? "org/apache/sysml/api/mlcontext" : testDir;
+		String dir = (testDir == null) ? "functions/mlcontext" : testDir;
 		String name = (testName == null) ? clazz.getSimpleName() : testName;
 
 		addTestConfiguration(dir, name);

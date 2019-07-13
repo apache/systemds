@@ -5,7 +5,7 @@
     "nnz": -1,
     "format": "csv",
     "header": false,
-    "schema": "string,double,boolean",
+    "schema": "string,fp64,boolean",
     "sep": ",",
     "description": {
         "author": "SystemML"

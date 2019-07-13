@@ -19,6 +19,7 @@
 
 package org.tugraz.sysds.test.functions.mlcontext;
 
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.Dataset;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -64,6 +66,7 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 	public static void setUpClass() {
 		spark = createSystemMLSparkSession("DataFrameMatrixConversionTest", "local");
 		sc = new JavaSparkContext(spark.sparkContext());
+		LazyWriteBuffer.init();
 	}
 
 	@Override
@@ -282,5 +285,6 @@ public class DataFrameMatrixConversionTest extends AutomatedTestBase
 		spark.stop();
 		sc = null;
 		spark = null;
+		LazyWriteBuffer.cleanup();
 	}
 }

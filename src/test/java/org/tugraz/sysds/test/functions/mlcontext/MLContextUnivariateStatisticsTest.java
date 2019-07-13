@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.tugraz.sysds.test.functions.mlcontext.algorithms;
+package org.tugraz.sysds.test.functions.mlcontext;
 
 import static org.tugraz.sysds.api.mlcontext.ScriptFactory.dmlFromFile;
 
@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.mlcontext.Script;
-import org.tugraz.sysds.test.functions.mlcontext.MLContextTestBase;
 
 public class MLContextUnivariateStatisticsTest extends MLContextTestBase {
 	protected static Logger log = Logger.getLogger(MLContextUnivariateStatisticsTest.class);

@@ -23,15 +23,15 @@
  * MNIST LeNet Example
  */
 # Imports
-source("nn/layers/affine.dml") as affine
-source("nn/layers/conv2d_builtin.dml") as conv2d
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("nn/layers/dropout.dml") as dropout
-source("nn/layers/l2_reg.dml") as l2_reg
-source("nn/layers/max_pool2d_builtin.dml") as max_pool2d
-source("nn/layers/relu.dml") as relu
-source("nn/layers/softmax.dml") as softmax
-source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+source("scripts/nn/layers/affine.dml") as affine
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
+source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("scripts/nn/layers/dropout.dml") as dropout
+source("scripts/nn/layers/l2_reg.dml") as l2_reg
+source("scripts/nn/layers/max_pool2d_builtin.dml") as max_pool2d
+source("scripts/nn/layers/relu.dml") as relu
+source("scripts/nn/layers/softmax.dml") as softmax
+source("scripts/nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
 train = function(matrix[double] X, matrix[double] Y,
                  matrix[double] X_val, matrix[double] Y_val,

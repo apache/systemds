@@ -35,10 +35,6 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 import org.tugraz.sysds.utils.Statistics;
 
-/**
- * 
- * 
- */
 public class FullCumminTest extends AutomatedTestBase 
 {
 	private final static String TEST_NAME = "Cummin";
@@ -59,144 +55,111 @@ public class FullCumminTest extends AutomatedTestBase
 	}
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"})); 
-
 		if (TEST_CACHE_ENABLED) {
 			setOutAndExpectedDeletionDisabled(true);
 		}
 	}
 
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 
 	@Test
-	public void testCumminColVectorDenseCP() 
-	{
+	public void testCumminColVectorDenseCP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminRowVectorDenseCP() 
-	{
+	public void testCumminRowVectorDenseCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminRowVectorDenseNoRewritesCP() 
-	{
+	public void testCumminRowVectorDenseNoRewritesCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumminMatrixDenseCP() 
-	{
+	public void testCumminMatrixDenseCP() {
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminColVectorSparseCP() 
-	{
+	public void testCumminColVectorSparseCP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminRowVectorSparseCP() 
-	{
+	public void testCumminRowVectorSparseCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminRowVectorSparseNoRewritesCP() 
-	{
+	public void testCumminRowVectorSparseNoRewritesCP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP, false);
 	}
 	
 	@Test
-	public void testCumminMatrixSparseCP() 
-	{
+	public void testCumminMatrixSparseCP() {
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testCumminColVectorDenseSP() 
-	{
+	public void testCumminColVectorDenseSP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumminRowVectorDenseSP() 
-	{
+	public void testCumminRowVectorDenseSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumminRowVectorDenseNoRewritesSP() 
-	{
+	public void testCumminRowVectorDenseNoRewritesSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumminMatrixDenseSP() 
-	{
+	public void testCumminMatrixDenseSP() {
 		runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumminColVectorSparseSP() 
-	{
+	public void testCumminColVectorSparseSP() {
 		runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumminRowVectorSparseSP() 
-	{
+	public void testCumminRowVectorSparseSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testCumminRowVectorSparseNoRewritesSP() 
-	{
+	public void testCumminRowVectorSparseNoRewritesSP() {
 		runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
 	}
 	
 	@Test
-	public void testCumminMatrixSparseSP() 
-	{
+	public void testCumminMatrixSparseSP() {
 		runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
 	}
 
-	
-	/**
-	 * 
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType)
 	{
 		//by default we apply algebraic simplification rewrites
 		runColAggregateOperationTest(type, sparse, instType, true);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runColAggregateOperationTest( InputType type, boolean sparse, ExecType instType, boolean rewrites)
 	{
 		ExecMode platformOld = rtplatform;
@@ -241,8 +204,8 @@ public class FullCumminTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 	
 			runTest(true, false, null, -1); 
-			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedSPInst());
+			if( instType==ExecType.CP ) //in CP no spark jobs should be executed
+				Assert.assertEquals("Unexpected number of executed Spark jobs.", 0, Statistics.getNoOfExecutedSPInst());
 			
 			runRScript(true);
 		

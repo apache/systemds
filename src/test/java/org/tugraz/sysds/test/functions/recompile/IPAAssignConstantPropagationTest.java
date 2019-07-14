@@ -96,8 +96,8 @@ public class IPAAssignConstantPropagationTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("X");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
-			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = branchRemoval ? 0 : 1; //rand
+			//check expected number of compiled and executed spark jobs
+			int expectedNumCompiled = branchRemoval ? 0 : 2; //rand, write
 			int expectedNumExecuted = 0;
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);

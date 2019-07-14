@@ -47,59 +47,45 @@ public class BranchRemovalTest extends AutomatedTestBase
 	
 	
 	@Test
-	public void testTrueConditionNoBranchRemovalNoIPA() 
-	{
+	public void testTrueConditionNoBranchRemovalNoIPA() {
 		runBranchRemovalTest(true, false, false);
 	}
 	
 	@Test
-	public void testFalseConditionNoBranchRemovalNoIPA() 
-	{
+	public void testFalseConditionNoBranchRemovalNoIPA() {
 		runBranchRemovalTest(false, false, false);
 	}
 	
 	@Test
-	public void testTrueConditionBranchRemovalNoIPA() 
-	{
+	public void testTrueConditionBranchRemovalNoIPA() {
 		runBranchRemovalTest(true, true, false);
 	}
 	
 	@Test
-	public void testFalseConditionBranchRemovalNoIPA() 
-	{
+	public void testFalseConditionBranchRemovalNoIPA() {
 		runBranchRemovalTest(false, true, false);
 	}
 	
 	@Test
-	public void testTrueConditionNoBranchRemovalIPA() 
-	{
+	public void testTrueConditionNoBranchRemovalIPA() {
 		runBranchRemovalTest(true, false, true);
 	}
 	
 	@Test
-	public void testFalseConditionNoBranchRemovalIPA() 
-	{
+	public void testFalseConditionNoBranchRemovalIPA() {
 		runBranchRemovalTest(false, false, true);
 	}
 	
 	@Test
-	public void testTrueConditionBranchRemovalIPA() 
-	{
+	public void testTrueConditionBranchRemovalIPA() {
 		runBranchRemovalTest(true, true, true);
 	}
 	
 	@Test
-	public void testFalseConditionBranchRemovalIPA() 
-	{
+	public void testFalseConditionBranchRemovalIPA() {
 		runBranchRemovalTest(false, true, true);
 	}
-
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
+	
 	private void runBranchRemovalTest( boolean condition, boolean branchRemoval, boolean IPA )
 	{	
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
@@ -112,7 +98,6 @@ public class BranchRemovalTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input("X"),

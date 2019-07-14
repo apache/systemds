@@ -37,7 +37,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_NAME = "LeftIndexingSparseSparseTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingSparseSparseTest.class.getSimpleName() + "/";
@@ -69,14 +68,12 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 	}
 	
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
@@ -147,7 +144,6 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 		}
 		int cu = cl+cols2-1;
 		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode oldRTP = rtplatform;
 		try
 		{
@@ -156,11 +152,11 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			}
 			
 			if(et == ExecType.SPARK) {
-		    	rtplatform = ExecMode.SPARK;
-		    }
+				rtplatform = ExecMode.SPARK;
+			}
 			else {
 				// rtplatform = (et==ExecType.MR)? ExecMode.HADOOP : ExecMode.SINGLE_NODE;
-			    rtplatform = ExecMode.HYBRID;
+				rtplatform = ExecMode.HYBRID;
 			}
 			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -168,13 +164,12 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			
 			String TEST_CACHE_DIR = "";
-			if (TEST_CACHE_ENABLED)
-			{
+			if (TEST_CACHE_ENABLED) {
 				TEST_CACHE_DIR = type.toString() + "/";
 			}
 			
 			loadTestConfiguration(config, TEST_CACHE_DIR);
-		    
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", input("A"), input("B"), 
@@ -182,24 +177,21 @@ public class LeftIndexingSparseSparseTest extends AutomatedTestBase
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " " + cl + " " + cu + " " + expectedDir();
+				inputDir() + " " + cl + " " + cu + " " + expectedDir();
 			
 			//generate input data sets
 			double[][] A = getRandomMatrix(rows1, cols1, -1, 1, sparsity1, 1234);
-	        writeInputMatrixWithMTD("A", A, true);
+			writeInputMatrixWithMTD("A", A, true);
 			double[][] B = getRandomMatrix(rows2, cols2, -1, 1, sparsity2, 5678);
-	        writeInputMatrixWithMTD("B", B, true);
-	        
-	        runTest(true, false, null, 1); //REBLOCK
+			writeInputMatrixWithMTD("B", B, true);
+			
+			runTest(true, false, null, 6); //2xrblk,2xchk,ix,write
+			runRScript(true);
 		}
-		finally
-		{
+		finally {
 			rtplatform = oldRTP;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			LeftIndexingOp.FORCED_LEFT_INDEXING = null;
 		}
-		
-		runRScript(true);
 		
 		HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 		HashMap<CellIndex, Double> rfile = readRMatrixFromFS("R");

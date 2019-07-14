@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
@@ -35,7 +34,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class MapMultChainTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "MapMultChain";
 	private final static String TEST_NAME2 = "MapMultChainWeights";
 	private final static String TEST_NAME3 = "MapMultChainWeights2";
@@ -73,175 +71,135 @@ public class MapMultChainTest extends AutomatedTestBase
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 	
 	@Test
-	public void testMapMultChainNoRewriteDenseCP() 
-	{
+	public void testMapMultChainNoRewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME1, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsNoRewriteDenseCP() 
-	{
+	public void testMapMultChainWeightsNoRewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME2, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2NoRewriteDenseCP() 
-	{
+	public void testMapMultChainWeights2NoRewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME3, false, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainNoRewriteSparseCP() 
-	{
+	public void testMapMultChainNoRewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME1, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsNoRewriteSparseCP() 
-	{
+	public void testMapMultChainWeightsNoRewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME2, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2NoRewriteSparseCP() 
-	{
+	public void testMapMultChainWeights2NoRewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME3, true, false, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainRewriteDenseCP() 
-	{
+	public void testMapMultChainRewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME1, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsRewriteDenseCP() 
-	{
+	public void testMapMultChainWeightsRewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME2, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2RewriteDenseCP() 
-	{
+	public void testMapMultChainWeights2RewriteDenseCP() {
 		runMapMultChainTest(TEST_NAME3, false, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainRewriteSparseCP() 
-	{
+	public void testMapMultChainRewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME1, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsRewriteSparseCP() 
-	{
+	public void testMapMultChainWeightsRewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME2, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2RewriteSparseCP() 
-	{
+	public void testMapMultChainWeights2RewriteSparseCP() {
 		runMapMultChainTest(TEST_NAME3, true, true, ExecType.CP);
 	}
 	
 	@Test
-	public void testMapMultChainNoRewriteDenseSpark() 
-	{
+	public void testMapMultChainNoRewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsNoRewriteDenseSpark() 
-	{
+	public void testMapMultChainWeightsNoRewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME2, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2NoRewriteDenseSpark() 
-	{
+	public void testMapMultChainWeights2NoRewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME3, false, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainNoRewriteSparseSpark() 
-	{
+	public void testMapMultChainNoRewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME1, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsNoRewriteSparseSpark() 
-	{
+	public void testMapMultChainWeightsNoRewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME2, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2NoRewriteSparseSpark() 
-	{
+	public void testMapMultChainWeights2NoRewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME3, true, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainRewriteDenseSpark() 
-	{
+	public void testMapMultChainRewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME1, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsRewriteDenseSpark() 
-	{
+	public void testMapMultChainWeightsRewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME2, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2RewriteDenseSpark() 
-	{
+	public void testMapMultChainWeights2RewriteDenseSpark() {
 		runMapMultChainTest(TEST_NAME3, false, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainRewriteSparseSpark() 
-	{
+	public void testMapMultChainRewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME1, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeightsRewriteSparseSpark() 
-	{
+	public void testMapMultChainWeightsRewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME2, true, true, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testMapMultChainWeights2RewriteSparseSpark() 
-	{
+	public void testMapMultChainWeights2RewriteSparseSpark() {
 		runMapMultChainTest(TEST_NAME3, true, true, ExecType.SPARK);
 	}
-
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
+	
 	private void runMapMultChainTest( String testname, boolean sparse, boolean sumProductRewrites, ExecType instType)
 	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 		
 		//rewrite
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
@@ -280,20 +238,16 @@ public class MapMultChainTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
-			//check compiled/executed jobs 
-			//changed 07/2015: by disabling the mm-transpose rewrite in forced mr/spark, the write is packed 
-			//into the GMR for mapmult because the additional CP r' does not create a cut anymore.
-			int expectedNumCompiled = (sumProductRewrites)?2:3; //GMR Reblock, 2x(GMR mapmult, incl write) -> GMR Reblock, GMR mapmultchain+write
-			int expectedNumExecuted = expectedNumCompiled;
+			//check compiled/executed jobs
+			int numInputs = testname.equals(TEST_NAME1) ? 2 : 3;
+			int expectedNumCompiled = numInputs
+				+ ((instType==ExecType.SPARK)?(sumProductRewrites?1:2):0);
 			checkNumCompiledSparkInst(expectedNumCompiled); 
-			checkNumExecutedSparkInst(expectedNumExecuted);
+			checkNumExecutedSparkInst(expectedNumCompiled - numInputs);
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
 		}
 	}
-
 }

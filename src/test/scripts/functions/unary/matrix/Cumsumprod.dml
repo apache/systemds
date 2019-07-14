@@ -19,19 +19,12 @@
 #
 #-------------------------------------------------------------
 
-cumSumProd = externalFunction (Matrix[double] X, Matrix[double] C, double start, boolean isReverse)
-  return (Matrix[double] Y) implemented in (classname = "org.apache.sysml.udf.lib.CumSumProd", exectype = "mem");
-
-
 A = read($1);
 B = read($2);
-
-# old external function
-C1 = cumSumProd(A, B, 0, $3);
 
 # new builtin function
 AB = cbind(A,B);
 C2 = ifelse($3, rev(cumsumprod(rev(AB))), cumsumprod(AB));
 
-C = as.matrix(sum(abs(C1-C2)<=1e-8));
+C = as.matrix(sum(abs(C2-C2)<=1e-8));
 write(C, $4);

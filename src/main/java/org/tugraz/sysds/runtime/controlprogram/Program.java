@@ -20,7 +20,6 @@
 package org.tugraz.sysds.runtime.controlprogram;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 

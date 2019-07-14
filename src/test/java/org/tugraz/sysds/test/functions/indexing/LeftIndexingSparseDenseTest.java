@@ -37,7 +37,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_DIR = "functions/indexing/";
 	private final static String TEST_NAME = "LeftIndexingSparseDenseTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + LeftIndexingSparseDenseTest.class.getSimpleName() + "/";
@@ -204,8 +203,8 @@ public class LeftIndexingSparseDenseTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 			double[][] B = getRandomMatrix(rows2, cols2, -1, 1, sparsity2, 5678);
 			writeInputMatrixWithMTD("B", B, true);
-	        
-	        runTest(true, false, null, 1); //REBLOCK
+
+			runTest(true, false, null, 6); //2xrblk,2xchk,ix,write
 			runRScript(true);
 			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

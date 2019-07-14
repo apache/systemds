@@ -33,9 +33,6 @@ import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
-/**
- * 
- */
 public class FrameScalarCastingTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/frame/";
@@ -90,12 +87,6 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 		runFrameCastingTest(TEST_NAME2, ValueType.INT64);
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param schema
-	 * @param wildcard
-	 */
 	private void runFrameCastingTest( String testname, ValueType vt)
 	{	
 		try
@@ -105,7 +96,8 @@ public class FrameScalarCastingTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-explain","-args", input("A"), vt.toString(), output("B") };
+			programArgs = new String[]{"-explain","-args", input("A"),
+				vt.toExternalString().toLowerCase(), output("B") };
 			
 			//input data and compare
 			FrameBlock fb = new FrameBlock(1, vt);

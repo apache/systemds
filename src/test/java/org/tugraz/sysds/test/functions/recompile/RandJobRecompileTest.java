@@ -30,7 +30,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class RandJobRecompileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "grpagg_rand_recompile";
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + RandJobRecompileTest.class.getSimpleName() + "/";
@@ -62,11 +61,7 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	{
 		runRandJobRecompileTest(true);
 	}
-
-	/**
-	 * 
-	 * @param estSizeEval
-	 */
+	
 	private void runRandJobRecompileTest( boolean estSizeEval )
 	{	
 		boolean oldFlagSizeEval = OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION;
@@ -97,9 +92,9 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Z");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
-			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = (estSizeEval?1:2); //rand, write
-			int expectedNumExecuted = 0;
+			//check expected number of compiled and executed Spark jobs
+			int expectedNumCompiled = (estSizeEval?1:3); //rbl, rand, write
+			int expectedNumExecuted = (estSizeEval?0:1); //write
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);

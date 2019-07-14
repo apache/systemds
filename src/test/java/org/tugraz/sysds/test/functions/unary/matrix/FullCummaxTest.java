@@ -241,8 +241,8 @@ public class FullCummaxTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("A", A, true);
 	
 			runTest(true, false, null, -1); 
-			if( instType==ExecType.CP || instType==ExecType.SPARK ) //in CP no MR jobs should be executed
-				Assert.assertEquals("Unexpected number of executed MR jobs.", 0, Statistics.getNoOfExecutedSPInst());
+			if( instType==ExecType.CP ) //in CP no Spark jobs should be executed
+				Assert.assertEquals("Unexpected number of executed Spark jobs.", 0, Statistics.getNoOfExecutedSPInst());
 			
 			runRScript(true); 
 		

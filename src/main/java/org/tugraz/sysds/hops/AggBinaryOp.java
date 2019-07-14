@@ -288,7 +288,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		// * All matrix multiplications internally use dense output representations for efficiency.
 		//   This is reflected in our conservative memory estimate. However, we additionally need 
 		//   to account for potential final dense/sparse transformations via processing mem estimates.
-		double sparsity = 1.0;
+		double sparsity = (nnz == 0) ? 0 : 1;
 		/*
 		if( isMatrixMultiply() ) {	
 			if( nnz < 0 ){
@@ -330,7 +330,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		}
 
 		//account for potential final dense-sparse transformation (worst-case sparse representation)
-		if( dim2 >= 2 ) //vectors always dense
+		if( dim2 >= 2 && nnz != 0 ) //vectors always dense
 			ret += MatrixBlock.estimateSizeSparseInMemory(dim1, dim2,
 				MatrixBlock.SPARSITY_TURN_POINT - UtilFunctions.DOUBLE_EPS);
 		
@@ -1377,14 +1377,14 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	public void refreshSizeInformation()
-	{
+	public void refreshSizeInformation() {
 		Hop input1 = getInput().get(0);
 		Hop input2 = getInput().get(1);
-		
 		if( isMatrixMultiply() ) {
 			setDim1(input1.getDim1());
 			setDim2(input2.getDim2());
+			if( input1.getNnz() == 0 || input2.getNnz() == 0 )
+				setNnz(0);
 		}
 	}
 	

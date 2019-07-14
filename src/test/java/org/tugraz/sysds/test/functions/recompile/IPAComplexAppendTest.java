@@ -38,7 +38,7 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + IPAComplexAppendTest.class.getSimpleName() + "/";
 	
-	private final static int rows = 300000;
+	private final static int rows = 1000000;
 	private final static int cols = 1000;
 	private final static int nnz  = 700; //ultra-sparse
 	
@@ -98,10 +98,9 @@ public class IPAComplexAppendTest extends AutomatedTestBase
 			//run test
 			runTest(true, false, null, -1); 
 			
-			//check expected number of compiled and executed MR jobs
-			//TODO investigate IPA side effect
-			int expectedNumCompiled = (rewrites&&IPA)?1:3; //(GMR mm+, GMR append,) GMR sum
-			int expectedNumExecuted = rewrites?0:IPA?2:1; //(GMR mm+, GMR append) 
+			//check expected number of compiled and executed Spark jobs
+			int expectedNumCompiled = IPA ? 0 : 4;
+			int expectedNumExecuted = 0; 
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);

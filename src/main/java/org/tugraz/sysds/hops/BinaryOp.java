@@ -912,7 +912,7 @@ public class BinaryOp extends MultiThreadedHop
 	public void refreshSizeInformation()
 	{
 		Hop input1 = getInput().get(0);
-		Hop input2 = getInput().get(1);		
+		Hop input2 = getInput().get(1);
 		DataType dt1 = input1.getDataType();
 		DataType dt2 = input2.getDataType();
 		
@@ -1001,11 +1001,15 @@ public class BinaryOp extends MultiThreadedHop
 				
 				//update nnz only if we can ensure exact results, 
 				//otherwise propagated via worst-case estimates
-				if(    op == OpOp2.POW 
-					|| (input2 instanceof LiteralOp && OptimizerUtils.isBinaryOpConditionalSparseSafeExact(op, (LiteralOp)input2)) ) 
+				if( op == OpOp2.POW || (input2 instanceof LiteralOp 
+					&& OptimizerUtils.isBinaryOpConditionalSparseSafeExact(op, (LiteralOp)input2)) )
 				{
 					setNnz( lnnz1 );
 				}
+				else if( (op == OpOp2.PLUS || op == OpOp2.MINUS) 
+					&& ((input1.getNnz()==0 && input2.getNnz()>=0)
+					|| (input1.getNnz()>=0 && input2.getNnz()==0)) )
+					setNnz(input1.getNnz() + input2.getNnz());
 			}
 		}
 	}

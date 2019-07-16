@@ -319,13 +319,6 @@ public class UtilFunctions
 			((Long)obj).intValue() : ((Integer)obj).intValue();
 	}
 	
-	public static float[] toFloat(double[] data) {
-		float[] ret = new float[data.length];
-		for( int i=0; i<data.length; i++ )
-			ret[i] = (float)data[i];
-		return ret;
-	}
-	
 	public static long getSeqLength(double from, double to, double incr) {
 		return getSeqLength(from, to, incr, true);
 	}
@@ -593,7 +586,7 @@ public class UtilFunctions
 			lnnz += (a[i] != 0) ? 1 : 0;
 		return lnnz;
 	}
-	
+
 	public static int computeNnz(float[] a, int ai, int len) {
 		int lnnz = 0;
 		for( int i=ai; i<ai+len; i++ )
@@ -621,7 +614,14 @@ public class UtilFunctions
 			lnnz += a.get(i) ? 1 : 0;
 		return lnnz;
 	}
-	
+
+	public static int computeNnz(String[] a, int ai, int len) {
+		int lnnz = 0;
+		for( int k=ai; k<ai+len; k++ )
+			lnnz += (a[k] != null && !a[k].isEmpty() && Double.parseDouble(a[k]) != 0) ? 1 : 0;
+		return lnnz;
+	}
+
 	public static long computeNnz(SparseBlock a, int[] aix, int ai, int alen) {
 		long lnnz = 0;
 		for( int k=ai; k<ai+alen; k++ )

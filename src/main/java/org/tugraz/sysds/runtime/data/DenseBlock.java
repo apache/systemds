@@ -24,6 +24,7 @@ package org.tugraz.sysds.runtime.data;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
@@ -59,7 +60,28 @@ public abstract class DenseBlock implements Serializable
 		//materialize dim offsets (reverse cumprod)
 		_odims = createDimOffsets(dims);
 	}
-	
+
+	/**
+	 * Create a block in the internal blocks array. `allocateBlocks` has to be called
+	 * before it for Large-Dense-Blocks.
+	 *
+	 * @param bix       block index
+	 * @param length    space to allocate
+	 */
+	protected abstract void allocateBlock(int bix, int length);
+
+	/**
+	 * Get the ith dimensions size of the dense block.
+	 *
+	 * @param i the number of dimension to get
+	 * @return the size of the dimension
+	 */
+	public final int getDim(int i) {
+		return (i == 0) ?_rlen : 
+			(i == _odims.length) ? _odims[i - 1] :
+			_odims[i - 1] / _odims[i];
+	}
+
 	/**
 	 * Resets the dense block by deleting non-zero values. After this
 	 * call all countNonZeros() calls are guaranteed to return 0.
@@ -220,7 +242,18 @@ public abstract class DenseBlock implements Serializable
 	 * @return capacity
 	 */
 	public abstract long capacity();
-	
+
+
+	/**
+	 * Computes the number of non zero elements of a certain range of elements in a block.
+	 *
+	 * @param bix       index of block
+	 * @param start     start index in block
+	 * @param length    number of elements to check
+	 * @return          number of elements that are not zero
+	 */
+	protected abstract long computeNnz(int bix, int start, int length);
+
 	/**
 	 * Compute the number of non-zero values, which potentially 
 	 * makes a full pass over the underlying blocks.
@@ -322,7 +355,25 @@ public abstract class DenseBlock implements Serializable
 	 * @param delta increment value
 	 */
 	public abstract void incr(int r, int c, double delta);
-	
+
+	/**
+	 * Fill a certain range of elements of a block.
+	 *
+	 * @param bix       index of block
+	 * @param fromIndex starting index in block
+	 * @param toIndex   ending index in block (exclusive)
+	 * @param v         value
+	 */
+	protected abstract void fillBlock(int bix, int fromIndex, int toIndex, double v);
+
+	/**
+	 * Set a value at a position given by block index and index in that block.
+	 * @param bix   block index
+	 * @param ix    block-array index
+	 * @param v     value
+	 */
+	protected abstract void setInternal(int bix, int ix, double v);
+
 	/**
 	 * Set the given value for the entire dense block (fill).
 	 * 
@@ -383,9 +434,30 @@ public abstract class DenseBlock implements Serializable
 	 * @param db dense block
 	 * @return self
 	 */
-	public abstract DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db);
-	
-	
+	public DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db) {
+		// TODO: Optimize if dense block types match
+		// TODO: Performance
+		boolean allColumns = cl == 0 && cu == _odims[0];
+		for (int bi = index(rl); bi <= index(ru - 1); bi++) {
+			double[] other = db.valuesAt(bi);
+			if (allColumns) {
+				int offset = rl * _odims[0] + cl;
+				IntStream.range(0, (int) db.size())
+						.forEach((i) -> setInternal(0, offset + i, other[i]));
+			}
+			else {
+				int len = cu - cl;
+				for(int i=rl, ix1=0, ix2=rl*_odims[0]+cl; i<ru; i++, ix1+=len, ix2+=_odims[0]) {
+					int finalIx1 = ix1;
+					int finalIx2 = ix2;
+					IntStream.range(0, len)
+							.forEach((ix) -> setInternal(0, finalIx2 + ix, other[finalIx1 + ix]));
+				}
+			}
+		}
+		return this;
+	}
+
 	/**
 	 * Copy the given kahan object sum and correction.
 	 * 
@@ -406,8 +478,16 @@ public abstract class DenseBlock implements Serializable
 	 * @return self
 	 */
 	public abstract DenseBlock set(int[] ix, double v);
-	
-	
+
+	/**
+	 * Set the specified cell to the given value.
+	 *
+	 * @param ix cell indexes
+	 * @param v value as String
+	 * @return self
+	 */
+	public abstract DenseBlock set(int[] ix, String v);
+
 	/**
 	 * Copy the given kahan object sum and correction
 	 * into the given row.
@@ -438,8 +518,15 @@ public abstract class DenseBlock implements Serializable
 	 * @return value
 	 */
 	public abstract double get(int[] ix);
-	
-	
+
+	/**
+	 * Get the value of a given cell as a String
+	 *
+	 * @param ix cell indexes
+	 * @return value as String
+	 */
+	public abstract String getString(int[] ix);
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

@@ -1,6 +1,6 @@
 /*
- * Modifications Copyright 2018 Graz University of Technology
- *
+ * Modifications Copyright 2019 Graz University of Technology
+ * 
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,31 +22,36 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.util.Arrays;
-
 import org.tugraz.sysds.common.Warnings;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockFP32 extends DenseBlockDRB
+import java.util.Arrays;
+
+public class DenseBlockLInt64 extends DenseBlockLDRB
 {
-	private static final long serialVersionUID = 1950471811056914020L;
+	private static final long serialVersionUID = 2329693723788239625L;
 
-	private float[] _data;
+	private long[][] _blocks;
 
-	public DenseBlockFP32(int[] dims) {
+	public DenseBlockLInt64(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
 
 	@Override
-	protected void allocateBlock(int bix, int length) {
-		_data = new float[length];
+	protected void allocateBlocks(int numBlocks) {
+		_blocks = new long[numBlocks][];
 	}
 
-	public DenseBlockFP32(int[] dims, float[] data) {
-		super(dims);
-		_data = data;
+	@Override
+	protected void allocateBlock(int bix, int length) {
+		_blocks[bix] = new long[length];
+	}
+
+	@Override
+	protected void setInternal(int bix, int ix, double v) {
+		_blocks[bix][ix] = UtilFunctions.toLong(v);
 	}
 
 	@Override
@@ -55,105 +60,81 @@ public class DenseBlockFP32 extends DenseBlockDRB
 	}
 
 	@Override
+	public boolean isContiguous() {
+		return _blocks.length == 1;
+	}
+
+	@Override
+	public int numBlocks() {
+		return _blocks.length;
+	}
+
+	@Override
 	public long capacity() {
-		return (_data!=null) ? _data.length : -1;
+		return (_blocks!=null) ? (long)(_blocks.length - 1) * _blocks[0].length + _blocks[_blocks.length - 1].length : -1;
 	}
 
 	@Override
 	protected long computeNnz(int bix, int start, int length) {
-		return UtilFunctions.computeNnz(_data, start, length);
+		return UtilFunctions.computeNnz(_blocks[bix], start, length);
 	}
 
 	@Override
 	public double[] values(int r) {
-		double[] ret = getReuseRow(false);
-		int ix = pos(r);
-		int ncol = _odims[0];
-		for(int j=0; j<ncol; j++)
-			ret[j] = _data[ix+j];
-		return ret;
+		return valuesAt(index(r));
 	}
-
+	
 	@Override
 	public double[] valuesAt(int bix) {
-		Warnings.warnFullFP64Conversion(_data.length);
-		return DataConverter.toDouble(_data);
-	}
-
-	@Override
-	public int index(int r) {
-		return 0;
+		Warnings.warnFullFP64Conversion(_blocks[bix].length);
+		return DataConverter.toDouble(_blocks[bix]);
 	}
 
 	@Override
 	public void incr(int r, int c) {
-		_data[pos(r, c)] ++;
+		incr(r, c, 1);
 	}
 
 	@Override
 	public void incr(int r, int c, double delta) {
-		_data[pos(r, c)] += delta;
+		_blocks[index(r)][pos(r, c)] += delta;
 	}
 
 	@Override
 	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
-		Arrays.fill(_data, fromIndex, toIndex, (float)v);
-	}
-
-	@Override
-	protected void setInternal(int bix, int ix, double v) {
-		_data[ix] = (float)v;
+		Arrays.fill(_blocks[bix], fromIndex, toIndex, UtilFunctions.toLong(v));
 	}
 
 	@Override
 	public DenseBlock set(int r, int c, double v) {
-		_data[pos(r, c)] = (float)v;
-		return this;
-	}
-
-	@Override
-	public DenseBlock set(DenseBlock db) {
-		// ToDo: Performance tests
-		double[] data = db.valuesAt(0);
-		for (int i = 0; i < _rlen * _odims[0]; i++) {
-			_data[i] = (float)data[i];
-		}
-		return this;
-	}
-
-	@Override
-	public DenseBlock set(int r, double[] v) {
-		int row = pos(r);
-		for (int i = 0; i < _odims[0]; i++) {
-			_data[row + i] = (float)v[i];
-		}
+		_blocks[index(r)][pos(r, c)] = UtilFunctions.toLong(v);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int[] ix, double v) {
-		_data[pos(ix)] = (float)v;
+		_blocks[index(ix[0])][pos(ix)] = UtilFunctions.toLong(v);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int[] ix, String v) {
-		_data[pos(ix)] = Float.parseFloat(v);
+		_blocks[index(ix[0])][pos(ix)] = Long.parseLong(v);
 		return this;
 	}
 
 	@Override
 	public double get(int r, int c) {
-		return _data[pos(r, c)];
+		return _blocks[index(r)][pos(r, c)];
 	}
 
 	@Override
 	public double get(int[] ix) {
-		return _data[pos(ix)];
+		return _blocks[index(ix[0])][pos(ix)];
 	}
 
 	@Override
 	public String getString(int[] ix) {
-		return String.valueOf(_data[pos(ix)]);
+		return String.valueOf(_blocks[index(ix[0])][pos(ix)]);
 	}
 }

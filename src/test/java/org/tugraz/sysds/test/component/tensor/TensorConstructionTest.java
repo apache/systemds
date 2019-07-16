@@ -25,31 +25,31 @@ import org.tugraz.sysds.runtime.data.TensorBlock;
 public class TensorConstructionTest 
 {
 	@Test
-	public void testMetaDefaultTensor() throws Exception {
+	public void testMetaDefaultTensor() {
 		TensorBlock tb = new TensorBlock();
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumCols());
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaValueTensor() throws Exception {
+	public void testMetaValueTensor() {
 		TensorBlock tb = new TensorBlock(7.3);
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumCols());
 		Assert.assertEquals(1, tb.getNonZeros());
-		Assert.assertEquals(false, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertFalse(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaTypedTensor() throws Exception {
+	public void testMetaTypedTensor() {
 		TensorBlock tb = new TensorBlock(ValueType.INT64, new int[]{11,12,13});
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
@@ -57,12 +57,12 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaTypedTensor2() throws Exception {
+	public void testMetaTypedTensor2() {
 		TensorBlock tb = new TensorBlock(ValueType.INT64, new int[]{11,12,13}, false);
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
@@ -70,12 +70,12 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(false, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertFalse(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaTypedTensor3() throws Exception {
+	public void testMetaTypedTensor3() {
 		TensorBlock tb = new TensorBlock(ValueType.BOOLEAN, new int[]{11,12}, true);
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
@@ -83,36 +83,36 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(true, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertTrue(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaCopyDefaultTensor() throws Exception {
+	public void testMetaCopyDefaultTensor() {
 		TensorBlock tb = new TensorBlock(new TensorBlock());
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
 		Assert.assertEquals(0, tb.getNumCols());
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaCopyValueTensor() throws Exception {
+	public void testMetaCopyValueTensor() {
 		TensorBlock tb = new TensorBlock(new TensorBlock(7.3));
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
 		Assert.assertEquals(1, tb.getNumCols());
 		Assert.assertEquals(1, tb.getNonZeros());
-		Assert.assertEquals(false, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertFalse(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaCopyTypedTensor() throws Exception {
+	public void testMetaCopyTypedTensor() {
 		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT64, new int[]{11,12,13}));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
@@ -120,12 +120,12 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaCopyTypedTensor2() throws Exception {
+	public void testMetaCopyTypedTensor2() {
 		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.INT64, new int[]{11,12,13}, false));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
@@ -133,12 +133,12 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(false, tb.isSparse());
-		Assert.assertEquals(false, tb.isMatrix());
+		Assert.assertFalse(tb.isSparse());
+		Assert.assertFalse(tb.isMatrix());
 	}
 	
 	@Test
-	public void testMetaCopyTypedTensor3() throws Exception {
+	public void testMetaCopyTypedTensor3() {
 		TensorBlock tb = new TensorBlock(new TensorBlock(ValueType.BOOLEAN, new int[]{11,12}, true));
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
@@ -146,7 +146,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(12, tb.getNumCols());
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
-		Assert.assertEquals(true, tb.isSparse());
-		Assert.assertEquals(true, tb.isMatrix());
+		Assert.assertTrue(tb.isSparse());
+		Assert.assertTrue(tb.isMatrix());
 	}
 }

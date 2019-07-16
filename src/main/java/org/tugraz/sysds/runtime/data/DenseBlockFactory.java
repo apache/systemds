@@ -68,11 +68,21 @@ public abstract class DenseBlockFactory
 					case INT32: return new DenseBlockInt32(dims);
 					case INT64: return new DenseBlockInt64(dims);
 					case BOOLEAN: return new DenseBlockBool(dims);
+					case STRING: return new DenseBlockString(dims);
 					default:
 						throw new DMLRuntimeException("Unsupported dense block value type: "+vt.name());
 				}
-			case LDRB: throw new NotImplementedException();
-				//TODO single call to LDRB with value type
+			case LDRB:
+				switch(vt) {
+					case FP32: return new DenseBlockLFP32(dims);
+					case FP64: return new DenseBlockLFP64(dims);
+					case BOOLEAN: return new DenseBlockLBool(dims);
+					case INT32: return new DenseBlockLInt32(dims);
+					case INT64: return new DenseBlockLInt64(dims);
+					case STRING: return new DenseBlockLString(dims);
+					default:
+						throw new NotImplementedException();
+				}
 			default:
 				throw new DMLRuntimeException("Unexpected dense block type: "+type.name());
 		}
@@ -84,6 +94,6 @@ public abstract class DenseBlockFactory
 
 	public static DenseBlock.Type getDenseBlockType(DenseBlock dblock) {
 		return (dblock instanceof DenseBlockDRB) ? DenseBlock.Type.DRB :
-			(dblock instanceof DenseBlockDRB) ? DenseBlock.Type.LDRB : null; //TODO
+			(dblock instanceof DenseBlockLDRB) ? DenseBlock.Type.LDRB : null;
 	}
 }

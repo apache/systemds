@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2018 Graz University of Technology
+ * Modifications Copyright 2019 Graz University of Technology
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,41 +22,40 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.util.Arrays;
-
 import org.tugraz.sysds.common.Warnings;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class DenseBlockFP32 extends DenseBlockDRB
-{
-	private static final long serialVersionUID = 1950471811056914020L;
+import java.util.Arrays;
 
-	private float[] _data;
+public class DenseBlockString extends DenseBlockDRB {
+	private static final long serialVersionUID = 7071870563356352352L;
 
-	public DenseBlockFP32(int[] dims) {
+	private String[] _data;
+
+	public DenseBlockString(int[] dims) {
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
 
 	@Override
 	protected void allocateBlock(int bix, int length) {
-		_data = new float[length];
+		_data = new String[length];
 	}
 
-	public DenseBlockFP32(int[] dims, float[] data) {
+	public DenseBlockString(int[] dims, String[] data) {
 		super(dims);
 		_data = data;
 	}
 
 	@Override
 	public boolean isNumeric() {
-		return true;
+		return false;
 	}
 
 	@Override
 	public long capacity() {
-		return (_data!=null) ? _data.length : -1;
+		return (_data != null) ? _data.length : -1;
 	}
 
 	@Override
@@ -66,12 +65,7 @@ public class DenseBlockFP32 extends DenseBlockDRB
 
 	@Override
 	public double[] values(int r) {
-		double[] ret = getReuseRow(false);
-		int ix = pos(r);
-		int ncol = _odims[0];
-		for(int j=0; j<ncol; j++)
-			ret[j] = _data[ix+j];
-		return ret;
+		return DataConverter.toDouble(_data);
 	}
 
 	@Override
@@ -86,74 +80,81 @@ public class DenseBlockFP32 extends DenseBlockDRB
 	}
 
 	@Override
+	public int pos(int r) {
+		return r * _odims[0];
+	}
+
+	@Override
+	public int pos(int r, int c) {
+		return r * _odims[0] + c;
+	}
+
+	@Override
 	public void incr(int r, int c) {
-		_data[pos(r, c)] ++;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void incr(int r, int c, double delta) {
-		_data[pos(r, c)] += delta;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
-		Arrays.fill(_data, fromIndex, toIndex, (float)v);
+		Arrays.fill(_data, fromIndex, toIndex, String.valueOf(v));
 	}
 
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
-		_data[ix] = (float)v;
+		_data[ix] = String.valueOf(v);
 	}
 
 	@Override
 	public DenseBlock set(int r, int c, double v) {
-		_data[pos(r, c)] = (float)v;
+		_data[pos(r, c)] = String.valueOf(v);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(DenseBlock db) {
-		// ToDo: Performance tests
-		double[] data = db.valuesAt(0);
-		for (int i = 0; i < _rlen * _odims[0]; i++) {
-			_data[i] = (float)data[i];
+		for (int r = 0; r < _rlen; r++) {
+			for (int c = 0; c < _odims[0]; c++) {
+				_data[pos(r, c)] = db.getString(new int[]{r, c});
+			}
 		}
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int r, double[] v) {
-		int row = pos(r);
-		for (int i = 0; i < _odims[0]; i++) {
-			_data[row + i] = (float)v[i];
-		}
+		System.arraycopy(DataConverter.toString(v), 0, _data, pos(r), _odims[0]);
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int[] ix, double v) {
-		_data[pos(ix)] = (float)v;
-		return this;
-	}
-
-	@Override
-	public DenseBlock set(int[] ix, String v) {
-		_data[pos(ix)] = Float.parseFloat(v);
+		_data[pos(ix)] = String.valueOf(v);
 		return this;
 	}
 
 	@Override
 	public double get(int r, int c) {
-		return _data[pos(r, c)];
+		return Double.parseDouble(_data[pos(r, c)]);
 	}
 
 	@Override
 	public double get(int[] ix) {
-		return _data[pos(ix)];
+		return Double.parseDouble(_data[pos(ix)]);
+	}
+
+	@Override
+	public DenseBlock set(int[] ix, String v) {
+		_data[pos(ix)] = v;
+		return this;
 	}
 
 	@Override
 	public String getString(int[] ix) {
-		return String.valueOf(_data[pos(ix)]);
+		return _data[pos(ix)];
 	}
 }

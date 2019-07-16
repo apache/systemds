@@ -38,7 +38,12 @@ public class DenseBlockBool extends DenseBlockDRB
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
-	
+
+	@Override
+	protected void allocateBlock(int bix, int length) {
+		_data = new BitSet(length);
+	}
+
 	public DenseBlockBool(int[] dims, boolean[] data) {
 		super(dims);
 		_data = new BitSet(data.length);
@@ -62,7 +67,7 @@ public class DenseBlockBool extends DenseBlockDRB
 				_data.set(0, len);
 		}
 		else {
-			_data.set(0, len, bv);
+			_data.set(0, _data.size(), bv);
 		}
 		_rlen = rlen;
 		_odims = odims;
@@ -74,26 +79,9 @@ public class DenseBlockBool extends DenseBlockDRB
 	}
 
 	@Override
-	public long countNonZeros() {
-		return _data.cardinality();
-	}
-	
-	@Override
-	public int countNonZeros(int r) {
-		return UtilFunctions.computeNnz(_data, r*_odims[0], _odims[0]);
-	}
-
-	@Override
-	public long countNonZeros(int rl, int ru, int ol, int ou) {
-		long nnz = 0;
-		if( ol == 0 && ou == _odims[0] ) { //specific case: all cols
-			nnz += UtilFunctions.computeNnz(_data, rl*_odims[0], (ru-rl)*_odims[0]);
-		}
-		else {
-			for( int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0] )
-				nnz += UtilFunctions.computeNnz(_data, ix+ol, ou-ol);
-		}
-		return nnz;
+	protected long computeNnz(int bix, int start, int length) {
+		return (start == 0 && length == _rlen * _odims[0]) ?
+			_data.cardinality() : UtilFunctions.computeNnz(_data, start, length);
 	}
 
 	@Override
@@ -120,31 +108,24 @@ public class DenseBlockBool extends DenseBlockDRB
 
 	@Override
 	public void incr(int r, int c) {
-		Warnings.warnInvaldBooleanIncrement(1);
+		Warnings.warnInvalidBooleanIncrement(1);
 		_data.set(pos(r, c));
 	}
 	
 	@Override
 	public void incr(int r, int c, double delta) {
-		Warnings.warnInvaldBooleanIncrement(delta);
+		Warnings.warnInvalidBooleanIncrement(delta);
 		_data.set(pos(r, c));
 	}
-	
+
 	@Override
-	public DenseBlock set(double v) {
-		_data.set(0, _rlen*_odims[0], v != 0);
-		return this;
+	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
+		_data.set(fromIndex, toIndex, v != 0);
 	}
-	
+
 	@Override
-	public DenseBlock set(int rl, int ru, int ol, int ou, double v) {
-		boolean bv = v != 0;
-		if( ol==0 && ou == _odims[0] )
-			_data.set(rl*_odims[0], ru*_odims[0], bv);
-		else
-			for(int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0])
-				_data.set(ix+ol, ix+ou, bv);
-		return this;
+	protected void setInternal(int bix, int ix, double v) {
+
 	}
 
 	@Override
@@ -155,32 +136,45 @@ public class DenseBlockBool extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(DenseBlock db) {
-		System.arraycopy(db.valuesAt(0), 0, _data, 0, _rlen*_odims[0]);
+		// ToDo: Performance tests and improvements
+		double[] data = db.valuesAt(0);
+		for (int i = 0; i < _rlen*_odims[0]; i++) {
+			_data.set(i, data[i] != 0);
+		}
 		return this;
 	}
 	
 	@Override
-	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
+	public DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db) {
 		double[] a = db.valuesAt(0);
-		if( ol == 0 && ou == _odims[0])
-			System.arraycopy(a, 0, _data, rl*_odims[0]+ol, (int)db.size());
-		else {
-			int len = ou - ol;
-			for(int i=rl, ix1=0, ix2=rl*_odims[0]+ol; i<ru; i++, ix1+=len, ix2+=_odims[0])
-				System.arraycopy(a, ix1, _data, ix2, len);
+		//TODO perf computed indexes
+		for (int r = rl; r < ru; r++) {
+			for (int c = cl; c < cu; c++) {
+				int i = r * _odims[0];
+				_data.set(i, a[i] != 0);
+			}
 		}
 		return this;
 	}
 
 	@Override
 	public DenseBlock set(int r, double[] v) {
-		System.arraycopy(v, 0, _data, pos(r), _odims[0]);
+		int ri = r * _odims[0];
+		for (int i = ri; i < ri + v.length; i++) {
+			_data.set(i, v[i - ri] != 0);
+		}
 		return this;
 	}
 	
 	@Override
 	public DenseBlock set(int[] ix, double v) {
 		_data.set(pos(ix), v != 0);
+		return this;
+	}
+
+	@Override
+	public DenseBlock set(int[] ix, String v) {
+		_data.set(pos(ix), Boolean.parseBoolean(v));
 		return this;
 	}
 
@@ -192,5 +186,10 @@ public class DenseBlockBool extends DenseBlockDRB
 	@Override
 	public double get(int[] ix) {
 		return _data.get(pos(ix)) ? 1 : 0;
+	}
+
+	@Override
+	public String getString(int[] ix) {
+		return String.valueOf(_data.get(pos(ix)));
 	}
 }

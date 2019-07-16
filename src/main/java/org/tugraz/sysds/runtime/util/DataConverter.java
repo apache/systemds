@@ -778,7 +778,7 @@ public class DataConverter
 	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
 	 * which is useful in invoking Apache CommonsMath.
 	 * 
-	 * @param mo matrix object
+	 * @param mb matrix object
 	 * @return matrix as a commons-math3 Array2DRowRealMatrix
 	 */
 	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixBlock mb) {
@@ -998,6 +998,48 @@ public class DataConverter
 		double[] ret = new double[len];
 		for(int i=0; i<len; i++)
 			ret[i] = data.get(i) ? 1 : 0;
+		return ret;
+	}
+
+	public static double[] toDouble(String[] data) {
+		double[] ret = new double[data.length];
+		for(int i=0; i<data.length; i++)
+			ret[i] = Double.parseDouble(data[i]);
+		return ret;
+	}
+
+	public static float[] toFloat(double[] data) {
+		float[] ret = new float[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = (float)data[i];
+		return ret;
+	}
+
+	public static int[] toInt(double[] data) {
+		int[] ret = new int[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = UtilFunctions.toInt(data[i]);
+		return ret;
+	}
+
+	public static long[] toLong(double[] data) {
+		long[] ret = new long[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = UtilFunctions.toLong(data[i]);
+		return ret;
+	}
+
+	public static BitSet toBitSet(double[] data) {
+		BitSet ret = new BitSet(data.length);
+		for( int i=0; i<data.length; i++ )
+			ret.set(i, data[i] != 0);
+		return ret;
+	}
+
+	public static String[] toString(double[] data) {
+		String[] ret = new String[data.length];
+		for( int i=0; i<data.length; i++ )
+			ret[i] = String.valueOf(data[i]);
 		return ret;
 	}
 }

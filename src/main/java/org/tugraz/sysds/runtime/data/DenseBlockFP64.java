@@ -36,7 +36,12 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		super(dims);
 		reset(_rlen, _odims, 0);
 	}
-	
+
+	@Override
+	protected void allocateBlock(int bix, int length) {
+		_data = new double[length];
+	}
+
 	public DenseBlockFP64(int[] dims, double[] data) {
 		super(dims);
 		_data = data;
@@ -68,26 +73,8 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	}
 
 	@Override
-	public long countNonZeros() {
-		return UtilFunctions.computeNnz(_data, 0, _rlen*_odims[0]);
-	}
-	
-	@Override
-	public int countNonZeros(int r) {
-		return UtilFunctions.computeNnz(_data, r*_odims[0], _odims[0]);
-	}
-
-	@Override
-	public long countNonZeros(int rl, int ru, int ol, int ou) {
-		long nnz = 0;
-		if( ol == 0 && ou == _odims[0] ) { //specific case: all cols
-			nnz += UtilFunctions.computeNnz(_data, rl*_odims[0], (ru-rl)*_odims[0]);
-		}
-		else {
-			for( int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0] )
-				nnz += UtilFunctions.computeNnz(_data, ix+ol, ou-ol);
-		}
-		return nnz;
+	protected long computeNnz(int bix, int start, int length) {
+		return UtilFunctions.computeNnz(_data, start, length);
 	}
 
 	@Override
@@ -124,21 +111,15 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	public void incr(int r, int c, double delta) {
 		_data[pos(r, c)] += delta;
 	}
-	
+
 	@Override
-	public DenseBlock set(double v) {
-		Arrays.fill(_data, 0, _rlen*_odims[0], v);
-		return this;
+	protected void fillBlock(int bix, int fromIndex, int toIndex, double v) {
+		Arrays.fill(_data, fromIndex, toIndex, v);
 	}
-	
+
 	@Override
-	public DenseBlock set(int rl, int ru, int ol, int ou, double v) {
-		if( ol==0 && ou == _odims[0] )
-			Arrays.fill(_data, rl*_odims[0], ru*_odims[0], v);
-		else
-			for(int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0])
-				Arrays.fill(_data, ix+ol, ix+ou, v);
-		return this;
+	protected void setInternal(int bix, int ix, double v) {
+		_data[ix] = v;
 	}
 
 	@Override
@@ -155,6 +136,7 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int ol, int ou, DenseBlock db) {
+		//TODO generalize to non-double dense blocks
 		double[] a = db.valuesAt(0);
 		if( ol == 0 && ou == _odims[0])
 			System.arraycopy(a, 0, _data, rl*_odims[0]+ol, (int)db.size());
@@ -179,6 +161,12 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	}
 
 	@Override
+	public DenseBlock set(int[] ix, String v) {
+		_data[pos(ix)] = Double.parseDouble(v);
+		return this;
+	}
+
+	@Override
 	public double get(int r, int c) {
 		return _data[pos(r, c)];
 	}
@@ -186,5 +174,10 @@ public class DenseBlockFP64 extends DenseBlockDRB
 	@Override
 	public double get(int[] ix) {
 		return _data[pos(ix)];
+	}
+
+	@Override
+	public String getString(int[] ix) {
+		return String.valueOf(_data[pos(ix)]);
 	}
 }

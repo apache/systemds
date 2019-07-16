@@ -18,6 +18,7 @@ package org.tugraz.sysds.runtime.data;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -111,7 +112,7 @@ public class TensorBlock implements Serializable
 	private void reset(int[] dims, boolean sp, long estnnz, double val) {
 		//check for valid dimensions
 		if( dims.length < 2 )
-			throw new DMLRuntimeException("Invalid number of tensor dimensions: "+dims.length);
+			throw new DMLRuntimeException("Invalid number of tensor dimensions: " + dims.length);
 		for( int i=0; i<dims.length; i++ )
 			if( dims[i] < 0 )
 				throw new DMLRuntimeException("Invalid "+i+"th dimensions: "+dims[i]);
@@ -140,9 +141,13 @@ public class TensorBlock implements Serializable
 		//reset dense block to given value
 		if( _denseBlock != null )
 			_denseBlock.reset(getDim(0), getDim(1), val);
-		else if( val != 0 ) {
-			allocateDenseBlock(false);
-			_denseBlock.set(val);
+		else {
+			if( val != 0 ) {
+				allocateDenseBlock(false);
+				_denseBlock.set(val);
+			} else {
+				allocateDenseBlock(true);
+			}
 		}
 	}
 	
@@ -165,12 +170,14 @@ public class TensorBlock implements Serializable
 	
 	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
+        // ToDo: use reset instead, since LDRB need to check dimensions for actually available space
 		long limit = getLength();
 		boolean reset = (_denseBlock == null || _denseBlock.capacity() < limit);
 		if( _denseBlock == null )
-			_denseBlock = DenseBlockFactory.createDenseBlock(getDim(0), getDim(1));
+			// ToDo: dimensions > 2
+			_denseBlock = DenseBlockFactory.createDenseBlock(_vt, _dims);
 		else if( _denseBlock.capacity() < limit )
-			_denseBlock.reset(getDim(0), getDim(1));
+			_denseBlock.reset(_dims);
 		
 		//clear nnz if necessary
 		if( clearNNZ )
@@ -275,11 +282,21 @@ public class TensorBlock implements Serializable
 	// Basic modification
 	
 	public double get(int[] ix) {
-		return -1; //TODO get
+		if (_sparse) {
+			// TODO: Implement sparse
+			throw new NotImplementedException();
+			//return _sparseBlock.get(ix);
+		} else {
+			return _denseBlock.get(ix);
+		}
 	}
 	
 	public void set(int[] ix, double v) {
-		//TODO set
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			_denseBlock.set(ix, v);
+		}
 	}
 	
 	private void copy(TensorBlock that) {

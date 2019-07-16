@@ -22,13 +22,27 @@
 
 package org.tugraz.sysds.runtime.data;
 
-
 public abstract class DenseBlockDRB extends DenseBlock
 {
 	private static final long serialVersionUID = 3581157975703708947L;
 
 	protected DenseBlockDRB(int[] dims) {
 		super(dims);
+	}
+
+	@Override
+	public void reset(int rlen, int[] odims, double v) {
+		int len = rlen * odims[0];
+		if( len > capacity() ) {
+			allocateBlock(0, len);
+			if( v != 0 )
+				fillBlock(0, 0, len, v);
+		}
+		else {
+			fillBlock(0, 0, len, v);
+		}
+		_rlen = rlen;
+		_odims = odims;
 	}
 
 	@Override
@@ -77,5 +91,44 @@ public abstract class DenseBlockDRB extends DenseBlock
 		for(int i=0; i<ix.length-1; i++)
 			pos += ix[i] * _odims[i];
 		return pos;
+	}
+
+	@Override
+	public long countNonZeros() {
+		return computeNnz(0, 0, _rlen * _odims[0]);
+	}
+
+	@Override
+	public int countNonZeros(int r) {
+		return (int) computeNnz(0, r * _odims[0], _odims[0]);
+	}
+
+	@Override
+	public long countNonZeros(int rl, int ru, int ol, int ou) {
+		long nnz = 0;
+		if( ol == 0 && ou == _odims[0] ) { //specific case: all cols
+			nnz += computeNnz(0, rl * _odims[0], (ru - rl) * _odims[0]);
+		}
+		else {
+			for( int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0] )
+				nnz += computeNnz(0, ix + ol, ou - ol);
+		}
+		return nnz;
+	}
+
+	@Override
+	public DenseBlock set(int rl, int ru, int cl, int cu, double v) {
+		if( cl==0 && cu == _odims[0] )
+			fillBlock(0, rl * _odims[0], ru * _odims[0], v);
+		else
+			for(int i=rl, ix=rl*_odims[0]; i<ru; i++, ix+=_odims[0])
+				fillBlock(0, ix + cl, ix + cu, v);
+		return this;
+	}
+
+	@Override
+	public DenseBlock set(double v) {
+		fillBlock(0, 0, _rlen * _odims[0], v);
+		return this;
 	}
 }

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,6 +24,7 @@ package org.tugraz.sysds.parser;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -50,6 +53,8 @@ import org.tugraz.sysds.utils.JSONHelper;
 
 public class DataExpression extends DataIdentifier 
 {
+	public static final String RAND_DIMS = "dims";
+
 	public static final String RAND_ROWS = "rows";
 	public static final String RAND_COLS = "cols";
 	public static final String RAND_MIN = "min";
@@ -98,11 +103,11 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{ RAND_ROWS, RAND_COLS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA}; 
+		{ RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA};
 	
-	public static final String[] MATRIX_VALID_PARAM_NAMES = 
-		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS};
-	
+	public static final String[] RESHAPE_VALID_PARAM_NAMES =
+		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
+
 	// Valid parameter names in a metadata file
 	public static final String[] READ_VALID_MTD_PARAM_NAMES = 
 		{ IO_FILENAME, READROWPARAM, READCOLPARAM, READNNZPARAM, FORMAT_TYPE,
@@ -208,7 +213,6 @@ public class DataExpression extends DataIdentifier
 				dataExpr.addVarParam(currName, currExpr);
 			}				
 		}
-		
 		else if (functionName.equalsIgnoreCase("rand")){
 			
 			dop = Expression.DataOp.RAND;
@@ -293,6 +297,66 @@ public class DataExpression extends DataIdentifier
 				}
 			}
 			dataExpr.setMatrixDefault();
+		} else if (functionName.equals("tensor")){
+			dop = Expression.DataOp.TENSOR;
+			dataExpr = new DataExpression(dop, new HashMap<String, Expression>(), parseInfo);
+
+			int namedParamCount = 0, unnamedParamCount = 0;
+			for (ParameterExpression currExpr : passedParamExprs) {
+				if (currExpr.getName() == null)
+					unnamedParamCount++;
+				else
+					namedParamCount++;
+			}
+
+			// check whether named or unnamed parameters are used
+			if (passedParamExprs.size() < 2){
+				errorListener.validationError(parseInfo, "for tensor statement, must specify at least 2 arguments: data, dims[]");
+				return null;
+			}
+
+			if (unnamedParamCount > 1){
+				if (namedParamCount > 0) {
+					errorListener.validationError(parseInfo, "for tensor statement, cannot mix named and unnamed parameters");
+					return null;
+				}
+
+				// assume: data, dims[], [byRow], [dimNames]
+				dataExpr.addTensorExprParam(DataExpression.RAND_DATA,passedParamExprs.get(0).getExpr());
+				dataExpr.addTensorExprParam(DataExpression.RAND_DIMS,passedParamExprs.get(1).getExpr());
+
+				if (unnamedParamCount >= 3)
+					// TODO use byRow parameter
+					dataExpr.addTensorExprParam(DataExpression.RAND_BY_ROW,passedParamExprs.get(2).getExpr());
+
+				if (unnamedParamCount == 4)
+					dataExpr.addTensorExprParam(DataExpression.RAND_DIMNAMES,passedParamExprs.get(3).getExpr());
+
+				if (unnamedParamCount > 4) {
+					errorListener.validationError(parseInfo, "for tensor statement, at most 4 arguments supported: data, dims, byrow, dimname");
+					return null;
+				}
+
+			} else {
+				// handle first parameter, which is data and may be unnamed
+				ParameterExpression firstParam = passedParamExprs.get(0);
+				if (firstParam.getName() != null && !firstParam.getName().equals(DataExpression.RAND_DATA)){
+					errorListener.validationError(parseInfo, "tensor method must have data parameter as first parameter or unnamed parameter");
+					return null;
+				} else {
+					dataExpr.addTensorExprParam(DataExpression.RAND_DATA, passedParamExprs.get(0).getExpr());
+				}
+
+				for (int i=1; i<passedParamExprs.size(); i++){
+					if (passedParamExprs.get(i).getName() == null){
+						errorListener.validationError(parseInfo, "for tensor statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+						return null;
+					} else {
+						dataExpr.addTensorExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
+					}
+				}
+			}
+			dataExpr.setTensorDefault();
 		}
 
 		if (dataExpr != null) {
@@ -344,18 +408,14 @@ public class DataExpression extends DataIdentifier
 		// check name is valid
 		boolean found = false;
 		if (paramName != null ){
-			for (String name : MATRIX_VALID_PARAM_NAMES){
-				if (name.equals(paramName)) {
-					found = true;
-				}			
-			}
+			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
 		}
 		
 		if (!found){
 			raiseValidateError("unexpected parameter \"" + paramName +
 					"\". Legal parameters for  matrix statement are " 
-					+ "(capitalization-sensitive): " 	+ RAND_DATA + ", " + RAND_ROWS 	
-					+ ", " + RAND_COLS		+ ", " + RAND_BY_ROW);
+					+ "(capitalization-sensitive): " + RAND_DATA + ", " + RAND_ROWS
+					+ ", " + RAND_COLS + ", " + RAND_BY_ROW);
 		}
 		if (getVarParam(paramName) != null) {
 			raiseValidateError("attempted to add matrix statement parameter " + paramValue + " more than once");
@@ -366,6 +426,35 @@ public class DataExpression extends DataIdentifier
 		} else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier) {
 			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
 		}
+
+		// add the parameter to expression list
+		paramValue.setParseInfo(this);
+		addVarParam(paramName,paramValue);
+	}
+
+	public void addTensorExprParam(String paramName, Expression paramValue)
+	{
+		// check name is valid
+		boolean found = false;
+		if (paramName != null ){
+			found = Arrays.stream(RESHAPE_VALID_PARAM_NAMES).anyMatch((name) -> name.equals(paramName));
+		}
+
+		if (!found){
+			raiseValidateError("unexpected parameter \"" + paramName + "\". Legal parameters for tensor statement are "
+					+ "(capitalization-sensitive): " + RAND_DATA + ", " + RAND_DIMS +
+					", " + RAND_BY_ROW + ", " + RAND_DIMNAMES);
+		}
+		if (getVarParam(paramName) != null) {
+			raiseValidateError("attempted to add tensor statement parameter " + paramValue + " more than once");
+		}
+		// Process the case where user provides double values to rows or cols
+		// TODO convert double Matrix to long Matrix
+		/*if (paramName.equals(RAND_DIMS) && paramValue instanceof DoubleIdentifier) {
+			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
+		} else if (paramName.equals(RAND_COLS) && paramValue instanceof DoubleIdentifier) {
+			paramValue = new IntIdentifier((long) ((DoubleIdentifier) paramValue).getValue(), this);
+		}*/
 
 		// add the parameter to expression list
 		paramValue.setParseInfo(this);
@@ -407,6 +496,23 @@ public class DataExpression extends DataIdentifier
 	public void setMatrixDefault(){
 		if (getVarParam(RAND_BY_ROW) == null)
 			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
+		if (getVarParam(RAND_DIMS) == null) {
+			StringIdentifier id = new StringIdentifier("1 1", this);
+			addVarParam(RAND_DIMS, id);
+		}
+	}
+
+	public void setTensorDefault(){
+		if (getVarParam(RAND_BY_ROW) == null)
+			addVarParam(RAND_BY_ROW, new BooleanIdentifier(true, this));
+		if (getVarParam(RAND_ROWS) == null) {
+			IntIdentifier id = new IntIdentifier(1L, this);
+			addVarParam(RAND_ROWS, id);
+		}
+		if (getVarParam(RAND_COLS) == null) {
+			IntIdentifier id = new IntIdentifier(1L, this);
+			addVarParam(RAND_COLS, id);
+		}
 	}
 
 	public void setRandDefault() {
@@ -417,6 +523,10 @@ public class DataExpression extends DataIdentifier
 		if (getVarParam(RAND_COLS) == null) {
 			IntIdentifier id = new IntIdentifier(1L, this);
 			addVarParam(RAND_COLS, id);
+		}
+		if (getVarParam(RAND_DIMS) == null) {
+			StringIdentifier id = new StringIdentifier("1 1", this);
+			addVarParam(RAND_DIMS, id);
 		}
 		if (getVarParam(RAND_MIN) == null) {
 			DoubleIdentifier id = new DoubleIdentifier(0.0, this);
@@ -540,7 +650,7 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
-			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA)) {
+			if ( getVarParam(s).getOutput().getDataType() != DataType.SCALAR && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS)) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
@@ -550,11 +660,14 @@ public class DataExpression extends DataIdentifier
 		performConstantPropagationReadWrite( currConstVars );
 		
 		// check if data parameter of matrix is scalar or matrix -- if scalar, use Rand instead
-		Expression dataParam1 = getVarParam(RAND_DATA);		
-		if (dataParam1 == null && getOpCode().equals(DataOp.MATRIX)){
-			raiseValidateError("for matrix, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+		Expression dataParam1 = getVarParam(RAND_DATA);
+		if (dataParam1 == null && (getOpCode().equals(DataOp.MATRIX) || getOpCode().equals(DataOp.TENSOR))){
+			raiseValidateError("for matrix or tensor, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
-		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR /*&& dataParam instanceof ConstIdentifier*/ ){
+		// We need to remember the operation if we replace the OpCode by rand so we have the correct output
+		Boolean tensorOperation = _opcode == DataOp.TENSOR;
+		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR &&
+				(_opcode == DataOp.MATRIX || _opcode == DataOp.TENSOR)/*&& dataParam instanceof ConstIdentifier*/ ){
 			//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
 			//variable input are routed to a reshape operation (but it works only on matrices and hence, crashes)
 			
@@ -1053,9 +1166,9 @@ public class DataExpression extends DataIdentifier
 			
 			if( dataParam != null ) 
 			{
-				// handle input variable (matrix/scalar) 
+				// handle input variable (matrix/scalar)
 				if( dataParam instanceof DataIdentifier )
-				{		
+				{
 					addVarParam(RAND_MIN, dataParam);
 					addVarParam(RAND_MAX, dataParam);
 				}
@@ -1078,7 +1191,7 @@ public class DataExpression extends DataIdentifier
 					String data = ((StringIdentifier)dataParam).getValue();
 					Expression minExpr = new StringIdentifier(data, this);
 					addVarParam(RAND_MIN, minExpr);
-					addVarParam(RAND_MAX, minExpr);	
+					addVarParam(RAND_MAX, minExpr);
 					_strInit = true;
 				}
 				else {
@@ -1094,20 +1207,11 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			//check valid parameters
-			for( String key : _varParams.keySet() ) {
-				boolean found = false;
-				for (String name : RAND_VALID_PARAM_NAMES){
-					found |= name.equals(key);
-				}
-				if (!found){
-					raiseValidateError("unexpected parameter \"" + key +
-							"\". Legal parameters for Rand statement are " 
-							+ "(capitalization-sensitive): " 	+ RAND_ROWS 	
-							+ ", " + RAND_COLS		+ ", " + RAND_MIN + ", " + RAND_MAX  	
-							+ ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", " + RAND_PDF  + ", " + RAND_LAMBDA, conditional);
-				}
-			}
-			
+			validateParams(conditional, RAND_VALID_PARAM_NAMES, "Legal parameters for Rand statement are "
+					+ "(capitalization-sensitive): " 	+ RAND_ROWS + ", " + RAND_COLS + ", " + RAND_DIMS + ", "
+					+ RAND_MIN + ", " + RAND_MAX + ", " + RAND_SPARSITY + ", " + RAND_SEED     + ", "
+					+ RAND_PDF  + ", " + RAND_LAMBDA);
+
 			//parameters w/ support for variable inputs
 			if (getVarParam(RAND_ROWS) instanceof StringIdentifier || getVarParam(RAND_ROWS) instanceof BooleanIdentifier){
 				raiseValidateError("for Rand statement " + RAND_ROWS + " has incorrect value type", conditional);
@@ -1116,19 +1220,26 @@ public class DataExpression extends DataIdentifier
 			if (getVarParam(RAND_COLS) instanceof StringIdentifier || getVarParam(RAND_COLS) instanceof BooleanIdentifier){
 				raiseValidateError("for Rand statement " + RAND_COLS + " has incorrect value type", conditional);
 			}
-			
+
+			if (getVarParam(RAND_DIMS) instanceof IntIdentifier || getVarParam(RAND_DIMS) instanceof DoubleIdentifier
+					|| getVarParam(RAND_DIMS) instanceof BooleanIdentifier){
+				raiseValidateError("for Rand statement " + RAND_DIMS + " has incorrect value type", conditional);
+			}
+
 			if (getVarParam(RAND_SEED) instanceof StringIdentifier || getVarParam(RAND_SEED) instanceof BooleanIdentifier) {
 				raiseValidateError("for Rand statement " + RAND_SEED + " has incorrect value type", conditional);
 			}
-			
-			if ((getVarParam(RAND_MAX) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MAX) instanceof BooleanIdentifier) {
+
+			if ((getVarParam(RAND_MAX) instanceof StringIdentifier && !_strInit) ||
+					(getVarParam(RAND_MAX) instanceof BooleanIdentifier && !tensorOperation)) {
 				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect value type", conditional);
 			}
-			
-			if ((getVarParam(RAND_MIN) instanceof StringIdentifier && !_strInit) || getVarParam(RAND_MIN) instanceof BooleanIdentifier) {
+
+			if ((getVarParam(RAND_MIN) instanceof StringIdentifier && !_strInit) ||
+					getVarParam(RAND_MIN) instanceof BooleanIdentifier && !tensorOperation) {
 				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect value type", conditional);
 			}
-			
+
 			// Since sparsity can be arbitrary expression (SYSTEMML-515), no validation check for DoubleIdentifier/IntIdentifier required.
 			
 			if (!(getVarParam(RAND_PDF) instanceof StringIdentifier)) {
@@ -1276,7 +1387,12 @@ public class DataExpression extends DataIdentifier
 				// handle general expression
 				colsExpr.validateExpression(ids, currConstVars, conditional);
 			}
-			
+
+			///////////////////////////////////////////////////////////////////
+			// HANDLE DIMS
+			///////////////////////////////////////////////////////////////////
+			// TODO handle dims for rand
+
 			///////////////////////////////////////////////////////////////////
 			// HANDLE MIN
 			///////////////////////////////////////////////////////////////////	
@@ -1367,9 +1483,16 @@ public class DataExpression extends DataIdentifier
 			}
 		
 			getOutput().setFormatType(FormatType.BINARY);
-			getOutput().setDataType(DataType.MATRIX);
-			getOutput().setValueType(ValueType.FP64);
-			getOutput().setDimensions(rowsLong, colsLong);
+			if (tensorOperation) {
+				getOutput().setDataType(DataType.TENSOR);
+				getOutput().setValueType(dataParam.getOutput().getValueType());
+				// TODO set correct dimensions
+				getOutput().setDimensions(0, 0);
+			} else {
+				getOutput().setDataType(DataType.MATRIX);
+				getOutput().setValueType(ValueType.FP64);
+				getOutput().setDimensions(rowsLong, colsLong);
+			}
 			
 			if (getOutput() instanceof IndexedIdentifier){
 				// process the "target" being indexed
@@ -1391,19 +1514,10 @@ public class DataExpression extends DataIdentifier
 			
 			//handle default and input arguments
 			setMatrixDefault();
-			for( String key : _varParams.keySet() ) 
-			{
-				boolean found = false;
-				for (String name : MATRIX_VALID_PARAM_NAMES) {
-					found |= name.equals(key);
-				}
-				if( !found ) {
-					raiseValidateError("unexpected parameter \"" + key + "\". "
-							+ "Legal parameters for matrix statement are (case-sensitive): " 	
-							+ RAND_DATA + ", " + RAND_ROWS	+ ", " + RAND_COLS + ", " + RAND_BY_ROW, conditional);
-				}
-			}
-			
+			validateParams(conditional, RESHAPE_VALID_PARAM_NAMES,
+					"Legal parameters for matrix statement are (case-sensitive): "
+						+ RAND_DATA + ", " + RAND_ROWS	+ ", " + RAND_COLS + ", " + RAND_BY_ROW);
+
 			//validate correct value types
 			if (getVarParam(RAND_DATA) != null && (getVarParam(RAND_DATA) instanceof BooleanIdentifier)){
 				raiseValidateError("for matrix statement " + RAND_DATA + " has incorrect value type", conditional);
@@ -1592,10 +1706,62 @@ public class DataExpression extends DataIdentifier
 			}
 			
 			break;
-			
+
+		case TENSOR:
+			//handle default and input arguments
+			setTensorDefault();
+			validateParams(conditional, RESHAPE_VALID_PARAM_NAMES,
+					"Legal parameters for tensor statement are (case-sensitive): "
+						+ RAND_DATA + ", " + RAND_DIMS	+ ", " + RAND_BY_ROW);
+
+			//validate correct value types
+			/*if (getVarParam(RAND_DATA) != null && (getVarParam(RAND_DATA) instanceof BooleanIdentifier)){
+				raiseValidateError("for tensor statement " + RAND_DATA + " has incorrect value type", conditional);
+			}*/
+			if (getVarParam(RAND_DIMS) != null && (getVarParam(RAND_DIMS) instanceof BooleanIdentifier)){
+				raiseValidateError("for tensor statement " + RAND_DIMS + " has incorrect value type", conditional);
+			}
+			if ( !(getVarParam(RAND_BY_ROW) instanceof BooleanIdentifier)) {
+				raiseValidateError("for tensor statement " + RAND_BY_ROW + " has incorrect value type", conditional);
+			}
+
+			//validate general data expression
+			getVarParam(RAND_DATA).validateExpression(ids, currConstVars, conditional);
+			getVarParam(RAND_DIMS).validateExpression(ids, currConstVars, conditional);
+
+			getOutput().setFormatType(FormatType.BINARY);
+			getOutput().setDataType(DataType.TENSOR);
+			getOutput().setValueType(getVarParam(RAND_DATA).getOutput().getValueType());
+			// TODO get size
+			getOutput().setDimensions(0, 0);
+
+			if (getOutput() instanceof IndexedIdentifier){
+				((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());
+			}
+			//getOutput().computeDataType();
+
+			if (getOutput() instanceof IndexedIdentifier){
+				LOG.warn(this.printWarningLocation() + "Output for tensor Statement may have incorrect size information");
+			}
+
+			break;
 	
 		default:
 			raiseValidateError("Unsupported Data expression"+ this.getOpCode(), false, LanguageErrorCodes.INVALID_PARAMETERS); //always unconditional
+		}
+	}
+
+	private void validateParams(boolean conditional, String[] validParamNames, String legalMessage) {
+		for( String key : _varParams.keySet() )
+		{
+			boolean found = false;
+			for (String name : validParamNames) {
+				found |= name.equals(key);
+			}
+			if( !found ) {
+				raiseValidateError("unexpected parameter \"" + key + "\". "
+						+ legalMessage, conditional);
+			}
 		}
 	}
 

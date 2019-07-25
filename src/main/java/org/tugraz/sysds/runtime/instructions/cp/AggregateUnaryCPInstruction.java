@@ -25,6 +25,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.Lineage;
@@ -155,19 +156,38 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				break;
 			}
 			default: {
-				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-				AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
-				
-				MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
-					matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
-				
-				ec.releaseMatrixInput(input1.getName());
-				if(output.getDataType() == DataType.SCALAR){
-					DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
-					ec.setScalarOutput(output_name, ret);
-				} else{
-					// since the computed value is a scalar, allocate a "temp" output matrix
-					ec.setMatrixOutput(output_name, resultBlock);
+				if (input1.getDataType() == DataType.MATRIX) {
+					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+					AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
+
+					MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
+							matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+
+					ec.releaseMatrixInput(input1.getName());
+					if (output.getDataType() == DataType.SCALAR) {
+						DoubleObject ret = new DoubleObject(resultBlock.getValue(0, 0));
+						ec.setScalarOutput(output_name, ret);
+					} else {
+						// since the computed value is a scalar, allocate a "temp" output matrix
+						ec.setMatrixOutput(output_name, resultBlock);
+					}
+				} else if (input1.getDataType() == DataType.TENSOR) {
+					TensorBlock tensorBlock = ec.getTensorInput(input1.getName());
+
+					// TODO use a generalized method on tensorBlock
+					DoubleObject out = new DoubleObject(tensorBlock.sum());
+
+					// TODO once cacheable tensorObjects are used release them
+					//ec.releaseTensorInput(input1.getName());
+					if(output.getDataType() == DataType.SCALAR){
+						ec.setScalarOutput(output_name, out);
+					} else{
+						// TODO create a "temp" output tensor
+						//ec.setTensorOutput(output_name, resultBlock);
+						throw new DMLRuntimeException("Sum of tensor currently always returns a Scalar");
+					}
+				} else {
+					throw new DMLRuntimeException(opcode + " only supported on matrix or tensor.");
 				}
 			}
 		}

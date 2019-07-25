@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -78,7 +80,11 @@ public class CPOperand
 	public boolean isMatrix() {
 		return _dataType.isMatrix();
 	}
-	
+
+	public boolean isTensor() {
+		return _dataType.isTensor();
+	}
+
 	public boolean isScalar() {
 		return _dataType.isScalar();
 	}

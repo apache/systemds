@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -424,9 +426,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						else
 							return xbu * d1m * d1n;
 					}
-										
+
 				case Reorg: //opcodes: r', rdiag
-				case MatrixReshape: //opcodes: rshape
+				case Reshape: //opcodes: rshape
 					if( leftSparse )
 						return d1m * d1n * d1s;
 					else

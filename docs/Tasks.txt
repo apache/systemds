@@ -18,8 +18,9 @@ SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks      															OK
  * 22 Sparse double/float tensor blocks
  * 23 Sparse int/bool tensor blocks
- * 24 Initial data tensor implementation
- * 25 Non-zero default value for sparse (row/col)
+ * 24 Initial tensor dml integration
+ * 25 Initial data tensor implementation
+ * 26 Non-zero default value for sparse (row/col)
  * 
 
 SYSTEMDS-30 Builtin and Packaging

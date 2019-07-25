@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -253,8 +255,8 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//special case single row block (no offsets needed)
 		if( rlen > 0 && clen > 0 && rlen <= brlen ) {
-			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1),
-				new LiteralOp(clen), getCumulativeInitValue()).constructLops();
+			Lop offset = HopRewriteUtils.createDataGenOpByVal(new LiteralOp(1), new LiteralOp(clen),
+					new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, getCumulativeInitValue()).constructLops();
 			return constructCumOffBinary(X, offset, aggtype, rlen, clen, brlen, bclen);
 		}
 		

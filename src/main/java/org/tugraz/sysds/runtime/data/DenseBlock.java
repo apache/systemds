@@ -83,6 +83,16 @@ public abstract class DenseBlock implements Serializable
 	}
 
 	/**
+	 * Get the ith cumulative dimensions size of the dense block, without row.
+	 *
+	 * @param i the number of the cumulative dimension to get (0 equals the second dimension!)
+	 * @return the size of the dimension cumulative with all following dimensions
+	 */
+	public final int getCumODims(int i) {
+		return _odims[i];
+	}
+
+	/**
 	 * Resets the dense block by deleting non-zero values. After this
 	 * call all countNonZeros() calls are guaranteed to return 0.
 	 */
@@ -282,7 +292,7 @@ public abstract class DenseBlock implements Serializable
 	 * @return number of non-zeros
 	 */
 	public abstract long countNonZeros(int rl, int ru, int cl, int cu);
-	
+
 	/**
 	 * Get the allocated block for the given row. This call
 	 * is equivalent to valuesAt(indexes(r)).
@@ -381,7 +391,19 @@ public abstract class DenseBlock implements Serializable
 	 * @return self
 	 */
 	public abstract DenseBlock set(double v);
-	
+
+	/**
+	 * Set the given string for the entire dense block (fill). Generally the string will be parsed, except for string
+	 * DenseBlock.
+	 *
+	 * @param s string
+	 * @return self
+	 */
+	public DenseBlock set(String s) {
+		set(Double.parseDouble(s));
+		return this;
+	}
+
 	/**
 	 * Set the given value for an entire index range of the 
 	 * dense block (fill).

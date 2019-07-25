@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -36,8 +38,8 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 	private final long _clen;
 	private final String _data;
 
-	private StringInitCPInstruction(Operator op, CPOperand in, CPOperand out, long rows, long cols, int rpb, int cpb,
-			String data, String opcode, String inst) {
+	private StringInitCPInstruction(Operator op, CPOperand in, CPOperand out, long rows, long cols,
+			int rpb, int cpb, String data, String opcode, String inst) {
 		super(CPType.StringInit, op, in, out, opcode, inst);
 		_rlen = rows;
 		_clen = cols;
@@ -58,13 +60,14 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
 		//parse instruction
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );
-		InstructionUtils.checkNumFields( s, 6 );
+		InstructionUtils.checkNumFields( s, 7 );
 		CPOperand out = new CPOperand(s[s.length-1]); // output is specified by the last operand
 		long rows = (s[1].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[1]).longValue());
 		long cols = (s[2].contains( Lop.VARIABLE_NAME_PLACEHOLDER)?-1:Double.valueOf(s[2]).longValue());
-		int rpb = Integer.parseInt(s[3]);
-		int cpb = Integer.parseInt(s[4]);
-		String data = s[5];
+		// Ignore dims
+		int rpb = Integer.parseInt(s[4]);
+		int cpb = Integer.parseInt(s[5]);
+		String data = s[6];
 		return new StringInitCPInstruction(null, null, out, rows, cols, rpb, cpb, data, opcode, str);
 	}
 	

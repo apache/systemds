@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -85,6 +87,7 @@ public class DataGen extends Lop
 	{
 		this.getOutputParameters().setFormat(Format.BINARY);
 		this.getOutputParameters().setBlocked(true);
+		// TODO size for tensor
 		this.getOutputParameters().setNumRows(id.getDim1());
 		this.getOutputParameters().setNumCols(id.getDim2());
 		this.getOutputParameters().setNnz(-1);
@@ -143,36 +146,40 @@ public class DataGen extends Lop
 		sb.append(RAND_OPCODE);
 		sb.append(OPERAND_DELIMITOR);
 		
-		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
+		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS);
 		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
-		iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
+		iLop = _inputParams.get(DataExpression.RAND_COLS);
 		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
-		sb.append(String.valueOf(getOutputParameters().getRowsInBlock()));
+		iLop = _inputParams.get(DataExpression.RAND_DIMS);
+		sb.append(iLop.prepScalarInputOperand(getExecType()));
 		sb.append(OPERAND_DELIMITOR);
 
-		sb.append(String.valueOf(getOutputParameters().getColsInBlock()));
+		sb.append(getOutputParameters().getRowsInBlock());
 		sb.append(OPERAND_DELIMITOR);
 
-		iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
+		sb.append(getOutputParameters().getColsInBlock());
+		sb.append(OPERAND_DELIMITOR);
+
+		iLop = _inputParams.get(DataExpression.RAND_MIN);
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
 		
-		iLop = _inputParams.get(DataExpression.RAND_MAX.toString());
+		iLop = _inputParams.get(DataExpression.RAND_MAX);
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
 		
-		iLop = _inputParams.get(DataExpression.RAND_SPARSITY.toString());
+		iLop = _inputParams.get(DataExpression.RAND_SPARSITY);
 		if (iLop.isVariable())
 			sb.append(iLop.prepScalarLabel());
 		else
 			sb.append(iLop.getOutputParameters().getLabel()); 
 		sb.append(OPERAND_DELIMITOR);
 		
-		iLop = _inputParams.get(DataExpression.RAND_SEED.toString());
+		iLop = _inputParams.get(DataExpression.RAND_SEED);
 		sb.append(iLop.prepScalarLabel());
 		sb.append(OPERAND_DELIMITOR);
 		
@@ -181,7 +188,7 @@ public class DataGen extends Lop
 			sb.append(OPERAND_DELIMITOR);
 		}
 		
-		iLop = _inputParams.get(DataExpression.RAND_PDF.toString()); //no variable support
+		iLop = _inputParams.get(DataExpression.RAND_PDF); //no variable support
 		if (iLop.isVariable())
 			throw new LopsException(printErrorLocation()
 					+ "Parameter " + DataExpression.RAND_PDF
@@ -189,7 +196,7 @@ public class DataGen extends Lop
 		sb.append(iLop.getOutputParameters().getLabel()); 
 		sb.append(OPERAND_DELIMITOR);
 		
-		iLop = _inputParams.get(DataExpression.RAND_LAMBDA.toString()); //no variable support
+		iLop = _inputParams.get(DataExpression.RAND_LAMBDA); //no variable support
 		sb.append(iLop == null ? "" : iLop.prepScalarLabel()); 
 		sb.append(OPERAND_DELIMITOR);
 		
@@ -210,18 +217,21 @@ public class DataGen extends Lop
 			throw new LopsException("Invalid instruction generation for data generation method " + method);
 		
 		//prepare instruction parameters
-		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS.toString());
+		Lop iLop = _inputParams.get(DataExpression.RAND_ROWS);
 		String rowsString = iLop.prepScalarLabel();
 		
-		iLop = _inputParams.get(DataExpression.RAND_COLS.toString());
+		iLop = _inputParams.get(DataExpression.RAND_COLS);
 		String colsString = iLop.prepScalarLabel();
-		
+
+		iLop = _inputParams.get(DataExpression.RAND_DIMS);
+		String dimsString = iLop.prepScalarLabel();
+
 		String rowsInBlockString = String.valueOf(this
 				.getOutputParameters().getRowsInBlock());
 		String colsInBlockString = String.valueOf(this
 				.getOutputParameters().getColsInBlock());
 
-		iLop = _inputParams.get(DataExpression.RAND_MIN.toString());
+		iLop = _inputParams.get(DataExpression.RAND_MIN);
 		String minString = iLop.getOutputParameters().getLabel();
 		if (iLop.isVariable())
 			throw new LopsException(this.printErrorLocation()
@@ -239,6 +249,8 @@ public class DataGen extends Lop
 		sb.append(rowsString);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(colsString);
+		sb.append(OPERAND_DELIMITOR);
+		sb.append(dimsString);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(rowsInBlockString);
 		sb.append(OPERAND_DELIMITOR);

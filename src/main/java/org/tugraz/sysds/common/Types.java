@@ -43,6 +43,9 @@ public class Types
 		public boolean isMatrix() {
 			return this == MATRIX;
 		}
+		public boolean isTensor() {
+			return this == TENSOR;
+		}
 		public boolean isFrame() {
 			return this == FRAME;
 		}

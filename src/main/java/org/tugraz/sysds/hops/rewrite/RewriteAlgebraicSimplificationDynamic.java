@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -215,8 +217,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			    HopRewriteUtils.isDimsKnown(hi)) //output dims known
 			{
 				//remove unnecessary right indexing
-				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()), 
-						                                         new LiteralOp(hi.getDim2()), 0);
+				Hop hnew = HopRewriteUtils.createDataGenOpByVal( new LiteralOp(hi.getDim1()),
+						new LiteralOp(hi.getDim2()), new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, 0);
 				HopRewriteUtils.replaceChildReference(parent, hi, hnew, pos);
 				HopRewriteUtils.cleanupUnreferenced(hi, input);
 				hi = hnew;
@@ -726,6 +728,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	
 	private static Hop simplifyUnnecessaryAggregate(Hop parent, Hop hi, int pos) 
 	{
+		// TODO implement for tensor
 		//e.g., sum(X) -> as.scalar(X) if 1x1 (applies to sum, min, max, prod, trace)
 		if( hi instanceof AggUnaryOp && ((AggUnaryOp)hi).getDirection()==Direction.RowCol  ) 
 		{
@@ -734,7 +737,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			
 			if( HopRewriteUtils.isValidOp(uhi.getOp(), LOOKUP_VALID_UNNECESSARY_AGGREGATE) ){		
 				
-				if( input.getDim1()==1 && input.getDim2()==1 )
+				if( input.getDim1()==1 && input.getDim2()==1 && input.getDataType()==DataType.MATRIX)
 				{
 					UnaryOp cast = HopRewriteUtils.createUnary(input, OpOp1.CAST_AS_SCALAR);
 					
@@ -822,13 +825,15 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 					if( HopRewriteUtils.isDimsKnown(input) ) {
 						if( input.getDim2()==1 ) //diagv2m
 							hnew = HopRewriteUtils.createDataGenOp(input, false, input, true, 0);
-						else //diagm2v
+						else //diagm2v TODO support tensor operation
 							hnew = HopRewriteUtils.createDataGenOpByVal(
-									HopRewriteUtils.createValueHop(input,true), new LiteralOp(1), 0);
+									HopRewriteUtils.createValueHop(input,true), new LiteralOp(1),
+									new LiteralOp("1 1"), DataType.MATRIX, ValueType.FP64, 0);
 					}
 				}
 				else if( rhi.getOp() == ReOrgOp.RESHAPE )
-					hnew = HopRewriteUtils.createDataGenOpByVal(rhi.getInput().get(1), rhi.getInput().get(2), 0);
+					hnew = HopRewriteUtils.createDataGenOpByVal(rhi.getInput().get(1), rhi.getInput().get(2),
+							rhi.getInput().get(3), rhi.getDataType(), rhi.getValueType(), 0);
 			
 				//modify dag if one of the above rules applied
 				if( hnew != null ){ 

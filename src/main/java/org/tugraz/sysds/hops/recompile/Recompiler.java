@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -1352,11 +1354,15 @@ public class Recompiler
 		}
 		//update size expression for reshape according to symbol table entries
 		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.RESHAPE) ) {
-			hop.refreshSizeInformation(); //update incl reset
-			if( !hop.dimsKnown() ) {
-				HashMap<Long, Long> memo = new HashMap<>();
-				hop.refreshRowsParameterInformation(hop.getInput().get(1), vars, memo);
-				hop.refreshColsParameterInformation(hop.getInput().get(2), vars, memo);
+			if (hop.getDataType() != DataType.TENSOR) {
+				hop.refreshSizeInformation(); //update incl reset
+				if (!hop.dimsKnown()) {
+					HashMap<Long, Long> memo = new HashMap<>();
+					hop.refreshRowsParameterInformation(hop.getInput().get(1), vars, memo);
+					hop.refreshColsParameterInformation(hop.getInput().get(2), vars, memo);
+				}
+			} else {
+				//TODO tensor rewrite
 			}
 		}
 		//update size expression for indexing according to symbol table entries

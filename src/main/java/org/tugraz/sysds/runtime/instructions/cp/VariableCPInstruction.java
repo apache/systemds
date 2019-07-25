@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -41,6 +44,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.runtime.data.TensorBlockData;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
@@ -523,6 +527,29 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				//created variable not called for scalars
 				ec.setScalarOutput(getInput1().getName(), null);
 			}
+			else if ( getInput1().getDataType() == DataType.TENSOR ) {
+				//create new variable for symbol table and cache
+				//(existing objects gets cleared through rmvar instructions)
+				//String fname = getInput2().getName();
+				// check if unique filename needs to be generated
+				//if( Boolean.parseBoolean(getInput3().getName()) ) {
+				//	fname = new StringBuilder(fname.length()+16).append(fname)
+				//			.append('_').append(_uniqueVarID.getNextID()).toString();
+				//}
+				// TODO Cacheable tensor block
+				TensorBlockData tensor = new TensorBlockData(getInput1().getValueType());
+				//MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
+				//clone meta data because it is updated on copy-on-write, otherwise there
+				//is potential for hidden side effects between variables.
+				//mobj.setMetaData((MetaData)metadata.clone());
+				//mobj.setFileFormatProperties(_formatProperties);
+				//mobj.setUpdateType(_updateType);
+				//mobj.enableCleanup(!getInput1().getName()
+				//		.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
+				ec.setVariable(getInput1().getName(), tensor);
+				//if(DMLScript.STATISTICS && _updateType.isInPlace())
+				//	Statistics.incrementTotalUIPVar();
+			}
 			else {
 				throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());
 			}
@@ -848,6 +875,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			String outFmt = getInput3().getName();
 			FrameObject mo = ec.getFrameObject(getInput1().getName());
 			mo.exportData(fname, outFmt, _formatProperties);
+		}
+		else if( getInput1().getDataType() == DataType.TENSOR ) {
+			// TODO write tensor
+			throw new NotImplementedException();
 		}
 	}
 	

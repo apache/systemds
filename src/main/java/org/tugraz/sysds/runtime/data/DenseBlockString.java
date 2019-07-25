@@ -110,6 +110,12 @@ public class DenseBlockString extends DenseBlockDRB {
 	}
 
 	@Override
+	public DenseBlock set(String s) {
+		Arrays.fill(_data, 0, _data.length, s);
+		return this;
+	}
+
+	@Override
 	public DenseBlock set(int r, int c, double v) {
 		_data[pos(r, c)] = String.valueOf(v);
 		return this;

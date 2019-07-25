@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -60,7 +62,7 @@ public abstract class Expression implements ParseInfo
 	 * Data operators.
 	 */
 	public enum DataOp {
-		READ, WRITE, RAND, MATRIX
+		READ, WRITE, RAND, MATRIX, TENSOR
 	}
 
 	/**
@@ -396,7 +398,7 @@ public abstract class Expression implements ParseInfo
 	 * Throw a LanguageException with the message (and optional error code) if conditional is {@code false};
 	 * otherwise log the message as a warning.
 	 * 
-	 * @param message the error (or warning) message
+	 * @param msg the error (or warning) message
 	 * @param conditional if {@code true}, display log warning message. Otherwise, the message (and optional
 	 * error code) will be thrown as a LanguageException
 	 * @param errorCode optional error code
@@ -473,8 +475,6 @@ public abstract class Expression implements ParseInfo
 	 *            parse information, such as beginning line position, beginning
 	 *            column position, ending line position, ending column position,
 	 *            text, and filename
-	 * @param filename
-	 *            the DML/PYDML filename (if it exists)
 	 */
 	public void setParseInfo(ParseInfo parseInfo) {
 		_beginLine = parseInfo.getBeginLine();

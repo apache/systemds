@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -436,14 +438,14 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
-	public static Hop createDataGenOpByVal( Hop rowInput, Hop colInput, double value ) 
-	{
+	public static Hop createDataGenOpByVal(Hop rowInput, Hop colInput, Hop dimsInput, DataType dt, ValueType vt, double value) {
 		Hop val = new LiteralOp(value);
 		
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rowInput);
 		params.put(DataExpression.RAND_COLS, colInput);
 		params.put(DataExpression.RAND_MIN, val);
+		params.put(DataExpression.RAND_DIMS, dimsInput);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
@@ -451,7 +453,10 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
-		Hop datagen = new DataGenOp(DataGenMethod.RAND, new DataIdentifier("tmp"), params);
+		DataIdentifier di = new DataIdentifier("tmp");
+		di.setDataType(dt);
+		di.setValueType(vt);
+		Hop datagen = new DataGenOp(DataGenMethod.RAND, di, params);
 		datagen.setOutputBlocksizes(rowInput.getRowsInBlock(), colInput.getColsInBlock());
 		copyLineNumbers(rowInput, datagen);
 		

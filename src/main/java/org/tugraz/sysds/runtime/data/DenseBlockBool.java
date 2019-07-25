@@ -125,7 +125,13 @@ public class DenseBlockBool extends DenseBlockDRB
 
 	@Override
 	protected void setInternal(int bix, int ix, double v) {
+		_data.set(ix, v != 0);
+	}
 
+	@Override
+	public DenseBlock set(String s) {
+		_data.set(0, blockSize() * _odims[0], Boolean.parseBoolean(s));
+		return this;
 	}
 
 	@Override
@@ -150,7 +156,7 @@ public class DenseBlockBool extends DenseBlockDRB
 		//TODO perf computed indexes
 		for (int r = rl; r < ru; r++) {
 			for (int c = cl; c < cu; c++) {
-				int i = r * _odims[0];
+				int i = r * _odims[0] + c;
 				_data.set(i, a[i] != 0);
 			}
 		}

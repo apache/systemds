@@ -21,6 +21,7 @@ import java.io.Serializable;
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class TensorBlock implements Serializable
@@ -232,6 +233,29 @@ public class TensorBlock implements Serializable
 	public long getNonZeros() {
 		return _nnz;
 	}
+
+	/**
+	 * Calculates the next index array. Note that if the given index array was the last element, the next index will
+	 * be the first one.
+	 *
+	 * @param ix the index array which will be incremented to the next index array
+	 */
+	public void getNextIndexes(int[] ix) {
+		int i = ix.length - 1;
+		ix[i]++;
+		//calculating next index
+		if (ix[i] == getDim(i)) {
+			while (ix[i] == getDim(i)) {
+				ix[i] = 0;
+				i--;
+				if (i < 0) {
+					//we are finished
+					break;
+				}
+				ix[i]++;
+			}
+		}
+	}
 	
 	public boolean isVector() {
 		return getNumDims() <= 2 
@@ -290,7 +314,17 @@ public class TensorBlock implements Serializable
 			return _denseBlock.get(ix);
 		}
 	}
-	
+
+	public String getString(int[] ix) {
+		if (_sparse) {
+			// TODO: Implement sparse
+			throw new NotImplementedException();
+			//return _sparseBlock.get(ix);
+		} else {
+			return _denseBlock.getString(ix);
+		}
+	}
+
 	public void set(int[] ix, double v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -298,17 +332,85 @@ public class TensorBlock implements Serializable
 			_denseBlock.set(ix, v);
 		}
 	}
-	
+
+	public void set(int[] ix, String v) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			_denseBlock.set(ix, v);
+		}
+	}
+
+	public void set(double v) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			_denseBlock.set(v);
+		}
+	}
+
+	public void set(String str) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			_denseBlock.set(str);
+		}
+	}
+
+	public void set(TensorBlock other) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			if (other.isSparse()) {
+				throw new NotImplementedException();
+			} else {
+				_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+			}
+		}
+	}
+
+	public void set(MatrixBlock other) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			if (other.isInSparseFormat()) {
+				throw new NotImplementedException();
+			} else {
+				_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+			}
+		}
+	}
+
+	public double sum() {
+		// TODO perf
+		// TODO generalize this method to an aggregate method that can do more than just sum
+		if (_sparse) {
+			// TODO implement for sparse
+			throw new NotImplementedException();
+		} else {
+			if (_vt == ValueType.BOOLEAN) {
+				return _denseBlock.countNonZeros();
+			} else {
+				double sum = 0;
+				for (int bix = 0; bix < _denseBlock.numBlocks(); bix++) {
+					double[] values = _denseBlock.valuesAt(bix);
+					for (int i = 0; i < _denseBlock.blockSize(bix) * _denseBlock.getCumODims(0); i++)
+						sum += values[i];
+				}
+				return sum;
+			}
+		}
+	}
+
 	private void copy(TensorBlock that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		allocateBlock();
 		_nnz = that._nnz;
-		
-		
+
 		// TODO Auto-generated method stub copy
 	}
-	
+
 	////////
 	// Size estimation and format decisions
 	

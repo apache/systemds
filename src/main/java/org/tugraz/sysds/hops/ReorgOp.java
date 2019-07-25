@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -91,23 +93,20 @@ public class ReorgOp extends MultiThreadedHop
 			break;
 		case RESHAPE:
 		case SORT:
-			HopsException.check(sz == 4, this, "should have arity 4 for op %s but has arity %d", op, sz);
+			HopsException.check(sz == 5, this, "should have arity 5 for op %s but has arity %d", op, sz);
 			break;
 		default:
 			throw new HopsException("Unsupported lops construction for operation type '" + op + "'.");
 		}
 	}
 
-	public ReOrgOp getOp()
-	{
+	public ReOrgOp getOp() {
 		return op;
 	}
 	
 	@Override
 	public String getOpString() {
-		String s = new String("");
-		s += "r(" + HopsTransf2String.get(op) + ")";
-		return s;
+		return "r(" + HopsTransf2String.get(op) + ")";
 	}
 	
 	@Override
@@ -116,18 +115,11 @@ public class ReorgOp extends MultiThreadedHop
 			return false;
 		switch( op ) {
 			case TRANS: {
-				if( getDim1()==1 && getDim2()==1 ) {
+				if( getDim1()==1 && getDim2()==1 )
 					return false; //if input of size 1x1, avoid unnecessary transpose
-				}
-				else if( getInput().get(0) instanceof ReorgOp &&  ((ReorgOp) getInput().get(0)).getOp() == ReOrgOp.TRANS) {
-					// Following checks causes stackoverflow:
-					// lin = getInput().get(0).constructLops();
-					// lin instanceof Transform && ((Transform)lin).getOperationType()==OperationTypes.Transpose
-					return false; //if input is already a transpose, avoid redundant transpose ops
-				}
-				else {
-					return true;
-				}
+				//if input is already a transpose, avoid redundant transpose ops
+				return !(getInput().get(0) instanceof ReorgOp)
+					|| ((ReorgOp) getInput().get(0)).getOp() != ReOrgOp.TRANS;
 			}
 			case RESHAPE: {
 				return true;
@@ -170,7 +162,7 @@ public class ReorgOp extends MultiThreadedHop
 				break;
 			}
 			case DIAG:
-			{
+			case REV: {
 				Transform transform1 = new Transform( getInput().get(0).constructLops(), 
 						HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
 				setOutputDimensions(transform1);
@@ -179,29 +171,18 @@ public class ReorgOp extends MultiThreadedHop
 				
 				break;
 			}
-			case REV:
-			{
-				Lop rev = new Transform( getInput().get(0).constructLops(), 
-					HopsTransf2Lops.get(op), getDataType(), getValueType(), et);
-				setOutputDimensions(rev);
-				setLineNumbers(rev);
-				setLops(rev);
-				
-				break;
-			}
 			case RESHAPE:
 			{
-				Lop[] linputs = new Lop[4]; //main, rows, cols, byrow
-				for( int i=0; i<4; i++ )
+				Lop[] linputs = new Lop[5]; //main, rows, cols, dims, byrow
+				for (int i = 0; i < 5; i++)
 					linputs[i] = getInput().get(i).constructLops();
-				
-				_outputEmptyBlocks = (et==ExecType.SPARK &&
-					!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this)); 
-				Transform transform1 = new Transform( linputs,
-					HopsTransf2Lops.get(op), getDataType(), getValueType(), _outputEmptyBlocks, et);
+				_outputEmptyBlocks = (et == ExecType.SPARK &&
+						!OptimizerUtils.allowsToFilterEmptyBlockOutputs(this));
+				Transform transform1 = new Transform(linputs,
+						HopsTransf2Lops.get(op), getDataType(), getValueType(), _outputEmptyBlocks, et);
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
-				
+
 				setLops(transform1);
 				break;
 			}
@@ -454,19 +435,23 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case RESHAPE:
 			{
-				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
-				// #nnz in output is exactly the same as in input
-				Hop input2 = getInput().get(1); //rows 
-				Hop input3 = getInput().get(2); //cols 
-				refreshRowsParameterInformation(input2); //refresh rows
- 				refreshColsParameterInformation(input3); //refresh cols
- 				setNnz(input1.getNnz());
- 				if( !dimsKnown() && input1.dimsKnown() ) { //reshape allows to infer dims, if input and 1 dim known
-	 				if(_dim1 > 0) 
-						_dim2 = (input1._dim1*input1._dim2)/_dim1;
-					else if(_dim2 > 0)
-						_dim1 = (input1._dim1*input1._dim2)/_dim2; 
- 				}
+				if (_dataType != DataType.TENSOR) {
+					// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4
+					// #nnz in output is exactly the same as in input
+					Hop input2 = getInput().get(1); //rows
+					Hop input3 = getInput().get(2); //cols
+					refreshRowsParameterInformation(input2); //refresh rows
+					refreshColsParameterInformation(input3); //refresh cols
+					setNnz(input1.getNnz());
+					if (!dimsKnown() && input1.dimsKnown()) { //reshape allows to infer dims, if input and 1 dim known
+						if (_dim1 > 0)
+							_dim2 = (input1._dim1 * input1._dim2) / _dim1;
+						else if (_dim2 > 0)
+							_dim1 = (input1._dim1 * input1._dim2) / _dim2;
+					}
+				}
+				// TODO size information for tensor
+
 				break;
 			}
 			case SORT:

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -83,9 +85,8 @@ public class DataGenOp extends MultiThreadedHop
 	 * @param id the target identifier
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
-	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters)
-	{
-		super(id.getName(), DataType.MATRIX, ValueType.FP64);
+	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters) {
+		super(id.getName(), id.getDataType(), id.getValueType());
 		
 		_id = id;
 		_op = mthd;
@@ -109,7 +110,7 @@ public class DataGenOp extends MultiThreadedHop
 		String scratch = ConfigurationManager.getScratchSpace();
 		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR 
 			+ Lop.FILE_SEPARATOR + Lop.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
-		
+
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
@@ -296,7 +297,7 @@ public class DataGenOp extends MultiThreadedHop
 
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
-		
+
 		//always force string initialization into CP (not supported in MR)
 		//similarly, sample is currently not supported in MR either
 		if( _op == DataGenMethod.SINIT || _op == DataGenMethod.TIME ) {
@@ -308,7 +309,12 @@ public class DataGenOp extends MultiThreadedHop
 	
 	@Override
 	public void refreshSizeInformation()
-	{		
+	{
+		if (_dataType == DataType.TENSOR) {
+			//TODO size information for tensor
+			return;
+		}
+		
 		Hop input1 = null;  
 		Hop input2 = null; 
 		Hop input3 = null;
@@ -450,18 +456,15 @@ public class DataGenOp extends MultiThreadedHop
 		return getInput().get(_paramIndexMap.get(DataExpression.RAND_MIN));
 	}
 	
-	public void setIncrementValue(double incr)
-	{
+	public void setIncrementValue(double incr) {
 		_incr = incr;
 	}
 	
-	public double getIncrementValue()
-	{
+	public double getIncrementValue() {
 		return _incr;
 	}
 	
-	public static long generateRandomSeed()
-	{
+	public static long generateRandomSeed() {
 		return System.nanoTime();
 	}
 
@@ -469,7 +472,7 @@ public class DataGenOp extends MultiThreadedHop
 	@SuppressWarnings("unchecked")
 	public Object clone() throws CloneNotSupportedException 
 	{
-		DataGenOp ret = new DataGenOp();	
+		DataGenOp ret = new DataGenOp();
 		
 		//copy generic attributes
 		ret.clone(this, false);

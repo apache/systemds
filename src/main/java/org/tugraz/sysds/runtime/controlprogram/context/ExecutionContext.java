@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -35,6 +37,8 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlockData;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -203,6 +207,19 @@ public class ExecutionContext {
 		return (MatrixObject) dat;
 	}
 
+	public TensorBlockData getTensorObject(String varname) {
+		// TODO use cacheable TensorObject once implemented
+		Data dat = getVariable(varname);
+
+		//error handling if non existing or no matrix
+		if( dat == null )
+			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
+		if( !(dat instanceof TensorBlockData) )
+			throw new DMLRuntimeException("Variable '"+varname+"' is not a tensor.");
+
+		return (TensorBlockData) dat;
+	}
+
 	public boolean isFrameObject(String varname) {
 		Data dat = getVariable(varname);
 		return (dat!= null && dat instanceof FrameObject);
@@ -275,7 +292,19 @@ public class ExecutionContext {
 		MatrixObject mo = getMatrixObject(varName);
 		return mo.acquireRead();
 	}
-	
+
+	/**
+	 * Pins a matrix variable into memory and returns the internal matrix block.
+	 *
+	 * @param varName variable name
+	 * @return matrix block
+	 */
+	public TensorBlock getTensorInput(String varName) {
+		// TODO Cachable tensorBlock
+		TensorBlockData to = getTensorObject(varName);
+		return to.getTensorBlock();
+	}
+
 	public void setMetaData(String varName, long nrows, long ncols) {
 		MatrixObject mo = getMatrixObject(varName);
 		if(mo.getNumRows() == nrows && mo.getNumColumns() == ncols) 
@@ -481,7 +510,7 @@ public class ExecutionContext {
 		mo.release();
 		setVariable(varName, mo);
 	}
-	
+
 	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) {
 		setMatrixOutput(varName, outputData);
 	}
@@ -494,9 +523,15 @@ public class ExecutionContext {
 		}
 		setMatrixOutput(varName, outputData);
 	}
-	
+
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag, String opcode) {
 		setMatrixOutput(varName, outputData, flag);
+	}
+
+	public void setTensorOutput(String varName, TensorBlock outputData) {
+		TensorBlockData to = getTensorObject(varName);
+		to.setTensorBlock(outputData);
+		setVariable(varName, to);
 	}
 
 	public void setFrameOutput(String varName, FrameBlock outputData) {

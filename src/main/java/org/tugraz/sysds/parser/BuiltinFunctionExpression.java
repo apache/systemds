@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -568,8 +570,8 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		case VAR:
 			// sum(X);
 			checkNumParameters(1);
-			checkMatrixParam(getFirstExpr());
-			
+			// TODO rewrite this
+			checkMatrixTensorParam(getFirstExpr());
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlockDimensions (0, 0);
@@ -579,12 +581,12 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		case MEAN:
 			//checkNumParameters(2, false); // mean(Y) or mean(Y,W)
-            if (getSecondExpr() != null) {
-            	checkNumParameters (2);
-            }
-            else {
-            	checkNumParameters (1);
-            }
+			if (getSecondExpr() != null) {
+				checkNumParameters (2);
+			}
+			else {
+				checkNumParameters (1);
+			}
 			
 			checkMatrixParam(getFirstExpr());
 			if ( getSecondExpr() != null ) {
@@ -1709,9 +1711,20 @@ public class BuiltinFunctionExpression extends DataIdentifier
 
 	protected void checkMatrixParam(Expression e) {
 		if (e.getOutput().getDataType() != DataType.MATRIX) {
-			raiseValidateError(
-					"Expected " + e.getText() + " to be a matrix argument for function " + this.getOpCode().toString().toLowerCase() + "().",
-					false);
+			raiseValidateError("Expected " + e.getText() + " to be a matrix argument for function " +
+					this.getOpCode().toString().toLowerCase() + "().", false);
+		}
+	}
+
+	protected void checkMatrixTensorParam(Expression e) {
+		if (e.getOutput().getDataType() != DataType.MATRIX) {
+			// Param is not a matrix
+			// TODO get supported Operations form builtins
+			if (e.getOutput().getDataType() != DataType.TENSOR || getOpCode() != Builtins.SUM) {
+				// Param is also not a tensor, or the operation is not supported on tensor
+				raiseValidateError("Expected " + e.getText() + " to be a matrix or tensor argument for function "
+						+ this.getOpCode().toString().toLowerCase() + "().", false);
+			}
 		}
 	}
 

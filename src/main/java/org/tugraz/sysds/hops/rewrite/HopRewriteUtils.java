@@ -305,11 +305,12 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
-		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
+		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
 		
 		//note internal refresh size information
@@ -338,6 +339,7 @@ public class HopRewriteUtils
 		Hop cols = inputGen.getInput().get(params.get(DataExpression.RAND_COLS));
 		Hop min = inputGen.getInput().get(params.get(DataExpression.RAND_MIN));
 		Hop max = inputGen.getInput().get(params.get(DataExpression.RAND_MAX));
+		Hop dims = inputGen.getInput().get(params.get(DataExpression.RAND_DIMS));
 		Hop pdf = inputGen.getInput().get(params.get(DataExpression.RAND_PDF));
 		Hop mean = inputGen.getInput().get(params.get(DataExpression.RAND_LAMBDA));
 		Hop sparsity = inputGen.getInput().get(params.get(DataExpression.RAND_SPARSITY));
@@ -361,6 +363,7 @@ public class HopRewriteUtils
 		params2.put(DataExpression.RAND_COLS, cols);
 		params2.put(DataExpression.RAND_MIN, sminHop);
 		params2.put(DataExpression.RAND_MAX, smaxHop);
+		params2.put(DataExpression.RAND_DIMS, dims);
 		params2.put(DataExpression.RAND_PDF, pdf);
 		params2.put(DataExpression.RAND_LAMBDA, mean);
 		params2.put(DataExpression.RAND_SPARSITY, sparsity);
@@ -388,6 +391,7 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rows);
 		params.put(DataExpression.RAND_COLS, cols);
+		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
@@ -422,6 +426,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_COLS, cols);
 		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
+		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA,new LiteralOp(-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
@@ -444,8 +449,8 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, rowInput);
 		params.put(DataExpression.RAND_COLS, colInput);
-		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_DIMS, dimsInput);
+		params.put(DataExpression.RAND_MIN, val);
 		params.put(DataExpression.RAND_MAX, val);
 		params.put(DataExpression.RAND_PDF, new LiteralOp(DataExpression.RAND_PDF_UNIFORM));
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
@@ -479,6 +484,7 @@ public class HopRewriteUtils
 		HashMap<String, Hop> params = new HashMap<>();
 		params.put(DataExpression.RAND_ROWS, new LiteralOp(rows));
 		params.put(DataExpression.RAND_COLS, new LiteralOp(cols));
+		params.put(DataExpression.RAND_DIMS, new LiteralOp("-1")); //TODO
 		params.put(DataExpression.RAND_MIN, str);
 		params.put(DataExpression.RAND_MAX, str);
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED));

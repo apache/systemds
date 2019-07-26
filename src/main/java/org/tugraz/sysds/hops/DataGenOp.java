@@ -86,7 +86,9 @@ public class DataGenOp extends MultiThreadedHop
 	 * @param inputParameters HashMap of the input parameters for Rand Hop
 	 */
 	public DataGenOp(DataGenMethod mthd, DataIdentifier id, HashMap<String, Hop> inputParameters) {
-		super(id.getName(), id.getDataType(), id.getValueType());
+		super(id.getName(),
+			id.getDataType().isUnknown() ? DataType.MATRIX : id.getDataType(),
+			id.getValueType().isUnknown() ? ValueType.FP64 : id.getValueType());
 		
 		_id = id;
 		_op = mthd;
@@ -171,8 +173,8 @@ public class DataGenOp extends MultiThreadedHop
 				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
 		}
 		
-		DataGen rnd = new DataGen(_op, _id, inputLops,_baseDir,
-								getDataType(), getValueType(), et);
+		DataGen rnd = new DataGen(_op, _id, inputLops,
+			_baseDir, getDataType(), getValueType(), et);
 		
 		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		rnd.setNumThreads(k);
@@ -217,7 +219,7 @@ public class DataGenOp extends MultiThreadedHop
 			}
 		}
 		else {
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);	
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
 		}
 		
 		return ret;

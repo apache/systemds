@@ -159,7 +159,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		DataGenMethod method = DataGenMethod.INVALID;
 		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
 			method = DataGenMethod.RAND;
-			InstructionUtils.checkNumFields ( str, 12 );
+			InstructionUtils.checkNumFields ( str, 13 );
 		}
 		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
 			method = DataGenMethod.SEQ;
@@ -179,20 +179,21 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if ( method == DataGenMethod.RAND ) {
 			CPOperand rows = new CPOperand(s[1]);
 			CPOperand cols = new CPOperand(s[2]);
-			int rpb = Integer.parseInt(s[3]);
-			int cpb = Integer.parseInt(s[4]);
-			double minValue = !s[5].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[5]).doubleValue() : -1;
-			double maxValue = !s[6].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+			//TODO: handle dims param s[3]
+			int rpb = Integer.parseInt(s[4]);
+			int cpb = Integer.parseInt(s[5]);
+			double minValue = !s[6].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				Double.valueOf(s[6]).doubleValue() : -1;
-			double sparsity = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+			double maxValue = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				Double.valueOf(s[7]).doubleValue() : -1;
-			long seed = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Long.valueOf(s[8]).longValue() : -1;
-			String dir = s[9];
-			String pdf = s[10];
-			String pdfParams = !s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				s[11] : null;
+			double sparsity = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				Double.valueOf(s[8]).doubleValue() : -1;
+			long seed = !s[9].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				Long.valueOf(s[9]).longValue() : -1;
+			String dir = s[10];
+			String pdf = s[11];
+			String pdfParams = !s[12].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[12] : null;
 			
 			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}

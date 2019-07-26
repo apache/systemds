@@ -55,6 +55,9 @@ public class Types
 		public boolean isList() {
 			return this == LIST;
 		}
+		public boolean isUnknown() {
+			return this == UNKNOWN;
+		}
 	}
 
 	/**
@@ -64,6 +67,9 @@ public class Types
 		FP32, FP64, INT32, INT64, BOOLEAN, STRING, UNKNOWN;
 		public boolean isNumeric() {
 			return this == INT32 || this == INT64 || this == FP32 || this == FP64;
+		}
+		public boolean isUnknown() {
+			return this == UNKNOWN;
 		}
 		public boolean isPseudoNumeric() {
 			return isNumeric() || this == BOOLEAN;

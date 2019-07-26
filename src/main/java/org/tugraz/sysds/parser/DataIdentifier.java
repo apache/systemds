@@ -34,14 +34,6 @@ public class DataIdentifier extends Identifier
 		setParseInfo(passed);
 	}
 	
-	@Override
-	public Expression rewriteExpression(String prefix) {
-		DataIdentifier newId = new DataIdentifier(this);
-		String newIdName = prefix + _name;
-		newId.setName(newIdName);
-		return newId;
-	}
-	
 	public DataIdentifier(String name){
 		super();
 		_name = name;
@@ -49,6 +41,14 @@ public class DataIdentifier extends Identifier
 	
 	public DataIdentifier(){
 		_name = null;
+	}
+	
+	@Override
+	public Expression rewriteExpression(String prefix) {
+		DataIdentifier newId = new DataIdentifier(this);
+		String newIdName = prefix + _name;
+		newId.setName(newIdName);
+		return newId;
 	}
 
 	public String getName(){

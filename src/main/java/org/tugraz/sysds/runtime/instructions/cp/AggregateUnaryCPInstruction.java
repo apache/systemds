@@ -177,8 +177,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 					// TODO use a generalized method on tensorBlock
 					DoubleObject out = new DoubleObject(tensorBlock.sum());
 
-					// TODO once cacheable tensorObjects are used release them
-					//ec.releaseTensorInput(input1.getName());
+					ec.releaseTensorInput(input1.getName());
 					if(output.getDataType() == DataType.SCALAR){
 						ec.setScalarOutput(output_name, out);
 					} else{

@@ -42,9 +42,9 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.data.TensorBlockData;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
@@ -491,7 +491,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		{
 		case CreateVariable:
 			
-			if ( getInput1().getDataType() == DataType.MATRIX ) {
+			if ( getInput1().getDataType() == DataType.MATRIX
+				|| getInput1().getDataType() == DataType.TENSOR ) {
 				//create new variable for symbol table and cache
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
@@ -500,17 +501,22 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					fname = new StringBuilder(fname.length()+16).append(fname)
 						.append('_').append(_uniqueVarID.getNextID()).toString();
 				}
-				MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
+				CacheableData<?> obj = getInput1().getDataType().isMatrix() ?
+					new MatrixObject(getInput1().getValueType(), fname) :
+					new TensorObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
-				mobj.setMetaData((MetaData)metadata.clone());
-				mobj.setFileFormatProperties(_formatProperties);
-				mobj.setUpdateType(_updateType);
-				mobj.enableCleanup(!getInput1().getName()
+				obj.setMetaData((MetaData)metadata.clone());
+				obj.setFileFormatProperties(_formatProperties);
+				obj.enableCleanup(!getInput1().getName()
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
-				ec.setVariable(getInput1().getName(), mobj);
-				if(DMLScript.STATISTICS && _updateType.isInPlace())
-					Statistics.incrementTotalUIPVar();
+				ec.setVariable(getInput1().getName(), obj);
+				
+				if( obj instanceof MatrixObject ) {
+					((MatrixObject)obj).setUpdateType(_updateType);
+					if(DMLScript.STATISTICS && _updateType.isInPlace())
+						Statistics.incrementTotalUIPVar();
+				}
 			}
 			else if( getInput1().getDataType() == DataType.FRAME ) {
 				String fname = getInput2().getName();
@@ -526,29 +532,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			else if ( getInput1().getDataType() == DataType.SCALAR ){
 				//created variable not called for scalars
 				ec.setScalarOutput(getInput1().getName(), null);
-			}
-			else if ( getInput1().getDataType() == DataType.TENSOR ) {
-				//create new variable for symbol table and cache
-				//(existing objects gets cleared through rmvar instructions)
-				//String fname = getInput2().getName();
-				// check if unique filename needs to be generated
-				//if( Boolean.parseBoolean(getInput3().getName()) ) {
-				//	fname = new StringBuilder(fname.length()+16).append(fname)
-				//			.append('_').append(_uniqueVarID.getNextID()).toString();
-				//}
-				// TODO Cacheable tensor block
-				TensorBlockData tensor = new TensorBlockData(getInput1().getValueType());
-				//MatrixObject mobj = new MatrixObject(getInput1().getValueType(), fname );
-				//clone meta data because it is updated on copy-on-write, otherwise there
-				//is potential for hidden side effects between variables.
-				//mobj.setMetaData((MetaData)metadata.clone());
-				//mobj.setFileFormatProperties(_formatProperties);
-				//mobj.setUpdateType(_updateType);
-				//mobj.enableCleanup(!getInput1().getName()
-				//		.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
-				ec.setVariable(getInput1().getName(), tensor);
-				//if(DMLScript.STATISTICS && _updateType.isInPlace())
-				//	Statistics.incrementTotalUIPVar();
 			}
 			else {
 				throw new DMLRuntimeException("Unexpected data type: " + getInput1().getDataType());

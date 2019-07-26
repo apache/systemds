@@ -18,10 +18,11 @@ SYSTEMDS-20 New Data Model
  * 21 Finalize dense tensor blocks      															OK
  * 22 Sparse double/float tensor blocks
  * 23 Sparse int/bool tensor blocks
- * 24 Initial tensor dml integration
+ * 24 Initial tensor dml integration                                  OK
  * 25 Initial data tensor implementation
  * 26 Non-zero default value for sparse (row/col)
- * 
+ * 27 Tensor buffer pool integration
+ * 28 Tensor local readers and writers
 
 SYSTEMDS-30 Builtin and Packaging
  * 31 Shell script for local runs

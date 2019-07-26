@@ -37,8 +37,8 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.TensorBlockData;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -120,13 +120,13 @@ public class ExecutionContext {
 	 * @param index index of the GPUContext
 	 * @return a valid GPUContext or null if the indexed GPUContext does not exist.
 	 */
-    public GPUContext getGPUContext(int index) {
-    	try {
+	public GPUContext getGPUContext(int index) {
+		try {
 			return _gpuContexts.get(index);
 		} catch (IndexOutOfBoundsException e){
-    		return null;
+			return null;
 		}
-    }
+	}
 
 	/**
 	 * Sets the list of GPUContexts
@@ -149,7 +149,7 @@ public class ExecutionContext {
 	 * @return number of GPUContexts
 	 */
 	public int getNumGPUContexts() {
-    	return _gpuContexts.size();
+		return _gpuContexts.size();
 	}
 
 	/* -------------------------------------------------------
@@ -207,17 +207,16 @@ public class ExecutionContext {
 		return (MatrixObject) dat;
 	}
 
-	public TensorBlockData getTensorObject(String varname) {
-		// TODO use cacheable TensorObject once implemented
+	public TensorObject getTensorObject(String varname) {
 		Data dat = getVariable(varname);
 
 		//error handling if non existing or no matrix
 		if( dat == null )
 			throw new DMLRuntimeException("Variable '"+varname+"' does not exist in the symbol table.");
-		if( !(dat instanceof TensorBlockData) )
+		if( !(dat instanceof TensorObject) )
 			throw new DMLRuntimeException("Variable '"+varname+"' is not a tensor.");
 
-		return (TensorBlockData) dat;
+		return (TensorObject) dat;
 	}
 
 	public boolean isFrameObject(String varname) {
@@ -254,8 +253,7 @@ public class ExecutionContext {
 	}
 
 	public void releaseCacheableData(String varname) {
-		CacheableData<?> dat = getCacheableData(varname);
-		dat.release();
+		getCacheableData(varname).release();
 	}
 	
 	public MatrixCharacteristics getMatrixCharacteristics( String varname ) {
@@ -289,8 +287,7 @@ public class ExecutionContext {
 	 * @return matrix block
 	 */
 	public MatrixBlock getMatrixInput(String varName) {
-		MatrixObject mo = getMatrixObject(varName);
-		return mo.acquireRead();
+		return getMatrixObject(varName).acquireRead();
 	}
 
 	/**
@@ -300,9 +297,7 @@ public class ExecutionContext {
 	 * @return matrix block
 	 */
 	public TensorBlock getTensorInput(String varName) {
-		// TODO Cachable tensorBlock
-		TensorBlockData to = getTensorObject(varName);
-		return to.getTensorBlock();
+		return getTensorObject(varName).acquireRead();
 	}
 
 	public void setMetaData(String varName, long nrows, long ncols) {
@@ -439,8 +434,7 @@ public class ExecutionContext {
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName) {
-		MatrixObject mo = getMatrixObject(varName);
-		mo.getGPUObject(getGPUContext(0)).releaseInput();
+		getMatrixObject(varName).getGPUObject(getGPUContext(0)).releaseInput();
 	}
 	
 	/**
@@ -450,8 +444,7 @@ public class ExecutionContext {
 	 * @return frame block
 	 */
 	public FrameBlock getFrameInput(String varName) {
-		FrameObject fo = getFrameObject(varName);
-		return fo.acquireRead();
+		return getFrameObject(varName).acquireRead();
 	}
 	
 	/**
@@ -460,8 +453,11 @@ public class ExecutionContext {
 	 * @param varName variable name
 	 */
 	public void releaseFrameInput(String varName) {
-		FrameObject fo = getFrameObject(varName);
-		fo.release();
+		getFrameObject(varName).release();
+	}
+	
+	public void releaseTensorInput(String varName) {
+		getTensorObject(varName).release();
 	}
 	
 	public ScalarObject getScalarInput(CPOperand input) {
@@ -529,8 +525,9 @@ public class ExecutionContext {
 	}
 
 	public void setTensorOutput(String varName, TensorBlock outputData) {
-		TensorBlockData to = getTensorObject(varName);
-		to.setTensorBlock(outputData);
+		TensorObject to = getTensorObject(varName);
+		to.acquireModify(outputData);
+		to.release();
 		setVariable(varName, to);
 	}
 

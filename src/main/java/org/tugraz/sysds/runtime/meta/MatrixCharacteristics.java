@@ -56,7 +56,7 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public MatrixCharacteristics(MatrixCharacteristics that) {
-		set(that.numRows, that.numColumns, that.numRowsPerBlock, that.numColumnsPerBlock, that.nonZero);
+		set(that);
 	}
 
 	public MatrixCharacteristics set(long nr, long nc, int bnr, int bnc) {
@@ -68,21 +68,15 @@ public class MatrixCharacteristics implements Serializable
 	}
 	
 	public MatrixCharacteristics set(long nr, long nc, int bnr, int bnc, long nnz) {
-		numRows = nr;
-		numColumns = nc;
-		numRowsPerBlock = bnr;
-		numColumnsPerBlock = bnc;
+		set(nr, nc, bnr, bnc);
 		nonZero = nnz;
 		ubNnz = false;
 		return this;
 	}
 	
 	public MatrixCharacteristics set(MatrixCharacteristics that) {
-		numRows = that.numRows;
-		numColumns = that.numColumns;
-		numRowsPerBlock = that.numRowsPerBlock;
-		numColumnsPerBlock = that.numColumnsPerBlock;
-		nonZero = that.nonZero;
+		set(that.numRows, that.numColumns, that.numRowsPerBlock,
+			that.numColumnsPerBlock, that.nonZero);
 		ubNnz = that.ubNnz;
 		return this;
 	}

@@ -16,18 +16,19 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.io.Serializable;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class TensorBlock implements Serializable
+public class TensorBlock implements CacheBlock
 {
-	private static final long serialVersionUID = -4205257127878517048L;
-	
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	public static final ValueType DEFAULT_VTYPE = ValueType.FP64;
 	public static final int[] DEFAULT_DIMS = new int[]{0, 0};
@@ -171,7 +172,7 @@ public class TensorBlock implements Serializable
 	
 	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-        // ToDo: use reset instead, since LDRB need to check dimensions for actually available space
+		// TODO: use reset instead, since LDRB need to check dimensions for actually available space
 		long limit = getLength();
 		boolean reset = (_denseBlock == null || _denseBlock.capacity() < limit);
 		if( _denseBlock == null )
@@ -419,5 +420,69 @@ public class TensorBlock implements Serializable
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void readFields(DataInput in) throws IOException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public int getNumColumns() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public long getExactSerializedSize() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean isShallowSerialize() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean isShallowSerialize(boolean inclConvert) {
+		return !isSparse();
+	}
+
+	@Override
+	public void toShallowSerializeBlock() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void compactEmptyBlock() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void merge(CacheBlock that, boolean appendOnly) {
+		// TODO Auto-generated method stub
+		
+	}
 }

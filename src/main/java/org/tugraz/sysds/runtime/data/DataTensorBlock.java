@@ -18,7 +18,6 @@ package org.tugraz.sysds.runtime.data;
 
 public class DataTensorBlock extends TensorBlock
 {
-	private static final long serialVersionUID = -8818191561516565919L;
 	
 	//TODO handle of schema via multiple dense or sparse blocks of homogeneous types and col mapping
 }

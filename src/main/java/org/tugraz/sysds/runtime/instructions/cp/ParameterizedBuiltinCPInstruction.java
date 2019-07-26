@@ -37,9 +37,9 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.data.TensorBlockData;
 import org.tugraz.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
@@ -322,23 +322,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			String lineseparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
 			
 			//get input matrix/frame and convert to string
-			// TODO implement cacheableData for tensor so we can simplify this
-			Data dataVariable = ec.getVariable(getParam("target"));
-			String out;
-			if (dataVariable instanceof TensorBlockData) {
-				TensorBlock tensor = ((TensorBlockData) dataVariable).getTensorBlock();
-				// TODO improve truncation to check all dimensions
-				warnOnTrunction(tensor, rows, cols);
-				out = DataConverter.toString(tensor, sparse, separator, lineseparator, "[", "]",
-						rows, cols, decimal);
-				ec.setScalarOutput(output.getName(), new StringObject(out));
-				return;
-			}
+			String out = null;
 			CacheableData<?> data = ec.getCacheableData(getParam("target"));
 			if( data instanceof MatrixObject ) {
 				MatrixBlock matrix = (MatrixBlock) data.acquireRead();
 				warnOnTrunction(matrix, rows, cols);
 				out = DataConverter.toString(matrix, sparse, separator, lineseparator, rows, cols, decimal);
+			}
+			else if( data instanceof TensorObject ) {
+				TensorBlock tensor = (TensorBlock) data.acquireRead();
+				// TODO improve truncation to check all dimensions
+				warnOnTrunction(tensor, rows, cols);
+				out = DataConverter.toString(tensor, sparse, separator,
+					lineseparator, "[", "]", rows, cols, decimal);
 			}
 			else if( data instanceof FrameObject ) {
 				FrameBlock frame = (FrameBlock) data.acquireRead();

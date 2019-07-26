@@ -52,10 +52,10 @@ SYSTEMDS-60 Update SystemML improvements
 
 SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 71 Basic collection of lineage traces                              OK
- * 72 Serialization and deserialization of lineage traces
- * 73 Deduplication of lineage traces
-      (loops, nested loops, branchless loops)
- * 74 Performance features lineage tracing
+ * 72 Serialization and deserialization of lineage traces             OK
+ * 73 Deduplication of lineage traces                                 OK
+      (loops, nested loops, branchless loops)                         OK
+ * 74 Performance features lineage tracing                            OK
  * 75 Reuse cache based on lineage traces
  * 76 Generate runtime plan from lineage trace                        OK
  * 77 New builtin function for obtaining lineage                      OK
@@ -75,11 +75,12 @@ SYSTEMDS-110 New Builtin Functions
  * 111 Time builtin function for script-level measurements            OK
  * 112 Image data augmentation builtin functions                      OK
  * 113 Builtin functions for linear regression algorithms             OK
-<<<<<<< HEAD
- 
-=======
 
->>>>>>> Add LargeDenseBlock Representations with new support for Strings for DRB
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK
  * 122 Reduce thread contention on parfor left indexing               OK
+ 
+SYSTEMDS-130 IPA and Size Propagation
+ * 131 New IPA pass for function call forwarding                      OK
+ * 132 Hop Size Propagation for Tensors
+ * 

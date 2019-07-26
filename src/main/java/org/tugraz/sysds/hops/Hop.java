@@ -714,6 +714,11 @@ public abstract class Hop implements ParseInfo
 		_input.add(h);
 		h._parent.add(this);
 	}
+	
+	public void addAllInputs( ArrayList<Hop> list ) {
+		for( Hop h : list )
+			addInput(h);
+	}
 
 	public int getRowsInBlock() {
 		return _rows_in_block;

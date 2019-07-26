@@ -102,6 +102,14 @@ public class FunctionOp extends Hop
 		_fname = fname;
 	}
 	
+	public void setFunctionNamespace( String fnamespace ) {
+		_fnamespace = fnamespace;
+	}
+	
+	public void setInputVariableNames(String[] names) {
+		_inputNames = names;
+	}
+	
 	public ArrayList<Hop> getOutputs() {
 		return _outputHops;
 	}

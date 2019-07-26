@@ -106,7 +106,10 @@ public class CacheDataInput implements DataInput, MatrixBlockDataInput
 
 	@Override
 	public float readFloat() throws IOException {
-		throw new IOException("Not supported.");
+		int tmp = baToInt(_buff, _count);
+		float tmp2 = Float.intBitsToFloat(tmp);
+		_count += 4;
+		return tmp2;
 	}
 
 	@Override

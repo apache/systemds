@@ -38,6 +38,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.tugraz.sysds.common.Types.BlockType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
@@ -128,13 +129,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public static final boolean CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE = true;
 	//basic header (int rlen, int clen, byte type)
 	public static final int HEADER_SIZE = 9;
-	
-	public enum BlockType{
-		EMPTY_BLOCK,  
-		ULTRA_SPARSE_BLOCK, //ultra sparse representation, in-mem same as sparse
-		SPARSE_BLOCK, //sparse representation, see sparseRows 
-		DENSE_BLOCK, //dense representation, see denseBlock
-	}
 	
 	//matrix meta data
 	protected int rlen       = -1;

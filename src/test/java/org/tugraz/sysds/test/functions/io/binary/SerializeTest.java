@@ -34,7 +34,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class SerializeTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "SerializeTest";
 	private final static String TEST_DIR = "functions/io/binary/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + SerializeTest.class.getSimpleName() + "/";

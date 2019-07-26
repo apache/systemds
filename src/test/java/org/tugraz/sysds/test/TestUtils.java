@@ -2043,6 +2043,11 @@ public class TestUtils
 		return data;
 	}
 	
+	public static MatrixBlock round(MatrixBlock data) {
+		return DataConverter.convertToMatrixBlock(
+			round(DataConverter.convertToDoubleMatrix(data)));
+	}
+	
 	public static double[][] floor(double[][] data) {
 		for(int i=0; i<data.length; i++)
 			for(int j=0; j<data[i].length; j++)

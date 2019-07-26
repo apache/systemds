@@ -30,7 +30,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
-		Assert.assertEquals(0, tb.getNumCols());
+		Assert.assertEquals(0, tb.getNumColumns());
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
 		Assert.assertFalse(tb.isMatrix());
@@ -42,7 +42,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
-		Assert.assertEquals(1, tb.getNumCols());
+		Assert.assertEquals(1, tb.getNumColumns());
 		Assert.assertEquals(1, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
 		Assert.assertFalse(tb.isMatrix());
@@ -54,7 +54,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
@@ -67,7 +67,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
@@ -80,7 +80,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
@@ -93,7 +93,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
-		Assert.assertEquals(0, tb.getNumCols());
+		Assert.assertEquals(0, tb.getNumColumns());
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
 		Assert.assertFalse(tb.isMatrix());
@@ -105,7 +105,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
-		Assert.assertEquals(1, tb.getNumCols());
+		Assert.assertEquals(1, tb.getNumColumns());
 		Assert.assertEquals(1, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
 		Assert.assertFalse(tb.isMatrix());
@@ -117,7 +117,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());
@@ -130,7 +130,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(13, tb.getDim(2));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertFalse(tb.isSparse());
@@ -143,7 +143,7 @@ public class TensorConstructionTest
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
-		Assert.assertEquals(12, tb.getNumCols());
+		Assert.assertEquals(12, tb.getNumColumns());
 		Assert.assertEquals(12, tb.getDim(1));
 		Assert.assertEquals(0, tb.getNonZeros());
 		Assert.assertTrue(tb.isSparse());

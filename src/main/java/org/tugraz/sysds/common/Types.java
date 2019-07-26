@@ -95,4 +95,14 @@ public class Types
 			}
 		}
 	}
+	
+	/**
+	 * Serialization block types (empty, dense, sparse, ultra-sparse)
+	 */
+	public enum BlockType{
+		EMPTY_BLOCK,
+		ULTRA_SPARSE_BLOCK,
+		SPARSE_BLOCK,
+		DENSE_BLOCK,
+	}
 }

@@ -21,6 +21,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.tugraz.sysds.common.Types.BlockType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -35,7 +36,7 @@ public class TensorBlock implements CacheBlock
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	
 	//constant value type of tensor block
-	protected final ValueType _vt;
+	protected ValueType _vt;
 	
 	//min 2 dimensions to preserve proper matrix semantics
 	protected int[] _dims; //[2,inf)
@@ -222,8 +223,9 @@ public class TensorBlock implements CacheBlock
 	public int getNumRows() {
 		return getDim(0);
 	}
-	
-	public int getNumCols() {
+
+	@Override
+	public int getNumColumns() {
 		return getDim(1);
 	}
 	
@@ -304,6 +306,85 @@ public class TensorBlock implements CacheBlock
 	}
 	
 	////////
+	// Input/Output functions
+	
+	@Override
+	@SuppressWarnings("incomplete-switch")
+	public void readFields(DataInput in) 
+		throws IOException 
+	{
+		//step 1: read header
+		_vt = ValueType.values()[in.readByte()];
+		_dims = new int[in.readInt()];
+		for(int i=0; i<_dims.length; i++)
+			_dims[i] = in.readInt();
+		_nnz = in.readLong();
+	
+		//step 2: read tensor block data
+		switch( BlockType.values()[in.readByte()] ) {
+			case EMPTY_BLOCK:
+				reset(_dims);
+				return;
+			case DENSE_BLOCK: {
+				allocateDenseBlock(false);
+				DenseBlock a = getDenseBlock();
+				int odims = (int) UtilFunctions.prod(_dims, 1);
+				for( int i=0; i<getNumRows(); i++ )
+					for( int j=0; j<odims; j++ ) {
+						switch( _vt ) {
+							case FP32: a.set(i, j, in.readFloat()); break;
+							case FP64: a.set(i, j, in.readDouble()); break;
+							case INT32: a.set(i, j, in.readInt()); break;
+							case INT64: a.set(i, j, in.readLong()); break;
+							case BOOLEAN: a.set(i, j, in.readByte()); break;
+						}
+					}
+				break;
+			}
+			case SPARSE_BLOCK:
+			case ULTRA_SPARSE_BLOCK:
+				throw new NotImplementedException();
+		}
+	}
+	
+	@Override
+	@SuppressWarnings("incomplete-switch")
+	public void write(DataOutput out) 
+		throws IOException 
+	{
+		//step 1: write header
+		out.writeByte(_vt.ordinal()); // value type
+		out.writeInt(getNumDims()); // num dims
+		for(int i=0; i<getNumDims(); i++)
+			out.writeInt(getDim(i)); // dim
+		out.writeLong(getNonZeros()); // nnz
+		
+		//step 2: write tensor block data
+		if( isEmpty(false) ) {
+			//empty blocks do not need to materialize row information
+			out.writeByte(BlockType.EMPTY_BLOCK.ordinal());
+		}
+		else if( !isSparse() ) {
+			out.writeByte(BlockType.DENSE_BLOCK.ordinal());
+			DenseBlock a = getDenseBlock();
+			int odims = (int) UtilFunctions.prod(_dims, 1);
+			for( int i=0; i<getNumRows(); i++ )
+				for( int j=0; j<odims; j++ ) {
+					switch( _vt ) {
+						case FP32: out.writeFloat((float)a.get(i, j)); break;
+						case FP64: out.writeDouble(a.get(i, j)); break;
+						case INT32: out.writeInt((int)a.get(i, j)); break;
+						case INT64: out.writeLong((long)a.get(i, j)); break;
+						case BOOLEAN: out.writeBoolean(a.get(i, j) != 0); break;
+					}
+				}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+	}
+	
+	////////
 	// Basic modification
 	
 	public double get(int[] ix) {
@@ -315,7 +396,17 @@ public class TensorBlock implements CacheBlock
 			return _denseBlock.get(ix);
 		}
 	}
-
+	
+	public double get(int r, int c) {
+		if (_sparse) {
+			// TODO: Implement sparse
+			throw new NotImplementedException();
+			//return _sparseBlock.get(ix);
+		} else {
+			return _denseBlock.get(r, c);
+		}
+	}
+	
 	public String getString(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -331,6 +422,14 @@ public class TensorBlock implements CacheBlock
 			throw new NotImplementedException();
 		} else {
 			_denseBlock.set(ix, v);
+		}
+	}
+	
+	public void set(int r, int c, double v) {
+		if (_sparse) {
+			throw new NotImplementedException();
+		} else {
+			_denseBlock.set(r, c, v);
 		}
 	}
 
@@ -422,24 +521,6 @@ public class TensorBlock implements CacheBlock
 	}
 
 	@Override
-	public void write(DataOutput out) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public int getNumColumns() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
 	public long getInMemorySize() {
 		// TODO Auto-generated method stub
 		return 0;
@@ -447,8 +528,30 @@ public class TensorBlock implements CacheBlock
 
 	@Override
 	public long getExactSerializedSize() {
-		// TODO Auto-generated method stub
-		return 0;
+		//header size (vt, num dims, dims, nnz, type)
+		long size = 4 * (1+_dims.length) + 8 + 2;
+		//serialized representation
+		if( !isSparse() ) {
+			switch( _vt ) {
+				case INT32:
+				case FP32:
+					size += 4 * getLength(); break;
+				case INT64:
+				case FP64: 
+					size += 8 * getLength(); break;
+				case BOOLEAN:
+					//TODO perf bits instead of bytes
+					size += getLength(); break;
+					//size += Math.ceil((double)getLength() / 64); break;
+				case STRING:
+				case UNKNOWN:
+					throw new NotImplementedException();
+			}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+		return size;
 	}
 
 	@Override

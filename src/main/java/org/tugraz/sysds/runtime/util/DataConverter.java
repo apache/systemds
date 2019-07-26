@@ -728,6 +728,27 @@ public class DataConverter
 		
 		return frame;
 	}
+	
+	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt) {
+		TensorBlock ret = new TensorBlock(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
+		ret.allocateDenseBlock(true);
+		if( mb.getNonZeros() > 0 ) {
+			if( mb.isInSparseFormat() ) {
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				while( iter.hasNext() ) {
+					IJV cell = iter.next();
+					ret.set(cell.getI(), cell.getJ(), cell.getV());
+				}
+			}
+			else {
+				double[] a = mb.getDenseBlockValues();
+				for( int i=0, ix=0; i<mb.getNumRows(); i++ )
+					for( int j=0; j<mb.getNumColumns(); j++, ix++ )
+						ret.set(i, j, a[ix]);
+			}
+		}
+		return ret;
+	}
 
 	public static MatrixBlock[] convertToMatrixBlockPartitions( MatrixBlock mb, boolean colwise ) 
 	{
@@ -909,7 +930,7 @@ public class DataConverter
 	}
 
 	public static String toString(TensorBlock mb) {
-		return toString(mb, false, " ", "\n", "[", "]", mb.getNumRows(), mb.getNumCols(), 3);
+		return toString(mb, false, " ", "\n", "[", "]", mb.getNumRows(), mb.getNumColumns(), 3);
 	}
 
 	/**
@@ -927,12 +948,12 @@ public class DataConverter
 	 * @return tensor as a string
 	 */
 	public static String toString(TensorBlock tb, boolean sparse, String separator, String lineseparator,
-	                              String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
+			String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuilder sb = new StringBuilder();
 
 		// Setup number of rows and columns to print
 		int rlen = tb.getNumRows();
-		int clen = tb.getNumCols();
+		int clen = tb.getNumColumns();
 		int rowLength = rlen;
 		int colLength = clen;
 		if (rowsToPrint >= 0)

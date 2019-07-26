@@ -102,7 +102,9 @@ public class CacheDataOutput implements DataOutput, MatrixBlockDataOutput
 	
 	@Override
 	public void writeFloat(float v) throws IOException {
-		throw new IOException("Not supported.");
+		int tmp = Float.floatToRawIntBits(v);
+		intToBa(tmp, _buff, _count);
+		_count += 4;
 	}
 
 	@Override

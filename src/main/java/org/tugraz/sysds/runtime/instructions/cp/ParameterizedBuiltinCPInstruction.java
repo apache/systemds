@@ -378,16 +378,15 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	private void warnOnTrunction(TensorBlock data, int rows, int cols) {
 		//warn on truncation because users might not be aware and use toString for verification
 		if( (getParam("rows")==null && data.getNumRows()>rows)
-				|| (getParam("cols")==null && data.getNumCols()>cols) )
+			|| (getParam("cols")==null && data.getNumColumns()>cols) )
 		{
 			StringBuilder sb = new StringBuilder();
 			IntStream.range(0, data.getNumDims()).forEach((i) -> {
-						if ((i == data.getNumDims() - 1)) {
-							sb.append(data.getDim(i));
-						} else {
-							sb.append(data.getDim(i)).append("x");
-						}
-					});
+				if ((i == data.getNumDims() - 1))
+					sb.append(data.getDim(i));
+				else
+					sb.append(data.getDim(i)).append("x");
+			});
 			LOG.warn("Truncating "+data.getClass().getSimpleName()+" of size "+sb.toString()+" to "+rows+"x"+cols+". "
 					+ "Use toString(X, rows=..., cols=...) if necessary.");
 		}

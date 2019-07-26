@@ -60,20 +60,21 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 
 	public static MatrixReshapeSPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields( parts, 6 );
+		InstructionUtils.checkNumFields( parts, 7 );
 		
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand in2 = new CPOperand(parts[2]);
-		CPOperand in3 = new CPOperand(parts[3]);
-		CPOperand in4 = new CPOperand(parts[4]);
-		CPOperand out = new CPOperand(parts[5]);
-		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[6]);
+		CPOperand rows = new CPOperand(parts[2]);
+		CPOperand cols = new CPOperand(parts[3]);
+		//TODO handle dims for tensors parts[4]
+		CPOperand byRow = new CPOperand(parts[5]);
+		CPOperand out = new CPOperand(parts[6]);
+		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[7]);
 		 
 		if(!opcode.equalsIgnoreCase("rshape"))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeInstruction: " + str);
 		else
-			return new MatrixReshapeSPInstruction(new Operator(true), in1, in2, in3, in4, out, outputEmptyBlocks, opcode, str);
+			return new MatrixReshapeSPInstruction(new Operator(true), in1, rows, cols, byRow, out, outputEmptyBlocks, opcode, str);
 	}
 	
 	@Override

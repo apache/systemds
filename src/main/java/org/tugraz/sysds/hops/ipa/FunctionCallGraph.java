@@ -198,6 +198,12 @@ public class FunctionCallGraph
 		_fCallsSB.remove(fkeyOld);
 		_fCalls.put(fkey, fopTmp);
 		_fCallsSB.put(fkey, sbTmp);
+		//additional cleanups fold no longer reachable
+		_fRecursive.remove(fkeyOld);
+		_fSideEffectFree.remove(fkeyOld);
+		_fGraph.remove(fkeyOld);
+		for( HashSet<String> hs : _fGraph.values() )
+			hs.remove(fkeyOld);
 	}
 	
 	/**

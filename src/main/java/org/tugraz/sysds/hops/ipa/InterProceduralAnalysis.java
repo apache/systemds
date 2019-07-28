@@ -72,7 +72,6 @@ import org.tugraz.sysds.runtime.meta.MetaDataFormat;
  *  Additionally, IPA also covers the removal of unused functions, the decision on
  *  recompile once functions, the removal of unnecessary checkpoints, and the 
  *  global removal of constant binary operations such as X * ones.
- *         
  */
 public class InterProceduralAnalysis 
 {
@@ -134,11 +133,11 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassInlineFunctions());
-		_passes.add(new IPAPassForwardFunctionCalls());
 		_passes.add(new IPAPassEliminateDeadCode());
 		//note: apply rewrites last because statement block rewrites
 		//might merge relevant statement blocks in special cases, which 
 		//would require an update of the function call graph
+		_passes.add(new IPAPassForwardFunctionCalls());
 		_passes.add(new IPAPassApplyStaticAndDynamicHopRewrites());
 	}
 	

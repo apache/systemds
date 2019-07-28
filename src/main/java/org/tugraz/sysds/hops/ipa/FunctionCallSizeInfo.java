@@ -210,7 +210,7 @@ public class FunctionCallSizeInfo
 		//step 1: determine function candidates by evaluating all function calls
 		for( String fkey : _fgraph.getReachableFunctions() ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
-			if( flist.isEmpty() ) //robustness removed functions
+			if( flist == null || flist.isEmpty() ) //robustness removed functions
 				continue;
 			
 			//condition 1: function called just once
@@ -249,7 +249,7 @@ public class FunctionCallSizeInfo
 		//(considered for valid functions only)
 		for( String fkey : _fcand ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
-			if( flist.isEmpty() ) //robustness removed functions
+			if( flist == null || flist.isEmpty() ) //robustness removed functions
 				continue;
 			FunctionOp first = flist.get(0);
 			HashSet<Integer> tmp = new HashSet<>();
@@ -267,7 +267,7 @@ public class FunctionCallSizeInfo
 		//(considered for all functions)
 		for( String fkey : _fgraph.getReachableFunctions() ) {
 			List<FunctionOp> flist = _fgraph.getFunctionCalls(fkey);
-			if( flist.isEmpty() ) //robustness removed functions
+			if( flist == null || flist.isEmpty() ) //robustness removed functions
 				continue;
 			FunctionOp first = flist.get(0);
 			//initialize w/ all literals of first call

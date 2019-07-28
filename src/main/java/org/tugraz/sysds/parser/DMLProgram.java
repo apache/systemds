@@ -70,6 +70,11 @@ public class DMLProgram
 		return getFunctionStatementBlock(tmp[0], tmp[1]);
 	}
 	
+	public void removeFunctionStatementBlock(String fkey) {
+		String[] tmp = splitFunctionKey(fkey);
+		removeFunctionStatementBlock(tmp[0], tmp[1]);
+	}
+	
 	public FunctionStatementBlock getFunctionStatementBlock(String namespaceKey, String functionName) {
 		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
 		if (namespaceProgram == null)
@@ -78,6 +83,13 @@ public class DMLProgram
 		// for the namespace DMLProgram, get the specified function (if exists) in its current namespace
 		FunctionStatementBlock retVal = namespaceProgram._functionBlocks.get(functionName);
 		return retVal;
+	}
+	
+	public void removeFunctionStatementBlock(String namespaceKey, String functionName) {
+		DMLProgram namespaceProgram = this.getNamespaces().get(namespaceKey);
+		// for the namespace DMLProgram, get the specified function (if exists) in its current namespace
+		if (namespaceProgram != null)
+			namespaceProgram._functionBlocks.remove(functionName);
 	}
 	
 	public HashMap<String, FunctionStatementBlock> getFunctionStatementBlocks(String namespaceKey) {

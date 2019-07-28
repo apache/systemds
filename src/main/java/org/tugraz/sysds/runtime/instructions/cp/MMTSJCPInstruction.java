@@ -56,14 +56,14 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 
 		//execute operations 
 		MatrixBlock ret = (MatrixBlock) matBlock1.transposeSelfMatrixMultOperations(new MatrixBlock(), _type, _numThreads );
 		
 		//set output and release inputs
-		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), ret);
+		ec.releaseMatrixInput(input1.getName());
 	}
 	
 	public MMTSJType getMMTSJType()

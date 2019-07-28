@@ -200,7 +200,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				
 				//put output block into symbol table (no lineage because single block)
 				//this also includes implicit maintenance of matrix characteristics
-				sec.setMatrixOutput(output.getName(), out2, getExtendedOpcode());
+				sec.setMatrixOutput(output.getName(), out2);
 			}
 			//multi-block aggregation
 			else {
@@ -358,7 +358,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			{
 				int n = emptyReturn ? 1 : 0;
 				MatrixBlock out = new MatrixBlock(rows?n:(int)mcIn.getRows(), rows?(int)mcIn.getCols():n, true); 
-				sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+				sec.setMatrixOutput(output.getName(), out);
 			}
 		}
 		else if ( opcode.equalsIgnoreCase("replace") ) 

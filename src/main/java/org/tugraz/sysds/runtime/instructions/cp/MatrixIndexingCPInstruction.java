@@ -63,12 +63,12 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			{
 				//execute right indexing operation (with shallow row copies for range
 				//of entire sparse rows, which is safe due to copy on update)
-				MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+				MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 				resultBlock = matBlock.slice((int)ixrange.rowStart, (int)ixrange.rowEnd, 
 					(int)ixrange.colStart, (int)ixrange.colEnd, false, new MatrixBlock());
 				
 				//unpin rhs input
-				ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(input1.getName());
 				
 				//ensure correct sparse/dense output representation
 				if( checkGuardedRepresentationChange(matBlock, resultBlock) )
@@ -76,7 +76,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			}
 			
 			//unpin output
-			ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), resultBlock);
 		}
 		//left indexing
 		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))
@@ -88,13 +88,13 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 				Statistics.incrementTotalLix();
 			}
 			
-			MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+			MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 			MatrixBlock resultBlock = null;
 			
 			if(input2.getDataType() == DataType.MATRIX) { //MATRIX<-MATRIX
-				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+				MatrixBlock rhsMatBlock = ec.getMatrixInput(input2.getName());
 				resultBlock = matBlock.leftIndexingOperations(rhsMatBlock, ixrange, new MatrixBlock(), updateType);
-				ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(input2.getName());
 			}
 			else { //MATRIX<-SCALAR 
 				if(!ixrange.isScalar())
@@ -105,7 +105,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			}
 
 			//unpin lhs input
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName());
 			
 			//ensure correct sparse/dense output representation
 			//(memory guarded by release of input)

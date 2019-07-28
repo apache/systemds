@@ -56,23 +56,23 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		MatrixBlock matBlock3 = input3.isLiteral() ? null : //matrix or literal 1
-			ec.getMatrixInput(input3.getName(), getExtendedOpcode());
+			ec.getMatrixInput(input3.getName());
 		
 		AggregateTernaryOperator ab_op = (AggregateTernaryOperator) _optr;
 		MatrixBlock ret = matBlock1.aggregateTernaryOperations(
 				matBlock1, matBlock2, matBlock3, new MatrixBlock(), ab_op, true);
 		
 		//release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(input2.getName());
 		if( !input3.isLiteral() )
-			ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input3.getName());
 		if( output.getDataType().isScalar() )
 			ec.setScalarOutput(output.getName(), new DoubleObject(ret.quickGetValue(0, 0)));
 		else
-			ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());	
+			ec.setMatrixOutput(output.getName(), ret);
 	}
 }

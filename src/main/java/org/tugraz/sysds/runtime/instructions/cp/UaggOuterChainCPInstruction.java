@@ -77,30 +77,29 @@ public class UaggOuterChainCPInstruction extends UnaryCPInstruction {
 		MatrixBlock mbLeft = null, mbRight = null, mbOut = null;
 		//get the main data input
 		if( rightCached ) { 
-			mbLeft = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-			mbRight = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+			mbLeft = ec.getMatrixInput(input1.getName());
+			mbRight = ec.getMatrixInput(input2.getName());
 		}
 		else { 
-			mbLeft = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
-			mbRight = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+			mbLeft = ec.getMatrixInput(input2.getName());
+			mbRight = ec.getMatrixInput(input1.getName());
 		}
 		
 		mbOut = mbLeft.uaggouterchainOperations(mbLeft, mbRight, mbOut, _bOp, _uaggOp);
 
 		//release locks
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), input2.getName());
 		
 		if( _uaggOp.aggOp.correctionExists )
 			mbOut.dropLastRowsOrColumns(_uaggOp.aggOp.correctionLocation);
 		
 		if(_uaggOp.indexFn instanceof ReduceAll ) { //RC AGG (output is scalar)
-			ec.setMatrixOutput(output.getName(), new MatrixBlock(
-				mbOut.quickGetValue(0, 0)), getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(),
+				new MatrixBlock(mbOut.quickGetValue(0, 0)));
 		}
 		else { //R/C AGG (output is rdd)
 			mbOut.examSparsity();
-			ec.setMatrixOutput(output.getName(), mbOut, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), mbOut);
 		}
 	}
 }

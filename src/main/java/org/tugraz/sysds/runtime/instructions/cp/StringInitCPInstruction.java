@@ -99,6 +99,6 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 		outBlk.examSparsity();
 		
 		//put output into symbol table
-		ec.setMatrixOutput(outName, outBlk, getExtendedOpcode());
+		ec.setMatrixOutput(outName, outBlk);
 	}
 }

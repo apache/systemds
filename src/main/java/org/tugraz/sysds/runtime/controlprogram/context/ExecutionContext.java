@@ -39,7 +39,6 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.data.TensorBlock;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ListObject;
@@ -57,7 +56,6 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.HDFSTool;
-import org.tugraz.sysds.utils.GPUStatistics;
 import org.tugraz.sysds.utils.Statistics;
 
 
@@ -261,26 +259,6 @@ public class ExecutionContext {
 	}
 	
 	/**
-	 * Pins a matrix variable into memory, update the finegrained statistics and returns the internal matrix block.
-	 * 
-	 * @param varName variable name
-	 * @param opcode  extended opcode
-	 * @return matrix block
-	 */
-	public MatrixBlock getMatrixInput(String varName, String opcode) {
-		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		MatrixBlock mb = getMatrixInput(varName);
-		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
-			long t2 = System.nanoTime();
-			if(mb.isInSparseFormat())
-				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, t2-t1);
-			else
-				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_DENSE_MB, t2-t1);
-		}
-		return mb;
-	}
-	
-	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.
 	 * 
 	 * @param varName variable name
@@ -424,13 +402,9 @@ public class ExecutionContext {
 		getMatrixObject(varName).release();
 	}
 	
-	public void releaseMatrixInput(String varName, String opcode) {
-		long t1 = opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		releaseMatrixInput(varName);
-		if(opcode != null && DMLScript.STATISTICS && DMLScript.FINEGRAINED_STATISTICS) {
-			long t2 = System.nanoTime();
-			GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_RELEASE_INPUT_MB, t2-t1);
-		}
+	public void releaseMatrixInput(String... varNames) {
+		for( String varName : varNames )
+			releaseMatrixInput(varName);
 	}
 	
 	public void releaseMatrixInputForGPUInstruction(String varName) {
@@ -505,10 +479,6 @@ public class ExecutionContext {
 		mo.acquireModify(outputData);
 		mo.release();
 		setVariable(varName, mo);
-	}
-
-	public void setMatrixOutput(String varName, MatrixBlock outputData, String opcode) {
-		setMatrixOutput(varName, outputData);
 	}
 
 	public void setMatrixOutput(String varName, MatrixBlock outputData, UpdateType flag) {

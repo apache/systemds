@@ -100,7 +100,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());		
+			sec.setMatrixOutput(output.getName(), ret);
 		}
 		else //tack+* multi block
 		{

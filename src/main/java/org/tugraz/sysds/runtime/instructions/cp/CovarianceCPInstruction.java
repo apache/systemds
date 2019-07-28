@@ -74,8 +74,8 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec)
 	{
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		String output_name = output.getName(); 
 		COVOperator cov_op = (COVOperator)_optr;
 		CM_COV_Object covobj = new CM_COV_Object();
@@ -84,18 +84,16 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 			// Unweighted: cov.mvar0.mvar1.out
 			covobj = matBlock1.covOperations(cov_op, matBlock2);
 			
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-			ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName(), input2.getName());
 		}
 		else {
 			// Weighted: cov.mvar0.mvar1.weights.out
-			MatrixBlock wtBlock = ec.getMatrixInput(input3.getName(), getExtendedOpcode());
+			MatrixBlock wtBlock = ec.getMatrixInput(input3.getName());
 			
 			covobj = matBlock1.covOperations(cov_op, matBlock2, wtBlock);
 			
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-			ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
-			ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName(), 
+				input2.getName(), input3.getName());
 		}
 		
 		double val = covobj.getRequiredResult(_optr);

@@ -94,7 +94,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(output.getName(), out2, getExtendedOpcode());	
+		sec.setMatrixOutput(output.getName(), out2);
 	}
 
 	private static class ZipMultiplyFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, MatrixBlock> 

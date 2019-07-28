@@ -594,11 +594,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						ScalarObjectFactory.createScalarObject(fBlock.getSchema()[0], value));
 			}
 			else if( getInput1().getDataType().isMatrix() ) {
-				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());
+				MatrixBlock mBlock = ec.getMatrixInput(getInput1().getName());
 				if( mBlock.getNumRows()!=1 || mBlock.getNumColumns()!=1 )
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast matrix '"+getInput1().getName()+"' of dimension ("+mBlock.getNumRows()+" x "+mBlock.getNumColumns()+") to scalar.");
 				double value = mBlock.getValue(0,0);
-				ec.releaseMatrixInput(getInput1().getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(getInput1().getName());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));
 			}
 			else if( getInput1().getDataType().isList() ) {
@@ -616,13 +616,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				FrameBlock fin = ec.getFrameInput(getInput1().getName());
 				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
 				ec.releaseFrameInput(getInput1().getName());
-				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+				ec.setMatrixOutput(output.getName(), out);
 			}
 			else if( getInput1().getDataType().isScalar() ) {
 				ScalarObject scalarInput = ec.getScalarInput(
 					getInput1().getName(), getInput1().getValueType(), getInput1().isLiteral());
 				MatrixBlock out = new MatrixBlock(scalarInput.getDoubleValue());
-				ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+				ec.setMatrixOutput(output.getName(), out);
 			}
 			else if( getInput1().getDataType().isList() ) {
 				//TODO handling of cleanup status, potentially new object
@@ -633,14 +633,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					MatrixBlock out = new MatrixBlock(list.getLength(), 1, false);
 					for( int i=0; i<list.getLength(); i++ )
 						out.quickSetValue(i, 0, ((ScalarObject)list.slice(i)).getDoubleValue());
-					ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+					ec.setMatrixOutput(output.getName(), out);
 				}
 				else {
 					//pass through matrix input or create 1x1 matrix for scalar
 					Data tmp = list.slice(0);
 					if( tmp instanceof ScalarObject && tmp.getValueType()!=ValueType.STRING ) {
 						MatrixBlock out = new MatrixBlock(((ScalarObject)tmp).getDoubleValue());
-						ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+						ec.setMatrixOutput(output.getName(), out);
 					}
 					else {
 						ec.setVariable(output.getName(), tmp);
@@ -662,9 +662,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				out.set(0, 0, scalarInput.getStringValue());
 			}
 			else { //DataType.FRAME
-				MatrixBlock min = ec.getMatrixInput(getInput1().getName(), getExtendedOpcode());
+				MatrixBlock min = ec.getMatrixInput(getInput1().getName());
 				out = DataConverter.convertToFrameBlock(min);
-				ec.releaseMatrixInput(getInput1().getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(getInput1().getName());
 			}
 			ec.setFrameOutput(output.getName(), out);
 			break;

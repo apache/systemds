@@ -53,15 +53,14 @@ public class PMMJCPInstruction extends ComputationCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		int rlen = (int)ec.getScalarInput(input3).getLongValue();
 		//execute operations
 		MatrixBlock ret = new MatrixBlock(rlen, matBlock2.getNumColumns(), matBlock2.isInSparseFormat());
 		matBlock1.permutationMatrixMultOperations(matBlock2, ret, null, _numThreads);
 		//set output and release inputs
-		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), ret);
+		ec.releaseMatrixInput(input1.getName(), input2.getName());
 	}
 }

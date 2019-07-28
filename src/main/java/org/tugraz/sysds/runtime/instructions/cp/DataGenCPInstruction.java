@@ -338,7 +338,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				soresBlock.examSparsity();
 		
 			//release created output
-			ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), soresBlock);
 		} else if(output.isTensor()) {
 			// TODO memory optimization
 			ec.setTensorOutput(output.getName(), tensorBlock);

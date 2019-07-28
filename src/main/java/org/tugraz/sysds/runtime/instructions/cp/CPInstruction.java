@@ -209,7 +209,7 @@ public abstract class CPInstruction extends Instruction
 			break;
 			case MATRIX: {
 				// Dimensions given as vector
-				MatrixBlock in = ec.getMatrixInput(dims.getName(), getExtendedOpcode());
+				MatrixBlock in = ec.getMatrixInput(dims.getName());
 				boolean colVec = false;
 				if (in.getNumRows() == 1) {
 					colVec = true;
@@ -220,7 +220,7 @@ public abstract class CPInstruction extends Instruction
 				for (int i = 0; i < in.getLength(); i++) {
 					tDims[i] = UtilFunctions.toInt(in.getValue(colVec ? 0 : i, colVec ? i : 0));
 				}
-				ec.releaseMatrixInput(dims.getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(dims.getName());
 			}
 			break;
 			case TENSOR: {

@@ -67,10 +67,10 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)
 		JavaRDD<MatrixBlock> tmp = in.map(new RDDTSMMFunction(_type));
 		MatrixBlock out = RDDAggregateUtils.sumStable(tmp);
-		      
+
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+		sec.setMatrixOutput(output.getName(), out);
 	}
 
 	private static class RDDTSMMFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, MatrixBlock> 

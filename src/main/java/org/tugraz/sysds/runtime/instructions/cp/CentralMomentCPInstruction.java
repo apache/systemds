@@ -97,7 +97,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		 * order and update the CMOperator, if needed.
 		 */
 		
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 
 		CPOperand scalarInput = (input3==null ? input2 : input3);
 		ScalarObject order = ec.getScalarInput(scalarInput); 
@@ -111,12 +111,12 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 			cmobj = matBlock.cmOperations(cm_op);
 		}
 		else {
-			MatrixBlock wtBlock = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+			MatrixBlock wtBlock = ec.getMatrixInput(input2.getName());
 			cmobj = matBlock.cmOperations(cm_op, wtBlock);
-			ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input2.getName());
 		}
 		
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
 		
 		double val = cmobj.getRequiredResult(cm_op);
 		ec.setScalarOutput(output_name, new DoubleObject(val));

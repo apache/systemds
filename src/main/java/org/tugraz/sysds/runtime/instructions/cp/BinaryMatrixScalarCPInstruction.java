@@ -37,7 +37,7 @@ public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 		CPOperand mat = ( input1.getDataType() == DataType.MATRIX ) ? input1 : input2;
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
 		
-		MatrixBlock inBlock = ec.getMatrixInput(mat.getName(), getExtendedOpcode());
+		MatrixBlock inBlock = ec.getMatrixInput(mat.getName());
 		ScalarObject constant = (ScalarObject) ec.getScalarInput(scalar);
 
 		ScalarOperator sc_op = (ScalarOperator) _optr;
@@ -45,13 +45,13 @@ public class BinaryMatrixScalarCPInstruction extends BinaryCPInstruction {
 		
 		MatrixBlock retBlock = (MatrixBlock) inBlock.scalarOperations(sc_op, new MatrixBlock());
 		
-		ec.releaseMatrixInput(mat.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(mat.getName());
 		
 		// Ensure right dense/sparse output representation (guarded by released input memory)
 		if( checkGuardedRepresentationChange(inBlock, retBlock) ) {
  			retBlock.examSparsity();
  		}
 		
-		ec.setMatrixOutput(output.getName(), retBlock, getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), retBlock);
 	}
 }

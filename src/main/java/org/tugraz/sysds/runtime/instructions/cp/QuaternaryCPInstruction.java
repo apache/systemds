@@ -101,38 +101,36 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		QuaternaryOperator qop = (QuaternaryOperator) _optr;
 		
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
-		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
+		MatrixBlock matBlock3 = ec.getMatrixInput(input3.getName());
 		MatrixBlock matBlock4 = null;
 		if( qop.hasFourInputs() ) {
 			if (input4.getDataType() == DataType.SCALAR)
 				matBlock4 = new MatrixBlock(ec.getScalarInput(input4).getDoubleValue());
 			else
-				matBlock4 = ec.getMatrixInput(input4.getName(), getExtendedOpcode());
+				matBlock4 = ec.getMatrixInput(input4.getName());
 		}
 		
 		//core execute
 		MatrixBlock out = matBlock1.quaternaryOperations(qop, matBlock2, matBlock3, matBlock4, new MatrixBlock(), _numThreads);
 		
 		//release inputs and output
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input3.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), input2.getName(), input3.getName());
 		if( qop.wtype1 != null || qop.wtype4 != null ) { //wsloss/wcemm
 			if( (qop.wtype1 != null && qop.wtype1.hasFourInputs()) ||
 				(qop.wtype4 != null && qop.wtype4.hasFourInputs()) )
 				if (input4.getDataType() == DataType.MATRIX) {
-					ec.releaseMatrixInput(input4.getName(), getExtendedOpcode());
+					ec.releaseMatrixInput(input4.getName());
 				}
 			ec.setVariable(output.getName(), new DoubleObject(out.quickGetValue(0, 0)));
 		}
 		else { //wsigmoid / wdivmm / wumm
 			if( qop.wtype3 != null && qop.wtype3.hasFourInputs() )
 				if (input4.getDataType() == DataType.MATRIX) {
-					ec.releaseMatrixInput(input4.getName(), getExtendedOpcode());
+					ec.releaseMatrixInput(input4.getName());
 				}
-			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), out);
 		}
 	}	
 }

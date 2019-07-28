@@ -100,10 +100,10 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			JavaRDD<MatrixBlock> tmp2 = in.map(
 					new RDDTSMM2ExtFunction(bpmb, _type, outputDim, (int)mc.getRowsPerBlock()));
 			MatrixBlock out = RDDAggregateUtils.sumStable(tmp2);
-		      
+
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+			sec.setMatrixOutput(output.getName(), out);
 		}
 		else {
 			//output individual output blocks and aggregate by key (no action)
@@ -112,8 +112,8 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			
 			//put output RDD handle into symbol table
 			sec.getMatrixCharacteristics(output.getName()).set(outputDim, outputDim, mc.getRowsPerBlock(), mc.getColsPerBlock());
-			sec.setRDDHandleForVariable(output.getName(), out);	
-			sec.addLineageRDD(output.getName(), input1.getName());	
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
 	}
 

@@ -34,8 +34,8 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//get inputs
-		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+		MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		//check input dimensions
 		if( _type == AppendType.CBIND && matBlock1.getNumRows() != matBlock2.getNumRows() ) {
 			throw new DMLRuntimeException("Append-cbind is not possible for input matrices " + input1.getName() + " and " + input2.getName()
@@ -48,8 +48,7 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 		//execute append operations (append both inputs to initially empty output)
 		MatrixBlock ret = matBlock1.append(matBlock2, new MatrixBlock(), _type==AppendType.CBIND);
 		//set output and release inputs 
-		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), ret);
+		ec.releaseMatrixInput(input1.getName(), input2.getName());
 	}
 }

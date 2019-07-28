@@ -125,7 +125,7 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//acquire inputs
-		MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 		ReorgOperator r_op = (ReorgOperator) _optr;
 		if( r_op.fn instanceof SortIndex ) {
 			//additional attributes for sort
@@ -142,8 +142,8 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		//release inputs/outputs
 		if( r_op.fn instanceof SortIndex && _col.getDataType().isMatrix() )
 			ec.releaseMatrixInput(_col.getName());
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(output.getName(), soresBlock, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
+		ec.setMatrixOutput(output.getName(), soresBlock);
 		if( r_op.fn instanceof DiagIndex && soresBlock.getNumColumns()>1 ) //diagV2M
 			ec.getMatrixObject(output.getName()).setDiag(true);
 	}

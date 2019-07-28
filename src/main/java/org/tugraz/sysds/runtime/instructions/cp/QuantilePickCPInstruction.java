@@ -85,7 +85,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 			case VALUEPICK: 
 				if( _inmem ) //INMEM VALUEPICK
 				{
-					MatrixBlock matBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 
 					if ( input2.getDataType() == DataType.SCALAR ) {
 						ScalarObject quantile = ec.getScalarInput(input2);
@@ -93,22 +93,22 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					} 
 					else {
-						MatrixBlock quantiles = ec.getMatrixInput(input2.getName(), getExtendedOpcode());
+						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
 						MatrixBlock resultBlock = (MatrixBlock) matBlock.pickValues(quantiles, new MatrixBlock());
 						quantiles = null;
-						ec.releaseMatrixInput(input2.getName(), getExtendedOpcode());
-						ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
+						ec.releaseMatrixInput(input2.getName());
+						ec.setMatrixOutput(output.getName(), resultBlock);
 					}
-					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+					ec.releaseMatrixInput(input1.getName());
 				}
 				break;
 
 			case MEDIAN:
 				if( _inmem ) //INMEM MEDIAN
 				{
-					double picked = ec.getMatrixInput(input1.getName(), getExtendedOpcode()).median();
+					double picked = ec.getMatrixInput(input1.getName()).median();
 					ec.setScalarOutput(output.getName(), new DoubleObject(picked));
-					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+					ec.releaseMatrixInput(input1.getName());
 					break;
 				}
 				break;
@@ -116,9 +116,9 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 			case IQM:
 				if( _inmem ) //INMEM IQM
 				{
-					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+					MatrixBlock matBlock1 = ec.getMatrixInput(input1.getName());
 					double iqm = matBlock1.interQuartileMean();
-					ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+					ec.releaseMatrixInput(input1.getName());
 					ec.setScalarOutput(output.getName(), new DoubleObject(iqm));
 				}
 				break;

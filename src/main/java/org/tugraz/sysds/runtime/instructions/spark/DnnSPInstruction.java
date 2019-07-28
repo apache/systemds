@@ -225,8 +225,8 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	}
 	
 	private Broadcast<MatrixBlock> getBroadcast(SparkExecutionContext sec, String name) {
-		MatrixBlock mb = sec.getMatrixInput( name, getExtendedOpcode() );
-		sec.releaseMatrixInput(name, getExtendedOpcode());
+		MatrixBlock mb = sec.getMatrixInput(name);
+		sec.releaseMatrixInput(name);
 		return sec.getSparkContext().broadcast(mb);
 	}
 

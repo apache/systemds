@@ -70,7 +70,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		ArrayList<ScalarObject> scalars = new ArrayList<>();
 		for (CPOperand input : _in) {
 			if(input.getDataType()==DataType.MATRIX)
-				inputs.add(ec.getMatrixInput(input.getName(), getExtendedOpcode()));
+				inputs.add(ec.getMatrixInput(input.getName()));
 			else if(input.getDataType()==DataType.SCALAR) {
 				//note: even if literal, it might be compiled as scalar placeholder
 				scalars.add(ec.getScalarInput(input));
@@ -80,7 +80,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		// set the output dimensions to the hop node matrix dimensions
 		if( output.getDataType() == DataType.MATRIX) {
 			MatrixBlock out = _op.execute(inputs, scalars, new MatrixBlock(), _numThreads);
-			ec.setMatrixOutput(output.getName(), out, getExtendedOpcode());
+			ec.setMatrixOutput(output.getName(), out);
 		}
 		else if (output.getDataType() == DataType.SCALAR) {
 			ScalarObject out = _op.execute(inputs, scalars, _numThreads);
@@ -90,6 +90,6 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		// release input matrices
 		for (CPOperand input : _in)
 			if(input.getDataType()==DataType.MATRIX)
-				ec.releaseMatrixInput(input.getName(), getExtendedOpcode());
+				ec.releaseMatrixInput(input.getName());
 	}
 }

@@ -104,9 +104,9 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 		
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
 		MatrixBlock[] out = LibCommonsMath.multiReturnOperations(in, getOpcode());
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
 		for(int i=0; i < _outputs.size(); i++) {
-			ec.setMatrixOutput(_outputs.get(i).getName(), out[i], getExtendedOpcode());
+			ec.setMatrixOutput(_outputs.get(i).getName(), out[i]);
 		}
 	}
 	

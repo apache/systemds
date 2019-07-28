@@ -115,7 +115,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		
 		//put output block into symbol table (no lineage because single block)
 		//this also includes implicit maintenance of matrix characteristics
-		sec.setMatrixOutput(_output.getName(), out, getExtendedOpcode());
+		sec.setMatrixOutput(_output.getName(), out);
 	}
 	
 	/**

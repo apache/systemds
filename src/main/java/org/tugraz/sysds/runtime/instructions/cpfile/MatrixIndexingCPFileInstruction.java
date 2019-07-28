@@ -121,7 +121,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 			else { //empty matrix partition
 				//note: for binary cell data partitioning empty partitions are not materialized
 				MatrixBlock resultBlock = mo.readMatrixPartition( ixrange );
-				ec.setMatrixOutput(output.getName(), resultBlock, getExtendedOpcode());
+				ec.setMatrixOutput(output.getName(), resultBlock);
 			}
 		}
 		else {

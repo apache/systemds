@@ -103,7 +103,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
-			sec.setMatrixOutput(output.getName(), out3, getExtendedOpcode());
+			sec.setMatrixOutput(output.getName(), out3);
 		}
 		else //MULTI_BLOCK or NONE
 		{

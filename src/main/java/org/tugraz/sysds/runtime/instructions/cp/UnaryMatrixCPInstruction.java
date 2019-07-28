@@ -32,22 +32,22 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 
 	@Override 
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock inBlock = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock inBlock = ec.getMatrixInput(input1.getName());
 		MatrixBlock retBlock = null;
 		
 		if(LibCommonsMath.isSupportedUnaryOperation(getOpcode())) {
 			retBlock = LibCommonsMath.unaryOperations(inBlock, getOpcode());
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName());
 		}
 		else {
 			UnaryOperator u_op = (UnaryOperator) _optr;
 			retBlock = (MatrixBlock) (inBlock.unaryOperations(u_op, new MatrixBlock()));
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName());
 			// Ensure right dense/sparse output representation (guarded by released input memory)
 			if( checkGuardedRepresentationChange(inBlock, retBlock) )
 	 			retBlock.examSparsity();
 		}
 		
-		ec.setMatrixOutput(output.getName(), retBlock, getExtendedOpcode());
+		ec.setMatrixOutput(output.getName(), retBlock);
 	}
 }

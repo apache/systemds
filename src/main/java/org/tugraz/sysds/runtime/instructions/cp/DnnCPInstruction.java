@@ -272,8 +272,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	
 	public void processReluBackwardInstruction(ExecutionContext ec) {
 		// (X > 0) * dout
-		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock input = ec.getMatrixInput(input1.getName());
+		MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 		MatrixBlock outputBlock = new MatrixBlock(input.getNumRows(), input.getNumColumns(),
 			input.isInSparseFormat() || dout.isInSparseFormat() );
 		
@@ -283,14 +283,14 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	public void processBiasAddInstruction(ExecutionContext ec) {
-		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock input = ec.getMatrixInput(input1.getName());
+		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
 		MatrixBlock outputBlock = null;
 		
 		if(bias.getNumColumns() != 1) {
@@ -311,14 +311,14 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	public void processBiasMultiplyInstruction(ExecutionContext ec) {
-		MatrixBlock input = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+		MatrixBlock input = ec.getMatrixInput(input1.getName());
+		MatrixBlock bias = ec.getMatrixInput(_in2.getName());
 		MatrixBlock outputBlock = null;
 		
 		if(bias.getNumColumns() != 1) {
@@ -337,17 +337,17 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName());
+		ec.releaseMatrixInput(_in2.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	public void processBatchNorm2dInstruction(ExecutionContext ec) {
-		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock scale = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
-		MatrixBlock bias = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
-		MatrixBlock runningMean = ec.getMatrixInput(_in4.getName(), getExtendedOpcode());
-		MatrixBlock runningVar = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
+		MatrixBlock image = ec.getMatrixInput(input1.getName());
+		MatrixBlock scale = ec.getMatrixInput(_in2.getName());
+		MatrixBlock bias = ec.getMatrixInput(_in3.getName());
+		MatrixBlock runningMean = ec.getMatrixInput(_in4.getName());
+		MatrixBlock runningVar = ec.getMatrixInput(_in5.getName());
 		String phase = ec.getScalarInput(_in6).getStringValue();
 		double epsilon = ec.getScalarInput(_in7).getDoubleValue();
 		double mu = ec.getScalarInput(_in8.getName(), _in8.getValueType(), _in8.isLiteral()).getDoubleValue();
@@ -362,25 +362,22 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				retRunningMean, retRunningVar, resultSaveMean, resultSaveInvVariance);
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in4.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(output.getName(), ret, getExtendedOpcode());
-		ec.setMatrixOutput(_out2.getName(), retRunningMean, getExtendedOpcode());
-		ec.setMatrixOutput(_out3.getName(), retRunningVar, getExtendedOpcode());
-		ec.setMatrixOutput(_out4.getName(), resultSaveMean, getExtendedOpcode());
-		ec.setMatrixOutput(_out5.getName(), resultSaveInvVariance, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), _in2.getName(),
+			_in3.getName(), _in4.getName(), _in5.getName());
+		ec.setMatrixOutput(output.getName(), ret);
+		ec.setMatrixOutput(_out2.getName(), retRunningMean);
+		ec.setMatrixOutput(_out3.getName(), retRunningVar);
+		ec.setMatrixOutput(_out4.getName(), resultSaveMean);
+		ec.setMatrixOutput(_out5.getName(), resultSaveInvVariance);
 	}
 	
 	public void processBatchNorm2dBackwardInstruction(ExecutionContext ec) {
-		MatrixBlock image = ec.getMatrixInput(input1.getName(), getExtendedOpcode());
-		MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
-		MatrixBlock scale = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
+		MatrixBlock image = ec.getMatrixInput(input1.getName());
+		MatrixBlock dout = ec.getMatrixInput(_in2.getName());
+		MatrixBlock scale = ec.getMatrixInput(_in3.getName());
 		double epsilon = ec.getScalarInput(_in4).getDoubleValue();
-		MatrixBlock resultSaveMean = ec.getMatrixInput(_in5.getName(), getExtendedOpcode());
-		MatrixBlock resultSaveInvVariance = ec.getMatrixInput(_in6.getName(), getExtendedOpcode());
+		MatrixBlock resultSaveMean = ec.getMatrixInput(_in5.getName());
+		MatrixBlock resultSaveInvVariance = ec.getMatrixInput(_in6.getName());
 		
 		MatrixBlock dX = new MatrixBlock(image.getNumRows(), image.getNumColumns(), false).allocateBlock();
 		MatrixBlock dScale = new MatrixBlock(scale.getNumRows(), scale.getNumColumns(), false).allocateBlock();
@@ -389,14 +386,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		LibMatrixDNN.batchNorm2DBackward(image, dout, scale, epsilon, resultSaveMean, resultSaveInvVariance, dX, dScale, dBias);
 		
 		// release inputs/outputs
-		ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in5.getName(), getExtendedOpcode());
-		ec.releaseMatrixInput(_in6.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(output.getName(), dX, getExtendedOpcode());
-		ec.setMatrixOutput(_out2.getName(), dScale, getExtendedOpcode());
-		ec.setMatrixOutput(_out3.getName(), dBias, getExtendedOpcode());
+		ec.releaseMatrixInput(input1.getName(), _in2.getName(),
+			_in3.getName(), _in5.getName(), _in6.getName());
+		ec.setMatrixOutput(output.getName(), dX);
+		ec.setMatrixOutput(_out2.getName(), dScale);
+		ec.setMatrixOutput(_out3.getName(), dBias);
 	}
 	
 	
@@ -438,7 +432,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		
 		// acquire inputs
 		MatrixBlock outputBlock = null;
-		MatrixBlock matBlock = instOpcode.equalsIgnoreCase("avgpooling_backward") ? null : ec.getMatrixInput(input1.getName(), getExtendedOpcode());
+		MatrixBlock matBlock = instOpcode.equalsIgnoreCase("avgpooling_backward") ? null : ec.getMatrixInput(input1.getName());
 		int pad_h = getScalarInput(ec, _padding, 0);
 		int pad_w = getScalarInput(ec, _padding, 1);
 		int stride_h = getScalarInput(ec, _stride, 0);
@@ -474,7 +468,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		else if (instOpcode.equalsIgnoreCase("maxpooling_backward") || instOpcode.equalsIgnoreCase("relu_maxpooling_backward") ||
 				instOpcode.equalsIgnoreCase("avgpooling_backward")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			boolean isEmpty = instOpcode.equalsIgnoreCase("avgpooling_backward") ? dout.isEmpty() : (matBlock.isEmpty() || dout.isEmpty());
 			if(isEmpty) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
@@ -487,11 +481,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 					params.minValForMaxPoolOperations = 0;
 				LibMatrixDNN.poolingBackward(matBlock, dout, outputBlock, params, performReLUBackward, poolType);
 			}
-			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d")) {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
-			MatrixBlock filter = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
 			if(filter.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, K*P*Q, true);
 			}
@@ -504,12 +498,12 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
-			MatrixBlock filter = ec.getMatrixInput(_in3.getName(), getExtendedOpcode());
-			MatrixBlock bias = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
+			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
 			if(bias.getNumRows() != params.K || bias.getNumColumns() != 1) {
 				throw new DMLRuntimeException("Incorrect shape of bias matrix: [" + bias.getNumRows() + " " + bias.getNumColumns() + "]. "
 						+ "Expected: [" + params.K + ", 1]");
@@ -538,11 +532,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				else
 					LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in3.getName(), getExtendedOpcode());
-			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in3.getName(), _in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_filter")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
 			}
@@ -553,10 +546,10 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				else
 					LibMatrixDNN.conv2dBackwardFilter(matBlock, dout, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in2.getName());
 		}
 		else if (instOpcode.equalsIgnoreCase("conv2d_backward_data")) {
-			MatrixBlock dout = ec.getMatrixInput(_in2.getName(), getExtendedOpcode());
+			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
 			}
@@ -567,7 +560,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 				else
 					LibMatrixDNN.conv2dBackwardData(matBlock, dout, outputBlock, params);
 			}
-			ec.releaseMatrixInput(_in2.getName(), getExtendedOpcode());
+			ec.releaseMatrixInput(_in2.getName());
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported op code " + instOpcode);
@@ -575,8 +568,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		
 		// release inputs/outputs
 		if(!instOpcode.equalsIgnoreCase("avgpooling_backward"))
-			ec.releaseMatrixInput(input1.getName(), getExtendedOpcode());
-		ec.setMatrixOutput(getOutputVariableName(), outputBlock, getExtendedOpcode());
+			ec.releaseMatrixInput(input1.getName());
+		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}
 	
 	/**

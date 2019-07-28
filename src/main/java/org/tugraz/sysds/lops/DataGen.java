@@ -138,7 +138,7 @@ public class DataGen extends Lop
 				+ getInputs().size() + ") for a Rand operation");
 		}
 		
-		StringBuilder sb = new StringBuilder( );
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
@@ -337,13 +337,13 @@ public class DataGen extends Lop
 
 		Lop iLop = null;
 
-		iLop = _inputParams.get(Statement.SEQ_FROM.toString()); 
+		iLop = _inputParams.get(Statement.SEQ_FROM.toString());
 		String fromString = iLop.prepScalarInputOperand(et);
 		
 		iLop = _inputParams.get(Statement.SEQ_TO.toString());
 		String toString = iLop.prepScalarInputOperand(et);
 		
-		iLop = _inputParams.get(Statement.SEQ_INCR.toString()); 
+		iLop = _inputParams.get(Statement.SEQ_INCR.toString());
 		String incrString = iLop.prepScalarInputOperand(et);
 		
 		String rowsString = String.valueOf(this.getOutputParameters().getNumRows());

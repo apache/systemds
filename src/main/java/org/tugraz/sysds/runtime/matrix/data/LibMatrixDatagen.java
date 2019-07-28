@@ -202,7 +202,7 @@ public class LibMatrixDatagen
 		
 		// Special case shortcuts for efficiency
 		if ( rgen._pdf == RandomMatrixGenerator.PDF.UNIFORM) {
-			if ( min == 0.0 && max == 0.0 ) { //all zeros
+			if ( min == 0.0 && max == 0.0 || sparsity == 0 ) { //all zeros
 				out.reset(rows, cols, true);
 				return;
 			} 

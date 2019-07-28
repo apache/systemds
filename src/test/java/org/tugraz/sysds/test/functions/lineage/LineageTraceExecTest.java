@@ -86,7 +86,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 		testLineageTraceExec(TEST_NAME5);
 	}
 		
-		private void testLineageTraceExec(String testname) {
+	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		
 		getAndLoadTestConfiguration(testname);

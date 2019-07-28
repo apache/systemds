@@ -357,7 +357,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public LineageItem[] getLineageItems() {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-			int position = (method == DataGenMethod.RAND) ? 9 :
+			int position = (method == DataGenMethod.RAND) ? 10 :
 				(method == DataGenMethod.SAMPLE) ? 5 : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
 				tmpInstStr, position, String.valueOf(runtimeSeed));

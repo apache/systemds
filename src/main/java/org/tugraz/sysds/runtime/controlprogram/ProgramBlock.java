@@ -45,6 +45,7 @@ import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.StringObject;
+import org.tugraz.sysds.runtime.lineage.LineageCache;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.utils.Statistics;
 
@@ -198,11 +199,16 @@ public abstract class ProgramBlock implements ParseInfo
 			long t0 = (DMLScript.STATISTICS || LOG.isTraceEnabled()) ?
 				System.nanoTime() : 0;
 
-			// pre-process instruction (debug state, inst patching, listeners)
+			// pre-process instruction (inst patching, listeners, lineage)
 			Instruction tmp = currInst.preprocessInstruction( ec );
 
-			// process actual instruction
-			tmp.processInstruction( ec );
+			// try to reuse instruction result from lineage cache
+			if( !LineageCache.reuse(tmp, ec) ) {
+				// process actual instruction
+				tmp.processInstruction(ec);
+				// cache result
+				LineageCache.put(tmp, ec);
+			}
 
 			// post-process instruction (debug)
 			tmp.postprocessInstruction( ec );

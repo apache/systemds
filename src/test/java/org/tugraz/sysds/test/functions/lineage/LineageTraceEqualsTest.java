@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -86,7 +87,7 @@ public class LineageTraceEqualsTest extends AutomatedTestBase {
 			double[][] m = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
 			writeInputMatrixWithMTD("M", m, true);
 			
-			LineageItem.resetIDSequence();
+			Lineage.resetInternalState();
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
 			String X_lineage = readDMLLineageFromHDFS("X");

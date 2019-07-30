@@ -139,8 +139,15 @@ public class CLIOptionsParserTest {
 		Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(true, o.lineage_dedup);
 	}
-
-    @Test
+	
+	@Test(expected = ParseException.class)
+	public void testBadLineageOption() throws Exception {
+		String cl = "systemml -f test.dml -lineage ded";
+		String[] args = cl.split(" ");
+		DMLOptions.parseCLArguments(args);
+	}
+	
+	@Test
 	public void testGPUForce() throws Exception {
 		String cl = "systemml -f test.dml -gpu force";
 		String[] args = cl.split(" ");

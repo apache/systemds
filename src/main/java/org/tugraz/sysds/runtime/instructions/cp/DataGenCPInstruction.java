@@ -50,7 +50,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	private final double minValue, maxValue, sparsity;
 	private final String pdf, pdfParams;
 	private final long seed;
-	private long runtimeSeed;
+	private Long runtimeSeed;
 
 	// sequence specific attributes
 	private final CPOperand seq_from, seq_to, seq_incr;
@@ -58,6 +58,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	// sample specific attributes
 	private final boolean replace;
 	private final int numThreads;
+
+	// seed positions
+	private static final int SEED_POSITION_RAND = 9;
+	private static final int SEED_POSITION_SAMPLE = 4;
 
 	private DataGenCPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
 			CPOperand rows, CPOperand cols, CPOperand dims, int rpb, int cpb, String minValue, String maxValue, double sparsity, long seed,
@@ -132,6 +136,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public long getCols() {
 		return cols.isLiteral() ? Long.parseLong(cols.getName()) : -1;
 	}
+
+	public String getDims() { return dims.getName(); }
 	
 	public int getRowsInBlock() {
 		return rowsInBlock;
@@ -204,8 +210,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			int cpb = Integer.parseInt(s[5]);
 			double sparsity = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 					Double.valueOf(s[8]) : -1;
-			long seed = !s[9].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-					Long.valueOf(s[9]) : -1;
+			long seed = !s[SEED_POSITION_RAND].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Long.valueOf(s[SEED_POSITION_RAND]) : -1;
 			String pdf = s[10];
 			String pdfParams = !s[11].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				s[11] : null;
@@ -231,7 +237,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			boolean replace = (!s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) 
 				&& Boolean.valueOf(s[3]));
 			
-			long seed = Long.parseLong(s[4]);
+			long seed = Long.parseLong(s[SEED_POSITION_SAMPLE]);
 			int rpb = Integer.parseInt(s[5]);
 			int cpb = Integer.parseInt(s[6]);
 			
@@ -261,8 +267,9 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			//generate pseudo-random seed (because not specified) 
 			long lSeed = seed; //seed per invocation
 			if( lSeed == DataGenOp.UNSPECIFIED_SEED ) {
-				lSeed = DataGenOp.generateRandomSeed();
-				runtimeSeed = lSeed;
+				if (runtimeSeed == null)
+					runtimeSeed = DataGenOp.generateRandomSeed();
+				lSeed = runtimeSeed;
 			}
 			
 			if( LOG.isTraceEnabled() )
@@ -299,6 +306,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 						pdf, (int) lrows, (int) lcols, rowsInBlock, colsInBlock, sparsity, minValue, maxValue, pdfParams);
 				soresBlock = MatrixBlock.randOperations(rgen, lSeed, numThreads);
 			}
+			//reset runtime seed (e.g., when executed in loop)
+			runtimeSeed = null;
 		}
 		else if ( method == DataGenMethod.SEQ ) 
 		{
@@ -326,6 +335,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 			if ( range < lrows && !replace )
 				throw new DMLRuntimeException("Sample (size=" + lrows + ") larger than population (size=" + range + ") can only be generated with replacement.");
 			
+			//TODO handle runtime seed
 			soresBlock = MatrixBlock.sampleOperations(range, (int)lrows, replace, seed);
 		}
 		else if ( method == DataGenMethod.TIME ) {
@@ -357,10 +367,14 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	public LineageItem[] getLineageItems() {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-			int position = (method == DataGenMethod.RAND) ? 10 :
-				(method == DataGenMethod.SAMPLE) ? 5 : 0;
+			//generate pseudo-random seed (because not specified)
+			if (runtimeSeed == null)
+				runtimeSeed = DataGenOp.generateRandomSeed();
+			
+			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND + 1 :
+					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE + 1 : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(
-				tmpInstStr, position, String.valueOf(runtimeSeed));
+					tmpInstStr, position, String.valueOf(runtimeSeed));
 		}
 		return new LineageItem[]{new LineageItem(output.getName(), tmpInstStr, getOpcode())};
 	}

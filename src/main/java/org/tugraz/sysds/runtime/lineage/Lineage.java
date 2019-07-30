@@ -48,20 +48,20 @@ public class Lineage {
 	
 	public static LineageItem getOrCreate(CPOperand variable) {
 		return _initDedupBlock.empty() ?
-			_globalLineages.getOrCreate(variable) :
-			_initDedupBlock.peek().getActiveMap().getOrCreate(variable);
+				_globalLineages.getOrCreate(variable) :
+				_initDedupBlock.peek().getActiveMap().getOrCreate(variable);
 	}
 	
 	public static boolean contains(CPOperand variable) {
 		return _initDedupBlock.empty() ?
-			_globalLineages.containsKey(variable.getName()) :
-			_initDedupBlock.peek().getActiveMap().containsKey(variable.getName());
+				_globalLineages.containsKey(variable.getName()) :
+				_initDedupBlock.peek().getActiveMap().containsKey(variable.getName());
 	}
 	
 	public static LineageItem get(CPOperand variable) {
 		return _initDedupBlock.empty() ?
-			_globalLineages.get(variable) :
-			_initDedupBlock.peek().getActiveMap().get(variable);
+				_globalLineages.get(variable) :
+				_initDedupBlock.peek().getActiveMap().get(variable);
 	}
 	
 	public static void pushInitDedupBlock(LineageDedupBlock ldb) {
@@ -82,7 +82,13 @@ public class Lineage {
 		_activeDedupBlock.pop();
 	}
 	
-	public static void resetLineageMaps() {
+	public static void resetInternalState() {
+		LineageItem.resetIDSequence();
+		LineageCache.resetCache();
+		Lineage.resetLineageMaps();
+	}
+	
+	private static void resetLineageMaps() {
 		_globalLineages.resetLineageMaps();
 	}
 }

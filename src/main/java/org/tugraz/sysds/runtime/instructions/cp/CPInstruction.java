@@ -107,15 +107,15 @@ public abstract class CPInstruction extends Instruction
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		//default preprocess behavior (e.g., debug state)
-		Instruction tmp = super.preprocessInstruction(ec);
+		Instruction tmp = this;
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = updateLabels(tmp.toString(), ec.getVariables());
 			tmp = CPInstructionParser.parseSingleInstruction(updInst);
 		}
-		return tmp;
+		//default preprocess behavior (e.g., lineage tracing)
+		return super.preprocessInstruction(ec);
 	}
 
 	@Override 

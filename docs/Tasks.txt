@@ -56,7 +56,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 73 Deduplication of lineage traces                                 OK
       (loops, nested loops, branchless loops)                         OK
  * 74 Performance features lineage tracing                            OK
- * 75 Reuse cache based on lineage traces
+ * 75 Reuse cache based on lineage traces                             OK
  * 76 Generate runtime plan from lineage trace                        OK
  * 77 New builtin function for obtaining lineage                      OK
 

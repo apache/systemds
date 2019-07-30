@@ -217,6 +217,9 @@ public abstract class Instruction
 	 * @return instruction
 	 */
 	public Instruction preprocessInstruction(ExecutionContext ec){
+		// Lineage tracing
+		if (DMLScript.LINEAGE)
+			Lineage.trace(this, ec);
 		//return instruction ifself
 		return this;
 	}
@@ -236,7 +239,5 @@ public abstract class Instruction
 	 * @param ec execution context
 	 */
 	public void postprocessInstruction(ExecutionContext ec) {
-		if (DMLScript.LINEAGE)
-			Lineage.trace(this, ec);
 	}
 }

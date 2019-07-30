@@ -143,6 +143,8 @@ public class LineageItemUtils {
 		pb.setInstructions(dag.getJobs(null,
 				ConfigurationManager.getDMLConfig()));
 		
+		// reset cache due to cleaned data objects
+		LineageCache.resetCache();
 		//execute instructions and get result
 		pb.execute(ec);
 		return ec.getVariable(varname);
@@ -169,7 +171,7 @@ public class LineageItemUtils {
 					HashMap<String, Hop> params = new HashMap<>();
 					params.put(DataExpression.RAND_ROWS, new LiteralOp(rand.getRows()));
 					params.put(DataExpression.RAND_COLS, new LiteralOp(rand.getCols()));
-					params.put(DataExpression.RAND_DIMS, new LiteralOp("-1"));
+					params.put(DataExpression.RAND_DIMS, new LiteralOp(rand.getDims()));
 					params.put(DataExpression.RAND_MIN, new LiteralOp(rand.getMinValue()));
 					params.put(DataExpression.RAND_MAX, new LiteralOp(rand.getMaxValue()));
 					params.put(DataExpression.RAND_PDF, new LiteralOp(rand.getPdf()));

@@ -106,7 +106,10 @@ public class DMLOptions {
 			dmlOptions.lineage = true;
 			String lineageType = line.getOptionValue("lineage");
 			if (lineageType != null){
-				dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+				if (lineageType.equalsIgnoreCase("dedup"))
+					dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+				else
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
 			}
 		}
 		dmlOptions.debug = line.hasOption("debug");

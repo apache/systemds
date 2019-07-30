@@ -1171,7 +1171,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				for (CPOperand input : getInputs())
 					if (!input.getName().isEmpty())
 						lineages.add(Lineage.getOrCreate(input));
-				if (_formatProperties != null && !_formatProperties.getDescription().isEmpty())
+				if (_formatProperties != null && _formatProperties.getDescription() != null && !_formatProperties.getDescription().isEmpty())
 					lineages.add(new LineageItem(_formatProperties.getDescription()));
 				li = new LineageItem(getInput1().getName(),
 						getOpcode(), lineages.toArray(new LineageItem[0]));

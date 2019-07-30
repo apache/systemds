@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -107,6 +108,7 @@ public class LineageTraceExecTest extends AutomatedTestBase {
 			writeInputMatrixWithMTD("X", X, true);
 		}
 		
+		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		

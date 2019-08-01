@@ -81,6 +81,7 @@ import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.tugraz.sysds.runtime.instructions.Instruction;
@@ -1120,7 +1121,7 @@ public class Recompiler
 
 	public static void extractDAGOutputStatistics(Hop hop, LocalVariableMap vars, boolean overwrite)
 	{
-		if(    hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
+		if( hop instanceof DataOp && ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTWRITE ) //for all writes to symbol table
 		{
 			String varName = hop.getName();
 			if( !vars.keySet().contains(varName) || overwrite ) //not existing so far
@@ -1134,6 +1135,13 @@ public class Recompiler
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
+				} else if( hop.getDataType()==DataType.TENSOR ) {
+					TensorObject to = new TensorObject(hop.getValueType(), null);
+					MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
+							ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
+					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
+					to.setMetaData(meta);
+					vars.put(varName, to);
 				}
 				//extract scalar constants for second constant propagation
 				else if( hop.getDataType()==DataType.SCALAR )
@@ -1272,7 +1280,7 @@ public class Recompiler
 		//recursively process children
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
-				rUpdateStatistics(c, vars);	
+				rUpdateStatistics(c, vars);
 		
 		//update statistics for transient reads according to current statistics
 		//(with awareness not to override persistent reads to an existing name)
@@ -1291,6 +1299,12 @@ public class Recompiler
 					FrameObject fo = (FrameObject) dat;
 					d.setDim1(fo.getNumRows());
 					d.setDim2(fo.getNumColumns());
+				} else if( dat instanceof TensorObject) {
+					TensorObject to = (TensorObject) dat;
+					// TODO: correct dimensions
+					d.setDim1(to.getNumRows());
+					d.setDim2(to.getNumColumns());
+					d.setNnz(to.getNnz());
 				}
 			}
 		}

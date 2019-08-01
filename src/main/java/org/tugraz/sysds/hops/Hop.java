@@ -1098,7 +1098,7 @@ public abstract class Hop implements ParseInfo
 		HopsAgg2Lops.put(AggOp.MEAN, org.tugraz.sysds.lops.Aggregate.OperationTypes.Mean);
 		HopsAgg2Lops.put(AggOp.VAR, org.tugraz.sysds.lops.Aggregate.OperationTypes.Var);
 	}
-	
+
 	protected static final HashMap<ReOrgOp, org.tugraz.sysds.lops.Transform.OperationTypes> HopsTransf2Lops;
 	static {
 		HopsTransf2Lops = new HashMap<>();

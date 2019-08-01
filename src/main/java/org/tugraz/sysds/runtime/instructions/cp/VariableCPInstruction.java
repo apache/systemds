@@ -511,7 +511,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				obj.enableCleanup(!getInput1().getName()
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);
-				
+
 				if( obj instanceof MatrixObject ) {
 					((MatrixObject)obj).setUpdateType(_updateType);
 					if(DMLScript.STATISTICS && _updateType.isInPlace())

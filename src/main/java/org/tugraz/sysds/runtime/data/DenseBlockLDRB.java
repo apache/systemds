@@ -56,7 +56,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 
 	@Override
 	public int blockSize(int bix) {
-		return Math.min(_blen, _blen - bix * _rlen);
+		return Math.min(_blen, _rlen - bix * _blen);
 	}
 
 	@Override

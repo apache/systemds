@@ -23,9 +23,14 @@ import java.io.IOException;
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types.BlockType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.PartialAggregate;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
+import org.tugraz.sysds.runtime.functionobjects.ReduceAll;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class TensorBlock implements CacheBlock
@@ -75,7 +80,7 @@ public class TensorBlock implements CacheBlock
 	}
 	
 	public TensorBlock(int[] dims, ValueType vt, double val) {
-		_vt = DEFAULT_VTYPE;
+		_vt = vt;
 		_dims = dims;
 		reset(dims, false, (val==0) ? 0 : getLength(), val);
 	}
@@ -259,7 +264,7 @@ public class TensorBlock implements CacheBlock
 			}
 		}
 	}
-	
+
 	public boolean isVector() {
 		return getNumDims() <= 2 
 			&& (getDim(0) == 1 || getDim(1) == 1);
@@ -481,34 +486,43 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
-	public double sum() {
-		// TODO perf
-		// TODO generalize this method to an aggregate method that can do more than just sum
-		if (_sparse) {
-			// TODO implement for sparse
-			throw new NotImplementedException();
-		} else {
-			if (_vt == ValueType.BOOLEAN) {
-				return _denseBlock.countNonZeros();
-			} else {
-				double sum = 0;
-				for (int bix = 0; bix < _denseBlock.numBlocks(); bix++) {
-					double[] values = _denseBlock.valuesAt(bix);
-					for (int i = 0; i < _denseBlock.blockSize(bix) * _denseBlock.getCumODims(0); i++)
-						sum += values[i];
-				}
-				return sum;
-			}
+	public void copy(TensorBlock that) {
+		_dims = that._dims.clone();
+		_sparse = that._sparse;
+		_nnz = that._nnz;
+		if( that.isAllocated() ) {
+			allocateBlock();
+			if( !_sparse )
+				copyDenseToDense(that);
+			else // TODO copy sparse to dense, dense to dense or sparse to dense
+				throw new NotImplementedException();
 		}
 	}
 
-	private void copy(TensorBlock that) {
+	public TensorBlock copyShallow(TensorBlock that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
-		allocateBlock();
+		_nnz = that._nnz;
+		if( !_sparse )
+			_denseBlock = that._denseBlock;
+		else
+			_sparseBlock = that._sparseBlock;
+		return this;
+	}
+
+	private void copyDenseToDense(TensorBlock that) {
 		_nnz = that._nnz;
 
-		// TODO Auto-generated method stub copy
+		//plain reset to 0 for empty input
+		if( that.isEmpty(false) ) {
+			if(_denseBlock!=null)
+				_denseBlock.reset(that._dims);
+			return;
+		}
+
+		//allocate and copy dense block
+		allocateDenseBlock(false);
+		_denseBlock.set(that._denseBlock);
 	}
 
 	////////
@@ -518,6 +532,45 @@ public class TensorBlock implements CacheBlock
 	private boolean evalSparseFormatInMemory(int[] dims, long estnnz) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	///////
+	// Aggregations
+	public TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
+		// TODO allow to aggregate along a dimension?
+		// TODO performance
+		int dim0 = 1;
+		int dim1 = 1;
+		if (op.aggOp.correctionExists) {
+			dim1 = 2;
+		}
+		//prepare result matrix block
+		if(result==null)
+			result=new TensorBlock(_vt, new int[]{dim0, dim1}, false);
+		else
+			result.reset(new int[]{dim0, dim1}, false);
+
+		if( LibTensorAgg.isSupportedUnaryAggregateOperator(op) )
+			if (op.indexFn instanceof ReduceAll)
+				LibTensorAgg.aggregateUnaryTensor(this, result, op);
+			else
+				throw new DMLRuntimeException("Only ReduceAll UnaryAggregationOperators are supported for tensor");
+		else
+			throw new DMLRuntimeException("Current UnaryAggregationOperator not supported for tensor");
+		return result;
+	}
+
+	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock newWithCorrection) {
+		if(aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTROW ||
+			aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTCOLUMN)
+		{
+			if(aggOp.increOp.fn instanceof KahanPlus)
+			{
+				LibTensorAgg.aggregateBinaryTensor(newWithCorrection, this, aggOp);
+			}
+		}
+		else
+			throw new DMLRuntimeException("unrecognized correctionLocation: "+aggOp.correctionLocation);
 	}
 
 	@Override
@@ -568,13 +621,13 @@ public class TensorBlock implements CacheBlock
 	@Override
 	public void toShallowSerializeBlock() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void compactEmptyBlock() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -586,6 +639,6 @@ public class TensorBlock implements CacheBlock
 	@Override
 	public void merge(CacheBlock that, boolean appendOnly) {
 		// TODO Auto-generated method stub
-		
+
 	}
 }

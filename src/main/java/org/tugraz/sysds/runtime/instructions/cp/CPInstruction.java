@@ -236,6 +236,7 @@ public abstract class CPInstruction extends Instruction
 				for (int i = 0; i < in.getLength(); i++) {
 					tDims[i] = UtilFunctions.toInt(in.get(new int[]{colVec ? 0 : i, colVec ? i : 0}));
 				}
+				ec.releaseTensorInput(dims.getName());
 			}
 			break;
 			case LIST: {

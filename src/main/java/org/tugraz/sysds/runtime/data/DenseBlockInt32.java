@@ -48,6 +48,10 @@ public class DenseBlockInt32 extends DenseBlockDRB
 		_data = data;
 	}
 
+	public int[] getData() {
+		return _data;
+	}
+
 	@Override
 	public boolean isNumeric() {
 		return true;

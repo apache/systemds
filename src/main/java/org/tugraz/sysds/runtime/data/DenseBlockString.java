@@ -48,6 +48,10 @@ public class DenseBlockString extends DenseBlockDRB {
 		_data = data;
 	}
 
+	public String[] getData() {
+		return _data;
+	}
+
 	@Override
 	public boolean isNumeric() {
 		return false;

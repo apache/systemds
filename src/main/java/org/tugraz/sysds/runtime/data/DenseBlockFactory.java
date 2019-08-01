@@ -27,6 +27,8 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
+import java.util.BitSet;
+
 public abstract class DenseBlockFactory
 {
 	public static DenseBlock createDenseBlock(int rlen, int clen) {
@@ -43,16 +45,32 @@ public abstract class DenseBlockFactory
 		return createDenseBlock(vt, type, dims);
 	}
 
+	public static DenseBlock createDenseBlock(BitSet data, int[] dims) {
+		return new DenseBlockBool(dims, data);
+	}
+
+	public static DenseBlock createDenseBlock(String[] data, int[] dims) {
+		return new DenseBlockString(dims, data);
+	}
+
 	public static DenseBlock createDenseBlock(double[] data, int[] dims) {
 		return new DenseBlockFP64(dims, data);
 	}
-	
-	public static DenseBlock createDenseBlock(double[] data, int rlen, int clen) {
-		return createDenseBlock(data, new int[]{rlen, clen});
-	}
-	
+
 	public static DenseBlock createDenseBlock(float[] data, int[] dims) {
 		return new DenseBlockFP32(dims, data);
+	}
+
+	public static DenseBlock createDenseBlock(long[] data, int[] dims) {
+		return new DenseBlockInt64(dims, data);
+	}
+
+	public static DenseBlock createDenseBlock(int[] data, int[] dims) {
+		return new DenseBlockInt32(dims, data);
+	}
+
+	public static DenseBlock createDenseBlock(double[] data, int rlen, int clen) {
+		return createDenseBlock(data, new int[]{rlen, clen});
 	}
 	
 	public static DenseBlock createDenseBlock(float[] data, int rlen, int clen) {

@@ -25,6 +25,7 @@ import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.data.LibTensorReorg;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -37,8 +38,8 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 	private final CPOperand _opDims;
 	private final CPOperand _opByRow;
 
-	private ReshapeCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand in5,
-	                             CPOperand out, String opcode, String istr) {
+	private ReshapeCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3,
+		CPOperand in4, CPOperand in5, CPOperand out, String opcode, String istr) {
 		super(CPType.Reshape, op, in1, out, opcode, istr);
 		_opRows = in2;
 		_opCols = in3;
@@ -65,23 +66,29 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if (output.getDataType() == Types.DataType.TENSOR) {
-			TensorBlock out = new TensorBlock(output.getValueType(), getTensorDimensions(ec, _opDims));
-			out.allocateDenseBlock();
+			int[] dims = getTensorDimensions(ec, _opDims);
+			TensorBlock out = new TensorBlock(output.getValueType(), dims);
 			if (input1.getDataType() == Types.DataType.TENSOR) {
 				//get Tensor-data from tensor (reshape)
 				TensorBlock data = ec.getTensorInput(input1.getName());
-				out.set(data);
-			} else if (input1.getDataType() == Types.DataType.MATRIX) {
+				LibTensorReorg.reshape(data, out, dims);
+				ec.releaseTensorInput(input1.getName());
+			}
+			else if (input1.getDataType() == Types.DataType.MATRIX) {
+				out.allocateDenseBlock();
 				//get Tensor-data from matrix
 				MatrixBlock data = ec.getMatrixInput(input1.getName());
+				// TODO metadata operation
 				out.set(data);
 				ec.releaseMatrixInput(input1.getName());
-			} else {
+			}
+			else {
 				// TODO support frame and list. Before we implement list it might be good to implement heterogeneous tensors
 				throw new DMLRuntimeException("ReshapeInstruction only supports tensor and matrix as data parameter.");
 			}
 			ec.setTensorOutput(output.getName(), out);
-		} else {
+		}
+		else {
 			//get inputs
 			MatrixBlock in = ec.getMatrixInput(input1.getName());
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue(); //save cast
@@ -90,7 +97,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 
 			//execute operations
 			MatrixBlock out = new MatrixBlock();
-			out = LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
+			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue());
 
 			//set output and release inputs
 			ec.setMatrixOutput(output.getName(), out);

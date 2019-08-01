@@ -84,7 +84,8 @@ public class RewriteInjectSparkLoopCheckpointing extends StatementBlockRewriteRu
 			VariableSet updated = sb.variablesUpdated();
 			
 			for( String rvar : read.getVariableNames() )
-				if( !updated.containsVariable(rvar) && read.getVariable(rvar).getDataType()==DataType.MATRIX )
+				if( !updated.containsVariable(rvar) && (read.getVariable(rvar).getDataType()==DataType.MATRIX ||
+						read.getVariable(rvar).getDataType()==DataType.TENSOR))
 					candidates.add(rvar);
 			
 			//step 2: insert statement block with checkpointing operations

@@ -56,7 +56,6 @@ public class TensorObject extends CacheableData<TensorBlock>
 		setMetaData(meta);
 	}
 
-	
 	/**
 	 * Copy constructor that copies meta data but NO data.
 	 * 
@@ -86,7 +85,11 @@ public class TensorObject extends CacheableData<TensorBlock>
 		MatrixCharacteristics mc = getMatrixCharacteristics();
 		return mc.getCols();
 	}
-	
+
+	public long getNnz() {
+		return getMatrixCharacteristics().getNonZeros();
+	}
+
 	@Override
 	protected TensorBlock readBlobFromCache(String fname) throws IOException {
 		return (TensorBlock)LazyWriteBuffer.readBlock(fname, false);

@@ -168,7 +168,7 @@ public class ReorgOp extends MultiThreadedHop
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 				setLops(transform1);
-				
+
 				break;
 			}
 			case RESHAPE:
@@ -449,8 +449,10 @@ public class ReorgOp extends MultiThreadedHop
 						else if (_dim2 > 0)
 							_dim1 = (input1._dim1 * input1._dim2) / _dim2;
 					}
+				} else {
+					// TODO size information for tensor
+					setNnz(input1.getNnz());
 				}
-				// TODO size information for tensor
 
 				break;
 			}

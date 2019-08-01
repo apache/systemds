@@ -57,7 +57,7 @@ import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final int TOSTRING_MAXROWS = 100;
-	private static final int TOSTRING_MAXCOLS = 10;
+	private static final int TOSTRING_MAXCOLS = 100;
 	private static final int TOSTRING_DECIMAL = 3;
 	private static final boolean TOSTRING_SPARSE = false;
 	private static final String TOSTRING_SEPARATOR = " ";

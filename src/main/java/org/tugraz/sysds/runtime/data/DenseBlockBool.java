@@ -44,12 +44,21 @@ public class DenseBlockBool extends DenseBlockDRB
 		_data = new BitSet(length);
 	}
 
+	public DenseBlockBool(int[] dims, BitSet data) {
+		super(dims);
+		_data = data;
+	}
+
 	public DenseBlockBool(int[] dims, boolean[] data) {
 		super(dims);
 		_data = new BitSet(data.length);
 		for(int i=0; i<data.length; i++)
 			if( data[i] )
-			_data.set(i);
+				_data.set(i);
+	}
+
+	public BitSet getData() {
+		return _data;
 	}
 	
 	@Override

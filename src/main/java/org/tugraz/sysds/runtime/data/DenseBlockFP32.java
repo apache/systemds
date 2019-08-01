@@ -49,6 +49,10 @@ public class DenseBlockFP32 extends DenseBlockDRB
 		_data = data;
 	}
 
+	public float[] getData() {
+		return _data;
+	}
+
 	@Override
 	public boolean isNumeric() {
 		return true;

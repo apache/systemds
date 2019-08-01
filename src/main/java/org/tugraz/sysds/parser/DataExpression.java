@@ -1733,7 +1733,7 @@ public class DataExpression extends DataIdentifier
 			getOutput().setDataType(DataType.TENSOR);
 			getOutput().setValueType(getVarParam(RAND_DATA).getOutput().getValueType());
 			// TODO get size
-			getOutput().setDimensions(0, 0);
+			getOutput().setDimensions(-1, -1);
 
 			if (getOutput() instanceof IndexedIdentifier){
 				((IndexedIdentifier) getOutput()).setOriginalDimensions(getOutput().getDim1(), getOutput().getDim2());

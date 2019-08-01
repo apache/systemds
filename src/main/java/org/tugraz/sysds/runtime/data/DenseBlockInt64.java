@@ -47,7 +47,11 @@ public class DenseBlockInt64 extends DenseBlockDRB
 		super(dims);
 		_data = data;
 	}
-	
+
+	public long[] getData() {
+		return _data;
+	}
+
 	@Override
 	public boolean isNumeric() {
 		return true;

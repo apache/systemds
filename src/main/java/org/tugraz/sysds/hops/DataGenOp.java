@@ -113,6 +113,7 @@ public class DataGenOp extends MultiThreadedHop
 		_baseDir = scratch + Lop.FILE_SEPARATOR + Lop.PROCESS_PREFIX + DMLScript.getUUID() + Lop.FILE_SEPARATOR 
 			+ Lop.FILE_SEPARATOR + Lop.CP_ROOT_THREAD_ID + Lop.FILE_SEPARATOR;
 
+		//TODO size information for tensor
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
@@ -312,25 +313,23 @@ public class DataGenOp extends MultiThreadedHop
 	@Override
 	public void refreshSizeInformation()
 	{
-		if (_dataType == DataType.TENSOR) {
-			//TODO size information for tensor
-			return;
-		}
-		
-		Hop input1 = null;  
-		Hop input2 = null; 
-		Hop input3 = null;
+		Hop input1;
+		Hop input2;
+		Hop input3;
 
 		if ( _op == DataGenMethod.RAND || _op == DataGenMethod.SINIT ) 
 		{
-			input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
-			input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
-			
-			//refresh rows information
-			refreshRowsParameterInformation(input1);
-			
-			//refresh cols information
-			refreshColsParameterInformation(input2);
+			if (_dataType != DataType.TENSOR) {
+				input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows
+				input2 = getInput().get(_paramIndexMap.get(DataExpression.RAND_COLS)); //cols
+
+				//refresh rows information
+				refreshRowsParameterInformation(input1);
+
+				//refresh cols information
+				refreshColsParameterInformation(input2);
+			}
+			// TODO size information for tensor
 		}
 		else if (_op == DataGenMethod.SEQ ) 
 		{

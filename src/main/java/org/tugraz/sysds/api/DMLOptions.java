@@ -58,7 +58,8 @@ public class DMLOptions {
 	public String               script        = null;             // the script itself
 	public boolean              help          = false;            // whether to print the usage option
 	public boolean              lineage       = false;            // whether compute lineage trace
-	public boolean              lineage_dedup = false;             // whether deduplicate lineage items
+	public boolean              lineage_dedup = false;            // whether deduplicate lineage items
+	public boolean              lineage_reuse = false;            // whether lineage-based reuse of intermediates
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -108,6 +109,8 @@ public class DMLOptions {
 			if (lineageType != null){
 				if (lineageType.equalsIgnoreCase("dedup"))
 					dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+				else if (lineageType.equalsIgnoreCase("reuse"))
+					dmlOptions.lineage_reuse = lineageType.equalsIgnoreCase("reuse");
 				else
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
 			}

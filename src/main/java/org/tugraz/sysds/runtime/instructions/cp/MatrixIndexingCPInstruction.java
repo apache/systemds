@@ -28,9 +28,13 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.util.Arrays;
 
 public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 
@@ -116,5 +120,12 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 		}
 		else
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in MatrixIndexingCPInstruction.");
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems() {
+		LineageItem[] tmp = Arrays.asList(input1,input2,input3,colLower,colUpper,rowLower,rowUpper)
+			.stream().filter(c -> c!=null).map(c -> Lineage.getOrCreate(c)).toArray(LineageItem[]::new);
+		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(), tmp)};
 	}
 }

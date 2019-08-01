@@ -129,6 +129,7 @@ public class CLIOptionsParserTest {
         DMLOptions o = DMLOptions.parseCLArguments(args);
         Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(false, o.lineage_dedup);
+		Assert.assertEquals(false, o.lineage_reuse);
     }
     
 	@Test
@@ -138,11 +139,39 @@ public class CLIOptionsParserTest {
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
 		Assert.assertEquals(true, o.lineage_dedup);
+		Assert.assertEquals(false, o.lineage_reuse);
+	}
+	
+	@Test
+	public void testLineageReuse() throws Exception {
+		String cl = "systemml -f test.dml -lineage reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_reuse);
+		Assert.assertEquals(false, o.lineage_dedup);
+	}
+	
+	@Test
+	public void testLineageDedupAndReuse() throws Exception {
+		String cl = "systemml -f test.dml -lineage dedup reuse";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		Assert.assertEquals(true, o.lineage);
+		Assert.assertEquals(true, o.lineage_dedup);
+		Assert.assertEquals(true, o.lineage_reuse);
 	}
 	
 	@Test(expected = ParseException.class)
-	public void testBadLineageOption() throws Exception {
+	public void testBadLineageOptionDedup() throws Exception {
 		String cl = "systemml -f test.dml -lineage ded";
+		String[] args = cl.split(" ");
+		DMLOptions.parseCLArguments(args);
+	}
+	
+	@Test(expected = ParseException.class)
+	public void testBadLineageOptionReuse() throws Exception {
+		String cl = "systemml -f test.dml -lineage rese";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}

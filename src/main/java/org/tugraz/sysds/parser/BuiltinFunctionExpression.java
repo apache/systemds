@@ -1555,19 +1555,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 	
 	@Override
 	public boolean multipleReturns() {
-		switch(_opcode) {
-		case QR:
-		case LU:
-		case EIGEN:
-		case LSTM:
-		case LSTM_BACKWARD:
-		case BATCH_NORM2D:
-		case BATCH_NORM2D_BACKWARD:
-		case SVD:
-			return true;
-		default:
-			return false;
-		}
+		return _opcode.isMultiReturn();
 	}
 
 	private static boolean isConstant(Expression expr) {

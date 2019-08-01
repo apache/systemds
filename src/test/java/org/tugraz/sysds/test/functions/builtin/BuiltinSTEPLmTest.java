@@ -49,19 +49,23 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase {
 
 	@Test
 	public void testLmMatrixDenseCPlm() {
-        runSTEPLmTest(false, ExecType.CP, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(false, ExecType.CP, BuiltinSTEPLmTest.LinregType.AUTO);
+	}
+
+	@Test
+	public void testLmMatrixSparseCPlm() {
+		runSTEPLmTest(false, ExecType.CP, BuiltinSTEPLmTest.LinregType.AUTO);
 	}
 
 	@Test
 	public void testLmMatrixDenseSPlm() {
-        runSTEPLmTest(false, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(false, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
 	}
 
 	@Test
 	public void testLmMatrixSparseSPlm() {
-        runSTEPLmTest(true, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(true, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
 	}
-
 
 	private void runSTEPLmTest(boolean sparse, ExecType instType, BuiltinSTEPLmTest.LinregType linregAlgo) {
 		ExecMode platformOld = setExecMode(instType);
@@ -75,7 +79,6 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase {
 			double sparsity = sparse ? spSparse : spDense;
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-
 
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
 			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), output("C"), output("S")};
@@ -92,18 +95,15 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase {
 			runRScript(true);
 
 			//compare matrices
-
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("C");
 			HashMap<CellIndex, Double> dmfile1 = readDMLMatrixFromHDFS("S");
 			HashMap<CellIndex, Double> rfile = readRMatrixFromFS("C");
 			HashMap<CellIndex, Double> rfile1 = readRMatrixFromFS("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmfile1, rfile1, eps, "Stat-DML", "Stat-R");
-
-		} finally {
+		}
+		finally {
 			rtplatform = platformOld;
 		}
 	}
-
 }
-

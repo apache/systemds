@@ -105,4 +105,14 @@ public class Types
 		SPARSE_BLOCK,
 		DENSE_BLOCK,
 	}
+	
+	/**
+	 * Type of builtin or user-defined function with regard to its
+	 * number of return variables.
+	 */
+	public enum ReturnType {
+		NO_RETURN,
+		SINGLE_RETURN,
+		MULTI_RETURN
+	}
 }

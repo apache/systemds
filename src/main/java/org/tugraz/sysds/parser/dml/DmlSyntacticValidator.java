@@ -503,7 +503,7 @@ public class DmlSyntacticValidator implements DmlListener {
 
 		boolean hasLHS = ctx.targetList != null;
 		functionCallAssignmentStatementHelper(ctx, printStatements, outputStatements, hasLHS ? ctx.targetList.dataInfo.expr : null, ctx.info, ctx.name,
-	 			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
+			hasLHS ? ctx.targetList.start : null, namespace, functionName, paramExpression, hasLHS);
 	}
 
 	// TODO: remove this when castAsScalar has been removed from DML/PYDML
@@ -589,6 +589,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				setMultiAssignmentStatement(targetList, e, ctx, ctx.info);
 				return;
 			}
+			handleDMLBodiedBuiltinFunction(functionName, namespace, ctx);
 		}
 
 		// Override default namespace for imported non-built-in function
@@ -596,6 +597,16 @@ public class DmlSyntacticValidator implements DmlListener {
 		functCall.setFunctionNamespace(inferNamespace);
 
 		setMultiAssignmentStatement(targetList, functCall, ctx, ctx.info);
+	}
+	
+	private void handleDMLBodiedBuiltinFunction(String functionName, String namespace, ParserRuleContext ctx) {
+		if( Builtins.contains(functionName, true, false) ) {
+			//load and add builtin DML-bodied functions
+			String filePath = Builtins.getFilePath(functionName);
+			DMLProgram prog = parseAndAddImportedFunctions(namespace, filePath, ctx);
+			for( Entry<String,FunctionStatementBlock> f : prog.getNamedFunctionStatementBlocks().entrySet() )
+				builtinFuns.addFunctionStatementBlock(f.getKey(), f.getValue());
+		}
 	}
 
 
@@ -1610,14 +1621,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				setAssignmentStatement(ctx, info, target, e);
 				return;
 			}
-			
-			if( Builtins.contains(functionName, true, false) ) {
-				//load and add builtin DML-bodied functions
-				String filePath = Builtins.getFilePath(functionName);
-				DMLProgram prog = parseAndAddImportedFunctions(namespace, filePath, ctx);
-				for( Entry<String,FunctionStatementBlock> f : prog.getNamedFunctionStatementBlocks().entrySet() )
-					builtinFuns.addFunctionStatementBlock(f.getKey(), f.getValue());
-			}
+			handleDMLBodiedBuiltinFunction(functionName, namespace, ctx);
 		}
 
 		// handle user-defined functions

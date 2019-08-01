@@ -19,6 +19,8 @@ package org.tugraz.sysds.common;
 import java.util.EnumSet;
 import java.util.HashMap;
 
+import org.tugraz.sysds.common.Types.ReturnType;
+
 /**
  * Enum to represent all builtin functions in the default name space.
  * Each function is either native or implemented by a DML script. In
@@ -38,8 +40,8 @@ public enum Builtins {
 	ATAN("atan", false),
 	AVG_POOL("avg_pool", false),
 	AVG_POOL_BACKWARD("avg_pool_backward", false),
-	BATCH_NORM2D("batch_norm2d", false),
-	BATCH_NORM2D_BACKWARD("batch_norm2d_backward", false),
+	BATCH_NORM2D("batch_norm2d", false, ReturnType.MULTI_RETURN),
+	BATCH_NORM2D_BACKWARD("batch_norm2d_backward", false, ReturnType.MULTI_RETURN),
 	BIASADD("bias_add", false),
 	BIASMULT("bias_multiply", false),
 	BITWAND("bitwAnd", false),
@@ -75,7 +77,7 @@ public enum Builtins {
 	CUMSUM("cumsum", false),
 	CUMSUMPROD("cumsumprod", false),
 	DIAG("diag", false),
-	EIGEN("eigen", false),
+	EIGEN("eigen", false, ReturnType.MULTI_RETURN),
 	EXISTS("exists", false),
 	EXP("exp", false),
 	EVAL("eval", false),
@@ -95,9 +97,9 @@ public enum Builtins {
 	LMDS("lmDS", true),
 	LMPREDICT("lmpredict", true),
 	LOG("log", false),
-	LSTM("lstm", false),
-	LSTM_BACKWARD("lstm_backward", false),
-	LU("lu", false),
+	LSTM("lstm", false, ReturnType.MULTI_RETURN),
+	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
+	LU("lu", false, ReturnType.MULTI_RETURN),
 	MEAN("mean", "avg", false),
 	MIN("min", "pmin", false),
 	MAX("max", "pmax", false),
@@ -112,7 +114,7 @@ public enum Builtins {
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	PPRED("ppred", false),
 	PROD("prod", false),
-	QR("qr", false),
+	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
 	RANGE("range", false),
 	RBIND("rbind", false),
@@ -134,11 +136,11 @@ public enum Builtins {
 	SIGN("sign", false),
 	SIN("sin", false),
 	SINH("sinh", false),
-	STEPLM("steplm",true),
+	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
 	SOLVE("solve", false),
 	SQRT("sqrt", false),
 	SUM("sum", false),
-	SVD("svd", false),
+	SVD("svd", false, ReturnType.MULTI_RETURN),
 	TRANS("t", false),
 	TABLE("table", "ctable", false),
 	TAN("tan", false),
@@ -179,22 +181,31 @@ public enum Builtins {
 	UPPER_TRI("upper.tri", false, true);
 	
 	Builtins(String name, boolean script) {
-		this(name, null, script, false);
+		this(name, null, script, false, ReturnType.SINGLE_RETURN);
+	}
+	
+	Builtins(String name, boolean script, ReturnType retType) {
+		this(name, null, script, false, retType);
 	}
 	
 	Builtins(String name, boolean script, boolean parameterized) {
-		this(name, null, script, parameterized);
+		this(name, null, script, parameterized, ReturnType.SINGLE_RETURN);
 	}
 	
 	Builtins(String name, String alias, boolean script) {
-		this(name, alias, script, false);
+		this(name, alias, script, false, ReturnType.SINGLE_RETURN);
 	}
 	
 	Builtins(String name, String alias, boolean script, boolean parameterized) {
+		this(name, alias, script, false, ReturnType.SINGLE_RETURN);
+	}
+	
+	Builtins(String name, String alias, boolean script, boolean parameterized, ReturnType retType) {
 		_name = name;
 		_alias = alias;
 		_script = script;
 		_parameterized = parameterized;
+		_retType = retType;
 	}
 	
 	private final static String BUILTIN_DIR = "scripts/builtin/";
@@ -213,6 +224,7 @@ public enum Builtins {
 	private final String _alias;
 	private final boolean _script;
 	private final boolean _parameterized;
+	private final ReturnType _retType;
 	
 	public String getName() {
 		return _name;
@@ -228,6 +240,10 @@ public enum Builtins {
 	
 	public boolean isParameterized() {
 		return _parameterized;
+	}
+	
+	public boolean isMultiReturn() {
+		return _retType == ReturnType.MULTI_RETURN;
 	}
 	
 	public static boolean contains(String name, boolean script, boolean parameterized) {

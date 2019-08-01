@@ -20,6 +20,7 @@
 package org.tugraz.sysds.parser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MultiAssignmentStatement extends Statement
@@ -106,26 +107,16 @@ public class MultiAssignmentStatement extends Statement
 	}
 	
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		
-		for( int i=0; i< _targetList.size(); i++ )
-		{
-			sb.append(_targetList.get(i).toString());
-			if (i < _targetList.size() - 1)
-				sb.append(",");
-		}
-		sb.append("] = ");
+		sb.append(Arrays.toString(_targetList.toArray()));
+		sb.append(" = ");
 		sb.append(_source.toString());
 		sb.append(";");
-		
 		return sb.toString();
 	}
 
 	public void setSource(FunctionCallIdentifier s) {
 		_source = s;
-		
 	}
 }

@@ -134,6 +134,7 @@ public enum Builtins {
 	SIGN("sign", false),
 	SIN("sin", false),
 	SINH("sinh", false),
+	STEPLM("steplm",true),
 	SOLVE("solve", false),
 	SQRT("sqrt", false),
 	SUM("sum", false),

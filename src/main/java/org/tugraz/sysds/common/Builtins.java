@@ -197,7 +197,7 @@ public enum Builtins {
 	}
 	
 	Builtins(String name, String alias, boolean script, boolean parameterized) {
-		this(name, alias, script, false, ReturnType.SINGLE_RETURN);
+		this(name, alias, script, parameterized, ReturnType.SINGLE_RETURN);
 	}
 	
 	Builtins(String name, String alias, boolean script, boolean parameterized, ReturnType retType) {

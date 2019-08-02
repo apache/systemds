@@ -35,26 +35,16 @@ import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 public class WhileProgramBlock extends ProgramBlock 
 {
 	private ArrayList<Instruction> _predicate;
-	private ArrayList <Instruction> _exitInstructions ;
 	private ArrayList<ProgramBlock> _childBlocks;
 
 	public WhileProgramBlock(Program prog, ArrayList<Instruction> predicate) {
 		super(prog);
 		_predicate = predicate;
-		_exitInstructions = new ArrayList<>();
 		_childBlocks = new ArrayList<>(); 
 	}
 	
 	public void addProgramBlock(ProgramBlock childBlock) {
 		_childBlocks.add(childBlock);
-	}
-	
-	public void setExitInstructions2(ArrayList<Instruction> exitInstructions) { 
-		_exitInstructions = exitInstructions; 
-	}
-
-	public void setExitInstructions1(ArrayList<Instruction> predicate) { 
-		_predicate = predicate; 
 	}
 
 	public ArrayList<Instruction> getPredicate() { 
@@ -124,14 +114,6 @@ public class WhileProgramBlock extends ProgramBlock
 		}
 		catch (Exception e) {
 			throw new DMLRuntimeException(printBlockErrorLocation() + "Error evaluating while program block", e);
-		}
-		
-		//execute exit instructions
-		try {
-			executeInstructions(_exitInstructions, ec);
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException(printBlockErrorLocation() + "Error executing while exit instructions.", e);
 		}
 	}
 	

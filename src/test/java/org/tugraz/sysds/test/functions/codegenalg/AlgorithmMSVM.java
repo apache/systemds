@@ -34,7 +34,7 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 public class AlgorithmMSVM extends AutomatedTestBase 
-{	
+{
 	private final static String TEST_NAME1 = "Algorithm_MSVM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmMSVM.class.getSimpleName() + "/";

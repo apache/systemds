@@ -370,5 +370,4 @@ public abstract class ProgramBlock implements ParseInfo
 		_text = parseInfo.getText();
 		_filename = parseInfo.getFilename();
 	}
-
 }

@@ -1332,16 +1332,11 @@ public class ProgramConverter
 		//predicate instructions
 		ArrayList<Instruction> inst = parseInstructions(st.nextToken(),id);
 		
-		//exit instructions
-		ArrayList<Instruction> exit = parseInstructions(st.nextToken(),id);
-		
 		//program blocks
 		ArrayList<ProgramBlock> pbs = rParseProgramBlocks(st.nextToken(), prog, id);
 		
 		WhileProgramBlock wpb = new WhileProgramBlock(prog,inst);
-		wpb.setExitInstructions2(exit);
 		wpb.setChildBlocks(pbs);
-		
 		return wpb;
 	}
 

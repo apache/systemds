@@ -37,7 +37,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class ReblockRecompileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "rblk_recompile1";
 	private final static String TEST_NAME2 = "rblk_recompile2";
 	private final static String TEST_NAME3 = "rblk_recompile3";
@@ -45,7 +44,7 @@ public class ReblockRecompileTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + ReblockRecompileTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 2000;   
+	private final static int rows = 2000;
 	
 	
 	@Override
@@ -75,21 +74,6 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		runReblockTest(2, 296304710250949L);
 	}
 	
-	@Test
-	public void testReblockGroupedAggregateRand() {
-		runReblockTest(3, System.nanoTime());
-	}
-	
-	@Test //failed before for this particular seed
-	public void testReblockGroupedAggregateFixed() {
-		runReblockTest(3, 296304710250949L);
-	}
-	
-	/**
-	 * 
-	 * @param scriptNum
-	 * @param seed
-	 */
 	private void runReblockTest(int scriptNum, long seed)
 	{
 		String TEST_NAME = null;
@@ -124,13 +108,14 @@ public class ReblockRecompileTest extends AutomatedTestBase
 		runTest(true, exceptionExpected, null, -1); //0 due to recompile 
 		runRScript(true);
 		
-		Assert.assertEquals("Unexpected number of executed MR jobs.",
+		Assert.assertEquals("Unexpected number of executed Spark instructions.",
 			0, Statistics.getNoOfExecutedSPInst());
 		
 		//compare matrices
 		try 
 		{
-			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo, rows, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
+			MatrixBlock mo = DataConverter.readMatrixFromHDFS(output("R"), InputInfo.BinaryBlockInputInfo,
+				rows, 1, OptimizerUtils.DEFAULT_BLOCKSIZE, OptimizerUtils.DEFAULT_BLOCKSIZE);
 			HashMap<CellIndex, Double> dmlfile = new HashMap<CellIndex,Double>();
 			for( int i=0; i<mo.getNumRows(); i++ )
 				for( int j=0; j<mo.getNumColumns(); j++ )

@@ -78,7 +78,7 @@ public class BasicProgramBlock extends ProgramBlock
 		try
 		{
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			if(    ConfigurationManager.isDynamicRecompilation()
+			if( ConfigurationManager.isDynamicRecompilation()
 				&& _sb != null
 				&& _sb.requiresRecompilation() )
 			{

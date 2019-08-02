@@ -45,6 +45,7 @@ import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -253,8 +254,9 @@ public class RandSPInstruction extends UnarySPInstruction {
 			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
 
 		//step 2: potential in-memory rand operations if applicable
-		if( isMemAvail(lrows, lcols, sparsity, minValue, maxValue) 
-			&&  DMLScript.getGlobalExecMode() != ExecMode.SPARK )
+		if( ConfigurationManager.isDynamicRecompilation()
+			&& isMemAvail(lrows, lcols, sparsity, minValue, maxValue) 
+			&& DMLScript.getGlobalExecMode() != ExecMode.SPARK )
 		{
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
 				pdf, (int)lrows, (int)lcols, rowsInBlock, colsInBlock, 

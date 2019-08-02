@@ -283,22 +283,21 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			else
 			{
 				if( IPA ) {
-					//old expected numbers before IPA
-					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
-							4 - ((evalExpr||constFold)?4:0), Statistics.getNoOfExecutedSPInst()); //rand, 2xgmr while pred, 1x gmr while body
-					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
-							3 - ((evalExpr||constFold)?3:0), Statistics.getNoOfExecutedSPInst()); //rand, 1xgmr if pred, 1x gmr if body
+					int expected = (testname.equals(TEST_NAME1) ?
+						4 - ((evalExpr||constFold)?4:0) :
+						3 - ((evalExpr||constFold)?3:0))
+						+ ((!testname.equals(TEST_NAME2)&&!(evalExpr||constFold))?1:0); //loop checkpoint
+					Assert.assertEquals("Unexpected number of executed Spark instructions.",
+						expected, Statistics.getNoOfExecutedSPInst());
 				}
 				else {
 					//old expected numbers before IPA
-					if( testname.equals(TEST_NAME1) )
-						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
-							5 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedSPInst()); //rand, 2xgmr while pred, 1x gmr while body
-					else //if( testname.equals(TEST_NAME2) )
-						Assert.assertEquals("Unexpected number of executed Spark instructions.", 
-							3 - ((evalExpr||constFold)?1:0), Statistics.getNoOfExecutedSPInst()); //rand, 1xgmr if pred, 1x gmr if body
+					int expected = (testname.equals(TEST_NAME1) ?
+						4 - ((evalExpr||constFold)?1:0) :
+						3 - ((evalExpr||constFold)?1:0))
+						+ (!testname.equals(TEST_NAME2)?1:0); //loop checkpoint
+					Assert.assertEquals("Unexpected number of executed Spark instructions.", 
+						expected, Statistics.getNoOfExecutedSPInst());
 				}
 			}
 			
@@ -306,13 +305,11 @@ public class PredicateRecompileTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			Assert.assertEquals(Double.valueOf((double)val), dmlfile.get(new CellIndex(1,1)));
 		}
-		finally
-		{
+		finally {
 			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 			OptimizerUtils.ALLOW_SIZE_EXPRESSION_EVALUATION = oldFlagEval;
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldFlagFold;
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
-			
 			OptimizerUtils.ALLOW_RAND_JOB_RECOMPILE = oldFlagRand1;
 			OptimizerUtils.ALLOW_BRANCH_REMOVAL = oldFlagRand2;
 			OptimizerUtils.ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = oldFlagRand3;

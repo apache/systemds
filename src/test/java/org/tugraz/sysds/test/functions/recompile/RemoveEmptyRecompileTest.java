@@ -42,7 +42,6 @@ import org.tugraz.sysds.utils.Statistics;
  */
 public class RemoveEmptyRecompileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME = "remove_empty_recompile";
 	
 	private final static String TEST_DIR = "functions/recompile/";
@@ -50,7 +49,7 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;
-	private final static int cols = 20;    
+	private final static int cols = 20;
 	private final static double sparsity = 1.0;
 	
 	private enum OpType{
@@ -71,177 +70,144 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "R" }));
 	}
 
 	
 	@Test
-	public void testRemoveEmptySumNonEmpty() 
-	{
+	public void testRemoveEmptySumNonEmpty() {
 		runRemoveEmptyTest(OpType.SUM, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyRoundNonEmpty() 
-	{
+	public void testRemoveEmptyRoundNonEmpty() {
 		runRemoveEmptyTest(OpType.ROUND, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyTransposeNonEmpty() 
-	{
+	public void testRemoveEmptyTransposeNonEmpty() {
 		runRemoveEmptyTest(OpType.TRANSPOSE, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMultLeftNonEmpty() 
-	{
+	public void testRemoveEmptyMultLeftNonEmpty() {
 		runRemoveEmptyTest(OpType.MULT_LEFT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMultRightNonEmpty() 
-	{
+	public void testRemoveEmptyMultRightNonEmpty() {
 		runRemoveEmptyTest(OpType.MULT_RIGHT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusLeftNonEmpty() 
-	{
+	public void testRemoveEmptyPlusLeftNonEmpty() {
 		runRemoveEmptyTest(OpType.PLUS_LEFT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusRightNonEmpty() 
-	{
+	public void testRemoveEmptyPlusRightNonEmpty() {
 		runRemoveEmptyTest(OpType.PLUS_RIGHT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMinusLeftNonEmpty() 
-	{
+	public void testRemoveEmptyMinusLeftNonEmpty() {
 		runRemoveEmptyTest(OpType.MINUS_LEFT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMinusRightNonEmpty() 
-	{
+	public void testRemoveEmptyMinusRightNonEmpty() {
 		runRemoveEmptyTest(OpType.MINUS_RIGHT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultLeftNonEmpty() 
-	{
+	public void testRemoveEmptyMatMultLeftNonEmpty() {
 		runRemoveEmptyTest(OpType.MM_LEFT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultRightNonEmpty() 
-	{
+	public void testRemoveEmptyMatMultRightNonEmpty() {
 		runRemoveEmptyTest(OpType.MM_RIGHT, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyRIXNonEmpty() 
-	{
+	public void testRemoveEmptyRIXNonEmpty() {
 		runRemoveEmptyTest(OpType.RIX, false);
 	}
 	
 	@Test
-	public void testRemoveEmptyLIXNonEmpty() 
-	{
+	public void testRemoveEmptyLIXNonEmpty() {
 		runRemoveEmptyTest(OpType.LIX, false);
 	}
 
 	@Test
-	public void testRemoveEmptySumEmpty() 
-	{
+	public void testRemoveEmptySumEmpty() {
 		runRemoveEmptyTest(OpType.SUM, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyRoundEmpty() 
-	{
+	public void testRemoveEmptyRoundEmpty() {
 		runRemoveEmptyTest(OpType.ROUND, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyTransposeEmpty() 
-	{
+	public void testRemoveEmptyTransposeEmpty() {
 		runRemoveEmptyTest(OpType.TRANSPOSE, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMultLeftEmpty() 
-	{
+	public void testRemoveEmptyMultLeftEmpty() {
 		runRemoveEmptyTest(OpType.MULT_LEFT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMultRightEmpty() 
-	{
+	public void testRemoveEmptyMultRightEmpty() {
 		runRemoveEmptyTest(OpType.MULT_RIGHT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusLeftEmpty() 
-	{
+	public void testRemoveEmptyPlusLeftEmpty() {
 		runRemoveEmptyTest(OpType.PLUS_LEFT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyPlusRightEmpty() 
-	{
+	public void testRemoveEmptyPlusRightEmpty() {
 		runRemoveEmptyTest(OpType.PLUS_RIGHT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMinusLeftEmpty() 
-	{
+	public void testRemoveEmptyMinusLeftEmpty() {
 		runRemoveEmptyTest(OpType.MINUS_LEFT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMinusRightEmpty() 
-	{
+	public void testRemoveEmptyMinusRightEmpty() {
 		runRemoveEmptyTest(OpType.MINUS_RIGHT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultLeftEmpty() 
-	{
+	public void testRemoveEmptyMatMultLeftEmpty() {
 		runRemoveEmptyTest(OpType.MM_LEFT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyMatMultRightEmpty() 
-	{
+	public void testRemoveEmptyMatMultRightEmpty() {
 		runRemoveEmptyTest(OpType.MM_RIGHT, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyRIXEmpty() 
-	{
+	public void testRemoveEmptyRIXEmpty() {
 		runRemoveEmptyTest(OpType.RIX, true);
 	}
 	
 	@Test
-	public void testRemoveEmptyLIXEmpty() 
-	{
+	public void testRemoveEmptyLIXEmpty() {
 		runRemoveEmptyTest(OpType.LIX, true);
 	}
-	
 
-	/**
-	 * 
-	 * @param type
-	 * @param empty
-	 */
 	private void runRemoveEmptyTest( OpType type, boolean empty )
-	{	
+	{
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		try
@@ -266,20 +232,20 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 				inputDir() + " " + Integer.toString(type.ordinal()) + " " + expectedDir();
 	
 			long seed = System.nanoTime();
-	        double[][] X = getRandomMatrix(rows, cols, 0, empty?0:1, sparsity, seed);
+			double[][] X = getRandomMatrix(rows, cols, 0, empty?0:1, sparsity, seed);
 			writeInputMatrixWithMTD("X", X, true);
 	
 			runTest(true, false, null, -1); 
 			runRScript(true);
 			
-			//CHECK compiled MR jobs
-			int expectNumCompiled = 21; //reblock, 10xGMR, 2x(MMCJ+GMR), 2xGMR(LIX), write
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledSPInst());
-			//CHECK executed MR jobs
+			//CHECK compiled Spark jobs
+			int expectNumCompiled = 24; //reblock, 4x1, 9x2, write
+			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
+			//CHECK executed Spark jobs
 			int expectNumExecuted = 0;
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
-		                        expectNumExecuted, Statistics.getNoOfExecutedSPInst());
+			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
+				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//CHECK rewrite application 
 			//(for minus_left we replace X-Y with 0-Y and hence still execute -)
@@ -295,19 +261,15 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}
 	
-
-	private static String getOpcode( OpType type )
-	{
+	private static String getOpcode( OpType type ) {
 		switch(type){
-		    //for sum, literal replacement of unary aggregates applies
+			//for sum, literal replacement of unary aggregates applies
 			case SUM:         return "rlit";//return "uak+";
-			
 			case ROUND:       return "round";
 			case TRANSPOSE:   return "r'";
 			case MULT_LEFT:
@@ -321,7 +283,6 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 			case RIX:         return RightIndex.OPCODE;
 			case LIX:         return LeftIndex.OPCODE;
 		}
-		
 		return null;
 	}
 }

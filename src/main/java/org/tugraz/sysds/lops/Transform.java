@@ -32,7 +32,6 @@ import org.tugraz.sysds.common.Types.ValueType;
  * Lop to perform transpose/vector to diag operations
  * This lop can change the keys and hence break alignment.
  */
-
 public class Transform extends Lop
 {
 	public enum OperationTypes {
@@ -133,7 +132,6 @@ public class Transform extends Lop
 		
 		default:
 			throw new UnsupportedOperationException(this.printErrorLocation() + "Instruction is not defined for Transform operation " + operation);
-				
 		}
 	}
 	
@@ -141,38 +139,32 @@ public class Transform extends Lop
 	
 	@Override
 	public String getInstructions(String input1, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
-		
-		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
-			sb.append( OPERAND_DELIMITOR );
-			sb.append( _numThreads );
-		}
-		
-		return sb.toString();
+		//opcodes: r', rev, rdiag
+		return getInstructions(input1, 1, output);
 	}
 
 	@Override
+	public String getInstructions(String input1, String input2, String input3, String input4, String output) {
+		//opcodes: rsort
+		return getInstructions(input1, 4, output);
+	}
+	
+	@Override
 	public String getInstructions(String input1, String input2, String input3, String input4, String input5, String output) {
-		//only used for reshape
-		
+		//opcodes: rshape
+		return getInstructions(input1, 5, output);
+	}
+	
+	private String getInstructions(String input1, int numInputs, String output) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( getExecType() );
-		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getOpcode() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input1));
 		
 		//rows, cols, byrow
-		String[] inputX = new String[]{input2,input3,input4,input5};
-		for( int i=1; i<=(inputX.length); i++ ) {
+		for( int i = 1; i < numInputs; i++ ) {
 			Lop ltmp = getInputs().get(i);
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( ltmp.prepScalarInputOperand(getExecType()));
@@ -182,11 +174,14 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
+		if( getExecType()==ExecType.CP && operation == OperationTypes.Transpose ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( _numThreads );
+		}
 		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Reshape ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _outputEmptyBlock );
 		}
-		
 		if( getExecType()==ExecType.SPARK && operation == OperationTypes.Sort ){
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _bSortIndInMem );

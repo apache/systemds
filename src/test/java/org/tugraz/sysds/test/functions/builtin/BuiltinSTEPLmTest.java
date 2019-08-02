@@ -26,8 +26,8 @@ import org.tugraz.sysds.test.TestUtils;
 
 import java.util.HashMap;
 
-public class BuiltinSTEPLmTest extends AutomatedTestBase {
-
+public class BuiltinSTEPLmTest extends AutomatedTestBase 
+{
 	private final static String TEST_NAME = "steplm";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSTEPLmTest.class.getSimpleName() + "/";
@@ -38,10 +38,6 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase {
 	private final static double spSparse = 0.3;
 	private final static double spDense = 0.7;
 
-	public enum LinregType {
-		CG, DS, AUTO
-	}
-
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
@@ -49,32 +45,29 @@ public class BuiltinSTEPLmTest extends AutomatedTestBase {
 
 	@Test
 	public void testLmMatrixDenseCPlm() {
-		runSTEPLmTest(false, ExecType.CP, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(false, ExecType.CP);
 	}
 
 	@Test
 	public void testLmMatrixSparseCPlm() {
-		runSTEPLmTest(false, ExecType.CP, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(true, ExecType.CP);
 	}
 
 	@Test
 	public void testLmMatrixDenseSPlm() {
-		runSTEPLmTest(false, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testLmMatrixSparseSPlm() {
-		runSTEPLmTest(true, ExecType.SPARK, BuiltinSTEPLmTest.LinregType.AUTO);
+		runSTEPLmTest(true, ExecType.SPARK);
 	}
 
-	private void runSTEPLmTest(boolean sparse, ExecType instType, BuiltinSTEPLmTest.LinregType linregAlgo) {
+	private void runSTEPLmTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
-
 		String dml_test_name = TEST_NAME;
 
 		try {
-			//disableOutAndExpectedDeletion();
-
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			double sparsity = sparse ? spSparse : spDense;
 

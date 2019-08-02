@@ -62,9 +62,9 @@
 # AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
 
 m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
-  return(Matrix[Double] C, Matrix[Double] S)
-{
-  # currently only the forward selection strategy in supported: start 
+return(Matrix[Double] C, Matrix[Double] S) {
+
+  # currently only the forward selection strategy in supported: start
   # from one feature and iteratively add features until AIC improves
   dir = "forward";
   thr = 0.001;
@@ -103,7 +103,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double
     for (i in 1:m_orig, check = 0) {
       columns_fixed_ordered_1 = matrix(i, rows = 1, cols = 1);
       [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt);
-      print(" mibeta " + toString(beta_out_i))
+
       AICs[1, i] = AIC_1;
       AIC_cur = as.scalar(AICs[1, i]);
       if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best))) {
@@ -128,72 +128,71 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, Double
       beta_out = B;
       S = Selected;
       C = beta_out;
-      stop("");
-    }
-    print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+    } else {
 
-    columns_fixed[1, column_best] = 1;
-    columns_fixed_ordered[1, 1] = column_best;
-    X_global = X_orig[, column_best];
+      print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
 
-    while (continue) {
-      # Subsequent passes over the features
-      beta_out_all_2 = matrix(0, rows = boa_ncol, cols = m_orig * 1);
-      for (i in 1:m_orig, check = 0) {
-        if (as.scalar(columns_fixed[1, i]) == 0) {
-          # Construct the feature matrix
-          X = cbind(X_global, X_orig[, i]);
-          tmp = matrix(0, rows = 1, cols = 1);
-          tmp[1, 1] = i;
-          columns_fixed_ordered_2 = append(columns_fixed_ordered, tmp);
-          [AIC_2, beta_out_i] = linear_regression(X, y, icpt);
-          beta_out_all_2[1:nrow(beta_out_i), (i - 1) * y_ncol + 1:i * y_ncol] = beta_out_i[, 1:1];
-          AICs[1, i] = AIC_2;
-          AIC_cur = as.scalar(AICs[1, i]);
-          if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best)) &
+      columns_fixed[1, column_best] = 1;
+      columns_fixed_ordered[1, 1] = column_best;
+      X_global = X_orig[, column_best];
+
+      while (continue) {
+        # Subsequent passes over the features
+        beta_out_all_2 = matrix(0, rows = boa_ncol, cols = m_orig * 1);
+        for (i in 1:m_orig, check = 0) {
+          if (as.scalar(columns_fixed[1, i]) == 0) {
+            # Construct the feature matrix
+            X = cbind(X_global, X_orig[, i]);
+            tmp = matrix(0, rows = 1, cols = 1);
+            tmp[1, 1] = i;
+            columns_fixed_ordered_2 = append(columns_fixed_ordered, tmp);
+            [AIC_2, beta_out_i] = linear_regression(X, y, icpt);
+            beta_out_all_2[1:nrow(beta_out_i), (i - 1) * y_ncol + 1:i * y_ncol] = beta_out_i[, 1:1];
+            AICs[1, i] = AIC_2;
+            AIC_cur = as.scalar(AICs[1, i]);
+            if ((AIC_cur < AIC_best) & ((AIC_best - AIC_cur) > abs(thr * AIC_best)) &
             (as.scalar(columns_fixed[1, i]) == 0)) {
-            column_best = i;
-            AIC_best = as.scalar(AICs[1, i]);
+              column_best = i;
+              AIC_best = as.scalar(AICs[1, i]);
+            }
           }
         }
-      }
 
-      # have the best beta store in the matrix
-      beta_best = beta_out_all_2[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
+        # have the best beta store in the matrix
+        beta_best = beta_out_all_2[, (column_best - 1) * y_ncol + 1:column_best * y_ncol];
 
-      # Append best found features (i.e., columns) to X_global
-      if (as.scalar(columns_fixed[1, column_best]) == 0) {
-        # new best feature found
-        print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
-        columns_fixed[1, column_best] = 1;
-        columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
-        if (ncol(columns_fixed_ordered) == m_orig) {
-          # all features examined
-          X_global = cbind(X_global, X_orig[, column_best]);
-          continue = FALSE;
+        # Append best found features (i.e., columns) to X_global
+        if (as.scalar(columns_fixed[1, column_best]) == 0) {
+          # new best feature found
+          print("Best AIC " + AIC_best + " achieved with feature: " + column_best);
+          columns_fixed[1, column_best] = 1;
+          columns_fixed_ordered = cbind(columns_fixed_ordered, as.matrix(column_best));
+          if (ncol(columns_fixed_ordered) == m_orig) {
+            # all features examined
+            X_global = cbind(X_global, X_orig[, column_best]);
+            continue = FALSE;
+          } else {
+            X_global = cbind(X_global, X_orig[, column_best]);
+          }
         } else {
-          X_global = cbind(X_global, X_orig[, column_best]);
+          continue = FALSE;
         }
-      } else {
-        continue = FALSE;
       }
+      # run linear regression with selected set of features
+      print("Running linear regression with selected features...");
+      [AIC, beta_out] = linear_regression(X_global, y, icpt);
+      Selected = columns_fixed_ordered;
+      if (icpt != 0) {
+        Selected = cbind(Selected, matrix(boa_ncol, rows = 1, cols = 1))
+      }
+      beta_out = reorder_matrix(boa_ncol, beta_out, Selected);
+      S = Selected;
+      C = beta_out;
     }
-
-    # run linear regression with selected set of features
-    print("Running linear regression with selected features...");
-    [AIC, beta_out] = linear_regression(X_global, y, icpt);
-    Selected = columns_fixed_ordered;
-    if (icpt != 0) {
-      Selected = cbind(Selected, matrix(boa_ncol, rows = 1, cols = 1))
-    }
-    beta_out = reorder_matrix(boa_ncol, beta_out, Selected);
-    S = Selected;
-    C = beta_out;
   } else {
     stop("Currently only forward selection strategy is supported!");
   }
 }
-
 # Computes linear regression using lm and outputs AIC.
 linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0)
   return(Double AIC, Matrix[Double] beta) {
@@ -207,6 +206,7 @@ linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 
     X = cbind(X, ones_n);
     m = m - 1;
   }
+
   m_ext = ncol(X);
 
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)

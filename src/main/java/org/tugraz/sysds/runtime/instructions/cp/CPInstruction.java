@@ -21,6 +21,7 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.common.Types.DataType;
@@ -31,6 +32,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
@@ -107,15 +109,19 @@ public abstract class CPInstruction extends Instruction
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
-		Instruction tmp = this;
+		//default preprocess behavior (e.g., debug state)
+		Instruction tmp = super.preprocessInstruction(ec);
+		
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
 			String updInst = updateLabels(tmp.toString(), ec.getVariables());
 			tmp = CPInstructionParser.parseSingleInstruction(updInst);
+			// Corrected lineage trace for patched instructions
+			if (DMLScript.LINEAGE)
+				Lineage.trace(tmp, ec);
 		}
-		//default preprocess behavior (e.g., lineage tracing)
-		return super.preprocessInstruction(ec);
+		return tmp;
 	}
 
 	@Override 

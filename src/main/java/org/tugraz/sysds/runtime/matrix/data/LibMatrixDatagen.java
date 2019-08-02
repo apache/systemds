@@ -248,12 +248,12 @@ public class LibMatrixDatagen
 	 * (-Inf,+Inf).
 	 * 
 	 * 
-     * @param out output matrix block
-     * @param rgen random matrix generator
-     * @param bigrand Well1024a pseudo-random number generator
-     * @param bSeed seed for random generator
-     * @param k ?
-     */
+	 * @param out output matrix block
+	 * @param rgen random matrix generator
+	 * @param bigrand Well1024a pseudo-random number generator
+	 * @param bSeed seed for random generator
+	 * @param k ?
+	 */
 	public static void generateRandomMatrix( MatrixBlock out, RandomMatrixGenerator rgen, Well1024a bigrand, long bSeed, int k ) {
 		int rows = rgen._rows;
 		int cols = rgen._cols;

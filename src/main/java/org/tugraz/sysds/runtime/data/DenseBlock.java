@@ -1,6 +1,6 @@
 /*
  * Modifications Copyright 2018 Graz University of Technology
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -427,7 +427,7 @@ public abstract class DenseBlock implements Serializable
 	 * @return self
 	 */
 	public abstract DenseBlock set(int r, int c, double v);
-	
+
 	/**
 	 * Copy the given vector into the given row.
 	 * 
@@ -505,6 +505,15 @@ public abstract class DenseBlock implements Serializable
 	 * Set the specified cell to the given value.
 	 *
 	 * @param ix cell indexes
+	 * @param v value
+	 * @return self
+	 */
+	public abstract DenseBlock set(int[] ix, long v);
+
+	/**
+	 * Set the specified cell to the given value.
+	 *
+	 * @param ix cell indexes
 	 * @param v value as String
 	 * @return self
 	 */
@@ -548,6 +557,14 @@ public abstract class DenseBlock implements Serializable
 	 * @return value as String
 	 */
 	public abstract String getString(int[] ix);
+
+	/**
+	 * Get the value of a given cell as long
+	 *
+	 * @param ix cell indexes
+	 * @return value as long
+	 */
+	public abstract long getLong(int[] ix);
 
 	@Override
 	public String toString() {

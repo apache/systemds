@@ -141,6 +141,12 @@ public class DenseBlockFP32 extends DenseBlockDRB
 	}
 
 	@Override
+	public DenseBlock set(int[] ix, long v) {
+		_data[pos(ix)] = v;
+		return this;
+	}
+
+	@Override
 	public DenseBlock set(int[] ix, String v) {
 		_data[pos(ix)] = Float.parseFloat(v);
 		return this;
@@ -159,5 +165,10 @@ public class DenseBlockFP32 extends DenseBlockDRB
 	@Override
 	public String getString(int[] ix) {
 		return String.valueOf(_data[pos(ix)]);
+	}
+
+	@Override
+	public long getLong(int[] ix) {
+		return UtilFunctions.toLong(_data[pos(ix)]);
 	}
 }

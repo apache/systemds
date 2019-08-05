@@ -127,6 +127,12 @@ public class DenseBlockLString extends DenseBlockLDRB
 	}
 
 	@Override
+	public DenseBlock set(int[] ix, long v) {
+		_blocks[index(ix[0])][pos(ix)] = String.valueOf(v);
+		return this;
+	}
+
+	@Override
 	public DenseBlock set(int[] ix, String v) {
 		_blocks[index(ix[0])][pos(ix)] = v;
 		return this;
@@ -145,5 +151,10 @@ public class DenseBlockLString extends DenseBlockLDRB
 	@Override
 	public String getString(int[] ix) {
 		return _blocks[index(ix[0])][pos(ix)];
+	}
+
+	@Override
+	public long getLong(int[] ix) {
+		return Long.parseLong(_blocks[index(ix[0])][pos(ix)]);
 	}
 }

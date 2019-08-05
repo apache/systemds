@@ -74,7 +74,7 @@ public class DenseBlockLBool extends DenseBlockLDRB
 		int numBlocks = UtilFunctions.toInt(Math.ceil((double) rlen / newBlockSize));
 		if (_blen == newBlockSize && dataLength <= capacity()) {
 			for (int i = 0; i < numBlocks; i++) {
-				int toIndex = (int)Math.min((long)newBlockSize, dataLength - i * newBlockSize) * _odims[0];
+				int toIndex = (int)Math.min(newBlockSize, dataLength - i * newBlockSize) * _odims[0];
 				_blocks[i].set(0, toIndex, bv);
 				// Clear old data so we can use cardinality for computeNnz
 				_blocks[i].set(toIndex, _blocks[i].size(), false);
@@ -168,6 +168,11 @@ public class DenseBlockLBool extends DenseBlockLDRB
 	}
 
 	@Override
+	public DenseBlock set(int[] ix, long v) {
+		_blocks[index(ix[0])].set(pos(ix), v != 0);
+		return this;
+	}
+	@Override
 	public DenseBlock set(int[] ix, String v) {
 		_blocks[index(ix[0])].set(pos(ix), Boolean.parseBoolean(v));
 		return this;
@@ -186,5 +191,10 @@ public class DenseBlockLBool extends DenseBlockLDRB
 	@Override
 	public String getString(int[] ix) {
 		return String.valueOf(_blocks[index(ix[0])].get(pos(ix)));
+	}
+
+	@Override
+	public long getLong(int[] ix) {
+		return _blocks[index(ix[0])].get(pos(ix)) ? 1 : 0;
 	}
 }

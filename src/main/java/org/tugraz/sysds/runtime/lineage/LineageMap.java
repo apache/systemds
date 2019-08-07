@@ -7,6 +7,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.utils.Explain;
 
 import java.util.HashMap;
@@ -33,9 +34,10 @@ public class LineageMap {
 		LineageItem[] items = ((LineageTraceable) inst).getLineageItems();
 		if (items == null || items.length < 1)
 			trace(inst, ec, null);
-		else
+		else {
 			for (LineageItem li : items)
-				trace(inst, ec, li);
+				trace(inst, ec, cleanupInputLiterals(li, ec));
+		}
 	}
 	
 	public void processDedupItem(LineageMap lm, Long path) {
@@ -131,6 +133,23 @@ public class LineageMap {
 		
 	}
 	
+	private LineageItem cleanupInputLiterals(LineageItem li, ExecutionContext ec) {
+		if( li.getInputs() == null )
+			return li;
+		// fix literals referring to variables (e.g., for/parfor loop variable)
+		for(int i=0; i<li.getInputs().length; i++) {
+			LineageItem tmp = li.getInputs()[i];
+			if( tmp.getType() != LineageItemType.Literal ) 
+				continue;
+			//check if CPOperand is not a literal, w/o parsing
+			if( tmp.getData().endsWith("false") ) {
+				CPOperand cp = new CPOperand(tmp.getData());
+				cp.setLiteral(ec.getScalarInput(cp));
+				li.getInputs()[i] = getOrCreate(cp);
+			}
+		}
+		return li;
+	}
 	
 	private void processCopyLI(LineageItem li) {
 		if (li.getInputs().length != 1)

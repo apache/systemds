@@ -123,6 +123,6 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 	@Override
 	public LineageItem[] getLineageItems() {
 		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
-			LineageItemUtils.getLineage(input1,input2,input3,colLower,colUpper,rowLower,rowUpper))};
+			LineageItemUtils.getLineage(input1,input2,input3,rowLower,rowUpper,colLower,colUpper))};
 	}
 }

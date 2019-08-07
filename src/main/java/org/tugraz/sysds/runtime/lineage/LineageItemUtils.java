@@ -222,10 +222,30 @@ public class LineageItemUtils {
 							break;
 						}
 						case Binary: {
+							//handle special cases of binary operations 
+							String opcode = ("^2".equals(item.getOpcode()) 
+								|| "*2".equals(item.getOpcode())) ? 
+								item.getOpcode().substring(0, 1) : item.getOpcode();
 							Hop input1 = operands.get(item.getInputs()[0].getId());
 							Hop input2 = operands.get(item.getInputs()[1].getId());
-							Hop binary = HopRewriteUtils.createBinary(input1, input2, item.getOpcode());
+							Hop binary = HopRewriteUtils.createBinary(input1, input2, opcode);
 							operands.put(item.getId(), binary);
+							break;
+						}
+						case Ternary: {
+							operands.put(item.getId(), HopRewriteUtils.createTernaryOp(
+								operands.get(item.getInputs()[0].getId()), 
+								operands.get(item.getInputs()[1].getId()), 
+								operands.get(item.getInputs()[2].getId()), item.getOpcode()));
+							break;
+						}
+						case MatrixIndexing: {
+							operands.put(item.getId(), HopRewriteUtils.createIndexingOp(
+								operands.get(item.getInputs()[0].getId()), //input
+								operands.get(item.getInputs()[1].getId()), //rl
+								operands.get(item.getInputs()[2].getId()), //ru
+								operands.get(item.getInputs()[3].getId()), //cl
+								operands.get(item.getInputs()[4].getId()))); //cu
 							break;
 						}
 						case Variable: { //cpvar, write
@@ -248,7 +268,7 @@ public class LineageItemUtils {
 			case Literal: {
 				CPOperand op = new CPOperand(item.getData());
 				operands.put(item.getId(), ScalarObjectFactory
-						.createLiteralOp(op.getValueType(), op.getName()));
+					.createLiteralOp(op.getValueType(), op.getName()));
 				break;
 			}
 			case Dedup: {

@@ -738,6 +738,10 @@ public class HopRewriteUtils
 		return datagen;
 	}
 	
+	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, String opcode) {
+		return createTernaryOp(mleft, smid, mright, Hop.getTernaryOpCode(opcode));
+	}
+	
 	public static TernaryOp createTernaryOp(Hop mleft, Hop smid, Hop mright, OpOp3 op) {
 		TernaryOp ternOp = new TernaryOp("tmp", DataType.MATRIX, ValueType.FP64, op, mleft, smid, mright);
 		ternOp.setOutputBlocksizes(mleft.getRowsInBlock(), mleft.getColsInBlock());

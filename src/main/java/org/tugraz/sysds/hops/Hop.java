@@ -1448,6 +1448,7 @@ public abstract class Hop implements ParseInfo
 	}
 	
 	protected static final HashMap<Hop.OpOp3, String> HopsOpOp3String;
+	protected static final HashMap<String,OpOp3> HopsStringOpOp3;
 	static {
 		HopsOpOp3String = new HashMap<>();
 		HopsOpOp3String.put(OpOp3.QUANTILE, "quantile");
@@ -1458,6 +1459,18 @@ public abstract class Hop implements ParseInfo
 		HopsOpOp3String.put(OpOp3.PLUS_MULT, "+*");
 		HopsOpOp3String.put(OpOp3.MINUS_MULT, "-*");
 		HopsOpOp3String.put(OpOp3.IFELSE, "ifelse");
+		
+		HopsStringOpOp3 = new HashMap<>();
+		for( Entry<OpOp3,String> e : HopsOpOp3String.entrySet() )
+			HopsStringOpOp3.put(e.getValue(), e.getKey());
+	}
+	
+	public static String getTernaryOpCode(OpOp3 op) {
+		return HopsOpOp3String.get(op);
+	}
+	
+	public static OpOp3 getTernaryOpCode(String op) {
+		return HopsStringOpOp3.get(op);
 	}
 	
 	protected static final HashMap<Hop.OpOp4, String> HopsOpOp4String;

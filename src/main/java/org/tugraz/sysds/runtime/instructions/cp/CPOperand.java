@@ -105,6 +105,12 @@ public class CPOperand
 		_name = name;
 		_literal = null;
 	}
+	
+	public void setLiteral(ScalarObject literal) {
+		_name = String.valueOf(literal);
+		_literal = literal;
+		_isLiteral = (_literal!=null);
+	}
 
 	public void split(String str){
 		String[] opr = str.split(Instruction.VALUETYPE_PREFIX);
@@ -140,6 +146,17 @@ public class CPOperand
 
 	public String getLineageLiteral() {
 		StringBuilder sb = new StringBuilder(getName());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(getDataType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(getValueType().toString());
+		sb.append(Instruction.VALUETYPE_PREFIX);
+		sb.append(isLiteral());
+		return sb.toString();
+	}
+	
+	public String getLineageLiteral(ScalarObject so) {
+		StringBuilder sb = new StringBuilder(so.toString());
 		sb.append(Instruction.VALUETYPE_PREFIX);
 		sb.append(getDataType().toString());
 		sb.append(Instruction.VALUETYPE_PREFIX);

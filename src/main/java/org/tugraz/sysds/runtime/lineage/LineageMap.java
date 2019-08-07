@@ -114,6 +114,15 @@ public class LineageMap {
 					processMoveLI(li);
 					break;
 				}
+				case CastAsBooleanVariable:
+				case CastAsDoubleVariable:
+				case CastAsIntegerVariable:
+				case CastAsScalarVariable:
+				case CastAsMatrixVariable:
+				case CastAsFrameVariable: {
+					addLineageItem(li);
+					break;
+				}
 				default:
 					throw new DMLRuntimeException("Unknown VariableCPInstruction (" + inst.getOpcode() + ") traced.");
 			}

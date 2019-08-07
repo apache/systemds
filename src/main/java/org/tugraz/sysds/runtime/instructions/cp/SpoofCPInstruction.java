@@ -26,6 +26,8 @@ import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.SpoofOperator;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 public class SpoofCPInstruction extends ComputationCPInstruction {
@@ -91,5 +93,11 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		for (CPOperand input : _in)
 			if(input.getDataType()==DataType.MATRIX)
 				ec.releaseMatrixInput(input.getName());
+	}
+	
+	@Override
+	public LineageItem[] getLineageItems() {
+		return new LineageItem[]{new LineageItem(output.getName(),
+			getOpcode(), LineageItemUtils.getLineage(_in))};
 	}
 }

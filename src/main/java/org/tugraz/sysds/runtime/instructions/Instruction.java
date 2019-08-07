@@ -191,10 +191,9 @@ public abstract class Instruction
 		return extendedOpcode;
 	}
 
-	public boolean requiresLabelUpdate()
-	{
+	public boolean requiresLabelUpdate() {
 		return instString.contains( Lop.VARIABLE_NAME_PLACEHOLDER );
-	}	
+	}
 	
 	/**
 	 * All instructions that have thread-specific filenames or names encoded in it

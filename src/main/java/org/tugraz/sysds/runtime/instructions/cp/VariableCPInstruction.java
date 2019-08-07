@@ -54,6 +54,7 @@ import org.tugraz.sysds.runtime.io.WriterMatrixMarket;
 import org.tugraz.sysds.runtime.io.WriterTextCSV;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -1187,7 +1188,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						lineages.add(Lineage.getOrCreate(getInput3()));
 				}
 				li = new LineageItem(getInput2().getName(),
-						getOpcode(), lineages.toArray(new LineageItem[0]));
+					getOpcode(), lineages.toArray(new LineageItem[0]));
+				break;
+			}
+			case CastAsBooleanVariable:
+			case CastAsDoubleVariable:
+			case CastAsIntegerVariable:
+			case CastAsScalarVariable:
+			case CastAsMatrixVariable:
+			case CastAsFrameVariable:{
+				li = new LineageItem(getOutputVariableName(), 
+					getOpcode(), LineageItemUtils.getLineage(getInput1()));
 				break;
 			}
 			case RemoveVariable:

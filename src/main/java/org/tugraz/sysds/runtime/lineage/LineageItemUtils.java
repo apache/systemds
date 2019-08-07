@@ -150,6 +150,11 @@ public class LineageItemUtils {
 		return ec.getVariable(varname);
 	}
 	
+	public static LineageItem[] getLineage(CPOperand... operands) {
+		return Arrays.stream(operands).filter(c -> c!=null)
+			.map(c -> Lineage.getOrCreate(c)).toArray(LineageItem[]::new);
+	}
+	
 	private static void rConstructHops(LineageItem item, HashMap<Long, Hop> operands) {
 		if (item.isVisited())
 			return;

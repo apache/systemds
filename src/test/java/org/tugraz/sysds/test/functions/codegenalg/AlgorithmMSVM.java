@@ -22,6 +22,7 @@ package org.tugraz.sysds.test.functions.codegenalg;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.api.DMLScript;
@@ -148,7 +149,31 @@ public class AlgorithmMSVM extends AutomatedTestBase
 		runMSVMTest(TEST_NAME1, true, true, 4, ExecType.CP, TestType.FUSE_NO_REDUNDANCY);
 	}
 
-	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType, TestType testType)
+	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, int numClasses, ExecType instType, TestType testType) {
+		runMSVMTest(testname, rewrites, sparse, false, numClasses, instType, testType);
+	}
+	
+	@Test
+	public void testMSVMDenseMulRewritesCPLineage() {
+		runMSVMTest(TEST_NAME1, true, false, true, 4, ExecType.CP, TestType.DEFAULT);
+	}
+	
+	@Test
+	public void testMSVMSparseMulRewritesCPLineage() {
+		runMSVMTest(TEST_NAME1, true, true, true, 4, ExecType.CP, TestType.DEFAULT);
+	}
+	
+	@Test
+	public void testMSVMDenseMulCPLineage() {
+		runMSVMTest(TEST_NAME1, false, false, true, 4, ExecType.CP, TestType.DEFAULT);
+	}
+	
+	@Test
+	public void testMSVMSparseMulCPLineage() {
+		runMSVMTest(TEST_NAME1, false, true, true, 4, ExecType.CP, TestType.DEFAULT);
+	}
+	
+	private void runMSVMTest( String testname, boolean rewrites, boolean sparse, boolean lineage, int numClasses, ExecType instType, TestType testType)
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
@@ -171,7 +196,9 @@ public class AlgorithmMSVM extends AutomatedTestBase
 			programArgs = new String[]{ "-explain", "-stats", "-nvargs", "X="+input("X"), "Y="+input("Y"),
 					"icpt="+String.valueOf(intercept), "tol="+String.valueOf(epsilon), "reg=0.001",
 					"maxiter="+String.valueOf(maxiter), "model="+output("w"), "Log= "};
-
+			if( lineage )
+				programArgs = (String[])ArrayUtils.addAll(new String[]{"-lineage"}, programArgs);
+			
 			rCmd = getRCmd(inputDir(), String.valueOf(intercept),String.valueOf(epsilon),
 				String.valueOf(maxiter), expectedDir());
 

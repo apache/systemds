@@ -23,12 +23,11 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
-import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
+import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import java.util.ArrayList;
 
 public abstract class ComputationCPInstruction extends CPInstruction implements LineageTraceable {
 
@@ -77,14 +76,7 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 
 	@Override
 	public LineageItem[] getLineageItems() {
-		ArrayList<LineageItem> lineages = new ArrayList<>();
-		if (input1 != null)
-			lineages.add(Lineage.getOrCreate(input1));
-		if (input2 != null)
-			lineages.add(Lineage.getOrCreate(input2));
-		if (input3 != null)
-			lineages.add(Lineage.getOrCreate(input3));
 		return new LineageItem[]{new LineageItem(output.getName(),
-				getOpcode(), lineages.toArray(new LineageItem[0]))};
+			getOpcode(), LineageItemUtils.getLineage(input1,input2,input3))};
 	}
 }

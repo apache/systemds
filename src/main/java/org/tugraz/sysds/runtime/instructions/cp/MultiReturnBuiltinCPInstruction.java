@@ -111,8 +111,8 @@ public class MultiReturnBuiltinCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems() {
-		LineageItem[] inputLineage = LineageItemUtils.getLineage(input1,input2,input3);
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
+		LineageItem[] inputLineage = LineageItemUtils.getLineage(ec, input1,input2,input3);
 		ArrayList<LineageItem> items = new ArrayList<>();
 		for (CPOperand out : _outputs)
 			items.add(new LineageItem(out.getName(), getOpcode(), inputLineage));

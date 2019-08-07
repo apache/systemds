@@ -41,7 +41,11 @@ public class ExecutionContextFactory
 		return ec;
 	}
 
-	public static ExecutionContext createContext(boolean allocateVars, Program prog)
+	public static ExecutionContext createContext(boolean allocateVars, Program prog) {
+		return createContext(allocateVars, DMLScript.LINEAGE, prog );
+	}
+	
+	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog)
 	{
 		ExecutionContext ec = null;
 		
@@ -51,14 +55,14 @@ public class ExecutionContextFactory
 				//NOTE: even in case of forced singlenode operations, users might still 
 				//want to run remote parfor which requires the correct execution context
 				if( OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID)
-					ec = new ExecutionContext(allocateVars, prog);
+					ec = new ExecutionContext(allocateVars, allocateLineage, prog);
 				else
-					ec = new SparkExecutionContext(allocateVars, prog);
+					ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
 				break;
 				
 			case SPARK:
 			case HYBRID:
-				ec = new SparkExecutionContext(allocateVars, prog);
+				ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
 				break;
 		}
 		

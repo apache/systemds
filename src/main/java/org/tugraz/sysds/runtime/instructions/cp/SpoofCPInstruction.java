@@ -96,8 +96,8 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems() {
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
 		return new LineageItem[]{new LineageItem(output.getName(),
-			getOpcode(), LineageItemUtils.getLineage(_in))};
+			getOpcode(), LineageItemUtils.getLineage(ec, _in))};
 	}
 }

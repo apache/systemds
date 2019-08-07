@@ -19,6 +19,8 @@ package org.tugraz.sysds.runtime.lineage;
 
 
 import org.tugraz.sysds.parser.ParseException;
+import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionParser;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -41,6 +43,7 @@ public class LineageParser {
 	}
 	
 	public static LineageItem parseLineageTrace(String str) {
+		ExecutionContext ec = ExecutionContextFactory.createContext();
 		LineageItem li = null;
 		Map<Long, LineageItem> map = new HashMap<>();
 		
@@ -57,7 +60,7 @@ public class LineageParser {
 					if (!(inst instanceof LineageTraceable))
 						throw new ParseException("Invalid Instruction (" + inst.getOpcode() + ") traced");
 					
-					LineageItem[] items = ((LineageTraceable) inst).getLineageItems();
+					LineageItem[] items = ((LineageTraceable) inst).getLineageItems(ec);
 					if (items == null)
 						throw new ParseException("Instruction without output (" + inst.getOpcode() + ") not supported");
 					if (items.length != 1)

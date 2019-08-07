@@ -206,8 +206,8 @@ public class AggUnaryOp extends MultiThreadedHop
 					setLops(aggregate);
 				
 					if (getDataType() == DataType.SCALAR) {
-						UnaryCP unary1 = new UnaryCP(aggregate, HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR),
-								                    getDataType(), getValueType());
+						UnaryCP unary1 = new UnaryCP(aggregate, 
+							HopsOpOp1LopsUS.get(OpOp1.CAST_AS_SCALAR), getDataType(), getValueType());
 						unary1.getOutputParameters().setDimensions(0, 0, 0, 0, -1);
 						setLineNumbers(unary1);
 						setLops(unary1);

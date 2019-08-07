@@ -33,7 +33,6 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
-import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineagePath;
 
 public class ForProgramBlock extends ProgramBlock
@@ -120,7 +119,7 @@ public class ForProgramBlock extends ProgramBlock
 			
 			// observe all distinct paths, compute a LineageDedupBlock and stores them globally
 			if (DMLScript.LINEAGE_DEDUP) {
-				Lineage.computeDedupBlock(this, ec);
+				ec.getLineage().computeDedupBlock(this, ec);
 				currentLineagePath = ec.getLineagePath();
 				ec.getLineagePath().initLastBranch();
 			}
@@ -143,7 +142,7 @@ public class ForProgramBlock extends ProgramBlock
 					if (DMLScript.LINEAGE_DEDUP && (
 						// Current ProgramBlock is last or next ProgramBlock is ForProgramBlock
 						i + 1 == _childBlocks.size() || _childBlocks.get(i + 1) instanceof ForProgramBlock)) {
-						Lineage.tracePath(currentDedupBlock++, ec.getLineagePath().getLastBranch());
+						ec.getLineage().tracePath(currentDedupBlock++, ec.getLineagePath().getLastBranch());
 						ec.getLineagePath().clearLastBranch();
 					}
 				}
@@ -151,7 +150,7 @@ public class ForProgramBlock extends ProgramBlock
 			
 			// clear current LineageDedupBlock
 			if (DMLScript.LINEAGE_DEDUP) {
-				Lineage.clearDedupBlock();
+				ec.getLineage().clearDedupBlock();
 				ec.setLineagePath(currentLineagePath);
 			}
 			

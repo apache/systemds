@@ -364,7 +364,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 	}
 
 	@Override
-	public LineageItem[] getLineageItems() {
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
 		String tmpInstStr = instString;
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			//generate pseudo-random seed (because not specified)

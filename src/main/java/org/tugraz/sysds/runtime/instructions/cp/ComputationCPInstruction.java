@@ -23,6 +23,7 @@ import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
+import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
@@ -75,8 +76,8 @@ public abstract class ComputationCPInstruction extends CPInstruction implements 
 	}
 
 	@Override
-	public LineageItem[] getLineageItems() {
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
 		return new LineageItem[]{new LineageItem(output.getName(),
-			getOpcode(), LineageItemUtils.getLineage(input1,input2,input3))};
+			getOpcode(), LineageItemUtils.getLineage(ec, input1,input2,input3))};
 	}
 }

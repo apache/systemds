@@ -121,8 +121,8 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 	}
 	
 	@Override
-	public LineageItem[] getLineageItems() {
+	public LineageItem[] getLineageItems(ExecutionContext ec) {
 		return new LineageItem[]{new LineageItem(output.getName(), getOpcode(),
-			LineageItemUtils.getLineage(input1,input2,input3,rowLower,rowUpper,colLower,colUpper))};
+			LineageItemUtils.getLineage(ec, input1,input2,input3,rowLower,rowUpper,colLower,colUpper))};
 	}
 }

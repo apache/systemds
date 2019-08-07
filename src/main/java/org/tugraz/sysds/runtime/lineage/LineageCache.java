@@ -20,7 +20,7 @@ public class LineageCache {
 		if( inst instanceof ComputationCPInstruction
 			&&((ComputationCPInstruction) inst).output.getDataType().isMatrix() ) {
 			
-			for (LineageItem item : ((LineageTraceable) inst).getLineageItems()) {
+			for (LineageItem item : ((LineageTraceable) inst).getLineageItems(ec)) {
 				MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
 				LineageCache._cache.put(item, mo.acquireReadAndRelease());
 			}
@@ -45,7 +45,7 @@ public class LineageCache {
 		
 		if (inst instanceof ComputationCPInstruction) {
 			boolean reused = true;
-			LineageItem[] items = ((ComputationCPInstruction) inst).getLineageItems();
+			LineageItem[] items = ((ComputationCPInstruction) inst).getLineageItems(ec);
 			for (LineageItem item : items) {
 				if (LineageCache.probe(item))
 					ec.setMatrixOutput(((ComputationCPInstruction) inst).output.getName(), LineageCache.get(item));

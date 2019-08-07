@@ -8,7 +8,7 @@ public class LineageDedupUtils {
 	
 	public static LineageDedupBlock computeDedupBlock(ForProgramBlock fpb, ExecutionContext ec) {
 		LineageDedupBlock ldb = new LineageDedupBlock();
-		Lineage.pushInitDedupBlock(ldb);
+		ec.getLineage().pushInitDedupBlock(ldb);
 		ldb.addBlock();
 		for (ProgramBlock pb : fpb.getChildBlocks()) {
 			if (pb instanceof IfProgramBlock)
@@ -22,7 +22,7 @@ public class LineageDedupUtils {
 					+ "IfProgramBlocks are allowed inside a LineageDedupBlock.");
 		}
 		ldb.removeLastBlockIfEmpty();
-		Lineage.popInitDedupBlock();
+		ec.getLineage().popInitDedupBlock();
 		return ldb;
 	}
 }

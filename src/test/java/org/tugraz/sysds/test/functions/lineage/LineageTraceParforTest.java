@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.Test;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -73,6 +74,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 		List<String> proArgs = new ArrayList<String>();
 		
 		proArgs.add("-explain");
+		proArgs.add("-lineage");
 		proArgs.add("-args");
 		proArgs.add(input("X"));
 		proArgs.add(output("R"));
@@ -82,6 +84,7 @@ public class LineageTraceParforTest extends AutomatedTestBase {
 		fullDMLScriptName = getScript();
 		
 		//run the test
+		Lineage.resetInternalState();
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		
 		//get lineage and generate program

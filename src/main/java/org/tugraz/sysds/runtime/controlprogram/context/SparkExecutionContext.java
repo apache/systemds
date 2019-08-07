@@ -123,9 +123,9 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	protected SparkExecutionContext(boolean allocateVars, Program prog) {
+	protected SparkExecutionContext(boolean allocateVars, boolean allocateLineage, Program prog) {
 		//protected constructor to force use of ExecutionContextFactory
-		super( allocateVars, prog );
+		super( allocateVars, allocateLineage, prog );
 		
 		//spark context creation via internal initializer
 		if( !LAZY_SPARKCTX_CREATION || DMLScript.getGlobalExecMode()==ExecMode.SPARK ) {

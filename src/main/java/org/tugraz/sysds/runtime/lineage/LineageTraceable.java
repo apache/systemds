@@ -15,6 +15,8 @@
  */
 package org.tugraz.sysds.runtime.lineage;
 
+import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
+
 public interface LineageTraceable {
-	public LineageItem[] getLineageItems();
+	public LineageItem[] getLineageItems(ExecutionContext ec);
 }

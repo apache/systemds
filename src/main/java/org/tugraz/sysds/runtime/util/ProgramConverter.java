@@ -87,6 +87,7 @@ import org.tugraz.sysds.runtime.instructions.cp.StringObject;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
@@ -175,7 +176,8 @@ public class ProgramConverter
 	{
 		ExecutionContext cpec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
-	
+		cpec.setLineage(new Lineage(ec.getLineage()));
+		
 		//handle result variables with in-place update flag
 		//(each worker requires its own copy of the empty matrix object)
 		for( String var : cpec.getVariables().keySet() ) {

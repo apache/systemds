@@ -30,7 +30,6 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
-import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -146,13 +145,13 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 			}
 			case LINEAGE: {
 				//serialize lineage and set output scalar
-				if( Lineage.get(input1) == null )
+				if( ec.getLineageItem(input1) == null )
 					throw new DMLRuntimeException("Lineage trace "
 						+ "for variable "+input1.getName()+" unavailable.");
 				
 				LineageItem li = DMLScript.LINEAGE_DEDUP ?
-						LineageItemUtils.rDecompress(Lineage.get(input1)) :
-						Lineage.get(input1);
+						LineageItemUtils.rDecompress(ec.getLineageItem(input1)) :
+						ec.getLineageItem(input1);
 				
 				ec.setScalarOutput(output_name, new StringObject(
 						Explain.explain(li)));

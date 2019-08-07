@@ -39,6 +39,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ListObject;
@@ -46,6 +47,8 @@ import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.tugraz.sysds.runtime.lineage.Lineage;
+import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineagePath;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
@@ -68,33 +71,25 @@ public class ExecutionContext {
 	//symbol table
 	protected LocalVariableMap _variables;
 
+	//lineage map, cache, prepared dedup blocks
+	protected Lineage _lineage;
+	protected LineagePath _lineagePath = new LineagePath();
+	
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
 	protected List<GPUContext> _gpuContexts = new ArrayList<>();
-	protected LineagePath _lineagePath = new LineagePath();
 	
-	protected ExecutionContext()
-	{
+	protected ExecutionContext() {
 		//protected constructor to force use of ExecutionContextFactory
-		this( true, null );
+		this( true, DMLScript.LINEAGE, null );
 	}
-
-	protected ExecutionContext( boolean allocateVariableMap, Program prog ) {
+	
+	protected ExecutionContext( boolean allocateVariableMap, boolean allocateLineage, Program prog ) {
 		//protected constructor to force use of ExecutionContextFactory
-		if( allocateVariableMap )
-			_variables = new LocalVariableMap();
-		else
-			_variables = null;
+		_variables = allocateVariableMap ? new LocalVariableMap() : null;
+		_lineage = allocateLineage ? new Lineage() : null;
 		_prog = prog;
-	}
-	
-	public LineagePath getLineagePath(){
-		return _lineagePath;
-	}
-	
-	public void setLineagePath(LineagePath lp){
-		_lineagePath = lp;
 	}
 
 	public Program getProgram(){
@@ -111,6 +106,22 @@ public class ExecutionContext {
 	
 	public void setVariables(LocalVariableMap vars) {
 		_variables = vars;
+	}
+
+	public Lineage getLineage() {
+		return _lineage;
+	}
+	
+	public void setLineage(Lineage lineage) {
+		_lineage = lineage;
+	}
+	
+	public LineagePath getLineagePath(){
+		return _lineagePath;
+	}
+	
+	public void setLineagePath(LineagePath lp){
+		_lineagePath = lp;
 	}
 
 	/**
@@ -662,5 +673,23 @@ public class ExecutionContext {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+	
+	public void traceLineage(Instruction inst) {
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		_lineage.trace(inst, this);
+	}
+	
+	public LineageItem getLineageItem(CPOperand input) {
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		return _lineage.get(input);
+	}
+	
+	public LineageItem getOrCreateLineageItem(CPOperand input) {
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		return _lineage.getOrCreate(input);
 	}
 }

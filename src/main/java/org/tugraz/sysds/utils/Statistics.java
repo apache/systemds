@@ -703,18 +703,17 @@ public class Statistics
 			long count = tmp[len - 1 - i].getValue().count.longValue();
 			int numLines = wrappedInstruction.length;
 			
-			String miscFormatString = "%s";
 			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
 				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
 				if(wrapIter == 0) {
 					// Display instruction count
 					sb.append(String.format(
-							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d" + miscFormatString,
+							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d",
 							(i + 1), instStr, timeSString, count));
 				}
 				else {
 					sb.append(String.format(
-							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s" + miscFormatString,
+							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s",
 							"", instStr, "", ""));
 				}
 				sb.append("\n");

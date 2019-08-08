@@ -44,6 +44,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME7 = "wdivmmTransposeOut";
 	private static final String TEST_NAME8 = "wSparseUnsafeOuterProduct";
 	private static final String TEST_NAME9 = "wdivmmNeq";
+	private static final String TEST_NAME10 = "rmseDist";
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + OuterProdTmplTest.class.getSimpleName() + "/";
@@ -64,8 +65,9 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "7" }) );
 		addTestConfiguration( TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] { "8" }) );
 		addTestConfiguration( TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] { "9" }) );
+		addTestConfiguration( TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] { "10" }) );
 	}
-		
+	
 	@Test
 	public void testCodegenOuterProdRewrite1() {
 		testCodegenIntegrationWithInput( TEST_NAME1, true, ExecType.CP  );
@@ -186,8 +188,18 @@ public class OuterProdTmplTest extends AutomatedTestBase
 		testCodegenIntegrationWithInput( TEST_NAME9, true, ExecType.SPARK );
 	}
 	
+	@Test
+	public void testCodegenOuterProd10NoRewrite() {
+		testCodegenIntegration( TEST_NAME10, false, ExecType.CP );
+	}
+	
+	@Test
+	public void testCodegenOuterProd10NoRewriteSP() {
+		testCodegenIntegrationWithInput( TEST_NAME10, false, ExecType.SPARK );
+	}
+	
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType  )
-	{			
+	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = rtplatform;
 		switch( instType ){
@@ -209,7 +221,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			programArgs = new String[]{"-explain", "-stats", "-args", output("S")};
 			
 			fullRScriptName = HOME + testname + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());			
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
@@ -238,11 +250,10 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-		
-	}	
+	}
 
 	private void testCodegenIntegrationWithInput( String testname, boolean rewrites, ExecType instType )
-	{		
+	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		switch( instType ){
 			case SPARK: 
@@ -298,7 +309,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_AUTO_VECTORIZATION = true;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = true;
 		}
-	}	
+	}
 
 	/**
 	 * Override default configuration with custom test configuration to ensure

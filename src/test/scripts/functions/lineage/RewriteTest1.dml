@@ -16,19 +16,27 @@
 #
 #-------------------------------------------------------------
 
-# Increase rows and cols for better performance gain
+X = read($1);
 
-X = rand(rows=1024, cols=16, seed=42);
-tmp = X[,1];
-R = matrix(0, ncol(X), 1);
+# calculate and same the trans-mult of X
+Res1 = t(X) %*% X;
 
-for(i in 2:ncol(X)) {
-  A = t(tmp) %*% tmp;
-  R[i,] = sum(A)
+# find vector V as the last column and matrix X1 as the rest
+nc = ncol(X);
+V = X[,nc];
+X1 = X[, 1:nc-1];
 
-  tmp = cbind(tmp, X[,i]);
-  A = t(tmp) %*% tmp;
-  R[i,] += sum(A)
-}
+# use X1 and V to derive trans-mult of X
+r1 = cbind((t(X1) %*% X1), (t(X1) %*% V));
+r2 = cbind((t(V) %*% X1), (t(V) %*% V));
+Res2 = rbind(r1, r2);
 
-write(R, $1, format="text");
+# verify if the sums are same
+while(FALSE) {}	
+sum1 = sum(Res1);
+sum2 = sum(Res2);
+print("original matrix sum = " + sum1);
+print("rewritten matrix sum = " + sum2);
+
+write(Res1, $2, format="text");
+write(Res2, $3, format="text");

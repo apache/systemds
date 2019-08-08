@@ -65,6 +65,7 @@ public class LocalFileUtils
 	public static final String CATEGORY_RESULTMERGE  = "resultmerge";
 	public static final String CATEGORY_WORK         = "work";
 	public static final String CATEGORY_CODEGEN      = "codegen";
+	public static final String CATEGORY_LINEAGE      = "lineage";
 	
 	static {
 		_seq = new IDSequence();

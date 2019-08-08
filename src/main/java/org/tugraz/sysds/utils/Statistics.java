@@ -41,6 +41,7 @@ import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.tugraz.sysds.runtime.instructions.spark.SPInstruction;
+import org.tugraz.sysds.runtime.lineage.LineageCacheStatistics;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN;
 
 /**
@@ -441,6 +442,7 @@ public class Statistics
 		lTotalUIPVar.reset();
 		
 		CacheStatistics.reset();
+		LineageCacheStatistics.reset();
 		
 		resetJITCompileTime();
 		resetJVMgcTime();
@@ -940,6 +942,12 @@ public class Statistics
 			if( getFunRecompiles()>0 ) {
 				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
 				sb.append("Functions recompile time:\t" + String.format("%.3f", ((double)getFunRecompileTime())/1000000000) + " sec.\n");
+			}
+			if (DMLScript.LINEAGE && DMLScript.LINEAGE_REUSE) {
+				sb.append("LineageCache hits (Mem/FS/Del): " + LineageCacheStatistics.displayHits() + ".\n");
+				sb.append("LineageCache writes (Mem/FS): \t" + LineageCacheStatistics.displayWtrites() + ".\n");
+				sb.append("LineageCache FStimes (Rd/Wr): \t" + LineageCacheStatistics.displayTime() + " sec.\n");
+				sb.append("LineageCache costing time: \t" + LineageCacheStatistics.displayCostingTime() + " sec.\n");
 			}
 			if( ConfigurationManager.isCodegenEnabled() ) {
 				sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"

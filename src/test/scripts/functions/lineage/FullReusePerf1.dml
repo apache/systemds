@@ -16,19 +16,32 @@
 #
 #-------------------------------------------------------------
 
-# Increase rows and cols for better performance gain
-
-X = rand(rows=1024, cols=16, seed=42);
+X = read($1);
 tmp = X[,1];
-R = matrix(0, ncol(X), 1);
 
-for(i in 2:ncol(X)) {
-  A = t(tmp) %*% tmp;
-  R[i,] = sum(A)
-
-  tmp = cbind(tmp, X[,i]);
-  A = t(tmp) %*% tmp;
-  R[i,] += sum(A)
+for(i in 2:ncol(X)){
+    A = t(tmp) %*% tmp;
+    while(FALSE) {}
+    print(sum(A));
+    tmp = cbind(tmp, X[,i]);
+    A = t(tmp) %*% tmp;
+    while(FALSE) {}
+    print(sum(A));
 }
 
-write(R, $1, format="text");
+# repeat the loop to test read from local FS
+
+tmp = X[,1];
+
+for(i in 2:ncol(X)){
+    A = t(tmp) %*% tmp;
+    while(FALSE) {}
+    print(sum(A));
+    tmp = cbind(tmp, X[,i]);
+    A = t(tmp) %*% tmp;
+    while(FALSE) {}
+    print(sum(A));
+}
+
+write(A, $2, format="text");
+

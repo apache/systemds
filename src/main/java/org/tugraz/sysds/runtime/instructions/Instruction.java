@@ -218,7 +218,6 @@ public abstract class Instruction
 		//return instruction ifself
 		return this;
 	}
-	
 	/**
 	 * This method should be used to execute the instruction. 
 	 * 

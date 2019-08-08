@@ -40,7 +40,6 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CostEstimatorStaticRuntime extends CostEstimator
 {
-	
 	//time-conversion
 	private static final long DEFAULT_FLOPS = 2L * 1024 * 1024 * 1024; //2GFLOPS
 	//private static final long UNKNOWN_TIME = -1;
@@ -55,7 +54,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_DENSE = 200;
 	private static final double DEFAULT_MBS_FSREAD_BINARYBLOCK_SPARSE = 100;
 	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_DENSE = 150;
-	private static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE = 75;
+	public static final double DEFAULT_MBS_HDFSREAD_BINARYBLOCK_SPARSE = 75;
 	//IO WRITE throughput
 	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_DENSE = 150;
 	private static final double DEFAULT_MBS_FSWRITE_BINARYBLOCK_SPARSE = 75;
@@ -205,8 +204,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 	 * @param ds sparsity factor?
 	 * @return estimated local file system read time
 	 */
-	@SuppressWarnings("unused")
-	private static double getFSReadTime( long dm, long dn, double ds )
+	public static double getFSReadTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		
@@ -219,7 +217,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		return ret;
 	}
 
-	private static double getFSWriteTime( long dm, long dn, double ds )
+	public static double getFSWriteTime( long dm, long dn, double ds )
 	{
 		boolean sparse = MatrixBlock.evalSparseFormatOnDisk(dm, dn, (long)(ds*dm*dn));
 		

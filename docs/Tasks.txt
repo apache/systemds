@@ -15,7 +15,7 @@ SYSTEMDS-10 Compiler Rework / Misc
  * 18 Improve API for new dml-bodied builtin functions                OK
  
 SYSTEMDS-20 New Data Model
- * 21 Finalize dense tensor blocks      															OK
+ * 21 Finalize dense tensor blocks                                    OK
  * 22 Sparse double/float tensor blocks
  * 23 Sparse int/bool tensor blocks
  * 24 Initial tensor dml integration                                  OK
@@ -59,7 +59,7 @@ SYSTEMDS-70 Lineage Tracing and Reuse                                 OK
  * 75 Reuse cache based on lineage traces                             OK
  * 76 Generate runtime plan from lineage trace                        OK
  * 77 New builtin function for obtaining lineage                      OK
- * 78 Extended lineage tracing (parfor, funs, codegen)
+ * 78 Extended lineage tracing (parfor, funs, codegen)                OK
 
 SYSTEMDS-80 Improved distributed operations
  * 81 Avoid unnecessary replication on rmm
@@ -70,13 +70,14 @@ SYSTEMDS-100 Various Fixes
  * 102 Fix parser issue after refactoring                             OK
  * 103 Fix handling of builtin functions w/ matching udfs             OK
  * 104 Fix failing tests due to incorrect parfor parameters           OK
- * 105 Fix all application/function tests (various issues)
+ * 105 Fix all application/function tests (various issues)            OK
+ * 106 Fix correctness of as.integer for negative numbers             OK
  
 SYSTEMDS-110 New Builtin Functions
  * 111 Time builtin function for script-level measurements            OK
  * 112 Image data augmentation builtin functions                      OK
  * 113 Builtin functions for linear regression algorithms             OK
- * 114 Builtin function for stepwise regression                       OK 
+ * 114 Builtin function for stepwise regression                       OK
 
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK

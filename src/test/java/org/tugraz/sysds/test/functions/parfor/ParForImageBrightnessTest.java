@@ -35,11 +35,10 @@ public class ParForImageBrightnessTest extends AutomatedTestBase
 	private final static double spDense = 0.9;
 	private final static int image_width = 32;
 	private final static int image_height = 32;
-	private final static int rows = 128; // -> number of images
+	private final static int rows = 16; // -> number of images
 	private final static int cols = image_width * image_height;
 	private final static int num_augmentations = 5;
 
-	//FIXME: results between R and DML quite imprecise
 	private final static double eps = 1e-10;
 
 	@Override
@@ -53,7 +52,9 @@ public class ParForImageBrightnessTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testImageBrightnessDenseSP() { runImageBrightnessTest(false, Types.ExecType.SPARK); }
+	public void testImageBrightnessDenseSP() {
+		runImageBrightnessTest(false, Types.ExecType.SPARK);
+	}
 
 	@Test
 	public void testImageBrightnessSparseCP() {
@@ -61,7 +62,9 @@ public class ParForImageBrightnessTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testImageBrightnessSparseSP() { runImageBrightnessTest(true, Types.ExecType.SPARK); }
+	public void testImageBrightnessSparseSP() {
+		runImageBrightnessTest(true, Types.ExecType.SPARK);
+	}
 
 	private void runImageBrightnessTest(boolean sparse, Types.ExecType instType)
 	{

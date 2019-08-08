@@ -19,7 +19,6 @@
 images = read($in_file)
 brightness_adjustments = read($brightness_adjustments)
 num_augmentations = nrow(brightness_adjustments)
-
 augmented_images = matrix(0, rows=num_augmentations * nrow(images), cols=ncol(images))
 max_value=255
 

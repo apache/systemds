@@ -307,11 +307,13 @@ public class UtilFunctions
 	}
 	
 	public static int toInt( double val ) {
-		return (int) Math.floor( val + DOUBLE_EPS );
+		return (int) (Math.signum(val)
+			* Math.floor(Math.abs(val) + DOUBLE_EPS));
 	}
 	
 	public static long toLong( double val ) {
-		return (long) Math.floor( val + DOUBLE_EPS );
+		return (long) (Math.signum(val)
+			* Math.floor(Math.abs(val) + DOUBLE_EPS));
 	}
 	
 	public static int toInt(Object obj) {

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -32,8 +32,9 @@ import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.tugraz.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-
 import scala.Tuple2;
+
+import java.util.Iterator;
 
 public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 
@@ -61,7 +62,7 @@ public class FrameAppendMSPInstruction extends AppendMSPInstruction {
 			throw new DMLRuntimeException("Append type rbind not supported for frame mappend, instead use rappend");
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());

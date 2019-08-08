@@ -31,7 +31,7 @@ import java.util.Arrays;
 public class DenseBlockString extends DenseBlockDRB {
 	private static final long serialVersionUID = 7071870563356352352L;
 
-	private String[] _data;
+	protected String[] _data;
 
 	public DenseBlockString(int[] dims) {
 		super(dims);

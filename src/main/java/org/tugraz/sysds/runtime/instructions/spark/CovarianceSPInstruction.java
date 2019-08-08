@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -35,7 +37,6 @@ import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.COVOperator;
-
 import scala.Tuple2;
 
 public class CovarianceSPInstruction extends BinarySPInstruction {
@@ -84,8 +85,8 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 		COVOperator cop = ((COVOperator)_optr); 
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		
 		//process central moment instruction
 		CM_COV_Object cmobj = null; 
@@ -95,7 +96,7 @@ public class CovarianceSPInstruction extends BinarySPInstruction {
 				.fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));
 		}
 		else { //with weights
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() );
 			cmobj = in1.join( in2 ).join( in3 )
 				.values().map(new RDDCOVWeightsFunction(cop))
 				.fold(new CM_COV_Object(), new RDDCOVReduceFunction(cop));

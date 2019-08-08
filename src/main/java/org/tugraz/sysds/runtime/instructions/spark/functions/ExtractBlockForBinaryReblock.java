@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,17 +21,16 @@
 
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<MatrixIndexes,MatrixBlock>, MatrixIndexes, MatrixBlock> 
 {
@@ -39,7 +40,7 @@ public class ExtractBlockForBinaryReblock implements PairFlatMapFunction<Tuple2<
 	private final int in_brlen, in_bclen;
 	private final int out_brlen, out_bclen;
 	
-	public ExtractBlockForBinaryReblock(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut) {
+	public ExtractBlockForBinaryReblock(DataCharacteristics mcIn, DataCharacteristics mcOut) {
 		rlen = mcIn.getRows();
 		clen = mcIn.getCols();
 		in_brlen = mcIn.getRowsPerBlock();

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,8 +30,8 @@ public class MetaDataFormat extends MetaData
 	private final InputInfo iinfo;
 	private final OutputInfo oinfo;
 	
-	public MetaDataFormat(MatrixCharacteristics mc, OutputInfo oinfo, InputInfo iinfo ) {
-		super(mc);
+	public MetaDataFormat(DataCharacteristics dc, OutputInfo oinfo, InputInfo iinfo ) {
+		super(dc);
 		this.oinfo = oinfo;
 		this.iinfo = iinfo;
 	}
@@ -44,6 +46,10 @@ public class MetaDataFormat extends MetaData
 	
 	@Override
 	public Object clone() {
-		return new MetaDataFormat(new MatrixCharacteristics(_mc), oinfo, iinfo);
+		if (_dc instanceof MatrixCharacteristics) {
+			return new MetaDataFormat(new MatrixCharacteristics(_dc), oinfo, iinfo);
+		} else {
+			return new MetaDataFormat(new TensorCharacteristics(_dc), oinfo, iinfo);
+		}
 	}
 }

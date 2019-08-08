@@ -18,4 +18,5 @@
 
 A = tensor($1, $2);
 so = sum(A)
+print(so)
 write(so, $3)

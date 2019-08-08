@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,12 +21,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -42,10 +38,15 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.util.PairWritableCell;
 import org.tugraz.sysds.runtime.instructions.cp.IntObject;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapFunction<Iterator<Tuple2<Long, Iterable<Writable>>>, Long, String> 
 {
@@ -68,9 +69,9 @@ public class RemoteDPParForSparkWorker extends ParWorker implements PairFlatMapF
 	private final LongAccumulator _aTasks;
 	private final LongAccumulator _aIters;
 	
-	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar, 
-			boolean cpCaching, MatrixCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo, 
-			LongAccumulator atasks, LongAccumulator aiters) 
+	public RemoteDPParForSparkWorker(String program, HashMap<String, byte[]> clsMap, String inputVar, String iterVar,
+	                                 boolean cpCaching, DataCharacteristics mc, boolean tSparseCol, PartitionFormat dpf, OutputInfo oinfo,
+	                                 LongAccumulator atasks, LongAccumulator aiters)
 	{
 		_prog = program;
 		_clsMap = clsMap;

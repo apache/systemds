@@ -21,22 +21,18 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.UnaryCP;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
@@ -45,6 +41,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
@@ -59,14 +56,20 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class VariableCPInstruction extends CPInstruction implements LineageTraceable {
 
@@ -351,21 +354,41 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 			OutputInfo oi = OutputInfo.stringToOutputInfo(fmt);
 			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
-			
-			MatrixCharacteristics mc = new MatrixCharacteristics();
-			if ( parts.length == 6 ) {
-				// do nothing
+
+			MetaDataFormat iimd = null;
+			if (dt == DataType.MATRIX) {
+				DataCharacteristics mc = new MatrixCharacteristics();
+				if (parts.length == 6) {
+					// do nothing
+				}
+				else if (parts.length >= 11) {
+					// matrix characteristics
+					mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
+					mc.setBlockSize(Integer.parseInt(parts[8]), Integer.parseInt(parts[9]));
+					mc.setNonZeros(Long.parseLong(parts[10]));
+				}
+				else {
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				}
+				iimd = new MetaDataFormat(mc, oi, ii);
 			}
-			else if ( parts.length >= 11 ) {
-				// matrix characteristics
-				mc.setDimension(Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-				mc.setBlockSize(Integer.parseInt(parts[8]), Integer.parseInt(parts[9]));
-				mc.setNonZeros(Long.parseLong(parts[10]));
+			else if (dt == DataType.TENSOR) {
+				TensorCharacteristics tc = new TensorCharacteristics(new long[]{1, 1}, 0);
+				if (parts.length == 6) {
+					// do nothing
+				}
+				else if (parts.length >= 11) {
+					// TODO correct sizes
+					tc.setDim(0, Long.parseLong(parts[6]));
+					tc.setDim(1, Long.parseLong(parts[7]));
+					tc.setBlockSize(0, Integer.parseInt(parts[8]));
+					tc.setBlockSize(1, Integer.parseInt(parts[9]));
+				}
+				else {
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				}
+				iimd = new MetaDataFormat(tc, oi, ii);
 			}
-			else {
-				throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
-			}
-			MetaDataFormat iimd = new MetaDataFormat(mc, oi, ii);
 			UpdateType updateType = UpdateType.COPY;
 			if ( parts.length >= 12 )
 				updateType = UpdateType.valueOf(parts[11].toUpperCase());
@@ -491,19 +514,15 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		{
 		case CreateVariable:
 			
-			if ( getInput1().getDataType() == DataType.MATRIX
-				|| getInput1().getDataType() == DataType.TENSOR ) {
+			if ( getInput1().getDataType() == DataType.MATRIX ) {
 				//create new variable for symbol table and cache
 				//(existing objects gets cleared through rmvar instructions)
 				String fname = getInput2().getName();
 				// check if unique filename needs to be generated
 				if( Boolean.parseBoolean(getInput3().getName()) ) {
-					fname = new StringBuilder(fname.length()+16).append(fname)
-						.append('_').append(_uniqueVarID.getNextID()).toString();
+					fname = fname + '_' + _uniqueVarID.getNextID();
 				}
-				CacheableData<?> obj = getInput1().getDataType().isMatrix() ?
-					new MatrixObject(getInput1().getValueType(), fname) :
-					new TensorObject(getInput1().getValueType(), fname);
+				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
 				//clone meta data because it is updated on copy-on-write, otherwise there
 				//is potential for hidden side effects between variables.
 				obj.setMetaData((MetaData)metadata.clone());
@@ -512,11 +531,28 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
 				ec.setVariable(getInput1().getName(), obj);
 
-				if( obj instanceof MatrixObject ) {
-					((MatrixObject)obj).setUpdateType(_updateType);
-					if(DMLScript.STATISTICS && _updateType.isInPlace())
-						Statistics.incrementTotalUIPVar();
+				obj.setUpdateType(_updateType);
+				if(DMLScript.STATISTICS && _updateType.isInPlace())
+					Statistics.incrementTotalUIPVar();
+			}
+			else if( getInput1().getDataType() == DataType.TENSOR ) {
+				//create new variable for symbol table and cache
+				//(existing objects gets cleared through rmvar instructions)
+				String fname = getInput2().getName();
+				// check if unique filename needs to be generated
+				if( Boolean.parseBoolean(getInput3().getName()) ) {
+					fname = fname + '_' + _uniqueVarID.getNextID();
 				}
+				CacheableData<?> obj = new TensorObject(getInput1().getValueType(), fname);
+				//clone meta data because it is updated on copy-on-write, otherwise there
+				//is potential for hidden side effects between variables.
+				obj.setMetaData((MetaData)metadata.clone());
+				obj.setFileFormatProperties(_formatProperties);
+				obj.enableCleanup(!getInput1().getName()
+						.startsWith(org.tugraz.sysds.lops.Data.PREAD_PREFIX));
+				ec.setVariable(getInput1().getName(), obj);
+
+				// TODO update
 			}
 			else if( getInput1().getDataType() == DataType.FRAME ) {
 				String fname = getInput2().getName();
@@ -600,6 +636,28 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				double value = mBlock.getValue(0,0);
 				ec.releaseMatrixInput(getInput1().getName());
 				ec.setScalarOutput(output.getName(), new DoubleObject(value));
+			}
+			else if( getInput1().getDataType().isTensor() ) {
+				TensorBlock tBlock = ec.getTensorInput(getInput1().getName());
+				if( tBlock.getNumDims() != 2 || tBlock.getNumRows() != 1 || tBlock.getNumColumns() != 1 )
+					throw new DMLRuntimeException("Dimension mismatch - unable to cast tensor '"+getInput1().getName()+"' to scalar.");
+				switch (tBlock.getValueType()) {
+					case STRING:
+						String str = tBlock.getString(new int[] {0, 0});
+						ec.setScalarOutput(output.getName(), new StringObject(str));
+						break;
+					case INT64:
+					case INT32:
+					case BOOLEAN:
+						long lvalue = UtilFunctions.toLong(tBlock.get(0, 0));
+						ec.setScalarOutput(output.getName(), new IntObject(lvalue));
+						break;
+					default:
+						double value = tBlock.get(0,0);
+						ec.setScalarOutput(output.getName(), new DoubleObject(value));
+						break;
+				}
+				ec.releaseTensorInput(getInput1().getName());
 			}
 			else if( getInput1().getDataType().isList() ) {
 				//TODO handling of cleanup status, potentially new object
@@ -898,10 +956,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else {
 			try {
 				OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
-				MatrixCharacteristics mc = ((MetaDataFormat)mo.getMetaData()).getMatrixCharacteristics();
+				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
 				if(oi == OutputInfo.CSVOutputInfo) {
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)_formatProperties);
-					writer.addHeaderToCSV(mo.getFileName(), fname, mc.getRows(), mc.getCols());
+					writer.addHeaderToCSV(mo.getFileName(), fname, dc.getRows(), dc.getCols());
 				}
 				else if ( oi == OutputInfo.BinaryBlockOutputInfo || oi == OutputInfo.TextCellOutputInfo ) {
 					mo.exportData(fname, outFmt, _formatProperties);
@@ -911,7 +969,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				}
 				
 				// Write Metadata file
-				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), mc, OutputInfo.CSVOutputInfo, _formatProperties);
+				HDFSTool.writeMetaDataFile (fname + ".mtd", mo.getValueType(), dc, OutputInfo.CSVOutputInfo, _formatProperties);
 			} catch (IOException e) {
 				throw new DMLRuntimeException(e);
 			}
@@ -935,11 +993,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else {
 			OutputInfo oi = ((MetaDataFormat)mo.getMetaData()).getOutputInfo();
-			MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+			DataCharacteristics dc = mo.getDataCharacteristics();
 			if(oi == OutputInfo.TextCellOutputInfo) {
 				try {
 					WriterMatrixMarket.mergeTextcellToMatrixMarket(mo.getFileName(),
-						fname, mc.getRows(), mc.getCols(), mc.getNonZeros());
+						fname, dc.getRows(), dc.getCols(), dc.getNonZeros());
 				} catch (IOException e) {
 					throw new DMLRuntimeException(e);
 				}
@@ -1068,7 +1126,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(getBasicCreateVarString(varName, fileName, fNameOverride, DataType.MATRIX, format));
 	}
 
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update) {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
 		
@@ -1090,7 +1148,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return parseInstruction(str);
 	}
 	
-	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, MatrixCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
+	public static Instruction prepareCreateVariableInstruction(String varName, String fileName, boolean fNameOverride, DataType dt, String format, DataCharacteristics mc, UpdateType update, boolean hasHeader, String delim, boolean sparse) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getBasicCreateVarString(varName, fileName, fNameOverride, dt, format));
 		

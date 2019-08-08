@@ -16,10 +16,6 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types.BlockType;
 import org.tugraz.sysds.common.Types.ValueType;
@@ -32,14 +28,24 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+import scala.Array;
 
-public class TensorBlock implements CacheBlock
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+public class TensorBlock implements CacheBlock, Externalizable
 {
+	private static final long serialVersionUID = -1887367304030494999L;
+
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	public static final ValueType DEFAULT_VTYPE = ValueType.FP64;
 	public static final int[] DEFAULT_DIMS = new int[]{0, 0};
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
-	
+
 	//constant value type of tensor block
 	protected ValueType _vt;
 	
@@ -220,7 +226,13 @@ public class TensorBlock implements CacheBlock
 	public ValueType getValueType() {
 		return _vt;
 	}
-	
+
+	public int[] getDims() {
+		int[] dims = new int[_dims.length];
+		Array.copy(_dims, 0, dims, 0, _dims.length);
+		return dims;
+	}
+
 	public int getNumDims() {
 		return _dims.length;
 	}
@@ -244,7 +256,7 @@ public class TensorBlock implements CacheBlock
 
 	/**
 	 * Calculates the next index array. Note that if the given index array was the last element, the next index will
-	 * be the first one.
+	 * be outside of range.
 	 *
 	 * @param ix the index array which will be incremented to the next index array
 	 */
@@ -254,12 +266,12 @@ public class TensorBlock implements CacheBlock
 		//calculating next index
 		if (ix[i] == getDim(i)) {
 			while (ix[i] == getDim(i)) {
-				ix[i] = 0;
-				i--;
-				if (i < 0) {
+				if (i - 1 < 0) {
 					//we are finished
 					break;
 				}
+				ix[i] = 0;
+				i--;
 				ix[i]++;
 			}
 		}
@@ -342,6 +354,7 @@ public class TensorBlock implements CacheBlock
 							case INT32: a.set(i, j, in.readInt()); break;
 							case INT64: a.set(i, j, in.readLong()); break;
 							case BOOLEAN: a.set(i, j, in.readByte()); break;
+							case STRING: a.set(new int[]{i, j}, in.readUTF()); break;
 						}
 					}
 				break;
@@ -381,6 +394,7 @@ public class TensorBlock implements CacheBlock
 						case INT32: out.writeInt((int)a.get(i, j)); break;
 						case INT64: out.writeLong((long)a.get(i, j)); break;
 						case BOOLEAN: out.writeBoolean(a.get(i, j) != 0); break;
+						case STRING: out.writeUTF(a.getString(new int[] {i, j})); break;
 					}
 				}
 		}
@@ -496,7 +510,13 @@ public class TensorBlock implements CacheBlock
 			throw new NotImplementedException();
 		} else {
 			if (other.isInSparseFormat()) {
-				throw new NotImplementedException();
+				if (other.isEmpty()) {
+					_denseBlock.set(0);
+				} else {
+					// TODO implement sparse set instead of converting to dense
+					other.sparseToDense();
+					_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
+				}
 			} else {
 				_denseBlock.set(0, _dims[0], 0, _denseBlock.getCumODims(0), other.getDenseBlock());
 			}
@@ -542,6 +562,32 @@ public class TensorBlock implements CacheBlock
 		_denseBlock.set(that._denseBlock);
 	}
 
+	/**
+	 * Copy a part of another tensor
+	 * @param lower lower index of elements to copy (inclusive)
+	 * @param upper upper index of elements to copy (exclusive)
+	 * @param src source tensor
+	 */
+	public void copy(int[] lower, int[] upper, TensorBlock src) {
+		// TODO consider sparse
+		if (src.isEmpty(false)) {
+			return;
+		}
+		int rowLower = lower[0];
+		int rowUpper = upper[0] + 1;
+		int columnLower = lower[lower.length - 1];
+		int columnUpper = upper[upper.length - 1];
+		for (int i = 1; i < lower.length - 1; i++) {
+			columnLower += lower[i] * _denseBlock.getCumODims(i);
+			columnUpper += upper[i] * _denseBlock.getCumODims(i);
+		}
+		if (columnLower == columnUpper || columnUpper == 0) {
+			rowUpper--;
+			columnUpper = _denseBlock.getCumODims(0);
+		}
+		_denseBlock.set(rowLower, rowUpper, columnLower, columnUpper, src.getDenseBlock());
+	}
+
 	////////
 	// Size estimation and format decisions
 	
@@ -553,6 +599,13 @@ public class TensorBlock implements CacheBlock
 
 	///////
 	// Aggregations
+
+	/**
+	 * Aggregate a unary operation on this tensor.
+	 * @param op the operation to apply
+	 * @param result the result tensor
+	 * @return the result tensor
+	 */
 	public TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
 		// TODO allow to aggregate along a dimension?
 		// TODO performance
@@ -562,7 +615,7 @@ public class TensorBlock implements CacheBlock
 			dim1 = 2;
 		}
 		//prepare result matrix block
-		if(result==null)
+		if(result==null || result.getValueType() != _vt)
 			result=new TensorBlock(_vt, new int[]{dim0, dim1}, false);
 		else
 			result.reset(new int[]{dim0, dim1}, false);
@@ -577,6 +630,11 @@ public class TensorBlock implements CacheBlock
 		return result;
 	}
 
+	/**
+	 * Aggregate a partial result to this tensor, which contains a partial result.
+	 * @param aggOp the aggregation operation to apply
+	 * @param newWithCorrection a partial result tensor
+	 */
 	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock newWithCorrection) {
 		if(aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTROW ||
 			aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTCOLUMN)
@@ -653,9 +711,51 @@ public class TensorBlock implements CacheBlock
 		return null;
 	}
 
+	/**
+	 * Slice the current block and write into the outBlock. The offsets determines where the slice starts,
+	 * the length of the blocks is given by the outBlock dimensions.
+	 * @param offsets offsets where the slice starts
+	 * @param outBlock sliced result block
+	 * @return the sliced result block
+	 */
+	public TensorBlock slice(int[] offsets, TensorBlock outBlock) {
+		// TODO perf
+		int[] srcIx = new int[offsets.length];
+		Array.copy(offsets, 0, srcIx, 0, offsets.length);
+		int[] destIx = new int[offsets.length];
+		for (int l = 0; l < outBlock.getLength(); l++) {
+			outBlock.set(destIx, get(srcIx));
+			int i = outBlock.getNumDims() - 1;
+			destIx[i]++;
+			//calculating next index
+			while (destIx[i] == outBlock.getDim(i)) {
+				destIx[i] = 0;
+				srcIx[i] = offsets[i];
+				i--;
+				if (i < 0) {
+					//we are finished
+					return outBlock;
+				}
+				destIx[i]++;
+				srcIx[i]++;
+			}
+		}
+		return outBlock;
+	}
+
 	@Override
 	public void merge(CacheBlock that, boolean appendOnly) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		write(out);
+	}
+
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		readFields(in);
 	}
 }

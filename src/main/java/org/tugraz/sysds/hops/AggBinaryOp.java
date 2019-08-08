@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,28 +22,28 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.MMCJ;
 import org.tugraz.sysds.lops.MMRJ;
 import org.tugraz.sysds.lops.MMTSJ;
+import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
 import org.tugraz.sysds.lops.MMZip;
 import org.tugraz.sysds.lops.MapMult;
 import org.tugraz.sysds.lops.MapMultChain;
+import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.lops.PMMJ;
 import org.tugraz.sysds.lops.PMapMult;
 import org.tugraz.sysds.lops.Transform;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.MMTSJ.MMTSJType;
-import org.tugraz.sysds.lops.MapMultChain.ChainType;
 import org.tugraz.sysds.lops.Transform.OperationTypes;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 
@@ -342,14 +344,14 @@ public class AggBinaryOp extends MultiThreadedHop
 	{
 		long[] ret = null;
 	
-		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
-		if( mc[0].rowsKnown() && mc[1].colsKnown() ) {
+		DataCharacteristics[] dc = memo.getAllInputStats(getInput());
+		if( dc[0].rowsKnown() && dc[1].colsKnown() ) {
 			ret = new long[3];
-			ret[0] = mc[0].getRows();
-			ret[1] = mc[1].getCols();
-			double sp1 = (mc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[0].getRows(), mc[0].getCols(), mc[0].getNonZeros()) : 1.0; 
-			double sp2 = (mc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(mc[1].getRows(), mc[1].getCols(), mc[1].getNonZeros()) : 1.0; 			
-			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], mc[0].getCols(), ret[1], true));
+			ret[0] = dc[0].getRows();
+			ret[1] = dc[1].getCols();
+			double sp1 = (dc[0].getNonZeros()>0) ? OptimizerUtils.getSparsity(dc[0].getRows(), dc[0].getCols(), dc[0].getNonZeros()) : 1.0;
+			double sp2 = (dc[1].getNonZeros()>0) ? OptimizerUtils.getSparsity(dc[1].getRows(), dc[1].getCols(), dc[1].getNonZeros()) : 1.0;
+			ret[2] = (long) ( ret[0] * ret[1] * OptimizerUtils.getMatMultSparsity(sp1, sp2, ret[0], dc[0].getCols(), ret[1], true));
 		}
 		
 		return ret;

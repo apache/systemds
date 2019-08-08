@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.Serializable;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -30,9 +30,10 @@ import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.TernaryOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.io.Serializable;
 
 public class TernarySPInstruction extends ComputationSPInstruction {
 	private TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
@@ -54,11 +55,11 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = !input1.isMatrix() ? null :
-			sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+			sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = !input2.isMatrix() ? null :
-			sec.getBinaryBlockRDDHandleForVariable(input2.getName());
+			sec.getBinaryMatrixBlockRDDHandleForVariable(input2.getName());
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = !input3.isMatrix() ? null :
-			sec.getBinaryBlockRDDHandleForVariable(input3.getName());
+			sec.getBinaryMatrixBlockRDDHandleForVariable(input3.getName());
 		MatrixBlock m1 = input1.isMatrix() ? null :
 			new MatrixBlock(ec.getScalarInput(input1).getDoubleValue());
 		MatrixBlock m2 = input2.isMatrix() ? null :
@@ -85,7 +86,7 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			out = in1.join(in2).join(in3).mapValues(new TernaryFunctionMMM(op, m1, m2, m3));
 		
 		//set output RDD
-		updateTernaryOutputMatrixCharacteristics(sec);
+		updateTernaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		if( input1.isMatrix() )
 			sec.addLineageRDD(output.getName(), input1.getName());
@@ -95,11 +96,11 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 			sec.addLineageRDD(output.getName(), input3.getName());
 	}
 	
-	protected void updateTernaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+	protected void updateTernaryOutputDataCharacteristics(SparkExecutionContext sec) {
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		for(CPOperand input : new CPOperand[]{input1, input2, input3})
 			if( input.isMatrix() ) {
-				MatrixCharacteristics mc = sec.getMatrixCharacteristics(input.getName());
+				DataCharacteristics mc = sec.getDataCharacteristics(input.getName());
 				if( mc.dimsKnown() )
 					mcOut.set(mc);
 			}

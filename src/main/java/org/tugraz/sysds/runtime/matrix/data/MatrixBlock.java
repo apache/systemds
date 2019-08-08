@@ -21,22 +21,6 @@
 
 package org.tugraz.sysds.runtime.matrix.data;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
-
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -59,6 +43,7 @@ import org.tugraz.sysds.runtime.data.SparseBlockFactory;
 import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
 import org.tugraz.sysds.runtime.data.SparseRow;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
+import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.tugraz.sysds.runtime.functionobjects.CM;
 import org.tugraz.sysds.runtime.functionobjects.CTable;
 import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
@@ -77,7 +62,6 @@ import org.tugraz.sysds.runtime.functionobjects.ReduceRow;
 import org.tugraz.sysds.runtime.functionobjects.RevIndex;
 import org.tugraz.sysds.runtime.functionobjects.SortIndex;
 import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.tugraz.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -93,6 +77,7 @@ import org.tugraz.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
+import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.tugraz.sysds.runtime.matrix.operators.COVOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.QuaternaryOperator;
@@ -101,7 +86,7 @@ import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.matrix.operators.TernaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
-import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastBufferedDataInputStream;
@@ -109,6 +94,22 @@ import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.NativeHelper;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
@@ -480,7 +481,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return OptimizerUtils.getSparsity(rlen, clen, nonZeros);
 	}
 	
-	public MatrixCharacteristics getMatrixCharacteristics() {
+	public DataCharacteristics getDataCharacteristics() {
 		return new MatrixCharacteristics(rlen, clen, -1, -1, nonZeros);
 	}
 	
@@ -5378,7 +5379,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		else if( qop.wtype2 != null || qop.wtype5 != null )
 			R.reset(rlen, clen, sparse);
 		else if( qop.wtype3 != null ) {
-			MatrixCharacteristics mc = qop.wtype3.computeOutputCharacteristics(X.rlen, X.clen, U.clen);
+			DataCharacteristics mc = qop.wtype3.computeOutputCharacteristics(X.rlen, X.clen, U.clen);
 			R.reset( (int)mc.getRows(), (int)mc.getCols(), qop.wtype3.isBasic()?X.isInSparseFormat():false);
 		}
 		

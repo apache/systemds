@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,20 +21,20 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.ArrayList;
-
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.DnnTransform;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.DnnTransform.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.lops.DnnTransform;
+import org.tugraz.sysds.lops.DnnTransform.OperationTypes;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.matrix.data.DnnParameters;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.ArrayList;
 
 public class DnnOp extends MultiThreadedHop
 {
@@ -534,7 +536,7 @@ public class DnnOp extends MultiThreadedHop
 		if(op == OpOpDnn.BIASADD || op == OpOpDnn.BIASMULT || op == OpOpDnn.BATCH_NORM2D_TEST ||
 			op == OpOpDnn.UPDATE_NESTEROV_X) {
 			// Same dimension as the first input
-			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+			DataCharacteristics[] mc = memo.getAllInputStats(getInput());
 			ret[0] = mc[0].rowsKnown() ? mc[0].getRows() : -1;
 			ret[1] = mc[0].colsKnown() ? mc[0].getCols() : -1;
 			ret[2] = -1;

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,13 +20,6 @@
  */
 
 package org.tugraz.sysds.runtime.instructions.spark;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -50,22 +45,28 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.io.FrameReader;
 import org.tugraz.sysds.runtime.io.FrameReaderFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
+import org.tugraz.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.data.FrameBlock.ColumnMetadata;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.transform.encode.Encoder;
 import org.tugraz.sysds.runtime.transform.encode.EncoderComposite;
 import org.tugraz.sysds.runtime.transform.encode.EncoderFactory;
 import org.tugraz.sysds.runtime.transform.encode.EncoderMVImpute;
-import org.tugraz.sysds.runtime.transform.encode.EncoderRecode;
 import org.tugraz.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod;
+import org.tugraz.sysds.runtime.transform.encode.EncoderRecode;
 import org.tugraz.sysds.runtime.transform.meta.TfMetaUtils;
 import org.tugraz.sysds.runtime.transform.meta.TfOffsetMap;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPInstruction {
 	protected ArrayList<CPOperand> _outputs;
@@ -108,8 +109,8 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			JavaPairRDD<Long,FrameBlock> in = (JavaPairRDD<Long,FrameBlock>)
 					sec.getRDDHandleForFrameObject(fo, InputInfo.BinaryBlockInputInfo);
 			String spec = ec.getScalarInput(input2).getStringValue();
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			String[] colnames = !TfMetaUtils.isIDSpec(spec) ?
 					in.lookup(1L).get(0).getColumnNames() : null; 
 					

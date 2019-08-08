@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -30,6 +32,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
@@ -49,7 +52,7 @@ public class Matrix {
 	public Matrix(MatrixObject matrixObject, SparkExecutionContext sparkExecutionContext) {
 		this.matrixObject = matrixObject;
 		this.sparkExecutionContext = sparkExecutionContext;
-		this.matrixMetadata = new MatrixMetadata(matrixObject.getMatrixCharacteristics());
+		this.matrixMetadata = new MatrixMetadata((MatrixCharacteristics) matrixObject.getDataCharacteristics());
 	}
 
 	/**
@@ -216,7 +219,7 @@ public class Matrix {
 			return binaryBlocks;
 		} else if (matrixObject != null) {
 			binaryBlocks = MLContextConversionUtil.matrixObjectToBinaryBlocks(matrixObject, sparkExecutionContext);
-			MatrixCharacteristics mc = matrixObject.getMatrixCharacteristics();
+			DataCharacteristics mc = matrixObject.getDataCharacteristics();
 			matrixMetadata = new MatrixMetadata(mc);
 			return binaryBlocks;
 		}

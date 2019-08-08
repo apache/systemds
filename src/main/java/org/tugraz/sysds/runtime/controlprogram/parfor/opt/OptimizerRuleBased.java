@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,24 +21,18 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor.opt;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.AggBinaryOp;
+import org.tugraz.sysds.hops.AggBinaryOp.MMultMethod;
 import org.tugraz.sysds.hops.BinaryOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
 import org.tugraz.sysds.hops.Hop;
+import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
+import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LeftIndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
@@ -46,9 +42,6 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
 import org.tugraz.sysds.hops.ReorgOp;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.AggBinaryOp.MMultMethod;
-import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
-import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.hops.rewrite.ProgramRewriteStatus;
@@ -59,16 +52,14 @@ import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.FunctionStatementBlock;
 import org.tugraz.sysds.parser.ParForStatement;
 import org.tugraz.sysds.parser.ParForStatementBlock;
-import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
+import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitioner;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
@@ -76,6 +67,8 @@ import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PResultMerge;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PTaskPartitioner;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.tugraz.sysds.runtime.controlprogram.Program;
+import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -96,11 +89,20 @@ import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.utils.NativeHelper;
 import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Rule-Based ParFor Optimizer (time: O(n)):
@@ -524,7 +526,7 @@ public class OptimizerRuleBased extends Optimizer
 	protected double getMemoryEstimate(String varName, LocalVariableMap vars) {
 		Data dat = vars.get(varName);
 		return (dat instanceof MatrixObject) ? 
-			OptimizerUtils.estimateSize(((MatrixObject)dat).getMatrixCharacteristics()) : 
+			OptimizerUtils.estimateSize(((MatrixObject)dat).getDataCharacteristics()) :
 			OptimizerUtils.DEFAULT_SIZE;
 	}
 
@@ -1165,7 +1167,7 @@ public class OptimizerRuleBased extends Optimizer
 			if( computeMaxK(M, M, 0, mem) < kMax ) { //account for shared read if necessary
 				sharedM = pfsb.getReadOnlyParentMatrixVars().stream().map(s -> vars.get(s))
 					.filter(d -> d instanceof MatrixObject).mapToDouble(mo -> OptimizerUtils
-					.estimateSize(((MatrixObject)mo).getMatrixCharacteristics())).sum();
+					.estimateSize(((MatrixObject)mo).getDataCharacteristics())).sum();
 				nonSharedM = cost.getEstimate(TestMeasure.MEMORY_USAGE, n, true,
 					pfsb.getReadOnlyParentMatrixVars(), ExcludeType.SHARED_READ);
 			}
@@ -1906,7 +1908,7 @@ public class OptimizerRuleBased extends Optimizer
 					&& ((MatrixObject)dat).getRDDHandle()!=null )
 				{
 					MatrixObject mo = (MatrixObject)dat;
-					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+					DataCharacteristics mc = mo.getDataCharacteristics();
 					RDDObject rdd = mo.getRDDHandle();
 					if( (rpVars==null || !rpVars.contains(var)) //not a repartition var
 						&& rdd.rHasCheckpointRDDChilds()        //is cached rdd 
@@ -2115,7 +2117,7 @@ public class OptimizerRuleBased extends Optimizer
 				MatrixObject mo = (MatrixObject)dat;
 				MetaDataFormat meta = (MetaDataFormat) mo.getMetaData();
 				OutputInfo oi = meta.getOutputInfo();
-				long nnz = meta.getMatrixCharacteristics().getNonZeros();
+				long nnz = meta.getDataCharacteristics().getNonZeros();
 				
 				if( oi == OutputInfo.BinaryBlockOutputInfo || nnz != 0 ) {
 					ret = false; 

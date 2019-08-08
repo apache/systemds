@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -198,7 +200,6 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * 
 	 * @param schema
 	 * @param type
-	 * @param instType
 	 */
 	private void runFrameConverterTest( ValueType[] schema, ConvType type)
 	{
@@ -274,7 +275,6 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param type
 	 * @param iinfo
 	 * @param oinfo
-	 * @param instType
 	 */
 	private void runConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
 		throws IOException
@@ -317,7 +317,6 @@ public class FrameConverterTest extends AutomatedTestBase
 	 * @param type
 	 * @param iinfo
 	 * @param oinfo
-	 * @param instType
 	 */
 	private void runMatrixConverterAndVerify( ValueType[] schema, double[][] A, ConvType type, InputInfo iinfo, OutputInfo oinfo )
 		throws IOException
@@ -416,8 +415,8 @@ public class FrameConverterTest extends AutomatedTestBase
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix, 
-			List<ValueType> schema, String fnameIn, String fnameOut)
+	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix,
+	                                 List<ValueType> schema, String fnameIn, String fnameOut)
 		throws IOException
 	{
 		SparkExecutionContext sec = (SparkExecutionContext) ExecutionContextFactory.createContext();

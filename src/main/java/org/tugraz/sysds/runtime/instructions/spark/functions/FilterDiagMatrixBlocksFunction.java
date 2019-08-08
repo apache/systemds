@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,10 +24,9 @@ package org.tugraz.sysds.runtime.instructions.spark.functions;
 import org.apache.spark.api.java.function.Function;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-
 import scala.Tuple2;
 
-public class FilterDiagBlocksFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean> 
+public class FilterDiagMatrixBlocksFunction implements Function<Tuple2<MatrixIndexes,MatrixBlock>, Boolean>
 {
 	
 	private static final long serialVersionUID = 685221977882289849L;

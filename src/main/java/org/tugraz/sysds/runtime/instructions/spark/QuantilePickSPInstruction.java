@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
@@ -43,11 +38,17 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class QuantilePickSPInstruction extends BinarySPInstruction {
 	private OperationTypes _type = null;
@@ -105,8 +106,8 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdds
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
 		//NOTE: no difference between inmem/mr pick (see related cp instruction), but wrt w/ w/o weights
 		//(in contrast to cp instructions, w/o weights does not materializes weights of 1)
@@ -165,7 +166,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	 * @param quantiles one or more quantiles between 0 and 1.
 	 * @return a summary of weighted quantiles
 	 */
-	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, MatrixCharacteristics mc, double[] quantiles)
+	private static double[] getWeightedQuantileSummary(JavaPairRDD<MatrixIndexes,MatrixBlock> w, DataCharacteristics mc, double[] quantiles)
 	{
 		double[] ret = new double[3*quantiles.length + 1];
 		if( mc.getCols()==2 ) //weighted 
@@ -328,13 +329,13 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 	private static class ExtractWeightedQuantileFunction implements Function2<Integer,Iterator<Tuple2<MatrixIndexes,MatrixBlock>>,Iterator<Tuple2<Integer, double[]>>> 
 	{
 		private static final long serialVersionUID = 4879975971050093739L;
-		private final MatrixCharacteristics _mc;
+		private final DataCharacteristics _mc;
 		private final double[] _qdKeys;
 		private final long[] _qiKeys;
 		private final int[] _qPIDs;
 		private final double[] _offsets;
 		
-		public ExtractWeightedQuantileFunction(MatrixCharacteristics mc, double[] qdKeys, long[] qiKeys, int[] qPIDs, double[] offsets) {
+		public ExtractWeightedQuantileFunction(DataCharacteristics mc, double[] qdKeys, long[] qiKeys, int[] qPIDs, double[] offsets) {
 			_mc = mc;
 			_qdKeys = qdKeys;
 			_qiKeys = qiKeys;

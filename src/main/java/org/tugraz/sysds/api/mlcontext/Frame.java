@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,7 +30,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * Frame encapsulates a SystemML frame.
@@ -44,7 +46,7 @@ public class Frame {
 	public Frame(FrameObject frameObject, SparkExecutionContext sparkExecutionContext) {
 		this.frameObject = frameObject;
 		this.sparkExecutionContext = sparkExecutionContext;
-		this.frameMetadata = new FrameMetadata(frameObject.getMatrixCharacteristics());
+		this.frameMetadata = new FrameMetadata(frameObject.getDataCharacteristics());
 	}
 
 	/**
@@ -173,7 +175,7 @@ public class Frame {
 			return binaryBlocks;
 		} else if (frameObject != null) {
 			binaryBlocks = MLContextConversionUtil.frameObjectToBinaryBlocks(frameObject, sparkExecutionContext);
-			MatrixCharacteristics mc = frameObject.getMatrixCharacteristics();
+			DataCharacteristics mc = frameObject.getDataCharacteristics();
 			frameMetadata = new FrameMetadata(mc);
 			return binaryBlocks;
 		}

@@ -21,16 +21,12 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map.Entry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
 import org.tugraz.sysds.lops.Binary;
@@ -39,6 +35,7 @@ import org.tugraz.sysds.lops.CSVReBlock;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.Nary;
 import org.tugraz.sysds.lops.ParameterizedBuiltin;
@@ -46,18 +43,21 @@ import org.tugraz.sysds.lops.ReBlock;
 import org.tugraz.sysds.lops.Ternary;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.ParseInfo;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
 
 
 public abstract class Hop implements ParseInfo
@@ -1734,12 +1734,12 @@ public abstract class Hop implements ParseInfo
 		if( input instanceof UnaryOp )
 		{
 			if( ((UnaryOp)input).getOp() == Hop.OpOp1.NROW ) {
-				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
+				DataCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.rowsKnown() )
 					ret = mc.getRows();
 			}
 			else if ( ((UnaryOp)input).getOp() == Hop.OpOp1.NCOL ) {
-				MatrixCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
+				DataCharacteristics mc = memo.getAllInputStats(input.getInput().get(0));
 				if( mc.colsKnown() )
 					ret = mc.getCols();
 			}
@@ -1778,12 +1778,12 @@ public abstract class Hop implements ParseInfo
 			long dim = -1;
 			if(uroot.getOp() == Hop.OpOp1.NROW)
 			{
-				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				DataCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getRows();
 			}
 			else if( uroot.getOp() == Hop.OpOp1.NCOL )
 			{
-				MatrixCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
+				DataCharacteristics mc = memo.getAllInputStats(uroot.getInput().get(0));
 				dim = mc.getCols();
 			}
 			if( dim != -1 ) //if known
@@ -1918,8 +1918,6 @@ public abstract class Hop implements ParseInfo
 	 *            parse information, such as beginning line position, beginning
 	 *            column position, ending line position, ending column position,
 	 *            text, and filename
-	 * @param filename
-	 *            the DML/PYDML filename (if it exists)
 	 */
 	public void setParseInfo(ParseInfo parseInfo) {
 		_beginLine = parseInfo.getBeginLine();

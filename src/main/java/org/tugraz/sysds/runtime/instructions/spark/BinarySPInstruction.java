@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,10 +22,10 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.BinaryM.VectorType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.BinaryM.VectorType;
+import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -42,7 +44,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ScalarOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
@@ -123,14 +125,14 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		
 		//sanity check dimensions
 		checkMatrixMatrixBinaryCharacteristics(sec);
-		updateBinaryOutputMatrixCharacteristics(sec);
+		updateBinaryOutputDataCharacteristics(sec);
 		
 		// Get input RDDs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable(input2.getName());
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 	
@@ -168,10 +170,10 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		//get input RDDs
 		String rddVar = input1.getName(); 
 		String bcastVar = input2.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar );
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(rddVar);
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(bcastVar);
+		DataCharacteristics mc1 = sec.getDataCharacteristics(rddVar);
+		DataCharacteristics mc2 = sec.getDataCharacteristics(bcastVar);
 		
 		BinaryOperator bop = (BinaryOperator) _optr;
 		boolean isOuter = (mc1.getRows()>1 && mc1.getCols()==1 && mc2.getRows()==1 && mc2.getCols()>1);
@@ -191,7 +193,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		//set output RDD
-		updateBinaryOutputMatrixCharacteristics(sec);
+		updateBinaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), rddVar);
 		sec.addLineageBroadcast(output.getName(), bcastVar);
@@ -203,7 +205,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	
 		//get input RDD
 		String rddVar = (input1.getDataType() == DataType.MATRIX) ? input1.getName() : input2.getName();
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
 		
 		//get operator and scalar
 		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
@@ -215,16 +217,16 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
 			
 		//put output RDD handle into symbol table
-		updateUnaryOutputMatrixCharacteristics(sec, rddVar, output.getName());
+		updateUnaryOutputDataCharacteristics(sec, rddVar, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), rddVar);
 	}
 
-	protected MatrixCharacteristics updateBinaryMMOutputMatrixCharacteristics(SparkExecutionContext sec, boolean checkCommonDim) 
+	protected DataCharacteristics updateBinaryMMOutputDataCharacteristics(SparkExecutionContext sec, boolean checkCommonDim)
 	{
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if(!mcOut.dimsKnown()) { 
 			if( !mc1.dimsKnown() || !mc2.dimsKnown() )
 				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from inputs.");
@@ -239,11 +241,11 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		return mcOut;
 	}
 
-	protected void updateBinaryAppendOutputMatrixCharacteristics(SparkExecutionContext sec, boolean cbind) 
+	protected void updateBinaryAppendOutputDataCharacteristics(SparkExecutionContext sec, boolean cbind)
 	{
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		//infer initially unknown dimensions from inputs
 		if(!mcOut.dimsKnown()) { 
@@ -262,7 +264,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}
 	}
 
-	protected long getNumReplicas(MatrixCharacteristics mc1, MatrixCharacteristics mc2, boolean left) 
+	protected long getNumReplicas(DataCharacteristics mc1, DataCharacteristics mc2, boolean left)
 	{
 		if( left ) 
 		{
@@ -282,8 +284,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
 	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
 	{
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		
 		//check for unknown input dimensions
 		if( !(mc1.dimsKnown() && mc2.dimsKnown()) ){
@@ -309,8 +311,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 
 	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned) 
 	{
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		
 		if(!mc1.dimsKnown() || !mc2.dimsKnown()) {
 			throw new DMLRuntimeException("The dimensions unknown for inputs");

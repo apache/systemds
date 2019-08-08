@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -25,7 +27,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 /**
  * General purpose copy function for binary block values. This function can be used in
  * mapValues (copy matrix blocks) to change the internal sparse block representation. 
- * See CopyBlockFunction if no change of SparseBlock.Type required.
+ * See CopyMatrixBlockFunction if no change of SparseBlock.Type required.
  * 
  */
 public class CreateSparseBlockFunction implements Function<MatrixBlock,MatrixBlock> 

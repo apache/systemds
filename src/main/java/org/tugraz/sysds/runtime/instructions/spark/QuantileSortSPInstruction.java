@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,9 +22,9 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
-import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -31,7 +33,7 @@ import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDSortUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * This class supports two variants of sort operation on a 1-dimensional input matrix. 
@@ -87,9 +89,9 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 		boolean weighted = (input2 != null);
 		
 		//get input rdds
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inW = weighted ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inW = weighted ? sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() ) : null;
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		long clen = -1;
@@ -109,7 +111,7 @@ public class QuantileSortSPInstruction extends UnarySPInstruction {
 			sec.addLineageRDD(output.getName(), input2.getName());
 		
 		//update output matrix characteristics
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		mcOut.set(mc.getRows(), clen, mc.getRowsPerBlock(), mc.getColsPerBlock());
 	}
 }

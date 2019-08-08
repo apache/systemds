@@ -31,6 +31,7 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.util.DataConverter;
 
 public class ReshapeCPInstruction extends UnaryCPInstruction {
 	private final CPOperand _opRows;
@@ -66,7 +67,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		if (output.getDataType() == Types.DataType.TENSOR) {
-			int[] dims = getTensorDimensions(ec, _opDims);
+			int[] dims = DataConverter.getTensorDimensions(ec, _opDims);
 			TensorBlock out = new TensorBlock(output.getValueType(), dims);
 			if (input1.getDataType() == Types.DataType.TENSOR) {
 				//get Tensor-data from tensor (reshape)

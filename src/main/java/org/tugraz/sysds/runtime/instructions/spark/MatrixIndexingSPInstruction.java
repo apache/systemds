@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,22 +21,16 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.rdd.PartitionPruningRDD;
-import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
+import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
+import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -49,14 +45,19 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Function1;
 import scala.Tuple2;
 import scala.reflect.ClassManifestFactory;
 import scala.runtime.AbstractFunction1;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class implements the matrix indexing functionality inside CP.
@@ -92,14 +93,14 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//update and check output dimensions
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			mcOut.setNonZerosBound(Math.min(mcOut.getLength(), mcIn.getNonZerosBound()));
 			checkValidOutputDimensions(mcOut);
 			
 			//execute right indexing operation (partitioning-preserving if possible)
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 			
 			if( isSingleBlockLookup(mcIn, ixrange) ) {
 				sec.setMatrixOutput(output.getName(), singleBlockIndexing(in1, mcIn, mcOut, ixrange));
@@ -120,19 +121,19 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		{
 			String rddVar = (_type==LixCacheType.LEFT) ? input2.getName() : input1.getName();
 			String bcVar = (_type==LixCacheType.LEFT) ? input1.getName() : input2.getName();
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
 			PartitionedBroadcast<MatrixBlock> broadcastIn2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 			
 			//update and check output dimensions
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+			DataCharacteristics mcLeft = ec.getDataCharacteristics(input1.getName());
 			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
 			//note: always matrix rhs, scalars are preprocessed via cast to 1x1 matrix
-			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
+			DataCharacteristics mcRight = ec.getDataCharacteristics(input2.getName());
 				
 			//sanity check matching index range and rhs dimensions
 			if(!mcRight.dimsKnown()) {
@@ -155,7 +156,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				in1 = in1.mapToPair(new ZeroOutLHS(false, ixrange, mcLeft));
 				
 				// slice rhs, shift and merge with lhs
-				in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() )
+				in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() )
 					    .flatMapToPair(new SliceRHSForLeftIndexing(ixrange, mcLeft));
 				out = RDDAggregateUtils.mergeByKey(in1.union(in2));
 			}
@@ -172,8 +173,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	}
 
 
-	public static MatrixBlock inmemoryIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
+	public static MatrixBlock inmemoryIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1,
+	                                           DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange) {
 		if( isSingleBlockLookup(mcIn, ixrange) ) {
 			return singleBlockIndexing(in1, mcIn, mcOut, ixrange);
 		}
@@ -184,8 +185,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throw new DMLRuntimeException("Incorrect usage of inmemoryIndexing");
 	}
 	
-	private static MatrixBlock multiBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
+	private static MatrixBlock multiBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1,
+	                                              DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange) {
 		//create list of all required matrix indexes
 		List<MatrixIndexes> filter = new ArrayList<>();
 		long rlix = UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock());
@@ -207,8 +208,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		return mbout;
 	}
 	
-	private static MatrixBlock singleBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
+	private static MatrixBlock singleBlockIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1,
+	                                               DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange) {
 		//single block output via lookup (on partitioned inputs, this allows for single partition
 		//access to avoid a full scan of the input; note that this is especially important for 
 		//out-of-core datasets as entire partitions are read, not just keys as in the in-memory setting.
@@ -229,8 +230,8 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		return mbout;
 	}
 	
-	private static JavaPairRDD<MatrixIndexes,MatrixBlock> generalCaseRightIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1, 
-			 MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange, SparkAggType aggType) {
+	private static JavaPairRDD<MatrixIndexes,MatrixBlock> generalCaseRightIndexing(JavaPairRDD<MatrixIndexes,MatrixBlock> in1,
+	                                                                               DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange, SparkAggType aggType) {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
 		if( isPartitioningPreservingRightIndexing(mcIn, ixrange) ) {
@@ -250,13 +251,13 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		return out;
 	}
 	
-	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) {
+	private static void checkValidOutputDimensions(DataCharacteristics mcOut) {
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("MatrixIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
 	}
 
-	private static boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange) {
+	private static boolean isPartitioningPreservingRightIndexing(DataCharacteristics mcIn, IndexRange ixrange) {
 		return ( mcIn.dimsKnown() &&
 				(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() && mcIn.getCols()<=mcIn.getColsPerBlock() )   //1-1 column block indexing
 			  ||(ixrange.colStart==1 && ixrange.colEnd==mcIn.getCols() && mcIn.getRows()<=mcIn.getRowsPerBlock() )); //1-1 row block indexing
@@ -271,7 +272,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	 * @param ixrange index range
 	 * @return true if index range covers a single block of the input matrix
 	 */
-	public static boolean isSingleBlockLookup(MatrixCharacteristics mcIn, IndexRange ixrange) {
+	public static boolean isSingleBlockLookup(DataCharacteristics mcIn, IndexRange ixrange) {
 		return UtilFunctions.computeBlockIndex(ixrange.rowStart, mcIn.getRowsPerBlock())
 			== UtilFunctions.computeBlockIndex(ixrange.rowEnd, mcIn.getRowsPerBlock())
 			&& UtilFunctions.computeBlockIndex(ixrange.colStart, mcIn.getColsPerBlock())
@@ -290,7 +291,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 	 * @param ixrange index range
 	 * @return true if index range requires a multi-block lookup
 	 */
-	public static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, IndexRange ixrange) {
+	public static boolean isMultiBlockLookup(JavaPairRDD<?,?> in, DataCharacteristics mcIn, DataCharacteristics mcOut, IndexRange ixrange) {
 		return SparkUtils.isHashPartitioned(in)                          //existing partitioner
 			&& OptimizerUtils.estimatePartitionedSizeExactSparsity(mcIn) //out-of-core dataset
 			   > SparkExecutionContext.getDataMemoryBudget(true, true)
@@ -308,7 +309,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private long _rlen = -1;
 		private long _clen = -1;
 		
-		public SliceRHSForLeftIndexing(IndexRange ixrange, MatrixCharacteristics mcLeft) {
+		public SliceRHSForLeftIndexing(IndexRange ixrange, DataCharacteristics mcLeft) {
 			_ixrange = ixrange;
 			_rlen = mcLeft.getRows();
 			_clen = mcLeft.getCols();
@@ -336,7 +337,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private int _brlen = -1;
 		private int _bclen = -1;
 		
-		public ZeroOutLHS(boolean complement, IndexRange range, MatrixCharacteristics mcLeft) {
+		public ZeroOutLHS(boolean complement, IndexRange range, DataCharacteristics mcLeft) {
 			_complement = complement;
 			_ixrange = range;
 			_brlen = mcLeft.getRowsPerBlock();
@@ -371,7 +372,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private final int _brlen;
 		private final int _bclen;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, IndexRange ixrange, LixCacheType type, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<MatrixBlock> binput, IndexRange ixrange, LixCacheType type, DataCharacteristics mc)
 		{
 			_binput = binput;
 			_ixrange = ixrange;
@@ -456,7 +457,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private final int _brlen; 
 		private final int _bclen;
 		
-		public SliceSingleBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceSingleBlock(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 			_brlen = mcOut.getRowsPerBlock();
 			_bclen = mcOut.getColsPerBlock();
@@ -503,7 +504,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private final int _brlen; 
 		private final int _bclen;
 		
-		public SliceMultipleBlocks(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceMultipleBlocks(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 			_brlen = mcOut.getRowsPerBlock();
 			_bclen = mcOut.getColsPerBlock();
@@ -531,7 +532,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private int _brlen; 
 		private int _bclen;
 		
-		public SliceBlock2(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlock2(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 			_brlen = mcOut.getRowsPerBlock();
 			_bclen = mcOut.getColsPerBlock();
@@ -556,7 +557,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		private int _brlen; 
 		private int _bclen;
 		
-		public SliceBlockPartitionFunction(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlockPartitionFunction(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 			_brlen = mcOut.getRowsPerBlock();
 			_bclen = mcOut.getColsPerBlock();

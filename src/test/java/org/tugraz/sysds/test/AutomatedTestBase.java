@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -705,6 +707,14 @@ public abstract class AutomatedTestBase
 		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
 	}
 
+	protected void writeExpectedScalar(String name, long value) {
+		File path = new File(baseDirectory, EXPECTED_DIR + cacheDir);
+		path.mkdirs();
+
+		TestUtils.writeTestScalar(baseDirectory + EXPECTED_DIR + cacheDir + name, value);
+		expectedFiles.add(baseDirectory + EXPECTED_DIR + cacheDir + name);
+	}
+
 	protected static HashMap<CellIndex, Double> readDMLMatrixFromHDFS(String fileName) {
 		return TestUtils.readDMLMatrixFromHDFS(baseDirectory + OUTPUT_DIR + fileName);
 	}
@@ -1147,7 +1157,7 @@ public abstract class AutomatedTestBase
 	 *            expected exception
 	 * @param errMessage
 	 * 		      expected error message
-	 * @param maxMRJobs
+	 * @param maxSparkInst
 	 *            specifies a maximum limit for the number of MR jobs. If set to
 	 *            -1 there is no limit.
 	 */
@@ -1763,7 +1773,7 @@ public abstract class AutomatedTestBase
 	 *
 	 * @param name
 	 *            directory name
-	 * @param matrix
+	 * @param data
 	 *            two dimensional frame data
 	 * @param schema
 	 * @param oi

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Random;
-
 import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.fs.FileSystem;
@@ -37,19 +32,21 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.util.random.SamplingUtils;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
+import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.DataGen;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
@@ -60,20 +57,32 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
-
+import scala.Array;
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Random;
 
 public class RandSPInstruction extends UnarySPInstruction {
 	// internal configuration
 	private static final long INMEMORY_NUMBLOCKS_THRESHOLD = 1024 * 1024;
 
 	private DataGenMethod method = DataGenMethod.INVALID;
-	private final CPOperand rows, cols;
+	private final CPOperand rows, cols, dims;
 	private final int rowsInBlock, colsInBlock;
+	//private boolean minMaxAreDoubles;
 	private final double minValue, maxValue;
+	private final String minValueStr, maxValueStr;
 	private final double sparsity;
 	private final String pdf, pdfParams;
 	private long seed = 0;
@@ -83,18 +92,39 @@ public class RandSPInstruction extends UnarySPInstruction {
 	// sample specific attributes
 	private final boolean replace;
 
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, 
-			CPOperand rows, CPOperand cols, int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed,
-			String dir, String probabilityDensityFunction, String pdfParams,
-			CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr) {
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+		CPOperand cols, CPOperand dims, int rpb, int cpb, String minValue, String maxValue,
+		double sparsity, long seed, String dir, String probabilityDensityFunction, String pdfParams,
+		CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, boolean replace, String opcode, String istr)
+	{
 		super(SPType.Rand, op, in, out, opcode, istr);
 		this.method = mthd;
 		this.rows = rows;
 		this.cols = cols;
+		this.dims = dims;
 		this.rowsInBlock = rpb;
 		this.colsInBlock = cpb;
-		this.minValue = minValue;
-		this.maxValue = maxValue;
+		this.minValueStr = minValue;
+		this.maxValueStr = maxValue;
+		double minDouble, maxDouble;
+		try {
+			minDouble = !minValue.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Double.valueOf(minValue) : -1;
+			maxDouble = !maxValue.contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+					Double.valueOf(maxValue) : -1;
+			//minMaxAreDoubles = true;
+		} catch (NumberFormatException e) {
+			// Non double values
+			if (!minValueStr.equals(maxValueStr)) {
+				throw new DMLRuntimeException("Rand instruction does not support " +
+						"non numeric Datatypes for range initializations.");
+			}
+			minDouble = -1;
+			maxDouble = -1;
+			//minMaxAreDoubles = false;
+		}
+		this.minValue = minDouble;
+		this.maxValue = maxDouble;
 		this.sparsity = sparsity;
 		this.seed = seed;
 		this.dir = dir;
@@ -106,23 +136,25 @@ public class RandSPInstruction extends UnarySPInstruction {
 		this.replace = replace;
 	}
 	
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
-			int rpb, int cpb, double minValue, double maxValue, double sparsity, long seed, String dir,
-			String probabilityDensityFunction, String pdfParams, String opcode, String istr) {
-		this(op, mthd, in, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity,
-			seed, dir, probabilityDensityFunction, pdfParams, null, null, null, false, opcode, istr);
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+		CPOperand cols, CPOperand dims, int rpb, int cpb, String minValue, String maxValue, double sparsity, long seed,
+		String dir, String probabilityDensityFunction, String pdfParams, String opcode, String istr)
+	{
+		this(op, mthd, in, out, rows, cols, dims, rpb, cpb, minValue, maxValue, sparsity, seed, dir,
+			probabilityDensityFunction, pdfParams, null, null, null, false, opcode, istr);
+	}
+
+	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows,
+		CPOperand cols, CPOperand dims, int rpb, int cpb, CPOperand seqFrom, CPOperand seqTo,
+		CPOperand seqIncr, String opcode, String istr) {
+		this(op, mthd, in, out, rows, cols, dims, rpb, cpb, "-1", "-1", -1, -1, null,
+			null, null, seqFrom, seqTo, seqIncr, false, opcode, istr);
 	}
 
 	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
-			int rpb, int cpb, CPOperand seqFrom, CPOperand seqTo, CPOperand seqIncr, String opcode, String istr) {
-		this(op, mthd, in, out, rows, cols, rpb, cpb, -1, -1, -1,
-			-1, null, null, null, seqFrom, seqTo, seqIncr, false, opcode, istr);
-	}
-
-	private RandSPInstruction(Operator op, DataGenMethod mthd, CPOperand in, CPOperand out, CPOperand rows, CPOperand cols,
-			int rpb, int cpb, double maxValue, boolean replace, long seed, String opcode, String istr) {
-		this(op, mthd, in, out, rows, cols, rpb, cpb, -1, maxValue, -1,
-			seed, null, null, null, null, null, null, replace, opcode, istr);
+		CPOperand dims, int rpb, int cpb, String maxValue, boolean replace, long seed, String opcode, String istr) {
+		this(op, mthd, in, out, rows, cols, dims, rpb, cpb, "-1", maxValue, -1, seed, null,
+			null, null, null, null, null, replace, opcode, istr);
 	}
 
 	public long getRows() {
@@ -180,13 +212,9 @@ public class RandSPInstruction extends UnarySPInstruction {
 		if ( method == DataGenMethod.RAND ) {
 			CPOperand rows = new CPOperand(s[1]);
 			CPOperand cols = new CPOperand(s[2]);
-			//TODO: handle dims param s[3]
+			CPOperand dims = new CPOperand(s[3]);
 			int rpb = Integer.parseInt(s[4]);
 			int cpb = Integer.parseInt(s[5]);
-			double minValue = !s[6].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[6]).doubleValue() : -1;
-			double maxValue = !s[7].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[7]).doubleValue() : -1;
 			double sparsity = !s[8].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				Double.valueOf(s[8]).doubleValue() : -1;
 			long seed = !s[9].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
@@ -196,7 +224,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 			String pdfParams = !s[12].contains( Lop.VARIABLE_NAME_PLACEHOLDER) ?
 				s[12] : null;
 			
-			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, minValue, maxValue, sparsity, seed, dir, pdf, pdfParams, opcode, str);
+			return new RandSPInstruction(op, method, null, out, rows, cols, dims,
+				rpb, cpb, s[6], s[7], sparsity, seed, dir, pdf, pdfParams, opcode, str);
 		}
 		else if ( method == DataGenMethod.SEQ) {
 			int rpb = Integer.parseInt(s[3]);
@@ -206,12 +235,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 			CPOperand incr = new CPOperand(s[7]);
 			
 			CPOperand in = null;
-			return new RandSPInstruction(op, method, in, out, null, null, rpb, cpb, from, to, incr, opcode, str);
+			return new RandSPInstruction(op, method, in, out, null,
+				null, null, rpb, cpb, from, to, incr, opcode, str);
 		}
 		else if ( method == DataGenMethod.SAMPLE) 
 		{
-			double max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
-				Double.valueOf(s[1]) : 0;
+			String max = !s[1].contains(Lop.VARIABLE_NAME_PLACEHOLDER) ?
+				s[1] : "0";
 			CPOperand rows = new CPOperand(s[2]);
 			CPOperand cols = new CPOperand("1", ValueType.INT64, DataType.SCALAR);
 			boolean replace = (!s[3].contains(Lop.VARIABLE_NAME_PLACEHOLDER) 
@@ -221,7 +251,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 			int rpb = Integer.parseInt(s[5]);
 			int cpb = Integer.parseInt(s[6]);
 			
-			return new RandSPInstruction(op, method, null, out, rows, cols, rpb, cpb, max, replace, seed, opcode, str);
+			return new RandSPInstruction(op, method, null, out, rows, cols,
+				null, rpb, cpb, max, replace, seed, opcode, str);
 		}
 		else 
 			throw new DMLRuntimeException("Unrecognized data generation method: " + method);
@@ -242,43 +273,51 @@ public class RandSPInstruction extends UnarySPInstruction {
 	}
 
 	private void generateRandData(SparkExecutionContext sec) {
+		if (output.getDataType() == DataType.MATRIX) {
+			generateRandDataMatrix(sec);
+		} else {
+			generateRandDataTensor(sec);
+		}
+	}
+
+	private void generateRandDataMatrix(SparkExecutionContext sec) {
 		long lrows = sec.getScalarInput(rows).getLongValue();
 		long lcols = sec.getScalarInput(cols).getLongValue();
-		
-		//step 1: generate pseudo-random seed (because not specified) 
+
+		//step 1: generate pseudo-random seed (because not specified)
 		long lSeed = seed; //seed per invocation
-		if( lSeed == DataGenOp.UNSPECIFIED_SEED ) 
+		if( lSeed == DataGenOp.UNSPECIFIED_SEED )
 			lSeed = DataGenOp.generateRandomSeed();
-		
+
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
 
 		//step 2: potential in-memory rand operations if applicable
 		if( ConfigurationManager.isDynamicRecompilation()
-			&& isMemAvail(lrows, lcols, sparsity, minValue, maxValue) 
+			&& isMemAvail(lrows, lcols, sparsity, minValue, maxValue)
 			&& DMLScript.getGlobalExecMode() != ExecMode.SPARK )
 		{
 			RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(
-				pdf, (int)lrows, (int)lcols, rowsInBlock, colsInBlock, 
-				sparsity, minValue, maxValue, pdfParams);
+					pdf, (int) lrows, (int) lcols, rowsInBlock, colsInBlock,
+					sparsity, minValue, maxValue, pdfParams);
 			MatrixBlock mb = MatrixBlock.randOperations(rgen, lSeed);
-			
+
 			sec.setMatrixOutput(output.getName(), mb);
 			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}
-		
-		//step 3: seed generation 
+
+		//step 3: seed generation
 		JavaPairRDD<MatrixIndexes, Long> seedsRDD = null;
 		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
-		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( lrows, lcols, rowsInBlock, 
+		double totalSize = OptimizerUtils.estimatePartitionedSizeExactSparsity( lrows, lcols, rowsInBlock,
 			colsInBlock, sparsity); //overestimate for on disk, ensures hdfs block per partition
 		double hdfsBlkSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		MatrixCharacteristics tmp = new MatrixCharacteristics(lrows, lcols, rowsInBlock, colsInBlock);
+		DataCharacteristics tmp = new MatrixCharacteristics(lrows, lcols, rowsInBlock, colsInBlock);
 		long numBlocks = tmp.getNumBlocks();
 		long numColBlocks = tmp.getNumColBlocks();
-		
-		//a) in-memory seed rdd construction 
+
+		//a) in-memory seed rdd construction
 		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
 		{
 			ArrayList<Tuple2<MatrixIndexes, Long>> seeds = new ArrayList<>();
@@ -289,11 +328,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 				Long seedForBlock = bigrand.nextLong();
 				seeds.add(new Tuple2<>(indx, seedForBlock));
 			}
-			
+
 			//for load balancing: degree of parallelism such that ~128MB per partition
 			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
-			
-			//create seeds rdd 
+
+			//create seeds rdd
 			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
 		}
 		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
@@ -322,28 +361,128 @@ public class RandSPInstruction extends UnarySPInstruction {
 			finally {
 				IOUtilFunctions.closeSilently(pw);
 			}
-			
+
 			//for load balancing: degree of parallelism such that ~128MB per partition
 			int numPartitions = (int) Math.max(Math.min(totalSize/hdfsBlkSize, numBlocks), 1);
-			
-			//create seeds rdd 
+
+			//create seeds rdd
 			seedsRDD = sec.getSparkContext()
 					.textFile(path.toString(), numPartitions)
-					.mapToPair(new ExtractSeedTuple());
+					.mapToPair(new ExtractMatrixSeedTuple());
 		}
-		
+
 		//step 4: execute rand instruction over seed input
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = seedsRDD
-				.mapToPair(new GenerateRandomBlock(lrows, lcols, rowsInBlock, colsInBlock, 
-					sparsity, minValue, maxValue, pdf, pdfParams)); 
-		
+				.mapToPair(new GenerateRandomBlock(lrows, lcols, rowsInBlock, colsInBlock,
+					sparsity, minValue, maxValue, pdf, pdfParams));
+
 		//step 5: output handling
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if(!mcOut.dimsKnown(true)) {
-			//note: we cannot compute the nnz from sparsity because this would not reflect the 
+			//note: we cannot compute the nnz from sparsity because this would not reflect the
 			//actual number of non-zeros, except for extreme values of sparsity equals 0 or 1.
 			long lnnz = (sparsity==0 || sparsity==1) ? (long) (sparsity*lrows*lcols) : -1;
 			mcOut.set(lrows, lcols, rowsInBlock, colsInBlock, lnnz);
+		}
+		sec.setRDDHandleForVariable(output.getName(), out);
+	}
+
+	private void generateRandDataTensor(SparkExecutionContext sec) {
+		int[] tDims = DataConverter.getTensorDimensions(sec, dims);
+
+		//step 1: generate pseudo-random seed (because not specified)
+		long lSeed = seed; //seed per invocation
+		if( lSeed == DataGenOp.UNSPECIFIED_SEED )
+			lSeed = DataGenOp.generateRandomSeed();
+
+		if( LOG.isTraceEnabled() )
+			LOG.trace("Process RandSPInstruction rand with seed = "+lSeed+".");
+
+		//step 2: TODO potential in-memory rand operations if applicable
+
+		//step 3: seed generation
+		JavaPairRDD<TensorIndexes, Long> seedsRDD;
+		Well1024a bigrand = LibMatrixDatagen.setupSeedsForRand(lSeed);
+		// TODO calculate totalSize
+		long[] longDims = new long[tDims.length];
+		int[] blockSizes = new int[tDims.length];
+		// TODO get blockSize from somewhere different, like a settings class or as a constant;
+		int blockSize = TensorCharacteristics.DEFAULT_BLOCK_SIZE[tDims.length - 2];
+		long totalSize = 1;
+		long hdfsBlkSize = blockSize * tDims.length;
+		for (int i = 0; i < tDims.length; i++) {
+			blockSizes[i] = blockSize;
+			longDims[i] = tDims[i];
+			totalSize *= tDims[i];
+		}
+		TensorCharacteristics tmp = new TensorCharacteristics(longDims, blockSizes, 0);
+		long numBlocks = tmp.getNumBlocks();
+
+		//a) in-memory seed rdd construction
+		//for load balancing: degree of parallelism such that ~128MB per partition
+		int numPartitions = (int) Math.max(Math.min(totalSize / hdfsBlkSize, numBlocks), 1);
+		if( numBlocks < INMEMORY_NUMBLOCKS_THRESHOLD )
+		{
+			ArrayList<Tuple2<TensorIndexes, Long>> seeds = new ArrayList<>();
+			for( long i=0; i<numBlocks; i++ ) {
+				long blockIndex = i;
+				long[] ix = new long[tmp.getNumDims()];
+				for (int j = tmp.getNumDims() - 1; j >= 0; j--) {
+					ix[j] = 1 + (blockIndex % tmp.getNumBlocks(j));
+					blockIndex /= tmp.getNumBlocks(j);
+				}
+				TensorIndexes indx = new TensorIndexes(ix);
+				Long seedForBlock = bigrand.nextLong();
+				seeds.add(new Tuple2<>(indx, seedForBlock));
+			}
+
+			//create seeds rdd
+			seedsRDD = sec.getSparkContext().parallelizePairs(seeds, numPartitions);
+		}
+		//b) file-based seed rdd construction (for robustness wrt large number of blocks)
+		else
+		{
+			Path path = new Path(LibMatrixDatagen.generateUniqueSeedPath(dir));
+			PrintWriter pw = null;
+			try
+			{
+				FileSystem fs = IOUtilFunctions.getFileSystem(path);
+				pw = new PrintWriter(fs.create(path));
+				StringBuilder sb = new StringBuilder();
+				for( long i=0; i<numBlocks; i++ ) {
+					long blockIndex = i;
+					for (int j = tmp.getNumDims() - 1; j >= 0; j--) {
+						sb.append(1 + blockIndex % tmp.getNumBlocks(j)).append(',');
+						blockIndex /= tmp.getNumBlocks(j);
+					}
+					sb.append(bigrand.nextLong());
+					pw.println(sb.toString());
+					sb.setLength(0);
+				}
+			}
+			catch( IOException ex ) {
+				throw new DMLRuntimeException(ex);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(pw);
+			}
+
+			//create seeds rdd
+			seedsRDD = sec.getSparkContext()
+					.textFile(path.toString(), numPartitions)
+					.mapToPair(new ExtractTensorSeedTuple());
+		}
+
+		//step 4: execute rand instruction over seed input
+		// TODO getDimLengthPerBlock accurate for each dimension
+		JavaPairRDD<TensorIndexes, TensorBlock> out = seedsRDD
+				.mapToPair(new GenerateRandomTensorBlock(output.getValueType(), tDims, blockSizes,
+						sparsity, minValueStr, maxValueStr, pdf, pdfParams));
+
+		//step 5: output handling
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+		if(!mcOut.dimsKnown(true)) {
+			mcOut.set(tmp);
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
@@ -422,7 +561,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			.mapToPair(new GenerateSequenceBlock(rowsInBlock, lfrom, lto, lincr));
 
 		//step 3: output handling
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if(!mcOut.dimsKnown()) {
 			mcOut.set(nnz, 1, rowsInBlock, colsInBlock, nnz);
 		}
@@ -451,11 +590,11 @@ public class RandSPInstruction extends UnarySPInstruction {
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
 		long outputSize = MatrixBlock.estimateSizeDenseInMemory(lrows,1);
 		int numPartitions = (int) Math.ceil((double)outputSize/hdfsBlockSize);
-		long partitionSize = (long) Math.ceil(maxValue/numPartitions);
+		long partitionSize = (long) Math.ceil(maxValue /numPartitions);
 
 		ArrayList<SampleTask> offsets = new ArrayList<>();
 		long st = 1;
-		while ( st <= maxValue ) {
+		while (st <= maxValue) {
 			SampleTask s = new SampleTask();
 			s.range_start = st;
 			s.seed = bigrand.nextLong();
@@ -465,7 +604,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		JavaRDD<SampleTask> offsetRDD = sec.getSparkContext().parallelize(offsets, numPartitions);
 		
 		// Construct the sample in a distributed manner
-		JavaRDD<Double> rdd = offsetRDD.flatMap( (new GenerateSampleBlock(replace, fraction, (long)maxValue, partitionSize)) );
+		JavaRDD<Double> rdd = offsetRDD.flatMap( (new GenerateSampleBlock(replace, fraction, (long) maxValue, partitionSize)) );
 		
 		// Randomize the sampled elements
 		JavaRDD<Double> randomizedRDD = rdd.mapToPair(new AttachRandom()).sortByKey().values();
@@ -476,13 +615,13 @@ public class RandSPInstruction extends UnarySPInstruction {
 				.filter( new TrimSample(lrows) )
 				.mapToPair( new Double2MatrixCell() );
 		
-		MatrixCharacteristics mcOut = new MatrixCharacteristics(lrows, 1, rowsInBlock, colsInBlock, lrows);
+		DataCharacteristics mcOut = new MatrixCharacteristics(lrows, 1, rowsInBlock, colsInBlock, lrows);
 		
 		// Construct BinaryBlock representation
 		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = 
 				RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), miRDD, mcOut, true);
 		
-		sec.getMatrixCharacteristics(output.getName()).setNonZeros(lrows);
+		sec.getDataCharacteristics(output.getName()).setNonZeros(lrows);
 		sec.setRDDHandleForVariable(output.getName(), mbRDD);
 	}
 	
@@ -628,7 +767,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class ExtractSeedTuple implements PairFunction<String, MatrixIndexes, Long> {
+	private static class ExtractMatrixSeedTuple implements PairFunction<String, MatrixIndexes, Long> {
 		private static final long serialVersionUID = 3973794676854157101L;
 
 		@Override
@@ -639,6 +778,22 @@ public class RandSPInstruction extends UnarySPInstruction {
 			MatrixIndexes ix = new MatrixIndexes(
 				Long.parseLong(parts[0]), Long.parseLong(parts[1]));
 			return new Tuple2<>(ix,Long.parseLong(parts[2]));
+		}
+	}
+
+	private static class ExtractTensorSeedTuple implements PairFunction<String, TensorIndexes, Long> {
+		private static final long serialVersionUID = 3973794676854157101L;
+
+		@Override
+		public Tuple2<TensorIndexes, Long> call(String arg)
+				throws Exception
+		{
+			String[] parts = IOUtilFunctions.split(arg, ",");
+			long[] ix = new long[parts.length - 1];
+			for (int i = 0; i < parts.length - 1; i++)
+				ix[i] = Long.parseLong(parts[i]);
+			TensorIndexes to = new TensorIndexes(ix);
+			return new Tuple2<>(to,Long.parseLong(parts[parts.length - 1]));
 		}
 	}
 
@@ -699,7 +854,82 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class GenerateSequenceBlock implements PairFunction<Double, MatrixIndexes, MatrixBlock> 
+	private static class GenerateRandomTensorBlock implements PairFunction<Tuple2<TensorIndexes, Long>, TensorIndexes, TensorBlock>
+	{
+		private static final long serialVersionUID = -512119897654170462L;
+
+		private ValueType _vt;
+		private int[] _dims;
+		private int[] _blen;
+		private double _sparsity;
+		private String _min;
+		private String _max;
+		private String _pdf;
+		private String _pdfParams;
+
+		public GenerateRandomTensorBlock(ValueType vt, int[] dims, int[] blen,
+			double sparsity, String min, String max, String pdf, String pdfParams) {
+			_vt = vt;
+			_dims = new int[dims.length];
+			Array.copy(dims, 0, _dims, 0, dims.length);
+			_blen = blen;
+			_sparsity = sparsity;
+			_min = min;
+			_max = max;
+			_pdf = pdf;
+			_pdfParams = pdfParams;
+		}
+
+		@Override
+		public Tuple2<TensorIndexes, TensorBlock> call(Tuple2<TensorIndexes, Long> kv)
+				throws Exception
+		{
+			//compute local block size:
+			TensorIndexes ix = kv._1();
+			// TODO: accurate block size computation
+			int[] blockDims = new int[_dims.length];
+			blockDims[0] = UtilFunctions.computeBlockSize(_dims[0], ix.getIndex(0), _blen[0]);
+			for (int i = 1; i < _dims.length; i++) {
+				blockDims[i] = UtilFunctions.computeBlockSize(_dims[i], ix.getIndex(i), _blen[i]);
+			}
+			int clen = (int) UtilFunctions.prod(blockDims, 1);
+			long seed = kv._2;
+
+			TensorBlock tb = new TensorBlock(_vt, blockDims);
+			// TODO implement sparse support
+			tb.allocateDenseBlock();
+			if (!_min.equals(_max)) {
+				if (_vt == ValueType.STRING) {
+					throw new DMLRuntimeException("Random string data can not be generated for tensors.");
+				}
+				MatrixBlock blk = new MatrixBlock();
+				RandomMatrixGenerator rgen = LibMatrixDatagen.createRandomMatrixGenerator(_pdf, blockDims[0], clen,
+						blockDims[0], clen, _sparsity, Double.parseDouble(_min), Double.parseDouble(_max), _pdfParams);
+				blk.randOperationsInPlace(rgen, null, seed);
+				blk.examSparsity();
+				tb.set(blk);
+			}
+			else {
+				switch (_vt) {
+					case STRING:
+					case BOOLEAN:
+						tb.set(_min);
+						break;
+					case INT64:
+					case INT32:
+						tb.set(Long.parseLong(_min));
+						break;
+					default:
+						tb.set(Double.parseDouble(_min));
+						break;
+				}
+			}
+
+			return new Tuple2<>(kv._1, tb);
+		}
+	}
+
+	private static class GenerateSequenceBlock implements PairFunction<Double, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 5779681055705756965L;
 		
@@ -734,8 +964,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 	/**
 	 * This will check if there is sufficient memory locally.
 	 * 
-	 * @param lRows number of rows
-	 * @param lCols number of columns
+	 * @param lrows number of rows
+	 * @param lcols number of columns
 	 * @param sparsity sparsity ratio
 	 * @param min minimum value
 	 * @param max maximum value

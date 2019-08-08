@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -27,7 +29,6 @@ import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-
 import scala.Tuple2;
 
 public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
@@ -43,8 +44,8 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, true, false);
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		
 		//execute reduce-append operations (partitioning preserving)
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1
@@ -52,7 +53,7 @@ public class MatrixAppendRSPInstruction extends AppendRSPInstruction {
 			.mapValues(new ReduceSideAppendFunction(_cbind));
 
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());

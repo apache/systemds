@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,14 +22,11 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.lops.PMMJ;
 import org.tugraz.sysds.lops.MapMult.CacheType;
+import org.tugraz.sysds.lops.PMMJ;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -42,10 +41,12 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class PmmSPInstruction extends BinarySPInstruction {
 	private CacheType _type = null;
@@ -82,11 +83,11 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		
 		String rddVar = (_type==CacheType.LEFT) ? input2.getName() : input1.getName();
 		String bcastVar = (_type==CacheType.LEFT) ? input1.getName() : input2.getName();
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(output.getName());
 		long rlen = sec.getScalarInput(_nrow).getLongValue();
 		
 		//get inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( bcastVar ); 
 		
 		//execute pmm instruction
@@ -100,7 +101,7 @@ public class PmmSPInstruction extends BinarySPInstruction {
 		sec.addLineageBroadcast(output.getName(), bcastVar);
 		
 		//update output statistics if not inferred
-		updateBinaryMMOutputMatrixCharacteristics(sec, false);
+		updateBinaryMMOutputDataCharacteristics(sec, false);
 	}
 
 	private static class RDDPMMFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

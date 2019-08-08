@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -35,7 +37,6 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-
 import scala.Tuple2;
 
 public class MapmmChainSPInstruction extends SPInstruction {
@@ -98,7 +99,7 @@ public class MapmmChainSPInstruction extends SPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd and broadcast inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryBlockRDDHandleForVariable( _input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inX = sec.getBinaryMatrixBlockRDDHandleForVariable( _input1.getName() );
 		PartitionedBroadcast<MatrixBlock> inV = sec.getBroadcastForVariable( _input2.getName() );
 		
 		//execute mapmmchain (guaranteed to have single output block)

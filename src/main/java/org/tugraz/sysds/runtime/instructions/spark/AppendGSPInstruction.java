@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -36,10 +35,12 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class AppendGSPInstruction extends BinarySPInstruction {
 	private boolean _cbind = true;
@@ -75,11 +76,11 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		// general case append (map-extend, aggregate)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, false);
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
 		// General case: This one needs shifting and merging and hence has huge performance hit.
@@ -89,7 +90,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 				.mapToPair(new MergeWithShiftedBlocks(mc1, mc2, _cbind));
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());
@@ -103,7 +104,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		private long _lastIxLeft;
 		private int _blen;
 		
-		public MergeWithShiftedBlocks(MatrixCharacteristics mc1, MatrixCharacteristics mc2, boolean cbind) 
+		public MergeWithShiftedBlocks(DataCharacteristics mc1, DataCharacteristics mc2, boolean cbind)
 		{
 			_cbind = cbind;
 			_blen = cbind ? mc1.getColsPerBlock() : mc1.getRowsPerBlock();
@@ -158,7 +159,7 @@ public class AppendGSPInstruction extends BinarySPInstruction {
 		private int _blen;
 		private long _outlen;
 		
-		public ShiftMatrix(MatrixCharacteristics mc1, MatrixCharacteristics mc2, boolean cbind) 
+		public ShiftMatrix(DataCharacteristics mc1, DataCharacteristics mc2, boolean cbind)
 		{
 			_cbind = cbind;
 			_startIx = cbind ? UtilFunctions.computeBlockIndex(mc1.getCols(), mc1.getColsPerBlock()) :

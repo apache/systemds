@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,10 +21,6 @@
 
 package org.tugraz.sysds.hops.estim;
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.stream.IntStream;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -30,7 +28,12 @@ import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+
+import java.util.Arrays;
+import java.util.Random;
+import java.util.stream.IntStream;
 
 /**
  * This estimator implements a remarkably simple yet effective
@@ -55,11 +58,11 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	}
 	
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		return estim(root, true);
 	}
 	
-	public MatrixCharacteristics estim(MMNode root, boolean topLevel) {
+	public DataCharacteristics estim(MMNode root, boolean topLevel) {
 		//NOTE: not estimateInputs due to handling of topLevel
 		MatrixHistogram h1 = getCachedSynopsis(root.getLeft());
 		MatrixHistogram h2 = getCachedSynopsis(root.getRight());
@@ -77,7 +80,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 		MatrixHistogram outMap = MatrixHistogram
 			.deriveOutputHistogram(h1, h2, ret, root.getOp(), root.getMisc());
 		root.setSynopsis(outMap);
-		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+		return root.setDataCharacteristics(new MatrixCharacteristics(
 			outMap.getRows(), outMap.getCols(), outMap.getNonZeros()));
 	}
 	
@@ -89,8 +92,8 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(),
+				m2.getDataCharacteristics(), op).getSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		MatrixHistogram h2 = (m1 == m2) ? //self product
 			h1 : new MatrixHistogram(m2, _useExtended);
@@ -100,7 +103,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(), null, op).getSparsity();
 		MatrixHistogram h1 = new MatrixHistogram(m1, _useExtended);
 		return estimIntern(h1, null, op, null);
 	}
@@ -373,7 +376,7 @@ public class EstimatorMatrixHistogram extends SparsityEstimator
 			}
 		}
 		
-		public static MatrixCharacteristics deriveOutputCharacteristics(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
+		public static DataCharacteristics deriveOutputCharacteristics(MatrixHistogram h1, MatrixHistogram h2, double spOut, OpCode op, long[] misc) {
 			switch(op) {
 				case MM:
 					return new MatrixCharacteristics(h1.getRows(), h2.getCols(),

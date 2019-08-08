@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -34,8 +36,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
 public class AggregateTernarySPInstruction extends ComputationSPInstruction {
@@ -66,11 +67,11 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get inputs
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = input3.isLiteral() ? null : //matrix or literal 1
-													 sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
+													 sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() );
 		
 		//execute aggregate ternary operation
 		AggregateTernaryOperator aggop = (AggregateTernaryOperator) _optr;
@@ -109,7 +110,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 			out = out.mapValues( new AggregateDropCorrectionFunction(aggop.aggOp) );
 
 			//put output RDD handle into symbol table
-			updateUnaryAggOutputMatrixCharacteristics(sec, aggop.indexFn);
+			updateUnaryAggOutputDataCharacteristics(sec, aggop.indexFn);
 			sec.setRDDHandleForVariable(output.getName(), out);	
 			sec.addLineageRDD(output.getName(), input1.getName());
 			sec.addLineageRDD(output.getName(), input2.getName());

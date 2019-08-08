@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,10 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -37,16 +35,20 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ComputeBinaryBlockNnzFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils.LongFrameToLongWritableFrameFunction;
+import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.HDFSTool;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class WriteSPInstruction extends SPInstruction {
 	private CPOperand input1 = null;
@@ -149,8 +151,8 @@ public class WriteSPInstruction extends SPInstruction {
 		throws IOException
 	{
 		//get input rdd
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
 		if(    oi == OutputInfo.MatrixMarketOutputInfo
 			|| oi == OutputInfo.TextCellOutputInfo     ) 
@@ -234,7 +236,7 @@ public class WriteSPInstruction extends SPInstruction {
 		//get input rdd
 		JavaPairRDD<Long,FrameBlock> in1 = sec
 			.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
 		
 		if( oi == OutputInfo.TextCellOutputInfo ) {
 			JavaRDD<String> out = FrameRDDConverterUtils.binaryBlockToTextCell(in1, mc);

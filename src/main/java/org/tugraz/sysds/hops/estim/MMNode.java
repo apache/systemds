@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,6 +24,7 @@ package org.tugraz.sysds.hops.estim;
 import org.tugraz.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
@@ -33,7 +36,7 @@ public class MMNode
 	private final MMNode _m1;
 	private final MMNode _m2;
 	private final MatrixBlock _data;
-	private final MatrixCharacteristics _mc;
+	private final DataCharacteristics _mc;
 	private Object _synops = null;
 	private final OpCode _op;
 	private final long[] _misc;
@@ -42,7 +45,7 @@ public class MMNode
 		_m1 = null;
 		_m2 = null;
 		_data = in;
-		_mc = in.getMatrixCharacteristics();
+		_mc = in.getDataCharacteristics();
 		_op = null;
 		_misc = null;
 	}
@@ -94,12 +97,12 @@ public class MMNode
 		return _misc[pos];
 	}
 	
-	public MatrixCharacteristics getMatrixCharacteristics() {
+	public DataCharacteristics getDataCharacteristics() {
 		return _mc;
 	}
 	
-	public MatrixCharacteristics setMatrixCharacteristics(MatrixCharacteristics mc) {
-		return _mc.set(mc); //implicit copy
+	public DataCharacteristics setDataCharacteristics(DataCharacteristics mc) {
+		return (DataCharacteristics) _mc.set(mc); //implicit copy
 	}
 	
 	public MMNode getLeft() {

@@ -25,14 +25,15 @@ print("Tensor A: Fillvalue=" + $3 + ", dims=" + dimStr);
 A = tensor($3, d); # fill with value, dimensions given by matrix
 print(toString(A))
 
-print("Tensor B: Reshape A, dims=" + $5);
-B = tensor(A, $5); # reshape tensor, dimensions given by string
-print(toString(B))
+#TODO reactivate once reshape is implemented for spark
+#print("Tensor B: Reshape A, dims=" + $5);
+#B = tensor(A, $5); # reshape tensor, dimensions given by string
+#print(toString(B))
+#
+#print("Tensor C: Reshape dimension matrix, dims=1 " + $2);
+#C = tensor(d, list(1, $2)); # values given by matrix, dimensions given by list
+#print(toString(C, decimal=1))
 
-print("Tensor C: Reshape dimension matrix, dims=1 " + $2);
-C = tensor(d, list(1, $2)); # values given by matrix, dimensions given by list
-print(toString(C, decimal=1))
-
-print("Tensor D: Values=tst, dims=Tensor C");
-D = tensor("tst", C); # fill with string, dimensions given by tensor
+print("Tensor D: Values=tst, dims=" + dimStr);
+D = tensor("tst", d); # fill with string, dimensions given by tensor/ for now given by matrix
 print(toString(D))

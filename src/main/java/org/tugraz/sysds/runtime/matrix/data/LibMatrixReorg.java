@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,6 +22,24 @@
 
 package org.tugraz.sysds.runtime.matrix.data;
 
+import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.tugraz.sysds.runtime.data.DenseBlock;
+import org.tugraz.sysds.runtime.data.DenseBlockFactory;
+import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.SparseBlockCSR;
+import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
+import org.tugraz.sysds.runtime.functionobjects.RevIndex;
+import org.tugraz.sysds.runtime.functionobjects.SortIndex;
+import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
+import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.util.CommonThreadPool;
+import org.tugraz.sysds.runtime.util.DataConverter;
+import org.tugraz.sysds.runtime.util.SortUtils;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,24 +53,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.data.DenseBlock;
-import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.SparseBlockCSR;
-import org.tugraz.sysds.runtime.functionobjects.DiagIndex;
-import org.tugraz.sysds.runtime.functionobjects.RevIndex;
-import org.tugraz.sysds.runtime.functionobjects.SortIndex;
-import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
-import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.runtime.util.CommonThreadPool;
-import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.SortUtils;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
  * MB:
@@ -466,8 +468,8 @@ public class LibMatrixReorg
 	 * @param outputEmptyBlocks output blocks with nnz=0
 	 * @return list of indexed matrix values
 	 */
-	public static List<IndexedMatrixValue> reshape(IndexedMatrixValue in, MatrixCharacteristics mcIn,
-			MatrixCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
+	public static List<IndexedMatrixValue> reshape(IndexedMatrixValue in, DataCharacteristics mcIn,
+	                                               DataCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
 		//prepare inputs
 		MatrixIndexes ixIn = in.getIndexes();
 		MatrixBlock mbIn = (MatrixBlock) in.getValue();
@@ -1446,8 +1448,8 @@ public class LibMatrixReorg
 	// private MR implementation //
 	///////////////////////////////
 
-	private static Collection<MatrixIndexes> computeAllResultBlockIndexes( MatrixIndexes ixin,
-		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, MatrixBlock in, boolean rowwise, boolean outputEmpty )
+	private static Collection<MatrixIndexes> computeAllResultBlockIndexes(MatrixIndexes ixin,
+	                                                                      DataCharacteristics mcIn, DataCharacteristics mcOut, MatrixBlock in, boolean rowwise, boolean outputEmpty )
 	{
 		HashSet<MatrixIndexes> ret = new HashSet<>();
 		
@@ -1539,8 +1541,8 @@ public class LibMatrixReorg
 		}
 	}
 	
-	private static void createNonZeroIndexes(MatrixCharacteristics mcIn, MatrixCharacteristics mcOut,
-			MatrixBlock in, long row_offset, long col_offset, boolean rowwise, HashSet<MatrixIndexes> ret) {
+	private static void createNonZeroIndexes(DataCharacteristics mcIn, DataCharacteristics mcOut,
+	                                         MatrixBlock in, long row_offset, long col_offset, boolean rowwise, HashSet<MatrixIndexes> ret) {
 		Iterator<IJV> iter = in.getSparseBlockIterator();
 		while( iter.hasNext() ) {
 			IJV cell = iter.next();
@@ -1549,11 +1551,11 @@ public class LibMatrixReorg
 		}
 	}
 	
-	private static Map<MatrixIndexes, MatrixBlock> createAllResultBlocks(Collection<MatrixIndexes> rix, long nnz, MatrixCharacteristics mcOut) {
+	private static Map<MatrixIndexes, MatrixBlock> createAllResultBlocks(Collection<MatrixIndexes> rix, long nnz, DataCharacteristics mcOut) {
 		return rix.stream().collect(Collectors.toMap(ix -> ix, ix -> createResultBlock(ix, nnz, rix.size(), mcOut)));
 	}
 	
-	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, MatrixCharacteristics mcOut) {
+	private static MatrixBlock createResultBlock(MatrixIndexes ix, long nnz, int nBlocks, DataCharacteristics mcOut) {
 		//compute indexes
 		long bi = ix.getRowIndex();
 		long bj = ix.getColumnIndex();
@@ -1567,8 +1569,8 @@ public class LibMatrixReorg
 		return new MatrixBlock(lbrlen, lbclen, sparse, estnnz); 
 	}
 
-	private static void reshapeDense( MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
+	private static void reshapeDense(MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
+	                                 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1603,8 +1605,8 @@ public class LibMatrixReorg
 		}
 	}
 
-	private static void reshapeSparse( MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix, 
-			MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise ) {
+	private static void reshapeSparse(MatrixBlock in, long row_offset, long col_offset, Map<MatrixIndexes,MatrixBlock> rix,
+	                                  DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise ) {
 		if( in.isEmptyBlock(false) )
 			return;
 		
@@ -1654,8 +1656,8 @@ public class LibMatrixReorg
 	 * @param rowwise row-wise extraction
 	 * @return matrix indexes
 	 */
-	private static MatrixIndexes computeResultBlockIndex( MatrixIndexes ixout, long ai, long aj,
-		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
+	private static MatrixIndexes computeResultBlockIndex(MatrixIndexes ixout, long ai, long aj,
+	                                                     DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
 	{
 		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? tempc/mcOut.getCols() : tempc%mcOut.getRows();
@@ -1665,8 +1667,8 @@ public class LibMatrixReorg
 		return ixout.setIndexes(bci, bcj);
 	}
 	
-	private static MatrixIndexes computeInBlockIndex( MatrixIndexes ixout, long ai, long aj,
-		MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean rowwise )
+	private static MatrixIndexes computeInBlockIndex(MatrixIndexes ixout, long ai, long aj,
+	                                                 DataCharacteristics mcIn, DataCharacteristics mcOut, boolean rowwise )
 	{
 		long tempc = computeGlobalCellIndex(mcIn, ai, aj, rowwise);
 		long ci = rowwise ? (tempc/mcOut.getCols())%mcOut.getRowsPerBlock() : 
@@ -1676,7 +1678,7 @@ public class LibMatrixReorg
 		return ixout.setIndexes(ci, cj);
 	}
 	
-	private static long computeGlobalCellIndex(MatrixCharacteristics mcIn, long ai, long aj, boolean rowwise) {
+	private static long computeGlobalCellIndex(DataCharacteristics mcIn, long ai, long aj, boolean rowwise) {
 		return rowwise ? ai*mcIn.getCols()+aj : ai+mcIn.getRows()*aj;
 	}
 

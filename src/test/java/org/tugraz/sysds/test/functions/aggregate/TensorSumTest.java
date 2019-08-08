@@ -20,7 +20,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.lops.LopProperties;
 import org.tugraz.sysds.test.AutomatedTestBase;
 import org.tugraz.sysds.test.TestConfiguration;
 
@@ -34,25 +36,25 @@ public class TensorSumTest extends AutomatedTestBase
 	private final static String TEST_NAME = "TensorSum";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TensorSumTest.class.getSimpleName() + "/";
 
-	private double value;
+	private String value;
 	private int[] dimensions;
 
-	public TensorSumTest(int[] dims, double v) {
+	public TensorSumTest(int[] dims, String v) {
 		dimensions = dims;
 		value = v;
 	}
 	
 	@Parameters
 	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] { 
-				{new int[]{3, 4, 5}, 3},
-				{new int[]{1, 1}, 8},
-				{new int[]{7, 1, 1}, 0.5},
-				{new int[]{10, 2, 4}, 1},
-				{new int[]{1000, 100, 100, 10}, 3},
-				{new int[]{10000000, 2}, 8},
-				{new int[]{100000, 1, 1000}, 0.5},
-				{new int[]{1, 1, 1, 2, 1, 1, 1000}, 1},
+		Object[][] data = new Object[][] {
+				{new int[]{3, 4, 5}, "3"},
+				{new int[]{1, 1}, "8"},
+				{new int[]{7, 1, 1}, "0.5"},
+				{new int[]{10, 2, 4}, "1"},
+				{new int[]{1000, 100, 100, 10}, "3"},
+				{new int[]{10000000, 2}, "8"},
+				{new int[]{100000, 1, 1000}, "0.5"},
+				{new int[]{1, 1, 1, 2, 1, 1, 1000}, "1"},
 				};
 		return Arrays.asList(data);
 	}
@@ -63,22 +65,45 @@ public class TensorSumTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void tensorSumTest() {
+	public void tensorSumTestCP() {
+		testTensorSum(TEST_NAME, LopProperties.ExecType.CP);
+	}
+
+	@Test
+	public void tensorSumTestSpark() {
+		testTensorSum(TEST_NAME, LopProperties.ExecType.SPARK);
+	}
+
+	private void testTensorSum(String testName, LopProperties.ExecType platform) {
 		ExecMode platformOld = rtplatform;
+		if (platform == LopProperties.ExecType.SPARK) {
+			rtplatform = ExecMode.SPARK;
+		}
+		else {
+			rtplatform = ExecMode.SINGLE_NODE;
+		}
+
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if (rtplatform == ExecMode.SPARK) {
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		}
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
-			
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			String dimensionsString = Arrays.toString(dimensions).replace("[", "")
 					.replace(",", "").replace("]", "");
 			programArgs = new String[]{"-explain", "-args",
-				Double.toString(value), dimensionsString, output("A") };
+					value, dimensionsString, output("A")};
 
-			// Generate Data in CP
-			rtplatform = ExecMode.SINGLE_NODE;
-			writeExpectedScalar("A", Arrays.stream(dimensions).reduce(1, (a, b) -> a*b) * value);
+			try {
+				writeExpectedScalar("A", Arrays.stream(dimensions).reduce(1, (a, b) -> a * b) * Long.parseLong(value));
+			}
+			catch (NumberFormatException e) {
+				writeExpectedScalar("A", Arrays.stream(dimensions).reduce(1, (a, b) -> a * b) * Double.parseDouble(value));
+			}
 
 			runTest(true, false, null, -1);
 
@@ -86,6 +111,7 @@ public class TensorSumTest extends AutomatedTestBase
 		}
 		finally {
 			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

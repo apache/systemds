@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,12 +21,11 @@
 
 package org.tugraz.sysds.runtime.controlprogram;
 
-import java.util.ArrayList;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.jmlc.JMLCUtils;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -32,7 +33,6 @@ import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.parser.ParseInfo;
 import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.DMLScriptException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -48,6 +48,8 @@ import org.tugraz.sysds.runtime.instructions.cp.StringObject;
 import org.tugraz.sysds.runtime.lineage.LineageCache;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.util.ArrayList;
 
 
 public abstract class ProgramBlock implements ParseInfo
@@ -256,7 +258,7 @@ public abstract class ProgramBlock implements ParseInfo
 			flags[i] = mo.getUpdateType();
 			//create deep copy if required and if it fits in thread-local mem budget
 			if( flags[i]==UpdateType.COPY && OptimizerUtils.getLocalMemBudget()/2 >
-				OptimizerUtils.estimateSizeExactSparsity(mo.getMatrixCharacteristics())) {
+				OptimizerUtils.estimateSizeExactSparsity(mo.getDataCharacteristics())) {
 				MatrixObject moNew = new MatrixObject(mo);
 				MatrixBlock mbVar = mo.acquireRead();
 				moNew.acquireModify( !mbVar.isInSparseFormat() ? new MatrixBlock(mbVar) :
@@ -359,8 +361,6 @@ public abstract class ProgramBlock implements ParseInfo
 	 *            parse information, such as beginning line position, beginning
 	 *            column position, ending line position, ending column position,
 	 *            text, and filename
-	 * @param filename
-	 *            the DML/PYDML filename (if it exists)
 	 */
 	public void setParseInfo(ParseInfo parseInfo) {
 		_beginLine = parseInfo.getBeginLine();

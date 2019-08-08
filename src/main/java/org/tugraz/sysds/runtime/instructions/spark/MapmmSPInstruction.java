@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,16 +22,13 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 
-import java.util.Iterator;
-import java.util.stream.IntStream;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
+import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.MapMult;
 import org.tugraz.sysds.lops.MapMult.CacheType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -50,9 +49,11 @@ import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.Iterator;
+import java.util.stream.IntStream;
 
 public class MapmmSPInstruction extends BinarySPInstruction {
 	private CacheType _type = null;
@@ -93,11 +94,11 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 		CacheType type = _type;
 		String rddVar = type.isRight() ? input1.getName() : input2.getName();
 		String bcastVar = type.isRight() ? input2.getName() : input1.getName();
-		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(rddVar);
-		MatrixCharacteristics mcBc = sec.getMatrixCharacteristics(bcastVar);
+		DataCharacteristics mcRdd = sec.getDataCharacteristics(rddVar);
+		DataCharacteristics mcBc = sec.getDataCharacteristics(bcastVar);
 		
 		//get input rdd with preferred number of partitions to avoid unnecessary repartition
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar,
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(rddVar,
 			(requiresFlatMapFunction(type, mcBc) && requiresRepartitioning(
 			type, mcRdd, mcBc, sec.getSparkContext().defaultParallelism())) ?
 			getNumRepartitioning(type, mcRdd, mcBc) : -1, _outputEmpty);
@@ -113,9 +114,9 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 				type = type.getFlipped();
 				rddVar = type.isRight() ? input1.getName() : input2.getName();
 				bcastVar = type.isRight() ? input2.getName() : input1.getName();
-				mcRdd = sec.getMatrixCharacteristics(rddVar);
-				mcBc = sec.getMatrixCharacteristics(bcastVar);
-				in1 = sec.getBinaryBlockRDDHandleForVariable(rddVar);
+				mcRdd = sec.getDataCharacteristics(rddVar);
+				mcBc = sec.getDataCharacteristics(bcastVar);
+				in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(rddVar);
 				LOG.warn("Mapmm: Switching rdd ('"+bcastVar+"') and broadcast ('"+rddVar+"') inputs "
 						+ "for repartitioning because this allows better control of output partition "
 						+ "sizes ("+numParts+" < "+numParts2+").");	
@@ -169,11 +170,11 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 			sec.addLineageBroadcast(output.getName(), bcastVar);
 			
 			//update output statistics if not inferred
-			updateBinaryMMOutputMatrixCharacteristics(sec, true);
+			updateBinaryMMOutputDataCharacteristics(sec, true);
 		}
 	}
 
-	private static boolean preservesPartitioning( MatrixCharacteristics mcIn, CacheType type )
+	private static boolean preservesPartitioning(DataCharacteristics mcIn, CacheType type )
 	{
 		if( type == CacheType.LEFT )
 			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
@@ -189,7 +190,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	 * @param mcBc matrix characteristics
 	 * @return true if single input block creates multiple output blocks
 	 */
-	private static boolean requiresFlatMapFunction( CacheType type, MatrixCharacteristics mcBc)
+	private static boolean requiresFlatMapFunction( CacheType type, DataCharacteristics mcBc)
 	{
 		return    (type == CacheType.LEFT && mcBc.getRows() > mcBc.getRowsPerBlock())
 			   || (type == CacheType.RIGHT && mcBc.getCols() > mcBc.getColsPerBlock());
@@ -206,7 +207,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	 * @param numPartitions number of partitions
 	 * @return true need to repartition input RDD
 	 */
-	private static boolean requiresRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc, int numPartitions ) {
+	private static boolean requiresRepartitioning(CacheType type, DataCharacteristics mcRdd, DataCharacteristics mcBc, int numPartitions ) {
 		//note: as repartitioning requires data shuffling, we try to be very conservative here
 		//approach: we repartition, if there is a "outer-product-like" mm (single block common dimension),
 		//the size of output partitions (assuming dense) exceeds a size of 1GB 
@@ -231,7 +232,7 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 	 * @param mcBc ?
 	 * @return number of target partitions for repartitioning
 	 */
-	private static int getNumRepartitioning( CacheType type, MatrixCharacteristics mcRdd, MatrixCharacteristics mcBc ) {
+	private static int getNumRepartitioning(CacheType type, DataCharacteristics mcRdd, DataCharacteristics mcBc ) {
 		boolean isLeft = (type == CacheType.LEFT);
 		long sizeOutput = (OptimizerUtils.estimatePartitionedSizeExactSparsity(isLeft?mcBc.getRows():mcRdd.getRows(),
 				isLeft?mcRdd.getCols():mcBc.getCols(), isLeft?mcBc.getRowsPerBlock():mcRdd.getRowsPerBlock(),

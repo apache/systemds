@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,16 +21,16 @@
 
 package org.tugraz.sysds.hops;
 
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.lops.LeftIndex;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.UnaryCP.OperationTypes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.lops.LeftIndex;
+import org.tugraz.sysds.lops.LeftIndex.LixCacheType;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.UnaryCP;
+import org.tugraz.sysds.lops.UnaryCP.OperationTypes;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 public class LeftIndexingOp  extends Hop 
 {	
@@ -197,9 +199,9 @@ public class LeftIndexingOp  extends Hop
 		
 		//changed final estimate (infer and use input size)
 		Hop rhM = getInput().get(1);
-		MatrixCharacteristics mcRhM = memo.getAllInputStats(rhM);
+		DataCharacteristics dcRhM = memo.getAllInputStats(rhM);
 		//TODO also use worstcase estimate for output
-		if( dimsKnown() && !(rhM.dimsKnown()||mcRhM.dimsKnown()) ) 
+		if( dimsKnown() && !(rhM.dimsKnown()||dcRhM.dimsKnown()) )
 		{ 
 			// unless second input is single cell / row vector / column vector
 			// use worst-case memory estimate for second input (it cannot be larger than overall matrix)
@@ -222,12 +224,12 @@ public class LeftIndexingOp  extends Hop
 		{
 			//try a last attempt to infer a reasonable estimate wrt output sparsity
 			//(this is important for indexing sparse matrices into empty matrices).
-			MatrixCharacteristics mcM1 = memo.getAllInputStats(getInput().get(0));
-			MatrixCharacteristics mcM2 = memo.getAllInputStats(getInput().get(1));
-			if( mcM1.getNonZeros()>=0 && mcM2.getNonZeros()>=0
+			DataCharacteristics dcM1 = memo.getAllInputStats(getInput().get(0));
+			DataCharacteristics dcM2 = memo.getAllInputStats(getInput().get(1));
+			if( dcM1.getNonZeros()>=0 && dcM2.getNonZeros()>=0
 				&& hasConstantIndexingRange() ) 
 			{
-				long lnnz = mcM1.getNonZeros() + mcM2.getNonZeros();
+				long lnnz = dcM1.getNonZeros() + dcM2.getNonZeros();
 				_outputMemEstimate = computeOutputMemEstimate( _dim1, _dim2, lnnz );
 				_memEstimate = getInputSize(0) //original matrix (left)
 			                 + getInputSize(1) // new submatrix (right)
@@ -272,16 +274,16 @@ public class LeftIndexingOp  extends Hop
 	
 		Hop input1 = getInput().get(0); //original matrix
 		Hop input2 = getInput().get(1); //right matrix		
-		MatrixCharacteristics mc1 = memo.getAllInputStats(input1);
-		MatrixCharacteristics mc2 = memo.getAllInputStats(input2);
+		DataCharacteristics dc1 = memo.getAllInputStats(input1);
+		DataCharacteristics dc2 = memo.getAllInputStats(input2);
 		
-		if( mc1.dimsKnown() ) {
+		if( dc1.dimsKnown() ) {
 			double sparsity = OptimizerUtils.getLeftIndexingSparsity(
-					mc1.getRows(), mc1.getCols(), mc1.getNonZeros(), 
-					mc2.getRows(), mc2.getCols(), mc2.getNonZeros());
+					dc1.getRows(), dc1.getCols(), dc1.getNonZeros(),
+					dc2.getRows(), dc2.getCols(), dc2.getNonZeros());
 			long lnnz = !hasConstantIndexingRange() ? -1 :
-					(long)(sparsity * mc1.getRows() * mc1.getCols());
-			ret = new long[]{mc1.getRows(), mc1.getCols(), lnnz};
+					(long)(sparsity * dc1.getRows() * dc1.getCols());
+			ret = new long[]{dc1.getRows(), dc1.getCols(), lnnz};
 		}
 		
 		return ret;

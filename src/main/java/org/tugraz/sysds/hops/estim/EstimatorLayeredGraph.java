@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,6 +28,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
@@ -54,10 +57,10 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	}
 	
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
 		long nnz = new LayeredGraph(leafs, _rounds).estimateNnz();
-		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+		return root.setDataCharacteristics(new MatrixCharacteristics(
 			leafs.get(0).getNumRows(), leafs.get(leafs.size()-1).getNumColumns(), nnz));
 	}
 

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
-import java.io.Serializable;
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -29,6 +28,9 @@ import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -139,8 +141,8 @@ public abstract class ResultMerge implements Serializable
 
 	protected long computeNonZeros( MatrixObject out, List<MatrixObject> in ) {
 		//sum of nnz of input (worker result) - output var existing nnz
-		long outNNZ = out.getMatrixCharacteristics().getNonZeros();
+		long outNNZ = out.getDataCharacteristics().getNonZeros();
 		return outNNZ - in.size() * outNNZ + in.stream()
-			.mapToLong(m -> m.getMatrixCharacteristics().getNonZeros()).sum();
+			.mapToLong(m -> m.getDataCharacteristics().getNonZeros()).sum();
 	}
 }

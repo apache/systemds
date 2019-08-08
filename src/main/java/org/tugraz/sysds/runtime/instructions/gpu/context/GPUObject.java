@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,15 +20,10 @@
  */
 package org.tugraz.sysds.runtime.instructions.gpu.context;
 
-import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
-import static jcuda.runtime.JCuda.cudaMemcpy;
-import static jcuda.runtime.JCuda.cudaMemset;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
-
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
-
+import jcuda.Pointer;
+import jcuda.jcusparse.cusparseDirection;
+import jcuda.jcusparse.cusparseHandle;
+import jcuda.jcusparse.cusparseMatDescr;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
@@ -42,10 +39,14 @@ import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.utils.GPUStatistics;
 
-import jcuda.Pointer;
-import jcuda.jcusparse.cusparseDirection;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.jcusparse.cusparseMatDescr;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
+
+import static jcuda.jcublas.cublasOperation.CUBLAS_OP_T;
+import static jcuda.runtime.JCuda.cudaMemcpy;
+import static jcuda.runtime.JCuda.cudaMemset;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
+import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 
 /**
  * Handle to a matrix block on the GPU
@@ -791,7 +792,7 @@ public class GPUObject {
 				tmp.recomputeNonZeros();
 			}
 			long nnz = tmp.getNonZeros();
-			mat.getMatrixCharacteristics().setNonZeros(nnz);
+			mat.getDataCharacteristics().setNonZeros(nnz);
 
 			SparseBlock block = tmp.getSparseBlock();
 			boolean copyToDevice = true;

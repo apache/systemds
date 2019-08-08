@@ -21,26 +21,25 @@
 
 package org.tugraz.sysds.hops.recompile;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.api.jmlc.JMLCUtils;
-import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
+import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.Hop;
+import org.tugraz.sysds.hops.Hop.DataGenMethod;
+import org.tugraz.sysds.hops.Hop.DataOpTypes;
+import org.tugraz.sysds.hops.Hop.FileFormatTypes;
+import org.tugraz.sysds.hops.Hop.OpOp1;
+import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.IndexingOp;
 import org.tugraz.sysds.hops.LiteralOp;
@@ -48,12 +47,6 @@ import org.tugraz.sysds.hops.MemoTable;
 import org.tugraz.sysds.hops.MultiThreadedHop;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.UnaryOp;
-import org.tugraz.sysds.hops.FunctionOp.FunctionType;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.hops.Hop.FileFormatTypes;
-import org.tugraz.sysds.hops.Hop.OpOp1;
-import org.tugraz.sysds.hops.Hop.ReOrgOp;
 import org.tugraz.sysds.hops.codegen.SpoofCompiler;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.hops.rewrite.ProgramRewriter;
@@ -67,8 +60,6 @@ import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
@@ -93,14 +84,24 @@ import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Explain;
-import org.tugraz.sysds.utils.JSONHelper;
 import org.tugraz.sysds.utils.Explain.ExplainType;
+import org.tugraz.sysds.utils.JSONHelper;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -705,8 +706,8 @@ public class Recompiler
 			{
 				MatrixObject moOld = (MatrixObject) dat1;
 				MatrixObject mo = (MatrixObject) dat2;
-				MatrixCharacteristics mcOld = moOld.getMatrixCharacteristics();
-				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+				DataCharacteristics mcOld = moOld.getDataCharacteristics();
+				DataCharacteristics mc = mo.getDataCharacteristics();
 				
 				if( mcOld.getRows() != mc.getRows() 
 					|| mcOld.getCols() != mc.getCols()
@@ -745,35 +746,35 @@ public class Recompiler
 		//handle matrices
 		for( String varname : sb.variablesUpdated().getVariableNames() )
 		{
-			MatrixCharacteristics dat1 = oldCallStatus.getTWriteStats().get(varname);
-			MatrixCharacteristics dat2 = callStatus.getTWriteStats().get(varname);
+			DataCharacteristics dat1 = oldCallStatus.getTWriteStats().get(varname);
+			DataCharacteristics dat2 = callStatus.getTWriteStats().get(varname);
 			if( dat1!=null  && dat2!=null  )
 			{
-				MatrixCharacteristics mcOld = dat1;
-				MatrixCharacteristics mc = dat2;
+				DataCharacteristics dcOld = dat1;
+				DataCharacteristics dc = dat2;
 				
-				if( mcOld.getRows() != mc.getRows() 
-					|| mcOld.getCols() != mc.getCols()
-					|| mcOld.getNonZeros() != mc.getNonZeros() )
+				if( dcOld.getRows() != dc.getRows()
+					|| dcOld.getCols() != dc.getCols()
+					|| dcOld.getNonZeros() != dc.getNonZeros() )
 				{
-					long ldim1 = mc.getRows(), ldim2 = mc.getCols(), lnnz = mc.getNonZeros();
+					long ldim1 = dc.getRows(), ldim2 = dc.getCols(), lnnz = dc.getNonZeros();
 					//handle row dimension change in body
-					if( mcOld.getRows() != mc.getRows() ) {
+					if( dcOld.getRows() != dc.getRows() ) {
 						ldim1 = -1;
 						requiresRecompile = true;
 					}
 					//handle column dimension change in body
-					if( mcOld.getCols() != mc.getCols() ) {
+					if( dcOld.getCols() != dc.getCols() ) {
 						ldim2 = -1;
 						requiresRecompile = true;
 					}
 					//handle sparsity change
-					if( mcOld.getNonZeros() != mc.getNonZeros() ) {
+					if( dcOld.getNonZeros() != dc.getNonZeros() ) {
 						lnnz = -1;		
 						requiresRecompile = true;
 					}
 					
-					MatrixCharacteristics moNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					DataCharacteristics moNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
 					callStatus.getTWriteStats().put(varname, moNew);
 				}
 			}
@@ -813,8 +814,8 @@ public class Recompiler
 				{
 					MatrixObject moOld = (MatrixObject) dat1;
 					MatrixObject mo = (MatrixObject) dat2;
-					MatrixCharacteristics mcOld = moOld.getMatrixCharacteristics();
-					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+					DataCharacteristics mcOld = moOld.getDataCharacteristics();
+					DataCharacteristics mc = mo.getDataCharacteristics();
 					
 					if( mcOld.getRows() != mc.getRows() 
 							|| mcOld.getCols() != mc.getCols()
@@ -848,10 +849,10 @@ public class Recompiler
 	{
 		for( String varname : sb.variablesUpdated().getVariableNames() )
 		{	
-			MatrixCharacteristics origVar = oldStatus.getTWriteStats().get(varname);
-			MatrixCharacteristics ifVar = callStatusIf.getTWriteStats().get(varname);
-			MatrixCharacteristics elseVar = callStatusElse.getTWriteStats().get(varname);
-			MatrixCharacteristics dat1 = null, dat2 = null;
+			DataCharacteristics origVar = oldStatus.getTWriteStats().get(varname);
+			DataCharacteristics ifVar = callStatusIf.getTWriteStats().get(varname);
+			DataCharacteristics elseVar = callStatusElse.getTWriteStats().get(varname);
+			DataCharacteristics dat1 = null, dat2 = null;
 			
 			if( ifVar!=null && elseVar!=null ){ // both branches exists
 				dat1 = ifVar;
@@ -870,21 +871,21 @@ public class Recompiler
 			//because we do not allow data type changes)
 			if( dat1 != null && dat2!=null )
 			{
-				MatrixCharacteristics mcOld = dat1;
-				MatrixCharacteristics mc = dat2;
+				DataCharacteristics dcOld = dat1;
+				DataCharacteristics dc = dat2;
 					
-				if( mcOld.getRows() != mc.getRows() 
-						|| mcOld.getCols() != mc.getCols()
-						|| mcOld.getNonZeros() != mc.getNonZeros() )
+				if( dcOld.getRows() != dc.getRows()
+						|| dcOld.getCols() != dc.getCols()
+						|| dcOld.getNonZeros() != dc.getNonZeros() )
 				{
-					long ldim1 = (mcOld.getRows()>=0 && mc.getRows()>=0) ? 
-							Math.max( mcOld.getRows(), mc.getRows() ) : -1;
-					long ldim2 = (mcOld.getCols()>=0 && mc.getCols()>=0) ?
-							Math.max( mcOld.getCols(), mc.getCols() ) : -1;
-					long lnnz = (mcOld.getNonZeros()>=0 && mc.getNonZeros()>=0) ? 
-							Math.max( mcOld.getNonZeros(), mc.getNonZeros() ) : -1;	
+					long ldim1 = (dcOld.getRows()>=0 && dc.getRows()>=0) ?
+							Math.max( dcOld.getRows(), dc.getRows() ) : -1;
+					long ldim2 = (dcOld.getCols()>=0 && dc.getCols()>=0) ?
+							Math.max( dcOld.getCols(), dc.getCols() ) : -1;
+					long lnnz = (dcOld.getNonZeros()>=0 && dc.getNonZeros()>=0) ?
+							Math.max( dcOld.getNonZeros(), dc.getNonZeros() ) : -1;
 					
-					MatrixCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
+					DataCharacteristics mcNew = new MatrixCharacteristics(ldim1, ldim2, -1, -1, lnnz);
 					callStatusIf.getTWriteStats().put(varname, mcNew);
 				}
 			}
@@ -907,7 +908,7 @@ public class Recompiler
 	{
 		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
 		int blksz = ConfigurationManager.getBlocksize();
-		MatrixCharacteristics mc = new MatrixCharacteristics( 
+		DataCharacteristics mc = new MatrixCharacteristics(
 				dim1, dim2, blksz, blksz, nnz);
 		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);
@@ -1130,14 +1131,14 @@ public class Recompiler
 				if( hop.getDataType()==DataType.MATRIX )
 				{
 					MatrixObject mo = new MatrixObject(ValueType.FP64, null);
-					MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(), 
+					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
 						ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					mo.setMetaData(meta);	
 					vars.put(varName, mo);
 				} else if( hop.getDataType()==DataType.TENSOR ) {
 					TensorObject to = new TensorObject(hop.getValueType(), null);
-					MatrixCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
+					DataCharacteristics mc = new MatrixCharacteristics(hop.getDim1(), hop.getDim2(),
 							ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), hop.getNnz());
 					MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 					to.setMetaData(meta);
@@ -1190,7 +1191,7 @@ public class Recompiler
 				if( dat instanceof MatrixObject )
 				{
 					MatrixObject mo = (MatrixObject)dat;
-					MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+					DataCharacteristics mc = mo.getDataCharacteristics();
 					if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>=0)?((double)mc.getNonZeros())/mc.getRows()/mc.getCols():1.0)	
 					    < OptimizerUtils.estimateSize(hop.getDim1(), hop.getDim2()) )
 					{
@@ -1315,7 +1316,7 @@ public class Recompiler
 		{
 			//update hop with read meta data
 			DataOp dop = (DataOp) hop; 
-			tryReadMetaDataFileMatrixCharacteristics(dop);
+			tryReadMetaDataFileDataCharacteristics(dop);
 		}
 		//update size expression for rand/seq according to symbol table entries
 		else if ( hop instanceof DataGenOp )
@@ -1474,7 +1475,7 @@ public class Recompiler
 	public static boolean checkCPReblock(ExecutionContext ec, String varin) 
 	{
 		CacheableData<?> obj = ec.getCacheableData(varin);
-		MatrixCharacteristics mc = ec.getMatrixCharacteristics(varin);
+		DataCharacteristics mc = ec.getDataCharacteristics(varin);
 		
 		long rows = mc.getRows();
 		long cols = mc.getCols();
@@ -1556,7 +1557,7 @@ public class Recompiler
 		in.release();
 	}
 	
-	private static void tryReadMetaDataFileMatrixCharacteristics( DataOp dop )
+	private static void tryReadMetaDataFileDataCharacteristics( DataOp dop )
 	{
 		try
 		{

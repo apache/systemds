@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,17 +22,21 @@
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
 
-import java.io.IOException;
-
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
+import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
+
+import java.io.IOException;
 
 public class TensorObject extends CacheableData<TensorBlock>
 {
@@ -71,23 +77,31 @@ public class TensorObject extends CacheableData<TensorBlock>
 			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 
 		//update matrix characteristics
-		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
-		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );
-		mc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
+		DataCharacteristics tc = _metaData.getDataCharacteristics();
+		long[] dims = new long[_data.getNumDims()];
+		for (int i = 0; i < _data.getNumDims(); i++) {
+			dims[i] = _data.getDim(i);
+		}
+		tc.setDims(dims);
+		tc.setNonZeros(_data.getNonZeros());
+	}
+
+	public int[] getDims() {
+		return _data.getDims();
 	}
 
 	public long getNumRows() {
-		MatrixCharacteristics mc = getMatrixCharacteristics();
-		return mc.getRows();
+		DataCharacteristics dc = getDataCharacteristics();
+		return dc.getRows();
 	}
 
 	public long getNumColumns() {
-		MatrixCharacteristics mc = getMatrixCharacteristics();
-		return mc.getCols();
+		DataCharacteristics dc = getDataCharacteristics();
+		return dc.getCols();
 	}
 
 	public long getNnz() {
-		return getMatrixCharacteristics().getNonZeros();
+		return getDataCharacteristics().getNonZeros();
 	}
 
 	@Override
@@ -104,11 +118,15 @@ public class TensorObject extends CacheableData<TensorBlock>
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	protected TensorBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException 
 	{
-		//TODO read from RDD
-		return null;
+		status.setValue(false);
+		TensorCharacteristics tc = (TensorCharacteristics) _metaData.getDataCharacteristics();
+		// TODO correct blocksize;
+		// TODO read from RDD
+		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, TensorBlock>)rdd.getRDD(), tc);
 	}
 
 	@Override

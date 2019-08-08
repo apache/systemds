@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -37,10 +39,10 @@ public abstract class Metadata {
 	protected Integer numRowsPerBlock = null;
 
 	/**
-	 * Convert the metadata to a MatrixCharacteristics object. If all field
+	 * Convert the metadata to a DataCharacteristics object. If all field
 	 * values are {@code null}, {@code null} is returned.
 	 *
-	 * @return the metadata as a MatrixCharacteristics object, or {@code null}
+	 * @return the metadata as a DataCharacteristics object, or {@code null}
 	 *         if all field values are null
 	 */
 	public MatrixCharacteristics asMatrixCharacteristics() {
@@ -112,10 +114,10 @@ public abstract class Metadata {
 	}
 
 	/**
-	 * Set the metadata fields based on a MatrixCharacteristics object.
+	 * Set the metadata fields based on a DataCharacteristics object.
 	 *
 	 * @param matrixCharacteristics
-	 *            the matrix metadata as a MatrixCharacteristics object
+	 *            the matrix metadata as a DataCharacteristics object
 	 */
 	public void setMatrixCharacteristics(MatrixCharacteristics matrixCharacteristics) {
 		this.numRows = matrixCharacteristics.getRows();

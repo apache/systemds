@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,11 +21,11 @@
 
 package org.tugraz.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.io.Serializable;
 
 
 public class SwapIndex extends IndexFunction implements Serializable
@@ -61,7 +63,7 @@ public class SwapIndex extends IndexFunction implements Serializable
 	}
 
 	@Override
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
+	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
 		out.set(in.getCols(), in.getRows(), in.getColsPerBlock(), in.getRowsPerBlock());
 		return false;
 	}

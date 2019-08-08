@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -112,14 +114,6 @@ public class FrameAppendDistTest extends AutomatedTestBase
 		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1d, cols3d, true, AppendMethod.MR_MAPPEND, false);
 	}
 	
-	/**
-	 * 
-	 * @param platform
-	 * @param rows
-	 * @param cols1
-	 * @param cols2
-	 * @param sparse
-	 */
 	public void commonAppendTest(ExecMode platform, int rows1, int rows2, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod, boolean rbind)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);

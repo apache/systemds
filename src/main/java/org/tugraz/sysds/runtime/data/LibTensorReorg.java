@@ -17,8 +17,10 @@ package org.tugraz.sysds.runtime.data;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class LibTensorReorg {
 	//allow shallow dense/sparse copy for unchanged data (which is
@@ -114,5 +116,21 @@ public class LibTensorReorg {
 			return;
 		}
 		out.set(in);
+	}
+
+	/**
+	 * MR/SPARK reshape interface - for reshape we cannot view blocks independently, and hence,
+	 * there are different CP and MR interfaces.
+	 *
+	 * @param in indexed tensor block
+	 * @param mcIn input tensor characteristics
+	 * @param mcOut output tensor characteristics
+	 * @param rowwise if true, reshape by row
+	 * @param outputEmptyBlocks output blocks with nnz=0
+	 * @return list of indexed tensor block
+	 */
+	public static List<IndexedTensorBlock> reshape(IndexedTensorBlock in, DataCharacteristics mcIn,
+	                                               DataCharacteristics mcOut, boolean rowwise, boolean outputEmptyBlocks ) {
+		throw new DMLRuntimeException("Spark reshape not implemented for tensors.");
 	}
 }

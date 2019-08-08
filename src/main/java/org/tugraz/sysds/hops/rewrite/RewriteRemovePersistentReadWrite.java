@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,23 +21,23 @@
 
 package org.tugraz.sysds.hops.rewrite;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
-import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * This rewrite is a custom rewrite for JMLC in order to replace all persistent reads
@@ -122,9 +124,9 @@ public class RewriteRemovePersistentReadWrite extends HopRewriteRule
 						if( dop.requiresReblock() && _inputsMeta.containsKey(dop.getName()) 
 							&& _inputsMeta.get(dop.getName()) instanceof MetaDataFormat) {
 							MetaDataFormat meta = (MetaDataFormat)_inputsMeta.get(dop.getName());
-							MatrixCharacteristics mc = meta.getMatrixCharacteristics();
-							boolean matchingBlksz = mc.getRowsPerBlock() == dop.getRowsInBlock() 
-									&& mc.getColsPerBlock() == dop.getColsInBlock();
+							DataCharacteristics dc = meta.getDataCharacteristics();
+							boolean matchingBlksz = dc.getRowsPerBlock() == dop.getRowsInBlock()
+									&& dc.getColsPerBlock() == dop.getColsInBlock();
 							//binary matrix w/ matching dims and frames do not require reblock
 							if( meta.getInputInfo() == InputInfo.BinaryBlockInputInfo 
 								&& (matchingBlksz || dop.getDataType() == DataType.FRAME))

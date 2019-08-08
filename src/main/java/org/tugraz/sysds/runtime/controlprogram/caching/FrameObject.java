@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,14 +22,11 @@
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
 
-import java.io.IOException;
-import java.util.Arrays;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
@@ -39,10 +38,13 @@ import org.tugraz.sysds.runtime.io.FrameWriterFactory;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 public class FrameObject extends CacheableData<FrameBlock>
 {
@@ -137,22 +139,22 @@ public class FrameObject extends CacheableData<FrameBlock>
 			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 
 		//update matrix characteristics
-		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
-		mc.setDimension( _data.getNumRows(),_data.getNumColumns() );
-		mc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
+		DataCharacteristics dc = _metaData.getDataCharacteristics();
+		dc.setDimension( _data.getNumRows(),_data.getNumColumns() );
+		dc.setNonZeros(_data.getNumRows()*_data.getNumColumns());
 		
 		//update schema information
 		_schema = _data.getSchema();
 	}
 
 	public long getNumRows() {
-		MatrixCharacteristics mc = getMatrixCharacteristics();
-		return mc.getRows();
+		DataCharacteristics dc = getDataCharacteristics();
+		return dc.getRows();
 	}
 
 	public long getNumColumns() {
-		MatrixCharacteristics mc = getMatrixCharacteristics();
-		return mc.getCols();
+		DataCharacteristics dc = getDataCharacteristics();
+		return dc.getCols();
 	}
 	
 	@Override
@@ -165,7 +167,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		throws IOException 
 	{
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		DataCharacteristics dc = iimd.getDataCharacteristics();
 		
 		//handle missing schema if necessary
 		ValueType[] lschema = (_schema!=null) ? _schema : 
@@ -175,7 +177,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		FrameBlock data = null;
 		try {
 			FrameReader reader = FrameReaderFactory.createFrameReader(iimd.getInputInfo(), getFileFormatProperties());
-			data = reader.readFrameFromHDFS(fname, lschema, mc.getRows(), mc.getCols()); 
+			data = reader.readFrameFromHDFS(fname, lschema, dc.getRows(), dc.getCols());
 		}
 		catch( DMLRuntimeException ex ) {
 			throw new IOException(ex);
@@ -200,9 +202,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 		status.setValue(false);
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		int rlen = (int)mc.getRows();
-		int clen = (int)mc.getCols();
+		DataCharacteristics dc = iimd.getDataCharacteristics();
+		int rlen = (int)dc.getRows();
+		int clen = (int)dc.getCols();
 		
 		//handle missing schema if necessary
 		ValueType[] lschema = (_schema!=null) ? _schema : 

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,7 +26,7 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 public class ResultMergeLocalAutomatic extends ResultMerge
 {
@@ -40,9 +42,9 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	public MatrixObject executeSerialMerge() {
 		Timing time = new Timing(true);
 		
-		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
-		long rows = mc.getRows();
-		long cols = mc.getCols();
+		DataCharacteristics dc = _output.getDataCharacteristics();
+		long rows = dc.getRows();
+		long cols = dc.getCols();
 		
 		if( OptimizerRuleBased.isInMemoryResultMerge(rows, cols, OptimizerUtils.getLocalMemBudget()) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName, _isAccum );
@@ -58,9 +60,9 @@ public class ResultMergeLocalAutomatic extends ResultMerge
 	
 	@Override
 	public MatrixObject executeParallelMerge(int par) {
-		MatrixCharacteristics mc = _output.getMatrixCharacteristics();
-		long rows = mc.getRows();
-		long cols = mc.getCols();
+		DataCharacteristics dc = _output.getDataCharacteristics();
+		long rows = dc.getRows();
+		long cols = dc.getCols();
 		
 		if( OptimizerRuleBased.isInMemoryResultMerge(par * rows, cols, OptimizerUtils.getLocalMemBudget()) )
 			_rm = new ResultMergeLocalMemory( _output, _inputs, _outputFName, _isAccum );

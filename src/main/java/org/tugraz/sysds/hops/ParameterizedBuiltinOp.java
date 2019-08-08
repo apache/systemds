@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,22 +21,22 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.GroupedAggregate;
 import org.tugraz.sysds.lops.GroupedAggregateM;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.ParameterizedBuiltin;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.ParameterizedBuiltin;
 import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 
 /**
@@ -572,7 +574,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 		long[] ret = null;
 	
 		Hop input = getTargetHop();	
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		DataCharacteristics dc = memo.getAllInputStats(input);
 
 		if( _op == ParamBuiltinOp.GROUPEDAGG ) 
 		{
@@ -581,7 +583,7 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 				Hop ngroups = getParameterHop(Statement.GAGG_NUM_GROUPS);
 				if(ngroups != null && ngroups instanceof LiteralOp) {
 					long m = HopRewriteUtils.getIntValueSafe((LiteralOp)ngroups);
-					long n = (mc.getRows()==1)?1:mc.getCols();
+					long n = (dc.getRows()==1)?1:dc.getCols();
 					return new long[]{m, n, m};
 				}
 			}
@@ -590,8 +592,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			// #groups = #rows in the grouping attribute (e.g., categorical attribute is an ID column, say EmployeeID).
 			// In such a case, #rows in the output = #rows in the input. Also, output sparsity is 
 			// likely to be 1.0 (e.g., groupedAgg(groups=<a ID column>, fn="count"))
-			long m = mc.getRows();
-			long n = (mc.getRows()==1)?1:mc.getCols();
+			long m = dc.getRows();
+			long n = (dc.getRows()==1)?1:dc.getCols();
 			if ( m >= 1 ) {
 				ret = new long[]{m, n, m};
 			}
@@ -601,40 +603,40 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			// similar to groupedagg because in the worst-case ouputsize eq inputsize
 			// #nnz is exactly the same as in the input but sparsity can be higher if dimensions.
 			// change (denser output).
-			if ( mc.dimsKnown() ) {
+			if ( dc.dimsKnown() ) {
 				String margin = "rows";
 				Hop marginHop = getParameterHop("margin");
 				if(    marginHop instanceof LiteralOp 
 						&& "cols".equals(((LiteralOp)marginHop).getStringValue()) )
 					margin = new String("cols");
 				
-				MatrixCharacteristics mcSelect = null;
+				DataCharacteristics dcSelect = null;
 				if (_paramIndexMap.get("select") != null) {
 					Hop select = getParameterHop("select");
-					mcSelect = memo.getAllInputStats(select);
+					dcSelect = memo.getAllInputStats(select);
 				}
 
 				long lDim1 = 0, lDim2 = 0;
 				if( margin.equals("rows") ) {
-					lDim1 = (mcSelect == null ||  !mcSelect.nnzKnown() ) ? mc.getRows(): mcSelect.getNonZeros(); 
-					lDim2 = mc.getCols();
+					lDim1 = (dcSelect == null ||  !dcSelect.nnzKnown() ) ? dc.getRows(): dcSelect.getNonZeros();
+					lDim2 = dc.getCols();
 				} else {
-					lDim1 = mc.getRows();
-					lDim2 = (mcSelect == null ||  !mcSelect.nnzKnown() ) ? mc.getCols(): mcSelect.getNonZeros(); 
+					lDim1 = dc.getRows();
+					lDim2 = (dcSelect == null ||  !dcSelect.nnzKnown() ) ? dc.getCols(): dcSelect.getNonZeros();
 				}
-				ret = new long[]{lDim1, lDim2, mc.getNonZeros()};
+				ret = new long[]{lDim1, lDim2, dc.getNonZeros()};
 			}
 		}
 		else if(   _op == ParamBuiltinOp.REPLACE ) 
 		{ 
 			// the worst-case estimate from the input directly propagates to the output 
 			// #nnz depends on the replacement pattern and value, same as input if non-zero
-			if ( mc.dimsKnown() )
+			if ( dc.dimsKnown() )
 			{
 				if( isNonZeroReplaceArguments() )
-					ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
+					ret = new long[]{dc.getRows(), dc.getCols(), dc.getNonZeros()};
 				else
-					ret = new long[]{mc.getRows(), mc.getCols(), -1};
+					ret = new long[]{dc.getRows(), dc.getCols(), -1};
 			}
 		}
 		else if( _op == ParamBuiltinOp.REXPAND )
@@ -646,28 +648,28 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop
 			Hop dir = getParameterHop("dir");
 			long maxVal = computeDimParameterInformation(max, memo);
 			String dirVal = ((LiteralOp)dir).getStringValue();
-			if( mc.dimsKnown() ) {
-				long lnnz = mc.nnzKnown() ? mc.getNonZeros() : mc.getRows();
+			if( dc.dimsKnown() ) {
+				long lnnz = dc.nnzKnown() ? dc.getNonZeros() : dc.getRows();
 				if( "cols".equals(dirVal) ) { //expand horizontally
-					ret = new long[]{mc.getRows(), maxVal, lnnz};
+					ret = new long[]{dc.getRows(), maxVal, lnnz};
 				}
 				else if( "rows".equals(dirVal) ){ //expand vertically
-					ret = new long[]{maxVal, mc.getRows(), lnnz};
+					ret = new long[]{maxVal, dc.getRows(), lnnz};
 				}	
 			}
 		}
 		else if( _op == ParamBuiltinOp.TRANSFORMDECODE ) {
-			if( mc.dimsKnown() ) {
+			if( dc.dimsKnown() ) {
 				//rows: remain unchanged
 				//cols: dummy coding might decrease never increase cols 
-				return new long[]{mc.getRows(), mc.getCols(), mc.getRows()*mc.getCols()};
+				return new long[]{dc.getRows(), dc.getCols(), dc.getRows()*dc.getCols()};
 			}
 		}
 		else if( _op == ParamBuiltinOp.TRANSFORMAPPLY ) {
-			if( mc.dimsKnown() ) {
+			if( dc.dimsKnown() ) {
 				//rows: omitting might decrease but never increase rows
 				//cols: dummy coding and binning might increase cols but nnz stays constant
-				return new long[]{mc.getRows(), mc.getCols(), mc.getRows()*mc.getCols()};
+				return new long[]{dc.getRows(), dc.getCols(), dc.getRows()*dc.getCols()};
 			}
 		}
 		

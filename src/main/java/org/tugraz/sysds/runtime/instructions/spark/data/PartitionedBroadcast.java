@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,17 +21,17 @@
 
 package org.tugraz.sysds.runtime.instructions.spark.data;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-
 import org.apache.spark.broadcast.Broadcast;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlockFactory;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
+
+import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  * This class is a wrapper around an array of broadcasts of partitioned matrix/frame blocks,
@@ -47,15 +49,15 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	protected static final long BROADCAST_PARTSIZE = 240L*1024*1024; //250M cells > 1.875GB 
 	
 	private Broadcast<PartitionedBlock<T>>[] _pbc = null;
-	private MatrixCharacteristics _mc;
+	private DataCharacteristics _dc;
 	
 	public PartitionedBroadcast() {
 		//do nothing (required for Externalizable)
 	}
 	
-	public PartitionedBroadcast(Broadcast<PartitionedBlock<T>>[] broadcasts, MatrixCharacteristics mc) {
+	public PartitionedBroadcast(Broadcast<PartitionedBlock<T>>[] broadcasts, DataCharacteristics dc) {
 		_pbc = broadcasts;
-		_mc = mc;
+		_dc = dc;
 	}
 	
 	public Broadcast<PartitionedBlock<T>>[] getBroadcasts() {
@@ -63,19 +65,19 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	}
 	
 	public long getNumRows() {
-		return _mc.getRows();
+		return _dc.getRows();
 	}
 	
 	public long getNumCols() {
-		return _mc.getCols();
+		return _dc.getCols();
 	}
 
 	public int getNumRowBlocks() {
-		return (int)_mc.getNumRowBlocks();
+		return (int)_dc.getNumRowBlocks();
 	}
 	
 	public int getNumColumnBlocks() {
-		return (int)_mc.getNumColBlocks();
+		return (int)_dc.getNumColBlocks();
 	}
 
 	public static int computeBlocksPerPartition(long rlen, long clen, long brlen, long bclen) {
@@ -86,8 +88,8 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 	public T getBlock(int rowIndex, int colIndex) {
 		int pix = 0;
 		if( _pbc.length > 1 ) { //compute partition index
-			int numPerPart = computeBlocksPerPartition(_mc.getRows(),
-				_mc.getCols(),_mc.getRowsPerBlock(), _mc.getColsPerBlock());
+			int numPerPart = computeBlocksPerPartition(_dc.getRows(),
+				_dc.getCols(),_dc.getRowsPerBlock(), _dc.getColsPerBlock());
 			int ix = (rowIndex-1)*getNumColumnBlocks()+(colIndex-1);
 			pix = ix / numPerPart;
 		}
@@ -115,16 +117,16 @@ public class PartitionedBroadcast<T extends CacheBlock> implements Serializable
 		int lcu = (int) cu;
 		
 		ArrayList<Pair<?, ?>> allBlks = (ArrayList<Pair<?, ?>>) CacheBlockFactory.getPairList(block);
-		int start_iix = (lrl-1)/_mc.getRowsPerBlock()+1;
-		int end_iix = (lru-1)/_mc.getRowsPerBlock()+1;
-		int start_jix = (lcl-1)/_mc.getColsPerBlock()+1;
-		int end_jix = (lcu-1)/_mc.getColsPerBlock()+1;
+		int start_iix = (lrl-1)/_dc.getRowsPerBlock()+1;
+		int end_iix = (lru-1)/_dc.getRowsPerBlock()+1;
+		int start_jix = (lcl-1)/_dc.getColsPerBlock()+1;
+		int end_jix = (lcu-1)/_dc.getColsPerBlock()+1;
 		
 		for( int iix = start_iix; iix <= end_iix; iix++ )
 			for(int jix = start_jix; jix <= end_jix; jix++) {
 				IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 				allBlks.addAll(OperationsOnMatrixValues.performSlice(
-					ixrange, _mc.getRowsPerBlock(), _mc.getColsPerBlock(), iix, jix, getBlock(iix, jix)));
+					ixrange, _dc.getRowsPerBlock(), _dc.getColsPerBlock(), iix, jix, getBlock(iix, jix)));
 			}
 		
 		T ret = (T) allBlks.get(0).getValue();

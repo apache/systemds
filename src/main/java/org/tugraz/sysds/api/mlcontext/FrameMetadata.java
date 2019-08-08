@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,6 +21,7 @@
 
 package org.tugraz.sysds.api.mlcontext;
 
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
@@ -471,27 +474,27 @@ public class FrameMetadata extends Metadata {
 
 	/**
 	 * Constructor to create a FrameMetadata object based on a
-	 * MatrixCharacteristics object.
+	 * DataCharacteristics object.
 	 *
-	 * @param matrixCharacteristics
-	 *            the frame metadata as a MatrixCharacteristics object
+	 * @param dataCharacteristics
+	 *            the frame metadata as a DataCharacteristics object
 	 */
-	public FrameMetadata(MatrixCharacteristics matrixCharacteristics) {
-		this.numRows = matrixCharacteristics.getRows();
-		this.numColumns = matrixCharacteristics.getCols();
-		this.numNonZeros = matrixCharacteristics.getNonZeros();
-		this.numRowsPerBlock = matrixCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = matrixCharacteristics.getColsPerBlock();
+	public FrameMetadata(DataCharacteristics dataCharacteristics) {
+		this.numRows = dataCharacteristics.getRows();
+		this.numColumns = dataCharacteristics.getCols();
+		this.numNonZeros = dataCharacteristics.getNonZeros();
+		this.numRowsPerBlock = dataCharacteristics.getRowsPerBlock();
+		this.numColumnsPerBlock = dataCharacteristics.getColsPerBlock();
 	}
 
 	/**
 	 * Constructor to create a FrameMetadata object based on the frame schema
-	 * and a MatrixCharacteristics object.
+	 * and a DataCharacteristics object.
 	 *
 	 * @param frameSchema
 	 *            The frame schema.
 	 * @param matrixCharacteristics
-	 *            the frame metadata as a MatrixCharacteristics object
+	 *            the frame metadata as a DataCharacteristics object
 	 */
 	public FrameMetadata(FrameSchema frameSchema, MatrixCharacteristics matrixCharacteristics) {
 		this.frameSchema = frameSchema;
@@ -503,10 +506,10 @@ public class FrameMetadata extends Metadata {
 	}
 
 	/**
-	 * Set the FrameMetadata fields based on a MatrixCharacteristics object.
+	 * Set the FrameMetadata fields based on a DataCharacteristics object.
 	 *
 	 * @param matrixCharacteristics
-	 *            the frame metadata as a MatrixCharacteristics object
+	 *            the frame metadata as a DataCharacteristics object
 	 */
 	@Override
 	public void setMatrixCharacteristics(MatrixCharacteristics matrixCharacteristics) {

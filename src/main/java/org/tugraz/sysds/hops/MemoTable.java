@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,14 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.recompile.RecompileStatus;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.common.Types.DataType;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Memoization Table (hop id, worst-case matrix characteristics).
@@ -34,7 +37,7 @@ import org.tugraz.sysds.common.Types.DataType;
 public class MemoTable 
 {
 	
-	private HashMap<Long, MatrixCharacteristics> _memo = null;
+	private HashMap<Long, DataCharacteristics> _memo = null;
 	
 	public MemoTable()
 	{
@@ -83,9 +86,9 @@ public class MemoTable
 			{
 				String varname = hop.getName();
 				Hop input = hop.getInput().get(0); //child
-				MatrixCharacteristics mc = getAllInputStats(input);
-				if( mc != null )
-					status.getTWriteStats().put(varname, mc);
+				DataCharacteristics dc = getAllInputStats(input);
+				if( dc != null )
+					status.getTWriteStats().put(varname, dc);
 				else
 					status.getTWriteStats().remove(varname);
 			}
@@ -97,12 +100,12 @@ public class MemoTable
 		_memo.put(hopID, new MatrixCharacteristics(dim1, dim2, -1, -1, nnz));
 	}
 
-	public MatrixCharacteristics[] getAllInputStats( ArrayList<Hop> inputs )
+	public DataCharacteristics[] getAllInputStats(ArrayList<Hop> inputs )
 	{
 		if( inputs == null )
 			return null;
 		
-		MatrixCharacteristics[] ret = new MatrixCharacteristics[inputs.size()];
+		DataCharacteristics[] ret = new MatrixCharacteristics[inputs.size()];
 		for( int i=0; i<inputs.size(); i++ )
 		{
 			Hop input = inputs.get(i);
@@ -117,7 +120,7 @@ public class MemoTable
 			}
 			else
 			{
-				MatrixCharacteristics tmp = _memo.get(input.getHopID());
+				DataCharacteristics tmp = _memo.get(input.getHopID());
 				if( tmp != null )
 				{
 					//enrich exact information with worst-case stats
@@ -132,12 +135,12 @@ public class MemoTable
 		return ret;
 	}
 
-	public MatrixCharacteristics getAllInputStats( Hop input )
+	public DataCharacteristics getAllInputStats(Hop input )
 	{
 		if( input == null )
 			return null;
 		
-		MatrixCharacteristics ret = null;
+		DataCharacteristics ret = null;
 			
 		long dim1 = input.getDim1();
 		long dim2 = input.getDim2();
@@ -149,7 +152,7 @@ public class MemoTable
 		}
 		else //enrich exact information with worst-case stats
 		{
-			MatrixCharacteristics tmp = _memo.get(input.getHopID());
+			DataCharacteristics tmp = _memo.get(input.getHopID());
 			if( tmp != null ) {
 				dim1 = (dim1<=0) ? tmp.getRows() : dim1;
 				dim2 = (dim2<=0) ? tmp.getCols() : dim2;
@@ -193,9 +196,9 @@ public class MemoTable
 			&& ((DataOp)hop).getDataOpType()==DataOpTypes.TRANSIENTREAD )
 		{
 			String varname = hop.getName();
-			MatrixCharacteristics mc = status.getTWriteStats().get(varname);
-			if( mc != null )
-				_memo.put(hop.getHopID(), mc);
+			DataCharacteristics dc = status.getTWriteStats().get(varname);
+			if( dc != null )
+				_memo.put(hop.getHopID(), dc);
 		}
 		
 		if( hop.getInput()!=null && !hop.getInput().isEmpty() )

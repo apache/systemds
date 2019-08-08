@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -44,9 +43,11 @@ import org.tugraz.sysds.runtime.matrix.data.TripleIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.Iterator;
+import java.util.LinkedList;
 
 public class RmmSPInstruction extends BinarySPInstruction {
 
@@ -75,11 +76,11 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input rdds
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics( input1.getName() );
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics( input2.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
-		MatrixCharacteristics mcOut = updateBinaryMMOutputMatrixCharacteristics(sec, true);
+		DataCharacteristics mc1 = sec.getDataCharacteristics( input1.getName() );
+		DataCharacteristics mc2 = sec.getDataCharacteristics( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
+		DataCharacteristics mcOut = updateBinaryMMOutputDataCharacteristics(sec, true);
 		
 		//execute Spark RMM instruction
 		//step 1: prepare join keys (w/ shallow replication), i/j/k
@@ -104,7 +105,7 @@ public class RmmSPInstruction extends BinarySPInstruction {
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 	
-	private static int getNumJoinPartitions(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
+	private static int getNumJoinPartitions(DataCharacteristics mc1, DataCharacteristics mc2) {
 		if( !mc1.dimsKnown() || !mc2.dimsKnown() )
 			SparkExecutionContext.getDefaultParallelism(true);
 		//compute data size of replicated inputs

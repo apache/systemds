@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,13 @@
 
 package org.tugraz.sysds.hops.recompile;
 
-import java.util.HashMap;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import java.util.HashMap;
 
 public class RecompileStatus 
 {
-	private final HashMap<String, MatrixCharacteristics> _lastTWrites; 
+	private final HashMap<String, DataCharacteristics> _lastTWrites;
 	private final boolean _initialCodegen;
 	
 	public RecompileStatus() {
@@ -37,7 +39,7 @@ public class RecompileStatus
 		_initialCodegen = initialCodegen;
 	}
 	
-	public HashMap<String, MatrixCharacteristics> getTWriteStats() {
+	public HashMap<String, DataCharacteristics> getTWriteStats() {
 		return _lastTWrites;
 	}
 	

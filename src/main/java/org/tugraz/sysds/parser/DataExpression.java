@@ -21,13 +21,6 @@
 
 package org.tugraz.sysds.parser;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map.Entry;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -37,8 +30,8 @@ import org.apache.wink.json4j.JSONObject;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.parser.dml.CustomErrorListener;
@@ -50,10 +43,18 @@ import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.JSONHelper;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 
 public class DataExpression extends DataIdentifier 
 {
 	public static final String RAND_DIMS = "dims";
+	public static final String RAND_TENSOR = "istensor";
 
 	public static final String RAND_ROWS = "rows";
 	public static final String RAND_COLS = "cols";
@@ -103,7 +104,8 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{ RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA};
+		{ RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA,
+				RAND_TENSOR};
 	
 	public static final String[] RESHAPE_VALID_PARAM_NAMES =
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
@@ -552,6 +554,10 @@ public class DataExpression extends DataIdentifier
 			DoubleIdentifier id = new DoubleIdentifier(1.0, this);
 			addVarParam(RAND_LAMBDA, id);
 		}
+		if (getVarParam(RAND_TENSOR) == null) {
+			BooleanIdentifier id = new BooleanIdentifier(false, this);
+			addVarParam(RAND_TENSOR, id);
+		}
 	}
 
 	public void setOpCode(DataOp op) {
@@ -665,7 +671,6 @@ public class DataExpression extends DataIdentifier
 			raiseValidateError("for matrix or tensor, must defined data parameter", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 		}
 		// We need to remember the operation if we replace the OpCode by rand so we have the correct output
-		Boolean tensorOperation = _opcode == DataOp.TENSOR;
 		if (dataParam1 != null && dataParam1.getOutput().getDataType() == DataType.SCALAR &&
 				(_opcode == DataOp.MATRIX || _opcode == DataOp.TENSOR)/*&& dataParam instanceof ConstIdentifier*/ ){
 			//MB: note we should not check for const identifiers here, because otherwise all matrix constructors with
@@ -673,6 +678,9 @@ public class DataExpression extends DataIdentifier
 			
 			// replace DataOp MATRIX with RAND -- Rand handles matrix generation for Scalar values
 			// replace data parameter with min / max within Rand case below
+			// TODO either use dims or rows, cols depending on datatype
+			BooleanIdentifier id = new BooleanIdentifier(_opcode == DataOp.TENSOR, this);
+			addVarParam(RAND_TENSOR, id);
 			this.setOpCode(DataOp.RAND);
 		}
 		
@@ -1174,10 +1182,8 @@ public class DataExpression extends DataIdentifier
 				}
 				// handle integer constant 
 				else if (dataParam instanceof IntIdentifier) {
-					long roundedValue = ((IntIdentifier)dataParam).getValue();
-					Expression minExpr = new DoubleIdentifier(roundedValue, this);
-					addVarParam(RAND_MIN, minExpr);
-					addVarParam(RAND_MAX, minExpr);
+					addVarParam(RAND_MIN, dataParam);
+					addVarParam(RAND_MAX, dataParam);
 				}
 				// handle double constant 
 				else if (dataParam instanceof DoubleIdentifier) {
@@ -1230,15 +1236,21 @@ public class DataExpression extends DataIdentifier
 				raiseValidateError("for Rand statement " + RAND_SEED + " has incorrect value type", conditional);
 			}
 
+			boolean isTensorOperation = false;
+			if (!(getVarParam(RAND_TENSOR) instanceof BooleanIdentifier)) {
+				raiseValidateError("for Rand statement " + RAND_TENSOR + " has incorrect value type", conditional);
+			} else {
+				isTensorOperation = ((BooleanIdentifier)getVarParam(RAND_TENSOR)).getValue();
+			}
+
 			if ((getVarParam(RAND_MAX) instanceof StringIdentifier && !_strInit) ||
-					(getVarParam(RAND_MAX) instanceof BooleanIdentifier && !tensorOperation)) {
+					(getVarParam(RAND_MAX) instanceof BooleanIdentifier && !isTensorOperation)) {
 				raiseValidateError("for Rand statement " + RAND_MAX + " has incorrect value type", conditional);
 			}
 
 			if ((getVarParam(RAND_MIN) instanceof StringIdentifier && !_strInit) ||
-					getVarParam(RAND_MIN) instanceof BooleanIdentifier && !tensorOperation) {
+					getVarParam(RAND_MIN) instanceof BooleanIdentifier && !isTensorOperation)
 				raiseValidateError("for Rand statement " + RAND_MIN + " has incorrect value type", conditional);
-			}
 
 			// Since sparsity can be arbitrary expression (SYSTEMML-515), no validation check for DoubleIdentifier/IntIdentifier required.
 			
@@ -1483,11 +1495,11 @@ public class DataExpression extends DataIdentifier
 			}
 		
 			getOutput().setFormatType(FormatType.BINARY);
-			if (tensorOperation) {
+			if (isTensorOperation) {
 				getOutput().setDataType(DataType.TENSOR);
-				getOutput().setValueType(dataParam.getOutput().getValueType());
+				getOutput().setValueType(getVarParam(RAND_MIN).getOutput().getValueType());
 				// TODO set correct dimensions
-				getOutput().setDimensions(0, 0);
+				getOutput().setDimensions(-1, -1);
 			} else {
 				getOutput().setDataType(DataType.MATRIX);
 				getOutput().setValueType(ValueType.FP64);

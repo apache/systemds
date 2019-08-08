@@ -24,7 +24,6 @@ package org.tugraz.sysds.runtime.data;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.stream.IntStream;
 
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
@@ -460,24 +459,89 @@ public abstract class DenseBlock implements Serializable
 		// TODO: Optimize if dense block types match
 		// TODO: Performance
 		boolean allColumns = cl == 0 && cu == _odims[0];
-		for (int bi = index(rl); bi <= index(ru - 1); bi++) {
-			double[] other = db.valuesAt(bi);
-			if (allColumns) {
-				int offset = rl * _odims[0] + cl;
-				IntStream.range(0, (int) db.size())
-						.forEach((i) -> setInternal(0, offset + i, other[i]));
-			}
-			else {
-				int len = cu - cl;
-				for(int i=rl, ix1=0, ix2=rl*_odims[0]+cl; i<ru; i++, ix1+=len, ix2+=_odims[0]) {
-					int finalIx1 = ix1;
-					int finalIx2 = ix2;
-					IntStream.range(0, len)
-							.forEach((ix) -> setInternal(0, finalIx2 + ix, other[finalIx1 + ix]));
+		if (db.isNumeric()) {
+			int rowOther = 0;
+			int colOther = 0;
+			for (int bi = index(rl); bi <= index(ru - 1); bi++) {
+				if (allColumns) {
+					int offset = rl * _odims[0] + cl;
+					for (int i = 0; i < (ru - rl) * _odims[0]; i++) {
+						setInternal(bi, offset + i, db.get(rowOther, colOther));
+						colOther++;
+						if (colOther == db.getCumODims(0)) {
+							rowOther++;
+							colOther = 0;
+						}
+					}
 				}
+				else {
+					int len = cu - cl;
+					for (int i = rl, ix1 = rl * _odims[0] + cl; i < ru; i++, ix1 += _odims[0]) {
+						for (int ix = 0; ix < len; ix++) {
+							setInternal(bi, ix1 + ix, db.get(rowOther, colOther));
+							colOther++;
+							if (colOther == db.getCumODims(0)) {
+								rowOther++;
+								colOther = 0;
+							}
+						}
+					}
+				}
+				rl = 0;
+			}
+		}
+		else {
+			int[] otherIx = new int[db.numDims()];
+			for (int bi = index(rl); bi <= index(ru - 1); bi++) {
+				String[] data;
+				if (this instanceof DenseBlockString) {
+					data = ((DenseBlockString) this)._data;
+				} else {
+					data = ((DenseBlockLString) this)._blocks[bi];
+				}
+				if (allColumns) {
+					int offset = rl * _odims[0] + cl;
+					for (int i = 0; i < (ru - rl) * _odims[0]; i++) {
+						data[offset + i] = db.getString(otherIx);
+						getNextIndexes(otherIx);
+					}
+				}
+				else {
+					int len = cu - cl;
+					for (int i = rl, ix1 = rl * _odims[0] + cl; i < ru; i++, ix1 += _odims[0]) {
+						for (int ix = 0; ix < len; ix++) {
+							data[ix1 + ix] = db.getString(otherIx);
+							getNextIndexes(otherIx);
+						}
+					}
+				}
+				rl = 0;
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * Calculates the next index array. Note that if the given index array was the last element, the next index will
+	 * be outside of range.
+	 *
+	 * @param ix the index array which will be incremented to the next index array
+	 */
+	public void getNextIndexes(int[] ix) {
+		int i = ix.length - 1;
+		ix[i]++;
+		//calculating next index
+		if (ix[i] == getDim(i)) {
+			while (ix[i] == getDim(i)) {
+				if (i - 1 < 0) {
+					//we are finished
+					break;
+				}
+				ix[i] = 0;
+				i--;
+				ix[i]++;
+			}
+		}
 	}
 
 	/**

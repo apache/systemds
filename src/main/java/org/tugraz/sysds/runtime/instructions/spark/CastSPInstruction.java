@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,9 +22,9 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -34,6 +36,7 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -60,12 +63,12 @@ public class CastSPInstruction extends UnarySPInstruction {
 		
 		//get input RDD and prepare output
 		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
+		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
 		JavaPairRDD<?,?> out = null;
 		
 		//convert frame-matrix / matrix-frame and set output
 		if( opcode.equals(UnaryCP.CAST_AS_MATRIX_OPCODE) ) {
-			MatrixCharacteristics mcOut = new MatrixCharacteristics(mcIn);
+			DataCharacteristics mcOut = new MatrixCharacteristics(mcIn);
 			mcOut.setBlockSize(ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize());
 			out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(
 					(JavaPairRDD<Long, FrameBlock>)in, mcIn, mcOut);
@@ -80,7 +83,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		
 		//update output statistics and add lineage
 		sec.setRDDHandleForVariable(output.getName(), out);
-		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
+		updateUnaryOutputDataCharacteristics(sec, input1.getName(), output.getName());
 		sec.addLineageRDD(output.getName(), input1.getName());
 		
 		//update schema information for output frame

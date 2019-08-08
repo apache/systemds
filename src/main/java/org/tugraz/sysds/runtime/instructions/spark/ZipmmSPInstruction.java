@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -38,7 +40,6 @@ import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-
 import scala.Tuple2;
 
 public class ZipmmSPInstruction extends BinarySPInstruction {
@@ -75,8 +76,8 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd inputs (for computing r = t(X)%*%y via r = t(t(y)%*%X))
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() ); //X
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() ); //y
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() ); //X
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() ); //y
 		
 		//process core zipmm matrix multiply (in contrast to cpmm, the join over original indexes
 		//preserves the original partitioning and with that potentially unnecessary join shuffle)

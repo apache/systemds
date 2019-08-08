@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,13 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import java.io.Serializable;
-
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
+
+import java.io.Serializable;
 
 
 public abstract class Data implements Serializable 
@@ -63,7 +65,7 @@ public abstract class Data implements Serializable
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 
-	public void updateMatrixCharacteristics(MatrixCharacteristics mc) {
+	public void updateDataCharacteristics(DataCharacteristics mc) {
 		throw new DMLRuntimeException("This method in the base class should never be invoked.");
 	}
 }

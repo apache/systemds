@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -123,12 +125,7 @@ public class ValueTypeCastingTest extends AutomatedTestBase
 		runTest( ValueType.FP64, ValueType.BOOLEAN, true, true ); 
 	}
 	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
-	private void runTest( ValueType vtIn, ValueType vtOut, boolean matrixInput, boolean exceptionExpected ) 
+	private void runTest( ValueType vtIn, ValueType vtOut, boolean matrixInput, boolean exceptionExpected )
 	{
 		String TEST_NAME = null;
 		switch( vtOut )

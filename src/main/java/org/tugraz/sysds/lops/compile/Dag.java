@@ -21,6 +21,36 @@
 
 package org.tugraz.sysds.lops.compile;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.conf.DMLConfig;
+import org.tugraz.sysds.hops.HopsException;
+import org.tugraz.sysds.lops.Data;
+import org.tugraz.sysds.lops.Data.OperationTypes;
+import org.tugraz.sysds.lops.FunctionCallCP;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.Lop.Type;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.LopsException;
+import org.tugraz.sysds.lops.OutputParameters;
+import org.tugraz.sysds.lops.OutputParameters.Format;
+import org.tugraz.sysds.parser.DataExpression;
+import org.tugraz.sysds.parser.StatementBlock;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
+import org.tugraz.sysds.runtime.instructions.Instruction;
+import org.tugraz.sysds.runtime.instructions.Instruction.IType;
+import org.tugraz.sysds.runtime.instructions.InstructionParser;
+import org.tugraz.sysds.runtime.instructions.SPInstructionParser;
+import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
+import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
+import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,36 +60,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.FunctionCallCP;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.lops.OutputParameters;
-import org.tugraz.sysds.lops.Data.OperationTypes;
-import org.tugraz.sysds.lops.Lop.Type;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.OutputParameters.Format;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.parser.StatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.instructions.InstructionParser;
-import org.tugraz.sysds.runtime.instructions.SPInstructionParser;
-import org.tugraz.sysds.runtime.instructions.Instruction.IType;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 
 /**

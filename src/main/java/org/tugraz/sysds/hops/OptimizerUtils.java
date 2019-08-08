@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,17 +21,15 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.Arrays;
-import java.util.HashMap;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.hops.Hop.OpOp2;
@@ -40,7 +40,6 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.compile.Dag;
 import org.tugraz.sysds.parser.ForStatementBlock;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ForProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
@@ -54,10 +53,14 @@ import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
+
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class OptimizerUtils 
 {
@@ -467,14 +470,30 @@ public class OptimizerUtils
 				&& sizeP < memBudgetExec && size+sizeP < memBudgetLocal );
 	}
 
-	public static boolean checkSparkCollectMemoryBudget( MatrixCharacteristics mc, long memPinned ) {
-		return checkSparkCollectMemoryBudget(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(),
-			mc.getColsPerBlock(), mc.getNonZerosBound(), memPinned, false);
+	public static boolean checkSparkCollectMemoryBudget(DataCharacteristics dc, long memPinned ) {
+		if (dc instanceof MatrixCharacteristics) {
+			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(), dc.getRowsPerBlock(),
+					dc.getColsPerBlock(), dc.getNonZerosBound(), memPinned, false);
+		} else {
+			long[] dims = new long[dc.getNumDims()];
+			for (int i = 0; i < dims.length; i++) {
+				dims[i] = dc.getDim(i);
+			}
+			return checkSparkCollectMemoryBudget(dims, dc.getNonZeros(), memPinned, false);
+		}
 	}
 	
-	public static boolean checkSparkCollectMemoryBudget( MatrixCharacteristics mc, long memPinned, boolean checkBP ) {
-		return checkSparkCollectMemoryBudget(mc.getRows(), mc.getCols(), mc.getRowsPerBlock(),
-			mc.getColsPerBlock(), mc.getNonZerosBound(), memPinned, checkBP);
+	public static boolean checkSparkCollectMemoryBudget(DataCharacteristics dc, long memPinned, boolean checkBP ) {
+		if (dc instanceof MatrixCharacteristics) {
+			return checkSparkCollectMemoryBudget(dc.getRows(), dc.getCols(), dc.getRowsPerBlock(),
+					dc.getColsPerBlock(), dc.getNonZerosBound(), memPinned, checkBP);
+		} else {
+			long[] dims = new long[dc.getNumDims()];
+			for (int i = 0; i < dims.length; i++) {
+				dims[i] = dc.getDim(i);
+			}
+			return checkSparkCollectMemoryBudget(dims, dc.getNonZeros(), memPinned, checkBP);
+		}
 	}
 	
 	private static boolean checkSparkCollectMemoryBudget( long rlen, long clen, int brlen, int bclen, long nnz, long memPinned, boolean checkBP ) {
@@ -488,9 +507,22 @@ public class OptimizerUtils
 			&& (!checkBP || memMatrix < LazyWriteBuffer.getWriteBufferLimit());
 	}
 
-	public static boolean checkSparseBlockCSRConversion( MatrixCharacteristics mcIn ) {
+	private static boolean checkSparkCollectMemoryBudget( long[] dims, long nnz, long memPinned, boolean checkBP ) {
+		//compute size of output matrix and its blocked representation
+		//double sp = getSparsity(dims, nnz);
+		// TODO estimate exact size
+		long doubleSize = UtilFunctions.prod(dims) * 8;
+		double memTensor = doubleSize;
+		double memPTensor = doubleSize;
+		//check if both output matrix and partitioned matrix fit into local mem budget
+		return (memPinned + memTensor + memPTensor < getLocalMemBudget())
+				//check if the output matrix fits into the write buffer to avoid unnecessary evictions
+				&& (!checkBP || memTensor < LazyWriteBuffer.getWriteBufferLimit());
+	}
+
+	public static boolean checkSparseBlockCSRConversion( DataCharacteristics dcIn ) {
 		return Checkpoint.CHECKPOINT_SPARSE_CSR
-			&& OptimizerUtils.getSparsity(mcIn) < MatrixBlock.SPARSITY_TURN_POINT;
+			&& OptimizerUtils.getSparsity(dcIn) < MatrixBlock.SPARSITY_TURN_POINT;
 	}
 	
 	/**
@@ -617,16 +649,16 @@ public class OptimizerUtils
 	// Memory Estimates   //
 	////////////////////////
 	
-	public static long estimateSize(MatrixCharacteristics mc) {
-		return estimateSizeExactSparsity(mc);
+	public static long estimateSize(DataCharacteristics dc) {
+		return estimateSizeExactSparsity(dc);
 	}
 
-	public static long estimateSizeExactSparsity(MatrixCharacteristics mc)
+	public static long estimateSizeExactSparsity(DataCharacteristics dc)
 	{
 		return estimateSizeExactSparsity(
-				mc.getRows(),
-				mc.getCols(),
-				mc.getNonZeros());
+				dc.getRows(),
+				dc.getCols(),
+				dc.getNonZeros());
 	}
 	
 	/**
@@ -663,22 +695,32 @@ public class OptimizerUtils
 	{
 		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
 	}
-	
+
 	/**
 	 * Estimates the footprint (in bytes) for a partitioned in-memory representation of a
 	 * matrix with the given matrix characteristics
 	 * 
-	 * @param mc matrix characteristics
+	 * @param dc matrix characteristics
 	 * @return memory estimate
 	 */
-	public static long estimatePartitionedSizeExactSparsity(MatrixCharacteristics mc)
+	public static long estimatePartitionedSizeExactSparsity(DataCharacteristics dc)
 	{
-		return estimatePartitionedSizeExactSparsity(
-				mc.getRows(), 
-				mc.getCols(), 
-				mc.getRowsPerBlock(), 
-				mc.getColsPerBlock(), 
-				mc.getNonZerosBound());
+		if (dc instanceof MatrixCharacteristics) {
+			return estimatePartitionedSizeExactSparsity(
+					dc.getRows(),
+					dc.getCols(),
+					dc.getRowsPerBlock(),
+					dc.getColsPerBlock(),
+					dc.getNonZerosBound());
+		}
+		else {
+			// TODO estimate partitioned size exact for tensor
+			long inaccurateSize = 8; // 8 for double
+			for (int i = 0; i < dc.getNumDims(); i++) {
+				inaccurateSize *= dc.getDim(i);
+			}
+			return inaccurateSize;
+		}
 	}
 	
 	/**
@@ -798,7 +840,7 @@ public class OptimizerUtils
 	 * @param mc matrix characteristics
 	 * @return true if indexing range is block aligned
 	 */
-	public static boolean isIndexingRangeBlockAligned(IndexRange ixrange, MatrixCharacteristics mc) {
+	public static boolean isIndexingRangeBlockAligned(IndexRange ixrange, DataCharacteristics mc) {
 		long rl = ixrange.rowStart;
 		long ru = ixrange.rowEnd;
 		long cl = ixrange.colStart;
@@ -827,7 +869,7 @@ public class OptimizerUtils
 				|| (rl-1)%brlen == 0 && (cl-1)/bclen == (cu-1)/bclen);
 	}
 	
-	public static boolean isValidCPDimensions( MatrixCharacteristics mc ) {
+	public static boolean isValidCPDimensions( DataCharacteristics mc ) {
 		return isValidCPDimensions(mc.getRows(), mc.getCols());
 	}
 	
@@ -1159,15 +1201,26 @@ public class OptimizerUtils
 		return (long) Math.round(sp * dim1 * dim2);
 	}
 	
-	public static double getSparsity( MatrixCharacteristics mc ) {
-		return getSparsity(mc.getRows(), mc.getCols(), mc.getNonZeros());
+	public static double getSparsity( DataCharacteristics dc ) {
+		return getSparsity(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
 	
 	public static double getSparsity( long dim1, long dim2, long nnz ) {
 		return ( dim1<=0 || dim2<=0 || nnz<0 ) ? 1.0 :
 			Math.min(((double)nnz)/dim1/dim2, 1.0);
 	}
-	
+
+	public static double getSparsity(long[] dims, long nnz) {
+		double sparsity = nnz;
+		for (long dim : dims) {
+			if (dim <= 0) {
+				return 1.0;
+			}
+			sparsity /= (double) dim;
+		}
+		return Math.min(sparsity, 1.0);
+	}
+
 	public static String toMB(double inB) {
 		if ( inB < 0 )
 			return "-";

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,12 +21,12 @@
 
 package org.tugraz.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.io.Serializable;
 
 
 public class RevIndex extends IndexFunction implements Serializable
@@ -50,7 +52,7 @@ public class RevIndex extends IndexFunction implements Serializable
 	}
 
 	@Override //for mr block operations
-	public boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out) {
+	public boolean computeDimension(DataCharacteristics in, DataCharacteristics out) {
 		out.set(in.getRows(), in.getCols(), in.getColsPerBlock(), in.getRowsPerBlock(), in.getNonZeros());
 		return false;
 	}

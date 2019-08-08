@@ -21,25 +21,21 @@
 
 package org.tugraz.sysds.runtime.util;
 
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
+import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
+import org.tugraz.sysds.runtime.instructions.cp.Data;
+import org.tugraz.sysds.runtime.instructions.cp.ListObject;
+import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.MatrixReader;
 import org.tugraz.sysds.runtime.io.MatrixReaderFactory;
@@ -53,7 +49,18 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 
 /**
@@ -64,26 +71,27 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
  */
 public class DataConverter 
 {
+	private static final String DELIM = " ";
 	
 	//////////////
 	// READING and WRITING of matrix blocks to/from HDFS
 	// (textcell, binarycell, binaryblock)
 	///////
 
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo,  MatrixCharacteristics mc )
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo,  DataCharacteristics dc )
 		throws IOException {
-		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1, null);
+		writeMatrixToHDFS(mat, dir, outputinfo, dc, -1, null);
 	}
 
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication, FileFormatProperties formatProperties)
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, DataCharacteristics dc, int replication, FileFormatProperties formatProperties)
 		throws IOException {
-		writeMatrixToHDFS(mat, dir, outputinfo, mc, -1, null, false);
+		writeMatrixToHDFS(mat, dir, outputinfo, dc, -1, null, false);
 	}
 	
-	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, MatrixCharacteristics mc, int replication, FileFormatProperties formatProperties, boolean diag)
+	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, OutputInfo outputinfo, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
 		throws IOException {
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( outputinfo, replication, formatProperties );
-		writer.writeMatrixToHDFS(mat, dir, mc.getRows(), mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock(), mc.getNonZeros(), diag);
+		writer.writeMatrixToHDFS(mat, dir, dc.getRows(), dc.getCols(), dc.getRowsPerBlock(), dc.getColsPerBlock(), dc.getNonZeros(), diag);
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, InputInfo inputinfo, long rlen, long clen, int brlen, int bclen, boolean localFS) 
@@ -1129,7 +1137,75 @@ public class DataConverter
 		
 		return sb.toString();
 	}
-	
+
+	public static int[] getTensorDimensions(ExecutionContext ec, CPOperand dims) {
+		int[] tDims;
+		switch (dims.getDataType()) {
+			case SCALAR: {
+				// Dimensions given as string
+				if (dims.getValueType() != Types.ValueType.STRING) {
+					throw new DMLRuntimeException("Dimensions have to be passed as list, string, matrix or tensor.");
+				}
+				String dimensionString = ec.getScalarInput(dims.getName(), Types.ValueType.STRING, dims.isLiteral())
+						.getStringValue();
+				StringTokenizer dimensions = new StringTokenizer(dimensionString, DELIM);
+				tDims = new int[dimensions.countTokens()];
+				Arrays.setAll(tDims, (i) -> Integer.parseInt(dimensions.nextToken()));
+			}
+			break;
+			case MATRIX: {
+				// Dimensions given as vector
+				MatrixBlock in = ec.getMatrixInput(dims.getName());
+				boolean colVec = false;
+				if (in.getNumRows() == 1) {
+					colVec = true;
+				} else if (!(in.getNumColumns() == 1)) {
+					throw new DMLRuntimeException("Dimensions matrix has to be a vector.");
+				}
+				tDims = new int[(int) in.getLength()];
+				for (int i = 0; i < in.getLength(); i++) {
+					tDims[i] = UtilFunctions.toInt(in.getValue(colVec ? 0 : i, colVec ? i : 0));
+				}
+				ec.releaseMatrixInput(dims.getName());
+			}
+			break;
+			case TENSOR: {
+				// Dimensions given as vector
+				TensorBlock in = ec.getTensorInput(dims.getName());
+				boolean colVec = false;
+				if (!in.isVector()) {
+					throw new DMLRuntimeException("Dimensions tensor has to be a vector.");
+				} else if (in.getNumRows() == 1) {
+					colVec = true;
+				}
+				tDims = new int[(int) in.getLength()];
+				for (int i = 0; i < in.getLength(); i++) {
+					tDims[i] = UtilFunctions.toInt(in.get(new int[]{colVec ? 0 : i, colVec ? i : 0}));
+				}
+				ec.releaseTensorInput(dims.getName());
+			}
+			break;
+			case LIST: {
+				// Dimensions given as List
+				ListObject list = ec.getListObject(dims.getName());
+				tDims = new int[list.getLength()];
+				List<Data> dimsData = list.getData();
+				for (int i = 0; i < tDims.length; i++) {
+					if (dimsData.get(i) instanceof ScalarObject) {
+						// TODO warning if double value is cast to long?
+						tDims[i] = (int) ((ScalarObject) dimsData.get(i)).getLongValue();
+					} else {
+						throw new DMLRuntimeException("Dims parameter for does not support lists with non scalar values.");
+					}
+				}
+			}
+			break;
+			default:
+				throw new DMLRuntimeException("Dimensions have to be passed as list, string, matrix or tensor.");
+		}
+		return tDims;
+	}
+
 	public static double[] toDouble(float[] data) {
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)

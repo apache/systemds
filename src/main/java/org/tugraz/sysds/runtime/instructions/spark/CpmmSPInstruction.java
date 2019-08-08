@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -45,8 +47,7 @@ import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
 /**
@@ -88,10 +89,10 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get rdd inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable(input2.getName());
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		
 		if( !_outputEmptyBlocks || _aggtype == SparkAggType.SINGLE_BLOCK ) {
 			//prune empty blocks of ultra-sparse matrices
@@ -148,12 +149,12 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 				sec.addLineageRDD(output.getName(), input2.getName());
 				
 				//update output statistics if not inferred
-				updateBinaryMMOutputMatrixCharacteristics(sec, true);
+				updateBinaryMMOutputDataCharacteristics(sec, true);
 			}
 		}
 	}
 	
-	private static int getPreferredParJoin(MatrixCharacteristics mc1, MatrixCharacteristics mc2, int numPar1, int numPar2) {
+	private static int getPreferredParJoin(DataCharacteristics mc1, DataCharacteristics mc2, int numPar1, int numPar2) {
 		int defPar = SparkExecutionContext.getDefaultParallelism(true);
 		int maxParIn = Math.max(numPar1, numPar2);
 		int maxSizeIn = SparkUtils.getNumPreferredPartitions(mc1) +
@@ -163,7 +164,7 @@ public class CpmmSPInstruction extends BinarySPInstruction {
 		return (tmp > defPar/2) ? Math.max(tmp, defPar) : tmp;
 	}
 	
-	private static int getMaxParJoin(MatrixCharacteristics mc1, MatrixCharacteristics mc2) {
+	private static int getMaxParJoin(DataCharacteristics mc1, DataCharacteristics mc2) {
 		return mc1.colsKnown() ? (int)mc1.getNumColBlocks() :
 			mc2.rowsKnown() ? (int)mc2.getNumRowBlocks() :
 			Integer.MAX_VALUE;

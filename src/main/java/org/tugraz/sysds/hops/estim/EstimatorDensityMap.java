@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -25,6 +27,7 @@ import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
@@ -54,14 +57,14 @@ public class EstimatorDensityMap extends SparsityEstimator
 	}
 	
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		DensityMap m1Map = getCachedSynopsis(root.getLeft());
 		DensityMap m2Map = getCachedSynopsis(root.getRight());
 		
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
-		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+		return root.setDataCharacteristics(new MatrixCharacteristics(
 			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros()));
 	}
 
@@ -73,8 +76,8 @@ public class EstimatorDensityMap extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(), m2 != null ?
-				m2.getMatrixCharacteristics() : null, op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(), m2 != null ?
+				m2.getDataCharacteristics() : null, op).getSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
 		DensityMap m2Map = (m1 == m2 || m2 == null) ? //self product
 			m1Map : new DensityMap(m2, _b);

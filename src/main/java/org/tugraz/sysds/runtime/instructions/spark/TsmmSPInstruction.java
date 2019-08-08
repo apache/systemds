@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -33,7 +35,6 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-
 import scala.Tuple2;
 
 public class TsmmSPInstruction extends UnarySPInstruction {
@@ -61,7 +62,7 @@ public class TsmmSPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		
 		//execute tsmm instruction (always produce exactly one output block)
 		//(this formulation with values() requires --conf spark.driver.maxResultSize=0)

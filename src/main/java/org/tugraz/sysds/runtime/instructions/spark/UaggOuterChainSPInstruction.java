@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,14 +22,11 @@
 package org.tugraz.sysds.runtime.instructions.spark;
 
 
-import java.util.Arrays;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
+import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -50,10 +49,12 @@ import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-
 import scala.Tuple2;
+
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * Two types of broadcast variables used -- 1. Array of type double. 2.PartitionedMatrixBlock
@@ -112,8 +113,8 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		String bcastVar = (rightCached) ? input2.getName() : input1.getName();
 
 		//get rdd input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( rddVar );
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(rddVar);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( rddVar );
+		DataCharacteristics mcIn = sec.getDataCharacteristics(rddVar);
 		boolean noKeyChange = preservesPartitioning(mcIn, _uaggOp.indexFn); 
 		
 		//execute UAggOuterChain instruction
@@ -161,7 +162,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		else //R/C AGG (output is rdd)
 		{
 			//put output RDD handle into symbol table
-			updateUnaryAggOutputMatrixCharacteristics(sec);
+			updateUnaryAggOutputDataCharacteristics(sec);
 			
 			if( _uaggOp.aggOp.correctionExists )
 				out = out.mapValues( new AggregateDropCorrectionFunction(_uaggOp.aggOp) );
@@ -173,7 +174,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		}
 	}
 
-	protected static boolean preservesPartitioning( MatrixCharacteristics mcIn, IndexFunction ixfun )
+	protected static boolean preservesPartitioning(DataCharacteristics mcIn, IndexFunction ixfun )
 	{
 		if( ixfun instanceof ReduceCol ) //rowSums
 			return mcIn.dimsKnown() && mcIn.getCols() <= mcIn.getColsPerBlock();
@@ -181,7 +182,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			return mcIn.dimsKnown() && mcIn.getRows() <= mcIn.getRowsPerBlock();
 	}
 
-	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec) {
+	protected void updateUnaryAggOutputDataCharacteristics(SparkExecutionContext sec) {
 		String strInput1Name, strInput2Name;
 		if(_uaggOp.indexFn instanceof ReduceCol) {
 			strInput1Name = input1.getName();
@@ -190,9 +191,9 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 			strInput1Name = input2.getName();
 			strInput2Name = input1.getName();
 		}
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(strInput1Name);
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(strInput2Name);
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(strInput1Name);
+		DataCharacteristics mc2 = sec.getDataCharacteristics(strInput2Name);
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 	
 		if(!mcOut.dimsKnown()) {
 			if(!mc1.dimsKnown()) {
@@ -285,7 +286,7 @@ public class UaggOuterChainSPInstruction extends BinarySPInstruction {
 		private MatrixValue _tmpVal2 = null;
 
 		public RDDMapGenUAggOuterChainFunction(PartitionedBroadcast<MatrixBlock> binput, AggregateUnaryOperator uaggOp, AggregateOperator aggOp, BinaryOperator bOp, 
-				MatrixCharacteristics mc)
+				DataCharacteristics mc)
 		{
 			_pbc = binput;
 			

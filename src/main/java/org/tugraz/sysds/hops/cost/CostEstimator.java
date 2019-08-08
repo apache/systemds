@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.hops.cost;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.conf.ConfigurationManager;
@@ -36,8 +35,8 @@ import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.Program;
 import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData.CacheStatus;
+import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
@@ -55,7 +54,11 @@ import org.tugraz.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator;
 import org.tugraz.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public abstract class CostEstimator 
 {
@@ -183,12 +186,12 @@ public abstract class CostEstimator
 			if( dat instanceof MatrixObject ) //matrix
 			{
 				MatrixObject mo = (MatrixObject) dat;
-				MatrixCharacteristics mc = mo.getMatrixCharacteristics();
-				long rlen = mc.getRows();
-				long clen = mc.getCols();
-				int brlen = mc.getRowsPerBlock();
-				int bclen = mc.getColsPerBlock();
-				long nnz = mc.getNonZeros();
+				DataCharacteristics dc = mo.getDataCharacteristics();
+				long rlen = dc.getRows();
+				long clen = dc.getCols();
+				int brlen = dc.getRowsPerBlock();
+				int bclen = dc.getColsPerBlock();
+				long nnz = dc.getNonZeros();
 				boolean inmem = mo.getStatus()==CacheStatus.CACHED;
 				vs = new VarStats(rlen, clen, brlen, bclen, nnz, inmem);
 			}

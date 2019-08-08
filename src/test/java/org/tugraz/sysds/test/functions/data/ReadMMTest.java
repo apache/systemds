@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -314,7 +316,7 @@ public class ReadMMTest extends AutomatedTestBase
 		
 		MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
 		writeInputMatrixWithMTD("a", a, false, mc);
-		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, MatrixCharacteristics mc) throws IOException {
+		//protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR, DataCharacteristics mc) throws IOException {
 
 		runTest(true, DMLException.class);
 	}

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -35,8 +37,8 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
 import scala.Tuple2;
 
 public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstruction {
@@ -58,15 +60,15 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = new MatrixCharacteristics(mc);
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = new MatrixCharacteristics(mc);
 		long rlen = mc.getRows();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		mcOut.setRows((long)(Math.ceil((double)rlen/brlen)));
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		
 		//execute unary aggregate (w/ implicit drop correction)
 		AggregateUnaryOperator auop = (AggregateUnaryOperator) _optr;
@@ -81,7 +83,7 @@ public class CumulativeAggregateSPInstruction extends AggregateUnarySPInstructio
 		//put output handle in symbol table
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		sec.getMatrixCharacteristics(output.getName()).set(mcOut);
+		sec.getDataCharacteristics(output.getName()).set(mcOut);
 	}
 
 	private static class RDDCumAggFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

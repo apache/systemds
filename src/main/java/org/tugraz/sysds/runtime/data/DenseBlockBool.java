@@ -161,12 +161,11 @@ public class DenseBlockBool extends DenseBlockDRB
 	
 	@Override
 	public DenseBlock set(int rl, int ru, int cl, int cu, DenseBlock db) {
-		double[] a = db.valuesAt(0);
 		//TODO perf computed indexes
 		for (int r = rl; r < ru; r++) {
 			for (int c = cl; c < cu; c++) {
 				int i = r * _odims[0] + c;
-				_data.set(i, a[i] != 0);
+				_data.set(i, db.get(r, c) != 0);
 			}
 		}
 		return this;

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,22 +21,20 @@
 
 package org.tugraz.sysds.hops.ipa;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.FunctionOp;
+import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.LiteralOp;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.FunctionOp.FunctionType;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DMLTranslator;
@@ -48,15 +48,18 @@ import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatement;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This Inter Procedural Analysis (IPA) serves two major purposes:
@@ -267,7 +270,7 @@ public class InterProceduralAnalysis
 			ret &= mo.getNumRows() == mo2.getNumRows() && mo.getNumColumns() == mo2.getNumColumns();
 		
 			//reset function
-			mo.getMatrixCharacteristics().setDimension(-1, -1);
+			mo.getDataCharacteristics().setDimension(-1, -1);
 			for (StatementBlock sbi : fstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
 		}
@@ -525,7 +528,7 @@ public class InterProceduralAnalysis
 			{
 				//propagate matrix characteristics
 				MatrixObject mo = new MatrixObject(ValueType.FP64, null);
-				MatrixCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(),
+				DataCharacteristics mc = new MatrixCharacteristics( input.getDim1(), input.getDim2(),
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(),
 					fcallSizes.isSafeNnz(fkey, i)?input.getNnz():-1 );
 				MetaDataFormat meta = new MetaDataFormat(mc,null,null);
@@ -607,14 +610,14 @@ public class InterProceduralAnalysis
 						if( !(dat instanceof MatrixObject) )
 							continue;
 						MatrixObject moOut = (MatrixObject)dat;
-						MatrixCharacteristics mc = moOut.getMatrixCharacteristics();
-						if( OptimizerUtils.estimateSizeExactSparsity(mc.getRows(), mc.getCols(), (mc.getNonZeros()>0)?
-							OptimizerUtils.getSparsity(mc):1.0) 
+						DataCharacteristics dc = moOut.getDataCharacteristics();
+						if( OptimizerUtils.estimateSizeExactSparsity(dc.getRows(), dc.getCols(), (dc.getNonZeros()>0)?
+							OptimizerUtils.getSparsity(dc):1.0)
 							< OptimizerUtils.estimateSize(moIn.getNumRows(), moIn.getNumColumns()) )
 						{
 							//update statistics if necessary
-							mc.setDimension(moIn.getNumRows(), moIn.getNumColumns());
-							mc.setNonZeros(moIn.getNnz());
+							dc.setDimension(moIn.getNumRows(), moIn.getNumColumns());
+							dc.setNonZeros(moIn.getNnz());
 						}
 					}
 				}
@@ -659,7 +662,7 @@ public class InterProceduralAnalysis
 	
 	private static MatrixObject createOutputMatrix( long dim1, long dim2, long nnz ) {
 		MatrixObject moOut = new MatrixObject(ValueType.FP64, null);
-		MatrixCharacteristics mc = new MatrixCharacteristics( dim1, dim2,
+		DataCharacteristics mc = new MatrixCharacteristics( dim1, dim2,
 				ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), nnz);
 		MetaDataFormat meta = new MetaDataFormat(mc,null,null);
 		moOut.setMetaData(meta);

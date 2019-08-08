@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,7 +28,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -90,7 +92,7 @@ public class EstimatorSampleRa extends SparsityEstimator
 	}
 	
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		LOG.warn("Recursive estimates not supported by EstimatorSampleRa,"
 			+ " falling back to EstimatorBasicAvg.");
 		return new EstimatorBasicAvg().estim(root);

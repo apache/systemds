@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -45,9 +44,11 @@ import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * This pmapmm matrix multiplication instruction is still experimental
@@ -84,9 +85,9 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() ); 
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());		
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		
 		// This avoids errors such as java.lang.UnsupportedOperationException: Cannot change storage level of an RDD after it was already assigned a level
 		// Ideally, we should ensure that we donot redundantly call persist on the same RDD.
@@ -132,7 +133,7 @@ public class PMapmmSPInstruction extends BinarySPInstruction {
 		sec.addLineageRDD(output.getName(), input2.getName());
 			
 		//update output statistics if not inferred
-		updateBinaryMMOutputMatrixCharacteristics(sec, true);
+		updateBinaryMMOutputDataCharacteristics(sec, true);
 	}
 
 	private static class PMapMMRebaseBlocksFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 

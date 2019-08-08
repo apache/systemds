@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,9 +23,8 @@ package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
 
 public class IsFrameBlockInRange implements Function<Tuple2<Long,FrameBlock>, Boolean> 
@@ -32,7 +33,7 @@ public class IsFrameBlockInRange implements Function<Tuple2<Long,FrameBlock>, Bo
 
 	private long _rl, _ru;
 	
-	public IsFrameBlockInRange(long rl, long ru, MatrixCharacteristics mcOut) {
+	public IsFrameBlockInRange(long rl, long ru, DataCharacteristics mcOut) {
 		_rl = rl;
 		_ru = ru;
 	}

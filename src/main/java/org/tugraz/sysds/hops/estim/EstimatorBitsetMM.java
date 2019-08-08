@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.hops.estim;
 
-import java.util.BitSet;
-import java.util.stream.IntStream;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.hops.OptimizerUtils;
@@ -29,7 +28,11 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+
+import java.util.BitSet;
+import java.util.stream.IntStream;
 
 /**
  * This estimator implements a naive but rather common approach of boolean matrix
@@ -45,13 +48,13 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 public class EstimatorBitsetMM extends SparsityEstimator
 {
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
 		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
 		
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix
-		return root.setMatrixCharacteristics(new MatrixCharacteristics(
+		return root.setDataCharacteristics(new MatrixCharacteristics(
 			outMap.getNumRows(), outMap.getNumColumns(), outMap.getNonZeros()));
 	}
 
@@ -63,8 +66,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m1.getMatrixCharacteristics(),
-				m2.getMatrixCharacteristics(), op).getSparsity();
+			return estimExactMetaData(m1.getDataCharacteristics(),
+				m2.getDataCharacteristics(), op).getSparsity();
 		BitsetMatrix m1Map = createBitset(m1);
 		BitsetMatrix m2Map = (m1 == m2) ? //self product
 			m1Map : createBitset(m2);
@@ -76,7 +79,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
-			return estimExactMetaData(m.getMatrixCharacteristics(), null, op).getSparsity();
+			return estimExactMetaData(m.getDataCharacteristics(), null, op).getSparsity();
 		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),

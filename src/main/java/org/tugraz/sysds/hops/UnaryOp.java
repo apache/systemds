@@ -21,26 +21,26 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.ArrayList;
-
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.lops.Aggregate.OperationTypes;
+import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.CumulativeOffsetBinary;
 import org.tugraz.sysds.lops.CumulativePartialAggregate;
-import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+
+import java.util.ArrayList;
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
@@ -399,20 +399,20 @@ public class UnaryOp extends MultiThreadedHop
 		long[] ret = null;
 	
 		Hop input = getInput().get(0);
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
-		if( mc.dimsKnown() ) {
+		DataCharacteristics dc = memo.getAllInputStats(input);
+		if( dc.dimsKnown() ) {
 			if( _op==OpOp1.ABS || _op==OpOp1.COS || _op==OpOp1.SIN || _op==OpOp1.TAN 
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.COSH || _op==OpOp1.SINH || _op==OpOp1.TANH 
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
 				|| _op==OpOp1.SPROP ) //sparsity preserving
 			{
-				ret = new long[]{mc.getRows(), mc.getCols(), mc.getNonZeros()};
+				ret = new long[]{dc.getRows(), dc.getCols(), dc.getNonZeros()};
 			}
 			else if( _op==OpOp1.CUMSUMPROD )
-				ret = new long[]{mc.getRows(), 1, -1};
+				ret = new long[]{dc.getRows(), 1, -1};
 			else 
-				ret = new long[]{mc.getRows(), mc.getCols(), -1};
+				ret = new long[]{dc.getRows(), dc.getCols(), -1};
 		}
 		
 		return ret;

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,10 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -49,9 +47,12 @@ import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Tsmm2SPInstruction extends UnarySPInstruction {
 	private MMTSJType _type = null;
@@ -78,8 +79,8 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		DataCharacteristics mc = sec.getDataCharacteristics( input1.getName() );
 		
 		//execute tsmm2 instruction 
 		//step 1: first pass of X, filter-collect-broadcast excess blocks 
@@ -111,7 +112,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out = RDDAggregateUtils.sumByKeyStable(tmp2, false);
 			
 			//put output RDD handle into symbol table
-			sec.getMatrixCharacteristics(output.getName()).set(outputDim, outputDim, mc.getRowsPerBlock(), mc.getColsPerBlock());
+			sec.getDataCharacteristics(output.getName()).set(outputDim, outputDim, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
 		}

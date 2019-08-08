@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,13 +20,6 @@
  */
 
 package org.tugraz.sysds.runtime.instructions.spark.utils;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkContext;
@@ -50,12 +45,17 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.mapred.ReblockBuffer;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * NOTE: These are experimental converter utils. Once thoroughly tested, they
@@ -70,7 +70,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(JavaSparkContext sc,
-			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks)
+	                                                                                    CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks)
 	{
 		//convert matrix entry rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.entries().toJavaRDD()
@@ -89,7 +89,7 @@ public class RDDConverterUtilsExt
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
-			CoordinateMatrix input, MatrixCharacteristics mcIn, boolean outputEmptyBlocks) {
+	                                                                                    CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks) {
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
 	}
 
@@ -263,7 +263,7 @@ public class RDDConverterUtilsExt
 		private static final long serialVersionUID = 4907483236186747224L;
 
 		private IJVToBinaryBlockFunctionHelper helper = null;
-		public MatrixEntryToBinaryBlockFunction(MatrixCharacteristics mc) {
+		public MatrixEntryToBinaryBlockFunction(DataCharacteristics mc) {
 			helper = new IJVToBinaryBlockFunctionHelper(mc);
 		}
 
@@ -285,9 +285,9 @@ public class RDDConverterUtilsExt
 		private int _brlen = -1;
 		private int _bclen = -1;
 
-		public IJVToBinaryBlockFunctionHelper(MatrixCharacteristics mc) {
+		public IJVToBinaryBlockFunctionHelper(DataCharacteristics mc) {
 			if(!mc.dimsKnown())
-				throw new DMLRuntimeException("The dimensions need to be known in given MatrixCharacteristics for given input RDD");
+				throw new DMLRuntimeException("The dimensions need to be known in given DataCharacteristics for given input RDD");
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();

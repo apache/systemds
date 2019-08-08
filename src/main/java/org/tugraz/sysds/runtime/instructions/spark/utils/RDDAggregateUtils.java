@@ -25,6 +25,8 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
@@ -147,7 +149,35 @@ public class RDDAggregateUtils
 				new AggregateSingleBlockFunction(aop) );
 	}
 
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in, 
+	/**
+	 * Single block aggregation over pair rdds with corrections for numerical stability.
+	 *
+	 * @param in tensor as {@code JavaPairRDD<TensorIndexes, TensorBlock>}
+	 * @param aop aggregate operator
+	 * @return tensor block
+	 */
+	public static TensorBlock aggStableTensor(JavaPairRDD<TensorIndexes, TensorBlock> in, AggregateOperator aop) {
+		return aggStableTensor( in.values(), aop);
+	}
+
+	/**
+	 * Single block aggregation over rdds with corrections for numerical stability.
+	 *
+	 * @param in tensor as {@code JavaRDD<TensorBlock>}
+	 * @param aop aggregate operator
+	 * @return tensor block
+	 */
+	public static TensorBlock aggStableTensor( JavaRDD<TensorBlock> in, AggregateOperator aop )
+	{
+		//stable aggregate of all blocks with correction block per function instance
+
+		//reduce-all aggregate via fold instead of reduce to allow
+		//for update in-place w/o deep copy of left-hand-side blocks
+		return in.fold(
+				new TensorBlock(),
+				new AggregateSingleTensorBlockFunction(aop) );
+	}
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
 			AggregateOperator aop) {
 		return aggByKeyStable(in, aop, in.getNumPartitions(), true);
 	}
@@ -613,7 +643,44 @@ public class RDDAggregateUtils
 		}
 	}
 
-	private static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock> 
+	/**
+	 * Note: currently we always include the correction and use a subsequent maptopair to
+	 * drop them at the end because during aggregation we dont know if we produce an
+	 * intermediate or the final aggregate.
+	 */
+	private static class AggregateSingleTensorBlockFunction implements Function2<TensorBlock, TensorBlock, TensorBlock>
+	{
+		private static final long serialVersionUID = 5665180309149919945L;
+
+		private AggregateOperator _op = null;
+		//private MatrixBlock _corr = null;
+
+		public AggregateSingleTensorBlockFunction( AggregateOperator op ) {
+			_op = op;
+		}
+
+		@Override
+		public TensorBlock call(TensorBlock arg0, TensorBlock arg1)
+				throws Exception
+		{
+			//prepare combiner block
+			if( arg0.isEmpty()) {
+				return arg1;
+			}
+			else if( arg1.isEmpty() ) {
+				return arg0;
+			}
+
+			// TODO correction
+
+			//aggregate second input (in-place)
+			arg0.incrementalAggregate(_op, arg1);
+
+			return arg0;
+		}
+	}
+
+	private static class MergeBlocksFunction implements Function2<MatrixBlock, MatrixBlock, MatrixBlock>
 	{		
 		private static final long serialVersionUID = -8881019027250258850L;
 		private boolean _deep = false;

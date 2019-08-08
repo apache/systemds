@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,12 +20,6 @@
  */
 
 package org.tugraz.sysds.runtime.instructions.spark.utils;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -51,9 +47,9 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.instructions.spark.data.SerLongWritable;
 import org.tugraz.sysds.runtime.instructions.spark.data.SerText;
@@ -66,20 +62,26 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.mapred.ReblockBuffer;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class RDDConverterUtils 
 {
 	public static final String DF_ID_COLUMN = "__INDEX";
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> textCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks, FileFormatPropertiesMM mmProps) {
+	                                                                            JavaPairRDD<LongWritable, Text> input, DataCharacteristics mcOut, boolean outputEmptyBlocks, FileFormatPropertiesMM mmProps) {
 		//convert textcell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input.values()
 				.mapPartitionsToPair(new TextToBinaryBlockFunction(mcOut, mmProps));
@@ -97,7 +99,7 @@ public class RDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryCellToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<MatrixIndexes, MatrixCell> input, MatrixCharacteristics mcOut, boolean outputEmptyBlocks) {
+	                                                                              JavaPairRDD<MatrixIndexes, MatrixCell> input, DataCharacteristics mcOut, boolean outputEmptyBlocks) {
  		//convert binarycell rdd to binary block rdd (w/ partial blocks)
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = input
 				.mapPartitionsToPair(new BinaryCellToBinaryBlockFunction(mcOut));
@@ -131,12 +133,12 @@ public class RDDConverterUtils
 		return pointrdd;
 	}
 
-	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc) {
+	public static JavaRDD<String> binaryBlockToTextCell(JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mc) {
 		return in.flatMap(new ConvertMatrixBlockToIJVLines(
 				mc.getRowsPerBlock(), mc.getColsPerBlock()));
 	}
 
-	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, MatrixCharacteristics mcIn, FileFormatPropertiesCSV props, boolean strict)
+	public static JavaRDD<String> binaryBlockToCsv(JavaPairRDD<MatrixIndexes,MatrixBlock> in, DataCharacteristics mcIn, FileFormatPropertiesCSV props, boolean strict)
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> input = in;
 		
@@ -162,7 +164,7 @@ public class RDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaPairRDD<LongWritable, Text> input, MatrixCharacteristics mc, 
+			JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc,
 			boolean hasHeader, String delim, boolean fill, double fillValue) {
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown(true) ) {
@@ -193,7 +195,7 @@ public class RDDConverterUtils
 	}
 	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
-			JavaRDD<String> input, MatrixCharacteristics mcOut, 
+			JavaRDD<String> input, DataCharacteristics mcOut,
 			boolean hasHeader, String delim, boolean fill, double fillValue) 
 	{
 		//convert string rdd to serializable longwritable/text
@@ -205,7 +207,7 @@ public class RDDConverterUtils
 	}
 
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> dataFrameToBinaryBlock(JavaSparkContext sc,
-			Dataset<Row> df, MatrixCharacteristics mc, boolean containsID, boolean isVector) 
+	                                                                             Dataset<Row> df, DataCharacteristics mc, boolean containsID, boolean isVector)
 	{
 		//determine unknown dimensions and sparsity if required
 		if( !mc.dimsKnown(true) ) {
@@ -243,7 +245,7 @@ public class RDDConverterUtils
 	}
 
 	public static Dataset<Row> binaryBlockToDataFrame(SparkSession sparkSession,
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
+	                                                  JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mc, boolean toVector)
 	{
 		if( !mc.colsKnown() )
 			throw new RuntimeException("Number of columns needed to convert binary block to data frame.");
@@ -269,7 +271,7 @@ public class RDDConverterUtils
 
 	@Deprecated
 	public static Dataset<Row> binaryBlockToDataFrame(SQLContext sqlContext,
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in, MatrixCharacteristics mc, boolean toVector)  
+	                                                  JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mc, boolean toVector)
 	{
 		SparkSession sparkSession = sqlContext.sparkSession();
 		return binaryBlockToDataFrame(sparkSession, in, mc, toVector);
@@ -291,7 +293,7 @@ public class RDDConverterUtils
 	 * @param mcOutX matrix characteristics of output matrix X
 	 */
 	public static void libsvmToBinaryBlock(JavaSparkContext sc, String pathIn, 
-			String pathX, String pathY, MatrixCharacteristics mcOutX) 
+			String pathX, String pathY, DataCharacteristics mcOutX)
 	{
 		if( !mcOutX.dimsKnown() )
 			throw new DMLRuntimeException("Matrix characteristics "
@@ -312,7 +314,7 @@ public class RDDConverterUtils
 					lpoints.zipWithIndex().persist(StorageLevel.MEMORY_AND_DISK()); 
 			
 			//extract labels and convert to binary block
-			MatrixCharacteristics mc1 = new MatrixCharacteristics(mcOutX.getRows(), 1, 
+			DataCharacteristics mc1 = new MatrixCharacteristics(mcOutX.getRows(), 1,
 					mcOutX.getRowsPerBlock(), mcOutX.getColsPerBlock(), -1);
 			LongAccumulator aNnz1 = sc.sc().longAccumulator("nnz");
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out1 = ilpoints
@@ -324,7 +326,7 @@ public class RDDConverterUtils
 			HDFSTool.writeMetaDataFile(pathY+".mtd", ValueType.FP64, mc1, OutputInfo.BinaryBlockOutputInfo);
 			
 			//extract data and convert to binary block
-			MatrixCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(),
+			DataCharacteristics mc2 = new MatrixCharacteristics(mcOutX.getRows(), mcOutX.getCols(),
 					mcOutX.getRowsPerBlock(), mcOutX.getColsPerBlock(), -1);
 			LongAccumulator aNnz2 = sc.sc().longAccumulator("nnz");
 			JavaPairRDD<MatrixIndexes,MatrixBlock> out2 = ilpoints
@@ -347,7 +349,7 @@ public class RDDConverterUtils
 		return in.mapToPair(new TextToSerTextFunction());
 	}
 
-	private static boolean requiresSparseAllocation(JavaPairRDD<?,?> in, MatrixCharacteristics mc) {
+	private static boolean requiresSparseAllocation(JavaPairRDD<?,?> in, DataCharacteristics mc) {
 		//if nnz unknown or sparse, pick the robust sparse representation
 		if( !mc.nnzKnown() || (mc.nnzKnown() && MatrixBlock.evalSparseFormatInMemory(
 			mc.getRows(), mc.getCols(), mc.getNonZeros())) ) {
@@ -457,7 +459,7 @@ public class RDDConverterUtils
 		protected int _brlen = -1;
 		protected int _bclen = -1;
 		
-		protected CellToBinaryBlockFunction(MatrixCharacteristics mc)
+		protected CellToBinaryBlockFunction(DataCharacteristics mc)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
@@ -482,7 +484,7 @@ public class RDDConverterUtils
 
 		private final FileFormatPropertiesMM _mmProps;
 		
-		protected TextToBinaryBlockFunction(MatrixCharacteristics mc, FileFormatPropertiesMM mmProps) {
+		protected TextToBinaryBlockFunction(DataCharacteristics mc, FileFormatPropertiesMM mmProps) {
 			super(mc);
 			_mmProps = mmProps;
 		}
@@ -568,7 +570,7 @@ public class RDDConverterUtils
 	{
 		private static final long serialVersionUID = 3928810989462198243L;
 
-		public BinaryCellToBinaryBlockFunction(MatrixCharacteristics mc) {
+		public BinaryCellToBinaryBlockFunction(DataCharacteristics mc) {
 			super(mc);
 		}
 
@@ -662,7 +664,7 @@ public class RDDConverterUtils
 		private boolean _fill = false;
 		private double _fillValue = 0;
 		
-		public CSVToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue)
+		public CSVToBinaryBlockFunction(DataCharacteristics mc, boolean sparse, boolean hasHeader, String delim, boolean fill, double fillValue)
 		{
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
@@ -776,7 +778,7 @@ public class RDDConverterUtils
 		private final boolean _labels;
 		private final LongAccumulator _aNnz;
 		
-		public LabeledPointToBinaryBlockFunction(MatrixCharacteristics mc, boolean labels, LongAccumulator aNnz) {
+		public LabeledPointToBinaryBlockFunction(DataCharacteristics mc, boolean labels, LongAccumulator aNnz) {
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();
@@ -1006,7 +1008,7 @@ public class RDDConverterUtils
 		private boolean _containsID;
 		private boolean _isVector;
 		
-		public DataFrameToBinaryBlockFunction(MatrixCharacteristics mc, boolean sparse, boolean containsID, boolean isVector) {
+		public DataFrameToBinaryBlockFunction(DataCharacteristics mc, boolean sparse, boolean containsID, boolean isVector) {
 			_rlen = mc.getRows();
 			_clen = mc.getCols();
 			_brlen = mc.getRowsPerBlock();

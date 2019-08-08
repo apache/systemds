@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,6 +22,8 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Append;
@@ -36,14 +40,12 @@ import org.tugraz.sysds.lops.CoVariance;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.DnnTransform;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 
 /* Binary (cell operations): aij + bij
@@ -573,7 +575,7 @@ public class BinaryOp extends MultiThreadedHop
 	{
 		long[] ret = null;
 		
-		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+		DataCharacteristics[] dc = memo.getAllInputStats(getInput());
 		Hop input1 = getInput().get(0);
 		Hop input2 = getInput().get(1);		
 		DataType dt1 = input1.getDataType();
@@ -582,12 +584,12 @@ public class BinaryOp extends MultiThreadedHop
 		if( op== OpOp2.CBIND ) {
 			long ldim1 = -1, ldim2 = -1, lnnz = -1;
 			
-			if( mc[0].rowsKnown() || mc[1].rowsKnown() )
-				ldim1 = mc[0].rowsKnown() ? mc[0].getRows() : mc[1].getRows();
-			if( mc[0].colsKnown() && mc[1].colsKnown() )
-				ldim2 = mc[0].getCols()+mc[1].getCols();
-			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
-				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
+			if( dc[0].rowsKnown() || dc[1].rowsKnown() )
+				ldim1 = dc[0].rowsKnown() ? dc[0].getRows() : dc[1].getRows();
+			if( dc[0].colsKnown() && dc[1].colsKnown() )
+				ldim2 = dc[0].getCols()+dc[1].getCols();
+			if( dc[0].nnzKnown() && dc[1].nnzKnown() )
+				lnnz = dc[0].getNonZeros() + dc[1].getNonZeros();
 			
 			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
 				return new long[]{ldim1, ldim2, lnnz};
@@ -595,20 +597,20 @@ public class BinaryOp extends MultiThreadedHop
 		else if( op == OpOp2.RBIND ) {
 			long ldim1 = -1, ldim2 = -1, lnnz = -1;
 			
-			if( mc[0].colsKnown() || mc[1].colsKnown() )
-				ldim2 = mc[0].colsKnown() ? mc[0].getCols() : mc[1].getCols();
-			if( mc[0].rowsKnown() && mc[1].rowsKnown() )
-				ldim1 = mc[0].getRows()+mc[1].getRows();
-			if( mc[0].nnzKnown() && mc[1].nnzKnown() )
-				lnnz = mc[0].getNonZeros() + mc[1].getNonZeros();
+			if( dc[0].colsKnown() || dc[1].colsKnown() )
+				ldim2 = dc[0].colsKnown() ? dc[0].getCols() : dc[1].getCols();
+			if( dc[0].rowsKnown() && dc[1].rowsKnown() )
+				ldim1 = dc[0].getRows()+dc[1].getRows();
+			if( dc[0].nnzKnown() && dc[1].nnzKnown() )
+				lnnz = dc[0].getNonZeros() + dc[1].getNonZeros();
 			
 			if( ldim1 >= 0 || ldim2 >= 0 || lnnz >= 0 )
 				return new long[]{ldim1, ldim2, lnnz};
 		}
 		else if ( op == OpOp2.SOLVE ) {
 			// Output is a (likely to be dense) vector of size number of columns in the first input
-			if ( mc[0].getCols() >= 0 ) {
-				ret = new long[]{ mc[0].getCols(), 1, mc[0].getCols()};
+			if ( dc[0].getCols() >= 0 ) {
+				ret = new long[]{ dc[0].getCols(), 1, dc[0].getCols()};
 			}
 		}
 		else //general case
@@ -616,17 +618,17 @@ public class BinaryOp extends MultiThreadedHop
 			long ldim1, ldim2;
 			double sp1 = 1.0, sp2 = 1.0;
 			
-			if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR && mc[0].dimsKnown() )
+			if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR && dc[0].dimsKnown() )
 			{
-				ldim1 = mc[0].getRows();
-				ldim2 = mc[0].getCols();
-				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;	
+				ldim1 = dc[0].getRows();
+				ldim2 = dc[0].getCols();
+				sp1 = (dc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[0].getNonZeros()):1.0;
 			}
 			else if( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX  ) 
 			{
-				ldim1 = mc[1].getRows();
-				ldim2 = mc[1].getCols();
-				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
+				ldim1 = dc[1].getRows();
+				ldim2 = dc[1].getCols();
+				sp2 = (dc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[1].getNonZeros()):1.0;
 			}
 			else //MATRIX - MATRIX 
 			{
@@ -634,18 +636,18 @@ public class BinaryOp extends MultiThreadedHop
 				//for cols we need to be careful with regard to matrix-vector operations
 				if( outer ) //OUTER VECTOR OPERATION
 				{
-					ldim1 = mc[0].getRows();
-					ldim2 = mc[1].getCols();
+					ldim1 = dc[0].getRows();
+					ldim2 = dc[1].getCols();
 				}
 				else //GENERAL CASE
 				{
-					ldim1 = (mc[0].rowsKnown()) ? mc[0].getRows() : 
-					        (mc[1].getRows()>1) ? mc[1].getRows() : -1;
-					ldim2 = (mc[0].colsKnown()) ? mc[0].getCols() : 
-						    (mc[1].getCols()>1) ? mc[1].getCols() : -1;
+					ldim1 = (dc[0].rowsKnown()) ? dc[0].getRows() :
+					        (dc[1].getRows()>1) ? dc[1].getRows() : -1;
+					ldim2 = (dc[0].colsKnown()) ? dc[0].getCols() :
+						    (dc[1].getCols()>1) ? dc[1].getCols() : -1;
 				}
-				sp1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
-				sp2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
+				sp1 = (dc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[0].getNonZeros()):1.0;
+				sp2 = (dc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, dc[1].getNonZeros()):1.0;
 			}
 			
 			if( ldim1>=0 && ldim2>=0 )

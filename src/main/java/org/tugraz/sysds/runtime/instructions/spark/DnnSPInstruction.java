@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,9 +20,6 @@
  */
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
@@ -38,18 +37,21 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.DnnParameters;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixNative;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DnnUtils;
 import org.tugraz.sysds.utils.NativeHelper;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class DnnSPInstruction extends UnarySPInstruction {
 	private CPOperand _in2;
@@ -210,10 +212,10 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	}
 	
 	private static JavaPairRDD<MatrixIndexes,MatrixBlock> reblockAsRectangularMatrices(SparkExecutionContext sec, String name, int numRowsPerBlock) {
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( name );
-		MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(name);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( name );
+		DataCharacteristics mcRdd = sec.getDataCharacteristics(name);
 		if(mcRdd.getColsPerBlock() < mcRdd.getCols() || mcRdd.getRowsPerBlock() != 1) {
-			MatrixCharacteristics mcOut = new MatrixCharacteristics(mcRdd);
+			DataCharacteristics mcOut = new MatrixCharacteristics(mcRdd);
 			mcOut.setColsPerBlock((int)mcRdd.getCols());
 			mcOut.setRowsPerBlock(numRowsPerBlock); 
 			in1 = RDDAggregateUtils.mergeByKey(in1.flatMapToPair(new ExtractBlockForBinaryReblock(mcRdd, mcOut)));
@@ -238,7 +240,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			String rddVar = input1.getName();
 			int numRowsPerBlock = 1;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inputRDD = reblockAsRectangularMatrices(sec, rddVar, numRowsPerBlock);
-			MatrixCharacteristics mcRdd = sec.getMatrixCharacteristics(rddVar);
+			DataCharacteristics mcRdd = sec.getDataCharacteristics(rddVar);
 			
 			// ------------------------------------
 			// TODO: Handle large filters > 2G

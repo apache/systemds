@@ -21,9 +21,6 @@
 
 package org.tugraz.sysds.parser;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.logging.Log;
@@ -33,6 +30,9 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.Hop.FileFormatTypes;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 public abstract class Expression implements ParseInfo

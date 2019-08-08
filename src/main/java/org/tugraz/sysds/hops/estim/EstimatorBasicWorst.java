@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,6 +24,7 @@ package org.tugraz.sysds.hops.estim;
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
@@ -35,17 +38,17 @@ import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 public class EstimatorBasicWorst extends SparsityEstimator
 {
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		if (!root.getLeft().isLeaf())
 			estim(root.getLeft()); // obtain synopsis
 		if (root.getRight()!=null && !root.getRight().isLeaf())
 			estim(root.getRight()); // obtain synopsis
-		MatrixCharacteristics mc1 = !root.getLeft().isLeaf() ?
-			estim(root.getLeft()) : root.getLeft().getMatrixCharacteristics();
-		MatrixCharacteristics mc2 = root.getRight()==null ? null :
+		DataCharacteristics mc1 = !root.getLeft().isLeaf() ?
+			estim(root.getLeft()) : root.getLeft().getDataCharacteristics();
+		DataCharacteristics mc2 = root.getRight()==null ? null :
 			!root.getRight().isLeaf() ? estim(root.getRight()) : 
-			root.getRight().getMatrixCharacteristics();
-		return root.setMatrixCharacteristics(
+			root.getRight().getDataCharacteristics();
+		return root.setDataCharacteristics(
 			estimIntern(mc1, mc2, root.getOp()));
 	}
 
@@ -56,26 +59,26 @@ public class EstimatorBasicWorst extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		return estimIntern(m1.getMatrixCharacteristics(), m2.getMatrixCharacteristics(), op).getSparsity();
+		return estimIntern(m1.getDataCharacteristics(), m2.getDataCharacteristics(), op).getSparsity();
 	}
 
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		return estimIntern(m.getMatrixCharacteristics(), null, op).getSparsity();
+		return estimIntern(m.getDataCharacteristics(), null, op).getSparsity();
 	}
 
-	private MatrixCharacteristics estimIntern(MatrixCharacteristics mc1, MatrixCharacteristics mc2, OpCode op) {
+	private DataCharacteristics estimIntern(DataCharacteristics mc1, DataCharacteristics mc2, OpCode op) {
 		switch (op) {
 			case MM:
 				return new MatrixCharacteristics(mc1.getRows(), mc2.getCols(),
 					OptimizerUtils.getMatMultNnz(mc1.getSparsity(), mc2.getSparsity(),
 					mc1.getRows(), mc1.getCols(), mc2.getCols(), true));
 			case MULT:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(), 
+				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
 					OptimizerUtils.getNnz(mc1.getRows(), mc1.getCols(),
 						Math.min(mc1.getSparsity(), mc2.getSparsity())));
 			case PLUS:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(), 
+				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
 					OptimizerUtils.getNnz(mc1.getRows(), mc1.getCols(), 
 						Math.min(mc1.getSparsity() + mc2.getSparsity(), 1)));
 			case EQZERO:
@@ -85,7 +88,7 @@ public class EstimatorBasicWorst extends SparsityEstimator
 			case NEQZERO:
 			case TRANS:
 			case RESHAPE:
-				return estimExactMetaData(mc1, mc2, op);
+				return (DataCharacteristics) estimExactMetaData(mc1, mc2, op);
 			default:
 				throw new NotImplementedException();
 		}

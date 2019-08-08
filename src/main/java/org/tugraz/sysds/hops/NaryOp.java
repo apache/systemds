@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,13 @@
 
 package org.tugraz.sysds.hops;
 
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.Nary;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.Nary;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * The NaryOp Hop allows for a variable number of operands. Functionality
@@ -49,7 +51,7 @@ public class NaryOp extends Hop {
 	 *            the target data type (SCALAR for printf)
 	 * @param valueType
 	 *            the target value type (STRING for printf)
-	 * @param multipleOperandOperation
+	 * @param op
 	 *            the operation type (such as PRINTF)
 	 * @param inputs
 	 *            a variable number of input Hops
@@ -185,17 +187,17 @@ public class NaryOp extends Hop {
 	@SuppressWarnings("incomplete-switch")
 	protected long[] inferOutputCharacteristics(MemoTable memo) {
 		if( !getDataType().isScalar() ) {
-			MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+			DataCharacteristics[] dc = memo.getAllInputStats(getInput());
 			
 			switch( _op ) {
 				case CBIND: return new long[]{
-					HopRewriteUtils.getMaxInputDim(mc, true),
-					HopRewriteUtils.getSumValidInputDims(mc, false),
-					HopRewriteUtils.getSumValidInputNnz(mc, true)};
+					HopRewriteUtils.getMaxInputDim(dc, true),
+					HopRewriteUtils.getSumValidInputDims(dc, false),
+					HopRewriteUtils.getSumValidInputNnz(dc, true)};
 				case RBIND: return new long[]{
-					HopRewriteUtils.getSumValidInputDims(mc, true),
-					HopRewriteUtils.getMaxInputDim(mc, false),
-					HopRewriteUtils.getSumValidInputNnz(mc, true)};
+					HopRewriteUtils.getSumValidInputDims(dc, true),
+					HopRewriteUtils.getMaxInputDim(dc, false),
+					HopRewriteUtils.getSumValidInputNnz(dc, true)};
 				case MIN:
 				case MAX: return new long[]{
 					HopRewriteUtils.getMaxInputDim(this, true),

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -38,7 +37,7 @@ import org.tugraz.sysds.runtime.functionobjects.SortIndex;
 import org.tugraz.sysds.runtime.functionobjects.SwapIndex;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
-import org.tugraz.sysds.runtime.instructions.spark.functions.FilterDiagBlocksFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.FilterDiagMatrixBlocksFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.IsBlockInList;
 import org.tugraz.sysds.runtime.instructions.spark.functions.IsBlockInRange;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReorgMapFunction;
@@ -51,12 +50,14 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class ReorgSPInstruction extends UnarySPInstruction {
 	// sort-specific attributes (to enable variable attributes)
@@ -122,9 +123,9 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		String opcode = getOpcode();
 
 		//get input rdd handle
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
+		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 		
 		if( opcode.equalsIgnoreCase("r'") ) //TRANSPOSE
 		{
@@ -145,7 +146,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			}
 			else { // diagM2V
 				//execute diagM2V operation
-				out = in1.filter(new FilterDiagBlocksFunction())
+				out = in1.filter(new FilterDiagMatrixBlocksFunction())
 					     .mapToPair(new ReorgMapFunction(opcode));
 			}
 		}
@@ -207,14 +208,14 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		//store output rdd handle
 		if( opcode.equalsIgnoreCase("rsort") && _col.getDataType().isMatrix() )
 			sec.releaseMatrixInput(_col.getName());
-		updateReorgMatrixCharacteristics(sec);
+		updateReorgDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
-	private void updateReorgMatrixCharacteristics(SparkExecutionContext sec) {
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+	private void updateReorgDataCharacteristics(SparkExecutionContext sec) {
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		//infer initially unknown dimensions from inputs
 		if( !mcOut.dimsKnown() ) 
@@ -247,9 +248,9 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		private static final long serialVersionUID = 31065772250744103L;
 		
 		private ReorgOperator _reorgOp = null;
-		private MatrixCharacteristics _mcIn = null;
+		private DataCharacteristics _mcIn = null;
 		
-		public RDDDiagV2MFunction(MatrixCharacteristics mcIn) {
+		public RDDDiagV2MFunction(DataCharacteristics mcIn) {
 			_reorgOp = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 			_mcIn = mcIn;
 		}
@@ -285,9 +286,9 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 	{
 		private static final long serialVersionUID = 1183373828539843938L;
 		
-		private MatrixCharacteristics _mcIn = null;
+		private DataCharacteristics _mcIn = null;
 		
-		public RDDRevFunction(MatrixCharacteristics mcIn) {
+		public RDDRevFunction(DataCharacteristics mcIn) {
 			_mcIn = mcIn;
 		}
 		
@@ -330,7 +331,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		private final long[] _cols;
 		private final int _brlen, _bclen;
 		
-		public ExtractColumns(long[] cols, MatrixCharacteristics mc) {
+		public ExtractColumns(long[] cols, DataCharacteristics mc) {
 			_cols = cols;
 			_brlen = mc.getRowsPerBlock();
 			_bclen = mc.getColsPerBlock();

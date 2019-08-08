@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -59,13 +61,6 @@ public class ScalarFunctionTest extends AutomatedTestBase
 		runScalarFunctionTest(TEST_NAME2);
 	}
 	
-	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runScalarFunctionTest( String testname )
 	{
 		String TEST_NAME = testname;

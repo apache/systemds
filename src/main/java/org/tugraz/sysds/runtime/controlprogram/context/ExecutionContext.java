@@ -21,11 +21,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.context;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
@@ -55,11 +50,17 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class ExecutionContext {
@@ -264,9 +265,9 @@ public class ExecutionContext {
 	public void releaseCacheableData(String varname) {
 		getCacheableData(varname).release();
 	}
-	
-	public MatrixCharacteristics getMatrixCharacteristics( String varname ) {
-		return getMetaData(varname).getMatrixCharacteristics();
+
+	public DataCharacteristics getDataCharacteristics(String varname) {
+		return getMetaData(varname).getDataCharacteristics();
 	}
 	
 	/**
@@ -328,7 +329,7 @@ public class ExecutionContext {
 	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
-		mo.getMatrixCharacteristics().setNonZeros(-1);
+		mo.getDataCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}
 
@@ -344,7 +345,7 @@ public class ExecutionContext {
 	 */
 	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-		mo.getMatrixCharacteristics().setNonZeros(nnz);
+		mo.getDataCharacteristics().setNonZeros(nnz);
 				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
 		return new Pair<>(mo, allocated);
 	}
@@ -376,7 +377,7 @@ public class ExecutionContext {
 		}
 		if(dim1 != mo.getNumRows() || dim2 != mo.getNumColumns()) {
 			// Set unknown dimensions
-			mo.getMatrixCharacteristics().setDimension(dim1, dim2);
+			mo.getDataCharacteristics().setDimension(dim1, dim2);
 		}
 		if( mo.getGPUObject(getGPUContext(0)) == null ) {
 			GPUObject newGObj = getGPUContext(0).createGPUObject(mo);
@@ -481,7 +482,7 @@ public class ExecutionContext {
 		if(mo.getGPUObject(getGPUContext(0)) == null || !mo.getGPUObject(getGPUContext(0)).isAllocated()) {
 			throw new DMLRuntimeException("No output is allocated on GPU");
 		}
-		setMetaData(varName, new MetaDataFormat(mo.getMatrixCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
+		setMetaData(varName, new MetaDataFormat(mo.getDataCharacteristics(), OutputInfo.BinaryBlockOutputInfo, InputInfo.BinaryBlockInputInfo));
 		mo.getGPUObject(getGPUContext(0)).releaseOutput();
 	}
 	

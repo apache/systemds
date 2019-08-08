@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -25,14 +27,14 @@ package org.tugraz.sysds.runtime.meta;
  */
 public class MetaData
 {
-	protected final MatrixCharacteristics _mc;
+	protected final DataCharacteristics _dc;
 	
-	public MetaData(MatrixCharacteristics mc) {
-		_mc = mc;
+	public MetaData(DataCharacteristics dc) {
+		_dc = dc;
 	}
 	
-	public MatrixCharacteristics getMatrixCharacteristics() {
-		return _mc;
+	public DataCharacteristics getDataCharacteristics() {
+		return _dc;
 	}
 	
 	@Override
@@ -40,21 +42,24 @@ public class MetaData
 		if( !(anObject instanceof MetaData) )
 			return false;
 		MetaData that = (MetaData)anObject;
-		return _mc.equals(that._mc);
+		return _dc.equals(that._dc);
 	}
 	
 	@Override
 	public int hashCode() {
-		return _mc.hashCode();
+		return _dc.hashCode();
 	}
 
 	@Override
 	public String toString() {
-		return _mc.toString();
+		return _dc.toString();
 	}
 	
 	@Override
 	public Object clone() {
-		return new MetaData(new MatrixCharacteristics(_mc));
+		if (_dc instanceof MatrixCharacteristics)
+			return new MetaData(new MatrixCharacteristics(_dc));
+		else
+			return new MetaData(new TensorCharacteristics(_dc));
 	}
 }

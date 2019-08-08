@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,15 +22,15 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Data;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.RightIndex;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 //for now only works for range based indexing op
 public class IndexingOp extends Hop 
@@ -191,9 +193,9 @@ public class IndexingOp extends Hop
 		
 		//try to infer via worstcase input statistics (for the case of dims known
 		//but nnz initially unknown)
-		MatrixCharacteristics mcM1 = memo.getAllInputStats(getInput().get(0));
-		if( dimsKnown() && mcM1.getNonZeros()>=0 ){
-			long lnnz = mcM1.getNonZeros(); //worst-case output nnz
+		DataCharacteristics dcM1 = memo.getAllInputStats(getInput().get(0));
+		if( dimsKnown() && dcM1.getNonZeros()>=0 ){
+			long lnnz = dcM1.getNonZeros(); //worst-case output nnz
 			double lOutMemEst = computeOutputMemEstimate( _dim1, _dim2, lnnz );
 			if( lOutMemEst<_outputMemEstimate ){
 				_outputMemEstimate = lOutMemEst;
@@ -222,12 +224,12 @@ public class IndexingOp extends Hop
 		long[] ret = null;
 		
 		Hop input = getInput().get(0); //original matrix
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
-		if( mc != null ) 
+		DataCharacteristics dc = memo.getAllInputStats(input);
+		if( dc != null )
 		{
-			long lnnz = mc.dimsKnown()?Math.min(mc.getRows()*mc.getCols(), mc.getNonZeros()):-1;
+			long lnnz = dc.dimsKnown()?Math.min(dc.getRows()*dc.getCols(), dc.getNonZeros()):-1;
 			//worst-case is input size, but dense
-			ret = new long[]{mc.getRows(), mc.getCols(), lnnz};
+			ret = new long[]{dc.getRows(), dc.getCols(), lnnz};
 			
 			//exploit column/row indexing information
 			if( _rowLowerEqualsUpper ) ret[0]=1;

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,23 +21,17 @@
 
 package org.tugraz.sysds.runtime.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
-import java.util.Map.Entry;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.recompile.Recompiler;
@@ -45,11 +41,9 @@ import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.ForStatementBlock;
 import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.ParForStatementBlock;
+import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.controlprogram.BasicProgramBlock;
@@ -58,12 +52,12 @@ import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.IfProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.Program;
-import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
-import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PExecMode;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PartitionFormat;
+import org.tugraz.sysds.runtime.controlprogram.Program;
+import org.tugraz.sysds.runtime.controlprogram.ProgramBlock;
+import org.tugraz.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -91,8 +85,17 @@ import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 /**
  * Program converter functionalities for 
@@ -841,16 +844,16 @@ public class ProgramConverter
 			case MATRIX:
 				MatrixObject mo = (MatrixObject) dat;
 				MetaDataFormat md = (MetaDataFormat) dat.getMetaData();
-				MatrixCharacteristics mc = md.getMatrixCharacteristics();
+				DataCharacteristics dc = md.getDataCharacteristics();
 				value = mo.getFileName();
 				PartitionFormat partFormat = (mo.getPartitionFormat()!=null) ? new PartitionFormat(
 						mo.getPartitionFormat(),mo.getPartitionSize()) : PartitionFormat.NONE;
 				metaData = new String[11];
-				metaData[0] = String.valueOf( mc.getRows() );
-				metaData[1] = String.valueOf( mc.getCols() );
-				metaData[2] = String.valueOf( mc.getRowsPerBlock() );
-				metaData[3] = String.valueOf( mc.getColsPerBlock() );
-				metaData[4] = String.valueOf( mc.getNonZeros() );
+				metaData[0] = String.valueOf( dc.getRows() );
+				metaData[1] = String.valueOf( dc.getCols() );
+				metaData[2] = String.valueOf( dc.getRowsPerBlock() );
+				metaData[3] = String.valueOf( dc.getColsPerBlock() );
+				metaData[4] = String.valueOf( dc.getNonZeros() );
 				metaData[5] = InputInfo.inputInfoToString( md.getInputInfo() );
 				metaData[6] = OutputInfo.outputInfoToString( md.getOutputInfo() );
 				metaData[7] = String.valueOf( partFormat );
@@ -1551,7 +1554,7 @@ public class ProgramConverter
 				OutputInfo oin = OutputInfo.stringToOutputInfo( st.nextToken() );
 				PartitionFormat partFormat = PartitionFormat.valueOf( st.nextToken() );
 				UpdateType inplace = UpdateType.valueOf( st.nextToken() );
-				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz); 
+				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, brows, bcols, nnz);
 				MetaDataFormat md = new MetaDataFormat( mc, oin, iin );
 				mo.setMetaData( md );
 				if( partFormat._dpf != PDataPartitionFormat.NONE )

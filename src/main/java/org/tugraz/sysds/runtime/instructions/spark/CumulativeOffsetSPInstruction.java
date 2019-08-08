@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
@@ -39,11 +38,13 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.UnaryOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
@@ -86,13 +87,13 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		long rlen = mc2.getRows();
 		int brlen = mc2.getRowsPerBlock();
 		
 		//get and join inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<MatrixIndexes,MatrixBlock> inData = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<MatrixIndexes,Tuple2<MatrixBlock,MatrixBlock>> joined = null;
 		boolean broadcast = _broadcast && !SparkUtils.isHashPartitioned(inData);
 		
@@ -104,7 +105,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		else {
 			//prepare aggregates (cumsplit of offsets) and repartition join with data
 			joined = inData.join(sec
-				.getBinaryBlockRDDHandleForVariable(input2.getName())
+				.getBinaryMatrixBlockRDDHandleForVariable(input2.getName())
 				.flatMapToPair(new RDDCumSplitFunction(_initValue, rlen, brlen)));
 		}
 		
@@ -114,10 +115,10 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		
 		//put output handle in symbol table
 		if( _cumsumprod )
-			sec.getMatrixCharacteristics(output.getName())
+			sec.getDataCharacteristics(output.getName())
 				.set(mc1.getRows(), 1, mc1.getRowsPerBlock(), mc1.getColsPerBlock());
 		else //general case
-			updateUnaryOutputMatrixCharacteristics(sec);
+			updateUnaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineage(output.getName(), input2.getName(), broadcast);

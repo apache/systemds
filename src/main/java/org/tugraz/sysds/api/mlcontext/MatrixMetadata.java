@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,7 +21,7 @@
 
 package org.tugraz.sysds.api.mlcontext;
 
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
  * Matrix metadata, such as the number of rows, the number of columns, the
@@ -335,17 +337,17 @@ public class MatrixMetadata extends Metadata {
 
 	/**
 	 * Constructor to create a MatrixMetadata object based on a
-	 * MatrixCharacteristics object.
+	 * DataCharacteristics object.
 	 *
-	 * @param matrixCharacteristics
-	 *            the matrix metadata as a MatrixCharacteristics object
+	 * @param dataCharacteristics
+	 *            the matrix metadata as a DataCharacteristics object
 	 */
-	public MatrixMetadata(MatrixCharacteristics matrixCharacteristics) {
-		this.numRows = matrixCharacteristics.getRows();
-		this.numColumns = matrixCharacteristics.getCols();
-		this.numNonZeros = matrixCharacteristics.getNonZeros();
-		this.numRowsPerBlock = matrixCharacteristics.getRowsPerBlock();
-		this.numColumnsPerBlock = matrixCharacteristics.getColsPerBlock();
+	public MatrixMetadata(DataCharacteristics dataCharacteristics) {
+		this.numRows = dataCharacteristics.getRows();
+		this.numColumns = dataCharacteristics.getCols();
+		this.numNonZeros = dataCharacteristics.getNonZeros();
+		this.numRowsPerBlock = dataCharacteristics.getRowsPerBlock();
+		this.numColumnsPerBlock = dataCharacteristics.getColsPerBlock();
 	}
 
 	/**

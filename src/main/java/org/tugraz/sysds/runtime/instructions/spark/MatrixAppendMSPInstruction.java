@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,9 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -35,9 +34,11 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 
@@ -51,12 +52,12 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		// map-only append (rhs must be vector and fit in mapper mem)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, false);
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mc2 = sec.getMatrixCharacteristics(input2.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
 		int brlen = mc1.getRowsPerBlock();
 		int bclen = mc1.getColsPerBlock();
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		PartitionedBroadcast<MatrixBlock> in2 = sec.getBroadcastForVariable( input2.getName() );
 		long off = sec.getScalarInput( _offset).getLongValue();
 		
@@ -72,13 +73,13 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 		}
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageBroadcast(output.getName(), input2.getName());
 	}
 
-	private static boolean preservesPartitioning( MatrixCharacteristics mcIn1, MatrixCharacteristics mcIn2, boolean cbind )
+	private static boolean preservesPartitioning(DataCharacteristics mcIn1, DataCharacteristics mcIn2, boolean cbind )
 	{
 		//determine if append is partitioning-preserving based on number of input and output blocks
 		//with awareness of zero number of rows or columns

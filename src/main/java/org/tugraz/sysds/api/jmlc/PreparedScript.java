@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,25 +21,19 @@
 
 package org.tugraz.sysds.api.jmlc;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.ConfigurableAPI;
 import org.tugraz.sysds.api.DMLException;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.ipa.FunctionCallGraph;
 import org.tugraz.sysds.parser.DMLProgram;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
@@ -61,6 +57,12 @@ import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.utils.Explain;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
 
 /**
  * Representation of a prepared (precompiled) DML/PyDML script.

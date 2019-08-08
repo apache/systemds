@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -103,13 +105,7 @@ public class ConditionalValidateTest extends AutomatedTestBase
 		runTest( TEST_NAME4, false, false ); 
 	}
 	
-	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
-	private void runTest( String testName, boolean exceptionExpected, boolean fileExists ) 
+	private void runTest( String testName, boolean exceptionExpected, boolean fileExists )
 	{
 		String TEST_NAME = testName;
 

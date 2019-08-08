@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,23 +21,16 @@
 
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -49,12 +44,20 @@ import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.runtime.util.HDFSTool;
+import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -305,8 +308,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_metaData = null;
 	}
 	
-	public MatrixCharacteristics getMatrixCharacteristics() {
-		return _metaData.getMatrixCharacteristics();
+	public DataCharacteristics getDataCharacteristics() {
+		return _metaData.getDataCharacteristics();
 	}
 
 	public abstract void refreshMetaData();
@@ -888,8 +891,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		throws IOException 
 	{
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
-		return readBlobFromHDFS(fname, mc.getRows(), mc.getCols());
+		DataCharacteristics dc = iimd.getDataCharacteristics();
+		return readBlobFromHDFS(fname, dc.getRows(), dc.getCols());
 	}
 
 	protected abstract T readBlobFromHDFS(String fname, long rlen, long clen) 
@@ -918,19 +921,19 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		
 		if ( oinfo != OutputInfo.MatrixMarketOutputInfo ) {
 			// Get the dimension information from the metadata stored within MatrixObject
-			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
+			DataCharacteristics dc = iimd.getDataCharacteristics();
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE &&
-				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
+				(dc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || dc.getColsPerBlock() != ConfigurationManager.getBlocksize()) )
 			{
-				mc = new MatrixCharacteristics(mc.getRows(), mc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros());
+				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), dc.getNonZeros());
 			}
 			
 			//write the actual meta data file
 			HDFSTool.writeMetaDataFile (filePathAndName + ".mtd", valueType, 
-				getSchema(), dataType, mc, oinfo, formatProperties);
+				getSchema(), dataType, dc, oinfo, formatProperties);
 		}
 	}
 
@@ -1305,8 +1308,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		try {
 			MetaDataFormat md = (MetaDataFormat) _metaData;
 			if (md != null) {
-				MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
-				str.append(mc.toString());
+				DataCharacteristics dc = _metaData.getDataCharacteristics();
+				str.append(dc.toString());
 
 				InputInfo ii = md.getInputInfo();
 				if (ii == null)

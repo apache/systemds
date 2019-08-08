@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,17 +21,14 @@
 
 package org.tugraz.sysds.runtime.controlprogram.caching;
 
-import java.io.IOException;
-import java.lang.ref.SoftReference;
-
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -38,12 +37,16 @@ import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
-import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.HDFSTool;
+import org.tugraz.sysds.runtime.util.IndexRange;
+
+import java.io.IOException;
+import java.lang.ref.SoftReference;
 
 
 /**
@@ -116,7 +119,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		super(mo);
 
 		MetaDataFormat metaOld = (MetaDataFormat)mo.getMetaData();
-		_metaData = new MetaDataFormat(new MatrixCharacteristics(metaOld.getMatrixCharacteristics()),
+		_metaData = new MetaDataFormat(new MatrixCharacteristics(metaOld.getDataCharacteristics()),
 				                             metaOld.getOutputInfo(), metaOld.getInputInfo());
 		
 		_updateType = mo._updateType;
@@ -144,8 +147,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 	}
 	
 	@Override
-	public void updateMatrixCharacteristics (MatrixCharacteristics mc) {
-		_metaData.getMatrixCharacteristics().set(mc);
+	public void updateDataCharacteristics (DataCharacteristics dc) {
+		_metaData.getDataCharacteristics().set(dc);
 	}
 
 	/**
@@ -157,33 +160,33 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			throw new DMLRuntimeException("Cannot refresh meta data because there is no data or meta data. "); 
 			//we need to throw an exception, otherwise input/output format cannot be inferred
 		
-		MatrixCharacteristics mc = _metaData.getMatrixCharacteristics();
+		DataCharacteristics mc = _metaData.getDataCharacteristics();
 		mc.setDimension( _data.getNumRows(), _data.getNumColumns() );
 		mc.setNonZeros( _data.getNonZeros() );
 	}
 
 	public long getNumRows() {
-		return getMatrixCharacteristics().getRows();
+		return getDataCharacteristics().getRows();
 	}
 
 	public long getNumColumns() {
-		return getMatrixCharacteristics().getCols();
+		return getDataCharacteristics().getCols();
 	}
 
 	public long getNumRowsPerBlock() {
-		return getMatrixCharacteristics().getRowsPerBlock();
+		return getDataCharacteristics().getRowsPerBlock();
 	}
 
 	public long getNumColumnsPerBlock() {
-		return getMatrixCharacteristics().getColsPerBlock();
+		return getDataCharacteristics().getColsPerBlock();
 	}
 
 	public long getNnz() {
-		return getMatrixCharacteristics().getNonZeros();
+		return getDataCharacteristics().getNonZeros();
 	}
 
 	public double getSparsity() {
-		return OptimizerUtils.getSparsity(getMatrixCharacteristics());
+		return OptimizerUtils.getSparsity(getDataCharacteristics());
 	}
 	
 	// *********************************************
@@ -260,7 +263,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			
 			//preparations for block wise access
 			MetaDataFormat iimd = (MetaDataFormat) _metaData;
-			MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+			DataCharacteristics mc = iimd.getDataCharacteristics();
 			int brlen = mc.getRowsPerBlock();
 			int bclen = mc.getColsPerBlock();
 			
@@ -421,7 +424,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws IOException
 	{
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		DataCharacteristics mc = iimd.getDataCharacteristics();
 		long begin = 0;
 		
 		if( LOG.isTraceEnabled() ) {
@@ -457,7 +460,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		writeStatus.setValue(false);
 		
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
-		MatrixCharacteristics mc = iimd.getMatrixCharacteristics();
+		DataCharacteristics mc = iimd.getDataCharacteristics();
 		InputInfo ii = iimd.getInputInfo();
 		MatrixBlock mb = null;
 		try 
@@ -470,8 +473,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//obtain matrix block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
-			int brlen = (int)mc.getRowsPerBlock();
-			int bclen = (int)mc.getColsPerBlock();
+			int brlen = mc.getRowsPerBlock();
+			int bclen = mc.getColsPerBlock();
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
@@ -481,7 +484,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 				//note: lazy, partition-at-a-time collect (toLocalIterator) was significantly slower
 				if( !HDFSTool.existsFileOnHDFS(_hdfsFileName) ) { //prevent overwrite existing file
 					long newnnz = SparkExecutionContext.writeRDDtoHDFS(lrdd, _hdfsFileName, iimd.getOutputInfo());
-					_metaData.getMatrixCharacteristics().setNonZeros(newnnz);
+					_metaData.getDataCharacteristics().setNonZeros(newnnz);
 					((RDDObject)rdd).setPending(false); //mark rdd as non-pending (for export)
 					((RDDObject)rdd).setHDFSFile(true); //mark rdd as hdfs file (for restore)
 					writeStatus.setValue(true);         //mark for no cache-write on read
@@ -529,7 +532,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		if (_data != null)
 		{
 			// Get the dimension information from the metadata stored within MatrixObject
-			MatrixCharacteristics mc = iimd.getMatrixCharacteristics ();
+			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
 			OutputInfo oinfo = (ofmt != null ? OutputInfo.stringToOutputInfo (ofmt) : 
 					InputInfo.getMatchingOutputInfo (iimd.getInputInfo ()));
@@ -537,7 +540,7 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 
 			if ( oinfo == OutputInfo.BinaryBlockOutputInfo && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE &&
-				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) ) 
+				(mc.getRowsPerBlock() != ConfigurationManager.getBlocksize() || mc.getColsPerBlock() != ConfigurationManager.getBlocksize()) )
 			{
 				DataConverter.writeMatrixToHDFS(_data, fname, oinfo, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
 					ConfigurationManager.getBlocksize(), ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
@@ -569,6 +572,6 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.				
 		long newnnz = SparkExecutionContext.writeRDDtoHDFS(rdd, fname, oinfo);	
-		_metaData.getMatrixCharacteristics().setNonZeros(newnnz);
+		_metaData.getDataCharacteristics().setNonZeros(newnnz);
 	}
 }

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -31,7 +33,7 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.HDFSTool;
 import org.tugraz.sysds.utils.Statistics;
 
@@ -72,7 +74,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 					sec.getRDDHandleForMatrixObject(in, InputInfo.BinaryBlockInputInfo);
 			
 			//determine degree of parallelism
-			MatrixCharacteristics mc = in.getMatrixCharacteristics();
+			DataCharacteristics mc = in.getDataCharacteristics();
 			int numRed = (int)determineNumReducers(inRdd, mc, _numRed);
 	
 			//run spark remote data partition job 
@@ -95,7 +97,7 @@ public class DataPartitionerRemoteSpark extends DataPartitioner
 	}
 
 	private long determineNumReducers(JavaPairRDD<MatrixIndexes,MatrixBlock> in,
-		MatrixCharacteristics mc, long numRed)
+	                                  DataCharacteristics mc, long numRed)
 	{
 		long rlen = mc.getRows();
 		long clen = mc.getCols();

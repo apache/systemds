@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,8 +22,6 @@
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
 
-import java.util.Arrays;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -33,15 +33,18 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBlockPairFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockPairFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.Statistics;
+
+import java.util.Arrays;
 
 public class ResultMergeRemoteSpark extends ResultMerge
 {
@@ -81,7 +84,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			if( _inputs != null && _inputs.length>0 ) {
 				//prepare compare
 				MetaDataFormat metadata = (MetaDataFormat) _output.getMetaData();
-				MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
+				DataCharacteristics mcOld = metadata.getDataCharacteristics();
 				MatrixObject compare = (mcOld.getNonZeros()==0) ? null : _output;
 				
 				//actual merge
@@ -91,7 +94,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 				moNew = new MatrixObject(_output.getValueType(), _outputFName);
 				OutputInfo oiOld = metadata.getOutputInfo();
 				InputInfo iiOld = metadata.getInputInfo();
-				MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
+				DataCharacteristics mc = new MatrixCharacteristics(mcOld);
 				mc.setNonZeros(_isAccum ? -1 : computeNonZeros(_output, Arrays.asList(_inputs)));
 				MetaDataFormat meta = new MetaDataFormat(mc,oiOld,iiOld);
 				moNew.setMetaData( meta );
@@ -151,7 +154,7 @@ public class ResultMergeRemoteSpark extends ResultMerge
 			//b) create rdd from input files w/ deep copy of keys and blocks
 			JavaPairRDD<MatrixIndexes, MatrixBlock> rdd = sec.getSparkContext()
 					.hadoopRDD(job, ii.inputFormatClass, ii.inputKeyClass, ii.inputValueClass)
-					.mapPartitionsToPair(new CopyBlockPairFunction(true), true);
+					.mapPartitionsToPair(new CopyMatrixBlockPairFunction(true), true);
 			
 			//Step 2a: merge with compare
 			JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;

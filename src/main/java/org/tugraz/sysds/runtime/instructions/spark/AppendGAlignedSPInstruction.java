@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -31,8 +33,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.ReorgOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
 public class AppendGAlignedSPInstruction extends BinarySPInstruction {
@@ -68,10 +69,10 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 		// general case append (map-extend, aggregate)
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		checkBinaryAppendInputCharacteristics(sec, _cbind, false, true);
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		
 		// Simple changing of matrix indexes of RHS
@@ -80,7 +81,7 @@ public class AppendGAlignedSPInstruction extends BinarySPInstruction {
 		out = in1.union( out );
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,21 +21,10 @@
 
 package org.tugraz.sysds.runtime.controlprogram;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import org.apache.log4j.Level;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.conf.DMLConfig;
@@ -44,11 +35,9 @@ import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.DMLProgram;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.ParForStatementBlock;
+import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.VariableSet;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.parser.ParForStatementBlock.ResultVar;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -95,11 +84,24 @@ import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
 import org.tugraz.sysds.yarn.ropt.YarnClusterAnalyzer;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 
@@ -214,7 +216,7 @@ public class ParForProgramBlock extends ForProgramBlock
 				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE
 				|| _dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N;
 		}
-		public long getNumParts(MatrixCharacteristics mc) {
+		public long getNumParts(DataCharacteristics mc) {
 			switch( _dpf ) {
 				case ROW_WISE: return mc.getRows();
 				case ROW_BLOCK_WISE: return mc.getNumRowBlocks();
@@ -226,7 +228,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					throw new RuntimeException("Unsupported partition format: "+_dpf);
 			}
 		}
-		public long getNumRows(MatrixCharacteristics mc) {
+		public long getNumRows(DataCharacteristics mc) {
 			switch( _dpf ) {
 				case ROW_WISE: return 1;
 				case ROW_BLOCK_WISE: return mc.getRowsPerBlock();
@@ -238,7 +240,7 @@ public class ParForProgramBlock extends ForProgramBlock
 					throw new RuntimeException("Unsupported partition format: "+_dpf);
 			}
 		}
-		public long getNumColumns(MatrixCharacteristics mc) {
+		public long getNumColumns(DataCharacteristics mc) {
 			switch( _dpf ) {
 				case ROW_WISE: return mc.getCols();
 				case ROW_BLOCK_WISE: return mc.getCols();
@@ -370,7 +372,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * 
 	 * @param ID parfor program block id
 	 * @param prog runtime program
-	 * @param iterPredVars ?
+	 * @param iterPredVar ?
 	 * @param params map of parameters
 	 * @param resultVars list of result variable names
 	 */

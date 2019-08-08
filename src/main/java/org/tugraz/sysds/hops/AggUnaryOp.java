@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,22 +22,22 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.Aggregate;
+import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.PartialAggregate;
+import org.tugraz.sysds.lops.PartialAggregate.DirectionTypes;
 import org.tugraz.sysds.lops.TernaryAggregate;
 import org.tugraz.sysds.lops.UAggOuterChain;
 import org.tugraz.sysds.lops.UnaryCP;
-import org.tugraz.sysds.lops.Aggregate.OperationTypes;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.PartialAggregate.DirectionTypes;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 
 // Aggregate unary (cell) operation: Sum (aij), col_sum, row_sum
@@ -200,7 +202,7 @@ public class AggUnaryOp extends MultiThreadedHop
 					SparkAggType aggtype = getSparkUnaryAggregationType(needAgg);
 					
 					PartialAggregate aggregate = new PartialAggregate(input.constructLops(), 
-							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), DataType.MATRIX, getValueType(), aggtype, et);
+							HopsAgg2Lops.get(_op), HopsDirection2Lops.get(_direction), input._dataType, getValueType(), aggtype, et);
 					aggregate.setDimensionsBasedOnDirection(getDim1(), getDim2(), input.getRowsInBlock(), input.getColsInBlock());
 					setLineNumbers(aggregate);
 					setLops(aggregate);
@@ -339,11 +341,11 @@ public class AggUnaryOp extends MultiThreadedHop
 		long[] ret = null;
 	
 		Hop input = getInput().get(0);
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
-		if( _direction == Direction.Col && mc.colsKnown() ) 
-			ret = new long[]{1, mc.getCols(), -1};
-		else if( _direction == Direction.Row && mc.rowsKnown() )
-			ret = new long[]{mc.getRows(), 1, -1};
+		DataCharacteristics dc = memo.getAllInputStats(input);
+		if( _direction == Direction.Col && dc.colsKnown() )
+			ret = new long[]{1, dc.getCols(), -1};
+		else if( _direction == Direction.Row && dc.rowsKnown() )
+			ret = new long[]{dc.getRows(), 1, -1};
 		
 		return ret;
 	}

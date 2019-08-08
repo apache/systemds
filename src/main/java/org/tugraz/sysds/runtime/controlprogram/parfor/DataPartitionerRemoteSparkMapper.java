@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,11 +21,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 import org.apache.hadoop.io.Writable;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -33,10 +30,14 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.DataConverter;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * NOTE: for the moment we only support binary block here
@@ -57,7 +58,7 @@ public class DataPartitionerRemoteSparkMapper extends ParWorker implements PairF
 	private PDataPartitionFormat _dpf;
 	private final long _n;
 	
-	public DataPartitionerRemoteSparkMapper(MatrixCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) {
+	public DataPartitionerRemoteSparkMapper(DataCharacteristics mc, InputInfo ii, OutputInfo oi, PDataPartitionFormat dpf, int n) {
 		_rlen = mc.getRows();
 		_clen = mc.getCols();
 		_brlen = mc.getRowsPerBlock();

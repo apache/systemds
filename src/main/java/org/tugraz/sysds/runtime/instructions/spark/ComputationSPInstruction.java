@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -31,7 +33,7 @@ import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageItemUtils;
 import org.tugraz.sysds.runtime.lineage.LineageTraceable;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 public abstract class ComputationSPInstruction extends SPInstruction implements LineageTraceable {
 	public CPOperand output;
@@ -57,40 +59,40 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 		return output.getName();
 	}
 
-	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
-		updateUnaryOutputMatrixCharacteristics(sec, input1.getName(), output.getName());
+	protected void updateUnaryOutputDataCharacteristics(SparkExecutionContext sec) {
+		updateUnaryOutputDataCharacteristics(sec, input1.getName(), output.getName());
 	}
 
-	protected void updateUnaryOutputMatrixCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) {
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(nameIn);
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(nameOut);
-		if(!mcOut.dimsKnown()) {
-			if(!mc1.dimsKnown())
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mc1.toString() + " " + mcOut.toString());
+	protected void updateUnaryOutputDataCharacteristics(SparkExecutionContext sec, String nameIn, String nameOut) {
+		DataCharacteristics dc1 = sec.getDataCharacteristics(nameIn);
+		DataCharacteristics dcOut = sec.getDataCharacteristics(nameOut);
+		if(!dcOut.dimsKnown()) {
+			if(!dc1.dimsKnown())
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + dc1.toString() + " " + dcOut.toString());
 			else
-				mcOut.set(mc1.getRows(), mc1.getCols(), mc1.getRowsPerBlock(), mc1.getColsPerBlock());
+				dcOut.set(dc1.getRows(), dc1.getCols(), dc1.getRowsPerBlock(), dc1.getColsPerBlock());
 		}
 	}
 
-	protected void updateBinaryOutputMatrixCharacteristics(SparkExecutionContext sec) {
-		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-		boolean outer = (mcIn1.getRows()>1 && mcIn1.getCols()==1 && mcIn2.getRows()==1 && mcIn2.getCols()>1);
+	protected void updateBinaryOutputDataCharacteristics(SparkExecutionContext sec) {
+		DataCharacteristics dcIn1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics dcIn2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics dcOut = sec.getDataCharacteristics(output.getName());
+		boolean outer = (dcIn1.getRows()>1 && dcIn1.getCols()==1 && dcIn2.getRows()==1 && dcIn2.getCols()>1);
 		
-		if(!mcOut.dimsKnown()) {
-			if(!mcIn1.dimsKnown())
-				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + mcIn1.toString() + " " + mcIn2.toString() + " " + mcOut.toString());
+		if(!dcOut.dimsKnown()) {
+			if(!dcIn1.dimsKnown())
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + dcIn1.toString() + " " + dcIn2.toString() + " " + dcOut.toString());
 			else if(outer)
-				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn2.getCols(), mcIn1.getRowsPerBlock(), mcIn2.getColsPerBlock());
+				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn2.getCols(), dcIn1.getRowsPerBlock(), dcIn2.getColsPerBlock());
 			else
-				sec.getMatrixCharacteristics(output.getName()).set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getRowsPerBlock());
+				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn1.getCols(), dcIn1.getRowsPerBlock(), dcIn1.getRowsPerBlock());
 		}
 	}
 	
-	protected void updateUnaryAggOutputMatrixCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) {
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+	protected void updateUnaryAggOutputDataCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) {
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if( mcOut.dimsKnown() )
 			return;
 		

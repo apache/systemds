@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,29 +21,29 @@
 
 package org.tugraz.sysds.hops;
 
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.Unary;
 import org.tugraz.sysds.lops.WeightedCrossEntropy;
+import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.tugraz.sysds.lops.WeightedCrossEntropyR;
 import org.tugraz.sysds.lops.WeightedDivMM;
+import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
 import org.tugraz.sysds.lops.WeightedDivMMR;
 import org.tugraz.sysds.lops.WeightedSigmoid;
+import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.tugraz.sysds.lops.WeightedSigmoidR;
 import org.tugraz.sysds.lops.WeightedSquaredLoss;
+import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.tugraz.sysds.lops.WeightedSquaredLossR;
 import org.tugraz.sysds.lops.WeightedUnaryMM;
-import org.tugraz.sysds.lops.WeightedUnaryMMR;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
-import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.WeightedUnaryMMR;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /** 
  * Note: this hop should be called AggQuaternaryOp in consistency with AggUnaryOp and AggBinaryOp;
@@ -708,22 +710,22 @@ public class QuaternaryOp extends MultiThreadedHop
 			
 			case WSIGMOID: 
 			case WUMM: {
-				MatrixCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
+				DataCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
 				ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};
 				break;
 			}
 			
 			case WDIVMM: {
 				if( _baseType == 0 ){ //basic 
-					MatrixCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
+					DataCharacteristics mcW = memo.getAllInputStats(getInput().get(0));
 					ret = new long[]{mcW.getRows(), mcW.getCols(), mcW.getNonZeros()};	
 				}
 				else if( _baseType == 1 || _baseType == 3 ) { //left (w/ transpose or w/ epsilon)
-					MatrixCharacteristics mcV = memo.getAllInputStats(getInput().get(2));
+					DataCharacteristics mcV = memo.getAllInputStats(getInput().get(2));
 					ret = new long[]{mcV.getRows(), mcV.getCols(), -1};
 				}
 				else { //right
-					MatrixCharacteristics mcU = memo.getAllInputStats(getInput().get(1));
+					DataCharacteristics mcU = memo.getAllInputStats(getInput().get(1));
 					ret = new long[]{mcU.getRows(), mcU.getCols(), -1};
 				}
 				break;

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -24,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.hops.HopsException;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 public abstract class SparsityEstimator 
@@ -54,7 +57,7 @@ public abstract class SparsityEstimator
 	 * @param root
 	 * @return
 	 */
-	public abstract MatrixCharacteristics estim(MMNode root);
+	public abstract DataCharacteristics estim(MMNode root);
 	
 	
 	/**
@@ -79,7 +82,7 @@ public abstract class SparsityEstimator
 	/**
 	 * Estimates the output sparsity for a given unary operation.
 	 * 
-	 * @param m1 left-hand-side operand
+	 * @param m left-hand-side operand
 	 * @param op operator code
 	 * @return sparsity
 	 */
@@ -89,28 +92,28 @@ public abstract class SparsityEstimator
 		return ArrayUtils.contains(EXACT_META_DATA_OPS, op);
 	}
 	
-	protected MatrixCharacteristics estimExactMetaData(MatrixCharacteristics mc1, MatrixCharacteristics mc2, OpCode op) {
+	protected DataCharacteristics estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
 		switch( op ) {
 			case EQZERO:
-				return new MatrixCharacteristics(mc1.getRows(), mc1.getCols(),
-					(long) mc1.getRows() * mc1.getCols() - mc1.getNonZeros());
+				return new MatrixCharacteristics(dc1.getRows(), dc1.getCols(),
+					(long) dc1.getRows() * dc1.getCols() - dc1.getNonZeros());
 			case DIAG:
-				return (mc1.getCols() == 1) ?
-					new MatrixCharacteristics(mc1.getRows(), mc1.getRows(), mc1.getNonZeros()) :
-					new MatrixCharacteristics(mc1.getRows(), 1, Math.min(mc1.getRows(), mc1.getNonZeros()));
+				return (dc1.getCols() == 1) ?
+					new MatrixCharacteristics(dc1.getRows(), dc1.getRows(), dc1.getNonZeros()) :
+					new MatrixCharacteristics(dc1.getRows(), 1, Math.min(dc1.getRows(), dc1.getNonZeros()));
 			// binary operations that preserve sparsity exactly
 			case CBIND:
-				return new MatrixCharacteristics(mc1.getRows(), 
-					mc1.getCols() + mc2.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
+				return new MatrixCharacteristics(dc1.getRows(),
+					dc1.getCols() + dc2.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
 			case RBIND:
-				return new MatrixCharacteristics(mc1.getRows() + mc2.getRows(), 
-					mc1.getCols(), mc1.getNonZeros() + mc2.getNonZeros());
+				return new MatrixCharacteristics(dc1.getRows() + dc2.getRows(),
+					dc1.getCols(), dc1.getNonZeros() + dc2.getNonZeros());
 			case TRANS:
-				return new MatrixCharacteristics(mc1.getCols(), mc1.getRows(), mc1.getNonZeros());
+				return new MatrixCharacteristics(dc1.getCols(), dc1.getRows(), dc1.getNonZeros());
 			// unary operation that preserve sparsity exactly
 			case NEQZERO:
 			case RESHAPE:
-				return mc1;
+				return dc1;
 			default:
 				throw new HopsException("Opcode is not an exact meta data operation: "+op.name());
 		}

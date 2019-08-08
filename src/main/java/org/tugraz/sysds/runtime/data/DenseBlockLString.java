@@ -32,7 +32,7 @@ public class DenseBlockLString extends DenseBlockLDRB
 {
 	private static final long serialVersionUID = -6632424825959423264L;
 
-	private String[][] _blocks;
+	protected String[][] _blocks;
 
 	public DenseBlockLString(int[] dims) {
 		super(dims);

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,39 +21,31 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.IntStream;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
-import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.codegen.CodegenUtils;
 import org.tugraz.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.tugraz.sysds.runtime.codegen.SpoofCellwise;
+import org.tugraz.sysds.runtime.codegen.SpoofCellwise.AggOp;
+import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.tugraz.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.tugraz.sysds.runtime.codegen.SpoofOperator;
 import org.tugraz.sysds.runtime.codegen.SpoofOuterProduct;
-import org.tugraz.sysds.runtime.codegen.SpoofRowwise;
-import org.tugraz.sysds.runtime.codegen.SpoofCellwise.AggOp;
-import org.tugraz.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.tugraz.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
+import org.tugraz.sysds.runtime.codegen.SpoofRowwise;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
 import org.tugraz.sysds.runtime.functionobjects.Builtin.BuiltinCode;
+import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.DoubleObject;
@@ -64,9 +58,16 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class SpoofSPInstruction extends SPInstruction {
 	private final Class<?> _class;
@@ -110,7 +111,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		int main = getMainInputIndex(_in, bcVect);
 		
 		//create joined input rdd w/ replication if needed
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[main].getName());
+		DataCharacteristics mcIn = sec.getDataCharacteristics(_in[main].getName());
 		JavaPairRDD<MatrixIndexes, MatrixBlock[]> in = createJoinedInputRDD(
 			sec, _in, bcVect, (_class.getSuperclass() == SpoofOuterProduct.class));
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
@@ -150,7 +151,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				
 				//maintain lineage info and output characteristics
 				maintainLineageInfo(sec, _in, bcVect, _out);
-				updateOutputMatrixCharacteristics(sec, op);
+				updateOutputDataCharacteristics(sec, op);
 			}
 			else { //SCALAR
 				out = in.mapPartitionsToPair(new CellwiseFunction(_class.getName(),
@@ -175,8 +176,8 @@ public class SpoofSPInstruction extends SPInstruction {
 				OutProdType type = ((SpoofOuterProduct)op).getOuterProdType();
 
 				//update matrix characteristics
-				updateOutputMatrixCharacteristics(sec, op);
-				MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
+				updateOutputDataCharacteristics(sec, op);
+				DataCharacteristics mcOut = sec.getDataCharacteristics(_out.getName());
 				
 				out = in.mapPartitionsToPair(new OuterProductFunction(
 					_class.getName(), _classBytes, bcVect2, bcMatrices, scalars), true);
@@ -204,7 +205,7 @@ public class SpoofSPInstruction extends SPInstruction {
 			}
 			SpoofRowwise op = (SpoofRowwise) CodegenUtils.createInstance(_class);
 			long clen2 = op.getRowType().isConstDim2(op.getConstDim2()) ? op.getConstDim2() :
-				op.getRowType().isRowTypeB1() ? sec.getMatrixCharacteristics(_in[1].getName()).getCols() : -1;
+				op.getRowType().isRowTypeB1() ? sec.getDataCharacteristics(_in[1].getName()).getCols() : -1;
 			RowwiseFunction fmmc = new RowwiseFunction(_class.getName(), _classBytes, bcVect2,
 				bcMatrices, scalars, mcIn.getRowsPerBlock(), (int)mcIn.getCols(), (int)clen2);
 			out = in.mapPartitionsToPair(fmmc, op.getRowType()==RowType.ROW_AGG
@@ -228,7 +229,7 @@ public class SpoofSPInstruction extends SPInstruction {
 				
 				//maintain lineage info and output characteristics
 				maintainLineageInfo(sec, _in, bcVect, _out);
-				updateOutputMatrixCharacteristics(sec, op);
+				updateOutputDataCharacteristics(sec, op);
 			}
 		}
 		else {
@@ -246,7 +247,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		//budget; the major input, i.e., inputs[0] is always an RDD
 		for( int i=0; i<inputs.length; i++ ) 
 			if( inputs[i].getDataType().isMatrix() ) {
-				MatrixCharacteristics mc = sec.getMatrixCharacteristics(inputs[i].getName());
+				DataCharacteristics mc = sec.getDataCharacteristics(inputs[i].getName());
 				double sizeL = OptimizerUtils.estimateSizeExactSparsity(mc);
 				double sizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
 				//account for partitioning and local/remote budgets
@@ -275,8 +276,8 @@ public class SpoofSPInstruction extends SPInstruction {
 	private static JavaPairRDD<MatrixIndexes, MatrixBlock[]> createJoinedInputRDD(SparkExecutionContext sec, CPOperand[] inputs, boolean[] bcVect, boolean outer) {
 		//get input rdd for main input
 		int main = getMainInputIndex(inputs, bcVect);
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(inputs[main].getName());
-		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(inputs[main].getName());
+		DataCharacteristics mcIn = sec.getDataCharacteristics(inputs[main].getName());
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(inputs[main].getName());
 		JavaPairRDD<MatrixIndexes, MatrixBlock[]> ret = in.mapValues(new MapInputSignature());
 		
 		for( int i=0; i<inputs.length; i++ )
@@ -284,8 +285,8 @@ public class SpoofSPInstruction extends SPInstruction {
 				//create side input rdd 
 				String varname = inputs[i].getName();
 				JavaPairRDD<MatrixIndexes, MatrixBlock> tmp = sec
-					.getBinaryBlockRDDHandleForVariable(varname);
-				MatrixCharacteristics mcTmp = sec.getMatrixCharacteristics(varname);
+					.getBinaryMatrixBlockRDDHandleForVariable(varname);
+				DataCharacteristics mcTmp = sec.getDataCharacteristics(varname);
 				//replicate blocks if mismatch with main input
 				if( outer && i==2 )
 					tmp = tmp.flatMapToPair(new ReplicateRightFactorFunction(mcIn.getRows(), mcIn.getRowsPerBlock()));
@@ -313,20 +314,20 @@ public class SpoofSPInstruction extends SPInstruction {
 			.filter(i -> inputs[i].isMatrix() && !bcVect[i]).min().orElse(0);
 	}
 	
-	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, SpoofOperator op) {
+	private void updateOutputDataCharacteristics(SparkExecutionContext sec, SpoofOperator op) {
 		if(op instanceof SpoofCellwise) {
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(_in[0].getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(_out.getName());
 			if( ((SpoofCellwise)op).getCellType()==CellType.ROW_AGG )
 				mcOut.set(mcIn.getRows(), 1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			else if( ((SpoofCellwise)op).getCellType()==CellType.NO_AGG )
 				mcOut.set(mcIn.getRows(), mcIn.getCols(), mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 		}
 		else if(op instanceof SpoofOuterProduct) {
-			MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(_in[0].getName()); //X
-			MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(_in[1].getName()); //U
-			MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(_in[2].getName()); //V
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
+			DataCharacteristics mcIn1 = sec.getDataCharacteristics(_in[0].getName()); //X
+			DataCharacteristics mcIn2 = sec.getDataCharacteristics(_in[1].getName()); //U
+			DataCharacteristics mcIn3 = sec.getDataCharacteristics(_in[2].getName()); //V
+			DataCharacteristics mcOut = sec.getDataCharacteristics(_out.getName());
 			OutProdType type = ((SpoofOuterProduct)op).getOuterProdType();
 			
 			if( type == OutProdType.CELLWISE_OUTER_PRODUCT)
@@ -337,8 +338,8 @@ public class SpoofSPInstruction extends SPInstruction {
 				mcOut.set(mcIn2.getRows(), mcIn2.getCols(), mcIn2.getRowsPerBlock(), mcIn2.getColsPerBlock());
 		}
 		else if(op instanceof SpoofRowwise) {
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(_in[0].getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(_out.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(_in[0].getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(_out.getName());
 			RowType type = ((SpoofRowwise)op).getRowType();
 			if( type == RowType.NO_AGG )
 				mcOut.set(mcIn);

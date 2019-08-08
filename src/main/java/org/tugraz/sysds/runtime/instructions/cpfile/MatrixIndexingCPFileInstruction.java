@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,10 +30,11 @@ import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
-import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.HDFSTool;
+import org.tugraz.sysds.runtime.util.IndexRange;
 
 /**
  * This instruction is used if a single partition is too large to fit in memory.
@@ -84,13 +87,13 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		if( mo.isPartitioned() && opcode.equalsIgnoreCase(RightIndex.OPCODE) ) 
 		{
 			MetaDataFormat meta = (MetaDataFormat)mo.getMetaData();
-			MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+			DataCharacteristics mc = meta.getDataCharacteristics();
 			String pfname = mo.getPartitionFileName( ixrange, mc.getRowsPerBlock(), mc.getColsPerBlock());
 			
 			if( HDFSTool.existsFileOnHDFS(pfname) ) { //default
 				//create output matrix object
 				MatrixObject mobj = new MatrixObject(mo.getValueType(), pfname );
-				MatrixCharacteristics mcNew = null;
+				DataCharacteristics mcNew = null;
 				switch( mo.getPartitionFormat() ) {
 					case ROW_WISE:
 						mcNew = new MatrixCharacteristics( 1, mc.getCols(), mc.getRowsPerBlock(), mc.getColsPerBlock() );

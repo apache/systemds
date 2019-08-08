@@ -234,7 +234,6 @@ public class LibTensorAgg {
 		}
 		switch (in.getValueType()) {
 			case BOOLEAN: {
-				// TODO: switch to in.getNonZeros() once working
 				kbuff._sum = in.getDenseBlock().countNonZeros();
 				break;
 			}

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,26 +21,22 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.tugraz.sysds.lops.WeightedCrossEntropy;
+import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.tugraz.sysds.lops.WeightedDivMM;
+import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
 import org.tugraz.sysds.lops.WeightedDivMMR;
 import org.tugraz.sysds.lops.WeightedSigmoid;
+import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.tugraz.sysds.lops.WeightedSquaredLoss;
+import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.tugraz.sysds.lops.WeightedSquaredLossR;
 import org.tugraz.sysds.lops.WeightedUnaryMM;
-import org.tugraz.sysds.lops.WeightedUnaryMMR;
-import org.tugraz.sysds.lops.WeightedCrossEntropy.WCeMMType;
-import org.tugraz.sysds.lops.WeightedDivMM.WDivMMType;
-import org.tugraz.sysds.lops.WeightedSigmoid.WSigmoidType;
-import org.tugraz.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.tugraz.sysds.lops.WeightedUnaryMM.WUMMType;
+import org.tugraz.sysds.lops.WeightedUnaryMMR;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -54,9 +52,12 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.QuaternaryOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class QuaternarySPInstruction extends ComputationSPInstruction {
 	private CPOperand _input4 = null;
@@ -196,10 +197,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		ArrayList<String> rddVars = new ArrayList<>();
 		ArrayList<String> bcVars = new ArrayList<>();
 
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = null;
 		
-		MatrixCharacteristics inMc = sec.getMatrixCharacteristics( input1.getName() );
+		DataCharacteristics inMc = sec.getDataCharacteristics( input1.getName() );
 		long rlen = inMc.getRows();
 		long clen = inMc.getCols();
 		int brlen = inMc.getRowsPerBlock();
@@ -234,10 +235,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		{
 			PartitionedBroadcast<MatrixBlock> bc1 = _cacheU ? sec.getBroadcastForVariable( input2.getName() ) : null;
 			PartitionedBroadcast<MatrixBlock> bc2 = _cacheV ? sec.getBroadcastForVariable( input3.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryBlockRDDHandleForVariable( input2.getName() ) : null;
-			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryBlockRDDHandleForVariable( input3.getName() ) : null;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inU = (!_cacheU) ? sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() ) : null;
+			JavaPairRDD<MatrixIndexes,MatrixBlock> inV = (!_cacheV) ? sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() ) : null;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inW = (qop.hasFourInputs() && !_input4.isLiteral()) ? 
-					sec.getBinaryBlockRDDHandleForVariable( _input4.getName() ) : null;
+					sec.getBinaryMatrixBlockRDDHandleForVariable( _input4.getName() ) : null;
 
 			//preparation of transposed and replicated U
 			if( inU != null )
@@ -305,22 +306,22 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 				sec.addLineageBroadcast(output.getName(), bcVar);
 			
 			//update matrix characteristics
-			updateOutputMatrixCharacteristics(sec, qop);
+			updateOutputDataCharacteristics(sec, qop);
 		}
 	}
 
-	private void updateOutputMatrixCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) {
-		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcIn2 = sec.getMatrixCharacteristics(input2.getName());
-		MatrixCharacteristics mcIn3 = sec.getMatrixCharacteristics(input3.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+	private void updateOutputDataCharacteristics(SparkExecutionContext sec, QuaternaryOperator qop) {
+		DataCharacteristics mcIn1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcIn2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics mcIn3 = sec.getDataCharacteristics(input3.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		if( qop.wtype2 != null || qop.wtype5 != null ) {
 			//output size determined by main input
 			mcOut.set(mcIn1.getRows(), mcIn1.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}
 		else if(qop.wtype3 != null ) { //wdivmm
 			long rank = qop.wtype3.isLeft() ? mcIn3.getCols() : mcIn2.getCols();
-			MatrixCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mcIn1.getRows(), mcIn1.getCols(), rank);
+			DataCharacteristics mcTmp = qop.wtype3.computeOutputCharacteristics(mcIn1.getRows(), mcIn1.getCols(), rank);
 			mcOut.set(mcTmp.getRows(), mcTmp.getCols(), mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock());
 		}
 	}

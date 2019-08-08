@@ -32,6 +32,8 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 
 @SuppressWarnings("rawtypes")
 public class OutputInfo implements Serializable 
@@ -56,6 +58,8 @@ public class OutputInfo implements Serializable
 			MatrixIndexes.class, MatrixCell.class);
 	public static final OutputInfo BinaryBlockOutputInfo=new OutputInfo(
 			SequenceFileOutputFormat.class, MatrixIndexes.class, MatrixBlock.class);
+	public static final OutputInfo BinaryTensorBlockOutputInfo=new OutputInfo(
+			SequenceFileOutputFormat.class, TensorIndexes.class, TensorBlock.class);
 	public static final OutputInfo BinaryBlockFrameOutputInfo=new OutputInfo(
 			SequenceFileOutputFormat.class, LongWritable.class, FrameBlock.class);
 
@@ -66,6 +70,8 @@ public class OutputInfo implements Serializable
 	public static InputInfo getMatchingInputInfo(OutputInfo oi) {
 		if ( oi == OutputInfo.BinaryBlockOutputInfo )
 			return InputInfo.BinaryBlockInputInfo;
+		else if ( oi == OutputInfo.BinaryTensorBlockOutputInfo )
+			return InputInfo.BinaryTensorBlockInputInfo;
 		else if ( oi == OutputInfo.MatrixMarketOutputInfo )
 			return InputInfo.MatrixMarketInputInfo;
 		else if ( oi == OutputInfo.BinaryCellOutputInfo ) 
@@ -89,6 +95,8 @@ public class OutputInfo implements Serializable
 			return BinaryCellOutputInfo;
 		else if (str.equalsIgnoreCase("binaryblock"))
 			return BinaryBlockOutputInfo;
+		else if (str.equalsIgnoreCase("binarytensorblock"))
+			return BinaryTensorBlockOutputInfo;
 		else if ( str.equalsIgnoreCase("csv") )
 			return CSVOutputInfo;
 		else if ( str.equalsIgnoreCase("libsvm") )
@@ -105,6 +113,8 @@ public class OutputInfo implements Serializable
 			return "binarycell";
 		else if ( oi == BinaryBlockOutputInfo )
 			return "binaryblock";
+		else if ( oi == BinaryTensorBlockOutputInfo )
+			return "binarytensorblock";
 		else if ( oi == CSVOutputInfo )
 			return "csv";
 		else if ( oi == LIBSVMOutputInfo)
@@ -124,7 +134,8 @@ public class OutputInfo implements Serializable
 		else if( oinfo == OutputInfo.LIBSVMOutputInfo)
 			return DataExpression.FORMAT_TYPE_VALUE_LIBSVM;
 		else if( oinfo == OutputInfo.BinaryBlockOutputInfo 
-				|| oinfo == OutputInfo.BinaryCellOutputInfo )
+				|| oinfo == OutputInfo.BinaryCellOutputInfo
+				|| oinfo == OutputInfo.BinaryTensorBlockOutputInfo)
 			return DataExpression.FORMAT_TYPE_VALUE_BINARY;
 		else
 			return "specialized";

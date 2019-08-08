@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,16 +20,15 @@
  */
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
-import java.util.Iterator;
-
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-
 import scala.Tuple2;
+
+import java.util.Iterator;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in
@@ -35,17 +36,17 @@ import scala.Tuple2;
  * of key/value pairs.
  * 
  */
-public class CopyBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>,MatrixIndexes, MatrixBlock>
+public class CopyMatrixBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple2<MatrixIndexes, MatrixBlock>>,MatrixIndexes, MatrixBlock>
 {
 	private static final long serialVersionUID = -196553327495233360L;
 
 	private boolean _deepCopy = true;
 	
-	public CopyBlockPairFunction() {
+	public CopyMatrixBlockPairFunction() {
 		this(true);
 	}
 	
-	public CopyBlockPairFunction(boolean deepCopy) {
+	public CopyMatrixBlockPairFunction(boolean deepCopy) {
 		_deepCopy = deepCopy;
 	}
 

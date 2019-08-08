@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,15 +21,16 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
@@ -38,9 +41,11 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
+
+import java.util.Iterator;
+import java.util.List;
 
 public class MatrixReshapeSPInstruction extends UnarySPInstruction
 {
@@ -85,45 +90,56 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		long rows = ec.getScalarInput(_opRows).getLongValue(); //save cast
 		long cols = ec.getScalarInput(_opCols).getLongValue(); //save cast
 		boolean byRow = ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral()).getBooleanValue();
-		
-		//get inputs 
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec
-			.getBinaryBlockRDDHandleForVariable(input1.getName(), -1, _outputEmptyBlocks);
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics( input1.getName() );
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics( output.getName() );
-		
-		//update output characteristics and sanity check
-		mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
-		if( !mcIn.nnzKnown() )
-			mcOut.setNonZerosBound(mcIn.getNonZerosBound());
-		if( mcIn.getRows()*mcIn.getCols() != mcOut.getRows()*mcOut.getCols() ) {
-			throw new DMLRuntimeException("Incompatible matrix characteristics for reshape: "
-				+ mcIn.getRows()+"x"+mcIn.getCols()+" vs "+mcOut.getRows()+"x"+mcOut.getCols());
+
+		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+		if (input1.getDataType() == Types.DataType.MATRIX) {
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
+					.getBinaryMatrixBlockRDDHandleForVariable(input1.getName(), -1, _outputEmptyBlocks);
+
+			//update output characteristics and sanity check
+			mcOut.set(rows, cols, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock(), mcIn.getNonZeros());
+			if (!mcIn.nnzKnown())
+				mcOut.setNonZerosBound(mcIn.getNonZerosBound());
+			if (mcIn.getRows() * mcIn.getCols() != mcOut.getRows() * mcOut.getCols()) {
+				throw new DMLRuntimeException("Incompatible matrix characteristics for reshape: "
+						+ mcIn.getRows() + "x" + mcIn.getCols() + " vs " + mcOut.getRows() + "x" + mcOut.getCols());
+			}
+
+			if (!_outputEmptyBlocks)
+				in1 = in1.filter(new FilterNonEmptyBlocksFunction());
+
+			//execute reshape instruction
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out =
+					in1.flatMapToPair(new RDDReshapeFunction(mcIn, mcOut, byRow, _outputEmptyBlocks));
+			out = RDDAggregateUtils.mergeByKey(out);
+
+			//put output RDD handle into symbol table
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		} else {
+			// TODO Tensor reshape
+			JavaPairRDD<TensorIndexes, TensorBlock> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(input1.getName(),
+					-1, _outputEmptyBlocks);
+			JavaPairRDD<TensorIndexes, TensorBlock> out = in1.flatMapToPair(
+					new RDDTensorReshapeFunction(mcIn, mcOut, byRow, _outputEmptyBlocks));
+			// TODO merge by key
+			//out = RDDAggregateUtils.mergeByKey(out);
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
 		}
-		
-		if( !_outputEmptyBlocks )
-			in1 = in1.filter(new FilterNonEmptyBlocksFunction());
-		
-		//execute reshape instruction
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = 
-			in1.flatMapToPair(new RDDReshapeFunction(mcIn, mcOut, byRow, _outputEmptyBlocks));
-		out = RDDAggregateUtils.mergeByKey(out);
-		
-		//put output RDD handle into symbol table
-		sec.setRDDHandleForVariable(output.getName(), out);
-		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 	
-	private static class RDDReshapeFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> 
+	private static class RDDReshapeFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{
 		private static final long serialVersionUID = 2819309412002224478L;
 		
-		private final MatrixCharacteristics _mcIn;
-		private final MatrixCharacteristics _mcOut;
+		private final DataCharacteristics _mcIn;
+		private final DataCharacteristics _mcOut;
 		private final boolean _byrow;
 		private final boolean _outputEmptyBlocks;
 		
-		public RDDReshapeFunction( MatrixCharacteristics mcIn, MatrixCharacteristics mcOut, boolean byrow, boolean outputEmptyBlocks) {
+		public RDDReshapeFunction(DataCharacteristics mcIn, DataCharacteristics mcOut, boolean byrow, boolean outputEmptyBlocks) {
 			_mcIn = mcIn;
 			_mcOut = mcOut;
 			_byrow = byrow;
@@ -143,6 +159,38 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 
 			//output conversion (for compatibility w/ rdd schema)
 			return SparkUtils.fromIndexedMatrixBlock(out).iterator();
+		}
+	}
+
+	@SuppressWarnings("unused")
+	private static class RDDTensorReshapeFunction implements PairFlatMapFunction<Tuple2<TensorIndexes, TensorBlock>,
+			TensorIndexes, TensorBlock> {
+		private static final long serialVersionUID = 8030648988828223639L;
+
+		private final DataCharacteristics _mcIn;
+		private final DataCharacteristics _mcOut;
+		private final boolean _byrow;
+		private final boolean _outputEmptyBlocks;
+
+		public RDDTensorReshapeFunction(DataCharacteristics mcIn, DataCharacteristics mcOut, boolean byrow, boolean outputEmptyBlocks) {
+			_mcIn = mcIn;
+			_mcOut = mcOut;
+			_byrow = byrow;
+			_outputEmptyBlocks = outputEmptyBlocks;
+		}
+
+		@Override
+		public Iterator<Tuple2<TensorIndexes, TensorBlock>> call(Tuple2<TensorIndexes, TensorBlock> arg0)
+				throws Exception {
+			//input conversion (for libmatrixreorg compatibility)
+			IndexedTensorBlock in = SparkUtils.toIndexedTensorBlock(arg0);
+
+			//execute actual reshape operation
+			//LibTensorReorg.reshape()
+//			List<IndexedTensorBlock> out = LibTensorReorg
+//					.reshape(in, _mcIn, _mcOut, _byrow, _outputEmptyBlocks);
+//			// TODO create iterator
+			return null;
 		}
 	}
 }

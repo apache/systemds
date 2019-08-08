@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -51,14 +53,14 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
 		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		
 		//execute unary builtin operation
 		UnaryOperator uop = (UnaryOperator) _optr;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in.mapValues(new RDDMatrixBuiltinUnaryOp(uop));
 		
 		//set output RDD
-		updateUnaryOutputMatrixCharacteristics(sec);
+		updateUnaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);	
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,10 +20,6 @@
  */
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,17 +44,20 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.util.PairWritableBlock;
 import org.tugraz.sysds.runtime.instructions.spark.data.DatasetObject;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
-import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.instructions.spark.utils.RDDConverterUtils.DataFrameExtractIDFunction;
+import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Statistics;
-
 import scala.Tuple2;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * TODO heavy hitter maintenance
@@ -80,10 +81,10 @@ public class RemoteDPParForSpark
 		
 		//prepare input parameters
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
-		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		DataCharacteristics mc = mo.getDataCharacteristics();
 
 		//initialize accumulators for tasks/iterations, and inputs
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(matrixvar);
 		LongAccumulator aTasks = sc.sc().longAccumulator("tasks");
 		LongAccumulator aIters = sc.sc().longAccumulator("iterations");
 
@@ -124,7 +125,7 @@ public class RemoteDPParForSpark
 	{
 		InputInfo ii = InputInfo.BinaryBlockInputInfo;
 		MatrixObject mo = sec.getMatrixObject(matrixvar);
-		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		DataCharacteristics mc = mo.getDataCharacteristics();
 
 		//leverage existing dataset (w/o shuffling for reblock and data partitioning) 
 		//NOTE: there will always be a checkpoint rdd on top of the input rdd and the dataset
@@ -148,7 +149,7 @@ public class RemoteDPParForSpark
 		else if( !requiresGrouping(dpf, mo) ) 
 		{
 			//get input rdd and data partitioning 
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(matrixvar);
 			DataPartitionerRemoteSparkMapper dpfun = new DataPartitionerRemoteSparkMapper(mc, ii, oi, dpf._dpf, dpf._N);
 			return in.flatMapToPair(dpfun);
 		}
@@ -157,7 +158,7 @@ public class RemoteDPParForSpark
 		{
 			//get input rdd, avoid unnecessary caching if input is checkpoint and not cached yet
 			//to reduce memory pressure for shuffle and subsequent 
-			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryBlockRDDHandleForVariable(matrixvar);
+			JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(matrixvar);
 			if( mo.getRDDHandle().isCheckpointRDD() && !sec.isRDDCached(in.id()) )
 				in = (JavaPairRDD<MatrixIndexes,MatrixBlock>)((RDDObject)
 						mo.getRDDHandle().getLineageChilds().get(0)).getRDD();
@@ -170,7 +171,7 @@ public class RemoteDPParForSpark
 	
 	//determines if given input matrix requires grouping of partial partition slices
 	private static boolean requiresGrouping(PartitionFormat dpf, MatrixObject mo) {
-		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		DataCharacteristics mc = mo.getDataCharacteristics();
 		return ((dpf == PartitionFormat.ROW_WISE && mc.getNumColBlocks() > 1)
 				|| (dpf == PartitionFormat.COLUMN_WISE && mc.getNumRowBlocks() > 1)
 				|| (dpf._dpf == PDataPartitionFormat.ROW_BLOCK_WISE_N && mc.getNumColBlocks() > 1)

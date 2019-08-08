@@ -21,15 +21,11 @@
 
 package org.tugraz.sysds.hops.rewrite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ExecMode;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.AggBinaryOp;
 import org.tugraz.sysds.hops.AggUnaryOp;
@@ -38,17 +34,6 @@ import org.tugraz.sysds.hops.DataGenOp;
 import org.tugraz.sysds.hops.DataOp;
 import org.tugraz.sysds.hops.DnnOp;
 import org.tugraz.sysds.hops.Hop;
-import org.tugraz.sysds.hops.HopsException;
-import org.tugraz.sysds.hops.IndexingOp;
-import org.tugraz.sysds.hops.LeftIndexingOp;
-import org.tugraz.sysds.hops.LiteralOp;
-import org.tugraz.sysds.hops.MemoTable;
-import org.tugraz.sysds.hops.NaryOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
-import org.tugraz.sysds.hops.ReorgOp;
-import org.tugraz.sysds.hops.TernaryOp;
-import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.hops.Hop.AggOp;
 import org.tugraz.sysds.hops.Hop.DataGenMethod;
 import org.tugraz.sysds.hops.Hop.DataOpTypes;
@@ -61,6 +46,17 @@ import org.tugraz.sysds.hops.Hop.OpOpDnn;
 import org.tugraz.sysds.hops.Hop.OpOpN;
 import org.tugraz.sysds.hops.Hop.ParamBuiltinOp;
 import org.tugraz.sysds.hops.Hop.ReOrgOp;
+import org.tugraz.sysds.hops.HopsException;
+import org.tugraz.sysds.hops.IndexingOp;
+import org.tugraz.sysds.hops.LeftIndexingOp;
+import org.tugraz.sysds.hops.LiteralOp;
+import org.tugraz.sysds.hops.MemoTable;
+import org.tugraz.sysds.hops.NaryOp;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.ParameterizedBuiltinOp;
+import org.tugraz.sysds.hops.ReorgOp;
+import org.tugraz.sysds.hops.TernaryOp;
+import org.tugraz.sysds.hops.UnaryOp;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.parser.DataIdentifier;
 import org.tugraz.sysds.parser.ForStatementBlock;
@@ -69,16 +65,20 @@ import org.tugraz.sysds.parser.IfStatementBlock;
 import org.tugraz.sysds.parser.Statement;
 import org.tugraz.sysds.parser.StatementBlock;
 import org.tugraz.sysds.parser.WhileStatementBlock;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ExecMode;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.tugraz.sysds.runtime.instructions.cp.StringInitCPInstruction;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 
 public class HopRewriteUtils 
 {
@@ -456,6 +456,7 @@ public class HopRewriteUtils
 		params.put(DataExpression.RAND_LAMBDA, new LiteralOp(-1.0));
 		params.put(DataExpression.RAND_SPARSITY, new LiteralOp(1.0));		
 		params.put(DataExpression.RAND_SEED, new LiteralOp(DataGenOp.UNSPECIFIED_SEED) );
+		params.put(DataExpression.RAND_TENSOR, new LiteralOp(false));
 		
 		//note internal refresh size information
 		DataIdentifier di = new DataIdentifier("tmp");
@@ -1420,31 +1421,31 @@ public class HopRewriteUtils
 		return hop.getInput().stream().allMatch(h -> h.getNnz() >= 0);
 	}
 	
-	public static long getMaxInputDim(MatrixCharacteristics[] mc, boolean dim1) {
-		return Arrays.stream(mc).mapToLong(
+	public static long getMaxInputDim(DataCharacteristics[] dc, boolean dim1) {
+		return Arrays.stream(dc).mapToLong(
 			h -> (dim1 ? h.getRows() : h.getRows())).max().orElse(-1);
 	}
 	
-	public static long getSumValidInputDims(MatrixCharacteristics[] mc, boolean dim1) {
+	public static long getSumValidInputDims(DataCharacteristics[] mc, boolean dim1) {
 		if( !hasValidInputDims(mc, dim1) )
 			return -1;
 		return Arrays.stream(mc).mapToLong(
 			h -> (dim1 ? h.getRows() : h.getCols())).sum();
 	}
 	
-	public static boolean hasValidInputDims(MatrixCharacteristics[] mc, boolean dim1) {
+	public static boolean hasValidInputDims(DataCharacteristics[] mc, boolean dim1) {
 		return Arrays.stream(mc).allMatch(
 			h -> dim1 ? h.rowsKnown() : h.colsKnown());
 	}
 	
-	public static long getSumValidInputNnz(MatrixCharacteristics[] mc, boolean worstcase) {
+	public static long getSumValidInputNnz(DataCharacteristics[] mc, boolean worstcase) {
 		if( !hasValidInputNnz(mc, worstcase) )
 			return -1;
 		return Arrays.stream(mc).mapToLong(h -> h.nnzKnown() ?
 			h.getNonZeros() : h.getLength()).sum();
 	}
 	
-	public static boolean hasValidInputNnz(MatrixCharacteristics[] mc, boolean worstcase) {
+	public static boolean hasValidInputNnz(DataCharacteristics[] mc, boolean worstcase) {
 		return Arrays.stream(mc).allMatch(h -> h.nnzKnown() || (worstcase && h.dimsKnown()));
 	}
 	

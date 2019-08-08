@@ -22,28 +22,18 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types;
-import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
-import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringTokenizer;
 
 public abstract class CPInstruction extends Instruction 
 {
-	private static final String DELIM = " ";
-
 	public enum CPType {
 		AggregateUnary, AggregateBinary, AggregateTernary,
 		Unary, Binary, Ternary, Quaternary, BuiltinNary, Ctable, 
@@ -110,7 +100,7 @@ public abstract class CPInstruction extends Instruction
 	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default preprocess behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
-		
+
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) { //update labels only if required
 			//note: no exchange of updated instruction as labels might change in the general case
@@ -195,73 +185,5 @@ public abstract class CPInstruction extends Instruction
 		} else {
 			throw new DMLRuntimeException("Variable (" + varName + ") in Instruction (" + inst + ") is not found in the variablemap.");
 		}
-	}
-
-	public  int[] getTensorDimensions(ExecutionContext ec, CPOperand dims) {
-		int[] tDims;
-		switch (dims.getDataType()) {
-			case SCALAR: {
-				// Dimensions given as string
-				if (dims.getValueType() != Types.ValueType.STRING) {
-					throw new DMLRuntimeException("Dimensions have to be passed as list, string, matrix or tensor.");
-				}
-				String dimensionString = ec.getScalarInput(dims.getName(), Types.ValueType.STRING, dims.isLiteral())
-						.getStringValue();
-				StringTokenizer dimensions = new StringTokenizer(dimensionString, DELIM);
-				tDims = new int[dimensions.countTokens()];
-				Arrays.setAll(tDims, (i) -> Integer.parseInt(dimensions.nextToken()));
-			}
-			break;
-			case MATRIX: {
-				// Dimensions given as vector
-				MatrixBlock in = ec.getMatrixInput(dims.getName());
-				boolean colVec = false;
-				if (in.getNumRows() == 1) {
-					colVec = true;
-				} else if (!(in.getNumColumns() == 1)) {
-					throw new DMLRuntimeException("Dimensions matrix has to be a vector.");
-				}
-				tDims = new int[(int) in.getLength()];
-				for (int i = 0; i < in.getLength(); i++) {
-					tDims[i] = UtilFunctions.toInt(in.getValue(colVec ? 0 : i, colVec ? i : 0));
-				}
-				ec.releaseMatrixInput(dims.getName());
-			}
-			break;
-			case TENSOR: {
-				// Dimensions given as vector
-				TensorBlock in = ec.getTensorInput(dims.getName());
-				boolean colVec = false;
-				if (!in.isVector()) {
-					throw new DMLRuntimeException("Dimensions tensor has to be a vector.");
-				} else if (in.getNumRows() == 1) {
-					colVec = true;
-				}
-				tDims = new int[(int) in.getLength()];
-				for (int i = 0; i < in.getLength(); i++) {
-					tDims[i] = UtilFunctions.toInt(in.get(new int[]{colVec ? 0 : i, colVec ? i : 0}));
-				}
-				ec.releaseTensorInput(dims.getName());
-			}
-			break;
-			case LIST: {
-				// Dimensions given as List
-				ListObject list = ec.getListObject(dims.getName());
-				tDims = new int[list.getLength()];
-				List<Data> dimsData = list.getData();
-				for (int i = 0; i < tDims.length; i++) {
-					if (dimsData.get(i) instanceof ScalarObject) {
-						// TODO warning if double value is cast to long?
-						tDims[i] = (int) ((ScalarObject) dimsData.get(i)).getLongValue();
-					} else {
-						throw new DMLRuntimeException("Dims parameter for does not support lists with non scalar values.");
-					}
-				}
-			}
-			break;
-			default:
-				throw new DMLRuntimeException("Dimensions have to be passed as list, string, matrix or tensor.");
-		}
-		return tDims;
 	}
 }

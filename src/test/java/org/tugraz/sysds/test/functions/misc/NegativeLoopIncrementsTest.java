@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -89,12 +91,6 @@ public class NegativeLoopIncrementsTest extends AutomatedTestBase
 		runNegativeLoopIncrementsTest(TEST_NAME2, true, true);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runNegativeLoopIncrementsTest( String testname, boolean vect, boolean multiStep )
 	{
 		String TEST_NAME = testname;

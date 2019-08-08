@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,15 +21,6 @@
 
 package org.tugraz.sysds.runtime.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
@@ -41,11 +34,11 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.OrderedJSONObject;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
@@ -55,7 +48,16 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.mapred.MRConfigurationNames;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class HDFSTool 
@@ -343,29 +345,29 @@ public class HDFSTool
 		}
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc, OutputInfo outinfo) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics mc, OutputInfo outinfo)
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, OutputInfo outinfo) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, OutputInfo outinfo)
 		throws IOException {
 		writeMetaDataFile(mtdfile, vt, schema, dt, mc, outinfo, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, MatrixCharacteristics mc,  OutputInfo outinfo, FileFormatProperties formatProperties) 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, OutputInfo outinfo, FileFormatProperties formatProperties)
 		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, outinfo, formatProperties);
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, outinfo, formatProperties);
 	}
 	
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc, 
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
 			OutputInfo outinfo, FileFormatProperties formatProperties) 
 		throws IOException 
 	{
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, schema, dt, mc, outinfo, formatProperties);
+			String mtd = metaDataToString(vt, schema, dt, dc, outinfo, formatProperties);
 			br.write(mtd);
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);
@@ -386,7 +388,7 @@ public class HDFSTool
 		}
 	}
 
-	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt, MatrixCharacteristics mc,
+	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
 			OutputInfo outinfo, FileFormatProperties formatProperties) throws JSONException, DMLRuntimeException
 	{
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
@@ -410,15 +412,15 @@ public class HDFSTool
 		
 		//handle output dimensions
 		if( !dt.isScalar() ) {
-			mtd.put(DataExpression.READROWPARAM, mc.getRows());
-			mtd.put(DataExpression.READCOLPARAM, mc.getCols());
+			mtd.put(DataExpression.READROWPARAM, dc.getRows());
+			mtd.put(DataExpression.READCOLPARAM, dc.getCols());
 			// handle output nnz and binary block configuration
 			if( dt.isMatrix() ) {
 				if (outinfo == OutputInfo.BinaryBlockOutputInfo ) {
-					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, mc.getRowsPerBlock());
-					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, mc.getColsPerBlock());
+					mtd.put(DataExpression.ROWBLOCKCOUNTPARAM, dc.getRowsPerBlock());
+					mtd.put(DataExpression.COLUMNBLOCKCOUNTPARAM, dc.getColsPerBlock());
 				}
-				mtd.put(DataExpression.READNNZPARAM, mc.getNonZeros());
+				mtd.put(DataExpression.READNNZPARAM, dc.getNonZeros());
 			}
 		}
 			

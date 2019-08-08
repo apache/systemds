@@ -22,8 +22,8 @@
 package org.tugraz.sysds.runtime.instructions.cp;
 
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -37,7 +37,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Explain;
 
@@ -101,7 +101,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 					rval = ((ListObject)ec.getVariable(input1.getName())).getLength();
 				}
 				else if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
-					MatrixCharacteristics mc = ec.getMatrixCharacteristics(input1.getName());
+					DataCharacteristics mc = ec.getDataCharacteristics(input1.getName());
 					rval = getSizeMetaData(_type, mc);
 		
 					//check for valid output, and acquire read if necessary
@@ -121,7 +121,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 							obj.release();
 							
 							//update meta data information
-							mc = ec.getMatrixCharacteristics(input1.getName());
+							mc = ec.getDataCharacteristics(input1.getName());
 							rval = getSizeMetaData(_type, mc);
 						}
 						else {
@@ -206,7 +206,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 		}
 	}
 	
-	private static long getSizeMetaData(AUType type, MatrixCharacteristics mc) {
+	private static long getSizeMetaData(AUType type, DataCharacteristics mc) {
 		switch( type ) {
 			case NROW: return mc.getRows();
 			case NCOL: return mc.getCols();

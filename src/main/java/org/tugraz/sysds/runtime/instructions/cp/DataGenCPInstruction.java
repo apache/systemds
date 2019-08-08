@@ -21,13 +21,13 @@
 
 package org.tugraz.sysds.runtime.instructions.cp;
 
-import org.tugraz.sysds.hops.DataGenOp;
-import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.hops.Hop.DataGenMethod;
-import org.tugraz.sysds.lops.DataGen;
-import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.DataGenOp;
+import org.tugraz.sysds.hops.Hop.DataGenMethod;
+import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.lops.DataGen;
+import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.TensorBlock;
@@ -37,6 +37,7 @@ import org.tugraz.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
+import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public class DataGenCPInstruction extends UnaryCPInstruction {
@@ -276,7 +277,7 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				LOG.trace("Process DataGenCPInstruction rand with seed = "+lSeed+".");
 
 			if (output.isTensor()) {
-				int[] tDims = getTensorDimensions(ec, dims);
+				int[] tDims = DataConverter.getTensorDimensions(ec, dims);
 				tensorBlock = new TensorBlock(output.getValueType(), tDims);
 				tensorBlock.allocateDenseBlock();
 				if (minValueStr.equals(maxValueStr)) {

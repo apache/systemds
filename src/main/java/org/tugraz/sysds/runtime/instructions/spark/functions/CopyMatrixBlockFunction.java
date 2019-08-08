@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,17 +28,17 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
  * mapValues (copy matrix blocks). It supports both deep and shallow copies of values.
  * 
  */
-public class CopyBlockFunction implements Function<MatrixBlock,MatrixBlock> 
+public class CopyMatrixBlockFunction implements Function<MatrixBlock,MatrixBlock>
 {
 	private static final long serialVersionUID = 966409324406154236L;
 
 	private boolean _deepCopy = true;
 	
-	public CopyBlockFunction() {
+	public CopyMatrixBlockFunction() {
 		this(true);
 	}
 	
-	public CopyBlockFunction(boolean deepCopy) {
+	public CopyMatrixBlockFunction(boolean deepCopy) {
 		_deepCopy = deepCopy;
 	}
 

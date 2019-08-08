@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,13 +21,6 @@
 
 package org.tugraz.sysds.api.mlcontext;
 
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -40,9 +35,9 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.OptimizerUtils;
-import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -61,13 +56,20 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.collection.JavaConversions;
 import scala.reflect.ClassTag;
+
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Utility class containing methods to perform data conversions.
@@ -295,7 +297,7 @@ public class MLContextConversionUtil {
 	public static FrameObject binaryBlocksToFrameObject(JavaPairRDD<Long, FrameBlock> binaryBlocks,
 			FrameMetadata frameMetadata) {
 
-		MatrixCharacteristics mc = (frameMetadata != null) ? 
+		MatrixCharacteristics mc = (frameMetadata != null) ?
 			frameMetadata.asMatrixCharacteristics() : new MatrixCharacteristics();
 		ValueType[] schema = (frameMetadata != null) ?
 			frameMetadata.getFrameSchema().getSchema().toArray(new ValueType[0]) : 
@@ -589,7 +591,7 @@ public class MLContextConversionUtil {
 	public static MatrixObject javaRDDStringCSVToMatrixObject(JavaRDD<String> javaRDD,
 			MatrixMetadata matrixMetadata) {
 		JavaPairRDD<LongWritable, Text> javaPairRDD = javaRDD.mapToPair(new ConvertStringToLongTextPair());
-		MatrixCharacteristics mc = (matrixMetadata != null) ? matrixMetadata.asMatrixCharacteristics()
+		DataCharacteristics mc = (matrixMetadata != null) ? matrixMetadata.asMatrixCharacteristics()
 				: new MatrixCharacteristics();
 
 		MatrixObject matrixObject = new MatrixObject(ValueType.FP64, OptimizerUtils.getUniqueTempFileName(),
@@ -1150,7 +1152,7 @@ public class MLContextConversionUtil {
 			@SuppressWarnings("unchecked")
 			JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlocks = (JavaPairRDD<MatrixIndexes, MatrixBlock>) sparkExecutionContext
 					.getRDDHandleForMatrixObject(matrixObject, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics mc = matrixObject.getMatrixCharacteristics();
+			DataCharacteristics mc = matrixObject.getDataCharacteristics();
 
 			return RDDConverterUtils.binaryBlockToDataFrame(spark(), binaryBlocks, mc, isVectorDF);
 		} catch (DMLRuntimeException e) {
@@ -1173,7 +1175,7 @@ public class MLContextConversionUtil {
 			@SuppressWarnings("unchecked")
 			JavaPairRDD<Long, FrameBlock> binaryBlockFrame = (JavaPairRDD<Long, FrameBlock>) sparkExecutionContext
 					.getRDDHandleForFrameObject(frameObject, InputInfo.BinaryBlockInputInfo);
-			MatrixCharacteristics mc = frameObject.getMatrixCharacteristics();
+			DataCharacteristics mc = frameObject.getDataCharacteristics();
 
 			return FrameRDDConverterUtils.binaryBlockToDataFrame(spark(), binaryBlockFrame, mc,
 					frameObject.getSchema());

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,14 +21,11 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
-import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.AggBinaryOp.SparkAggType;
+import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.LeftIndex;
 import org.tugraz.sysds.lops.RightIndex;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -41,11 +40,13 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.IndexRange;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * This class implements the frame indexing functionality inside Spark.
@@ -79,8 +80,8 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
 		{
 			//update and check output dimensions
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 			mcOut.set(ru-rl+1, cu-cl+1, mcIn.getRowsPerBlock(), mcIn.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
@@ -113,13 +114,13 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			JavaPairRDD<Long,FrameBlock> out = null;
 			
 			//update and check output dimensions
-			MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
-			MatrixCharacteristics mcLeft = ec.getMatrixCharacteristics(input1.getName());
+			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
+			DataCharacteristics mcLeft = ec.getDataCharacteristics(input1.getName());
 			mcOut.set(mcLeft.getRows(), mcLeft.getCols(), mcLeft.getRowsPerBlock(), mcLeft.getColsPerBlock());
 			checkValidOutputDimensions(mcOut);
 			
 			//note: always frame rhs, scalars are preprocessed via cast to 1x1 frame
-			MatrixCharacteristics mcRight = ec.getMatrixCharacteristics(input2.getName());
+			DataCharacteristics mcRight = ec.getDataCharacteristics(input2.getName());
 				
 			//sanity check matching index range and rhs dimensions
 			if(!mcRight.dimsKnown()) {
@@ -160,12 +161,12 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 			throw new DMLRuntimeException("Invalid opcode (" + opcode +") encountered in FrameIndexingSPInstruction.");		
 	}
 
-	private static boolean isPartitioningPreservingRightIndexing(MatrixCharacteristics mcIn, IndexRange ixrange) {
+	private static boolean isPartitioningPreservingRightIndexing(DataCharacteristics mcIn, IndexRange ixrange) {
 		return ( mcIn.dimsKnown() &&
 			(ixrange.rowStart==1 && ixrange.rowEnd==mcIn.getRows() ));   //Entire Column/s
 	}
 
-	private static void checkValidOutputDimensions(MatrixCharacteristics mcOut) {
+	private static void checkValidOutputDimensions(DataCharacteristics mcOut) {
 		if(!mcOut.dimsKnown()) {
 			throw new DMLRuntimeException("FrameIndexingSPInstruction: The updated output dimensions are invalid: " + mcOut);
 		}
@@ -181,7 +182,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		private long _rlen = -1;
 		private long _clen = -1;
 		
-		public SliceRHSForLeftIndexing(IndexRange ixrange, MatrixCharacteristics mcLeft) {
+		public SliceRHSForLeftIndexing(IndexRange ixrange, DataCharacteristics mcLeft) {
 			_ixrange = ixrange;
 			_rlen = mcLeft.getRows();
 			_clen = mcLeft.getCols();
@@ -210,7 +211,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		private int _bclen = -1;
 		private long _rlen = -1;
 		
-		public ZeroOutLHS(boolean complement, IndexRange range, MatrixCharacteristics mcLeft) {
+		public ZeroOutLHS(boolean complement, IndexRange range, DataCharacteristics mcLeft) {
 			_complement = complement;
 			_ixrange = range;
 			_brlen = (int) OptimizerUtils.getDefaultFrameSize();
@@ -262,7 +263,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		private PartitionedBroadcast<FrameBlock> _binput;
 		private IndexRange _ixrange = null;
 		
-		public LeftIndexPartitionFunction(PartitionedBroadcast<FrameBlock> binput, IndexRange ixrange, MatrixCharacteristics mc) 
+		public LeftIndexPartitionFunction(PartitionedBroadcast<FrameBlock> binput, IndexRange ixrange, DataCharacteristics mc)
 		{
 			_binput = binput;
 			_ixrange = ixrange;
@@ -336,7 +337,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		
 		private IndexRange _ixrange;
 		
-		public SliceBlock(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlock(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 		}
 
@@ -368,7 +369,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		
 		private IndexRange _ixrange;
 		
-		public SliceBlockPartitionFunction(IndexRange ixrange, MatrixCharacteristics mcOut) {
+		public SliceBlockPartitionFunction(IndexRange ixrange, DataCharacteristics mcOut) {
 			_ixrange = ixrange;
 		}
 

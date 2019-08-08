@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,12 +21,12 @@
 
 package org.tugraz.sysds.parser;
 
-import java.util.HashMap;
-
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+
+import java.util.HashMap;
 
 public class RelationalExpression extends Expression
 {

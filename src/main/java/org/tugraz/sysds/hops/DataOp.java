@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,21 +21,21 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.HashMap;
-import java.util.Map.Entry;
-
-import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
-import org.tugraz.sysds.lops.Data;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.LopsException;
-import org.tugraz.sysds.parser.DataExpression;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.conf.CompilerConfig.ConfigType;
+import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.lops.Data;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.LopsException;
+import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.LocalFileUtils;
+
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 /**
  *  A DataOp can be either a persistent read/write or transient read/write - writes will always have at least one input,
@@ -110,7 +112,7 @@ public class DataOp extends Hop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param dop data operator type
-	 * @param inputParameters input parameters
+	 * @param params input parameters
 	 */
 	public DataOp(String l, DataType dt, ValueType vt, 
 			DataOpTypes dop, HashMap<String, Hop> params) {
@@ -427,16 +429,16 @@ public class DataOp extends Hop
 		if(   _dataop == DataOpTypes.PERSISTENTWRITE
 			|| _dataop == DataOpTypes.TRANSIENTWRITE ) 
 		{
-			MatrixCharacteristics mc = memo.getAllInputStats(getInput().get(0));
-			if( mc.dimsKnown() )
-				ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
+			DataCharacteristics dc = memo.getAllInputStats(getInput().get(0));
+			if( dc.dimsKnown() )
+				ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
 		}
 		else if( _dataop == DataOpTypes.TRANSIENTREAD )
 		{
 			//prepare statistics, passed from cross-dag transient writes
-			MatrixCharacteristics mc = memo.getAllInputStats(this);
-			if( mc.dimsKnown() )
-				ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
+			DataCharacteristics dc = memo.getAllInputStats(this);
+			if( dc.dimsKnown() )
+				ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
 		}
 		
 		return ret;

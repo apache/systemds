@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -406,12 +408,6 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 		runWeightedDivMMTest(TEST_NAME13, true, true, false, ExecType.CP);
 	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
 	private void runWeightedDivMMTest( String testname, boolean sparse, boolean rewrites, boolean rep, ExecType instType)
 	{		
 		ExecMode platformOld = rtplatform;

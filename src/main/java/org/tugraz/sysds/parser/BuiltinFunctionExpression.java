@@ -21,11 +21,6 @@
 
 package org.tugraz.sysds.parser;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -37,6 +32,11 @@ import org.tugraz.sysds.parser.LanguageException.LanguageErrorCodes;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.DnnUtils;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class BuiltinFunctionExpression extends DataIdentifier 
 {

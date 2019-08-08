@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,16 +20,6 @@
  */
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,12 +46,23 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.FastStringTokenizer;
-import org.tugraz.sysds.runtime.util.LocalFileUtils;
 import org.tugraz.sysds.runtime.util.HDFSTool;
+import org.tugraz.sysds.runtime.util.LocalFileUtils;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map.Entry;
 
 /**
  * 
@@ -148,7 +151,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixObject moNew = new MatrixObject( _output.getValueType(), _outputFName );
 		
 		//create deep copy of metadata obj
-		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
+		DataCharacteristics mcOld = metadata.getDataCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld);
@@ -502,7 +505,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		LongWritable key = new LongWritable();
 		Text value = new Text();
 
-		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		DataCharacteristics mc = mo.getDataCharacteristics();
 		int brlen = mc.getRowsPerBlock(); 
 		int bclen = mc.getColsPerBlock();
 		//long row = -1, col = -1; //FIXME needs reconsideration whenever textcell is used actively
@@ -561,7 +564,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		MatrixIndexes key = new MatrixIndexes();
 		MatrixCell value = new MatrixCell();
 	
-		MatrixCharacteristics mc = mo.getMatrixCharacteristics();
+		DataCharacteristics mc = mo.getDataCharacteristics();
 		int brlen = mc.getRowsPerBlock();
 		int bclen = mc.getColsPerBlock();
 		
@@ -641,7 +644,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock();
@@ -728,7 +731,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock();
@@ -850,7 +853,7 @@ public class ResultMergeLocalFile extends ResultMerge
 		Path path = new Path( fnameNew );	
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 		
-		MatrixCharacteristics mc = metadata.getMatrixCharacteristics();
+		DataCharacteristics mc = metadata.getDataCharacteristics();
 		long rlen = mc.getRows();
 		long clen = mc.getCols();
 		int brlen = mc.getRowsPerBlock();

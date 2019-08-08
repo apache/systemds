@@ -21,17 +21,17 @@
 
 package org.tugraz.sysds.hops;
 
-import java.util.ArrayList;
-
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
-import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.Transform;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.lops.Transform.OperationTypes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
+import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.lops.Transform;
+import org.tugraz.sysds.lops.Transform.OperationTypes;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.ArrayList;
 
 /**
  *  Reorg (cell) operation: aij
@@ -267,7 +267,7 @@ public class ReorgOp extends MultiThreadedHop
 		long[] ret = null;
 	
 		Hop input = getInput().get(0);
-		MatrixCharacteristics mc = memo.getAllInputStats(input);
+		DataCharacteristics dc = memo.getAllInputStats(input);
 			
 		switch(op) 
 		{
@@ -275,34 +275,34 @@ public class ReorgOp extends MultiThreadedHop
 			{
 				// input is a [k1,k2] matrix and output is a [k2,k1] matrix
 				// #nnz in output is exactly the same as in input
-				if( mc.dimsKnown() )
-					ret = new long[]{ mc.getCols(), mc.getRows(), mc.getNonZeros() };
+				if( dc.dimsKnown() )
+					ret = new long[]{ dc.getCols(), dc.getRows(), dc.getNonZeros() };
 				break;
 			}
 			case REV:
 			{
 				// dims and nnz are exactly the same as in input
-				if( mc.dimsKnown() )
-					ret = new long[]{ mc.getRows(), mc.getCols(), mc.getNonZeros() };
+				if( dc.dimsKnown() )
+					ret = new long[]{ dc.getRows(), dc.getCols(), dc.getNonZeros() };
 				break;
 			}
 			case DIAG:
 			{
 				// NOTE: diag is overloaded according to the number of columns of the input
 				
-				long k = mc.getRows(); 
+				long k = dc.getRows();
 				
 				// CASE a) DIAG V2M
 				// input is a [1,k] or [k,1] matrix, and output is [k,k] matrix
 				// #nnz in output is in the worst case k => sparsity = 1/k
 				if( k == 1 )
-					ret = new long[]{k, k, ((mc.getNonZeros()>=0) ? mc.getNonZeros() : k)};
+					ret = new long[]{k, k, ((dc.getNonZeros()>=0) ? dc.getNonZeros() : k)};
 				
 				// CASE b) DIAG M2V
 				// input is [k,k] matrix and output is [k,1] matrix
 				// #nnz in the output is likely to be k (a dense matrix)
 				if( k > 1 )
-					ret = new long[]{k, 1, ((mc.getNonZeros()>=0) ? Math.min(k,mc.getNonZeros()) : k) };
+					ret = new long[]{k, 1, ((dc.getNonZeros()>=0) ? Math.min(k,dc.getNonZeros()) : k) };
 				
 				break;
 			}
@@ -311,11 +311,11 @@ public class ReorgOp extends MultiThreadedHop
 				// input is a [k1,k2] matrix and output is a [k3,k4] matrix with k1*k2=k3*k4, except for
 				// special cases where an input or output dimension is zero (i.e., 0x5 -> 1x0 is valid)
 				// #nnz in output is exactly the same as in input
-				if( mc.dimsKnown() ) {
+				if( dc.dimsKnown() ) {
 					if( _dim1 > 0  )
-						ret = new long[]{_dim1, mc.getRows()*mc.getCols()/_dim1, mc.getNonZeros()};
+						ret = new long[]{_dim1, dc.getRows()*dc.getCols()/_dim1, dc.getNonZeros()};
 					else if( _dim2 > 0 ) 
-						ret = new long[]{mc.getRows()*mc.getCols()/_dim2, _dim2, mc.getNonZeros()};
+						ret = new long[]{dc.getRows()*dc.getCols()/_dim2, _dim2, dc.getNonZeros()};
 					else if( _dim1 >= 0 && _dim2 >= 0 )
 						ret = new long[]{_dim1, _dim2, -1};
 				}
@@ -330,12 +330,12 @@ public class ReorgOp extends MultiThreadedHop
 				
 				if( !unknownIxRet ) {
 					boolean ixret = HopRewriteUtils.getBooleanValueSafe((LiteralOp)input4);
-					long dim2 = ixret ? 1 : mc.getCols();
-					long nnz = ixret ? mc.getRows() : mc.getNonZeros();
-					ret = new long[]{ mc.getRows(), dim2, nnz};
+					long dim2 = ixret ? 1 : dc.getCols();
+					long nnz = ixret ? dc.getRows() : dc.getNonZeros();
+					ret = new long[]{ dc.getRows(), dim2, nnz};
 				}
 				else {
-					ret = new long[]{ mc.getRows(), -1, -1};
+					ret = new long[]{ dc.getRows(), -1, -1};
 				}
 			}
 		}	

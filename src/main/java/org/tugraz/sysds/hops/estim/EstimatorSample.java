@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -26,7 +28,7 @@ import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -63,7 +65,7 @@ public class EstimatorSample extends SparsityEstimator
 	}
 	
 	@Override
-	public MatrixCharacteristics estim(MMNode root) {
+	public DataCharacteristics estim(MMNode root) {
 		LOG.warn("Recursive estimates not supported by EstimatorSample, falling back to EstimatorBasicAvg.");
 		return new EstimatorBasicAvg().estim(root);
 	}
@@ -157,8 +159,8 @@ public class EstimatorSample extends SparsityEstimator
 			case TRANS:
 			case DIAG:
 			case RESHAPE:
-				MatrixCharacteristics mc1 = m1.getMatrixCharacteristics();
-				MatrixCharacteristics mc2 = m2.getMatrixCharacteristics();
+				DataCharacteristics mc1 = m1.getDataCharacteristics();
+				DataCharacteristics mc2 = m2.getDataCharacteristics();
 				return OptimizerUtils.getSparsity(estimExactMetaData(mc1, mc2, op));
 			default:
 				throw new NotImplementedException();

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,9 +24,9 @@ package org.tugraz.sysds.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
@@ -39,7 +41,7 @@ import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 
 public class CSVReblockSPInstruction extends UnarySPInstruction {
@@ -97,8 +99,8 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 		}
 		
 		//set output characteristics
-		MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		mcOut.set(mcIn.getRows(), mcIn.getCols(), _brlen, _bclen);
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
@@ -123,7 +125,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected JavaPairRDD<MatrixIndexes,MatrixBlock> processMatrixCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut) {
+	protected JavaPairRDD<MatrixIndexes,MatrixBlock> processMatrixCSVReblockInstruction(SparkExecutionContext sec, DataCharacteristics mcOut) {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
 		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>)
@@ -135,7 +137,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, MatrixCharacteristics mcOut, ValueType[] schema) {
+	protected JavaPairRDD<Long,FrameBlock> processFrameCSVReblockInstruction(SparkExecutionContext sec, DataCharacteristics mcOut, ValueType[] schema) {
 		//get input rdd (needs to be longwritable/text for consistency with meta data, in case of
 		//serialization issues create longwritableser/textser as serializable wrappers
 		JavaPairRDD<LongWritable, Text> in = (JavaPairRDD<LongWritable, Text>) 

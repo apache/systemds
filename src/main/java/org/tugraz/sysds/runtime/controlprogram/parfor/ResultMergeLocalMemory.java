@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +21,6 @@
 
 package org.tugraz.sysds.runtime.controlprogram.parfor;
 
-import java.util.ArrayList;
-
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -29,9 +29,12 @@ import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.DataConverter;
+
+import java.util.ArrayList;
 
 /**
  * Local in-memory realization of result merge. If the resulting matrix is
@@ -229,7 +232,7 @@ public class ResultMergeLocalMemory extends ResultMerge
 		MatrixObject moNew = new MatrixObject( vt, _outputFName );
 		
 		//create deep copy of metadata obj
-		MatrixCharacteristics mcOld = metadata.getMatrixCharacteristics();
+		DataCharacteristics mcOld = metadata.getDataCharacteristics();
 		OutputInfo oiOld = metadata.getOutputInfo();
 		InputInfo iiOld = metadata.getInputInfo();
 		MatrixCharacteristics mc = new MatrixCharacteristics(mcOld.getRows(),mcOld.getCols(),

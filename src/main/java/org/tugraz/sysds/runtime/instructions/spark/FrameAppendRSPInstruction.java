@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -29,7 +31,6 @@ import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.spark.utils.FrameRDDAggregateUtils;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-
 import scala.Tuple2;
 
 public class FrameAppendRSPInstruction extends AppendRSPInstruction {
@@ -45,7 +46,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<Long,FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable( input2.getName() );
 		JavaPairRDD<Long,FrameBlock> out = null;
-		long leftRows = sec.getMatrixCharacteristics(input1.getName()).getRows();
+		long leftRows = sec.getDataCharacteristics(input1.getName()).getRows();
 		
 		if(_cbind) {
 			JavaPairRDD<Long,FrameBlock> in1Aligned = in1.mapToPair(new ReduceSideAppendAlignFunction(leftRows));
@@ -60,7 +61,7 @@ public class FrameAppendRSPInstruction extends AppendRSPInstruction {
 		}
 		
 		//put output RDD handle into symbol table
-		updateBinaryAppendOutputMatrixCharacteristics(sec, _cbind);
+		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 		sec.addLineageRDD(output.getName(), input2.getName());

@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,11 +22,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark.utils;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
-
 import org.apache.spark.HashPartitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -36,9 +33,14 @@ import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBlockFunction;
-import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBlockPairFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockPairFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTensorBlockFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.CopyTensorBlockPairFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.FilterNonEmptyBlocksFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.RecomputeNnzFunction;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
@@ -47,10 +49,15 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.runtime.matrix.mapred.IndexedMatrixValue;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 public class SparkUtils 
 {	
@@ -63,6 +70,14 @@ public class SparkUtils
 
 	public static IndexedMatrixValue toIndexedMatrixBlock( MatrixIndexes ix, MatrixBlock mb ) {
 		return new IndexedMatrixValue(ix, mb);
+	}
+
+	public static IndexedTensorBlock toIndexedTensorBlock( Tuple2<TensorIndexes,TensorBlock> in ) {
+		return new IndexedTensorBlock(in._1(), in._2());
+	}
+
+	public static IndexedTensorBlock toIndexedTensorBlock(TensorIndexes ix, TensorBlock mb ) {
+		return new IndexedTensorBlock(ix, mb);
 	}
 
 	public static Tuple2<MatrixIndexes,MatrixBlock> fromIndexedMatrixBlock( IndexedMatrixValue in ){
@@ -109,17 +124,17 @@ public class SparkUtils
 			&& in.rdd().partitioner().get() instanceof HashPartitioner;
 	}
 	
-	public static int getNumPreferredPartitions(MatrixCharacteristics mc, JavaPairRDD<?,?> in) {
-		if( !mc.dimsKnown(true) && in != null )
+	public static int getNumPreferredPartitions(DataCharacteristics dc, JavaPairRDD<?,?> in) {
+		if( !dc.dimsKnown(true) && in != null )
 			return in.getNumPartitions();
-		return getNumPreferredPartitions(mc);
+		return getNumPreferredPartitions(dc);
 	}
 	
-	public static int getNumPreferredPartitions(MatrixCharacteristics mc) {
-		if( !mc.dimsKnown() )
+	public static int getNumPreferredPartitions(DataCharacteristics dc) {
+		if( !dc.dimsKnown() )
 			return SparkExecutionContext.getDefaultParallelism(true);
 		double hdfsBlockSize = InfrastructureAnalyzer.getHDFSBlockSize();
-		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(mc);
+		double matrixPSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(dc);
 		return (int) Math.max(Math.ceil(matrixPSize/hdfsBlockSize), 1);
 	}
 	
@@ -147,9 +162,37 @@ public class SparkUtils
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in, boolean deep) 
 	{
 		if( !deep ) //pass through of indexes and blocks
-			return in.mapValues(new CopyBlockFunction(false));
+			return in.mapValues(new CopyMatrixBlockFunction(false));
 		else //requires key access, so use mappartitions
-			return in.mapPartitionsToPair(new CopyBlockPairFunction(deep), true);
+			return in.mapPartitionsToPair(new CopyMatrixBlockPairFunction(deep), true);
+	}
+
+	/**
+	 * Creates a partitioning-preserving deep copy of the input tensor RDD, where
+	 * the indexes and values are copied.
+	 *
+	 * @param in tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 * @return tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 */
+	public static JavaPairRDD<TensorIndexes, TensorBlock> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, TensorBlock> in) {
+		return copyBinaryBlockTensor(in, true);
+	}
+
+	/**
+	 * Creates a partitioning-preserving copy of the input tensor RDD. If a deep copy is
+	 * requested, indexes and values are copied, otherwise they are simply passed through.
+	 *
+	 * @param in   tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 * @param deep if true, perform deep copy
+	 * @return tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 */
+	public static JavaPairRDD<TensorIndexes, TensorBlock> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, TensorBlock> in, boolean deep) {
+		if (!deep) //pass through of indexes and blocks
+			return in.mapValues(new CopyTensorBlockFunction(false));
+		else //requires key access, so use mappartitions
+			return in.mapPartitionsToPair(new CopyTensorBlockPairFunction(deep), true);
 	}
 
 	// This returns RDD with identifier as well as location
@@ -182,7 +225,7 @@ public class SparkUtils
 	 * @param mc matrix characteristics
 	 * @return pair rdd of empty matrix blocks 
 	 */
-	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, MatrixCharacteristics mc )
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> getEmptyBlockRDD( JavaSparkContext sc, DataCharacteristics mc )
 	{
 		//compute degree of parallelism and block ranges
 		long size = mc.getNumBlocks() * OptimizerUtils.estimateSizeEmptyBlock(Math.min(
@@ -211,12 +254,12 @@ public class SparkUtils
 	 * @param input matrix as {@code JavaPairRDD<MatrixIndexes, MatrixCell>}
 	 * @return matrix characteristics
 	 */
-	public static MatrixCharacteristics computeMatrixCharacteristics(JavaPairRDD<MatrixIndexes, MatrixCell> input) 
+	public static DataCharacteristics computeDataCharacteristics(JavaPairRDD<MatrixIndexes, MatrixCell> input)
 	{
 		// compute dimensions and nnz in single pass
-		MatrixCharacteristics ret = input
-				.map(new AnalyzeCellMatrixCharacteristics())
-				.reduce(new AggregateMatrixCharacteristics());
+		DataCharacteristics ret = input
+				.map(new AnalyzeCellDataCharacteristics())
+				.reduce(new AggregateDataCharacteristics());
 		
 		return ret;
 	}
@@ -227,12 +270,12 @@ public class SparkUtils
 			.values().mapPartitions(new RecomputeNnzFunction()).reduce((a,b)->a+b);
 	}
 
-	private static class AnalyzeCellMatrixCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, MatrixCharacteristics> 
+	private static class AnalyzeCellDataCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, DataCharacteristics>
 	{
 		private static final long serialVersionUID = 8899395272683723008L;
 
 		@Override
-		public MatrixCharacteristics call(Tuple2<MatrixIndexes, MatrixCell> arg0) 
+		public DataCharacteristics call(Tuple2<MatrixIndexes, MatrixCell> arg0)
 			throws Exception 
 		{
 			long rix = arg0._1().getRowIndex();
@@ -242,12 +285,12 @@ public class SparkUtils
 		}
 	}
 
-	private static class AggregateMatrixCharacteristics implements Function2<MatrixCharacteristics, MatrixCharacteristics, MatrixCharacteristics> 
+	private static class AggregateDataCharacteristics implements Function2<DataCharacteristics, DataCharacteristics, DataCharacteristics>
 	{
 		private static final long serialVersionUID = 4263886749699779994L;
 
 		@Override
-		public MatrixCharacteristics call(MatrixCharacteristics arg0, MatrixCharacteristics arg1) 
+		public DataCharacteristics call(DataCharacteristics arg0, DataCharacteristics arg1)
 			throws Exception 
 		{
 			return new MatrixCharacteristics(
@@ -263,10 +306,10 @@ public class SparkUtils
 	{
 		private static final long serialVersionUID = 630129586089106855L;
 
-		private final MatrixCharacteristics _mc;
+		private final DataCharacteristics _mc;
 		private final long _pNumBlocks;
 		
-		public GenerateEmptyBlocks(MatrixCharacteristics mc, long pNumBlocks) {
+		public GenerateEmptyBlocks(DataCharacteristics mc, long pNumBlocks) {
 			_mc = mc;
 			_pNumBlocks = pNumBlocks;
 		}

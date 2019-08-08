@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,19 +21,19 @@
 
 package org.tugraz.sysds.hops.codegen;
 
-import java.util.ArrayList;
-
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.hops.Hop;
 import org.tugraz.sysds.hops.MemoTable;
 import org.tugraz.sysds.hops.MultiThreadedHop;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.lops.Lop;
-import org.tugraz.sysds.lops.SpoofFused;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.SpoofFused;
 import org.tugraz.sysds.runtime.codegen.SpoofRowwise;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.ArrayList;
 
 public class SpoofFusedOp extends MultiThreadedHop
 {
@@ -138,7 +140,7 @@ public class SpoofFusedOp extends MultiThreadedHop
 		long[] ret = null;
 	
 		//get statistics of main input
-		MatrixCharacteristics mc = memo.getAllInputStats(getInput().get(0));
+		DataCharacteristics mc = memo.getAllInputStats(getInput().get(0));
 		
 		if( mc.dimsKnown() ) {
 			switch(_dimsType)
@@ -153,9 +155,9 @@ public class SpoofFusedOp extends MultiThreadedHop
 					ret = new long[]{1, mc.getCols(), -1};
 					break;
 				case RANK_DIMS_COLS: {
-					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
-					if( mc2.dimsKnown() )
-						ret = new long[]{1, mc2.getCols(), -1};
+					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
+					if( dc2.dimsKnown() )
+						ret = new long[]{1, dc2.getCols(), -1};
 					break;
 				}
 				case INPUT_DIMS:
@@ -175,21 +177,21 @@ public class SpoofFusedOp extends MultiThreadedHop
 					ret = new long[]{1, _dim2, -1};
 					break;
 				case ROW_RANK_DIMS: {
-					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
-					if( mc2.dimsKnown() )
-						ret = new long[]{mc.getRows(), mc2.getCols(), -1};
+					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
+					if( dc2.dimsKnown() )
+						ret = new long[]{mc.getRows(), dc2.getCols(), -1};
 					break;
 				}
 				case COLUMN_RANK_DIMS: {
-					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
-					if( mc2.dimsKnown() )
-						ret = new long[]{mc.getCols(), mc2.getCols(), -1};
+					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
+					if( dc2.dimsKnown() )
+						ret = new long[]{mc.getCols(), dc2.getCols(), -1};
 					break;
 				}
 				case COLUMN_RANK_DIMS_T: {
-					MatrixCharacteristics mc2 = memo.getAllInputStats(getInput().get(1));
-					if( mc2.dimsKnown() )
-						ret = new long[]{mc2.getCols(), mc.getCols(), -1};
+					DataCharacteristics dc2 = memo.getAllInputStats(getInput().get(1));
+					if( dc2.dimsKnown() )
+						ret = new long[]{dc2.getCols(), mc.getCols(), -1};
 					break;
 				}
 				default:

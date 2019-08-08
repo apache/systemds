@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,16 +21,12 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.tugraz.sysds.lops.Ctable;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.lops.Ctable;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -42,10 +40,13 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.tugraz.sysds.runtime.matrix.mapred.ReblockBuffer;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.LongLongDoubleHashMap.ADoubleEntry;
-
 import scala.Tuple2;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class CtableSPInstruction extends ComputationSPInstruction {
 	private String _outDim1;
@@ -105,15 +106,15 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		ctableOp = _isExpand ? Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT : ctableOp;
 		
 		//get input rdd handle
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable( input1.getName() );
+		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = !ctableOp.hasSecondInput() ? null :
-			sec.getBinaryBlockRDDHandleForVariable( input2.getName() );
+			sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 		
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in3 = null;
 		double s2 = -1, s3 = -1; //scalars
 		
-		MatrixCharacteristics mc1 = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		// handle known/unknown dimensions
 		long dim1 = (_dim1Literal ? (long) Double.parseDouble(_outDim1) :
@@ -139,7 +140,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		switch(ctableOp) {
 			case CTABLE_TRANSFORM: //(VECTOR)
 				// F=ctable(A,B,W) 
-				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
+				in3 = sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() );
 				out = in1.join(in2, numParts).join(in3, numParts)
 					.mapValues(new MapJoinSignature3())
 					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
@@ -163,7 +164,7 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 				
 			case CTABLE_TRANSFORM_WEIGHTED_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1,W)
-				in3 = sec.getBinaryBlockRDDHandleForVariable( input3.getName() );
+				in3 = sec.getBinaryMatrixBlockRDDHandleForVariable( input3.getName() );
 				s2 = sec.getScalarInput(input2).getDoubleValue();
 				out = in1.join(in3, numParts).mapValues(new MapJoinSignature2())
 					.mapPartitionsToPair(new CTableFunction(ctableOp, s2, s3, _ignoreZeros, mcOut));
@@ -196,11 +197,11 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		private final long _dim1, _dim2;
 		private final int _brlen, _bclen;
 		
-		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, MatrixCharacteristics mcOut) {
+		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, DataCharacteristics mcOut) {
 			this(ctableOp, s2, s3, ignoreZeros, false, mcOut);
 		}
 		
-		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, boolean emitEmpty, MatrixCharacteristics mcOut) {
+		public CTableFunction(Ctable.OperationTypes ctableOp, double s2, double s3, boolean ignoreZeros, boolean emitEmpty, DataCharacteristics mcOut) {
 			_ctableOp = ctableOp;
 			_scalar_input2 = s2;
 			_scalar_input3 = s3;

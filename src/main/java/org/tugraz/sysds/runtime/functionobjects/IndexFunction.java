@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,11 +21,11 @@
 
 package org.tugraz.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.io.Serializable;
 
 public abstract class IndexFunction extends FunctionObject implements Serializable 
 {
@@ -39,5 +41,5 @@ public abstract class IndexFunction extends FunctionObject implements Serializab
 	public abstract boolean computeDimension(int row, int col, CellIndex retDim);
 
 	//compute output dimensions
-	public abstract boolean computeDimension(MatrixCharacteristics in, MatrixCharacteristics out);
+	public abstract boolean computeDimension(DataCharacteristics in, DataCharacteristics out);
 }

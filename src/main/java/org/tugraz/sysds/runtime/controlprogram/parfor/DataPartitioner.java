@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,6 +30,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.matrix.data.InputInfo;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.runtime.util.HDFSTool;
@@ -88,15 +91,15 @@ public abstract class DataPartitioner
 		
 		//analyze input matrix object
 		MetaDataFormat meta = (MetaDataFormat)in.getMetaData();
-		MatrixCharacteristics mc = meta.getMatrixCharacteristics();
+		DataCharacteristics dc = meta.getDataCharacteristics();
 		InputInfo ii = meta.getInputInfo();
 		OutputInfo oi = meta.getOutputInfo();
-		long rows = mc.getRows(); 
-		long cols = mc.getCols();
-		int brlen = mc.getRowsPerBlock();
-		int bclen = mc.getColsPerBlock();
-		long nonZeros = mc.getNonZeros();
-		double sparsity = mc.dimsKnown(true) ?
+		long rows = dc.getRows();
+		long cols = dc.getCols();
+		int brlen = dc.getRowsPerBlock();
+		int bclen = dc.getColsPerBlock();
+		long nonZeros = dc.getNonZeros();
+		double sparsity = dc.dimsKnown(true) ?
 				((double)nonZeros)/(rows*cols) : 1.0;
 		
 		if( !force ) //try to optimize, if format not forced
@@ -148,7 +151,7 @@ public abstract class DataPartitioner
 		//create output matrix object
 		out.setPartitioned( _format, _n ); 
 		
-		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)brlen, (int)bclen ); 
+		MatrixCharacteristics mcNew = new MatrixCharacteristics( rows, cols, (int)brlen, (int)bclen );
 		mcNew.setNonZeros( nonZeros );
 		if( convertBlock2Cell )
 			ii = InputInfo.BinaryCellInputInfo;

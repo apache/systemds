@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,21 +22,21 @@
 package org.tugraz.sysds.hops;
 
 import org.tugraz.sysds.api.DMLScript;
+import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.hops.rewrite.HopRewriteUtils;
 import org.tugraz.sysds.lops.CentralMoment;
 import org.tugraz.sysds.lops.CoVariance;
 import org.tugraz.sysds.lops.Ctable;
 import org.tugraz.sysds.lops.Lop;
+import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.LopsException;
 import org.tugraz.sysds.lops.PickByCount;
 import org.tugraz.sysds.lops.SortKeys;
 import org.tugraz.sysds.lops.Ternary;
-import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.parser.Statement;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
-import org.tugraz.sysds.common.Types.DataType;
-import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /** Primary use cases for now, are
  * 		quantile (<n-1-matrix>, <n-1-matrix>, <literal>):      quantile (A, w, 0.5)
@@ -409,7 +411,7 @@ public class TernaryOp extends Hop
 	{
 		long[] ret = null;
 	
-		MatrixCharacteristics[] mc = memo.getAllInputStats(getInput());
+		DataCharacteristics[] mc = memo.getAllInputStats(getInput());
 		
 		switch( _op ) 
 		{
@@ -450,7 +452,7 @@ public class TernaryOp extends Hop
 					return new long[]{mc[2].getRows(), 1, mc[2].getRows()};
 				break;
 			case IFELSE:
-				for(MatrixCharacteristics lmc : mc)
+				for(DataCharacteristics lmc : mc)
 					if( lmc.dimsKnown() && lmc.getRows() >= 0 ) //known matrix
 						return new long[]{lmc.getRows(), lmc.getCols(), -1};
 				break;

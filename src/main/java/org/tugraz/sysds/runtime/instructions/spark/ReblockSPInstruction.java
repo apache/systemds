@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -22,8 +24,8 @@ package org.tugraz.sysds.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.common.Types.DataType;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
@@ -45,7 +47,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixCell;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.Statistics;
 
@@ -86,8 +88,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 
 		//set the output characteristics
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		mcOut.set(mc.getRows(), mc.getCols(), brlen, bclen, mc.getNonZeros());
 		
 		//get the source format form the meta data
@@ -116,8 +118,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 	@SuppressWarnings("unchecked")
 	protected void processMatrixReblockInstruction(SparkExecutionContext sec, InputInfo iinfo) {
 		MatrixObject mo = sec.getMatrixObject(input1.getName());
-		MatrixCharacteristics mc = sec.getMatrixCharacteristics(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		if(iinfo == InputInfo.TextCellInputInfo || iinfo == InputInfo.MatrixMarketInputInfo ) {
 			//get matrix market file properties if necessary
@@ -170,7 +172,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		else if(iinfo == InputInfo.BinaryBlockInputInfo)
 		{
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryBlockRDDHandleForVariable(input1.getName());
+			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 			
 			boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown()
 				&& (mc.getRows() < mcOut.getRowsPerBlock() || mc.getRowsPerBlock()%mcOut.getRowsPerBlock() == 0)
@@ -195,7 +197,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 	protected void processFrameReblockInstruction(SparkExecutionContext sec, InputInfo iinfo)
 	{
 		FrameObject fo = sec.getFrameObject(input1.getName());
-		MatrixCharacteristics mcOut = sec.getMatrixCharacteristics(output.getName());
+		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		if(iinfo == InputInfo.TextCellInputInfo ) {
 			//get the input textcell rdd

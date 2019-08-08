@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,8 +21,6 @@
 
 package org.tugraz.sysds.runtime.instructions.spark;
 
-import java.util.List;
-
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
@@ -38,10 +38,12 @@ import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-
 import scala.Tuple2;
+
+import java.util.List;
 
 public class BuiltinNarySPInstruction extends SPInstruction 
 {
@@ -69,24 +71,24 @@ public class BuiltinNarySPInstruction extends SPInstruction
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
-		MatrixCharacteristics mcOut = null;
+		DataCharacteristics mcOut = null;
 		
 		if( getOpcode().equals("cbind") || getOpcode().equals("rbind") ) {
 			//compute output characteristics
 			boolean cbind = getOpcode().equals("cbind");
-			mcOut = computeAppendOutputMatrixCharacteristics(sec, inputs, cbind);
+			mcOut = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
 			
 			//get consolidated input via union over shifted and padded inputs
-			MatrixCharacteristics off = new MatrixCharacteristics(
+			DataCharacteristics off = new MatrixCharacteristics(
 				0, 0, mcOut.getRowsPerBlock(), mcOut.getColsPerBlock(), 0);
 			for( CPOperand input : inputs ) {
-				MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input.getName());
+				DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
 				JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec
-					.getBinaryBlockRDDHandleForVariable( input.getName() )
+					.getBinaryMatrixBlockRDDHandleForVariable( input.getName() )
 					.flatMapToPair(new ShiftMatrix(off, mcIn, cbind))
 					.mapToPair(new PadBlocksFunction(mcOut)); //just padding
 				out = (out != null) ? out.union(in) : in;
-				updateAppendMatrixCharacteristics(mcIn, off, cbind);
+				updateAppendDataCharacteristics(mcIn, off, cbind);
 			}
 			
 			//aggregate partially overlapping blocks w/ single shuffle
@@ -95,7 +97,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		}
 		else if( getOpcode().equals("nmin") || getOpcode().equals("nmax") ) {
 			//compute output characteristics
-			mcOut = computeMinMaxOutputMatrixCharacteristics(sec, inputs);
+			mcOut = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			
 			//get scalars and consolidated input via join
 			List<ScalarObject> scalars = sec.getScalarInputs(inputs);
@@ -103,7 +105,7 @@ public class BuiltinNarySPInstruction extends SPInstruction
 			for( CPOperand input : inputs ) {
 				if( !input.getDataType().isMatrix() ) continue;
 				JavaPairRDD<MatrixIndexes, MatrixBlock> tmp = sec
-					.getBinaryBlockRDDHandleForVariable(input.getName());
+					.getBinaryMatrixBlockRDDHandleForVariable(input.getName());
 				in = (in == null) ? tmp.mapValues(new MapInputSignature()) :
 					in.join(tmp).mapValues(new MapJoinSignature());
 			}
@@ -113,35 +115,35 @@ public class BuiltinNarySPInstruction extends SPInstruction
 		}
 		
 		//set output RDD and add lineage
-		sec.getMatrixCharacteristics(output.getName()).set(mcOut);
+		sec.getDataCharacteristics(output.getName()).set(mcOut);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		for( CPOperand input : inputs )
 			if( !input.isScalar() )
 				sec.addLineageRDD(output.getName(), input.getName());
 	}
 	
-	private static MatrixCharacteristics computeAppendOutputMatrixCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) {
-		MatrixCharacteristics mcIn1 = sec.getMatrixCharacteristics(inputs[0].getName());
-		MatrixCharacteristics mcOut = new MatrixCharacteristics(
+	private static DataCharacteristics computeAppendOutputDataCharacteristics(SparkExecutionContext sec, CPOperand[] inputs, boolean cbind) {
+		DataCharacteristics mcIn1 = sec.getDataCharacteristics(inputs[0].getName());
+		DataCharacteristics mcOut = new MatrixCharacteristics(
 			0, 0, mcIn1.getRowsPerBlock(), mcIn1.getColsPerBlock(), 0);
 		for( CPOperand input : inputs ) {
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input.getName());
-			updateAppendMatrixCharacteristics(mcIn, mcOut, cbind);
+			DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
+			updateAppendDataCharacteristics(mcIn, mcOut, cbind);
 		}
 		return mcOut;
 	}
 	
-	private static void updateAppendMatrixCharacteristics(MatrixCharacteristics in, MatrixCharacteristics out, boolean cbind) {
+	private static void updateAppendDataCharacteristics(DataCharacteristics in, DataCharacteristics out, boolean cbind) {
 		out.setDimension(cbind ? Math.max(out.getRows(), in.getRows()) : out.getRows()+in.getRows(),
 			cbind ? out.getCols()+in.getCols() : Math.max(out.getCols(), in.getCols()));
 		out.setNonZeros((out.getNonZeros()!=-1 && in.dimsKnown(true)) ? out.getNonZeros()+in.getNonZeros() : -1);
 	}
 	
-	private static MatrixCharacteristics computeMinMaxOutputMatrixCharacteristics(SparkExecutionContext sec, CPOperand[] inputs) {
-		MatrixCharacteristics mcOut = new MatrixCharacteristics();
+	private static DataCharacteristics computeMinMaxOutputDataCharacteristics(SparkExecutionContext sec, CPOperand[] inputs) {
+		DataCharacteristics mcOut = new MatrixCharacteristics();
 		for( CPOperand input : inputs ) {
 			if( !input.getDataType().isMatrix() ) continue;
-			MatrixCharacteristics mcIn = sec.getMatrixCharacteristics(input.getName());
+			DataCharacteristics mcIn = sec.getDataCharacteristics(input.getName());
 			mcOut.setRows(Math.max(mcOut.getRows(), mcIn.getRows()));
 			mcOut.setCols(Math.max(mcOut.getCols(), mcIn.getCols()));
 			mcOut.setRowsPerBlock(mcIn.getRowsPerBlock());
@@ -154,9 +156,9 @@ public class BuiltinNarySPInstruction extends SPInstruction
 	{
 		private static final long serialVersionUID = 1291358959908299855L;
 		
-		private final MatrixCharacteristics _mcOut;
+		private final DataCharacteristics _mcOut;
 		
-		public PadBlocksFunction(MatrixCharacteristics mcOut) {
+		public PadBlocksFunction(DataCharacteristics mcOut) {
 			_mcOut = mcOut;
 		}
 

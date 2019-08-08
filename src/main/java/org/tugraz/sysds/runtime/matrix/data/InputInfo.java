@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,8 +23,6 @@
 package org.tugraz.sysds.runtime.matrix.data;
 
 
-import java.io.Serializable;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -31,7 +31,11 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.tugraz.sysds.parser.DataExpression;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.meta.MetaData;
+
+import java.io.Serializable;
 
 @SuppressWarnings("rawtypes")
 public class InputInfo implements Serializable 
@@ -67,7 +71,9 @@ public class InputInfo implements Serializable
 	public static final InputInfo BinaryCellInputInfo=new InputInfo(SequenceFileInputFormat.class, 
 			MatrixIndexes.class, MatrixCell.class);
 	public static final InputInfo BinaryBlockInputInfo=new InputInfo(
-			SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class); 
+			SequenceFileInputFormat.class, MatrixIndexes.class, MatrixBlock.class);
+	public static final InputInfo BinaryTensorBlockInputInfo=new InputInfo(
+			SequenceFileInputFormat.class, TensorIndexes.class, TensorBlock.class);
 	public static final InputInfo BinaryBlockFrameInputInfo=new InputInfo(
 			SequenceFileInputFormat.class, LongWritable.class, FrameBlock.class); 
 	
@@ -80,6 +86,8 @@ public class InputInfo implements Serializable
 	public static OutputInfo getMatchingOutputInfo(InputInfo ii) {
 		if ( ii == InputInfo.BinaryBlockInputInfo )
 			return OutputInfo.BinaryBlockOutputInfo;
+		else if ( ii == InputInfo.BinaryTensorBlockInputInfo)
+			return OutputInfo.BinaryTensorBlockOutputInfo;
 		else if ( ii == InputInfo.MatrixMarketInputInfo)
 			return OutputInfo.MatrixMarketOutputInfo;
 		else if ( ii == InputInfo.BinaryCellInputInfo ) 
@@ -98,6 +106,7 @@ public class InputInfo implements Serializable
 		if ( str.equalsIgnoreCase("textcell")) {
 			return TextCellInputInfo;
 		}
+		// TODO: tensormarket?
 		if ( str.equalsIgnoreCase("matrixmarket")) {
 			return MatrixMarketInputInfo;
 		}
@@ -106,6 +115,9 @@ public class InputInfo implements Serializable
 		}
 		else if (str.equalsIgnoreCase("binaryblock")) {
 			return BinaryBlockInputInfo;
+		}
+		else if (str.equalsIgnoreCase("binarytensorblock")) {
+			return BinaryTensorBlockInputInfo;
 		}
 		else if ( str.equalsIgnoreCase("csv"))
 			return CSVInputInfo;
@@ -123,7 +135,7 @@ public class InputInfo implements Serializable
 			return InputInfo.CSVInputInfo; 
 		else if( DataExpression.FORMAT_TYPE_VALUE_LIBSVM.equals(str) )
 			return InputInfo.LIBSVMInputInfo; 
-		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) )
+		else if( DataExpression.FORMAT_TYPE_VALUE_BINARY.equals(str) ) // TODO BinaryTensorBlockInputInfo
 			return InputInfo.BinaryBlockInputInfo; 		
 		return null;
 	}
@@ -135,6 +147,8 @@ public class InputInfo implements Serializable
 			return "binarycell";
 		else if ( ii == BinaryBlockInputInfo )
 			return "binaryblock";
+		else if ( ii == BinaryTensorBlockInputInfo )
+			return "binarytensorblock";
 		else if ( ii == MatrixMarketInputInfo )
 			return "matrixmarket";
 		else if ( ii == CSVInputInfo )

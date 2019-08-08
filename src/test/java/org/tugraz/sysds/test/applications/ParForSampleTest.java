@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -77,13 +79,6 @@ public class ParForSampleTest extends AutomatedTestBase
 		runParForSampleTest(true, ExecType.SPARK);
 	}
 		
-	/**
-	 * 
-	 * @param outer
-	 * @param instType
-	 * @param smallMem
-	 * @param sparse
-	 */
 	@SuppressWarnings({ "unchecked" })
 	private void runParForSampleTest( boolean sparse, ExecType et )
 	{
@@ -121,8 +116,8 @@ public class ParForSampleTest extends AutomatedTestBase
 			//read result data and meta data
 			HashMap<CellIndex, Double> B1 = readDMLMatrixFromHDFS("B1");				
 			HashMap<CellIndex, Double> B2 = readDMLMatrixFromHDFS("B2");				
-			MatrixCharacteristics B1mc = readDMLMetaDataFile("B1"); 
-			MatrixCharacteristics B2mc = readDMLMetaDataFile("B2"); 
+			MatrixCharacteristics B1mc = readDMLMetaDataFile("B1");
+			MatrixCharacteristics B2mc = readDMLMetaDataFile("B2");
 			
 			//compare meta data
 			Assert.assertEquals(new Long(rows), new Long(B1mc.getRows()+B2mc.getRows())); //join full coverage rows

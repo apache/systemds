@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,11 +21,11 @@
 
 package org.tugraz.sysds.runtime.instructions.spark.data;
 
-import java.util.Arrays;
-
 import org.apache.spark.Partitioner;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
-import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
+import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+
+import java.util.Arrays;
 
 /**
  * Default partitioner used for all binary block rdd operations in order
@@ -42,7 +44,7 @@ public class BlockPartitioner extends Partitioner
 	private long _rbPerPart = -1;
 	private long _cbPerPart = -1;
 	
-	public BlockPartitioner(MatrixCharacteristics mc, int numParts) 
+	public BlockPartitioner(DataCharacteristics mc, int numParts)
 	{
 		//sanity check known dimensions
 		if( !mc.dimsKnown() || mc.getRowsPerBlock()<1 || mc.getColsPerBlock()<1 ) {

@@ -26,7 +26,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class HeterogTensor extends Tensor {
+public class HeterogTensor extends TensorBlock {
 	private HomogTensor[] _colsdata = null;
 	private ValueType[] _schema = null;
 

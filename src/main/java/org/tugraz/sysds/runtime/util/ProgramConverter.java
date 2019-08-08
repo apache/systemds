@@ -176,7 +176,8 @@ public class ProgramConverter
 	{
 		ExecutionContext cpec = ExecutionContextFactory.createContext(false, ec.getProgram());
 		cpec.setVariables((LocalVariableMap) ec.getVariables().clone());
-		cpec.setLineage(new Lineage(ec.getLineage()));
+		if( ec.getLineage() != null )
+			cpec.setLineage(new Lineage(ec.getLineage()));
 		
 		//handle result variables with in-place update flag
 		//(each worker requires its own copy of the empty matrix object)

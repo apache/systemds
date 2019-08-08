@@ -68,6 +68,7 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 			conn.close();
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			Assert.fail("JMLC parfor test failed: "+ex.getMessage());
 		}
 		

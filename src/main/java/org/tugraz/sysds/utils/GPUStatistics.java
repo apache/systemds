@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.LongAdder;
 
-import org.tugraz.sysds.api.DMLScript;
-
 /**
  * Measures performance numbers when GPU mode is enabled
  * Printed as part of {@link Statistics}.
@@ -144,47 +142,6 @@ public class GPUStatistics {
 
 	public static synchronized int getNoOfExecutedGPUInst() {
 		return iNoOfExecutedGPUInst;
-	}
-
-	/**
-	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count
-	 * @param instructionName	name of the instruction/op
-	 * @param miscTimer				name of the miscellaneous timer
-	 * @param timeNanos				time in nano seconds
-	 * @param incrementCount	how much to increment the count of the miscTimer by
-	 */
-	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos, long incrementCount)
-	{
-		if (!(DMLScript.FINEGRAINED_STATISTICS))
-			return;
-
-		HashMap<String, Long> miscTimesMap = _cpInstMiscTime.get(instructionName);
-		if (miscTimesMap == null) {
-			miscTimesMap = new HashMap<>();
-			_cpInstMiscTime.put(instructionName, miscTimesMap);
-		}
-		Long oldVal = miscTimesMap.get(miscTimer);
-		Long newVal = timeNanos + ((oldVal!=null) ? oldVal : 0);
-		miscTimesMap.put(miscTimer, newVal);
-
-		HashMap<String, Long> miscCountMap = _cpInstMiscCount.get(instructionName);
-		if (miscCountMap == null){
-			miscCountMap = new HashMap<>();
-			_cpInstMiscCount.put(instructionName, miscCountMap);
-		}
-		Long oldCnt = miscCountMap.get(miscTimer);
-		Long newCnt = incrementCount + ((oldCnt!=null) ? oldCnt : 0);
-		miscCountMap.put(miscTimer, newCnt);
-	}
-
-	/**
-	 * "Maintains" or adds time to miscellaneous timers per instruction/op, also increments associated count by 1
-	 * @param instructionName	name of the instruction/op
-	 * @param miscTimer				name of the miscellaneous timer
-	 * @param timeNanos				time in nano seconds
-	 */
-	public synchronized static void maintainCPMiscTimes( String instructionName, String miscTimer, long timeNanos){
-		maintainCPMiscTimes(instructionName, miscTimer, timeNanos, 1);
 	}
 
 	/**

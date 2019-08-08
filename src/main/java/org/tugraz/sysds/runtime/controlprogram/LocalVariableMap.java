@@ -24,13 +24,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.cp.ListObject;
 import org.tugraz.sysds.runtime.util.ProgramConverter;
-import org.tugraz.sysds.utils.Statistics;
 
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -143,8 +141,6 @@ public class LocalVariableMap implements Cloneable
 			if( !dict.containsKey(hash) && e.getValue() instanceof CacheableData ) {
 				dict.put(hash, e.getValue());
 				double size = ((CacheableData<?>) e.getValue()).getDataSize();
-				if (DMLScript.JMLC_MEM_STATISTICS && DMLScript.FINEGRAINED_STATISTICS)
-					Statistics.maintainCPHeavyHittersMem(e.getKey(), size);
 				total += size;
 			}
 		}

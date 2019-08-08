@@ -33,8 +33,6 @@ import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.data.SparseBlockCOO;
 import org.tugraz.sysds.runtime.data.SparseBlockCSR;
 import org.tugraz.sysds.runtime.data.SparseBlockMCSR;
-import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.utils.GPUStatistics;
@@ -408,8 +406,6 @@ public class GPUObject {
 		denseColumnMajorToRowMajor();
 		if (DMLScript.STATISTICS)
 			end = System.nanoTime();
-		if (instructionName != null && DMLScript.FINEGRAINED_STATISTICS)
-			GPUStatistics.maintainCPMiscTimes(instructionName, GPUInstruction.MISC_TIMER_SPARSE_TO_DENSE, end - start);
 		if (DMLScript.STATISTICS)
 			GPUStatistics.cudaSparseToDenseTime.add(end - start);
 		if (DMLScript.STATISTICS)
@@ -526,7 +522,6 @@ public class GPUObject {
 				if(!recomputeDenseNNZ)
 					return -1;
 				
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				GPUContext gCtx = getGPUContext();
 				cusparseHandle cusparseHandle = gCtx.getCusparseHandle();
 				cusparseMatDescr matDescr = CSRPointer.getDefaultCuSparseMatrixDescriptor();
@@ -548,9 +543,6 @@ public class GPUObject {
 				}
 				gCtx.cudaFreeHelper(instName, nnzPerRowPtr, DMLScript.EAGER_CUDA_FREE);
 				gCtx.cudaFreeHelper(instName, nnzTotalDevHostPtr, DMLScript.EAGER_CUDA_FREE);
-				if(DMLScript.FINEGRAINED_STATISTICS) {
-					GPUStatistics.maintainCPMiscTimes(instName, CPInstruction.MISC_TIMER_RECOMPUTE_NNZ, System.nanoTime()-t1);
-			}
 				return nnzC[0];
 			}
 		}
@@ -773,14 +765,7 @@ public class GPUObject {
 		if (DMLScript.STATISTICS)
 			start = System.nanoTime();
 
-		long acqrTime = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 		MatrixBlock tmp = mat.acquireRead();
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(tmp.isInSparseFormat())
-				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_SPARSE_MB, System.nanoTime()-acqrTime);
-			else
-				GPUStatistics.maintainCPMiscTimes(opcode, CPInstruction.MISC_TIMER_GET_DENSE_MB, System.nanoTime()-acqrTime);
-		}
 		
 		if (tmp.isInSparseFormat()) {
 			int rowPtr[] = null;
@@ -838,11 +823,8 @@ public class GPUObject {
 			allocateSparseMatrixOnDevice();
 
 			if (copyToDevice) {
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(), tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd,
-						values);
-				if(DMLScript.FINEGRAINED_STATISTICS) 
-					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, System.nanoTime() - t1);
+				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(),
+					tmp.getNumRows(), tmp.getNonZeros(), rowPtr, colInd, values);
 			}
 		} else {
 			double[] data = tmp.getDenseBlockValues();
@@ -857,10 +839,7 @@ public class GPUObject {
 			if (tmp.getNonZeros() == 0) {
 				// Minor optimization: No need to allocate empty error for CPU 
 				// data = new double[tmp.getNumRows() * tmp.getNumColumns()];
-				long t1 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 				cudaMemset(getDensePointer(), 0, getDatatypeSizeOf(mat.getNumRows() * mat.getNumColumns()));
-				if(DMLScript.FINEGRAINED_STATISTICS) 
-					GPUStatistics.maintainCPMiscTimes(opcode, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t1);
 			}
 			else {
 				// Copy dense block

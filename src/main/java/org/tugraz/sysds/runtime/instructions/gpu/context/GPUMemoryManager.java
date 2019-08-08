@@ -519,23 +519,8 @@ public class GPUMemoryManager {
 			long totalTime = System.nanoTime() - startTime;
 			globalGPUTimer.add(totalTime);
 			globalGPUCounter.add(1);
-			if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
-				GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, totalTime);
 		}
 	}
-	
-	/**
-	 * Convenient method to add misc timers
-	 * 
-	 * @param opcode opcode
-	 * @param instructionLevelTimer member of GPUInstruction
-	 * @param startTime start time
-	 */
-	void addMiscTime(String opcode, String instructionLevelTimer, long startTime) {
-		if (opcode != null && DMLScript.FINEGRAINED_STATISTICS)
-			GPUStatistics.maintainCPMiscTimes(opcode, instructionLevelTimer, System.nanoTime() - startTime);
-	}
-	
 	
 	/**
 	 * Print debugging information

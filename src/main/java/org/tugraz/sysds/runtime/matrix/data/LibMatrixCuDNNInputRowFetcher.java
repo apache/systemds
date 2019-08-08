@@ -20,13 +20,10 @@ package org.tugraz.sysds.runtime.matrix.data;
 
 import static jcuda.runtime.JCuda.cudaMemset;
 
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
-import org.tugraz.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
 
@@ -60,10 +57,8 @@ public class LibMatrixCuDNNInputRowFetcher extends LibMatrixCUDA implements java
 	public Pointer getNthRow(int n) {
 		if(isInputInSparseFormat) {
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			cudaMemset(outPointer, 0, numColumns*sizeOfDataType);
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(DMLScript.FINEGRAINED_STATISTICS) GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_SET_ZERO, System.nanoTime() - t0);
 			LibMatrixCUDA.sliceSparseDense(gCtx, instName, (CSRPointer)inPointer, outPointer, n, n, 0, LibMatrixCUDA.toInt(numColumns-1), numColumns);
 		}
 		else {

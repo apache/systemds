@@ -160,23 +160,7 @@ public abstract class Instruction
 	}
 	
 	public String getExtendedOpcode() {
-		if(extendedOpcode != null)
-			return extendedOpcode;
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			String scriptInfo;
-			if(filename != null)
-				scriptInfo = " [" + filename + " " + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
-			else
-				scriptInfo = " [" + beginLine + ":" + beginCol + "-" + endLine + ":" + endCol + "]";
-			if( getType() == IType.SPARK )
-				extendedOpcode = SP_INST_PREFIX + getOpcode() + scriptInfo;
-			else if( getType() == IType.GPU )
-				extendedOpcode = GPU_INST_PREFIX + getOpcode() + scriptInfo;
-			else
-				extendedOpcode = getOpcode() + scriptInfo;
-		}
-		else {
-			// This ensures that there is no overhead if finegrained statistics is disabled
+		if( extendedOpcode == null ) {
 			if( getType() == IType.SPARK )
 				extendedOpcode = SP_INST_PREFIX + getOpcode();
 			else if( getType() == IType.GPU )

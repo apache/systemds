@@ -28,9 +28,7 @@ import org.tugraz.sysds.runtime.instructions.GPUInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
-import org.tugraz.sysds.runtime.matrix.data.Pair;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
-import org.tugraz.sysds.utils.GPUStatistics;
 import org.tugraz.sysds.utils.Statistics;
 
 public abstract class GPUInstruction extends Instruction {
@@ -202,10 +200,7 @@ public abstract class GPUInstruction extends Instruction {
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
 		if(DMLScript.SYNCHRONIZE_GPU) {
-			long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
 			jcuda.runtime.JCuda.cudaDeviceSynchronize();
-			if(DMLScript.FINEGRAINED_STATISTICS)
-				GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_CUDA_SYNC, System.nanoTime() - t0);
 		}
 		if(LOG.isDebugEnabled()) {
 			for(GPUContext gpuCtx : ec.getGPUContexts())
@@ -235,9 +230,6 @@ public abstract class GPUInstruction extends Instruction {
 	 * @return	the matrix object
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
-		long t0 = DMLScript.FINEGRAINED_STATISTICS ? System.nanoTime() : 0;
-		Pair<MatrixObject, Boolean> mb = ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols);
-		if (DMLScript.FINEGRAINED_STATISTICS && mb.getValue()) GPUStatistics.maintainCPMiscTimes(getExtendedOpcode(), GPUInstruction.MISC_TIMER_ALLOCATE_DENSE_OUTPUT, System.nanoTime() - t0);
-		return mb.getKey();
+		return ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols).getKey();
 	}
 }

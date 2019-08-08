@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
@@ -91,29 +90,6 @@ public class LibMatrixDNN {
 	static AtomicLong loopedConvBwdDataMatMultTime = new AtomicLong(0);
 	static AtomicLong loopedConvBwdDataCol2ImTime = new AtomicLong(0);
 	
-	public static void appendStatistics(StringBuilder sb) {
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			sb.append("LibMatrixDNN dense count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
-					+ conv2dDenseCount.get() + "/"
-					+ conv2dBwdFilterDenseCount.get() + "/"
-					+ conv2dBwdDataDenseCount.get() + "/"
-					+ im2colDenseCount.get() + "/"
-					+ maxPoolBwdDenseCount.get() + ".\n");
-			sb.append("LibMatrixDNN sparse count (conv/bwdF/bwdD/im2col/maxBwd):\t" 
-					+ conv2dSparseCount.get() + "/"
-					+ conv2dBwdFilterSparseCount.get() + "/"
-					+ conv2dBwdDataSparseCount.get() + "/"
-					+ im2colSparseCount.get() + "/"
-					+ maxPoolBwdSparseCount.get() + ".\n");
-			sb.append("LibMatrixDNN conv(im2col/matmult), bwdF (im2col/matmult), bwdD (col2im/matmult) time:\t" +
-					String.format("%.3f", loopedConvIm2ColTime.get()*1e-9) + "/" +
-					String.format("%.3f", loopedConvMatMultTime.get()*1e-9) + "/" + 
-					String.format("%.3f", loopedConvBwdFilterIm2ColTime.get()*1e-9) + "/" +
-					String.format("%.3f", loopedConvBwdFilterMatMultTime.get()*1e-9) + "/" +
-					String.format("%.3f", loopedConvBwdDataCol2ImTime.get()*1e-9) + "/" +
-					String.format("%.3f", loopedConvBwdDataMatMultTime.get()*1e-9) + " sec.\n");
-		}
-	}
 	public static void resetStatistics() {
 		conv2dDenseCount.set(0);
 		conv2dBwdFilterDenseCount.set(0);
@@ -237,14 +213,6 @@ public class LibMatrixDNN {
 
 		if(dout.getNumColumns() != params.C*params.P*params.Q || dout.getNumRows() != params.N) {
 			throw new DMLRuntimeException("Incorrect dout dimensions in pooling_backward:" + input.getNumRows() + " " + input.getNumColumns() + " " + params.N + " " + params.K*params.P*params.Q);
-		}
-		
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			boolean isSparse = (poolType == PoolingType.MAX) ? (input.isInSparseFormat() || dout.isInSparseFormat()) : dout.isInSparseFormat();
-			if(isSparse)
-				maxPoolBwdSparseCount.addAndGet(1);
-			else
-				maxPoolBwdDenseCount.addAndGet(1);
 		}
 		
 		if (params.output.isInSparseFormat())
@@ -780,15 +748,6 @@ public class LibMatrixDNN {
 				+ "expected input error channels*height*width", dout.getNumColumns(), params.K, params.P, params.Q);
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
-		
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(filter.isInSparseFormat() || dout.isInSparseFormat()) {
-				conv2dBwdDataSparseCount.addAndGet(1);
-			}
-			else {
-				conv2dBwdDataDenseCount.addAndGet(1);
-			}
-		}
 	}
 	
 	static void checkInputsConv2dBackwardFilter(MatrixBlock input, MatrixBlock dout, MatrixBlock outputBlock, DnnParameters params) {
@@ -805,15 +764,6 @@ public class LibMatrixDNN {
 				+ "expected input error channels*height*width", dout.getNumColumns(), params.K, params.P, params.Q);
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
-		
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(input.isInSparseFormat() || dout.isInSparseFormat()) {
-				conv2dBwdFilterSparseCount.addAndGet(1);
-			}
-			else {
-				conv2dBwdFilterDenseCount.addAndGet(1);
-			}
-		}
 	}
 	
 	static void checkInputsConv2d(MatrixBlock input, MatrixBlock filter, MatrixBlock outputBlock, DnnParameters params) {
@@ -831,15 +781,6 @@ public class LibMatrixDNN {
 				+ "channels*input_height*input_height in input_shape", input.getNumColumns(), params.C, params.H, params.W);
 		if(params.stride_h <= 0 || params.stride_w <= 0) 
 			throw new DMLRuntimeException("Only positive strides supported:" + params.stride_h + ", " + params.stride_w);
-		
-		if(DMLScript.FINEGRAINED_STATISTICS) {
-			if(input.isInSparseFormat() || filter.isInSparseFormat()) {
-				conv2dSparseCount.addAndGet(1);
-			}
-			else {
-				conv2dDenseCount.addAndGet(1);
-			}
-		}
 	}
 	
 	/**

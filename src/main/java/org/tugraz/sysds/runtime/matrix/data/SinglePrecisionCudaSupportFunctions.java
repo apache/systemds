@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.tugraz.sysds.api.DMLScript;
-import org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.tugraz.sysds.utils.GPUStatistics;
 
@@ -194,8 +193,6 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			long totalTime = System.nanoTime() - t0;
 			GPUStatistics.cudaFloat2DoubleTime.add(totalTime);
 			GPUStatistics.cudaFloat2DoubleCount.add(1);
-			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_DEVICE_TO_HOST, totalTime);
 		}
 	}
 
@@ -220,8 +217,6 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 			long totalTime = System.nanoTime() - t0;
 			GPUStatistics.cudaDouble2FloatTime.add(totalTime);
 			GPUStatistics.cudaDouble2FloatCount.add(1);
-			if(DMLScript.FINEGRAINED_STATISTICS && instName != null) 
-				GPUStatistics.maintainCPMiscTimes(instName, GPUInstruction.MISC_TIMER_HOST_TO_DEVICE, totalTime);
 		}
 	}
 }

@@ -668,7 +668,6 @@ public class Statistics
 		final String instCol = "Instruction";
 		final String timeSCol = "Time(s)";
 		final String countCol = "Count";
-		final String gpuCol = "Misc Timers";
 		StringBuilder sb = new StringBuilder();
 		int numHittersToDisplay = Math.min(num, len);
 		int maxNumLen = String.valueOf(numHittersToDisplay).length();
@@ -690,13 +689,8 @@ public class Statistics
 			maxCountLen = Math.max(maxCountLen, String.valueOf(hh.getValue().count.longValue()).length());
 		}
 		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
-		sb.append(String.format(
-				" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s", numCol,
-				instCol, timeSCol, countCol));
-		if (DMLScript.FINEGRAINED_STATISTICS) {
-			sb.append("  ");
-			sb.append(gpuCol);
-		}
+		sb.append(String.format( " %" + maxNumLen + "s  %-" + maxInstLen + "s  %"
+			+ maxTimeSLen + "s  %" + maxCountLen + "s", numCol, instCol, timeSCol, countCol));
 		sb.append("\n");
 		for (int i = 0; i < numHittersToDisplay; i++) {
 			String instruction = tmp[len - 1 - i].getKey();
@@ -708,27 +702,20 @@ public class Statistics
 
 			long count = tmp[len - 1 - i].getValue().count.longValue();
 			int numLines = wrappedInstruction.length;
-			String [] miscTimers = null;
 			
-			if (DMLScript.FINEGRAINED_STATISTICS) {
-				miscTimers = wrap(GPUStatistics.getStringForCPMiscTimesPerInstruction(instruction), DMLScript.STATISTICS_MAX_WRAP_LEN);
-				numLines = Math.max(numLines, miscTimers.length);
-			}
-			
-			String miscFormatString = (DMLScript.FINEGRAINED_STATISTICS) ? " %" + DMLScript.STATISTICS_MAX_WRAP_LEN + "s" : "%s";
+			String miscFormatString = "%s";
 			for(int wrapIter = 0; wrapIter < numLines; wrapIter++) {
 				String instStr = (wrapIter < wrappedInstruction.length) ? wrappedInstruction[wrapIter] : "";
-				String miscTimerStr = ( (DMLScript.FINEGRAINED_STATISTICS) && wrapIter < miscTimers.length) ? miscTimers[wrapIter] : ""; 
 				if(wrapIter == 0) {
 					// Display instruction count
 					sb.append(String.format(
 							" %" + maxNumLen + "d  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "d" + miscFormatString,
-							(i + 1), instStr, timeSString, count, miscTimerStr));
+							(i + 1), instStr, timeSString, count));
 				}
 				else {
 					sb.append(String.format(
 							" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeSLen + "s  %" + maxCountLen + "s" + miscFormatString,
-							"", instStr, "", "", miscTimerStr));
+							"", instStr, "", ""));
 				}
 				sb.append("\n");
 			}
@@ -993,10 +980,7 @@ public class Statistics
 			sb.append("Total JIT compile time:\t\t" + ((double)getJITCompileTime())/1000 + " sec.\n");
 			sb.append("Total JVM GC count:\t\t" + getJVMgcCount() + ".\n");
 			sb.append("Total JVM GC time:\t\t" + ((double)getJVMgcTime())/1000 + " sec.\n");
-			LibMatrixDNN.appendStatistics(sb);
 			sb.append("Heavy hitter instructions:\n" + getHeavyHitters(maxHeavyHitters));
-			if (DMLScript.JMLC_MEM_STATISTICS && DMLScript.FINEGRAINED_STATISTICS)
-				sb.append("Heavy hitter objects:\n" + getCPHeavyHittersMem(maxHeavyHitters));
 		}
 
 		return sb.toString();

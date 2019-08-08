@@ -33,18 +33,16 @@ import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
-public class TensorBlock implements CacheBlock
+public class HomogTensor extends Tensor
 {
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	public static final ValueType DEFAULT_VTYPE = ValueType.FP64;
-	public static final int[] DEFAULT_DIMS = new int[]{0, 0};
+
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 	
 	//constant value type of tensor block
 	protected ValueType _vt;
 	
-	//min 2 dimensions to preserve proper matrix semantics
-	protected int[] _dims; //[2,inf)
 	protected boolean _sparse = true;
 	protected long _nnz = 0;
 	
@@ -52,34 +50,34 @@ public class TensorBlock implements CacheBlock
 	protected DenseBlock _denseBlock = null;
 	protected SparseBlock _sparseBlock = null;
 	
-	public TensorBlock() {
+	public HomogTensor() {
 		this(DEFAULT_VTYPE, DEFAULT_DIMS.clone(), true, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims) {
+	public HomogTensor(ValueType vt, int[] dims) {
 		this(vt, dims, true, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims, boolean sp) {
+	public HomogTensor(ValueType vt, int[] dims, boolean sp) {
 		this(vt, dims, sp, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims, boolean sp, long estnnz) {
+	public HomogTensor(ValueType vt, int[] dims, boolean sp, long estnnz) {
 		_vt = vt;
 		reset(dims, sp, estnnz, 0);
 	}
 	
-	public TensorBlock(TensorBlock that) {
+	public HomogTensor(HomogTensor that) {
 		_vt = that.getValueType();
 		copy(that);
 	}
 
-	public TensorBlock(double val) {
+	public HomogTensor(double val) {
 		_vt = DEFAULT_VTYPE;
 		reset(new int[] {1, 1}, false, 1, val);
 	}
 	
-	public TensorBlock(int[] dims, ValueType vt, double val) {
+	public HomogTensor(int[] dims, ValueType vt, double val) {
 		_vt = vt;
 		_dims = dims;
 		reset(dims, false, (val==0) ? 0 : getLength(), val);
@@ -88,11 +86,13 @@ public class TensorBlock implements CacheBlock
 	////////
 	// Initialization methods
 	// (reset, init, allocate, etc)
-	
+
+	@Override
 	public void reset() {
 		reset(_dims, _sparse, -1, 0);
 	}
-	
+
+	@Override
 	public void reset(int[] dims) {
 		reset(dims, _sparse, -1, 0);
 	}
@@ -148,7 +148,7 @@ public class TensorBlock implements CacheBlock
 		//handle to dense block allocation and
 		//reset dense block to given value
 		if( _denseBlock != null )
-			_denseBlock.reset(getDim(0), getDim(1), val);
+			_denseBlock.reset(_dims, val);
 		else {
 			if( val != 0 ) {
 				allocateDenseBlock(false);
@@ -158,17 +158,18 @@ public class TensorBlock implements CacheBlock
 			}
 		}
 	}
-	
+
+	@Override
 	public boolean isAllocated() {
 		return _sparse ? (_sparseBlock!=null) : (_denseBlock!=null);
 	}
 
-	public TensorBlock allocateDenseBlock() {
+	public HomogTensor allocateDenseBlock() {
 		allocateDenseBlock(true);
 		return this;
 	}
 
-	public TensorBlock allocateBlock() {
+	public HomogTensor allocateBlock() {
 		if( _sparse )
 			allocateSparseBlock();
 		else
@@ -178,11 +179,10 @@ public class TensorBlock implements CacheBlock
 	
 	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		// TODO: use reset instead, since LDRB need to check dimensions for actually available space
+		// TODO: use _denseBlock.reset instead, since LDRB need to check dimensions for actually available space
 		long limit = getLength();
 		boolean reset = (_denseBlock == null || _denseBlock.capacity() < limit);
 		if( _denseBlock == null )
-			// ToDo: dimensions > 2
 			_denseBlock = DenseBlockFactory.createDenseBlock(_vt, _dims);
 		else if( _denseBlock.capacity() < limit )
 			_denseBlock.reset(_dims);
@@ -220,73 +220,16 @@ public class TensorBlock implements CacheBlock
 	public ValueType getValueType() {
 		return _vt;
 	}
-	
-	public int getNumDims() {
-		return _dims.length;
-	}
-	
-	public int getNumRows() {
-		return getDim(0);
-	}
 
-	@Override
-	public int getNumColumns() {
-		return getDim(1);
-	}
-	
-	public int getDim(int i) {
-		return _dims[i];
-	}
-	
 	public long getNonZeros() {
 		return _nnz;
 	}
 
-	/**
-	 * Calculates the next index array. Note that if the given index array was the last element, the next index will
-	 * be the first one.
-	 *
-	 * @param ix the index array which will be incremented to the next index array
-	 */
-	public void getNextIndexes(int[] ix) {
-		int i = ix.length - 1;
-		ix[i]++;
-		//calculating next index
-		if (ix[i] == getDim(i)) {
-			while (ix[i] == getDim(i)) {
-				ix[i] = 0;
-				i--;
-				if (i < 0) {
-					//we are finished
-					break;
-				}
-				ix[i]++;
-			}
-		}
-	}
-
-	public boolean isVector() {
-		return getNumDims() <= 2 
-			&& (getDim(0) == 1 || getDim(1) == 1);
-	}
-	
-	public boolean isMatrix() {
-		return getNumDims() == 2 
-			&& (getDim(0) > 1 && getDim(1) > 1);
-	}
-	
-	public long getLength() {
-		return UtilFunctions.prod(_dims);
-	}
-	
 	public boolean isSparse() {
 		return _sparse;
 	}
-	
-	public boolean isEmpty() {
-		return isEmpty(false);
-	}
-	
+
+	@Override
 	public boolean isEmpty(boolean safe) {
 		boolean ret = false;
 		if( _sparse && _sparseBlock==null )
@@ -295,9 +238,10 @@ public class TensorBlock implements CacheBlock
 			ret = true;
 		if( _nnz==0 ) {
 			//prevent under-estimation
+			//TODO recomputeNonZeros();
+			//TODO return false if _nnz != 0
 			if(safe)
-				//TODO recomputeNonZeros();
-			ret = (_nnz == 0);
+				ret = (_nnz == 0);
 		}
 		return ret;
 	}
@@ -391,7 +335,8 @@ public class TensorBlock implements CacheBlock
 	
 	////////
 	// Basic modification
-	
+
+	@Override
 	public double get(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -401,8 +346,11 @@ public class TensorBlock implements CacheBlock
 			return _denseBlock.get(ix);
 		}
 	}
-	
+
+	@Override
 	public double get(int r, int c) {
+		if (getNumDims() != 2)
+			throw new DMLRuntimeException("HomogTensor.get(int,int) dimension mismatch: expected=2 actual=" + getNumDims());
 		if (_sparse) {
 			// TODO: Implement sparse
 			throw new NotImplementedException();
@@ -412,6 +360,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
+	@Override
 	public long getLong(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -421,6 +370,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
+	@Override
 	public String getString(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -431,6 +381,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
+	@Override
 	public void set(int[] ix, double v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -438,8 +389,11 @@ public class TensorBlock implements CacheBlock
 			_denseBlock.set(ix, v);
 		}
 	}
-	
+
+	@Override
 	public void set(int r, int c, double v) {
+		if (getNumDims() != 2)
+			throw new DMLRuntimeException("HomogTensor.set(int,int,double) dimension mismatch: expected=2 actual=" + getNumDims());
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
@@ -447,6 +401,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
+	@Override
 	public void set(int[] ix, long v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -455,6 +410,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
+	@Override
 	public void set(int[] ix, String v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -479,7 +435,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
-	public void set(TensorBlock other) {
+	public void set(HomogTensor other) {
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
@@ -503,12 +459,11 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
-	public void copy(TensorBlock that) {
+	public void copy(HomogTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
 		if( that.isAllocated() ) {
-			allocateBlock();
 			if( !_sparse )
 				copyDenseToDense(that);
 			else // TODO copy sparse to dense, dense to dense or sparse to dense
@@ -516,7 +471,7 @@ public class TensorBlock implements CacheBlock
 		}
 	}
 
-	public TensorBlock copyShallow(TensorBlock that) {
+	public HomogTensor copyShallow(HomogTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
@@ -527,7 +482,7 @@ public class TensorBlock implements CacheBlock
 		return this;
 	}
 
-	private void copyDenseToDense(TensorBlock that) {
+	private void copyDenseToDense(HomogTensor that) {
 		_nnz = that._nnz;
 
 		//plain reset to 0 for empty input
@@ -536,7 +491,6 @@ public class TensorBlock implements CacheBlock
 				_denseBlock.reset(that._dims);
 			return;
 		}
-
 		//allocate and copy dense block
 		allocateDenseBlock(false);
 		_denseBlock.set(that._denseBlock);
@@ -553,7 +507,7 @@ public class TensorBlock implements CacheBlock
 
 	///////
 	// Aggregations
-	public TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
+	public HomogTensor aggregateUnaryOperations(AggregateUnaryOperator op, HomogTensor result) {
 		// TODO allow to aggregate along a dimension?
 		// TODO performance
 		int dim0 = 1;
@@ -563,7 +517,7 @@ public class TensorBlock implements CacheBlock
 		}
 		//prepare result matrix block
 		if(result==null)
-			result=new TensorBlock(_vt, new int[]{dim0, dim1}, false);
+			result=new HomogTensor(_vt, new int[]{dim0, dim1}, false);
 		else
 			result.reset(new int[]{dim0, dim1}, false);
 
@@ -577,7 +531,7 @@ public class TensorBlock implements CacheBlock
 		return result;
 	}
 
-	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock newWithCorrection) {
+	public void incrementalAggregate(AggregateOperator aggOp, HomogTensor newWithCorrection) {
 		if(aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTROW ||
 			aggOp.correctionLocation == PartialAggregate.CorrectionLocationType.LASTCOLUMN)
 		{

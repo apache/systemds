@@ -26,13 +26,13 @@ import org.apache.commons.lang.mutable.MutableBoolean;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaData;
 
-public class TensorObject extends CacheableData<TensorBlock>
+public class TensorObject extends CacheableData<HomogTensor>
 {
 	private static final long serialVersionUID = -2843358400200380775L;
 
@@ -91,12 +91,12 @@ public class TensorObject extends CacheableData<TensorBlock>
 	}
 
 	@Override
-	protected TensorBlock readBlobFromCache(String fname) throws IOException {
-		return (TensorBlock)LazyWriteBuffer.readBlock(fname, false);
+	protected HomogTensor readBlobFromCache(String fname) throws IOException {
+		return (HomogTensor)LazyWriteBuffer.readBlock(fname, false);
 	}
 
 	@Override
-	protected TensorBlock readBlobFromHDFS(String fname, long rlen, long clen)
+	protected HomogTensor readBlobFromHDFS(String fname, long rlen, long clen)
 		throws IOException 
 	{
 		//TODO read from HDFS
@@ -104,7 +104,7 @@ public class TensorObject extends CacheableData<TensorBlock>
 	}
 
 	@Override
-	protected TensorBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+	protected HomogTensor readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException 
 	{
 		//TODO read from RDD

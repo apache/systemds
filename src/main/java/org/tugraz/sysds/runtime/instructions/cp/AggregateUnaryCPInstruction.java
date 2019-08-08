@@ -27,7 +27,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
@@ -174,10 +174,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 						ec.setMatrixOutput(output_name, resultBlock);
 					}
 				} else if (input1.getDataType() == DataType.TENSOR) {
-					TensorBlock tensorBlock = ec.getTensorInput(input1.getName());
+					HomogTensor homogTensor = ec.getTensorInput(input1.getName());
 
 					// TODO Different datatype if int? Note that this is the tensor used for kahan buffer
-					TensorBlock resultBlock = tensorBlock.aggregateUnaryOperations(au_op, new TensorBlock());
+					HomogTensor resultBlock = homogTensor.aggregateUnaryOperations(au_op, new HomogTensor());
 
 					ec.releaseTensorInput(input1.getName());
 					if(output.getDataType() == DataType.SCALAR){

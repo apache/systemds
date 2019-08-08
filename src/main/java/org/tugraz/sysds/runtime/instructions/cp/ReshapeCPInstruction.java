@@ -26,7 +26,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.LibTensorReorg;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -67,10 +67,10 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if (output.getDataType() == Types.DataType.TENSOR) {
 			int[] dims = getTensorDimensions(ec, _opDims);
-			TensorBlock out = new TensorBlock(output.getValueType(), dims);
+			HomogTensor out = new HomogTensor(output.getValueType(), dims);
 			if (input1.getDataType() == Types.DataType.TENSOR) {
 				//get Tensor-data from tensor (reshape)
-				TensorBlock data = ec.getTensorInput(input1.getName());
+				HomogTensor data = ec.getTensorInput(input1.getName());
 				LibTensorReorg.reshape(data, out, dims);
 				ec.releaseTensorInput(input1.getName());
 			}

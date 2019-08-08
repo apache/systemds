@@ -29,7 +29,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.LocalVariableMap;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.instructions.CPInstructionParser;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
@@ -230,7 +230,7 @@ public abstract class CPInstruction extends Instruction
 			break;
 			case TENSOR: {
 				// Dimensions given as vector
-				TensorBlock in = ec.getTensorInput(dims.getName());
+				HomogTensor in = ec.getTensorInput(dims.getName());
 				boolean colVec = false;
 				if (!in.isVector()) {
 					throw new DMLRuntimeException("Dimensions tensor has to be a vector.");

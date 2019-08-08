@@ -1,5 +1,7 @@
 #-------------------------------------------------------------
 #
+# Modifications Copyright 2019 Graz University of Technology
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -56,7 +58,7 @@ R29 = matrix(0,rows=m,cols=n);
 R30 = matrix(0,rows=m,cols=n);
 R31 = matrix(0,rows=m,cols=n);
 R32 = matrix(0,rows=m,cols=n);
-parfor( i in 1:n, par=8, mode=REMOTE_MR, resultmerge=REMOTE_MR, taskpartitioner=FACTORING, opt=NONE )
+parfor( i in 1:n, par=8, mode=REMOTE_SPARK, resultmerge=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
 {
    X = V[,i];
    R1[,i] = X;

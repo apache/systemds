@@ -19,169 +19,222 @@ package org.tugraz.sysds.test.component.tensor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HeterogTensor;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 
 
 public class TensorGetSetIndexingTest
 {
+	private static int DIM0 = 3, DIM1 = 5, DIM2 = 7;
+	// TODO large tensor tests
 	@Test
-	public void testIndexTensorBlock2FP32SetGetCell() {
-		TensorBlock tb = getTensorBlock2(ValueType.FP32);
+	public void testIndexHomogTensor2FP32SetGetCell() {
+		HomogTensor tb = getHomogTensor2(ValueType.FP32);
 		checkSequence(setSequence(tb));
 	}
 
 	@Test
-	public void testIndexTensorBlock2FP64SetGetCell() {
-		TensorBlock tb = getTensorBlock2(ValueType.FP64);
-		checkSequence(setSequence(tb));
-	}
-	
-	@Test
-	public void testIndexTensorBlock2BoolSetGetCell() {
-		TensorBlock tb = getTensorBlock2(ValueType.BOOLEAN);
+	public void testIndexHomogTensor2FP64SetGetCell() {
+		HomogTensor tb = getHomogTensor2(ValueType.FP64);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock2Int32SetGetCell() {
-		TensorBlock tb = getTensorBlock2(ValueType.INT32);
+	public void testIndexHomogTensor2BoolSetGetCell() {
+		HomogTensor tb = getHomogTensor2(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock2Int64SetGetCell() {
-		TensorBlock tb = getTensorBlock2(ValueType.INT64);
-		checkSequence(setSequence(tb));
-	}
-
-	/* ToDo: Add constructor for Large Tensors?
-	@Test
-	public void testIndexTensorBlockLarge2FP32SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge2FP64SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge2BoolSetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge2Int32SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge2Int64SetGetCell() {
-	    throw new NotImplementedException();
-	}*/
-
-	@Test
-	public void testIndexTensorBlock3FP32SetGetCell() {
-		TensorBlock tb = getTensorBlock3(ValueType.FP32);
+	public void testIndexHomogTensor2Int32SetGetCell() {
+		HomogTensor tb = getHomogTensor2(ValueType.INT32);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock3FP64SetGetCell() {
-		TensorBlock tb = getTensorBlock3(ValueType.FP64);
+	public void testIndexHomogTensor2Int64SetGetCell() {
+		HomogTensor tb = getHomogTensor2(ValueType.INT64);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHomogTensor3FP32SetGetCell() {
+		HomogTensor tb = getHomogTensor3(ValueType.FP32);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock3BoolSetGetCell() {
-		TensorBlock tb = getTensorBlock3(ValueType.BOOLEAN);
+	public void testIndexHomogTensor3FP64SetGetCell() {
+		HomogTensor tb = getHomogTensor3(ValueType.FP64);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock3Int32SetGetCell() {
-		TensorBlock tb = getTensorBlock3(ValueType.INT32);
+	public void testIndexHomogTensor3BoolSetGetCell() {
+		HomogTensor tb = getHomogTensor3(ValueType.BOOLEAN);
 		checkSequence(setSequence(tb));
 	}
 	
 	@Test
-	public void testIndexTensorBlock3Int64SetGetCell() {
-		TensorBlock tb = getTensorBlock3(ValueType.INT64);
+	public void testIndexHomogTensor3Int32SetGetCell() {
+		HomogTensor tb = getHomogTensor3(ValueType.INT32);
+		checkSequence(setSequence(tb));
+	}
+	
+	@Test
+	public void testIndexHomogTensor3Int64SetGetCell() {
+		HomogTensor tb = getHomogTensor3(ValueType.INT64);
 		checkSequence(setSequence(tb));
 	}
 
-	/* ToDo: Add constructor for Large Tensors?
-	@Test
-	public void testIndexTensorBlockLarge3FP32SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge3FP64SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge3BoolSetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge3Int32SetGetCell() {
-		throw new NotImplementedException();
-	}
-
-	@Test
-	public void testIndexTensorBlockLarge3Int64SetGetCell() {
-	    throw new NotImplementedException();
-	}*/
-
-	private TensorBlock getTensorBlock2(ValueType vt) {
+	private HomogTensor getHomogTensor2(ValueType vt) {
 		// Todo: implement sparse for Tensor
-		return new TensorBlock(vt, new int[] {3,5}, false);
+		return new HomogTensor(vt, new int[] {DIM0,DIM1}, false);
 	}
 	
-	private TensorBlock getTensorBlock3(ValueType vt) {
+	private HomogTensor getHomogTensor3(ValueType vt) {
 		// Todo: implement sparse for Tensor
-		return new TensorBlock(vt, new int[] {3,5,7}, false);
+		return new HomogTensor(vt, new int[] {DIM0,DIM1,DIM2}, false);
 	}
 
-	private TensorBlock setSequence(TensorBlock tb) {
-		if( tb.getNumDims() == 3 ) {
-			int dim12 = 5*7;
-			int dim1 =5, dim2 = 7;
+	private HomogTensor setSequence(HomogTensor tb) {
+		if( tb.getNumDims() == DIM0 ) {
+			int dim12 = DIM1*DIM2;
 			for(int i=0; i<tb.getNumRows(); i++)
-				for(int j=0; j<dim1; j++)
-					for(int k=0; k<dim2; k++)
-						tb.set(new int[] {i,j,k}, (double)i*dim12+j*dim2+k);
+				for(int j=0; j<DIM1; j++)
+					for(int k=0; k<DIM2; k++)
+						tb.set(new int[] {i,j,k}, (double)i*dim12+j*DIM2+k);
 		}
 		else { //num dims = 2
-			int dim1 = 5;
 			for(int i=0; i<tb.getNumRows(); i++)
-				for(int j=0; j<dim1; j++)
-					tb.set(new int[]{i,j}, i*dim1+j);
+				for(int j=0; j<DIM1; j++)
+					tb.set(new int[]{i,j}, i*DIM1+j);
 		}
 		return tb;
 	}
 
-	private void checkSequence(TensorBlock tb) {
+	private void checkSequence(HomogTensor tb) {
 		boolean isBool = tb.getValueType() == ValueType.BOOLEAN;
-		if( tb.getNumDims() == 3 ) {
-			int dim12 = 5*7;
-			int dim1 = 5, dim2 = 7;
+		if( tb.getNumDims() == DIM0 ) {
+			int dim12 = DIM1 * DIM2;
 			for(int i=0; i<tb.getNumRows(); i++)
-				for(int j=0; j<dim1; j++)
-					for(int k=0; k<dim2; k++) {
-						int val = i*dim12+j*dim2+k;
+				for(int j=0; j<DIM1; j++)
+					for(int k=0; k<DIM2; k++) {
+						int val = i*dim12+j*DIM2+k;
 						double expected = isBool && val!=0 ? 1 : val;
 						Assert.assertEquals(expected, tb.get(new int[] {i,j,k}), 0);
 					}
 		}
 		else { //num dims = 2
-			int dim1 = 5;
 			for(int i=0; i<tb.getNumRows(); i++)
-				for(int j=0; j<dim1; j++) {
-					int val = i*dim1+j;
+				for(int j=0; j<DIM1; j++) {
+					int val = i*DIM1+j;
+					double expected = isBool && val!=0 ? 1 : val;
+					Assert.assertEquals(expected, tb.get(new int[]{i, j}), 0);
+				}
+		}
+	}
+
+	@Test
+	public void testIndexHeterogTensor2FP32SetGetCell() {
+		HeterogTensor tb = getHeterogTensor2(ValueType.FP32);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor2FP64SetGetCell() {
+		HeterogTensor tb = getHeterogTensor2(ValueType.FP64);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor2BoolSetGetCell() {
+		HeterogTensor tb = getHeterogTensor2(ValueType.BOOLEAN);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor2Int32SetGetCell() {
+		HeterogTensor tb = getHeterogTensor2(ValueType.INT32);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor2Int64SetGetCell() {
+		HeterogTensor tb = getHeterogTensor2(ValueType.INT64);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor3FP32SetGetCell() {
+		HeterogTensor tb = getHeterogTensor3(ValueType.FP32);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor3FP64SetGetCell() {
+		HeterogTensor tb = getHeterogTensor3(ValueType.FP64);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor3BoolSetGetCell() {
+		HeterogTensor tb = getHeterogTensor3(ValueType.BOOLEAN);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor3Int32SetGetCell() {
+		HeterogTensor tb = getHeterogTensor3(ValueType.INT32);
+		checkSequence(setSequence(tb));
+	}
+
+	@Test
+	public void testIndexHeterogTensor3Int64SetGetCell() {
+		HeterogTensor tb = getHeterogTensor3(ValueType.INT64);
+		checkSequence(setSequence(tb));
+	}
+
+	private HeterogTensor getHeterogTensor2(ValueType vt) {
+		return new HeterogTensor(vt, new int[] {DIM0,DIM1});
+	}
+
+	private HeterogTensor getHeterogTensor3(ValueType vt) {
+		return new HeterogTensor(vt, new int[] {DIM0,DIM1,DIM2});
+	}
+
+	private HeterogTensor setSequence(HeterogTensor tb) {
+		if( tb.getNumDims() == DIM0 ) {
+			int dim12 = DIM1*DIM2;
+			for(int i=0; i<tb.getNumRows(); i++)
+				for(int j=0; j<DIM1; j++)
+					for(int k=0; k<DIM2; k++)
+						tb.set(new int[] {i,j,k}, (double)i*dim12+j*DIM2+k);
+		}
+		else { //num dims = 2
+			for(int i=0; i<tb.getNumRows(); i++)
+				for(int j=0; j<DIM1; j++)
+					tb.set(new int[]{i,j}, i*DIM1+j);
+		}
+		return tb;
+	}
+
+	private void checkSequence(HeterogTensor tb) {
+		boolean isBool = tb.getSchema()[0] == ValueType.BOOLEAN;
+		if( tb.getNumDims() == DIM0 ) {
+			int dim12 = DIM1*DIM2;
+			for(int i=0; i<tb.getNumRows(); i++)
+				for(int j=0; j<DIM1; j++)
+					for(int k=0; k<DIM2; k++) {
+						int val = i*dim12+j*DIM2+k;
+						double expected = isBool && val!=0 ? 1 : val;
+						Assert.assertEquals(expected, tb.get(new int[] {i,j,k}), 0);
+					}
+		}
+		else { //num dims = 2
+			for(int i=0; i<tb.getNumRows(); i++)
+				for(int j=0; j<DIM1; j++) {
+					int val = i*DIM1+j;
 					double expected = isBool && val!=0 ? 1 : val;
 					Assert.assertEquals(expected, tb.get(new int[]{i, j}), 0);
 				}

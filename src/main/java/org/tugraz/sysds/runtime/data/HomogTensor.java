@@ -37,20 +37,18 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-public class TensorBlock implements CacheBlock, Externalizable
+public class HomogTensor extends Tensor implements Externalizable
 {
 	private static final long serialVersionUID = -1887367304030494999L;
 
 	public static final double SPARSITY_TURN_POINT = 0.4;
 	public static final ValueType DEFAULT_VTYPE = ValueType.FP64;
-	public static final int[] DEFAULT_DIMS = new int[]{0, 0};
+
 	public static final SparseBlock.Type DEFAULT_SPARSEBLOCK = SparseBlock.Type.MCSR;
 
 	//constant value type of tensor block
 	protected ValueType _vt;
-	
-	//min 2 dimensions to preserve proper matrix semantics
-	protected int[] _dims; //[2,inf)
+
 	protected boolean _sparse = true;
 	protected long _nnz = 0;
 	
@@ -58,34 +56,34 @@ public class TensorBlock implements CacheBlock, Externalizable
 	protected DenseBlock _denseBlock = null;
 	protected SparseBlock _sparseBlock = null;
 	
-	public TensorBlock() {
+	public HomogTensor() {
 		this(DEFAULT_VTYPE, DEFAULT_DIMS.clone(), true, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims) {
+	public HomogTensor(ValueType vt, int[] dims) {
 		this(vt, dims, true, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims, boolean sp) {
+	public HomogTensor(ValueType vt, int[] dims, boolean sp) {
 		this(vt, dims, sp, -1);
 	}
 	
-	public TensorBlock(ValueType vt, int[] dims, boolean sp, long estnnz) {
+	public HomogTensor(ValueType vt, int[] dims, boolean sp, long estnnz) {
 		_vt = vt;
 		reset(dims, sp, estnnz, 0);
 	}
 	
-	public TensorBlock(TensorBlock that) {
+	public HomogTensor(HomogTensor that) {
 		_vt = that.getValueType();
 		copy(that);
 	}
 
-	public TensorBlock(double val) {
+	public HomogTensor(double val) {
 		_vt = DEFAULT_VTYPE;
 		reset(new int[] {1, 1}, false, 1, val);
 	}
 	
-	public TensorBlock(int[] dims, ValueType vt, double val) {
+	public HomogTensor(int[] dims, ValueType vt, double val) {
 		_vt = vt;
 		_dims = dims;
 		reset(dims, false, (val==0) ? 0 : getLength(), val);
@@ -94,11 +92,13 @@ public class TensorBlock implements CacheBlock, Externalizable
 	////////
 	// Initialization methods
 	// (reset, init, allocate, etc)
-	
+
+	@Override
 	public void reset() {
 		reset(_dims, _sparse, -1, 0);
 	}
-	
+
+	@Override
 	public void reset(int[] dims) {
 		reset(dims, _sparse, -1, 0);
 	}
@@ -154,7 +154,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		//handle to dense block allocation and
 		//reset dense block to given value
 		if( _denseBlock != null )
-			_denseBlock.reset(getDim(0), getDim(1), val);
+			_denseBlock.reset(_dims, val);
 		else {
 			if( val != 0 ) {
 				allocateDenseBlock(false);
@@ -164,17 +164,18 @@ public class TensorBlock implements CacheBlock, Externalizable
 			}
 		}
 	}
-	
+
+	@Override
 	public boolean isAllocated() {
 		return _sparse ? (_sparseBlock!=null) : (_denseBlock!=null);
 	}
 
-	public TensorBlock allocateDenseBlock() {
+	public HomogTensor allocateDenseBlock() {
 		allocateDenseBlock(true);
 		return this;
 	}
 
-	public TensorBlock allocateBlock() {
+	public HomogTensor allocateBlock() {
 		if( _sparse )
 			allocateSparseBlock();
 		else
@@ -184,11 +185,10 @@ public class TensorBlock implements CacheBlock, Externalizable
 	
 	public boolean allocateDenseBlock(boolean clearNNZ) {
 		//allocate block if non-existing or too small (guaranteed to be 0-initialized),
-		// TODO: use reset instead, since LDRB need to check dimensions for actually available space
+		// TODO: use _denseBlock.reset instead, since LDRB need to check dimensions for actually available space
 		long limit = getLength();
 		boolean reset = (_denseBlock == null || _denseBlock.capacity() < limit);
 		if( _denseBlock == null )
-			// ToDo: dimensions > 2
 			_denseBlock = DenseBlockFactory.createDenseBlock(_vt, _dims);
 		else if( _denseBlock.capacity() < limit )
 			_denseBlock.reset(_dims);
@@ -233,72 +233,15 @@ public class TensorBlock implements CacheBlock, Externalizable
 		return dims;
 	}
 
-	public int getNumDims() {
-		return _dims.length;
-	}
-	
-	public int getNumRows() {
-		return getDim(0);
-	}
-
-	@Override
-	public int getNumColumns() {
-		return getDim(1);
-	}
-	
-	public int getDim(int i) {
-		return _dims[i];
-	}
-	
 	public long getNonZeros() {
 		return _nnz;
 	}
 
-	/**
-	 * Calculates the next index array. Note that if the given index array was the last element, the next index will
-	 * be outside of range.
-	 *
-	 * @param ix the index array which will be incremented to the next index array
-	 */
-	public void getNextIndexes(int[] ix) {
-		int i = ix.length - 1;
-		ix[i]++;
-		//calculating next index
-		if (ix[i] == getDim(i)) {
-			while (ix[i] == getDim(i)) {
-				if (i - 1 < 0) {
-					//we are finished
-					break;
-				}
-				ix[i] = 0;
-				i--;
-				ix[i]++;
-			}
-		}
-	}
-
-	public boolean isVector() {
-		return getNumDims() <= 2 
-			&& (getDim(0) == 1 || getDim(1) == 1);
-	}
-	
-	public boolean isMatrix() {
-		return getNumDims() == 2 
-			&& (getDim(0) > 1 && getDim(1) > 1);
-	}
-	
-	public long getLength() {
-		return UtilFunctions.prod(_dims);
-	}
-	
 	public boolean isSparse() {
 		return _sparse;
 	}
-	
-	public boolean isEmpty() {
-		return isEmpty(false);
-	}
-	
+
+	@Override
 	public boolean isEmpty(boolean safe) {
 		boolean ret = false;
 		if( _sparse && _sparseBlock==null )
@@ -307,9 +250,10 @@ public class TensorBlock implements CacheBlock, Externalizable
 			ret = true;
 		if( _nnz==0 ) {
 			//prevent under-estimation
+			//TODO recomputeNonZeros();
+			//TODO return false if _nnz != 0
 			if(safe)
-				//TODO recomputeNonZeros();
-			ret = (_nnz == 0);
+				ret = (_nnz == 0);
 		}
 		return ret;
 	}
@@ -346,17 +290,21 @@ public class TensorBlock implements CacheBlock, Externalizable
 				allocateDenseBlock(false);
 				DenseBlock a = getDenseBlock();
 				int odims = (int) UtilFunctions.prod(_dims, 1);
-				for( int i=0; i<getNumRows(); i++ )
-					for( int j=0; j<odims; j++ ) {
-						switch( _vt ) {
+				int ix = new int[getNumDims()];
+				for( int i=0; i<getNumRows(); i++ ) {
+					ix[0] = i;
+					for (int j = 0; j < odims; j++) {
+						ix[ix.length - 1] = j;
+						switch (_vt) {
 							case FP32: a.set(i, j, in.readFloat()); break;
 							case FP64: a.set(i, j, in.readDouble()); break;
-							case INT32: a.set(i, j, in.readInt()); break;
-							case INT64: a.set(i, j, in.readLong()); break;
+							case INT32: a.set(ix, (long)in.readInt()); break;
+							case INT64: a.set(ix, in.readLong()); break;
 							case BOOLEAN: a.set(i, j, in.readByte()); break;
-							case STRING: a.set(new int[]{i, j}, in.readUTF()); break;
+							case STRING: a.set(ix, in.readUTF()); break;
 						}
 					}
+				}
 				break;
 			}
 			case SPARSE_BLOCK:
@@ -386,17 +334,21 @@ public class TensorBlock implements CacheBlock, Externalizable
 			out.writeByte(BlockType.DENSE_BLOCK.ordinal());
 			DenseBlock a = getDenseBlock();
 			int odims = (int) UtilFunctions.prod(_dims, 1);
-			for( int i=0; i<getNumRows(); i++ )
-				for( int j=0; j<odims; j++ ) {
-					switch( _vt ) {
-						case FP32: out.writeFloat((float)a.get(i, j)); break;
+			int[] ix = new int[getNumDims()];
+			for( int i=0; i<getNumRows(); i++ ) {
+				ix[0] = i;
+				for (int j = 0; j < odims; j++) {
+					ix[ix.length - 1] = j;
+					switch (_vt) {
+						case FP32: out.writeFloat((float) a.get(i, j)); break;
 						case FP64: out.writeDouble(a.get(i, j)); break;
-						case INT32: out.writeInt((int)a.get(i, j)); break;
-						case INT64: out.writeLong((long)a.get(i, j)); break;
+						case INT32: out.writeInt((int) a.getLong(ix)); break;
+						case INT64: out.writeLong(a.getLong(ix)); break;
 						case BOOLEAN: out.writeBoolean(a.get(i, j) != 0); break;
-						case STRING: out.writeUTF(a.getString(new int[] {i, j})); break;
+						case STRING: out.writeUTF(a.getString(ix)); break;
 					}
 				}
+			}
 		}
 		else {
 			throw new NotImplementedException();
@@ -405,7 +357,8 @@ public class TensorBlock implements CacheBlock, Externalizable
 	
 	////////
 	// Basic modification
-	
+
+	@Override
 	public double get(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -415,8 +368,11 @@ public class TensorBlock implements CacheBlock, Externalizable
 			return _denseBlock.get(ix);
 		}
 	}
-	
+
+	@Override
 	public double get(int r, int c) {
+		if (getNumDims() != 2)
+			throw new DMLRuntimeException("HomogTensor.get(int,int) dimension mismatch: expected=2 actual=" + getNumDims());
 		if (_sparse) {
 			// TODO: Implement sparse
 			throw new NotImplementedException();
@@ -426,6 +382,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
+	@Override
 	public long getLong(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -435,6 +392,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
+	@Override
 	public String getString(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
@@ -445,6 +403,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
+	@Override
 	public void set(int[] ix, double v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -452,8 +411,11 @@ public class TensorBlock implements CacheBlock, Externalizable
 			_denseBlock.set(ix, v);
 		}
 	}
-	
+
+	@Override
 	public void set(int r, int c, double v) {
+		if (getNumDims() != 2)
+			throw new DMLRuntimeException("HomogTensor.set(int,int,double) dimension mismatch: expected=2 actual=" + getNumDims());
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
@@ -461,6 +423,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
+	@Override
 	public void set(int[] ix, long v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -469,6 +432,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
+	@Override
 	public void set(int[] ix, String v) {
 		if (_sparse) {
 			throw new NotImplementedException();
@@ -493,7 +457,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
-	public void set(TensorBlock other) {
+	public void set(HomogTensor other) {
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
@@ -523,12 +487,11 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
-	public void copy(TensorBlock that) {
+	public void copy(HomogTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
 		if( that.isAllocated() ) {
-			allocateBlock();
 			if( !_sparse )
 				copyDenseToDense(that);
 			else // TODO copy sparse to dense, dense to dense or sparse to dense
@@ -536,7 +499,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 	}
 
-	public TensorBlock copyShallow(TensorBlock that) {
+	public HomogTensor copyShallow(HomogTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
@@ -547,7 +510,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		return this;
 	}
 
-	private void copyDenseToDense(TensorBlock that) {
+	private void copyDenseToDense(HomogTensor that) {
 		_nnz = that._nnz;
 
 		//plain reset to 0 for empty input
@@ -556,7 +519,6 @@ public class TensorBlock implements CacheBlock, Externalizable
 				_denseBlock.reset(that._dims);
 			return;
 		}
-
 		//allocate and copy dense block
 		allocateDenseBlock(false);
 		_denseBlock.set(that._denseBlock);
@@ -568,7 +530,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 	 * @param upper upper index of elements to copy (exclusive)
 	 * @param src source tensor
 	 */
-	public void copy(int[] lower, int[] upper, TensorBlock src) {
+	public void copy(int[] lower, int[] upper, HomogTensor src) {
 		// TODO consider sparse
 		if (src.isEmpty(false)) {
 			return;
@@ -606,7 +568,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 	 * @param result the result tensor
 	 * @return the result tensor
 	 */
-	public TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
+	public HomogTensor aggregateUnaryOperations(AggregateUnaryOperator op, HomogTensor result) {
 		// TODO allow to aggregate along a dimension?
 		// TODO performance
 		if (op.aggOp.increOp.fn instanceof KahanPlus) {
@@ -619,7 +581,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		}
 		//prepare result matrix block
 		if(result==null || result._vt != _vt)
-			result=new TensorBlock(_vt, new int[]{dim0, dim1}, false);
+			result = new HomogTensor(_vt, new int[]{dim0, dim1}, false);
 		else
 			result.reset(new int[]{dim0, dim1}, false);
 
@@ -633,7 +595,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 		return result;
 	}
 
-	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock partialResult) {
+	public void incrementalAggregate(AggregateOperator aggOp, HomogTensor partialResult) {
 		if(!aggOp.correctionExists) {
 			if(aggOp.increOp.fn instanceof Plus) {
 				LibTensorAgg.aggregateBinaryTensor(partialResult, this, aggOp);
@@ -713,7 +675,7 @@ public class TensorBlock implements CacheBlock, Externalizable
 	 * @param outBlock sliced result block
 	 * @return the sliced result block
 	 */
-	public TensorBlock slice(int[] offsets, TensorBlock outBlock) {
+	public HomogTensor slice(int[] offsets, HomogTensor outBlock) {
 		// TODO perf
 		int[] srcIx = new int[offsets.length];
 		Array.copy(offsets, 0, srcIx, 0, offsets.length);

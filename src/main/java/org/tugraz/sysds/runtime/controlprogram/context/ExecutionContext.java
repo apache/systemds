@@ -33,7 +33,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -75,7 +75,7 @@ public class ExecutionContext {
 	//lineage map, cache, prepared dedup blocks
 	protected Lineage _lineage;
 	protected LineagePath _lineagePath = new LineagePath();
-	
+
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}
 	 */
@@ -85,7 +85,7 @@ public class ExecutionContext {
 		//protected constructor to force use of ExecutionContextFactory
 		this( true, DMLScript.LINEAGE, null );
 	}
-	
+
 	protected ExecutionContext( boolean allocateVariableMap, boolean allocateLineage, Program prog ) {
 		//protected constructor to force use of ExecutionContextFactory
 		_variables = allocateVariableMap ? new LocalVariableMap() : null;
@@ -112,15 +112,15 @@ public class ExecutionContext {
 	public Lineage getLineage() {
 		return _lineage;
 	}
-	
+
 	public void setLineage(Lineage lineage) {
 		_lineage = lineage;
 	}
-	
+
 	public LineagePath getLineagePath(){
 		return _lineagePath;
 	}
-	
+
 	public void setLineagePath(LineagePath lp){
 		_lineagePath = lp;
 	}
@@ -286,7 +286,7 @@ public class ExecutionContext {
 	 * @param varName variable name
 	 * @return matrix block
 	 */
-	public TensorBlock getTensorInput(String varName) {
+	public HomogTensor getTensorInput(String varName) {
 		return getTensorObject(varName).acquireRead();
 	}
 
@@ -506,7 +506,7 @@ public class ExecutionContext {
 		setMatrixOutput(varName, outputData, flag);
 	}
 
-	public void setTensorOutput(String varName, TensorBlock outputData) {
+	public void setTensorOutput(String varName, HomogTensor outputData) {
 		TensorObject to = getTensorObject(varName);
 		to.acquireModify(outputData);
 		to.release();
@@ -675,19 +675,19 @@ public class ExecutionContext {
 			throw new DMLRuntimeException(ex);
 		}
 	}
-	
+
 	public void traceLineage(Instruction inst) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		_lineage.trace(inst, this);
 	}
-	
+
 	public LineageItem getLineageItem(CPOperand input) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
 		return _lineage.get(input);
 	}
-	
+
 	public LineageItem getOrCreateLineageItem(CPOperand input) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");

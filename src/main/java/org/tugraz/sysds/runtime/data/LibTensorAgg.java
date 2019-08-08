@@ -18,9 +18,8 @@ package org.tugraz.sysds.runtime.data;
 import org.apache.commons.lang.NotImplementedException;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.functionobjects.ValueFunction;
-import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.util.CommonThreadPool;
@@ -33,7 +32,7 @@ import java.util.concurrent.ExecutorService;
 
 public class LibTensorAgg {
 	private enum AggType {
-		KAHAN_SUM,
+		SUM,
 		INVALID,
 	}
 
@@ -102,7 +101,7 @@ public class LibTensorAgg {
 	private static void aggregateUnaryTensorEmpty(TensorBlock in, TensorBlock out, AggType optype) {
 		// TODO implement for other optypes
 		double val;
-		if (optype == AggType.KAHAN_SUM) {
+		if (optype == AggType.SUM) {
 			val = 0;
 		} else {
 			val = Double.NaN;
@@ -114,8 +113,9 @@ public class LibTensorAgg {
 	 * Core incremental tensor aggregate (ak+) as used for uack+ and acrk+.
 	 * Embedded correction values.
 	 *
-	 * @param in     tensor block
-	 * @param aggVal aggregate operator
+	 * @param in partial aggregation
+	 * @param aggVal partial aggregation, also output (in will be added to this)
+	 * @param aop aggregation operator
 	 */
 	public static void aggregateBinaryTensor(TensorBlock in, TensorBlock aggVal, AggregateOperator aop) {
 		//check validity
@@ -125,8 +125,28 @@ public class LibTensorAgg {
 		}
 
 		//core aggregation
-		// TODO is the correction always the last column?
-		aggregateBinaryTensorLastColGeneric(in, aggVal);
+		// TODO support indexfn that are not reduce all
+		// TODO support for all shapes
+		if (!aop.correctionExists) {
+			if (aop.increOp.fn instanceof Plus) {
+				switch (in.getValueType()) {
+					case INT64:
+					case INT32:
+						int[] first = new int[in.getNumDims()];
+						aggVal.set(first, in.getLong(first) + aggVal.getLong(first));
+						break;
+					default:
+						aggVal.set(0, 0, in.get(0, 0) + aggVal.get(0, 0));
+						break;
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Binary aggregation of this type not supported for tensors yet");
+			}
+		}
+		else {
+			throw new DMLRuntimeException("Corrections not supported for tensors yet");
+		}
 	}
 
 	/**
@@ -137,9 +157,9 @@ public class LibTensorAgg {
 	 */
 	private static AggType getAggType(AggregateUnaryOperator op) {
 		ValueFunction vfn = op.aggOp.increOp.fn;
-		//(kahan) sum
-		if (vfn instanceof KahanPlus)
-			return AggType.KAHAN_SUM;
+		// sum
+		if (vfn instanceof Plus)
+			return AggType.SUM;
 		return AggType.INVALID;
 	}
 
@@ -167,45 +187,11 @@ public class LibTensorAgg {
 	private static void aggregateUnaryTensorPartial(TensorBlock in, TensorBlock out, AggType aggtype, ValueFunction fn,
 	                                                int rl, int ru) {
 		//note: due to corrections, even the output might be a large dense block
-		if (aggtype == AggType.KAHAN_SUM) {
+		if (aggtype == AggType.SUM) {
 			// TODO handle different index functions
-			kahanSum(in, out, (KahanPlus) fn, rl, ru);
+			sum(in, out, (Plus) fn, rl, ru);
 		}
 		// TODO other aggregations
-	}
-
-	/**
-	 * Add two tensor-blocks, which contain the result of an aggregation with correction in the last column, together.
-	 *
-	 * @param in     the tensor block to add
-	 * @param aggVal the tensor block to which the first should be added
-	 */
-	private static void aggregateBinaryTensorLastColGeneric(TensorBlock in, TensorBlock aggVal) {
-		if (!in.isSparse()) {
-			if (in._denseBlock == null || in.isEmpty(false)) return;
-
-			final int m = in.getDim(0);
-			final int n = in.getDim(1);
-
-			DenseBlock a = in.getDenseBlock();
-			//double[] a = in.getDenseBlock().valuesAt(0);
-			KahanObject buffer = new KahanObject(0, 0);
-			KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
-
-			//incl implicit nnz maintenance
-			for (int i = 0; i < m; i++)
-				for (int j = 0; j < n - 1; j++) {
-					buffer._sum = aggVal.get(new int[]{i, j});
-					buffer._correction = aggVal.get(new int[]{i, n - 1});
-					akplus.execute(buffer, a.get(i, j), a.get(i, j + 1));
-					//akplus.execute(buffer, a[ix + j], a[ix + j + 1]);
-					aggVal.set(new int[]{i, j}, buffer._sum);
-					aggVal.set(new int[]{i, n - 1}, buffer._correction);
-				}
-		} else {
-			throw new DMLRuntimeException("Sparse aggregation not implemented");
-		}
-		// TODO check sparsity
 	}
 
 	/**
@@ -216,46 +202,60 @@ public class LibTensorAgg {
 	 * @param partout the tensor-block which contains partial result and should be added to other partial result
 	 */
 	private static void aggregateFinalResult(AggregateOperator aop, TensorBlock out, TensorBlock partout) {
-		//TODO special handling for mean where the final aggregate operator (kahan plus)
+		//TODO special handling for mean where the final aggregate operator
 		// is not equals to the partial aggregate operator
 		//incremental aggregation of final results
-		if (aop.correctionExists)
+		if (!aop.correctionExists)
 			out.incrementalAggregate(aop, partout);
 		else
 			throw new NotImplementedException();
 		//out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
-	private static void kahanSum(TensorBlock in, TensorBlock out, KahanPlus kplus, int rl, int ru) {
-		KahanObject kbuff = new KahanObject(0, 0);
+	private static void sum(TensorBlock in, TensorBlock out, Plus plus, int rl, int ru) {
 		// TODO: SparseBlock
 		if (in.isSparse()) {
 			throw new DMLRuntimeException("Sparse aggregation not implemented for Tensor");
 		}
 		switch (in.getValueType()) {
 			case BOOLEAN: {
-				kbuff._sum = in.getDenseBlock().countNonZeros();
+				//TODO switch to no-op nnz meta data once available
+				out.set(0, 0, in.getDenseBlock().countNonZeros());
 				break;
 			}
 			case STRING: {
 				throw new DMLRuntimeException("Sum over string tensor is not supported.");
 			}
 			case FP64:
-			case FP32:
+			case FP32: {
+				DenseBlock a = in.getDenseBlock();
+				double sum = 0;
+				for (int r = rl; r < ru; r++) {
+					for (int c = 0; c < a.getCumODims(0); c++) {
+						sum = plus.execute(sum, a.get(r, c));
+					}
+				}
+				out.set(0, 0, sum);
+				break;
+			}
 			case INT64:
 			case INT32: {
 				DenseBlock a = in.getDenseBlock();
+				long sum = 0;
+				int[] ix = new int[a.numDims()];
 				for (int r = rl; r < ru; r++) {
+					ix[0] = r;
 					for (int c = 0; c < a.getCumODims(0); c++) {
-						kplus.execute2(kbuff, a.get(r, c));
+						ix[ix.length - 1] = c; // linear scan whole row
+						sum += a.getLong(ix);
 					}
 				}
+				out.set(new int[out.getNumDims()], sum);
 				break;
 			}
 			case UNKNOWN:
 				throw new NotImplementedException();
 		}
-		out.getDenseBlock().set(kbuff);
 	}
 
 	// TODO maybe merge this, and other parts, with `LibMatrixAgg`

@@ -127,9 +127,12 @@ public class DenseBlockString extends DenseBlockDRB {
 
 	@Override
 	public DenseBlock set(DenseBlock db) {
+		int[] ix = new int[numDims()];
 		for (int r = 0; r < _rlen; r++) {
+			ix[0] = r;
 			for (int c = 0; c < _odims[0]; c++) {
-				_data[pos(r, c)] = db.getString(new int[]{r, c});
+				ix[ix.length - 1] = c; // for linear scan
+				_data[pos(r, c)] = db.getString(ix);
 			}
 		}
 		return this;

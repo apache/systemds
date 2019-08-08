@@ -38,7 +38,6 @@ import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.matrix.operators.SimpleOperator;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
-import org.tugraz.sysds.runtime.util.UtilFunctions;
 import org.tugraz.sysds.utils.Explain;
 
 public class AggregateUnaryCPInstruction extends UnaryCPInstruction
@@ -176,7 +175,6 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				} else if (input1.getDataType() == DataType.TENSOR) {
 					TensorBlock tensorBlock = ec.getTensorInput(input1.getName());
 
-					// TODO Different datatype if int? Note that this is the tensor used for kahan buffer
 					TensorBlock resultBlock = tensorBlock.aggregateUnaryOperations(au_op, new TensorBlock());
 
 					ec.releaseTensorInput(input1.getName());
@@ -186,9 +184,7 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 							case INT64:
 							case INT32:
 								// Calculate accurate result
-								long sum = UtilFunctions.toLong(resultBlock.get(new int[]{0, 0}));
-								long corr = UtilFunctions.toLong(resultBlock.get(new int[]{0, 1}));
-								IntObject i = new IntObject(sum + corr);
+								IntObject i = new IntObject(resultBlock.getLong(new int[]{0, 0}));
 								ec.setScalarOutput(output_name, i);
 								break;
 							default:

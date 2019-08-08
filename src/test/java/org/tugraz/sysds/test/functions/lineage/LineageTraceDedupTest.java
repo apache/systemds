@@ -19,6 +19,7 @@ package org.tugraz.sysds.test.functions.lineage;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -142,10 +143,12 @@ public class LineageTraceDedupTest extends AutomatedTestBase {
 			String dedup_trace = readDMLLineageFromHDFS("R");
 			LineageItem dedup_li = LineageParser.parseLineageTrace(dedup_trace);
 			assertEquals(dedup_li, li);
-		} finally {
+		}
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
 			AutomatedTestBase.rtplatform = old_rtplatform;
+			Recompiler.reinitRecompiler(); 
 		}
 	}
 }

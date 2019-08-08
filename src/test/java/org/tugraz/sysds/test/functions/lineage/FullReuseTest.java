@@ -18,6 +18,7 @@ package org.tugraz.sysds.test.functions.lineage;
 
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.matrix.data.MatrixValue;
 import org.tugraz.sysds.test.AutomatedTestBase;
@@ -76,7 +77,6 @@ public class FullReuseTest extends AutomatedTestBase {
 			List<String> proArgs = new ArrayList<>();
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
-//			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -90,7 +90,6 @@ public class FullReuseTest extends AutomatedTestBase {
 			proArgs.add("-stats");
 			proArgs.add("-lineage");
 			proArgs.add("reuse");
-//			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("X"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
@@ -100,9 +99,11 @@ public class FullReuseTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromHDFS("X");
 			
 			TestUtils.compareMatrices(X_orig, X_reused, 1e-6, "Origin", "Reused");
-		} finally {
+		}
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			Recompiler.reinitRecompiler();
 		}
 	}
 }

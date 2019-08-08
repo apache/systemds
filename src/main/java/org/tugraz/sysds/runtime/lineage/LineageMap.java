@@ -6,6 +6,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
+import org.tugraz.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.tugraz.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.tugraz.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.tugraz.sysds.utils.Explain;
@@ -28,6 +29,8 @@ public class LineageMap {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
+		if( inst instanceof FunctionCallCPInstruction )
+			return; // no need for lineage tracing
 		if (!(inst instanceof LineageTraceable))
 			throw new DMLRuntimeException("Unknown Instruction (" + inst.getOpcode() + ") traced.");
 		

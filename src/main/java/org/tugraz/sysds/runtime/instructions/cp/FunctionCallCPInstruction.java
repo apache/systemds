@@ -37,6 +37,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.io.IOUtilFunctions;
+import org.tugraz.sysds.runtime.lineage.Lineage;
 
 public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _functionName;
@@ -111,6 +112,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		// create bindings to formal parameters for given function call
 		// These are the bindings passed to the FunctionProgramBlock for function execution 
 		LocalVariableMap functionVariables = new LocalVariableMap();
+		Lineage lineage = DMLScript.LINEAGE ? new Lineage() : null;
 		for( int i=0; i<_boundInputs.length; i++) {
 			//error handling non-existing variables
 			CPOperand input = _boundInputs[i];
@@ -138,6 +140,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//set input parameter
 			functionVariables.put(currFormalParam.getName(), value);
+			
+			//map lineage to function arguments
+			if( lineage != null )
+				lineage.set(currFormalParam.getName(), ec.getLineageItem(input));
 		}
 		
 		// Pin the input variables so that they do not get deleted 
@@ -146,12 +152,13 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		
 		// Create a symbol table under a new execution context for the function invocation,
 		// and copy the function arguments into the created table. 
-		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, ec.getProgram());
+		ExecutionContext fn_ec = ExecutionContextFactory.createContext(false, false, ec.getProgram());
 		if (DMLScript.USE_ACCELERATOR) {
 			fn_ec.setGPUContexts(ec.getGPUContexts());
 			fn_ec.getGPUContext(0).initializeThread();
 		}
 		fn_ec.setVariables(functionVariables);
+		fn_ec.setLineage(lineage);
 		// execute the function block
 		try {
 			fpb._functionName = this._functionName;
@@ -187,7 +194,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		int numOutputs = Math.min(_boundOutputNames.size(), fpb.getOutputParams().size());
 		for (int i=0; i< numOutputs; i++) {
 			String boundVarName = _boundOutputNames.get(i);
-			Data boundValue = retVars.get(fpb.getOutputParams().get(i).getName());
+			String retVarName = fpb.getOutputParams().get(i).getName();
+			Data boundValue = retVars.get(retVarName);
 			if (boundValue == null)
 				throw new DMLRuntimeException(boundVarName + " was not assigned a return value");
 
@@ -198,6 +206,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//add/replace data in symbol table
 			ec.setVariable(boundVarName, boundValue);
+			
+			//map lineage of function returns back to calling site
+			if( lineage != null ) //unchanged ref
+				ec.getLineage().set(boundVarName, lineage.get(retVarName));
 		}
 	}
 

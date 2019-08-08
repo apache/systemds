@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.junit.Test;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.runtime.lineage.Lineage;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
 import org.tugraz.sysds.runtime.lineage.LineageParser;
@@ -112,9 +113,11 @@ public class LineageTraceTest extends AutomatedTestBase {
 			
 			TestUtils.compareScalars(X_lineage, Explain.explain(X_li));
 			TestUtils.compareScalars(Y_lineage, Explain.explain(Y_li));
-		} finally {
+		}
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			Recompiler.reinitRecompiler(); 
 		}
 	}
 }

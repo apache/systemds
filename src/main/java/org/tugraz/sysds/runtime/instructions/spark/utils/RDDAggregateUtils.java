@@ -25,9 +25,10 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2;
@@ -152,29 +153,29 @@ public class RDDAggregateUtils
 	/**
 	 * Single block aggregation over pair rdds with corrections for numerical stability.
 	 *
-	 * @param in tensor as {@code JavaPairRDD<TensorIndexes, TensorBlock>}
+	 * @param in tensor as {@code JavaPairRDD<TensorIndexes, HomogTensor>}
 	 * @param aop aggregate operator
 	 * @return tensor block
 	 */
-	public static TensorBlock aggStableTensor(JavaPairRDD<TensorIndexes, TensorBlock> in, AggregateOperator aop) {
+	public static HomogTensor aggStableTensor(JavaPairRDD<TensorIndexes, HomogTensor> in, AggregateOperator aop) {
 		return aggStableTensor( in.values(), aop);
 	}
 
 	/**
 	 * Single block aggregation over rdds with corrections for numerical stability.
 	 *
-	 * @param in tensor as {@code JavaRDD<TensorBlock>}
+	 * @param in tensor as {@code JavaRDD<HomogTensor>}
 	 * @param aop aggregate operator
 	 * @return tensor block
 	 */
-	public static TensorBlock aggStableTensor( JavaRDD<TensorBlock> in, AggregateOperator aop )
+	public static HomogTensor aggStableTensor( JavaRDD<HomogTensor> in, AggregateOperator aop )
 	{
 		//stable aggregate of all blocks with correction block per function instance
 
 		//reduce-all aggregate via fold instead of reduce to allow
 		//for update in-place w/o deep copy of left-hand-side blocks
 		return in.fold(
-				new TensorBlock(),
+				new HomogTensor(),
 				new AggregateSingleTensorBlockFunction(aop) );
 	}
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
@@ -648,19 +649,18 @@ public class RDDAggregateUtils
 	 * drop them at the end because during aggregation we dont know if we produce an
 	 * intermediate or the final aggregate.
 	 */
-	private static class AggregateSingleTensorBlockFunction implements Function2<TensorBlock, TensorBlock, TensorBlock>
+	private static class AggregateSingleTensorBlockFunction implements Function2<HomogTensor, HomogTensor, HomogTensor>
 	{
 		private static final long serialVersionUID = 5665180309149919945L;
 
 		private AggregateOperator _op = null;
-		//private MatrixBlock _corr = null;
 
 		public AggregateSingleTensorBlockFunction( AggregateOperator op ) {
 			_op = op;
 		}
 
 		@Override
-		public TensorBlock call(TensorBlock arg0, TensorBlock arg1)
+		public HomogTensor call(HomogTensor arg0, HomogTensor arg1)
 				throws Exception
 		{
 			//prepare combiner block
@@ -671,7 +671,10 @@ public class RDDAggregateUtils
 				return arg0;
 			}
 
-			// TODO correction
+			// TODO remove once KahanPlus is completely replaced by plus
+			if (_op.increOp.fn instanceof KahanPlus) {
+				_op = new AggregateOperator(0, Plus.getPlusFnObject());
+			}
 
 			//aggregate second input (in-place)
 			arg0.incrementalAggregate(_op, arg1);

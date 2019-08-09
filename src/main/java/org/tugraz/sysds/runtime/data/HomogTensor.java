@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-public class HomogTensor extends Tensor implements Externalizable
+public class HomogTensor extends TensorBlock implements Externalizable
 {
 	private static final long serialVersionUID = -1887367304030494999L;
 
@@ -227,12 +227,6 @@ public class HomogTensor extends Tensor implements Externalizable
 		return _vt;
 	}
 
-	public int[] getDims() {
-		int[] dims = new int[_dims.length];
-		Array.copy(_dims, 0, dims, 0, _dims.length);
-		return dims;
-	}
-
 	public long getNonZeros() {
 		return _nnz;
 	}
@@ -290,7 +284,7 @@ public class HomogTensor extends Tensor implements Externalizable
 				allocateDenseBlock(false);
 				DenseBlock a = getDenseBlock();
 				int odims = (int) UtilFunctions.prod(_dims, 1);
-				int ix = new int[getNumDims()];
+				int[] ix = new int[getNumDims()];
 				for( int i=0; i<getNumRows(); i++ ) {
 					ix[0] = i;
 					for (int j = 0; j < odims; j++) {
@@ -298,7 +292,7 @@ public class HomogTensor extends Tensor implements Externalizable
 						switch (_vt) {
 							case FP32: a.set(i, j, in.readFloat()); break;
 							case FP64: a.set(i, j, in.readDouble()); break;
-							case INT32: a.set(ix, (long)in.readInt()); break;
+							case INT32: a.set(ix, in.readInt()); break;
 							case INT64: a.set(ix, in.readLong()); break;
 							case BOOLEAN: a.set(i, j, in.readByte()); break;
 							case STRING: a.set(ix, in.readUTF()); break;
@@ -712,7 +706,7 @@ public class HomogTensor extends Tensor implements Externalizable
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(ObjectInput in) throws IOException {
 		readFields(in);
 	}
 }

@@ -34,7 +34,7 @@ import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyBinaryCellFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.CopyMatrixBlockFunction;
@@ -72,11 +72,11 @@ public class SparkUtils
 		return new IndexedMatrixValue(ix, mb);
 	}
 
-	public static IndexedTensorBlock toIndexedTensorBlock( Tuple2<TensorIndexes,TensorBlock> in ) {
+	public static IndexedTensorBlock toIndexedTensorBlock( Tuple2<TensorIndexes,HomogTensor> in ) {
 		return new IndexedTensorBlock(in._1(), in._2());
 	}
 
-	public static IndexedTensorBlock toIndexedTensorBlock(TensorIndexes ix, TensorBlock mb ) {
+	public static IndexedTensorBlock toIndexedTensorBlock(TensorIndexes ix, HomogTensor mb ) {
 		return new IndexedTensorBlock(ix, mb);
 	}
 
@@ -171,11 +171,11 @@ public class SparkUtils
 	 * Creates a partitioning-preserving deep copy of the input tensor RDD, where
 	 * the indexes and values are copied.
 	 *
-	 * @param in tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
-	 * @return tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 * @param in tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
+	 * @return tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 */
-	public static JavaPairRDD<TensorIndexes, TensorBlock> copyBinaryBlockTensor(
-			JavaPairRDD<TensorIndexes, TensorBlock> in) {
+	public static JavaPairRDD<TensorIndexes, HomogTensor> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, HomogTensor> in) {
 		return copyBinaryBlockTensor(in, true);
 	}
 
@@ -183,12 +183,12 @@ public class SparkUtils
 	 * Creates a partitioning-preserving copy of the input tensor RDD. If a deep copy is
 	 * requested, indexes and values are copied, otherwise they are simply passed through.
 	 *
-	 * @param in   tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 * @param in   tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 * @param deep if true, perform deep copy
-	 * @return tensor as {@code JavaPairRDD<TensorIndexes,TensorBlock>}
+	 * @return tensor as {@code JavaPairRDD<TensorIndexes,HomogTensor>}
 	 */
-	public static JavaPairRDD<TensorIndexes, TensorBlock> copyBinaryBlockTensor(
-			JavaPairRDD<TensorIndexes, TensorBlock> in, boolean deep) {
+	public static JavaPairRDD<TensorIndexes, HomogTensor> copyBinaryBlockTensor(
+			JavaPairRDD<TensorIndexes, HomogTensor> in, boolean deep) {
 		if (!deep) //pass through of indexes and blocks
 			return in.mapValues(new CopyTensorBlockFunction(false));
 		else //requires key access, so use mappartitions

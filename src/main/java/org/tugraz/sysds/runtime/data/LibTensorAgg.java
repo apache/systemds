@@ -212,7 +212,7 @@ public class LibTensorAgg {
 		//out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
-	private static void sum(HomogTensor in, HomogTensor out, Plus kplus, int rl, int ru) {
+	private static void sum(HomogTensor in, HomogTensor out, Plus plus, int rl, int ru) {
 		// TODO: SparseBlock
 		if (in.isSparse()) {
 			throw new DMLRuntimeException("Sparse aggregation not implemented for Tensor");

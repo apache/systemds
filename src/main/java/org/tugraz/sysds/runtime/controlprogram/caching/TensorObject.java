@@ -86,10 +86,6 @@ public class TensorObject extends CacheableData<HomogTensor>
 		tc.setNonZeros(_data.getNonZeros());
 	}
 
-	public int[] getDims() {
-		return _data.getDims();
-	}
-
 	public long getNumRows() {
 		DataCharacteristics dc = getDataCharacteristics();
 		return dc.getRows();
@@ -126,7 +122,7 @@ public class TensorObject extends CacheableData<HomogTensor>
 		TensorCharacteristics tc = (TensorCharacteristics) _metaData.getDataCharacteristics();
 		// TODO correct blocksize;
 		// TODO read from RDD
-		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, TensorBlock>)rdd.getRDD(), tc);
+		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, HomogTensor>)rdd.getRDD(), tc);
 	}
 
 	@Override

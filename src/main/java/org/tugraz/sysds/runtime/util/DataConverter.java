@@ -1063,7 +1063,7 @@ public class DataConverter
 	/**
 	 * Concatenates a single tensor value to the `StringBuilder` by converting it to the correct format.
 	 *
-	 * @param tb the TensorBlock
+	 * @param tb the HomogTensor
 	 * @param sb the StringBuilder to use
 	 * @param df DecimalFormat with the correct settings for double or float values
 	 * @param ix the index of the TensorBlock value
@@ -1193,7 +1193,7 @@ public class DataConverter
 			break;
 			case TENSOR: {
 				// Dimensions given as vector
-				TensorBlock in = ec.getTensorInput(dims.getName());
+				HomogTensor in = ec.getTensorInput(dims.getName());
 				boolean colVec = false;
 				if (!in.isVector()) {
 					throw new DMLRuntimeException("Dimensions tensor has to be a vector.");

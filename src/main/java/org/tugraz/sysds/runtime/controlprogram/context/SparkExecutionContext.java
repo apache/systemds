@@ -51,8 +51,8 @@ import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.tugraz.sysds.runtime.data.HomogTensor;
 import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
 import org.tugraz.sysds.runtime.instructions.spark.data.BroadcastObject;
@@ -317,19 +317,19 @@ public class SparkExecutionContext extends ExecutionContext
 	 * variables.
 	 *
 	 * @param varname variable name
-	 * @return JavaPairRDD of TensorIndexes-TensorBlocks
+	 * @return JavaPairRDD of TensorIndexes-HomogTensors
 	 */
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<TensorIndexes, TensorBlock> getBinaryTensorBlockRDDHandleForVariable(String varname ) {
+	public JavaPairRDD<TensorIndexes, HomogTensor> getBinaryTensorBlockRDDHandleForVariable(String varname ) {
 		TensorObject to = getTensorObject(varname);
-		return (JavaPairRDD<TensorIndexes, TensorBlock>)
+		return (JavaPairRDD<TensorIndexes, HomogTensor>)
 				getRDDHandleForTensorObject(to, InputInfo.BinaryTensorBlockInputInfo, -1, true);
 	}
 
 	@SuppressWarnings("unchecked")
-	public JavaPairRDD<TensorIndexes, TensorBlock> getBinaryTensorBlockRDDHandleForVariable(String varname, int numParts, boolean inclEmpty ) {
+	public JavaPairRDD<TensorIndexes, HomogTensor> getBinaryTensorBlockRDDHandleForVariable(String varname, int numParts, boolean inclEmpty ) {
 		TensorObject to = getTensorObject(varname);
-		return (JavaPairRDD<TensorIndexes, TensorBlock>)
+		return (JavaPairRDD<TensorIndexes, HomogTensor>)
 				getRDDHandleForTensorObject(to, InputInfo.BinaryTensorBlockInputInfo, numParts, inclEmpty);
 	}
 
@@ -473,10 +473,10 @@ public class SparkExecutionContext extends ExecutionContext
 				// TODO implement hadoop read write for tensor
 				throw new DMLRuntimeException("Tensor can not yet be written or read to hadoopFile");
 				/*rdd = sc.hadoopFile(to.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
-				rdd = SparkUtils.copyBinaryBlockTensor((JavaPairRDD<TensorIndexes, TensorBlock>) rdd); //cp is workaround for read bug
+				rdd = SparkUtils.copyBinaryBlockTensor((JavaPairRDD<TensorIndexes, HomogTensor>) rdd); //cp is workaround for read bug
 				fromFile = true;*/
 			} else { //default case
-				TensorBlock mb = to.acquireRead(); //pin matrix in memory
+				HomogTensor mb = to.acquireRead(); //pin matrix in memory
 				int[] blen = new int[dc.getNumDims()];
 				for (int i = 0; i < blen.length; i++) {
 					blen[i] = (int) dc.getBlockSize(i);
@@ -503,7 +503,7 @@ public class SparkExecutionContext extends ExecutionContext
 				//rdd = sc.hadoopFile(to.getFileName(), inputInfo.inputFormatClass, inputInfo.inputKeyClass, inputInfo.inputValueClass);
 				//note: this copy is still required in Spark 1.4 because spark hands out whatever the inputformat
 				//recordreader returns; the javadoc explicitly recommend to copy all key/value pairs
-				//rdd = SparkUtils.copyBinaryBlockTensor((JavaPairRDD<TensorIndexes, TensorBlock>) rdd); //cp is workaround for read bug
+				//rdd = SparkUtils.copyBinaryBlockTensor((JavaPairRDD<TensorIndexes, HomogTensor>) rdd); //cp is workaround for read bug
 				// TODO: TensorMarket?
 			} else {
 				// TODO support other Input formats
@@ -834,14 +834,14 @@ public class SparkExecutionContext extends ExecutionContext
 		return result;
 	}
 
-	public static JavaPairRDD<TensorIndexes, TensorBlock> toTensorJavaPairRDD(JavaSparkContext sc, TensorBlock src, int[] blen) {
+	public static JavaPairRDD<TensorIndexes, HomogTensor> toTensorJavaPairRDD(JavaSparkContext sc, HomogTensor src, int[] blen) {
 		return toTensorJavaPairRDD(sc, src, blen, -1, true);
 	}
 
-	public static JavaPairRDD<TensorIndexes, TensorBlock> toTensorJavaPairRDD(JavaSparkContext sc, TensorBlock src,
+	public static JavaPairRDD<TensorIndexes, HomogTensor> toTensorJavaPairRDD(JavaSparkContext sc, HomogTensor src,
 			int[] blen, int numParts, boolean inclEmpty) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		List<Tuple2<TensorIndexes, TensorBlock>> list;
+		List<Tuple2<TensorIndexes, HomogTensor>> list;
 
 		boolean singleBlock = true;
 		for (int i = 0; i < blen.length; i++) {
@@ -866,7 +866,7 @@ public class SparkExecutionContext extends ExecutionContext
 					.collect(Collectors.toList());
 		}
 
-		JavaPairRDD<TensorIndexes, TensorBlock> result = (numParts > 1) ?
+		JavaPairRDD<TensorIndexes, HomogTensor> result = (numParts > 1) ?
 				sc.parallelizePairs(list, numParts) : sc.parallelizePairs(list);
 
 		if (DMLScript.STATISTICS) {
@@ -899,7 +899,7 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 	}
 
-	private static Tuple2<TensorIndexes,TensorBlock> createIndexedTensorBlock(TensorBlock mb, TensorCharacteristics tc, long ix) {
+	private static Tuple2<TensorIndexes,HomogTensor> createIndexedTensorBlock(HomogTensor mb, TensorCharacteristics tc, long ix) {
 		try {
 			//compute block indexes
 			long[] blockIx = new long[tc.getNumDims()];
@@ -913,7 +913,7 @@ public class SparkExecutionContext extends ExecutionContext
 				ix /= tc.getNumBlocks(i);
 			}
 			// TODO: sparse
-			TensorBlock outBlock = new TensorBlock(mb.getValueType(), outDims, false);
+			HomogTensor outBlock = new HomogTensor(mb.getValueType(), outDims, false);
 			outBlock = mb.slice(offset, outBlock);
 			//create key-value pair
 			for (int i = 0; i < blockIx.length; i++) {
@@ -1127,7 +1127,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return out;
 	}
 
-	public static TensorBlock toTensorBlock(JavaPairRDD<TensorIndexes, TensorBlock> rdd, DataCharacteristics dc) {
+	public static HomogTensor toTensorBlock(JavaPairRDD<TensorIndexes, HomogTensor> rdd, DataCharacteristics dc) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 
 		// TODO special case single block
@@ -1136,17 +1136,17 @@ public class SparkExecutionContext extends ExecutionContext
 			idims[i] = (int)dc.getDim(i);
 		}
 		// TODO asynchronous allocation
-		List<Tuple2<TensorIndexes, TensorBlock>> list = rdd.collect();
+		List<Tuple2<TensorIndexes, HomogTensor>> list = rdd.collect();
 		ValueType vt = list.get(0)._2.getValueType();
-		TensorBlock out = new TensorBlock(vt, idims);
+		HomogTensor out = new HomogTensor(vt, idims);
 		out.allocateDenseBlock();
 
 		//copy blocks one-at-a-time into output matrix block
-		for( Tuple2<TensorIndexes, TensorBlock> keyval : list )
+		for( Tuple2<TensorIndexes, HomogTensor> keyval : list )
 		{
 			//unpack index-block pair
 			TensorIndexes ix = keyval._1();
-			TensorBlock block = keyval._2();
+			HomogTensor block = keyval._2();
 
 			//compute row/column block offsets
 			int[] lower = new int[ix.getNumDims()];

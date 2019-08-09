@@ -37,7 +37,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class AppendMatrixTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME = "AppendMatrixTest";
 	private final static String TEST_DIR = "functions/append/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AppendMatrixTest.class.getSimpleName() + "/";
@@ -61,7 +60,6 @@ public class AppendMatrixTest extends AutomatedTestBase
 	private final static int cols2d = 1920;
 	private final static int cols3d = 990;
 	
-		
 	private final static double sparsity1 = 0.5;
 	private final static double sparsity2 = 0.01;
 	
@@ -145,87 +143,58 @@ public class AppendMatrixTest extends AutomatedTestBase
 		commonAppendTest(ExecMode.SPARK, rows, cols1d, cols2d, true, AppendMethod.MR_GAPPEND);
 	}
 	
-	// -----------------------------------------------------------------
-	
-	//NOTE: different dimension use cases only relvant for MR
-	/*
-	@Test
-	public void testAppendInBlock2CP() {
-		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1b, cols2b);
-	}
-	
-	@Test
-	public void testAppendOutBlock1CP() {
-		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1c, cols2c);
-	}	
-
-	@Test
-	public void testAppendOutBlock2CP() {
-		commonAppendTest(ExecMode.SINGLE_NODE, rows, cols1d, cols2d);
-	}*/
 	public void commonAppendTest(ExecMode platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-	    
 		ExecMode prevPlfm=rtplatform;
-		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
-		try
-		{
+		try {
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-		    rtplatform = platform;
-		    if( rtplatform == ExecMode.SPARK )
+			rtplatform = platform;
+			if( rtplatform == ExecMode.SPARK )
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 	
-	        config.addVariable("rows", rows);
-	        config.addVariable("cols", cols1);
-	          
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			config.addVariable("rows", rows);
+			config.addVariable("cols", cols1);
+	
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args",  input("A"), 
-					                             Long.toString(rows), 
-					                             Long.toString(cols1),
-								                 input("B"),
-								                 Long.toString(cols2),
-		                                         output("C") };
+				Long.toString(rows), Long.toString(cols1),
+				input("B"), Long.toString(cols2), output("C") };
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " " + expectedDir();
+				inputDir() + " " + expectedDir();
 	
 			Random rand=new Random(System.currentTimeMillis());
 			double[][] A = getRandomMatrix(rows, cols1, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("A", A, true);
-	        sparsity=rand.nextDouble();
-	        double[][] B= getRandomMatrix(rows, cols2, min, max, sparsity, System.currentTimeMillis());
-	        writeInputMatrix("B", B, true);
-	        
-	        boolean exceptionExpected = false;
-	        int expectedCompiledMRJobs = 1;
-			int expectedExecutedMRJobs = 0;
-			runTest(true, exceptionExpected, null, expectedCompiledMRJobs);
+			writeInputMatrix("A", A, true);
+			sparsity=rand.nextDouble();
+			double[][] B= getRandomMatrix(rows, cols2, min, max, sparsity, System.currentTimeMillis());
+			writeInputMatrix("B", B, true);
+			
+			int expectedCompiled = platform==ExecMode.SINGLE_NODE ?
+				0 : 6; //2x(rblk+chkpt), append, write
+			runTest(true, false, null, expectedCompiled);
 			runRScript(true);
-			Assert.assertEquals("Wrong number of executed MR jobs.",
-				expectedExecutedMRJobs, Statistics.getNoOfExecutedSPInst());
-	
-			for(String file: config.getOutputFiles())
-			{
+			
+			Assert.assertEquals("Wrong number of executed Spark jobs.",
+				expectedCompiled, Statistics.getNoOfExecutedSPInst());
+			for(String file: config.getOutputFiles()) {
 				HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS(file);
 				HashMap<CellIndex, Double> rfile = readRMatrixFromFS(file);
 				TestUtils.compareMatrices(dmlfile, rfile, epsilon, file+"-DML", file+"-R");
 			}
 		}
-		finally
-		{
+		finally {
 			//reset execution platform
 			rtplatform = prevPlfm;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 			BinaryOp.FORCED_APPEND_METHOD = null;
 		}
 	}
-   
 }

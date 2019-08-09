@@ -41,12 +41,11 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 		IPAPropagationSizeMultipleFunctionsTest.class.getSimpleName() + "/";
 	
 	private final static int rows = 10;
-	private final static int cols = 15;    
+	private final static int cols = 15;
 	private final static double sparsity = 0.7;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
@@ -54,7 +53,6 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
 	}
-	
 	
 	@Test
 	public void testFunctionSizePropagationSameInput() {
@@ -137,9 +135,9 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 0, "Stat-DML", "Stat-R");
 			
-			//check expected number of compiled and executed MR jobs
+			//check expected number of compiled and executed Spark jobs
 			int expectedNumCompiled = (IPA) ? ((TEST_NAME.equals(TEST_NAME5))?2:1) : 
-				(TEST_NAME.equals(TEST_NAME5)?5:4); //reblock, 2xGMR foo, GMR 
+				(TEST_NAME.equals(TEST_NAME5)?6:5); //reblock, rix, +, write + 1 per fun
 			int expectedNumExecuted = 0;
 			
 			checkNumCompiledSparkInst(expectedNumCompiled); 
@@ -149,5 +147,4 @@ public class IPAPropagationSizeMultipleFunctionsTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;
 		}
 	}
-	
 }

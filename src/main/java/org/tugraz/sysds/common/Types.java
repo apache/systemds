@@ -85,11 +85,18 @@ public class Types
 			}
 		}
 		public static ValueType fromExternalString(String value) {
+			//for now we support both internal and external strings
+			//until we have completely changed the external types
 			String lvalue = (value != null) ? value.toUpperCase() : null;
 			switch(lvalue) {
+				case "FP32":     return FP32;
+				case "FP64":
 				case "DOUBLE":   return FP64;
+				case "INT32":    return INT32;
+				case "INT64":
 				case "INT":      return INT64;
-				case "BOOLEAN" : return BOOLEAN;
+				case "BOOLEAN":  return BOOLEAN;
+				case "STRING":   return STRING;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}

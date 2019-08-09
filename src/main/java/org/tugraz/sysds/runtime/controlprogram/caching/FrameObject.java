@@ -125,7 +125,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 			String[] parts = schema.split(DataExpression.DEFAULT_DELIM_DELIMITER);
 			_schema = new ValueType[parts.length];
 			for( int i=0; i<parts.length; i++ )
-				_schema[i] = ValueType.valueOf(parts[i].toUpperCase());
+				_schema[i] = ValueType.fromExternalString(parts[i].toUpperCase());
 		}
 	}
 	

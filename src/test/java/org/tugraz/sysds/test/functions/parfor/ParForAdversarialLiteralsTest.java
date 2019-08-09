@@ -30,7 +30,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class ParForAdversarialLiteralsTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1a = "parfor_literals1a"; //local parfor, out filename dynwrite contains _t0
 	private final static String TEST_NAME1b = "parfor_literals1b"; //remote parfor, out filename dynwrite contains _t0
 	private final static String TEST_NAME1c = "parfor_literals1c"; //local parfor nested, out filename dynwrite contains _t0
@@ -44,13 +43,12 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 	private final static double eps = 1e-10;
 	
 	private final static int rows = 20;
-	private final static int cols = 10;    
+	private final static int cols = 10;
 	private final static double sparsity = 1.0;
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1a, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1a, new String[] { "_t0B" }) );
 		addTestConfiguration(TEST_NAME1b, 
@@ -68,48 +66,40 @@ public class ParForAdversarialLiteralsTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testParForLocalThreadIDLiterals() 
-	{
+	public void testParForLocalThreadIDLiterals() {
 		runLiteralTest(TEST_NAME1a);
 	}
 	
 	@Test
-	public void testParForRemoteThreadIDLiterals() 
-	{
+	public void testParForRemoteThreadIDLiterals() {
 		runLiteralTest(TEST_NAME1b);
 	}
 	
 	@Test
-	public void testParForLocalNestedThreadIDLiterals() 
-	{
+	public void testParForLocalNestedThreadIDLiterals() {
 		runLiteralTest(TEST_NAME1c);
 	}
 	
 	@Test
-	public void testParForExtFuncLiterals()  
-	{
+	public void testParForExtFuncLiterals() {
 		runLiteralTest(TEST_NAME2);
 	}
 	
 	@Test
-	public void testParForDelimiterLiterals() 
-	{
+	public void testParForDelimiterLiterals() {
 		runLiteralTest(TEST_NAME3);
 	}
 	
 	@Test
-	public void testParForLocalThreadIDVarname() 
-	{
+	public void testParForLocalThreadIDVarname() {
 		runLiteralTest(TEST_NAME4a);
 	}
 	
 	@Test
-	public void testParForRemoteThreadIDVarname() 
-	{
+	public void testParForRemoteThreadIDVarname() {
 		runLiteralTest(TEST_NAME4b);
 	}
 
-	
 	@SuppressWarnings("deprecation")
 	private void runLiteralTest( String testName )
 	{

@@ -277,7 +277,7 @@ public class ParForRulebasedOptimizerTest extends AutomatedTestBase
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		String testname = TEST_NAME2 + (timebasedOpt ? "b" : "");
 		fullDMLScriptName = HOME + testname + ".dml";
-		programArgs = new String[]{"-args", 
+		programArgs = new String[]{"-explain", "-args", 
 			input("D"),
 			input("S1"), input("S2"),
 			input("K1"), input("K2"),

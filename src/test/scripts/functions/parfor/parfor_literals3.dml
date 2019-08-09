@@ -19,15 +19,13 @@
 #
 #-------------------------------------------------------------
 
+A = read($1, rows=$2, cols=$3, format="text");
 
-A = read($1, rows=$2, cols=$3, format="text");   
+parfor( i in 1:1, mode=REMOTE_SPARK, opt=NONE ) {
+  print("{"); #level in
+  print("}"); #level out
+  print(","); #instruction
+  print(";"); #component
+}
 
-parfor( i in 1:1, mode=REMOTE_MR, opt=NONE ) 
-{
-   print("{"); #level in
-   print("}"); #level out
-   print(","); #instruction
-   print(";"); #component
-}  
-      
-write(A, $4);      
+write(A, $4);

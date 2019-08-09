@@ -24,14 +24,13 @@ V = read($1);
 m = nrow(V);
 n = ncol(V);
 
-R = matrix(0,rows=m,cols=n); 
+R = matrix(0,rows=m,cols=n);
 
-#parfor( i in 1:m, par=4, mode=LOCAL, datapartitioner=REMOTE_MR, resultmerge=REMOTE_MR, opt=NONE )
-parfor( i in 1:m )
-{
-   col = V[i,];
-   while(FALSE){}
-   R[i,] = col; 
-}   
+#parfor( i in 1:m, par=4, mode=LOCAL, datapartitioner=REMOTE_SPARK, resultmerge=REMOTE_SPARK, opt=NONE )
+parfor( i in 1:m ) {
+  col = V[i,];
+  while(FALSE){}
+  R[i,] = col; 
+}
 
-write(R, $2);       
+write(R, $2);

@@ -191,7 +191,7 @@ public class InterProceduralAnalysis
 				//called with different sizes (e.g., common block-recursive cholesky)
 				for( String tmp : fcallSizes.getInvalidFunctions() ) {
 					if( !_fgraph.isRecursiveFunction(tmp)
-						&& isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)) )
+						&& isUnarySizePreservingFunction(_prog.getFunctionStatementBlock(tmp)))
 						fcallSizes.addDimsPreservingFunction(tmp);
 				}
 				if( LOG.isDebugEnabled() )
@@ -201,7 +201,7 @@ public class InterProceduralAnalysis
 				//(callVars used to chain outputs/inputs of multiple functions calls)
 				LocalVariableMap callVars = new LocalVariableMap();
 				for ( StatementBlock sb : _prog.getStatementBlocks() ) //propagate stats into candidates
-					propagateStatisticsAcrossBlock( sb, callVars, fcallSizes, new HashSet<String>() );
+					propagateStatisticsAcrossBlock( sb, callVars, fcallSizes, new HashSet<String>(), true );
 			}
 			
 			//step 2: apply additional IPA passes
@@ -236,7 +236,7 @@ public class InterProceduralAnalysis
 		//(callVars used to chain outputs/inputs of multiple functions calls) 
 		if( !fcallSizes.getValidFunctions().isEmpty() ) {
 			LocalVariableMap callVars = new LocalVariableMap();
-			propagateStatisticsAcrossBlock( _sb, callVars, fcallSizes, new HashSet<String>() );
+			propagateStatisticsAcrossBlock(_sb, callVars, fcallSizes, new HashSet<String>(), true);
 		}
 		
 		return fcallSizes.getValidFunctions();
@@ -257,13 +257,13 @@ public class InterProceduralAnalysis
 			HashSet<String> fnStack = new HashSet<>();
 			LocalVariableMap callVars = new LocalVariableMap();
 			
-			//populate input
+			//populate input (recognizable numbers, later reset)
 			MatrixObject mo = createOutputMatrix(7777, 3333, -1);
 			callVars.put(fstmt.getInputParams().get(0).getName(), mo);
 			
 			//propagate statistics
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, false);
 		
 			//compare output
 			MatrixObject mo2 = (MatrixObject)callVars.get(fstmt.getOutputParams().get(0).getName());
@@ -272,7 +272,7 @@ public class InterProceduralAnalysis
 			//reset function
 			mo.getDataCharacteristics().setDimension(-1, -1);
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, false);
 		}
 		
 		return ret;
@@ -282,14 +282,14 @@ public class InterProceduralAnalysis
 	// INTRA-PROCEDURE ANALYSIS
 	//////	
 
-	private void propagateStatisticsAcrossBlock( StatementBlock sb, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack )
+	private void propagateStatisticsAcrossBlock( StatementBlock sb, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack, boolean replaceScalars )
 	{
 		if (sb instanceof FunctionStatementBlock)
 		{
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 		}
 		else if (sb instanceof WhileStatementBlock)
 		{
@@ -302,11 +302,11 @@ public class InterProceduralAnalysis
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : wstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, wsb) ){ //second pass if required
 				propagateStatisticsAcrossPredicateDAG(wsb.getPredicateHops(), callVars);
 				for (StatementBlock sbi : wstmt.getBody())
-					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 			}
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
@@ -321,9 +321,9 @@ public class InterProceduralAnalysis
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			LocalVariableMap callVarsElse = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : istmt.getIfBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 			for (StatementBlock sbi : istmt.getElseBody())
-				propagateStatisticsAcrossBlock(sbi, callVarsElse, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVarsElse, fcallSizes, fnStack, replaceScalars);
 			callVars = Recompiler.reconcileUpdatedCallVarsIf(oldCallVars, callVars, callVarsElse, isb);
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
@@ -341,10 +341,10 @@ public class InterProceduralAnalysis
 			//check and propagate stats into body
 			LocalVariableMap oldCallVars = (LocalVariableMap) callVars.clone();
 			for (StatementBlock sbi : fstmt.getBody())
-				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 			if( Recompiler.reconcileUpdatedCallVarsLoops(oldCallVars, callVars, fsb) )
 				for (StatementBlock sbi : fstmt.getBody())
-					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack);
+					propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, replaceScalars);
 			//remove updated constant scalars
 			Recompiler.removeUpdatedScalars(callVars, sb);
 		}
@@ -356,14 +356,16 @@ public class InterProceduralAnalysis
 			ArrayList<Hop> roots = sb.getHops();
 			DMLProgram prog = sb.getDMLProg();
 			//replace scalar reads with literals
-			Hop.resetVisitStatus(roots);
-			propagateScalarsAcrossDAG(roots, callVars);
+			if( replaceScalars ) {
+				Hop.resetVisitStatus(roots);
+				propagateScalarsAcrossDAG(roots, callVars);
+			}
 			//refresh stats across dag
 			Hop.resetVisitStatus(roots);
 			propagateStatisticsAcrossDAG(roots, callVars);
 			//propagate stats into function calls
 			Hop.resetVisitStatus(roots);
-			propagateStatisticsIntoFunctions(prog, roots, callVars, fcallSizes, fnStack);
+			propagateStatisticsIntoFunctions(prog, roots, callVars, fcallSizes, fnStack, replaceScalars);
 		}
 	}
 
@@ -445,9 +447,9 @@ public class InterProceduralAnalysis
 	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack) {
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, ArrayList<Hop> roots, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack, boolean replaceScalars) {
 		for( Hop root : roots )
-			propagateStatisticsIntoFunctions(prog, root, callVars, fcallSizes, fnStack);
+			propagateStatisticsIntoFunctions(prog, root, callVars, fcallSizes, fnStack, replaceScalars);
 	}
 
 	/**
@@ -460,13 +462,13 @@ public class InterProceduralAnalysis
 	 * @param fcallSizes function call summary
 	 * @param fnStack  Function stack to determine current scope.
 	 */
-	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack ) 
+	private void propagateStatisticsIntoFunctions(DMLProgram prog, Hop hop, LocalVariableMap callVars, FunctionCallSizeInfo fcallSizes, Set<String> fnStack, boolean replaceScalars ) 
 	{
 		if( hop.isVisited() )
 			return;
 		
 		for( Hop c : hop.getInput() )
-			propagateStatisticsIntoFunctions(prog, c, callVars, fcallSizes, fnStack);
+			propagateStatisticsIntoFunctions(prog, c, callVars, fcallSizes, fnStack, replaceScalars);
 		
 		if( hop instanceof FunctionOp )
 		{
@@ -490,7 +492,7 @@ public class InterProceduralAnalysis
 					populateLocalVariableMapForFunctionCall( fstmt, fop, callVars, tmpVars, fcallSizes);
 	
 					//recursively propagate statistics
-					propagateStatisticsAcrossBlock(fsb, tmpVars, fcallSizes, fnStack);
+					propagateStatisticsAcrossBlock(fsb, tmpVars, fcallSizes, fnStack, replaceScalars);
 					
 					//extract vars from symbol table, re-map and refresh main program
 					extractFunctionCallReturnStatistics(fstmt, fop, tmpVars, callVars, true);

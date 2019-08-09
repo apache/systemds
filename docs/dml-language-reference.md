@@ -368,11 +368,11 @@ The syntax and semantics of a `parfor` (parallel `for`) statement are equivalent
 
 	<dependency_analysis>         0 1
 	<degree_of_parallelism>       arbitrary integer number
-	<execution_mode>              LOCAL REMOTE_MR REMOTE_MR_DP REMOTE_SPARK REMOTE_SPARK_DP
+	<execution_mode>              LOCAL REMOTE_SPARK REMOTE_SPARK_DP
 	<task_partitioning_algorithm> FIXED NAIVE STATIC FACTORING FACTORING_CMIN FACTORING_CMAX
 	<task_size>                   arbitrary integer number
-	<data_partitioning_mode>      NONE LOCAL REMOTE_MR REMOTE_SPARK
-	<result_merge_mode>           LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_MR REMOTE_SPARK
+	<data_partitioning_mode>      NONE LOCAL REMOTE_SPARK
+	<result_merge_mode>           LOCAL_MEM LOCAL_FILE LOCAL_AUTOMATIC REMOTE_SPARK
 	<optimization_mode>           NONE RULEBASED CONSTRAINED HEURISTIC GREEDY FULL_DP
 	<log_level>                   ALL TRACE DEBUG INFO WARN ERROR FATAL OFF
 	<monitor>                     0 1

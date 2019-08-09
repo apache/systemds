@@ -297,7 +297,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //reuse partition input matrices, applied only if read-only in surrounding loops
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
 	public static final int     MAX_RETRYS_ON_ERROR         = 1;
-	public static final boolean FORCE_CP_ON_REMOTE_MR       = true; // compile body to CP if exec type forced to MR
+	public static final boolean FORCE_CP_ON_REMOTE_SPARK    = true; // compile body to CP if exec type forced to Spark
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
 	public static final boolean ALLOW_BROADCAST_INPUTS      = false; // enables to broadcast inputs for remote_spark
@@ -834,7 +834,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
 		boolean flagForced = false;
-		if( FORCE_CP_ON_REMOTE_MR && (_optMode == POptMode.NONE 
+		if( FORCE_CP_ON_REMOTE_SPARK && (_optMode == POptMode.NONE 
 			|| (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) ) {
 			//tid = 0  because replaced in remote parworker
 			flagForced = checkMRAndRecompileToCP(0); 
@@ -1481,8 +1481,8 @@ public class ParForProgramBlock extends ForProgramBlock
 	}
 	
 	/**
-	 * NOTE: Currently we use a fixed rule (multiple results AND REMOTE_MR -> only selected by the optimizer
-	 * if mode was REMOTE_MR as well). 
+	 * NOTE: Currently we use a fixed rule (multiple results AND REMOTE_SPARK -> only selected by the optimizer
+	 * if mode was REMOTE_SPARKJ as well). 
 	 * 
 	 * TODO The optimizer should explicitly decide about parallel result merge and its degree of parallelism.
 	 * 

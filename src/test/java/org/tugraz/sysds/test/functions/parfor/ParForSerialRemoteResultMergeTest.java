@@ -42,16 +42,15 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForSerialRemoteResultMergeTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	
-	private final static int rows = 1100;  
-	private final static int cols = 70;  
+	private final static int rows = 1100;
+	private final static int cols = 70;
 	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1d;
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
 	
@@ -66,73 +65,57 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSingleResultMergeDenseMR() 
-	{
+	public void testSingleResultMergeDenseCP() {
 		runParallelRemoteResultMerge(TEST_NAME1, false);
 	}
 	
 	@Test
-	public void testSingleResultMergeSparseMR() 
-	{
+	public void testSingleResultMergeSparseCP() {
 		runParallelRemoteResultMerge(TEST_NAME1, true);
 	}
 	
 	@Test
-	public void testSingleResultMergeCompareDenseMR() 
-	{
+	public void testSingleResultMergeCompareDenseCP() {
 		runParallelRemoteResultMerge(TEST_NAME2, false);
 	}
 	
 	@Test
-	public void testSingleResultMergeCompareSparseMR() 
-	{
+	public void testSingleResultMergeCompareSparseCP() {
 		runParallelRemoteResultMerge(TEST_NAME2, true);
 	}
 	
 	@Test
-	public void testSingleResultMergeDenseSP() 
-	{
+	public void testSingleResultMergeDenseSP() {
 		runParallelRemoteResultMerge(TEST_NAME3, false);
 	}
 	
 	@Test
-	public void testSingleResultMergeSparseSP() 
-	{
+	public void testSingleResultMergeSparseSP() {
 		runParallelRemoteResultMerge(TEST_NAME3, true);
 	}
 	
 	@Test
-	public void testSingleResultMergeCompareDenseSP() 
-	{
+	public void testSingleResultMergeCompareDenseSP() {
 		runParallelRemoteResultMerge(TEST_NAME4, false);
 	}
 	
 	@Test
-	public void testSingleResultMergeCompareSparseSP() 
-	{
+	public void testSingleResultMergeCompareSparseSP() {
 		runParallelRemoteResultMerge(TEST_NAME4, true);
 	}
 	
-	
-	/**
-	 * 
-	 * @param outer execution mode of outer parfor loop
-	 * @param inner execution mode of inner parfor loop
-	 * @param instType execution mode of instructions
-	 */
 	private void runParallelRemoteResultMerge( String test_name, boolean sparse )
 	{
 		ExecMode oldRT = rtplatform;
 		boolean oldUseSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
-		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) {
+		if( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  )
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			rtplatform = ExecMode.HYBRID;
-		}
+		rtplatform = ExecMode.HYBRID;
 		
 		//inst exec type, influenced via rows
 		String TEST_NAME = test_name;
-			
+		
 		try
 		{
 			//script
@@ -141,39 +124,33 @@ public class ParForSerialRemoteResultMergeTest extends AutomatedTestBase
 			config.addVariable("cols", cols);
 			loadTestConfiguration(config);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("V"), 
+			programArgs = new String[]{"-explain", "-args", input("V"), 
 				Integer.toString(rows), Integer.toString(cols), output("R") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			long seed = System.nanoTime();
-			double sparsity = -1;
-			if( sparse )
-				sparsity = sparsity2;
-			else
-				sparsity = sparsity1;
-	        double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+			double sparsity = sparse ? sparsity2 : sparsity1;
+			double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
 			writeInputMatrix("V", V, true);
 	
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
 			runRScript(true);
 			
-			//compare num MR jobs
-			int expectedMRJobs = ( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) ? 0 : 2; 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", expectedMRJobs, Statistics.getNoOfExecutedSPInst());
+			//compare num Spark jobs
+			int expectedJobs = ( test_name.equals(TEST_NAME3) || test_name.equals(TEST_NAME4)  ) ? 2 : 0; 
+			Assert.assertEquals("Unexpected number of executed Spark jobs.", expectedJobs, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("Rout");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = oldRT;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = oldUseSparkConfig;
 		}

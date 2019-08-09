@@ -26,26 +26,22 @@ W = m;
 
 R = matrix(0, rows=n,cols=n); 
 
-parfor( i in 1:8, par=2, mode=REMOTE_MR, datapartitioner=LOCAL, opt=NONE )
-{
-   X = V[,i];                 
-   m2X = moment(X,2);
-   sigmaX = sqrt(m2X * (W/(W-1.0)) );
-      
-   parfor( j in (i+1):(i+9), par=2, mode=LOCAL, opt=NONE )  
-   {  
-      Y = V[,j];
+parfor( i in 1:8, par=2, mode=REMOTE_SPARK, datapartitioner=LOCAL, opt=NONE ) {
+  X = V[,i];
+  m2X = moment(X,2);
+  sigmaX = sqrt(m2X * (W/(W-1.0)) );
 
-      #corr computation    
-      m2Y = moment(Y,2);
-      sigmaY = sqrt(m2Y * (W/(W-1.0)) );      
-      covXY = cov(X,Y);      
-      rXY = covXY / (sigmaX*sigmaY); 
-      
-      print("R[("+i+","+j+")]="+rXY); #test robustness of ProgramConverter
-      R[i,j] = rXY; 
-      
-   }
-}   
+  parfor( j in (i+1):(i+9), par=2, mode=LOCAL, opt=NONE ) {
+    Y = V[,j];
 
-write(R, $4); 
+    #corr computation
+    m2Y = moment(Y,2);
+    sigmaY = sqrt(m2Y * (W/(W-1.0)) );
+    covXY = cov(X,Y);
+    rXY = covXY / (sigmaX*sigmaY);
+    print("R[("+i+","+j+")]="+rXY); #test robustness of ProgramConverter
+    R[i,j] = rXY;
+  }
+}
+
+write(R, $4);

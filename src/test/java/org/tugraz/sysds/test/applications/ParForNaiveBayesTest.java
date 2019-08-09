@@ -138,7 +138,7 @@ public class ParForNaiveBayesTest extends AutomatedTestBase
 		MatrixCharacteristics mc2 = new MatrixCharacteristics(rows,1,-1,-1);
 		writeInputMatrixWithMTD("C", C, true, mc2);
 		
-		//set memory budget (to test automatic opt for remote_mr_dp)
+		//set memory budget (to test automatic opt for remote_spark_dp)
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
 		if(smallMem) {
 			long mem = 1024*1024*8;

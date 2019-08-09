@@ -26,11 +26,10 @@ n = $2;
 R = matrix(0, rows=1,cols=n); 
 dummy = matrix(1, rows=1, cols=1);
 
-parfor( i in 1:n, par=4, mode=REMOTE_MR,datapartitioner=LOCAL, taskpartitioner=FACTORING, opt=NONE )
-{
-   X = V[i,];                 
-   sX = sum(X);
-   R[1,i] = dummy * sX; 
-}   
+parfor( i in 1:n, par=4, mode=REMOTE_SPARK, datapartitioner=LOCAL, taskpartitioner=FACTORING, opt=NONE ) {
+  X = V[i,];
+  sX = sum(X);
+  R[1,i] = dummy * sX;
+}
 
-write(R, $4);       
+write(R, $4);

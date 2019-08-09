@@ -19,17 +19,10 @@
 #
 #-------------------------------------------------------------
 
-
-dynWrite_t0 = externalFunction(Matrix[Double] input, String fname, String format)
-  return(Boolean success)
-  implemented in (classname="org.apache.sysml.udf.lib.DynamicWriteMatrixCP",exectype="mem") 
-
 A = read($1, rows=$2, cols=$3, format="text");   
 
-parfor( i in 1:1, mode=REMOTE_MR, opt=NONE ) 
-{
-   B = A + 0; 
-   # param should include internal 'thread root prefix'
-   x = dynWrite_t0(B, $4, "textcell");  
-}  
-      
+parfor( i in 1:1, mode=REMOTE_SPARK, opt=NONE ) {
+  B = A + 0;
+  # param should include internal 'thread root prefix'
+  write(B, $4, "textcell");
+}

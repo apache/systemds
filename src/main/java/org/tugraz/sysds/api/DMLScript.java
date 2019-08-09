@@ -126,7 +126,7 @@ public class DMLScript
 	}
 
 	/**
-	 * Used to set master UUID on all nodes (in parfor remote_mr, where DMLScript passed) 
+	 * Used to set master UUID on all nodes (in parfor remote, where DMLScript passed) 
 	 * in order to simplify cleanup of scratch_space and local working dirs.
 	 * 
 	 * @param uuid master UUID to set on all nodes

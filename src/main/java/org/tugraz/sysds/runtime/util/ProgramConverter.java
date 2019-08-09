@@ -157,8 +157,8 @@ public class ProgramConverter
 	//exception msgs
 	public static final String NOT_SUPPORTED_EXTERNALFUNCTION_PB = "Not supported: ExternalFunctionProgramBlock contains MR instructions. " +
 			                                                       "(ExternalFunctionPRogramBlockCP can be used)";
-	public static final String NOT_SUPPORTED_MR_INSTRUCTION      = "Not supported: Instructions of type other than CP instructions";
-	public static final String NOT_SUPPORTED_MR_PARFOR           = "Not supported: Nested ParFOR REMOTE_MR due to possible deadlocks." +
+	public static final String NOT_SUPPORTED_SPARK_INSTRUCTION   = "Not supported: Instructions of type other than CP instructions";
+	public static final String NOT_SUPPORTED_SPARK_PARFOR        = "Not supported: Nested ParFOR REMOTE_SPARK due to possible deadlocks." +
 			                                                       "(LOCAL can be used for innner ParFOR)";
 	public static final String NOT_SUPPORTED_PB                  = "Not supported: type of program block";
 	
@@ -915,7 +915,7 @@ public class ProgramConverter
 		for( Instruction linst : inst ) {
 			//check that only cp instruction are transmitted 
 			if( !( linst instanceof CPInstruction) )
-				throw new DMLRuntimeException( NOT_SUPPORTED_MR_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
+				throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_INSTRUCTION + " " +linst.getClass().getName()+"\n"+linst );
 			
 			//obtain serialized version of generated classes
 			if( linst instanceof SpoofCPInstruction ) {
@@ -1099,7 +1099,7 @@ public class ProgramConverter
 			
 			//check for nested remote ParFOR
 			if( PExecMode.valueOf( pfpb.getParForParams().get( ParForStatementBlock.EXEC_MODE )) == PExecMode.REMOTE_SPARK )
-				throw new DMLRuntimeException( NOT_SUPPORTED_MR_PARFOR );
+				throw new DMLRuntimeException( NOT_SUPPORTED_SPARK_PARFOR );
 			
 			sb.append( pfpb.getIterVar() );
 			sb.append( COMPONENTS_DELIM );

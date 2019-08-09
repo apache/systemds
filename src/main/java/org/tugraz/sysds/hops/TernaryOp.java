@@ -523,6 +523,7 @@ public class TernaryOp extends Hop
 					Hop input2 = getInput().get(1);
 					Hop input3 = getInput().get(2);
 					
+					//TODO double check reset (dimsInputPresent?)
 					if ( _dim1 == -1 || _dim2 == -1 ) { 
 						//for ctable_expand at least one dimension is known
 						if( isSequenceRewriteApplicable(true) )
@@ -531,7 +532,7 @@ public class TernaryOp extends Hop
 							setDim2( input2._dim1 );
 						//for ctable_histogram also one dimension is known
 						Ctable.OperationTypes ternaryOp = Ctable.findCtableOperationByInputDataTypes(
-																input1.getDataType(), input2.getDataType(), input3.getDataType());
+							input1.getDataType(), input2.getDataType(), input3.getDataType());
 						if(  ternaryOp==Ctable.OperationTypes.CTABLE_TRANSFORM_HISTOGRAM
 							&& input2 instanceof LiteralOp )
 						{
@@ -716,7 +717,7 @@ public class TernaryOp extends Hop
 							ret = true;
 						}
 					}
-				}			
+				}
 			}
 		}
 		catch(Exception ex) {

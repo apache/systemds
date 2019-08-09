@@ -76,8 +76,8 @@ public class MatrixCharacteristics extends DataCharacteristics
 
 	@Override
 	public DataCharacteristics set(DataCharacteristics that) {
-		set(that.getRows(), that.getCols(), that.getRowsPerBlock(), that.getColsPerBlock(), getNonZeros());
-		ubNnz = !that.nnzKnown();
+		set(that.getRows(), that.getCols(), that.getRowsPerBlock(), that.getColsPerBlock(), that.getNonZeros());
+		ubNnz = (that instanceof MatrixCharacteristics && ((MatrixCharacteristics)that).ubNnz);
 		return this;
 	}
 

@@ -46,10 +46,9 @@ public class MetaDataFormat extends MetaData
 	
 	@Override
 	public Object clone() {
-		if (_dc instanceof MatrixCharacteristics) {
+		if (_dc instanceof MatrixCharacteristics)
 			return new MetaDataFormat(new MatrixCharacteristics(_dc), oinfo, iinfo);
-		} else {
+		else
 			return new MetaDataFormat(new TensorCharacteristics(_dc), oinfo, iinfo);
-		}
 	}
 }

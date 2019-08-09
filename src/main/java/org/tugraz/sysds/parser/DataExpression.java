@@ -104,8 +104,8 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
 	public static final String[] RAND_VALID_PARAM_NAMES = 
-		{ RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA,
-				RAND_TENSOR};
+		{RAND_ROWS, RAND_COLS, RAND_DIMS, RAND_MIN, RAND_MAX, RAND_SPARSITY, RAND_SEED, RAND_PDF, RAND_LAMBDA,
+		RAND_TENSOR}; //FIXME: why is this istensor required at all
 	
 	public static final String[] RESHAPE_VALID_PARAM_NAMES =
 		{  RAND_BY_ROW, RAND_DIMNAMES, RAND_DATA, RAND_ROWS, RAND_COLS, RAND_DIMS};
@@ -125,7 +125,7 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS
 	};
-		
+	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
 	public static final boolean DEFAULT_DELIM_HAS_HEADER_ROW = false;

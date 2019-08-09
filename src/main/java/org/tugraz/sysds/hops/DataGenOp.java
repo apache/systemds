@@ -92,7 +92,14 @@ public class DataGenOp extends MultiThreadedHop
 		
 		_id = id;
 		_op = mthd;
-
+		
+		//ensure all parameters existing and consistent with data type
+		//TODO remove once this unnecessary parameter is cleaned up
+		if( !inputParameters.containsKey(DataExpression.RAND_TENSOR) )
+			inputParameters.put(DataExpression.RAND_TENSOR, new LiteralOp(false));
+		else if (HopRewriteUtils.isLiteralOfValue(inputParameters.get(DataExpression.RAND_TENSOR), true))
+			setDataType(DataType.TENSOR);
+		
 		int index = 0;
 		for( Entry<String, Hop> e: inputParameters.entrySet() ) {
 			String s = e.getKey();
@@ -510,15 +517,14 @@ public class DataGenOp extends MultiThreadedHop
 			&& _paramIndexMap!=null && that2._paramIndexMap!=null
 			&& _maxNumThreads == that2._maxNumThreads );
 		
-		if( ret )
-		{
-			for( Entry<String,Integer> e : _paramIndexMap.entrySet() )
-			{
+		if( ret ) {
+			for( Entry<String,Integer> e : _paramIndexMap.entrySet() ) {
 				String key1 = e.getKey();
 				int pos1 = e.getValue();
-				int pos2 = that2._paramIndexMap.get(key1);
-				ret &= (   that2.getInput().get(pos2)!=null
-					    && getInput().get(pos1) == that2.getInput().get(pos2) );
+				int pos2 = that2._paramIndexMap.containsKey(key1) ?
+					that2._paramIndexMap.get(key1) : -1;
+				ret &= ( pos2 >=0 && that2.getInput().get(pos2)!=null
+					&& getInput().get(pos1) == that2.getInput().get(pos2) );
 			}
 			
 			//special case for rand seed (no CSE if unspecified seed because runtime generated)
@@ -531,8 +537,6 @@ public class DataGenOp extends MultiThreadedHop
 					ret = false;
 			}
 		}
-		
 		return ret;
 	}
-
 }

@@ -356,7 +356,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			InputInfo ii = OutputInfo.getMatchingInputInfo(oi);
 
 			MetaDataFormat iimd = null;
-			if (dt == DataType.MATRIX) {
+			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
 				DataCharacteristics mc = new MatrixCharacteristics();
 				if (parts.length == 6) {
 					// do nothing

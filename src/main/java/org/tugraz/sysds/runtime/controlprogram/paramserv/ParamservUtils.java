@@ -230,11 +230,9 @@ public class ParamservUtils {
 			new String[]{ns, name} : new String[]{ns, name};
 	}
 
-	public static ExecutionContext createExecutionContext(ExecutionContext ec, LocalVariableMap varsMap, String updFunc,
-		String aggFunc, int k) {
-		FunctionProgramBlock updPB = getFunctionBlock(ec, updFunc);
-		FunctionProgramBlock aggPB = getFunctionBlock(ec, aggFunc);
-
+	public static ExecutionContext createExecutionContext(ExecutionContext ec,
+		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+	{
 		Program prog = ec.getProgram();
 
 		// 1. Recompile the internal program blocks
@@ -242,21 +240,24 @@ public class ParamservUtils {
 		// 2. Recompile the imported function blocks
 		prog.getFunctionProgramBlocks().forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks()));
 
-		// 3. Copy function
-		FunctionProgramBlock newUpdFunc = copyFunction(updFunc, updPB);
-		FunctionProgramBlock newAggFunc = copyFunction(aggFunc, aggPB);
-		Program newProg = new Program();
-		putFunction(newProg, newUpdFunc);
-		putFunction(newProg, newAggFunc);
-		return ExecutionContextFactory.createContext(new LocalVariableMap(varsMap), newProg);
+		// 3. Copy all functions 
+		return ExecutionContextFactory.createContext(
+			new LocalVariableMap(varsMap), copyProgramFunctions(prog));
 	}
 
 	public static List<ExecutionContext> copyExecutionContext(ExecutionContext ec, int num) {
-		return IntStream.range(0, num).mapToObj(i -> {
-			Program newProg = new Program();
-			ec.getProgram().getFunctionProgramBlocks().forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
-			return ExecutionContextFactory.createContext(new LocalVariableMap(ec.getVariables()), newProg);
-		}).collect(Collectors.toList());
+		return IntStream.range(0, num).mapToObj(i ->
+			ExecutionContextFactory.createContext(
+				new LocalVariableMap(ec.getVariables()),
+				copyProgramFunctions(ec.getProgram()))
+		).collect(Collectors.toList());
+	}
+	
+	private static Program copyProgramFunctions(Program prog) {
+		Program newProg = new Program();
+		prog.getFunctionProgramBlocks()
+			.forEach((func, pb) -> putFunction(newProg, copyFunction(func, pb)));
+		return newProg;
 	}
 
 	private static FunctionProgramBlock copyFunction(String funcName, FunctionProgramBlock fpb) {
@@ -334,6 +335,7 @@ public class ParamservUtils {
 		return recompiled;
 	}
 
+	@SuppressWarnings("unused")
 	private static FunctionProgramBlock getFunctionBlock(ExecutionContext ec, String funcName) {
 		String[] cfn = getCompleteFuncName(funcName, null);
 		String ns = cfn[0];

@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.OutputInfo;
@@ -40,7 +41,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class SparsityFunctionRecompileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_DIR = "functions/recompile/";
 	private final static String TEST_NAME1 = "while_recompile_func_sparse";
 	private final static String TEST_NAME2 = "if_recompile_func_sparse";
@@ -50,14 +50,13 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		SparsityFunctionRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 1000;
-	private final static long cols = 500000;    
-	private final static double sparsity = 0.00001d;    
+	private final static long cols = 500000;
+	private final static double sparsity = 0.00001d;
 	private final static double val = 7.0;
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME1, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
 		addTestConfiguration(TEST_NAME2, 
@@ -69,98 +68,82 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testWhileRecompileIPA() 
-	{
+	public void testWhileRecompileIPA() {
 		runRecompileTest(TEST_NAME1, true, true);
 	}
 	
 	@Test
-	public void testWhileNoRecompileIPA() 
-	{
+	public void testWhileNoRecompileIPA() {
 		runRecompileTest(TEST_NAME1, false, true);
 	}
 	
 	@Test
-	public void testIfRecompileIPA() 
-	{
+	public void testIfRecompileIPA() {
 		runRecompileTest(TEST_NAME2, true, true);
 	}
 	
 	@Test
-	public void testIfNoRecompileIPA() 
-	{
+	public void testIfNoRecompileIPA() {
 		runRecompileTest(TEST_NAME2, false, true);
 	}
 	
 	@Test
-	public void testForRecompileIPA() 
-	{
+	public void testForRecompileIPA() {
 		runRecompileTest(TEST_NAME3, true, true);
 	}
 	
 	@Test
-	public void testForNoRecompileIPA() 
-	{
+	public void testForNoRecompileIPA() {
 		runRecompileTest(TEST_NAME3, false, true);
 	}
 	
 	@Test
-	public void testParForRecompileIPA() 
-	{
+	public void testParForRecompileIPA() {
 		runRecompileTest(TEST_NAME4, true, true);
 	}
 	
 	@Test
-	public void testParForNoRecompileIPA() 
-	{
+	public void testParForNoRecompileIPA() {
 		runRecompileTest(TEST_NAME4, false, true);
 	}
 	
 	@Test
-	public void testWhileRecompileNoIPA() 
-	{
+	public void testWhileRecompileNoIPA() {
 		runRecompileTest(TEST_NAME1, true, false);
 	}
 	
 	@Test
-	public void testWhileNoRecompileNoIPA() 
-	{
+	public void testWhileNoRecompileNoIPA() {
 		runRecompileTest(TEST_NAME1, false, false);
 	}
 	
 	@Test
-	public void testIfRecompileNoIPA() 
-	{
+	public void testIfRecompileNoIPA() {
 		runRecompileTest(TEST_NAME2, true, false);
 	}
 	
 	@Test
-	public void testIfNoRecompileNoIPA() 
-	{
+	public void testIfNoRecompileNoIPA() {
 		runRecompileTest(TEST_NAME2, false, false);
 	}
 	
 	@Test
-	public void testForRecompileNoIPA() 
-	{
+	public void testForRecompileNoIPA() {
 		runRecompileTest(TEST_NAME3, true, false);
 	}
 	
 	@Test
-	public void testForNoRecompileNoIPA() 
-	{
+	public void testForNoRecompileNoIPA() {
 		runRecompileTest(TEST_NAME3, false, false);
 	}
 	
 	@Test
-	public void testParForRecompileNoIPA() 
-	{
+	public void testParForRecompileNoIPA() {
 		runRecompileTest(TEST_NAME4, true, false);
 	}
 	
 	@Test
-	public void testParForNoRecompileNoIPA() 
-	{
+	public void testParForNoRecompileNoIPA() {
 		runRecompileTest(TEST_NAME4, false, false);
 	}
 	
@@ -170,6 +153,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		boolean oldFlagRecompile = CompilerConfig.FLAG_DYN_RECOMPILE;
 		boolean oldFlagIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		boolean oldFlagBranchRemoval = OptimizerUtils.ALLOW_BRANCH_REMOVAL;
+		DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		
 		try
 		{
@@ -178,7 +162,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args",
+			programArgs = new String[]{"-stats", "-args",
 				input("V"), Double.toString(val), output("R") };
 
 			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
@@ -194,20 +178,19 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1); 
 			
-			//CHECK compiled MR jobs (changed 07/2015 due to better sparsity inference)
-			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-				+ ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge)
-				+ (IPA ? 0 : (testname.equals(TEST_NAME2)?3:1)); //GMR ua(+), 3x for if
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
-					            expectNumCompiled, Statistics.getNoOfCompiledSPInst());
+			//CHECK compiled Spark jobs
+			int expectNumCompiled = 1 //rblk
+				+ (testname.equals(TEST_NAME2) ? (IPA?0:5) : (IPA?1:4)) //if no write on IPA
+				+ (testname.equals(TEST_NAME4)? 2 : 0); //(+2 parfor resultmerge);
+			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
+				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
-			//CHECK executed MR jobs (changed 07/2015 due to better sparsity inference)
-			int expectNumExecuted = -1;
-			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(2x resultmerge) 
-			else            expectNumExecuted = (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-				+ ((testname.equals(TEST_NAME4))?2:0) //(+2 resultmerge) 
-				+ (IPA ? 0 : (testname.equals(TEST_NAME2)?2:1)); //GMR ua(+)
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			//CHECK executed Spark jobs
+			int expectNumExecuted = recompile ? 
+				(testname.equals(TEST_NAME4)?2:0) : //(2x resultmerge) 
+				(testname.equals(TEST_NAME2) ? (IPA?1:5) :
+					(testname.equals(TEST_NAME4) ? (IPA?4:7) : (IPA?2:5)));
+			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 
 			//compare matrices

@@ -24,7 +24,7 @@
  *
  * Utilizes built-in convolution operators for higher performance.
  */
-source("nn/util.dml") as util
+source("scripts/nn/util.dml") as util
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int Hin, int Win, int M, int Hf, int Wf,

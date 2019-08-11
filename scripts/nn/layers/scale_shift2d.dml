@@ -22,7 +22,7 @@
 /*
  * 2D Scale & Shift layer.
  */
-source("nn/util.dml") as util
+source("scripts/nn/util.dml") as util
 
 forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta,
                    int C, int Hin, int Win)

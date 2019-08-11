@@ -22,7 +22,7 @@
 /*
  * 2D Cross-Entropy loss function.
  */
- source("nn/util.dml") as util
+ source("scripts/nn/util.dml") as util
  source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 
 forward = function(matrix[double] pred, matrix[double] y, int C)

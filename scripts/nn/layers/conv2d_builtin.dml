@@ -24,7 +24,7 @@
  *
  * This implementation uses a built-in operator for higher performance.
  */
-source("nn/util.dml") as util
+source("scripts/nn/util.dml") as util
 
 forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
                    int C, int Hin, int Win, int Hf, int Wf,

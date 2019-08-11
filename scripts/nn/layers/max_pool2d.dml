@@ -22,7 +22,7 @@
 /*
  * Max Pooling layer.
  */
-source("nn/util.dml") as util
+source("scripts/nn/util.dml") as util
 
 forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
                    int strideh, int stridew, int padh, int padw)

@@ -56,128 +56,110 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 	private final static double val = 1.0;
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		addTestConfiguration(TEST_NAME0, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME0));
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1)); 
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2)); 
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3)); 
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4)); 
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5)); 
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6)); 
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7)); 
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8)); 
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9)); 
-		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10)); 
-		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11)); 
-		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12)); 
-		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13)); 
-		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14)); 
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8));
+		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9));
+		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11));
+		addTestConfiguration(TEST_NAME12, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME12));
+		addTestConfiguration(TEST_NAME13, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME13));
+		addTestConfiguration(TEST_NAME14, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME14));
 	}
 	
 	@Test
-	public void testFunctionDefaultNS() 
-	{
+	public void testFunctionDefaultNS() {
 		runFunctionNamespaceTest(TEST_NAME0);
 	}
 	
 	@Test
-	public void testFunctionSourceNS() 
-	{
+	public void testFunctionSourceNS() {
 		runFunctionNamespaceTest(TEST_NAME1);
 	}
 	
 	@Test
-	public void testFunctionWithoutNS() 
-	{
+	public void testFunctionWithoutNS() {
 		runFunctionNamespaceTest(TEST_NAME2);
 	}
 	
 	@Test
-	public void testFunctionImportSource() 
-	{
+	public void testFunctionImportSource() {
 		runFunctionNamespaceTest(TEST_NAME3);
 	}
 	
 	@Test
-	public void testFunctionMultiSource() 
-	{
+	public void testFunctionMultiSource() {
 		runFunctionNamespaceTest(TEST_NAME4);
 	}
 	
 	@Test
-	public void testFunctionNoInliningIPA() 
-	{
+	public void testFunctionNoInliningIPA() {
 		runFunctionNoInliningNamespaceTest(TEST_NAME5, true);
 	}
 	
 	@Test
-	public void testFunctionNoInliningNoIPA() 
-	{
+	public void testFunctionNoInliningNoIPA() {
 		runFunctionNoInliningNamespaceTest(TEST_NAME5, false);
 	}
 	
 	@Test
-	public void testFunctionCircular() 
-	{
+	public void testFunctionCircular() {
 		runFunctionNamespaceTest(TEST_NAME6);
 	}
 	
 	@Test
-	public void testFunctionCircularChain() 
-	{
+	public void testFunctionCircularChain() {
 		runFunctionNoInliningNamespaceTest(TEST_NAME7, true);
 	}
 	
 	@Test
-	public void testFunctionCircularChainNoIPA() 
-	{
+	public void testFunctionCircularChainNoIPA() {
 		runFunctionNoInliningNamespaceTest(TEST_NAME7, false);
 	}
 	@Test
-	public void testFunctionErrorConflict() 
-	{
+	public void testFunctionErrorConflict() {
 		runFunctionNamespaceTest(TEST_NAME8);
 	}
 	
 	@Test
-	public void testFunctionIndirectConflict() 
-	{
+	public void testFunctionIndirectConflict() {
 		runFunctionNoInliningNamespaceTest(TEST_NAME9, true);
 	}
 	
 	@Test
-	public void testFunctionMultiConflict() 
-	{
+	public void testFunctionMultiConflict() {
 		runFunctionNamespaceTest(TEST_NAME10);
 	}
 	
 	@Test
-	public void testFunctionBuiltinOverride() 
-	{
+	public void testFunctionBuiltinOverride() {
 		runFunctionNamespaceTest(TEST_NAME11);
 	}
 	
 	@Test
-	public void testFunctionMultiOverride() 
-	{
+	public void testFunctionMultiOverride() {
 		runFunctionNamespaceTest(TEST_NAME12);
 	}
 	
 	@Test
-	public void testFunctionErrorOverride() 
-	{
+	public void testFunctionErrorOverride() {
 		runFunctionNamespaceTest(TEST_NAME13);
 	}
 	
 	@Test
-	public void testFunctionRandomCDF() 
-	{
+	public void testFunctionRandomCDF() {
 		runFunctionNamespaceTest(TEST_NAME14);
 	}
 	
 	private void runFunctionNamespaceTest(String TEST_NAME)
-	{		
+	{
 		getAndLoadTestConfiguration(TEST_NAME);
 		
 		fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
@@ -190,8 +172,7 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			ByteArrayOutputStream baos = null;
 			
 			boolean exceptionExpected = (TEST_NAME2.equals(TEST_NAME)) ? true : false;
-			if (!exceptionExpected)
-			{
+			if (!exceptionExpected) {
 				baos = new ByteArrayOutputStream();
 				PrintStream newStdErr = new PrintStream(baos);
 				System.setErr(newStdErr);
@@ -204,40 +185,31 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 				String stdErrString = baos.toString();
 				if (null != stdErrString && stdErrString.length() > 0)
 				{
-					if (TEST_NAME8.equals(TEST_NAME))
-					{
+					if (TEST_NAME8.equals(TEST_NAME)) {
 						if (!stdErrString.contains("Namespace Conflict"))
-						{
 							Assert.fail("Expected parse issue not detected.");
-						}
 					}
-					else if (TEST_NAME13.equals(TEST_NAME))
-					{
+					else if (TEST_NAME13.equals(TEST_NAME)) {
 						if (stdErrString != null && !stdErrString.contains("Function Name Conflict"))
-						{
 							Assert.fail("Expected parse issue not detected.");
-						}
 					}
-					else
-					{
+					else {
 						Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
 					}
 				}
 			}
 		}
-		catch (Exception e) 
-		{
+		catch (Exception e) {
 			e.printStackTrace(origStdErr);
 			Assert.fail("Unexpected exception: " + e);
 		}
-		finally
-		{
+		finally {
 			System.setErr(origStdErr);
 		}
 	}
 
 	private void runFunctionNoInliningNamespaceTest(String TEST_NAME, boolean IPA)
-	{		
+	{
 		boolean origIPA = OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS;
 		
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -252,10 +224,9 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			PrintStream newStdErr = new PrintStream(baos);
 			System.setErr(newStdErr);
-	        
+			
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = IPA;
 			runTest(true, false, null, -1); 
-			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = origIPA;
 			
 			//compare output
 			double ret = HDFSTool.readDoubleFromHDFSFile(output("Rout"));
@@ -271,17 +242,13 @@ public class FunctionNamespaceTest extends AutomatedTestBase
 			
 			String stdErrString = baos.toString();
 			if (stdErrString != null && stdErrString.length() > 0)
-			{
 				Assert.fail("Unexpected parse error or DML script error: " + stdErrString);
-			}
 		}
-		catch (Exception e) 
-		{
+		catch (Exception e) {
 			e.printStackTrace(originalStdErr);
 			Assert.fail("Unexpected exception: " + e);
 		}
-		finally
-		{
+		finally {
 			System.setErr(originalStdErr);
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = origIPA;
 		}

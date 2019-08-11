@@ -54,8 +54,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			
 			//step 1: basic application filter: simple forwarding call
-			if( fstmt.getBody().size() != 1 || fstmt.getBody().get(0).getHops().size() != 1
-				|| !containsFunctionOp(fstmt.getBody().get(0).getHops())
+			if( fstmt.getBody().size() != 1 || !singleFunctionOp(fstmt.getBody().get(0).getHops())
 				|| !hasOnlySimplyArguments((FunctionOp)fstmt.getBody().get(0).getHops().get(0)))
 				continue;
 			if( LOG.isDebugEnabled() )
@@ -70,6 +69,7 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 				LOG.debug("IPA: Forward-function-call candidate L2: '"+fkey+"'");
 			
 			//step 3: check and rewire input arguments (single call guaranteed)
+			
 			FunctionOp call1 = fgraph.getFunctionCalls(fkey).get(0);
 			if( hasValidVariableNames(call1) && hasValidVariableNames(call2)
 				&& isFirstSubsetOfSecond(call2.getInputVariableNames(), call1.getInputVariableNames())) {
@@ -88,13 +88,10 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 		}
 	}
 	
-	private static boolean containsFunctionOp(ArrayList<Hop> hops) {
-		if( hops==null || hops.isEmpty() )
+	private static boolean singleFunctionOp(ArrayList<Hop> hops) {
+		if( hops==null || hops.isEmpty() || hops.size()!=1 )
 			return false;
-		Hop.resetVisitStatus(hops);
-		boolean ret = HopRewriteUtils.containsOp(hops, FunctionOp.class);
-		Hop.resetVisitStatus(hops);
-		return ret;
+		return hops.get(0) instanceof FunctionOp;
 	}
 	
 	private static boolean hasOnlySimplyArguments(FunctionOp fop) {

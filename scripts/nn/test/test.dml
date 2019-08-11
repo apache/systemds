@@ -22,25 +22,25 @@
 /*
  * Various tests, not including gradient checks.
  */
-source("nn/layers/batch_norm1d.dml") as batch_norm1d
-source("nn/layers/batch_norm2d.dml") as batch_norm2d
-source("nn/layers/conv2d.dml") as conv2d
-source("nn/layers/conv2d_builtin.dml") as conv2d_builtin
-source("nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
-source("nn/layers/conv2d_transpose.dml") as conv2d_transpose
-source("nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
-source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
-source("nn/layers/cross_entropy_loss2d.dml") as cross_entropy_loss2d
-source("nn/layers/max_pool2d.dml") as max_pool2d
-source("nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
-source("nn/layers/tanh.dml") as tanh
-source("nn/layers/softmax2d.dml") as softmax2d
-source("nn/test/conv2d_simple.dml") as conv2d_simple
-source("nn/test/max_pool2d_simple.dml") as max_pool2d_simple
-source("nn/test/util.dml") as test_util
-source("nn/util.dml") as util
-source("nn/layers/sigmoid.dml") as sigmoid
-source("nn/layers/elu.dml") as elu
+source("scripts/nn/layers/batch_norm1d.dml") as batch_norm1d
+source("scripts/nn/layers/batch_norm2d.dml") as batch_norm2d
+source("scripts/nn/layers/conv2d.dml") as conv2d
+source("scripts/nn/layers/conv2d_builtin.dml") as conv2d_builtin
+source("scripts/nn/layers/conv2d_depthwise.dml") as conv2d_depthwise
+source("scripts/nn/layers/conv2d_transpose.dml") as conv2d_transpose
+source("scripts/nn/layers/conv2d_transpose_depthwise.dml") as conv2d_transpose_depthwise
+source("scripts/nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("scripts/nn/layers/cross_entropy_loss2d.dml") as cross_entropy_loss2d
+source("scripts/nn/layers/max_pool2d.dml") as max_pool2d
+source("scripts/nn/layers/max_pool2d_builtin.dml") as max_pool2d_builtin
+source("scripts/nn/layers/tanh.dml") as tanh
+source("scripts/nn/layers/softmax2d.dml") as softmax2d
+source("scripts/nn/test/conv2d_simple.dml") as conv2d_simple
+source("scripts/nn/test/max_pool2d_simple.dml") as max_pool2d_simple
+source("scripts/nn/test/util.dml") as test_util
+source("scripts/nn/util.dml") as util
+source("scripts/nn/layers/sigmoid.dml") as sigmoid
+source("scripts/nn/layers/elu.dml") as elu
 
 
 batch_norm1d = function() {

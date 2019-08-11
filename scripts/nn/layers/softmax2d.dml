@@ -22,7 +22,7 @@
 /*
  * 2D Softmax classifier layer.
  */
- source("nn/util.dml") as util
+ source("scripts/nn/util.dml") as util
  source("nn/layers/softmax.dml") as softmax
 
  forward = function(matrix[double] scores, int C)

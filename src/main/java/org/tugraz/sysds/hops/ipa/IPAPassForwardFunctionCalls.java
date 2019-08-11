@@ -54,7 +54,8 @@ public class IPAPassForwardFunctionCalls extends IPAPass
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			
 			//step 1: basic application filter: simple forwarding call
-			if( fstmt.getBody().size() != 1 || !containsFunctionOp(fstmt.getBody().get(0).getHops())
+			if( fstmt.getBody().size() != 1 || fstmt.getBody().get(0).getHops().size() != 1
+				|| !containsFunctionOp(fstmt.getBody().get(0).getHops())
 				|| !hasOnlySimplyArguments((FunctionOp)fstmt.getBody().get(0).getHops().get(0)))
 				continue;
 			if( LOG.isDebugEnabled() )

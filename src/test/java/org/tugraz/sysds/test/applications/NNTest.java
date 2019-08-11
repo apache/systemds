@@ -39,5 +39,4 @@ public class NNTest extends MLContextTestBase {
 		setUnexpectedStdOut(ERROR_STRING);
 		ml.execute(script);
 	}
-
 }

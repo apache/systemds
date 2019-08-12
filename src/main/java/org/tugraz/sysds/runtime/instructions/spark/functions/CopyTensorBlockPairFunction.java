@@ -21,7 +21,7 @@
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFlatMapFunction;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import scala.Tuple2;
@@ -33,7 +33,7 @@ import java.util.Iterator;
  * mapToPair (copy tensor indexes and blocks). It supports both deep and shallow copies
  * of key/value pairs.
  */
-public class CopyTensorBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple2<TensorIndexes, HomogTensor>>, TensorIndexes, HomogTensor> {
+public class CopyTensorBlockPairFunction implements PairFlatMapFunction<Iterator<Tuple2<TensorIndexes, BasicTensor>>, TensorIndexes, BasicTensor> {
 
 	private static final long serialVersionUID = 605514365345997070L;
 	private boolean _deepCopy;
@@ -47,24 +47,24 @@ public class CopyTensorBlockPairFunction implements PairFlatMapFunction<Iterator
 	}
 
 	@Override
-	public LazyIterableIterator<Tuple2<TensorIndexes, HomogTensor>> call(Iterator<Tuple2<TensorIndexes, HomogTensor>> arg0)
+	public LazyIterableIterator<Tuple2<TensorIndexes, BasicTensor>> call(Iterator<Tuple2<TensorIndexes, BasicTensor>> arg0)
 			throws Exception {
 		return new CopyBlockPairIterator(arg0);
 	}
 
-	private class CopyBlockPairIterator extends LazyIterableIterator<Tuple2<TensorIndexes, HomogTensor>> {
-		public CopyBlockPairIterator(Iterator<Tuple2<TensorIndexes, HomogTensor>> iter) {
+	private class CopyBlockPairIterator extends LazyIterableIterator<Tuple2<TensorIndexes, BasicTensor>> {
+		public CopyBlockPairIterator(Iterator<Tuple2<TensorIndexes, BasicTensor>> iter) {
 			super(iter);
 		}
 
 		@Override
-		protected Tuple2<TensorIndexes, HomogTensor> computeNext(Tuple2<TensorIndexes, HomogTensor> arg) {
+		protected Tuple2<TensorIndexes, BasicTensor> computeNext(Tuple2<TensorIndexes, BasicTensor> arg) {
 			if (_deepCopy) {
 				TensorIndexes ix = new TensorIndexes(arg._1());
-				HomogTensor block;
+				BasicTensor block;
 				// TODO: always create deep copies in more memory-efficient CSR representation
 				//  if block is already in sparse format
-				block = new HomogTensor(arg._2());
+				block = new BasicTensor(arg._2());
 				return new Tuple2<>(ix, block);
 			} else {
 				return arg;

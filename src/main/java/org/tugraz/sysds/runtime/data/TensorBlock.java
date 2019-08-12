@@ -94,6 +94,8 @@ public abstract class TensorBlock implements CacheBlock
 
 	public abstract boolean isEmpty(boolean safe);
 
+	public abstract long getNonZeros();
+
 	public abstract double get(int[] ix);
 
 	public abstract double get(int r, int c);

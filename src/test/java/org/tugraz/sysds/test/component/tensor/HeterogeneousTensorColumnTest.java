@@ -20,8 +20,8 @@ package org.tugraz.sysds.test.component.tensor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.data.HeterogTensor;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -32,122 +32,122 @@ public class HeterogeneousTensorColumnTest {
 	private static int DIM0 = 3, DIM1 = 5, DIM2 = 7;
 
 	@Test
-	public void testIndexHeterogTensor2FP32FillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.FP32);
+	public void testIndexDataTensor2FP32FillCol() {
+		DataTensor tb = getDataTensor2(ValueType.FP32);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor2FP64FillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.FP64);
+	public void testIndexDataTensor2FP64FillCol() {
+		DataTensor tb = getDataTensor2(ValueType.FP64);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor2BoolFillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.BOOLEAN);
+	public void testIndexDataTensor2BoolFillCol() {
+		DataTensor tb = getDataTensor2(ValueType.BOOLEAN);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor2StringFillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.STRING);
+	public void testIndexDataTensor2StringFillCol() {
+		DataTensor tb = getDataTensor2(ValueType.STRING);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor2Int32FillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.INT32);
+	public void testIndexDataTensor2Int32FillCol() {
+		DataTensor tb = getDataTensor2(ValueType.INT32);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor2Int64FillCol() {
-		HeterogTensor tb = getHeterogTensor2(ValueType.INT64);
+	public void testIndexDataTensor2Int64FillCol() {
+		DataTensor tb = getDataTensor2(ValueType.INT64);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3FP32FillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.FP32);
+	public void testIndexDataTensor3FP32FillCol() {
+		DataTensor tb = getDataTensor3(ValueType.FP32);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3FP64FillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.FP64);
+	public void testIndexDataTensor3FP64FillCol() {
+		DataTensor tb = getDataTensor3(ValueType.FP64);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3BoolFillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.BOOLEAN);
+	public void testIndexDataTensor3BoolFillCol() {
+		DataTensor tb = getDataTensor3(ValueType.BOOLEAN);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3StringFillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.STRING);
+	public void testIndexDataTensor3StringFillCol() {
+		DataTensor tb = getDataTensor3(ValueType.STRING);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3Int32FillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.INT32);
+	public void testIndexDataTensor3Int32FillCol() {
+		DataTensor tb = getDataTensor3(ValueType.INT32);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensor3Int64FillCol() {
-		HeterogTensor tb = getHeterogTensor3(ValueType.INT64);
+	public void testIndexDataTensor3Int64FillCol() {
+		DataTensor tb = getDataTensor3(ValueType.INT64);
 		checkCol(fillCol(tb));
 	}
 
 	@Test
-	public void testIndexHeterogTensorFP32AppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.FP32);
+	public void testIndexDataTensorFP32AppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.FP32);
 		checkCol(tb);
 	}
 
 	@Test
-	public void testIndexHeterogTensorFP64AppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.FP64);
+	public void testIndexDataTensorFP64AppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.FP64);
 		checkCol(tb);
 	}
 
 	@Test
-	public void testIndexHeterogTensorBoolAppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.BOOLEAN);
+	public void testIndexDataTensorBoolAppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.BOOLEAN);
 		checkCol(tb);
 	}
 
 	@Test
-	public void testIndexHeterogTensorStringAppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.STRING);
+	public void testIndexDataTensorStringAppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.STRING);
 		checkCol(tb);
 	}
 
 	@Test
-	public void testIndexHeterogTensorInt32AppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.INT32);
+	public void testIndexDataTensorInt32AppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.INT32);
 		checkCol(tb);
 	}
 
 	@Test
-	public void testIndexHeterogTensorInt64AppendCols() {
-		HeterogTensor tb = getHeterogTensorByAppendCols(ValueType.INT64);
+	public void testIndexDataTensorInt64AppendCols() {
+		DataTensor tb = getDataTensorByAppendCols(ValueType.INT64);
 		checkCol(tb);
 	}
 
-	private HeterogTensor getHeterogTensor2(ValueType vt) {
-		return new HeterogTensor(vt, new int[]{DIM0, DIM1});
+	private DataTensor getDataTensor2(ValueType vt) {
+		return new DataTensor(vt, new int[]{DIM0, DIM1});
 	}
 
-	private HeterogTensor getHeterogTensor3(ValueType vt) {
-		return new HeterogTensor(vt, new int[]{DIM0, DIM1, DIM2});
+	private DataTensor getDataTensor3(ValueType vt) {
+		return new DataTensor(vt, new int[]{DIM0, DIM1, DIM2});
 	}
 
-	private HeterogTensor fillCol(HeterogTensor tb) {
+	private DataTensor fillCol(DataTensor tb) {
 		int length;
 		if (tb.getNumDims() == 3) {
 			length = DIM0 * DIM2;
@@ -174,10 +174,10 @@ public class HeterogeneousTensorColumnTest {
 		return tb;
 	}
 
-	private HeterogTensor getHeterogTensorByAppendCols(ValueType vt) {
-		HeterogTensor tb = new HeterogTensor(vt, new int[]{DIM0, 0, DIM2});
+	private DataTensor getDataTensorByAppendCols(ValueType vt) {
+		DataTensor tb = new DataTensor(vt, new int[]{DIM0, 0, DIM2});
 		for (int c = 0; c < DIM1; c++) {
-			HomogTensor ht = new HomogTensor(vt, new int[]{DIM0, 1, DIM2}, false);
+			BasicTensor ht = new BasicTensor(vt, new int[]{DIM0, 1, DIM2}, false);
 			int[] ix = new int[ht.getNumDims()];
 			for (int i = 0; i < ht.getLength(); i++) {
 				switch (vt) {
@@ -199,7 +199,7 @@ public class HeterogeneousTensorColumnTest {
 		return tb;
 	}
 
-	private void checkCol(HeterogTensor tb) {
+	private void checkCol(DataTensor tb) {
 		int length;
 		if (tb.getNumDims() == 3) {
 			length = DIM0 * DIM2;
@@ -208,7 +208,7 @@ public class HeterogeneousTensorColumnTest {
 			length = DIM0;
 		}
 		for (int c = 0; c < DIM1; c++) {
-			HomogTensor colTensor = tb.getCol(c);
+			BasicTensor colTensor = tb.getCol(c);
 			int[] ix = new int[colTensor.getNumDims()];
 			for (int i = 0; i < length; i++) {
 				switch (tb.getColValueType(c)) {

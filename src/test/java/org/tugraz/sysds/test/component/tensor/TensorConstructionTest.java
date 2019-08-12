@@ -19,16 +19,16 @@ package org.tugraz.sysds.test.component.tensor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.tugraz.sysds.common.Types.ValueType;
-import org.tugraz.sysds.runtime.data.HeterogTensor;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 
 import java.util.Arrays;
 
 
 public class TensorConstructionTest {
 	@Test
-	public void testMetaDefaultHomogTensor() {
-		HomogTensor tb = new HomogTensor();
+	public void testMetaDefaultBasicTensor() {
+		BasicTensor tb = new BasicTensor();
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -39,8 +39,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaValueHomogTensor() {
-		HomogTensor tb = new HomogTensor(7.3);
+	public void testMetaValueBasicTensor() {
+		BasicTensor tb = new BasicTensor(7.3);
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
@@ -51,8 +51,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaTypedHomogTensor() {
-		HomogTensor tb = new HomogTensor(ValueType.INT64, new int[]{11, 12, 13});
+	public void testMetaTypedBasicTensor() {
+		BasicTensor tb = new BasicTensor(ValueType.INT64, new int[]{11, 12, 13});
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -64,8 +64,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaTypedHomogTensor2() {
-		HomogTensor tb = new HomogTensor(ValueType.INT64, new int[]{11, 12, 13}, false);
+	public void testMetaTypedBasicTensor2() {
+		BasicTensor tb = new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}, false);
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -77,8 +77,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaTypedHomogTensor3() {
-		HomogTensor tb = new HomogTensor(ValueType.BOOLEAN, new int[]{11, 12}, true);
+	public void testMetaTypedBasicTensor3() {
+		BasicTensor tb = new BasicTensor(ValueType.BOOLEAN, new int[]{11, 12}, true);
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -90,8 +90,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyDefaultHomogTensor() {
-		HomogTensor tb = new HomogTensor(new HomogTensor());
+	public void testMetaCopyDefaultBasicTensor() {
+		BasicTensor tb = new BasicTensor(new BasicTensor());
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -102,8 +102,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyValueHomogTensor() {
-		HomogTensor tb = new HomogTensor(new HomogTensor(7.3));
+	public void testMetaCopyValueBasicTensor() {
+		BasicTensor tb = new BasicTensor(new BasicTensor(7.3));
 		Assert.assertEquals(ValueType.FP64, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
@@ -114,8 +114,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHomogTensor() {
-		HomogTensor tb = new HomogTensor(new HomogTensor(ValueType.INT64, new int[]{11, 12, 13}));
+	public void testMetaCopyTypedBasicTensor() {
+		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -127,8 +127,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHomogTensor2() {
-		HomogTensor tb = new HomogTensor(new HomogTensor(ValueType.INT64, new int[]{11, 12, 13}, false));
+	public void testMetaCopyTypedBasicTensor2() {
+		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.INT64, new int[]{11, 12, 13}, false));
 		Assert.assertEquals(ValueType.INT64, tb.getValueType());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -140,8 +140,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHomogTensor3() {
-		HomogTensor tb = new HomogTensor(new HomogTensor(ValueType.BOOLEAN, new int[]{11, 12}, true));
+	public void testMetaCopyTypedBasicTensor3() {
+		BasicTensor tb = new BasicTensor(new BasicTensor(ValueType.BOOLEAN, new int[]{11, 12}, true));
 		Assert.assertEquals(ValueType.BOOLEAN, tb.getValueType());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -153,8 +153,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaDefaultHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor();
+	public void testMetaDefaultDataTensor() {
+		DataTensor tb = new DataTensor();
 		Assert.assertArrayEquals(new ValueType[0], tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -163,8 +163,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaValueHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor(7.3);
+	public void testMetaValueDataTensor() {
+		DataTensor tb = new DataTensor(7.3);
 		Assert.assertArrayEquals(new ValueType[]{ValueType.FP64}, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
@@ -173,8 +173,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaTypedHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor(ValueType.INT64, new int[]{11, 12, 13});
+	public void testMetaTypedDataTensor() {
+		DataTensor tb = new DataTensor(ValueType.INT64, new int[]{11, 12, 13});
 		ValueType[] schema = new ValueType[12];
 		Arrays.fill(schema, ValueType.INT64);
 		Assert.assertArrayEquals(schema, tb.getSchema());
@@ -186,9 +186,9 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaSchemaTypedHeterogTensor() {
+	public void testMetaSchemaTypedDataTensor() {
 		ValueType[] schema = new ValueType[] {ValueType.BOOLEAN, ValueType.INT32, ValueType.STRING};
-		HeterogTensor tb = new HeterogTensor(schema);
+		DataTensor tb = new DataTensor(schema);
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -197,8 +197,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaNColsTypedHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor(10, ValueType.BOOLEAN);
+	public void testMetaNColsTypedDataTensor() {
+		DataTensor tb = new DataTensor(10, ValueType.BOOLEAN);
 		ValueType[] schema = new ValueType[10];
 		Arrays.fill(schema, ValueType.BOOLEAN);
 		Assert.assertArrayEquals(schema, tb.getSchema());
@@ -209,8 +209,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyDefaultHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor(new HeterogTensor());
+	public void testMetaCopyDefaultDataTensor() {
+		DataTensor tb = new DataTensor(new DataTensor());
 		Assert.assertArrayEquals(new ValueType[0], tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(0, tb.getNumRows());
@@ -219,8 +219,8 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyValueHeterogTensor() {
-		HeterogTensor tb = new HeterogTensor(new HeterogTensor(7.3));
+	public void testMetaCopyValueDataTensor() {
+		DataTensor tb = new DataTensor(new DataTensor(7.3));
 		Assert.assertArrayEquals(new ValueType[]{ValueType.FP64}, tb.getSchema());
 		Assert.assertEquals(2, tb.getNumDims());
 		Assert.assertEquals(1, tb.getNumRows());
@@ -229,9 +229,9 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHeterogTensor() {
+	public void testMetaCopyTypedDataTensor() {
 		ValueType[] schema = {ValueType.INT32, ValueType.INT64, ValueType.BOOLEAN};
-		HeterogTensor tb = new HeterogTensor(new HeterogTensor(schema, new int[]{11, 3, 13}));
+		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{11, 3, 13}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -241,9 +241,9 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHeterogTensor2() {
+	public void testMetaCopyTypedDataTensor2() {
 		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.STRING};
-		HeterogTensor tb = new HeterogTensor(new HeterogTensor(schema, new int[]{11, 3, 13}));
+		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{11, 3, 13}));
 		Assert.assertArrayEquals(schema, tb.getSchema());
 		Assert.assertEquals(3, tb.getNumDims());
 		Assert.assertEquals(11, tb.getNumRows());
@@ -253,10 +253,10 @@ public class TensorConstructionTest {
 	}
 
 	@Test
-	public void testMetaCopyTypedHeterogTensor3() {
+	public void testMetaCopyTypedDataTensor3() {
 		ValueType[] schema = {ValueType.FP64, ValueType.FP32, ValueType.INT64, ValueType.INT32, ValueType.BOOLEAN,
 				ValueType.STRING};
-		HeterogTensor tb = new HeterogTensor(new HeterogTensor(schema, new int[]{2, schema.length, 2}, new String[][]{
+		DataTensor tb = new DataTensor(new DataTensor(schema, new int[]{2, schema.length, 2}, new String[][]{
 				new String[]{"1.4", "-5.34", "4.5", "-100000.1"},
 				new String[]{"1.4", "-5.34", "4.5", "-100000.1"},
 				new String[]{"1", "-5", "4", "-100000"},

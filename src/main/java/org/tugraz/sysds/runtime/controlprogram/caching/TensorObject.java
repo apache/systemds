@@ -28,7 +28,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.spark.data.RDDObject;
 import org.tugraz.sysds.runtime.io.FileFormatProperties;
@@ -38,7 +38,7 @@ import org.tugraz.sysds.runtime.meta.TensorCharacteristics;
 
 import java.io.IOException;
 
-public class TensorObject extends CacheableData<HomogTensor>
+public class TensorObject extends CacheableData<TensorBlock>
 {
 	private static final long serialVersionUID = -2843358400200380775L;
 
@@ -101,12 +101,12 @@ public class TensorObject extends CacheableData<HomogTensor>
 	}
 
 	@Override
-	protected HomogTensor readBlobFromCache(String fname) throws IOException {
-		return (HomogTensor)LazyWriteBuffer.readBlock(fname, false);
+	protected TensorBlock readBlobFromCache(String fname) throws IOException {
+		return (TensorBlock) LazyWriteBuffer.readBlock(fname, false);
 	}
 
 	@Override
-	protected HomogTensor readBlobFromHDFS(String fname, long rlen, long clen)
+	protected TensorBlock readBlobFromHDFS(String fname, long rlen, long clen)
 		throws IOException 
 	{
 		//TODO read from HDFS
@@ -115,14 +115,14 @@ public class TensorObject extends CacheableData<HomogTensor>
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected HomogTensor readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+	protected TensorBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException
 	{
 		status.setValue(false);
 		TensorCharacteristics tc = (TensorCharacteristics) _metaData.getDataCharacteristics();
 		// TODO correct blocksize;
 		// TODO read from RDD
-		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, HomogTensor>)rdd.getRDD(), tc);
+		return SparkExecutionContext.toTensorBlock((JavaPairRDD<TensorIndexes, TensorBlock>)rdd.getRDD(), tc);
 	}
 
 	@Override

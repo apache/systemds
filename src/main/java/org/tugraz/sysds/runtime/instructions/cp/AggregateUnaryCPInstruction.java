@@ -27,7 +27,7 @@ import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.functionobjects.Builtin;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.lineage.LineageItem;
@@ -173,9 +173,10 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 						ec.setMatrixOutput(output_name, resultBlock);
 					}
 				} else if (input1.getDataType() == DataType.TENSOR) {
-					HomogTensor homogTensor = ec.getTensorInput(input1.getName());
+					// TODO support DataTensor
+					BasicTensor basicTensor = (BasicTensor) ec.getTensorInput(input1.getName());
 
-					HomogTensor resultBlock = homogTensor.aggregateUnaryOperations(au_op, new HomogTensor());
+					BasicTensor resultBlock = basicTensor.aggregateUnaryOperations(au_op, new BasicTensor());
 
 					ec.releaseTensorInput(input1.getName());
 					if(output.getDataType() == DataType.SCALAR){

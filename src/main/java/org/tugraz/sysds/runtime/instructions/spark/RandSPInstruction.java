@@ -45,7 +45,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -475,7 +475,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 
 		//step 4: execute rand instruction over seed input
 		// TODO getDimLengthPerBlock accurate for each dimension
-		JavaPairRDD<TensorIndexes, HomogTensor> out = seedsRDD
+		JavaPairRDD<TensorIndexes, BasicTensor> out = seedsRDD
 				.mapToPair(new GenerateRandomTensorBlock(output.getValueType(), tDims, blockSizes,
 						sparsity, minValueStr, maxValueStr, pdf, pdfParams));
 
@@ -854,7 +854,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class GenerateRandomTensorBlock implements PairFunction<Tuple2<TensorIndexes, Long>, TensorIndexes, HomogTensor>
+	private static class GenerateRandomTensorBlock implements PairFunction<Tuple2<TensorIndexes, Long>, TensorIndexes, BasicTensor>
 	{
 		private static final long serialVersionUID = -512119897654170462L;
 
@@ -881,7 +881,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public Tuple2<TensorIndexes, HomogTensor> call(Tuple2<TensorIndexes, Long> kv)
+		public Tuple2<TensorIndexes, BasicTensor> call(Tuple2<TensorIndexes, Long> kv)
 				throws Exception
 		{
 			//compute local block size:
@@ -895,7 +895,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			int clen = (int) UtilFunctions.prod(blockDims, 1);
 			long seed = kv._2;
 
-			HomogTensor tb = new HomogTensor(_vt, blockDims);
+			BasicTensor tb = new BasicTensor(_vt, blockDims);
 			// TODO implement sparse support
 			tb.allocateDenseBlock();
 			if (!_min.equals(_max)) {

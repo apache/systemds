@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Graz University of Technology
+ * Copyright 2019 Graz University of Technology
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
-public class HomogTensor extends TensorBlock implements Externalizable
+public class BasicTensor extends TensorBlock implements Externalizable
 {
 	private static final long serialVersionUID = -1887367304030494999L;
 
@@ -56,34 +56,34 @@ public class HomogTensor extends TensorBlock implements Externalizable
 	protected DenseBlock _denseBlock = null;
 	protected SparseBlock _sparseBlock = null;
 	
-	public HomogTensor() {
+	public BasicTensor() {
 		this(DEFAULT_VTYPE, DEFAULT_DIMS.clone(), true, -1);
 	}
 	
-	public HomogTensor(ValueType vt, int[] dims) {
+	public BasicTensor(ValueType vt, int[] dims) {
 		this(vt, dims, true, -1);
 	}
 	
-	public HomogTensor(ValueType vt, int[] dims, boolean sp) {
+	public BasicTensor(ValueType vt, int[] dims, boolean sp) {
 		this(vt, dims, sp, -1);
 	}
 	
-	public HomogTensor(ValueType vt, int[] dims, boolean sp, long estnnz) {
+	public BasicTensor(ValueType vt, int[] dims, boolean sp, long estnnz) {
 		_vt = vt;
 		reset(dims, sp, estnnz, 0);
 	}
 	
-	public HomogTensor(HomogTensor that) {
+	public BasicTensor(BasicTensor that) {
 		_vt = that.getValueType();
 		copy(that);
 	}
 
-	public HomogTensor(double val) {
+	public BasicTensor(double val) {
 		_vt = DEFAULT_VTYPE;
 		reset(new int[] {1, 1}, false, 1, val);
 	}
 	
-	public HomogTensor(int[] dims, ValueType vt, double val) {
+	public BasicTensor(int[] dims, ValueType vt, double val) {
 		_vt = vt;
 		_dims = dims;
 		reset(dims, false, (val==0) ? 0 : getLength(), val);
@@ -170,12 +170,12 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		return _sparse ? (_sparseBlock!=null) : (_denseBlock!=null);
 	}
 
-	public HomogTensor allocateDenseBlock() {
+	public BasicTensor allocateDenseBlock() {
 		allocateDenseBlock(true);
 		return this;
 	}
 
-	public HomogTensor allocateBlock() {
+	public BasicTensor allocateBlock() {
 		if( _sparse )
 			allocateSparseBlock();
 		else
@@ -227,6 +227,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		return _vt;
 	}
 
+	@Override
 	public long getNonZeros() {
 		return _nnz;
 	}
@@ -451,7 +452,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		}
 	}
 
-	public void set(HomogTensor other) {
+	public void set(BasicTensor other) {
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
@@ -481,7 +482,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		}
 	}
 
-	public void copy(HomogTensor that) {
+	public void copy(BasicTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
@@ -493,7 +494,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		}
 	}
 
-	public HomogTensor copyShallow(HomogTensor that) {
+	public BasicTensor copyShallow(BasicTensor that) {
 		_dims = that._dims.clone();
 		_sparse = that._sparse;
 		_nnz = that._nnz;
@@ -504,7 +505,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		return this;
 	}
 
-	private void copyDenseToDense(HomogTensor that) {
+	private void copyDenseToDense(BasicTensor that) {
 		_nnz = that._nnz;
 
 		//plain reset to 0 for empty input
@@ -524,7 +525,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 	 * @param upper upper index of elements to copy (exclusive)
 	 * @param src source tensor
 	 */
-	public void copy(int[] lower, int[] upper, HomogTensor src) {
+	public void copy(int[] lower, int[] upper, BasicTensor src) {
 		// TODO consider sparse
 		if (src.isEmpty(false)) {
 			return;
@@ -562,7 +563,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 	 * @param result the result tensor
 	 * @return the result tensor
 	 */
-	public HomogTensor aggregateUnaryOperations(AggregateUnaryOperator op, HomogTensor result) {
+	public BasicTensor aggregateUnaryOperations(AggregateUnaryOperator op, BasicTensor result) {
 		// TODO allow to aggregate along a dimension?
 		// TODO performance
 		if (op.aggOp.increOp.fn instanceof KahanPlus) {
@@ -575,7 +576,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		}
 		//prepare result matrix block
 		if(result==null || result._vt != _vt)
-			result = new HomogTensor(_vt, new int[]{dim0, dim1}, false);
+			result = new BasicTensor(_vt, new int[]{dim0, dim1}, false);
 		else
 			result.reset(new int[]{dim0, dim1}, false);
 
@@ -589,7 +590,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 		return result;
 	}
 
-	public void incrementalAggregate(AggregateOperator aggOp, HomogTensor partialResult) {
+	public void incrementalAggregate(AggregateOperator aggOp, BasicTensor partialResult) {
 		if(!aggOp.correctionExists) {
 			if(aggOp.increOp.fn instanceof Plus) {
 				LibTensorAgg.aggregateBinaryTensor(partialResult, this, aggOp);
@@ -669,7 +670,7 @@ public class HomogTensor extends TensorBlock implements Externalizable
 	 * @param outBlock sliced result block
 	 * @return the sliced result block
 	 */
-	public HomogTensor slice(int[] offsets, HomogTensor outBlock) {
+	public BasicTensor slice(int[] offsets, BasicTensor outBlock) {
 		// TODO perf
 		int[] srcIx = new int[offsets.length];
 		Array.copy(offsets, 0, srcIx, 0, offsets.length);

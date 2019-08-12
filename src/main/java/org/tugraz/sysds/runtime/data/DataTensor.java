@@ -26,39 +26,40 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class HeterogTensor extends TensorBlock {
-	private HomogTensor[] _colsdata = null;
+public class DataTensor extends TensorBlock {
+	// TODO consider using a single BasicTensor for all columns of a certain DataType
+	private BasicTensor[] _colsdata = null;
 	private ValueType[] _schema = null;
 
-	public HeterogTensor() {
+	public DataTensor() {
 		this(new ValueType[0], DEFAULT_DIMS);
 	}
 
-	public HeterogTensor(int ncols, ValueType vt) {
+	public DataTensor(int ncols, ValueType vt) {
 		_dims = new int[]{0, ncols};
 		_schema = new ValueType[ncols];
 		Arrays.fill(_schema, vt);
 	}
 
-	public HeterogTensor(ValueType[] schema) {
+	public DataTensor(ValueType[] schema) {
 		_dims = new int[]{0, schema.length};
 		_schema = schema;
 	}
 
-	public HeterogTensor(ValueType[] schema, int[] dims) {
+	public DataTensor(ValueType[] schema, int[] dims) {
 		_dims = dims;
 		_schema = schema;
 		reset();
 	}
 
-	public HeterogTensor(ValueType vt, int[] dims) {
+	public DataTensor(ValueType vt, int[] dims) {
 		_dims = dims;
 		_schema = new ValueType[getDim(1)];
 		Arrays.fill(_schema, vt);
 		reset();
 	}
 
-	public HeterogTensor(ValueType[] schema, int[] dims, String[][] data) {
+	public DataTensor(ValueType[] schema, int[] dims, String[][] data) {
 		_dims = dims;
 		_schema = schema;
 		allocateBlock();
@@ -67,13 +68,13 @@ public class HeterogTensor extends TensorBlock {
 		}
 	}
 
-	public HeterogTensor(double val) {
+	public DataTensor(double val) {
 		_dims = new int[]{1, 1};
 		_schema = new ValueType[]{ValueType.FP64};
-		_colsdata = new HomogTensor[]{new HomogTensor(val)};
+		_colsdata = new BasicTensor[]{new BasicTensor(val)};
 	}
 
-	public HeterogTensor(HeterogTensor that) {
+	public DataTensor(DataTensor that) {
 		copy(that);
 	}
 
@@ -98,11 +99,11 @@ public class HeterogTensor extends TensorBlock {
 		if (_colsdata == null) {
 			allocateBlock();
 		} else {
-			HomogTensor[] newCols = new HomogTensor[getDim(1)];
+			BasicTensor[] newCols = new BasicTensor[getDim(1)];
 			if (_colsdata.length > getDim(1))
 				_colsdata = Arrays.copyOfRange(_colsdata, 0, getDim(1));
 			int[] blockDims = toInternalDims(dims);
-			for (HomogTensor colsdata : _colsdata) {
+			for (BasicTensor colsdata : _colsdata) {
 				colsdata.reset(blockDims);
 			}
 		}
@@ -121,11 +122,11 @@ public class HeterogTensor extends TensorBlock {
 		if (_colsdata == null) {
 			allocateBlock();
 		} else {
-			HomogTensor[] newCols = new HomogTensor[getDim(1)];
+			BasicTensor[] newCols = new BasicTensor[getDim(1)];
 			int[] blockDims = toInternalDims(dims);
 			for (int c = 0; c < getDim(1); c++) {
 				if (_colsdata[c]._vt != schema[c]) {
-					newCols[c] = new HomogTensor(schema[c], blockDims, false);
+					newCols[c] = new BasicTensor(schema[c], blockDims, false);
 				}
 				else {
 					newCols[c] = _colsdata[c];
@@ -137,15 +138,15 @@ public class HeterogTensor extends TensorBlock {
 	}
 
 	@Override
-	public HeterogTensor allocateBlock() {
+	public DataTensor allocateBlock() {
 		if (_colsdata == null)
-			_colsdata = new HomogTensor[getDim(1)];
+			_colsdata = new BasicTensor[getDim(1)];
 		// All column tensors can share the same dimension array
 		// since their dimension should always be equal.
 		int[] blockDims = toInternalDims(_dims);
 		for (int i = 0; i < _schema.length; i++) {
 			// TODO sparse
-			_colsdata[i] = new HomogTensor(_schema[i], blockDims, false);
+			_colsdata[i] = new BasicTensor(_schema[i], blockDims, false);
 			_colsdata[i].allocateBlock();
 		}
 		return this;
@@ -155,7 +156,7 @@ public class HeterogTensor extends TensorBlock {
 	public boolean isAllocated() {
 		if (_colsdata == null)
 			return false;
-		for (HomogTensor block : _colsdata) {
+		for (BasicTensor block : _colsdata) {
 			if (block.isAllocated())
 				return true;
 		}
@@ -167,11 +168,24 @@ public class HeterogTensor extends TensorBlock {
 		if (!isAllocated()) {
 			return true;
 		}
-		for (HomogTensor tb : _colsdata) {
+		for (BasicTensor tb : _colsdata) {
 			if (!tb.isEmpty(safe))
 				return false;
 		}
 		return true;
+	}
+
+	@Override
+	public long getNonZeros() {
+		// TODO non zero for DataTensor
+		if (!isAllocated()) {
+			return 0;
+		}
+		long nnz = 0;
+		for (BasicTensor bt : _colsdata) {
+			nnz += bt.getNonZeros();
+		}
+		return nnz;
 	}
 
 	public ValueType[] getSchema() {
@@ -232,7 +246,7 @@ public class HeterogTensor extends TensorBlock {
 		_colsdata[ix[1]].set(internalIx, v);
 	}
 
-	public void copy(HeterogTensor that) {
+	public void copy(DataTensor that) {
 		_dims = that._dims.clone();
 		_schema = that._schema.clone();
 		if (that.isAllocated()) {
@@ -271,11 +285,11 @@ public class HeterogTensor extends TensorBlock {
 		}
 	}
 
-	public HomogTensor getCol(int col) {
+	public BasicTensor getCol(int col) {
 		return _colsdata[col];
 	}
 
-	public HeterogTensor appendCol(HomogTensor data) {
+	public DataTensor appendCol(BasicTensor data) {
 		// validate data dimensions
 		if (_dims.length != data.getNumDims()) {
 			throw new DMLRuntimeException("Append column number of dimensions mismatch: expected=" + _dims.length +
@@ -290,7 +304,7 @@ public class HeterogTensor extends TensorBlock {
 		}
 		_dims[1]++;
 		_schema = (ValueType[]) ArrayUtils.add(_schema, data.getValueType());
-		_colsdata = (HomogTensor[]) ArrayUtils.add(_colsdata, data);
+		_colsdata = (BasicTensor[]) ArrayUtils.add(_colsdata, data);
 		return this;
 	}
 
@@ -305,7 +319,7 @@ public class HeterogTensor extends TensorBlock {
 		//header size (num dims, dims)
 		long size = 4 * (1 + _dims.length);
 		//colsdata serialized representation
-		for (HomogTensor ht : _colsdata)
+		for (BasicTensor ht : _colsdata)
 			size += ht.getExactSerializedSize();
 		return size;
 	}
@@ -361,9 +375,9 @@ public class HeterogTensor extends TensorBlock {
 		for (int i = 0; i < _dims.length; i++)
 			_dims[i] = in.readInt();
 		_schema = new ValueType[getDim(1)];
-		_colsdata = new HomogTensor[getDim(1)];
+		_colsdata = new BasicTensor[getDim(1)];
 		for (int i = 0; i < getDim(1); i++) {
-			_colsdata[i] = new HomogTensor();
+			_colsdata[i] = new BasicTensor();
 			_colsdata[i].readFields(in);
 			_schema[i] = _colsdata[i]._vt;
 		}

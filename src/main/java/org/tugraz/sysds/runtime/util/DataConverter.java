@@ -29,9 +29,10 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
-import org.tugraz.sysds.runtime.data.HeterogTensor;
+import org.tugraz.sysds.runtime.data.DataTensor;
 import org.tugraz.sysds.runtime.data.SparseBlock;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -738,30 +739,18 @@ public class DataConverter
 		return frame;
 	}
 	
-	public static HomogTensor convertToHomogTensor(MatrixBlock mb, ValueType vt) {
-		HomogTensor ret = new HomogTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
-		ret.allocateDenseBlock(true);
-		if( mb.getNonZeros() > 0 ) {
-			if( mb.isInSparseFormat() ) {
-				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() ) {
-					IJV cell = iter.next();
-					ret.set(cell.getI(), cell.getJ(), cell.getV());
-				}
-			}
-			else {
-				double[] a = mb.getDenseBlockValues();
-				for( int i=0, ix=0; i<mb.getNumRows(); i++ )
-					for( int j=0; j<mb.getNumColumns(); j++, ix++ )
-						ret.set(i, j, a[ix]);
-			}
+	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {
+		TensorBlock ret;
+		if (toBasicTensor) {
+			BasicTensor bt = new BasicTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
+			bt.allocateDenseBlock(true);
+			ret = bt;
 		}
-		return ret;
-	}
-
-	public static HeterogTensor convertToHeterogTensor(MatrixBlock mb, ValueType vt) {
-		HeterogTensor ret = new HeterogTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
-		ret.allocateBlock();
+		else {
+			DataTensor dt = new DataTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
+			dt.allocateBlock();
+			ret = dt;
+		}
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -959,7 +948,7 @@ public class DataConverter
 		return sb.toString();
 	}
 
-	public static String toString(HomogTensor mb) {
+	public static String toString(BasicTensor mb) {
 		return toString(mb, false, " ", "\n", "[", "]", mb.getNumRows(), mb.getNumColumns(), 3);
 	}
 
@@ -977,7 +966,7 @@ public class DataConverter
 	 * @param decimal number of decimal places to print, -1 for default
 	 * @return tensor as a string
 	 */
-	public static String toString(HomogTensor tb, boolean sparse, String separator, String lineseparator,
+	public static String toString(BasicTensor tb, boolean sparse, String separator, String lineseparator,
 	                              String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuilder sb = new StringBuilder();
 
@@ -1063,12 +1052,12 @@ public class DataConverter
 	/**
 	 * Concatenates a single tensor value to the `StringBuilder` by converting it to the correct format.
 	 *
-	 * @param tb the HomogTensor
+	 * @param tb the BasicTensor
 	 * @param sb the StringBuilder to use
 	 * @param df DecimalFormat with the correct settings for double or float values
 	 * @param ix the index of the TensorBlock value
 	 */
-	private static void concatenateTensorValue(HomogTensor tb, StringBuilder sb, DecimalFormat df, int[] ix) {
+	private static void concatenateTensorValue(BasicTensor tb, StringBuilder sb, DecimalFormat df, int[] ix) {
 		switch (tb.getValueType()) {
 			case FP32:
 			case FP64:
@@ -1193,7 +1182,7 @@ public class DataConverter
 			break;
 			case TENSOR: {
 				// Dimensions given as vector
-				HomogTensor in = ec.getTensorInput(dims.getName());
+				TensorBlock in = ec.getTensorInput(dims.getName());
 				boolean colVec = false;
 				if (!in.isVector()) {
 					throw new DMLRuntimeException("Dimensions tensor has to be a vector.");

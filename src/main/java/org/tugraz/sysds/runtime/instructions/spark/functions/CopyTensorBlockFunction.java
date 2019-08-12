@@ -21,13 +21,13 @@
 package org.tugraz.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.Function;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 
 /**
  * General purpose copy function for binary block rdds. This function can be used in
  * mapValues (copy tensor blocks). It supports both deep and shallow copies of values.
  */
-public class CopyTensorBlockFunction implements Function<HomogTensor, HomogTensor> {
+public class CopyTensorBlockFunction implements Function<BasicTensor, BasicTensor> {
 	private static final long serialVersionUID = 707987326466592670L;
 	private boolean _deepCopy;
 
@@ -40,10 +40,10 @@ public class CopyTensorBlockFunction implements Function<HomogTensor, HomogTenso
 	}
 
 	@Override
-	public HomogTensor call(HomogTensor arg0)
+	public BasicTensor call(BasicTensor arg0)
 			throws Exception {
 		if (_deepCopy)
-			return new HomogTensor(arg0);
+			return new BasicTensor(arg0);
 		else
 			return arg0;
 	}

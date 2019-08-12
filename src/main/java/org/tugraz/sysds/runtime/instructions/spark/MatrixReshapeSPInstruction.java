@@ -29,7 +29,8 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.tugraz.sysds.runtime.data.IndexedTensorBlock;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -119,9 +120,9 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 			sec.addLineageRDD(output.getName(), input1.getName());
 		} else {
 			// TODO Tensor reshape
-			JavaPairRDD<TensorIndexes, HomogTensor> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(input1.getName(),
+			JavaPairRDD<TensorIndexes, TensorBlock> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(input1.getName(),
 					-1, _outputEmptyBlocks);
-			JavaPairRDD<TensorIndexes, HomogTensor> out = in1.flatMapToPair(
+			JavaPairRDD<TensorIndexes, TensorBlock> out = in1.flatMapToPair(
 					new RDDTensorReshapeFunction(mcIn, mcOut, byRow, _outputEmptyBlocks));
 			// TODO merge by key
 			//out = RDDAggregateUtils.mergeByKey(out);
@@ -163,8 +164,8 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 	}
 
 	@SuppressWarnings("unused")
-	private static class RDDTensorReshapeFunction implements PairFlatMapFunction<Tuple2<TensorIndexes, HomogTensor>,
-			TensorIndexes, HomogTensor> {
+	private static class RDDTensorReshapeFunction implements PairFlatMapFunction<Tuple2<TensorIndexes, TensorBlock>,
+			TensorIndexes, TensorBlock> {
 		private static final long serialVersionUID = 8030648988828223639L;
 
 		private final DataCharacteristics _mcIn;
@@ -180,7 +181,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		}
 
 		@Override
-		public Iterator<Tuple2<TensorIndexes, HomogTensor>> call(Tuple2<TensorIndexes, HomogTensor> arg0)
+		public Iterator<Tuple2<TensorIndexes, TensorBlock>> call(Tuple2<TensorIndexes, TensorBlock> arg0)
 				throws Exception {
 			//input conversion (for libmatrixreorg compatibility)
 			IndexedTensorBlock in = SparkUtils.toIndexedTensorBlock(arg0);

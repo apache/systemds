@@ -33,7 +33,8 @@ import org.tugraz.sysds.runtime.controlprogram.caching.FrameObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.tugraz.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.tugraz.sysds.runtime.controlprogram.caching.TensorObject;
-import org.tugraz.sysds.runtime.data.HomogTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.Instruction;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.Data;
@@ -286,7 +287,7 @@ public class ExecutionContext {
 	 * @param varName variable name
 	 * @return matrix block
 	 */
-	public HomogTensor getTensorInput(String varName) {
+	public TensorBlock getTensorInput(String varName) {
 		return getTensorObject(varName).acquireRead();
 	}
 
@@ -506,7 +507,7 @@ public class ExecutionContext {
 		setMatrixOutput(varName, outputData, flag);
 	}
 
-	public void setTensorOutput(String varName, HomogTensor outputData) {
+	public void setTensorOutput(String varName, BasicTensor outputData) {
 		TensorObject to = getTensorObject(varName);
 		to.acquireModify(outputData);
 		to.release();

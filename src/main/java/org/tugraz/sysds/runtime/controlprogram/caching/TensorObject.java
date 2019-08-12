@@ -86,10 +86,6 @@ public class TensorObject extends CacheableData<TensorBlock>
 		tc.setNonZeros(_data.getNonZeros());
 	}
 
-	public int[] getDims() {
-		return _data.getDims();
-	}
-
 	public long getNumRows() {
 		DataCharacteristics dc = getDataCharacteristics();
 		return dc.getRows();
@@ -106,7 +102,7 @@ public class TensorObject extends CacheableData<TensorBlock>
 
 	@Override
 	protected TensorBlock readBlobFromCache(String fname) throws IOException {
-		return (TensorBlock)LazyWriteBuffer.readBlock(fname, false);
+		return (TensorBlock) LazyWriteBuffer.readBlock(fname, false);
 	}
 
 	@Override
@@ -120,7 +116,7 @@ public class TensorObject extends CacheableData<TensorBlock>
 	@Override
 	@SuppressWarnings("unchecked")
 	protected TensorBlock readBlobFromRDD(RDDObject rdd, MutableBoolean status)
-		throws IOException 
+		throws IOException
 	{
 		status.setValue(false);
 		TensorCharacteristics tc = (TensorCharacteristics) _metaData.getDataCharacteristics();

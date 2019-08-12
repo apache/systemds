@@ -29,7 +29,9 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.data.DenseBlock;
 import org.tugraz.sysds.runtime.data.DenseBlockFactory;
+import org.tugraz.sysds.runtime.data.DataTensor;
 import org.tugraz.sysds.runtime.data.SparseBlock;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.instructions.cp.BooleanObject;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
@@ -737,9 +739,18 @@ public class DataConverter
 		return frame;
 	}
 	
-	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt) {
-		TensorBlock ret = new TensorBlock(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
-		ret.allocateDenseBlock(true);
+	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {
+		TensorBlock ret;
+		if (toBasicTensor) {
+			BasicTensor bt = new BasicTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
+			bt.allocateDenseBlock(true);
+			ret = bt;
+		}
+		else {
+			DataTensor dt = new DataTensor(vt, new int[] {mb.getNumRows(), mb.getNumColumns()});
+			dt.allocateBlock();
+			ret = dt;
+		}
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -758,7 +769,7 @@ public class DataConverter
 		return ret;
 	}
 
-	public static MatrixBlock[] convertToMatrixBlockPartitions( MatrixBlock mb, boolean colwise ) 
+	public static MatrixBlock[] convertToMatrixBlockPartitions( MatrixBlock mb, boolean colwise )
 	{
 		MatrixBlock[] ret = null;
 		int rows = mb.getNumRows();
@@ -937,7 +948,7 @@ public class DataConverter
 		return sb.toString();
 	}
 
-	public static String toString(TensorBlock mb) {
+	public static String toString(BasicTensor mb) {
 		return toString(mb, false, " ", "\n", "[", "]", mb.getNumRows(), mb.getNumColumns(), 3);
 	}
 
@@ -955,8 +966,8 @@ public class DataConverter
 	 * @param decimal number of decimal places to print, -1 for default
 	 * @return tensor as a string
 	 */
-	public static String toString(TensorBlock tb, boolean sparse, String separator, String lineseparator,
-			String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
+	public static String toString(BasicTensor tb, boolean sparse, String separator, String lineseparator,
+	                              String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuilder sb = new StringBuilder();
 
 		// Setup number of rows and columns to print
@@ -1041,12 +1052,12 @@ public class DataConverter
 	/**
 	 * Concatenates a single tensor value to the `StringBuilder` by converting it to the correct format.
 	 *
-	 * @param tb the TensorBlock
+	 * @param tb the BasicTensor
 	 * @param sb the StringBuilder to use
 	 * @param df DecimalFormat with the correct settings for double or float values
 	 * @param ix the index of the TensorBlock value
 	 */
-	private static void concatenateTensorValue(TensorBlock tb, StringBuilder sb, DecimalFormat df, int[] ix) {
+	private static void concatenateTensorValue(BasicTensor tb, StringBuilder sb, DecimalFormat df, int[] ix) {
 		switch (tb.getValueType()) {
 			case FP32:
 			case FP64:

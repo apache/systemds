@@ -25,6 +25,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
@@ -158,7 +159,7 @@ public class RDDAggregateUtils
 	 * @return tensor block
 	 */
 	public static TensorBlock aggStableTensor(JavaPairRDD<TensorIndexes, TensorBlock> in, AggregateOperator aop) {
-		return aggStableTensor( in.values(), aop);
+		return aggStableTensor(in.values(), aop);
 	}
 
 	/**
@@ -168,14 +169,14 @@ public class RDDAggregateUtils
 	 * @param aop aggregate operator
 	 * @return tensor block
 	 */
-	public static TensorBlock aggStableTensor( JavaRDD<TensorBlock> in, AggregateOperator aop )
+	public static TensorBlock aggStableTensor(JavaRDD<TensorBlock> in, AggregateOperator aop )
 	{
 		//stable aggregate of all blocks with correction block per function instance
 
 		//reduce-all aggregate via fold instead of reduce to allow
 		//for update in-place w/o deep copy of left-hand-side blocks
 		return in.fold(
-				new TensorBlock(),
+				new BasicTensor(),
 				new AggregateSingleTensorBlockFunction(aop) );
 	}
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> aggByKeyStable( JavaPairRDD<MatrixIndexes, MatrixBlock> in,
@@ -654,7 +655,6 @@ public class RDDAggregateUtils
 		private static final long serialVersionUID = 5665180309149919945L;
 
 		private AggregateOperator _op = null;
-		//private MatrixBlock _corr = null;
 
 		public AggregateSingleTensorBlockFunction( AggregateOperator op ) {
 			_op = op;
@@ -678,7 +678,8 @@ public class RDDAggregateUtils
 			}
 
 			//aggregate second input (in-place)
-			arg0.incrementalAggregate(_op, arg1);
+			// TODO support DataTensor
+			((BasicTensor)arg0).incrementalAggregate(_op, (BasicTensor)arg1);
 
 			return arg0;
 		}

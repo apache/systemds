@@ -31,6 +31,7 @@ import org.tugraz.sysds.lops.PartialAggregate.CorrectionLocationType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
@@ -147,6 +148,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 
 		//get input
+		// TODO support DataTensor
 		JavaPairRDD<TensorIndexes, TensorBlock> in = sec.getBinaryTensorBlockRDDHandleForVariable( input1.getName() );
 		JavaPairRDD<TensorIndexes, TensorBlock> out = in;
 
@@ -155,7 +157,6 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
 		AggregateOperator aggop = _aop;
 
-		// TODO: aggregate
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
@@ -166,7 +167,8 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of data characteristics
 			// TODO generalize to drop depending on location of correction
-			TensorBlock out4 = new TensorBlock(out3.getValueType(), new int[]{1, 1}, false);
+			// TODO support DataTensor
+			BasicTensor out4 = new BasicTensor(((BasicTensor)out3).getValueType(), new int[]{1, 1}, false);
 			out4.set(0, 0, out3.get(0, 0));
 			sec.setTensorOutput(output.getName(), out4);
 		}
@@ -274,11 +276,12 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public TensorBlock call( Tuple2<TensorIndexes, TensorBlock> arg0 )
+		public BasicTensor call(Tuple2<TensorIndexes, TensorBlock> arg0 )
 				throws Exception
 		{
 			//unary aggregate operation (always keep the correction)
-			return arg0._2.aggregateUnaryOperations(_op, new TensorBlock());
+			// TODO support DataTensor
+			return ((BasicTensor)arg0._2).aggregateUnaryOperations(_op, new BasicTensor());
 		}
 	}
 
@@ -329,17 +332,18 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public TensorBlock call( TensorBlock arg0 )
+		public TensorBlock call(TensorBlock arg0 )
 				throws Exception
 		{
-			TensorBlock blkOut = new TensorBlock();
+			// TODO support DataTensor
+			BasicTensor blkOut = new BasicTensor();
 
 			//unary aggregate operation
-			arg0.aggregateUnaryOperations(_op, blkOut);
+			((BasicTensor)arg0).aggregateUnaryOperations(_op, blkOut);
 
 			//always drop correction since no aggregation
 			// TODO generalize to drop depending on location of correction
-			TensorBlock out = new TensorBlock(blkOut.getValueType(), new int[]{1, 1}, false);
+			BasicTensor out = new BasicTensor(blkOut.getValueType(), new int[]{1, 1}, false);
 			out.set(0, 0, blkOut.get(0, 0));
 
 			//output new tuple

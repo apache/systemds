@@ -43,7 +43,7 @@ public class LibTensorAgg {
 	 * @param k  the number of threads
 	 * @return true if aggregation should be done on multiple threads, false otherwise
 	 */
-	public static boolean satisfiesMultiThreadingConstraints(TensorBlock in, int k) {
+	public static boolean satisfiesMultiThreadingConstraints(BasicTensor in, int k) {
 		// TODO more conditions depending on operation
 		return k > 1 && in._vt != Types.ValueType.BOOLEAN;
 	}
@@ -55,7 +55,7 @@ public class LibTensorAgg {
 	 * @param out  the output tensor block containing the aggregated result
 	 * @param uaop the unary operation to apply
 	 */
-	public static void aggregateUnaryTensor(TensorBlock in, TensorBlock out, AggregateUnaryOperator uaop) {
+	public static void aggregateUnaryTensor(BasicTensor in, BasicTensor out, AggregateUnaryOperator uaop) {
 		AggType aggType = getAggType(uaop);
 		// TODO filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if (in.isEmpty(false)) {
@@ -98,7 +98,7 @@ public class LibTensorAgg {
 	 * @param out    the resulting tensor-block
 	 * @param optype the operation to apply
 	 */
-	private static void aggregateUnaryTensorEmpty(TensorBlock in, TensorBlock out, AggType optype) {
+	private static void aggregateUnaryTensorEmpty(BasicTensor in, BasicTensor out, AggType optype) {
 		// TODO implement for other optypes
 		double val;
 		if (optype == AggType.SUM) {
@@ -117,7 +117,7 @@ public class LibTensorAgg {
 	 * @param aggVal partial aggregation, also output (in will be added to this)
 	 * @param aop aggregation operator
 	 */
-	public static void aggregateBinaryTensor(TensorBlock in, TensorBlock aggVal, AggregateOperator aop) {
+	public static void aggregateBinaryTensor(BasicTensor in, BasicTensor aggVal, AggregateOperator aop) {
 		//check validity
 		if (in.getLength() != aggVal.getLength()) {
 			throw new DMLRuntimeException("Binary tensor aggregation requires consistent numbers of cells (" +
@@ -184,7 +184,7 @@ public class LibTensorAgg {
 	 * @param rl      the lower index of rows to use
 	 * @param ru      the upper index of rows to use (exclusive)
 	 */
-	private static void aggregateUnaryTensorPartial(TensorBlock in, TensorBlock out, AggType aggtype, ValueFunction fn,
+	private static void aggregateUnaryTensorPartial(BasicTensor in, BasicTensor out, AggType aggtype, ValueFunction fn,
 	                                                int rl, int ru) {
 		//note: due to corrections, even the output might be a large dense block
 		if (aggtype == AggType.SUM) {
@@ -201,7 +201,7 @@ public class LibTensorAgg {
 	 * @param out     the tensor-block which contains partial result and should be increased to contain sum of both results
 	 * @param partout the tensor-block which contains partial result and should be added to other partial result
 	 */
-	private static void aggregateFinalResult(AggregateOperator aop, TensorBlock out, TensorBlock partout) {
+	private static void aggregateFinalResult(AggregateOperator aop, BasicTensor out, BasicTensor partout) {
 		//TODO special handling for mean where the final aggregate operator
 		// is not equals to the partial aggregate operator
 		//incremental aggregation of final results
@@ -212,7 +212,7 @@ public class LibTensorAgg {
 		//out.binaryOperationsInPlace(laop.increOp, partout);
 	}
 
-	private static void sum(TensorBlock in, TensorBlock out, Plus plus, int rl, int ru) {
+	private static void sum(BasicTensor in, BasicTensor out, Plus plus, int rl, int ru) {
 		// TODO: SparseBlock
 		if (in.isSparse()) {
 			throw new DMLRuntimeException("Sparse aggregation not implemented for Tensor");
@@ -262,14 +262,14 @@ public class LibTensorAgg {
 	private static abstract class AggTask implements Callable<Object> {}
 
 	private static class PartialAggTask extends AggTask {
-		private TensorBlock _in;
-		private TensorBlock _ret;
+		private BasicTensor _in;
+		private BasicTensor _ret;
 		private AggType _aggtype;
 		private AggregateUnaryOperator _uaop;
 		private int _rl;
 		private int _ru;
 
-		protected PartialAggTask(TensorBlock in, TensorBlock ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru) {
+		protected PartialAggTask(BasicTensor in, BasicTensor ret, AggType aggtype, AggregateUnaryOperator uaop, int rl, int ru) {
 			_in = in;
 			_ret = ret;
 			_aggtype = aggtype;
@@ -281,7 +281,7 @@ public class LibTensorAgg {
 		@Override
 		public Object call() {
 			//thead-local allocation for partial aggregation
-			_ret = new TensorBlock(_ret._vt, new int[]{_ret.getDim(0), _ret.getDim(1)});
+			_ret = new BasicTensor(_ret._vt, new int[]{_ret.getDim(0), _ret.getDim(1)});
 			_ret.allocateDenseBlock();
 
 			aggregateUnaryTensorPartial(_in, _ret, _aggtype, _uaop.aggOp.increOp.fn, _rl, _ru);
@@ -289,7 +289,7 @@ public class LibTensorAgg {
 			return null;
 		}
 
-		public TensorBlock getResult() {
+		public BasicTensor getResult() {
 			return _ret;
 		}
 	}

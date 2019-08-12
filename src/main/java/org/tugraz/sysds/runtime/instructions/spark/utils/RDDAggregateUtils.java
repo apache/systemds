@@ -28,6 +28,7 @@ import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.TensorBlock;
 import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.functionobjects.KahanPlus;
+import org.tugraz.sysds.runtime.functionobjects.Plus;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.KahanObject;
 import org.tugraz.sysds.runtime.instructions.spark.AggregateUnarySPInstruction.RDDUAggFunction2;
@@ -671,7 +672,10 @@ public class RDDAggregateUtils
 				return arg0;
 			}
 
-			// TODO correction
+			// TODO remove once KahanPlus is completely replaced by plus
+			if (_op.increOp.fn instanceof KahanPlus) {
+				_op = new AggregateOperator(0, Plus.getPlusFnObject());
+			}
 
 			//aggregate second input (in-place)
 			arg0.incrementalAggregate(_op, arg1);

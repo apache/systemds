@@ -25,7 +25,8 @@ import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheDataInput;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheDataOutput;
-import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.BasicTensor;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.test.TestUtils;
@@ -34,48 +35,83 @@ import org.tugraz.sysds.test.TestUtils;
 public class TensorSerializationTest 
 {
 	@Test
-	public void testSerializeTensorFP32() {
-		TensorBlock tb1 = createTensorBlock(ValueType.FP32, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserialize(tb1);
-		compareTensorBlocks(tb1, tb2);
+	public void testSerializeBasicTensorFP32() {
+		BasicTensor tb1 = createBasicTensor(ValueType.FP32, 70, 30, 0.7);
+		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
-	public void testSerializeTensorFP64() {
-		TensorBlock tb1 = createTensorBlock(ValueType.FP64, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserialize(tb1);
-		compareTensorBlocks(tb1, tb2);
+	public void testSerializeBasicTensorFP64() {
+		BasicTensor tb1 = createBasicTensor(ValueType.FP64, 70, 30, 0.7);
+		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
-	public void testSerializeTensorINT32() {
-		TensorBlock tb1 = createTensorBlock(ValueType.INT32, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserialize(tb1);
-		compareTensorBlocks(tb1, tb2);
+	public void testSerializeBasicTensorINT32() {
+		BasicTensor tb1 = createBasicTensor(ValueType.INT32, 70, 30, 0.7);
+		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
-	public void testSerializeTensorINT64() {
-		TensorBlock tb1 = createTensorBlock(ValueType.INT64, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserialize(tb1);
-		compareTensorBlocks(tb1, tb2);
+	public void testSerializeBasicTensorINT64() {
+		BasicTensor tb1 = createBasicTensor(ValueType.INT64, 70, 30, 0.7);
+		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
-	public void testSerializeTensorBoolean() {
-		TensorBlock tb1 = createTensorBlock(ValueType.BOOLEAN, 70, 30, 0.7);
-		TensorBlock tb2 = serializeAndDeserialize(tb1);
-		compareTensorBlocks(tb1, tb2);
+	public void testSerializeBasicTensorBoolean() {
+		BasicTensor tb1 = createBasicTensor(ValueType.BOOLEAN, 70, 30, 0.7);
+		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		compareBasicTensors(tb1, tb2);
 	}
-	
-	private TensorBlock serializeAndDeserialize(TensorBlock tb1) {
+
+	@Test
+	public void testSerializeDataTensorFP32() {
+		DataTensor tb1 = createDataTensor(ValueType.FP32, 70, 30, 0.7);
+		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		compareDataTensors(tb1, tb2);
+	}
+
+	@Test
+	public void testSerializeDataTensorFP64() {
+		DataTensor tb1 = createDataTensor(ValueType.FP64, 70, 30, 0.7);
+		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		compareDataTensors(tb1, tb2);
+	}
+
+	@Test
+	public void testSerializeDataTensorINT32() {
+		DataTensor tb1 = createDataTensor(ValueType.INT32, 70, 30, 0.7);
+		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		compareDataTensors(tb1, tb2);
+	}
+
+	@Test
+	public void testSerializeDataTensorINT64() {
+		DataTensor tb1 = createDataTensor(ValueType.INT64, 70, 30, 0.7);
+		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		compareDataTensors(tb1, tb2);
+	}
+
+	@Test
+	public void testSerializeDataTensorBoolean() {
+		DataTensor tb1 = createDataTensor(ValueType.BOOLEAN, 70, 30, 0.7);
+		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		compareDataTensors(tb1, tb2);
+	}
+
+	private BasicTensor serializeAndDeserializeHomog(BasicTensor tb1) {
 		try {
 			//serialize and deserialize tensor block
 			byte[] bdata = new byte[(int)tb1.getExactSerializedSize()];
 			DataOutput dout = new CacheDataOutput(bdata);
 			tb1.write(dout); //tb1 serialized into bdata
 			DataInput din = new CacheDataInput(bdata);
-			TensorBlock tb2 = new TensorBlock();
+			BasicTensor tb2 = new BasicTensor();
 			tb2.readFields(din); //bdata deserialized into tb2
 			return tb2;
 		}
@@ -84,12 +120,33 @@ public class TensorSerializationTest
 		}
 	}
 
-	private TensorBlock createTensorBlock(ValueType vt, int rows, int cols, double sparsity) {
-		return DataConverter.convertToTensorBlock(TestUtils.round(
-			MatrixBlock.randOperations(rows, cols, sparsity, 0, 1, "uniform", 7)), vt);
+	private DataTensor serializeAndDeserializeHeterog(DataTensor tb1) {
+		try {
+			//serialize and deserialize tensor block
+			byte[] bdata = new byte[(int)tb1.getExactSerializedSize()];
+			DataOutput dout = new CacheDataOutput(bdata);
+			tb1.write(dout); //tb1 serialized into bdata
+			DataInput din = new CacheDataInput(bdata);
+			DataTensor tb2 = new DataTensor();
+			tb2.readFields(din); //bdata deserialized into tb2
+			return tb2;
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
-	
-	private void compareTensorBlocks(TensorBlock tb1, TensorBlock tb2) {
+
+	private BasicTensor createBasicTensor(ValueType vt, int rows, int cols, double sparsity) {
+		return (BasicTensor) DataConverter.convertToTensorBlock(TestUtils.round(
+				MatrixBlock.randOperations(rows, cols, sparsity, 0, 1, "uniform", 7)), vt, true);
+	}
+
+	private DataTensor createDataTensor(ValueType vt, int rows, int cols, double sparsity) {
+		return (DataTensor) DataConverter.convertToTensorBlock(TestUtils.round(
+				MatrixBlock.randOperations(rows, cols, sparsity, 0, 1, "uniform", 7)), vt, false);
+	}
+
+	private void compareBasicTensors(BasicTensor tb1, BasicTensor tb2) {
 		Assert.assertEquals(tb1.getValueType(), tb2.getValueType());
 		Assert.assertEquals(tb1.getNumRows(), tb2.getNumRows());
 		Assert.assertEquals(tb1.getNumColumns(), tb2.getNumColumns());
@@ -97,5 +154,15 @@ public class TensorSerializationTest
 			for(int j=0; j<tb1.getNumColumns(); j++)
 				Assert.assertEquals(Double.valueOf(tb1.get(i, j)),
 					Double.valueOf(tb2.get(i, j)));
+	}
+
+	private void compareDataTensors(DataTensor tb1, DataTensor tb2) {
+		Assert.assertArrayEquals(tb1.getSchema(), tb2.getSchema());
+		Assert.assertEquals(tb1.getNumRows(), tb2.getNumRows());
+		Assert.assertEquals(tb1.getNumColumns(), tb2.getNumColumns());
+		for(int i=0; i<tb1.getNumRows(); i++)
+			for(int j=0; j<tb1.getNumColumns(); j++)
+				Assert.assertEquals(Double.valueOf(tb1.get(i, j)),
+						Double.valueOf(tb2.get(i, j)));
 	}
 }

@@ -123,7 +123,7 @@ public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 		rtplatform = ExecMode.HYBRID;
 		
 		try {
-		    TestConfiguration config = getTestConfiguration(TEST_NAME);
+			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 			
 			double spM1 = sparseM1 ? sparsity1 : sparsity2;
@@ -140,12 +140,12 @@ public class LeftIndexingUpdateInPlaceTest extends AutomatedTestBase
 			
 			//generate input data sets
 			double[][] A = getRandomMatrix(rows1, cols1, -1, 1, spM1, 1234);
-	        writeInputMatrixWithMTD("A", A, true);
+			writeInputMatrixWithMTD("A", A, true);
 			double[][] B = getRandomMatrix(rows1, colsM2, -1, 1, spM2, 5678);
-	        writeInputMatrixWithMTD("B", B, true);
-	        
-	        //run dml and r script
-	        runTest(true, false, null, 1); 
+			writeInputMatrixWithMTD("B", B, true);
+
+			//run dml and r script
+			runTest(true, false, null, 2); //2xrblk
 			runRScript(true);
 			
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

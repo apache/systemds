@@ -49,7 +49,7 @@ public class SparsityRecompileTest extends AutomatedTestBase
 	private final static String TEST_CLASS_DIR = TEST_DIR + SparsityRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 1000;
-	private final static long cols = 500000;
+	private final static long cols = 1000000;
 	private final static double sparsity = 0.00001d;
 	private final static double val = 7.0;
 	
@@ -128,21 +128,20 @@ public class SparsityRecompileTest extends AutomatedTestBase
 			DataConverter.writeMatrixToHDFS(mb, input("V"), OutputInfo.TextCellOutputInfo, mc);
 			HDFSTool.writeMetaDataFile(input("V.mtd"), ValueType.FP64, mc, OutputInfo.TextCellOutputInfo);
 			
-			boolean exceptionExpected = false;
-			runTest(true, exceptionExpected, null, -1); 
+			runTest(true, false, null, -1);
 			
-			//CHECK compiled MR jobs
-			int expectNumCompiled =   (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if) 
-				+ (testname.equals(TEST_NAME4)?2:0);//(+2 resultmerge)
-			Assert.assertEquals("Unexpected number of compiled MR jobs.", 
+			//CHECK compiled Spark jobs
+			int expectNumCompiled = (testname.equals(TEST_NAME2)?3:4) //-1 for if
+				+ (testname.equals(TEST_NAME4)?3:0);//(+2 resultmerge, 1 sum)
+			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
 		
-			//CHECK executed MR jobs
-			int expectNumExecuted = -1;
-			if( recompile ) expectNumExecuted = 0 + ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
-			else            expectNumExecuted =  (testname.equals(TEST_NAME2)?3:4) //reblock,GMR,GMR,GMR (one GMR less for if)
-						+ ((testname.equals(TEST_NAME4))?2:0); //(+2 resultmerge) 
-			Assert.assertEquals("Unexpected number of executed MR jobs.", 
+			//CHECK executed Spark jobs
+			int expectNumExecuted = recompile ?
+				((testname.equals(TEST_NAME4))?2:0) : //(+2 resultmerge)
+				(testname.equals(TEST_NAME2)?3:4) //reblock + 3 (-1 for if)
+					+ ((testname.equals(TEST_NAME4))?3:0); //(+2 resultmerge, 1 sum) 
+			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
@@ -151,11 +150,9 @@ public class SparsityRecompileTest extends AutomatedTestBase
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
-			//Assert.fail("Failed to run test: "+ex.getMessage());
 		}
 		finally {
 			CompilerConfig.FLAG_DYN_RECOMPILE = oldFlagRecompile;
 		}
 	}
-	
 }

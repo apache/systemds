@@ -50,7 +50,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 		SparsityFunctionRecompileTest.class.getSimpleName() + "/";
 	
 	private final static long rows = 1000;
-	private final static long cols = 500000;
+	private final static long cols = 1000000;
 	private final static double sparsity = 0.00001d;
 	private final static double val = 7.0;
 	
@@ -162,7 +162,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-args",
+			programArgs = new String[]{"-explain", "-args",
 				input("V"), Double.toString(val), output("R") };
 
 			CompilerConfig.FLAG_DYN_RECOMPILE = recompile;
@@ -180,7 +180,7 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			
 			//CHECK compiled Spark jobs
 			int expectNumCompiled = 1 //rblk
-				+ (testname.equals(TEST_NAME2) ? (IPA?0:5) : (IPA?1:4)) //if no write on IPA
+				+ (testname.equals(TEST_NAME2) ? (IPA?2:5) : (IPA?3:4)) //if no write on IPA
 				+ (testname.equals(TEST_NAME4)? 2 : 0); //(+2 parfor resultmerge);
 			Assert.assertEquals("Unexpected number of compiled Spark jobs.", 
 				expectNumCompiled, Statistics.getNoOfCompiledSPInst());
@@ -188,8 +188,8 @@ public class SparsityFunctionRecompileTest extends AutomatedTestBase
 			//CHECK executed Spark jobs
 			int expectNumExecuted = recompile ? 
 				(testname.equals(TEST_NAME4)?2:0) : //(2x resultmerge) 
-				(testname.equals(TEST_NAME2) ? (IPA?1:5) :
-					(testname.equals(TEST_NAME4) ? (IPA?4:7) : (IPA?2:5)));
+				(testname.equals(TEST_NAME2) ? (IPA?3:5) :
+					(testname.equals(TEST_NAME4) ? (IPA?6:7) : (IPA?4:5)));
 			Assert.assertEquals("Unexpected number of executed Spark jobs.", 
 				expectNumExecuted, Statistics.getNoOfExecutedSPInst());
 

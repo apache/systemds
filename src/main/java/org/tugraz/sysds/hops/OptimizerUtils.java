@@ -325,22 +325,6 @@ public class OptimizerUtils
 			case 4:
 				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O4_GLOBAL_TIME_MEMORY.ordinal());
 				break;
-			// opt level 4: debug mode (no interfering rewrites)
-			case 5:
-				cconf.set(ConfigType.OPT_LEVEL, OptimizationLevel.O5_DEBUG_MODE.ordinal());
-				ALLOW_CONSTANT_FOLDING = false;
-				ALLOW_COMMON_SUBEXPRESSION_ELIMINATION = false;
-				ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-				ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
-				ALLOW_BRANCH_REMOVAL = false;
-				ALLOW_SIZE_EXPRESSION_EVALUATION = false;
-				ALLOW_WORSTCASE_SIZE_EXPRESSION_EVALUATION = false;
-				ALLOW_RAND_JOB_RECOMPILE = false;
-				ALLOW_SUM_PRODUCT_REWRITES = false;
-				ALLOW_SPLIT_HOP_DAGS = false;
-				cconf.set(ConfigType.ALLOW_DYN_RECOMPILATION, false);
-				cconf.set(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS, false);
-				break;
 			
 			// opt level 6 and7: SPOOF w/o fused operators, otherwise same as O2
 			// (hidden optimization levels not documented on purpose, as they will

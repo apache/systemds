@@ -240,10 +240,11 @@ public class MapMultChainTest extends AutomatedTestBase
 			
 			//check compiled/executed jobs
 			int numInputs = testname.equals(TEST_NAME1) ? 2 : 3;
-			int expectedNumCompiled = numInputs
-				+ ((instType==ExecType.SPARK)?(sumProductRewrites?1:2):0);
+			int expectedNumCompiled = numInputs + ((instType==ExecType.SPARK) ? 
+				(numInputs + (sumProductRewrites?2:((numInputs==2)?4:5))):0);
 			checkNumCompiledSparkInst(expectedNumCompiled); 
-			checkNumExecutedSparkInst(expectedNumCompiled - numInputs);
+			checkNumExecutedSparkInst(expectedNumCompiled 
+				- ((instType==ExecType.CP)?numInputs:0));
 		}
 		finally {
 			rtplatform = platformOld;

@@ -269,8 +269,9 @@ public class InterProceduralAnalysis
 			MatrixObject mo2 = (MatrixObject)callVars.get(fstmt.getOutputParams().get(0).getName());
 			ret &= mo.getNumRows() == mo2.getNumRows() && mo.getNumColumns() == mo2.getNumColumns();
 		
-			//reset function
+			//reset function (note: mo might have been replaced)
 			mo.getDataCharacteristics().setDimension(-1, -1);
+			callVars.put(fstmt.getInputParams().get(0).getName(), mo);
 			for (StatementBlock sbi : fstmt.getBody())
 				propagateStatisticsAcrossBlock(sbi, callVars, fcallSizes, fnStack, false);
 		}

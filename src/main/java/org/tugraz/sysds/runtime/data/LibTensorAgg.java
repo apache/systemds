@@ -129,11 +129,13 @@ public class LibTensorAgg {
 		// TODO support for all shapes
 		if (!aop.correctionExists) {
 			if (aop.increOp.fn instanceof Plus) {
+				int[] first = new int[in.getNumDims()];
 				switch (in.getValueType()) {
 					case INT64:
+						aggVal.set(first, (Long)in.get(first) + (Long)aggVal.get(first));
+						break;
 					case INT32:
-						int[] first = new int[in.getNumDims()];
-						aggVal.set(first, in.getLong(first) + aggVal.getLong(first));
+						aggVal.set(first, (Integer)in.get(first) + (Integer)aggVal.get(first));
 						break;
 					default:
 						aggVal.set(0, 0, in.get(0, 0) + aggVal.get(0, 0));

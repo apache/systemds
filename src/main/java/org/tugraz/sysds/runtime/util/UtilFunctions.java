@@ -32,6 +32,7 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.data.SparseBlock;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
@@ -404,11 +405,14 @@ public class UtilFunctions
 	public static double objectToDouble(ValueType vt, Object in) {
 		if( in == null )  return 0;
 		switch( vt ) {
+			case FP64:    return (Double)in;
+			case FP32:    return (Float)in;
+			case INT64:   return (Long)in;
+			case INT32:   return (Integer)in;
+			case BOOLEAN: return ((Boolean)in) ? 1 : 0;
 			case STRING:  return !((String)in).isEmpty() ? Double.parseDouble((String)in) : 0;
-			case BOOLEAN: return ((Boolean)in)?1d:0d;
-			case INT64:     return (Long)in;
-			case FP64:  return (Double)in;
-			default: throw new RuntimeException("Unsupported value type: "+vt);
+			default: 
+				throw new DMLRuntimeException("Unsupported value type: "+vt);
 		}
 	}
 

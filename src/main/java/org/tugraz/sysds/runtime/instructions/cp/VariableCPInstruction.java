@@ -643,23 +643,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				TensorBlock tBlock = ec.getTensorInput(getInput1().getName());
 				if (tBlock.getNumDims() != 2 || tBlock.getNumRows() != 1 || tBlock.getNumColumns() != 1)
 					throw new DMLRuntimeException("Dimension mismatch - unable to cast tensor '" + getInput1().getName() + "' to scalar.");
-				ValueType vt = tBlock instanceof BasicTensor ? ((BasicTensor) tBlock).getValueType() : ((DataTensor) tBlock).getColValueType(0);
-				switch (vt) {
-					case STRING:
-						String str = tBlock.getString(new int[] {0, 0});
-						ec.setScalarOutput(output.getName(), new StringObject(str));
-						break;
-					case INT64:
-					case INT32:
-					case BOOLEAN:
-						long lvalue = UtilFunctions.toLong(tBlock.get(0, 0));
-						ec.setScalarOutput(output.getName(), new IntObject(lvalue));
-						break;
-					default:
-						double value = tBlock.get(0,0);
-						ec.setScalarOutput(output.getName(), new DoubleObject(value));
-						break;
-				}
+				ValueType vt = tBlock instanceof BasicTensor ?
+					((BasicTensor) tBlock).getValueType() : ((DataTensor) tBlock).getColValueType(0);
+				ec.setScalarOutput(output.getName(), ScalarObjectFactory
+					.createScalarObject(vt, tBlock.get(new int[] {0, 0})));
 				ec.releaseTensorInput(getInput1().getName());
 			}
 			else if( getInput1().getDataType().isList() ) {

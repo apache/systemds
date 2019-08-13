@@ -37,74 +37,74 @@ public class TensorSerializationTest
 	@Test
 	public void testSerializeBasicTensorFP32() {
 		BasicTensor tb1 = createBasicTensor(ValueType.FP32, 70, 30, 0.7);
-		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		BasicTensor tb2 = serializeAndDeserializeBasicTensor(tb1);
 		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
 	public void testSerializeBasicTensorFP64() {
 		BasicTensor tb1 = createBasicTensor(ValueType.FP64, 70, 30, 0.7);
-		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		BasicTensor tb2 = serializeAndDeserializeBasicTensor(tb1);
 		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
 	public void testSerializeBasicTensorINT32() {
 		BasicTensor tb1 = createBasicTensor(ValueType.INT32, 70, 30, 0.7);
-		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		BasicTensor tb2 = serializeAndDeserializeBasicTensor(tb1);
 		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
 	public void testSerializeBasicTensorINT64() {
 		BasicTensor tb1 = createBasicTensor(ValueType.INT64, 70, 30, 0.7);
-		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		BasicTensor tb2 = serializeAndDeserializeBasicTensor(tb1);
 		compareBasicTensors(tb1, tb2);
 	}
 	
 	@Test
 	public void testSerializeBasicTensorBoolean() {
 		BasicTensor tb1 = createBasicTensor(ValueType.BOOLEAN, 70, 30, 0.7);
-		BasicTensor tb2 = serializeAndDeserializeHomog(tb1);
+		BasicTensor tb2 = serializeAndDeserializeBasicTensor(tb1);
 		compareBasicTensors(tb1, tb2);
 	}
 
 	@Test
 	public void testSerializeDataTensorFP32() {
 		DataTensor tb1 = createDataTensor(ValueType.FP32, 70, 30, 0.7);
-		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		DataTensor tb2 = serializeAndDeserializeDataTensor(tb1);
 		compareDataTensors(tb1, tb2);
 	}
 
 	@Test
 	public void testSerializeDataTensorFP64() {
 		DataTensor tb1 = createDataTensor(ValueType.FP64, 70, 30, 0.7);
-		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		DataTensor tb2 = serializeAndDeserializeDataTensor(tb1);
 		compareDataTensors(tb1, tb2);
 	}
 
 	@Test
 	public void testSerializeDataTensorINT32() {
 		DataTensor tb1 = createDataTensor(ValueType.INT32, 70, 30, 0.7);
-		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		DataTensor tb2 = serializeAndDeserializeDataTensor(tb1);
 		compareDataTensors(tb1, tb2);
 	}
 
 	@Test
 	public void testSerializeDataTensorINT64() {
 		DataTensor tb1 = createDataTensor(ValueType.INT64, 70, 30, 0.7);
-		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		DataTensor tb2 = serializeAndDeserializeDataTensor(tb1);
 		compareDataTensors(tb1, tb2);
 	}
 
 	@Test
 	public void testSerializeDataTensorBoolean() {
 		DataTensor tb1 = createDataTensor(ValueType.BOOLEAN, 70, 30, 0.7);
-		DataTensor tb2 = serializeAndDeserializeHeterog(tb1);
+		DataTensor tb2 = serializeAndDeserializeDataTensor(tb1);
 		compareDataTensors(tb1, tb2);
 	}
 
-	private BasicTensor serializeAndDeserializeHomog(BasicTensor tb1) {
+	private BasicTensor serializeAndDeserializeBasicTensor(BasicTensor tb1) {
 		try {
 			//serialize and deserialize tensor block
 			byte[] bdata = new byte[(int)tb1.getExactSerializedSize()];
@@ -120,7 +120,7 @@ public class TensorSerializationTest
 		}
 	}
 
-	private DataTensor serializeAndDeserializeHeterog(DataTensor tb1) {
+	private DataTensor serializeAndDeserializeDataTensor(DataTensor tb1) {
 		try {
 			//serialize and deserialize tensor block
 			byte[] bdata = new byte[(int)tb1.getExactSerializedSize()];

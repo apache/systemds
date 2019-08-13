@@ -990,7 +990,7 @@ public class DataConverter
 			// TODO use sparse iterator for sparse block
 			int[] ix = new int[tb.getNumDims()];
 			for (int i = 0; i < tb.getLength(); i++) {
-				String str = tb.getString(ix);
+				String str = tb.get(ix).toString();
 				if (str != null && !str.isEmpty() && Double.parseDouble(str) != 0) {
 					for (int item : ix) {
 						sb.append(item).append(separator);
@@ -1060,22 +1060,27 @@ public class DataConverter
 	private static void concatenateTensorValue(BasicTensor tb, StringBuilder sb, DecimalFormat df, int[] ix) {
 		switch (tb.getValueType()) {
 			case FP32:
+				Float valuef = (Float) tb.get(ix);
+				if (valuef.equals(-0.0f))
+					valuef = 0.0f;
+				sb.append(dfFormat(df, valuef));
+				break;
 			case FP64:
-				Double value = tb.get(ix);
+				Double value = (Double) tb.get(ix);
 				if (value.equals(-0.0d))
 					value = 0.0;
 				sb.append(dfFormat(df, value));
 				break;
 			case INT32:
 			case INT64:
-				sb.append((long) tb.get(ix));
+				sb.append(tb.get(ix));
 				break;
 			case BOOLEAN:
-				sb.append(Boolean.toString(tb.get(ix) != 0).toUpperCase());
+				sb.append(((Boolean) tb.get(ix)).toString().toUpperCase());
 				break;
 			case STRING:
 			case UNKNOWN:
-				sb.append("\"").append(tb.getString(ix)).append("\"");
+				sb.append("\"").append(tb.get(ix)).append("\"");
 				break;
 		}
 	}

@@ -160,9 +160,9 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 				AggregateUnaryOperator au_op = (AggregateUnaryOperator) _optr;
 				if (input1.getDataType() == DataType.MATRIX) {
 					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
-
+					
 					MatrixBlock resultBlock = (MatrixBlock) matBlock.aggregateUnaryOperations(au_op, new MatrixBlock(),
-							matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
+						matBlock.getNumRows(), matBlock.getNumColumns(), new MatrixIndexes(1, 1), true);
 
 					ec.releaseMatrixInput(input1.getName());
 					if (output.getDataType() == DataType.SCALAR) {
@@ -172,31 +172,21 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction
 						// since the computed value is a scalar, allocate a "temp" output matrix
 						ec.setMatrixOutput(output_name, resultBlock);
 					}
-				} else if (input1.getDataType() == DataType.TENSOR) {
+				} 
+				else if (input1.getDataType() == DataType.TENSOR) {
 					// TODO support DataTensor
 					BasicTensor basicTensor = (BasicTensor) ec.getTensorInput(input1.getName());
 
 					BasicTensor resultBlock = basicTensor.aggregateUnaryOperations(au_op, new BasicTensor());
 
 					ec.releaseTensorInput(input1.getName());
-					if(output.getDataType() == DataType.SCALAR){
-						switch (input1.getValueType()) {
-							case BOOLEAN:
-							case INT64:
-							case INT32:
-								// Calculate accurate result
-								IntObject i = new IntObject(resultBlock.getLong(new int[]{0, 0}));
-								ec.setScalarOutput(output_name, i);
-								break;
-							default:
-								DoubleObject out = new DoubleObject(resultBlock.get(new int[]{0, 0}));
-								ec.setScalarOutput(output_name, out);
-								break;
-						}
-					} else{
+					if(output.getDataType() == DataType.SCALAR)
+						ec.setScalarOutput(output_name, ScalarObjectFactory.createScalarObject(
+							input1.getValueType(), resultBlock.get(new int[]{0, 0})));
+					else
 						ec.setTensorOutput(output_name, resultBlock);
-					}
-				} else {
+				}
+				else {
 					throw new DMLRuntimeException(opcode + " only supported on matrix or tensor.");
 				}
 			}

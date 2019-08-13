@@ -96,19 +96,11 @@ public abstract class TensorBlock implements CacheBlock
 
 	public abstract long getNonZeros();
 
-	public abstract double get(int[] ix);
+	public abstract Object get(int[] ix);
 
 	public abstract double get(int r, int c);
 
-	public abstract long getLong(int[] ix);
-
-	public abstract String getString(int[] ix);
-
-	public abstract void set(int[] ix, double v);
+	public abstract void set(int[] ix, Object v);
 
 	public abstract void set(int r, int c, double v);
-
-	public abstract void set(int[] ix, long v);
-
-	public abstract void set(int[] ix, String v);
 }

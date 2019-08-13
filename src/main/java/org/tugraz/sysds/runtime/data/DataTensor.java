@@ -16,7 +16,7 @@
 
 package org.tugraz.sysds.runtime.data;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.math.IntRange;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -27,28 +27,59 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class DataTensor extends TensorBlock {
-	// TODO consider using a single BasicTensor for all columns of a certain DataType
-	private BasicTensor[] _colsdata = null;
+	private static final int VALID_VALUE_TYPES_LENGTH = ValueType.values().length - 1;
+
+	private BasicTensor[] _colsdata = new BasicTensor[VALID_VALUE_TYPES_LENGTH];
 	private ValueType[] _schema = null;
+	private int[] _colsToIx = null;
+	private int[][] _ixToCols = null;
 
 	public DataTensor() {
 		this(new ValueType[0], DEFAULT_DIMS);
 	}
 
 	public DataTensor(int ncols, ValueType vt) {
-		_dims = new int[]{0, ncols};
-		_schema = new ValueType[ncols];
-		Arrays.fill(_schema, vt);
+		this(vt, new int[]{0, ncols});
 	}
 
 	public DataTensor(ValueType[] schema) {
 		_dims = new int[]{0, schema.length};
 		_schema = schema;
+		_colsToIx = new int[_schema.length];
+		_ixToCols = new int[VALID_VALUE_TYPES_LENGTH][];
+		int[] typeIxCounter = new int[VALID_VALUE_TYPES_LENGTH];
+		for (int i = 0; i < schema.length; i++) {
+			int type = schema[i].ordinal();
+			_colsToIx[i] = typeIxCounter[type]++;
+		}
+		for (int i = 0; i < schema.length; i++) {
+			int type = schema[i].ordinal();
+			if (_ixToCols[type] == null) {
+				_ixToCols[type] = new int[typeIxCounter[type]];
+				typeIxCounter[type] = 0;
+			}
+			_ixToCols[type][typeIxCounter[type]++] = i;
+		}
 	}
 
 	public DataTensor(ValueType[] schema, int[] dims) {
 		_dims = dims;
 		_schema = schema;
+		_colsToIx = new int[_schema.length];
+		_ixToCols = new int[VALID_VALUE_TYPES_LENGTH][];
+		int[] typeIxCounter = new int[VALID_VALUE_TYPES_LENGTH];
+		for (int i = 0; i < schema.length; i++) {
+			int type = schema[i].ordinal();
+			_colsToIx[i] = typeIxCounter[type]++;
+		}
+		for (int i = 0; i < schema.length; i++) {
+			int type = schema[i].ordinal();
+			if (_ixToCols[type] == null) {
+				_ixToCols[type] = new int[typeIxCounter[type]];
+				typeIxCounter[type] = 0;
+			}
+			_ixToCols[type][typeIxCounter[type]++] = i;
+		}
 		reset();
 	}
 
@@ -56,22 +87,43 @@ public class DataTensor extends TensorBlock {
 		_dims = dims;
 		_schema = new ValueType[getDim(1)];
 		Arrays.fill(_schema, vt);
+		_colsToIx = new IntRange(0, getDim(1)).toArray();
+		_ixToCols = new int[VALID_VALUE_TYPES_LENGTH][];
+		_ixToCols[vt.ordinal()] = new IntRange(0, getDim(1)).toArray();
 		reset();
 	}
 
 	public DataTensor(ValueType[] schema, int[] dims, String[][] data) {
-		_dims = dims;
-		_schema = schema;
+		this(schema, dims);
 		allocateBlock();
 		for (int i = 0; i < schema.length; i++) {
-			fillCol(i, data[i]);
+			int[] ix = new int[dims.length];
+			ix[1] = _colsToIx[i];
+			BasicTensor current = _colsdata[schema[i].ordinal()];
+			for (int j = 0; j < data[i].length; j++) {
+				current.set(ix, data[i][j]);
+				current.getNextIndexes(ix);
+				if (ix[1] != _colsToIx[i]) {
+					// We want to stay in the current column
+					if (ix[1] == 0)
+						ix[1] = _colsToIx[i];
+					else {
+						ix[1] = _colsToIx[i];
+						ix[0]++;
+					}
+				}
+			}
 		}
 	}
 
 	public DataTensor(double val) {
 		_dims = new int[]{1, 1};
 		_schema = new ValueType[]{ValueType.FP64};
-		_colsdata = new BasicTensor[]{new BasicTensor(val)};
+		_colsToIx = new int[] {0};
+		_ixToCols = new int[VALID_VALUE_TYPES_LENGTH][];
+		_ixToCols[ValueType.FP64.ordinal()] = new int[] {0};
+		_colsdata = new BasicTensor[VALID_VALUE_TYPES_LENGTH];
+		_colsdata[ValueType.FP64.ordinal()] = new BasicTensor(val);
 	}
 
 	public DataTensor(DataTensor that) {
@@ -86,68 +138,79 @@ public class DataTensor extends TensorBlock {
 	@Override
 	public void reset(int[] dims) {
 		if (dims.length < 2)
-			throw new DMLRuntimeException("HeterogTensor.reset(int[]) invalid number of tensor dimensions: " + dims.length);
+			throw new DMLRuntimeException("DataTensor.reset(int[]) invalid number of tensor dimensions: " + dims.length);
 		if (dims[1] > _dims[1])
-			throw new DMLRuntimeException("HeterogTensor.reset(int[]) columns can not be added without a provided schema," +
+			throw new DMLRuntimeException("DataTensor.reset(int[]) columns can not be added without a provided schema," +
 					" use reset(int[],ValueType[]) instead");
-		for (int i = 0; i < dims.length; i++)
+		for (int i = 0; i < dims.length; i++) {
 			if (dims[i] < 0)
-				throw new DMLRuntimeException("HeterogTensor.reset(int[]) invalid  dimension " + i + ": " + dims[i]);
-		_dims = dims;
-		if (_schema.length < getDim(1))
-			_schema = Arrays.copyOfRange(_schema, 0, getDim(1));
-		if (_colsdata == null) {
-			allocateBlock();
-		} else {
-			//BasicTensor[] newCols = new BasicTensor[getDim(1)];
-			if (_colsdata.length > getDim(1))
-				_colsdata = Arrays.copyOfRange(_colsdata, 0, getDim(1));
-			int[] blockDims = toInternalDims(dims);
-			for (BasicTensor colsdata : _colsdata) {
-				colsdata.reset(blockDims);
-			}
+				throw new DMLRuntimeException("DataTensor.reset(int[]) invalid  dimension " + i + ": " + dims[i]);
 		}
+		_dims = dims;
+		if (getDim(1) < _schema.length) {
+			ValueType[] schema = new ValueType[getDim(1)];
+			System.arraycopy(_schema, 0, schema, 0, getDim(1));
+			_schema = schema;
+		}
+		reset(_dims, _schema);
 	}
 
 	public void reset(int[] dims, ValueType[] schema) {
 		if (dims.length < 2)
-			throw new DMLRuntimeException("HeterogTensor.reset(int[],ValueType[]) invalid number of tensor dimensions: " + dims.length);
+			throw new DMLRuntimeException("DataTensor.reset(int[],ValueType[]) invalid number of tensor dimensions: " + dims.length);
 		if (dims[1] != schema.length)
-			throw new DMLRuntimeException("HeterogTensor.reset(int[],ValueType[]) column dimension and schema length does not match");
+			throw new DMLRuntimeException("DataTensor.reset(int[],ValueType[]) column dimension and schema length does not match");
 		for (int i = 0; i < dims.length; i++)
 			if (dims[i] < 0)
-				throw new DMLRuntimeException("HeterogTensor.reset(int[],ValueType[]) invalid  dimension " + i + ": " + dims[i]);
+				throw new DMLRuntimeException("DataTensor.reset(int[],ValueType[]) invalid  dimension " + i + ": " + dims[i]);
 		_dims = dims;
 		_schema = schema;
+		_colsToIx = new int[_schema.length];
+		int[] typeIxCounter = new int[VALID_VALUE_TYPES_LENGTH];
+		for (int i = 0; i < schema.length; i++) {
+			int type = schema[i].ordinal();
+			_colsToIx[i] = typeIxCounter[type]++;
+		}
+		int[] colCounters = new int[VALID_VALUE_TYPES_LENGTH];
+		for (int i = 0; i < getDim(1); i++) {
+			int type = _schema[i].ordinal();
+			if (_ixToCols[type] == null || _ixToCols[type].length != typeIxCounter[type]) {
+				_ixToCols[type] = new int[typeIxCounter[type]];
+			}
+			_ixToCols[type][colCounters[type]++] = i;
+		}
+		// typeIxCounter now has the length of the BasicTensors
 		if (_colsdata == null) {
 			allocateBlock();
 		} else {
-			BasicTensor[] newCols = new BasicTensor[getDim(1)];
-			int[] blockDims = toInternalDims(dims);
-			for (int c = 0; c < getDim(1); c++) {
-				if (_colsdata[c]._vt != schema[c]) {
-					newCols[c] = new BasicTensor(schema[c], blockDims, false);
+			for (int i = 0; i < _colsdata.length; i++) {
+				if (_colsdata[i] != null) {
+					_colsdata[i].reset(toInternalDims(dims, typeIxCounter[i]));
 				}
-				else {
-					newCols[c] = _colsdata[c];
+				else if (typeIxCounter[i] != 0) {
+					int[] colDims = toInternalDims(_dims, typeIxCounter[i]);
+					_colsdata[i] = new BasicTensor(ValueType.values()[i], colDims, false);
+					_colsdata[i].allocateBlock();
 				}
-				newCols[c].reset(blockDims);
 			}
-			_colsdata = newCols;
 		}
 	}
 
 	@Override
 	public DataTensor allocateBlock() {
 		if (_colsdata == null)
-			_colsdata = new BasicTensor[getDim(1)];
-		// All column tensors can share the same dimension array
-		// since their dimension should always be equal.
-		int[] blockDims = toInternalDims(_dims);
-		for (int i = 0; i < _schema.length; i++) {
-			// TODO sparse
-			_colsdata[i] = new BasicTensor(_schema[i], blockDims, false);
-			_colsdata[i].allocateBlock();
+			// -1 because of unknown
+			_colsdata = new BasicTensor[VALID_VALUE_TYPES_LENGTH];
+		int[] colDataColumnLength = new int[_colsdata.length];
+		for (ValueType valueType : _schema)
+			colDataColumnLength[valueType.ordinal()]++;
+		for (int i = 0; i < _colsdata.length; i++) {
+			if (colDataColumnLength[i] != 0) {
+				int[] dims = toInternalDims(_dims, colDataColumnLength[i]);
+				// TODO sparse
+				_colsdata[i] = new BasicTensor(ValueType.values()[i], dims, false);
+				_colsdata[i].allocateBlock();
+			}
 		}
 		return this;
 	}
@@ -157,7 +220,7 @@ public class DataTensor extends TensorBlock {
 		if (_colsdata == null)
 			return false;
 		for (BasicTensor block : _colsdata) {
-			if (block.isAllocated())
+			if (block != null && block.isAllocated())
 				return true;
 		}
 		return false;
@@ -169,7 +232,7 @@ public class DataTensor extends TensorBlock {
 			return true;
 		}
 		for (BasicTensor tb : _colsdata) {
-			if (!tb.isEmpty(safe))
+			if (tb != null && !tb.isEmpty(safe))
 				return false;
 		}
 		return true;
@@ -183,7 +246,8 @@ public class DataTensor extends TensorBlock {
 		}
 		long nnz = 0;
 		for (BasicTensor bt : _colsdata) {
-			nnz += bt.getNonZeros();
+			if (bt != null)
+				nnz += bt.getNonZeros();
 		}
 		return nnz;
 	}
@@ -197,115 +261,47 @@ public class DataTensor extends TensorBlock {
 	}
 
 	@Override
-	public double get(int[] ix) {
-		int[] internalIx = toInternalIx(ix);
-		return _colsdata[ix[1]].get(internalIx);
+	public Object get(int[] ix) {
+		int columns = ix[1];
+		int[] internalIx = toInternalIx(ix, _colsToIx[columns]);
+		return _colsdata[_schema[columns].ordinal()].get(internalIx);
 	}
 
 	@Override
 	public double get(int r, int c) {
 		if (getNumDims() != 2)
-			throw new DMLRuntimeException("HeterogTensor.get(int,int) dimension mismatch: expected=2 actual=" + getNumDims());
-		return _colsdata[c].get(r, 0);
+			throw new DMLRuntimeException("DataTensor.get(int,int) dimension mismatch: expected=2 actual=" + getNumDims());
+		return _colsdata[_schema[c].ordinal()].get(r, _colsToIx[c]);
 	}
 
 	@Override
-	public long getLong(int[] ix) {
-		int[] internalIx = toInternalIx(ix);
-		return _colsdata[ix[1]].getLong(internalIx);
-	}
-
-	@Override
-	public String getString(int[] ix) {
-		int[] internalIx = toInternalIx(ix);
-		return _colsdata[ix[1]].getString(internalIx);
-	}
-
-	@Override
-	public void set(int[] ix, double v) {
-		int[] internalIx = toInternalIx(ix);
-		_colsdata[ix[1]].set(internalIx, v);
+	public void set(int[] ix, Object v) {
+		int columns = ix[1];
+		int[] internalIx = toInternalIx(ix, _colsToIx[columns]);
+		_colsdata[_schema[columns].ordinal()].set(internalIx, v);
 	}
 
 	@Override
 	public void set(int r, int c, double v) {
 		if (getNumDims() != 2)
-			throw new DMLRuntimeException("HeterogTensor.set(int,int,double) dimension mismatch: expected=2 actual=" + getNumDims());
-		_colsdata[c].set(r, 0, v);
-	}
-
-	@Override
-	public void set(int[] ix, long v) {
-		int[] internalIx = toInternalIx(ix);
-		_colsdata[ix[1]].set(internalIx, v);
-	}
-
-	@Override
-	public void set(int[] ix, String v) {
-		int[] internalIx = toInternalIx(ix);
-		_colsdata[ix[1]].set(internalIx, v);
+			throw new DMLRuntimeException("DataTensor.set(int,int,double) dimension mismatch: expected=2 actual=" + getNumDims());
+		_colsdata[_schema[c].ordinal()].set(r, _colsToIx[c], v);
 	}
 
 	public void copy(DataTensor that) {
 		_dims = that._dims.clone();
 		_schema = that._schema.clone();
+		_colsToIx = that._colsToIx.clone();
 		if (that.isAllocated()) {
-			allocateBlock();
 			if (that.isEmpty(false)) {
-				reset();
 				return;
 			}
 			for (int i = 0; i < _colsdata.length; i++) {
-				_colsdata[i].copy(that._colsdata[i]);
+				if (that._colsdata[i] != null) {
+					_colsdata[i] = new BasicTensor(that._colsdata[i]);
+				}
 			}
 		}
-	}
-
-	public void fillCol(int col, String[] data) {
-		int[] ix = new int[getNumDims()];
-		for (String datum : data) {
-			_colsdata[col].set(ix, datum);
-			getNextIndexes(ix);
-		}
-	}
-
-	public void fillCol(int col, double[] data) {
-		int[] ix = new int[getNumDims()];
-		for (double datum : data) {
-			_colsdata[col].set(ix, datum);
-			getNextIndexes(ix);
-		}
-	}
-
-	public void fillCol(int col, long[] data) {
-		int[] ix = new int[getNumDims()];
-		for (long datum : data) {
-			_colsdata[col].set(ix, datum);
-			getNextIndexes(ix);
-		}
-	}
-
-	public BasicTensor getCol(int col) {
-		return _colsdata[col];
-	}
-
-	public DataTensor appendCol(BasicTensor data) {
-		// validate data dimensions
-		if (_dims.length != data.getNumDims()) {
-			throw new DMLRuntimeException("Append column number of dimensions mismatch: expected=" + _dims.length +
-					" actual=" + data.getNumDims());
-		}
-		if (_dims[0] != data.getDim(0))
-			throw new DMLRuntimeException("Append column row dimension mismatch: expected=" + _dims[0] + " actual=" + data.getDim(0));
-		for (int i = 2; i < data.getNumDims(); i++) {
-			if (_dims[i] != data.getDim(i))
-				throw new DMLRuntimeException("Append column " + i + " dimension mismatch: expected=" + _dims[i] +
-						" actual=" + data.getDim(i));
-		}
-		_dims[1]++;
-		_schema = (ValueType[]) ArrayUtils.add(_schema, data.getValueType());
-		_colsdata = (BasicTensor[]) ArrayUtils.add(_colsdata, data);
-		return this;
 	}
 
 	@Override
@@ -317,10 +313,13 @@ public class DataTensor extends TensorBlock {
 	@Override
 	public long getExactSerializedSize() {
 		//header size (num dims, dims)
-		long size = 4 * (1 + _dims.length);
+		long size = 4 * (1 + _dims.length) + getDim(1) * (1 + 4);
 		//colsdata serialized representation
-		for (BasicTensor ht : _colsdata)
-			size += ht.getExactSerializedSize();
+		for (BasicTensor bt : _colsdata) {
+			size += 1; // flag
+			if (bt != null)
+				size += bt.getExactSerializedSize();
+		}
 		return size;
 	}
 
@@ -363,9 +362,21 @@ public class DataTensor extends TensorBlock {
 		out.writeInt(getNumDims()); // num dims
 		for (int i = 0; i < getNumDims(); i++)
 			out.writeInt(getDim(i)); // dim
-		//step 2: write tensors (read schema from those)
-		for (int i = 0; i < getDim(1); i++)
-			_colsdata[i].write(out);
+		//step 2: write schema and colIndexes
+		for (int i = 0; i < getDim(1); i++) {
+			out.writeByte(_schema[i].ordinal());
+			out.writeInt(_colsToIx[i]);
+		}
+		//step 3: write basic tensors
+		for (BasicTensor colsdatum : _colsdata) {
+			//present flag
+			if (colsdatum == null)
+				out.writeBoolean(false);
+			else {
+				out.writeBoolean(true);
+				colsdatum.write(out);
+			}
+		}
 	}
 
 	@Override
@@ -375,23 +386,29 @@ public class DataTensor extends TensorBlock {
 		for (int i = 0; i < _dims.length; i++)
 			_dims[i] = in.readInt();
 		_schema = new ValueType[getDim(1)];
-		_colsdata = new BasicTensor[getDim(1)];
+		_colsToIx = new int[getDim(1)];
 		for (int i = 0; i < getDim(1); i++) {
-			_colsdata[i] = new BasicTensor();
-			_colsdata[i].readFields(in);
-			_schema[i] = _colsdata[i]._vt;
+			_schema[i] = ValueType.values()[in.readByte()];
+			_colsToIx[i] = in.readInt();
+		}
+		_colsdata = new BasicTensor[VALID_VALUE_TYPES_LENGTH];
+		for (int i = 0; i < _colsdata.length; i++) {
+			if (in.readBoolean()) {
+				_colsdata[i] = new BasicTensor();
+				_colsdata[i].readFields(in);
+			}
 		}
 	}
 
-	private static int[] toInternalIx(int[] ix) {
+	private static int[] toInternalIx(int[] ix, int col) {
 		int[] internalIx = ix.clone();
-		internalIx[1] = 0;
+		internalIx[1] = col;
 		return internalIx;
 	}
 
-	private static int[] toInternalDims(int[] dims) {
+	private static int[] toInternalDims(int[] dims, int cols) {
 		int[] internalDims = dims.clone();
-		internalDims[1] = 1;
+		internalDims[1] = cols;
 		return internalDims;
 	}
 }

@@ -354,13 +354,28 @@ public class BasicTensor extends TensorBlock implements Externalizable
 	// Basic modification
 
 	@Override
-	public double get(int[] ix) {
+	public Object get(int[] ix) {
 		if (_sparse) {
 			// TODO: Implement sparse
 			throw new NotImplementedException();
-			//return _sparseBlock.get(ix);
-		} else {
-			return _denseBlock.get(ix);
+		}
+		else {
+			switch (_vt) {
+				case FP64:
+					return _denseBlock.get(ix);
+				case FP32:
+					return (float)_denseBlock.get(ix);
+				case INT64:
+					return _denseBlock.getLong(ix);
+				case INT32:
+					return (int)_denseBlock.getLong(ix);
+				case BOOLEAN:
+					return _denseBlock.get(ix) != 0;
+				case STRING:
+					return _denseBlock.getString(ix);
+				default:
+					throw new DMLRuntimeException("Unsupported value type: "+_vt);
+			}
 		}
 	}
 
@@ -378,32 +393,24 @@ public class BasicTensor extends TensorBlock implements Externalizable
 	}
 
 	@Override
-	public long getLong(int[] ix) {
-		if (_sparse) {
-			// TODO: Implement sparse
-			throw new NotImplementedException();
-		} else {
-			return _denseBlock.getLong(ix);
-		}
-	}
-
-	@Override
-	public String getString(int[] ix) {
-		if (_sparse) {
-			// TODO: Implement sparse
-			throw new NotImplementedException();
-			//return _sparseBlock.get(ix);
-		} else {
-			return _denseBlock.getString(ix);
-		}
-	}
-
-	@Override
-	public void set(int[] ix, double v) {
+	public void set(int[] ix, Object v) {
 		if (_sparse) {
 			throw new NotImplementedException();
 		} else {
-			_denseBlock.set(ix, v);
+			if (v instanceof Double)
+				_denseBlock.set(ix, (Double)v);
+			else if (v instanceof Float)
+				_denseBlock.set(ix, (Float)v);
+			else if (v instanceof Long)
+				_denseBlock.set(ix, (Long)v);
+			else if (v instanceof Integer)
+				_denseBlock.set(ix, (Integer)v);
+			else if (v instanceof Boolean)
+				_denseBlock.set(ix, ((Boolean)v) ? 1.0 : 0.0);
+			else if (v instanceof String)
+				_denseBlock.set(ix, (String)v);
+			else
+				throw new DMLRuntimeException("BasicTensor.set(int[],Object) is not implemented for the given Object");
 		}
 	}
 
@@ -415,24 +422,6 @@ public class BasicTensor extends TensorBlock implements Externalizable
 			throw new NotImplementedException();
 		} else {
 			_denseBlock.set(r, c, v);
-		}
-	}
-
-	@Override
-	public void set(int[] ix, long v) {
-		if (_sparse) {
-			throw new NotImplementedException();
-		} else {
-			_denseBlock.set(ix, v);
-		}
-	}
-
-	@Override
-	public void set(int[] ix, String v) {
-		if (_sparse) {
-			throw new NotImplementedException();
-		} else {
-			_denseBlock.set(ix, v);
 		}
 	}
 

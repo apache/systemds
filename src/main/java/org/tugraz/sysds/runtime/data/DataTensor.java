@@ -99,7 +99,7 @@ public class DataTensor extends TensorBlock {
 		if (_colsdata == null) {
 			allocateBlock();
 		} else {
-			BasicTensor[] newCols = new BasicTensor[getDim(1)];
+			//BasicTensor[] newCols = new BasicTensor[getDim(1)];
 			if (_colsdata.length > getDim(1))
 				_colsdata = Arrays.copyOfRange(_colsdata, 0, getDim(1));
 			int[] blockDims = toInternalDims(dims);

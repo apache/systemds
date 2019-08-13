@@ -32,7 +32,6 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class RewriteComplexMapMultChainTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "rewrite_mapmultchain1";
 	private final static String TEST_NAME2 = "rewrite_mapmultchain2";
 	private final static String TEST_DIR = "functions/recompile/";
@@ -48,7 +47,6 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 	private final static double sparsity = 0.7;
 	private final static double eps = 0.0000001;
 	
-	
 	@Override
 	public void setUp() 
 	{
@@ -57,7 +55,6 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 		addTestConfiguration( TEST_NAME2,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "HV" }) );
 	}
-	
 	
 	@Test
 	public void testRewriteExpr1SingleColumnCP() throws IOException {
@@ -106,23 +103,22 @@ public class RewriteComplexMapMultChainTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("v", v, true);
 			
 			//run test
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			runRScript(true);
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("HV");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("HV");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");	
+			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
 			
-			//check expected number of compiled and executed MR jobs
-			int expectedNumCompiled = (et==ExecType.CP)?1:(singleCol?4:6); //mapmultchain if single column
+			//check expected number of compiled and executed Spark jobs
+			int expectedNumCompiled = (et==ExecType.CP)?3:(singleCol?4:6); //mapmultchain if single column
 			int expectedNumExecuted = (et==ExecType.CP)?0:(singleCol?4:6); //mapmultchain if single column
 			
-			checkNumCompiledSparkInst(expectedNumCompiled); 
-			checkNumExecutedSparkInst(expectedNumExecuted); 
+			checkNumCompiledSparkInst(expectedNumCompiled);
+			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
 		}
 	}

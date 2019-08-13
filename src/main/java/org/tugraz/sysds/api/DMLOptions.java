@@ -106,14 +106,16 @@ public class DMLOptions {
 		if (line.hasOption("lineage")){
 			dmlOptions.lineage = true;
 			String lineageTypes[] = line.getOptionValues("lineage");
-			for (String lineageType : lineageTypes) {
-				if (lineageType != null){
-					if (lineageType.equalsIgnoreCase("dedup"))
-						dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
-					else if (lineageType.equalsIgnoreCase("reuse"))
-						dmlOptions.lineage_reuse = lineageType.equalsIgnoreCase("reuse");
-					else
-						throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
+			if (lineageTypes != null) {
+				for (String lineageType : lineageTypes) {
+					if (lineageType != null){
+						if (lineageType.equalsIgnoreCase("dedup"))
+							dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+						else if (lineageType.equalsIgnoreCase("reuse"))
+							dmlOptions.lineage_reuse = lineageType.equalsIgnoreCase("reuse");
+						else
+							throw new org.apache.commons.cli.ParseException("Invalid argument specified for -lineage option");
+					}
 				}
 			}
 		}
@@ -249,7 +251,7 @@ public class DMLOptions {
 		Option helpOpt = OptionBuilder.withDescription("shows usage message")
 			.create("help");
 		Option lineageOpt = OptionBuilder.withDescription("computes lineage traces")
-			.hasArgs().create("lineage");
+			.hasOptionalArgs().create("lineage");
 
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);

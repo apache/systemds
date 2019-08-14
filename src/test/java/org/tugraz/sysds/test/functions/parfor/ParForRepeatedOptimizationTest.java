@@ -38,7 +38,6 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class ParForRepeatedOptimizationTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "parfor_repeatedopt1";
 	private final static String TEST_NAME2 = "parfor_repeatedopt2";
 	private final static String TEST_NAME3 = "parfor_repeatedopt3";
@@ -63,61 +62,53 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 	}
 	
 	@BeforeClass
-	public static void init()
-	{
+	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
 	@AfterClass
-	public static void cleanUp()
-	{
+	public static void cleanUp() {
 		if (TEST_CACHE_ENABLED) {
 			TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 		}
 	}
 
 	@Test
-	public void testParForRepeatedOptNoReuseNoUpdateCP() 
-	{
-		int numExpectedMRJobs = 1+3; //reblock, 3*partition
+	public void testParForRepeatedOptNoReuseNoUpdateCP() {
+		int numExpectedMRJobs = 1+8; //reblock, 3*partition, 4*checkpoints, 1
 		runParForRepeatedOptTest( false, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
-	public void testParForRepeatedOptNoReuseUpdateCP() 
-	{
-		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+	public void testParForRepeatedOptNoReuseUpdateCP() {
+		int numExpectedMRJobs = 1+3+6; //reblock, 3*partition, 4*checkpoints, 2
  		runParForRepeatedOptTest( false, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
-	public void testParForRepeatedOptNoReuseChangedDimCP() 
-	{
-		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+	public void testParForRepeatedOptNoReuseChangedDimCP() {
+		int numExpectedMRJobs = 1+3+7; //reblock, 3*partition, 4*checkpoints, 3
  		runParForRepeatedOptTest( false, false, true, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
-	public void testParForRepeatedOptReuseNoUpdateCP() 
-	{
-		int numExpectedMRJobs = 1+1; //reblock, partition
+	public void testParForRepeatedOptReuseNoUpdateCP() {
+		int numExpectedMRJobs = 1+1 + 5; //reblock, partition, ?
 		runParForRepeatedOptTest( true, false, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
-	public void testParForRepeatedOptReuseUpdateCP() 
-	{
-		int numExpectedMRJobs = 1+3+2; //reblock, 3*partition, 2*GMR (previously 3GMR, now 1GMR removed on V*1)
+	public void testParForRepeatedOptReuseUpdateCP() {
+		int numExpectedMRJobs = 1+3+6; //reblock, 3*partition, 4*checkpoint, 2
 		runParForRepeatedOptTest( true, true, false, ExecType.CP, numExpectedMRJobs );
 	}
 	
 	@Test
-	public void testParForRepeatedOptReuseChangedDimCP() 
-	{
-		int numExpectedMRJobs = 1+3+3; //reblock, 3*partition, 3*GMR
+	public void testParForRepeatedOptReuseChangedDimCP() {
+		int numExpectedMRJobs = 1+3+7; //reblock, 3*partition, 4*checkpoints, 3
 		runParForRepeatedOptTest( true, false, true, ExecType.CP, numExpectedMRJobs );
 	}
-		
+	
 	
 	/**
 	 * update, refers to changing data
@@ -171,7 +162,8 @@ public class ParForRepeatedOptimizationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			runRScript(true);
 			
-			Assert.assertEquals("Unexpected number of executed MR jobs.", numExpectedMR, Statistics.getNoOfExecutedSPInst());
+			Assert.assertEquals("Unexpected number of executed Spark jobs.",
+				numExpectedMR, Statistics.getNoOfExecutedSPInst());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("R");

@@ -99,7 +99,7 @@ public class ID3Test extends AutomatedTestBase
 		//check also num actually executed jobs
 		if(AutomatedTestBase.rtplatform != ExecMode.SPARK) {
 			long actualSP = Statistics.getNoOfExecutedSPInst();
-			Assert.assertEquals("Wrong number of executed jobs: expected 2 but executed "+actualSP+".", 2, actualSP);
+			Assert.assertEquals("Wrong number of executed jobs: expected 0 but executed "+actualSP+".", 0, actualSP);
 		}
 		
 		//compare results

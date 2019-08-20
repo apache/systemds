@@ -2060,6 +2060,13 @@ public class TestUtils
 		return data;
 	}
 	
+	public static double[][] ceil(double[][] data) {
+		for(int i=0; i<data.length; i++)
+			for(int j=0; j<data[i].length; j++)
+				data[i][j]=Math.ceil(data[i][j]);
+		return data;
+	}
+	
 	public static double[][] floor(double[][] data, int col) {
 		for(int i=0; i<data.length; i++)
 			data[i][col]=Math.floor(data[i][col]);

@@ -137,6 +137,7 @@ public enum Builtins {
 	SIN("sin", false),
 	SINH("sinh", false),
 	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
+	SLICEFINDER("slicefinder", true),
 	SOLVE("solve", false),
 	SQRT("sqrt", false),
 	SUM("sum", false),

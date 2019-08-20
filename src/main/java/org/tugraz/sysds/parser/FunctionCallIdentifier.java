@@ -105,7 +105,7 @@ public class FunctionCallIdentifier extends DataIdentifier
 		// Step 2: set opcode (whether internal or external function) -- based on whether FunctionStatement
 		// in FunctionStatementBlock is ExternalFunctionStatement or FunctionStatement
 		_opcode = Expression.FunctCallOp.INTERNAL;
-		
+
 		// Step 3: check all parameters to be either unnamed or named for functions
 		boolean hasNamed = false, hasUnnamed = false;
 		for( ParameterExpression paramExpr : _paramExprs ) {

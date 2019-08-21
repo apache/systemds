@@ -44,16 +44,11 @@ public class PredicateRecompileTest extends AutomatedTestBase
 	private final static int val = 7;
 	
 	@Override
-	public void setUp() 
-	{
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
-		addTestConfiguration(TEST_NAME2, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
-		addTestConfiguration(TEST_NAME3, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
-		addTestConfiguration(TEST_NAME4, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "Rout" }) );
+	public void setUp() {
+		addTestConfiguration(new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "Rout" }) );
+		addTestConfiguration(new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "Rout" }) );
+		addTestConfiguration(new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "Rout" }) );
+		addTestConfiguration(new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "Rout" }) );
 	}
 
 	@Test
@@ -285,8 +280,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 				if( IPA ) {
 					int expected = (testname.equals(TEST_NAME1) ?
 						4 - ((evalExpr||constFold)?4:0) :
-						3 - ((evalExpr||constFold)?3:0))
-						+ ((!testname.equals(TEST_NAME2)&&!(evalExpr||constFold))?1:0); //loop checkpoint
+						3 - ((evalExpr||constFold)?3:0));
+						//+ ((!testname.equals(TEST_NAME2)&&!(evalExpr||constFold))?1:0); //loop checkpoint
 					Assert.assertEquals("Unexpected number of executed Spark instructions.",
 						expected, Statistics.getNoOfExecutedSPInst());
 				}
@@ -294,8 +289,8 @@ public class PredicateRecompileTest extends AutomatedTestBase
 					//old expected numbers before IPA
 					int expected = (testname.equals(TEST_NAME1) ?
 						4 - ((evalExpr||constFold)?1:0) :
-						3 - ((evalExpr||constFold)?1:0))
-						+ (!testname.equals(TEST_NAME2)?1:0); //loop checkpoint
+						3 - ((evalExpr||constFold)?1:0));
+						//+ (!testname.equals(TEST_NAME2)?1:0); //loop checkpoint
 					Assert.assertEquals("Unexpected number of executed Spark instructions.", 
 						expected, Statistics.getNoOfExecutedSPInst());
 				}

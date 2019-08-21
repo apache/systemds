@@ -139,19 +139,16 @@ public class CSVReadUnknownSizeTest extends AutomatedTestBase {
 			
 			//check expected number of compiled and executed MR jobs
 			//note: with algebraic rewrites - unary op in reducer prevents job-level recompile
-			//TODO investigate current number of spark instructions
-			int expectedNumCompiled = (rewrites && !splitDags) ? 5 : 5; //reblock, GMR
-			int expectedNumExecuted = splitDags ? 2 : rewrites ? 5 : 5;
+			int expectedNumCompiled = (rewrites && !splitDags) ? 5 : 5;
+			int expectedNumExecuted = splitDags ? 0 : rewrites ? 3 : 3;
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_SPLIT_HOP_DAGS = oldFlagSplit;
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}

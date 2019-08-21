@@ -195,5 +195,4 @@ public class CSVParametersTest extends AutomatedTestBase
 		double dmlScalar = TestUtils.readDMLScalar(scalarFile); 
 		TestUtils.compareScalars(dmlScalar, 0.0, eps);
 	}
-	
 }

@@ -34,22 +34,19 @@ import java.util.HashMap;
  */
 public class TestConfiguration 
 {
+	/** directory where the test can be found */
+	private String testDirectory = null;
 
-	
-    
-    /** directory where the test can be found */
-    private String testDirectory = null;
-    
-    /** name of the test script */
-    private String testScript = null;
-    
-    /** list of output files which are produced by the test */
-    private String[] outputFiles = null;
-    
-    /** list of variables which can be replaced in the script */
-    private HashMap<String, String> variables = new HashMap<String, String>();
-    
-    /**
+	/** name of the test script */
+	private String testScript = null;
+
+	/** list of output files which are produced by the test */
+	private String[] outputFiles = null;
+
+	/** list of variables which can be replaced in the script */
+	private HashMap<String, String> variables = new HashMap<String, String>();
+
+	/**
      * <p>
      *  Creates a new test configuration with the name of the test script and the output files which are produced by
      *  the test.

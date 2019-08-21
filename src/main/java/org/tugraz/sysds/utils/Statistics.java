@@ -178,6 +178,10 @@ public class Statistics
 		numCompiledSPInst.increment();
 	}
 	
+	public static boolean createdSparkContext() {
+		return sparkCtxCreateTime > 0;
+	}
+	
 	public static long getTotalUIPVar() {
 		return lTotalUIPVar.longValue();
 	}

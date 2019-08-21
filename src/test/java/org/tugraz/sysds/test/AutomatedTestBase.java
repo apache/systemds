@@ -244,6 +244,10 @@ public abstract class AutomatedTestBase
 	protected void addTestConfiguration(String testName, TestConfiguration config) {
 		availableTestConfigurations.put(testName, config);
 	}
+	
+	protected void addTestConfiguration(TestConfiguration config) {
+		availableTestConfigurations.put(config.getTestScript(), config);
+	}
 
 	/**
 	 * <p>

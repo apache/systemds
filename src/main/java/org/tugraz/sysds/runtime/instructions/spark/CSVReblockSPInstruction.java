@@ -43,6 +43,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MetaDataFormat;
+import org.tugraz.sysds.utils.Statistics;
 
 public class CSVReblockSPInstruction extends UnarySPInstruction {
 	private int _brlen;
@@ -109,6 +110,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 				Recompiler.executeInMemoryMatrixReblock(sec, input1.getName(), output.getName());
 			else if( input1.getDataType() == DataType.FRAME )
 				Recompiler.executeInMemoryFrameReblock(sec, input1.getName(), output.getName());
+			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}
 		

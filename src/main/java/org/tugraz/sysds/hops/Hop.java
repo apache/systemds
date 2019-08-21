@@ -28,6 +28,7 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ExecMode;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.ConfigurationManager;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.hops.recompile.Recompiler.ResetType;
 import org.tugraz.sysds.lops.Binary;
 import org.tugraz.sysds.lops.BinaryScalar;
@@ -51,6 +52,7 @@ import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.tugraz.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
+import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 import java.util.ArrayList;
@@ -313,22 +315,10 @@ public abstract class Hop implements ParseInfo
 	private void constructAndSetCheckpointLopIfRequired() {
 		//determine execution type
 		ExecType et = ExecType.CP;
-		if( OptimizerUtils.isSparkExecutionMode() 
-			&& getDataType()!=DataType.SCALAR )
-		{
-			//conditional checkpoint based on memory estimate in order to 
-			//(1) avoid unnecessary persist and unpersist calls, and 
-			//(2) avoid unnecessary creation of spark context (incl executors)
-			if( (OptimizerUtils.isHybridExecutionMode() && hasValidCPDimsAndSize()
-				&& !OptimizerUtils.exceedsCachingThreshold(getDim2(), _outputMemEstimate))
-				|| _etypeForced == ExecType.CP )
-			{
-				et = ExecType.CP;
-			}
-			else //default case
-			{
-				et = ExecType.SPARK;
-			}
+		if( OptimizerUtils.isSparkExecutionMode() && getDataType()!=DataType.SCALAR ) {
+			//conditional checkpoint based on memory estimate 
+			et = ( Recompiler.checkCPCheckpoint(getDataCharacteristics() )
+				|| _etypeForced == ExecType.CP ) ? ExecType.CP : ExecType.SPARK;
 		}
 
 		//add checkpoint lop to output if required
@@ -932,9 +922,14 @@ public abstract class Hop implements ParseInfo
 		return OptimizerUtils.getSparsity(_dim1, _dim2, _nnz);
 	}
 	
+	public DataCharacteristics getDataCharacteristics() {
+		return new MatrixCharacteristics(
+			_dim1, _dim2, _rows_in_block, _cols_in_block, _nnz);
+	}
+	
 	protected void setOutputDimensions(Lop lop) {
 		lop.getOutputParameters().setDimensions(
-			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());	
+			getDim1(), getDim2(), getRowsInBlock(), getColsInBlock(), getNnz(), getUpdateType());
 	}
 	
 	public Lop getLops() {

@@ -1513,7 +1513,7 @@ public class Recompiler
 		
 		//check valid dimensions and memory requirements
 		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
-		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);			
+		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
 		if(    !OptimizerUtils.isValidCPDimensions(rows, cols)
 			|| !OptimizerUtils.isValidCPMatrixSize(rows, cols, sp)
 			|| mem >= OptimizerUtils.getLocalMemBudget() ) 
@@ -1524,10 +1524,16 @@ public class Recompiler
 		//check in-memory reblock size threshold (preference: distributed)
 		long estFilesize = (long)(3.5 * mem); //conservative estimate
 		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
-		           OptimizerUtils.getParallelTextReadParallelism();
+			OptimizerUtils.getParallelTextReadParallelism();
 		return (estFilesize < cpThreshold);
 	}
-		
+	
+	public static boolean checkCPCheckpoint(DataCharacteristics dc) {
+		return OptimizerUtils.isHybridExecutionMode()
+			&& OptimizerUtils.isValidCPDimensions(dc.getRows(), dc.getCols())
+			&& !OptimizerUtils.exceedsCachingThreshold(dc.getCols(), OptimizerUtils.estimateSize(dc));
+	}
+	
 	public static void executeInMemoryMatrixReblock(ExecutionContext ec, String varin, String varout) {
 		MatrixObject in = ec.getMatrixObject(varin);
 		MatrixObject out = ec.getMatrixObject(varout);

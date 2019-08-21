@@ -25,6 +25,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.hops.OptimizerUtils;
+import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Checkpoint;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheableData;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -44,6 +45,7 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
 import org.tugraz.sysds.runtime.matrix.operators.Operator;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
+import org.tugraz.sysds.utils.Statistics;
 
 public class CheckpointSPInstruction extends UnarySPInstruction {
 	// default storage level
@@ -86,14 +88,15 @@ public class CheckpointSPInstruction extends UnarySPInstruction {
 		//(for csv input files with unknown dimensions, we might have generated a checkpoint after
 		//csvreblock although not necessary because the csvreblock was subject to in-memory reblock)
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
-		if( obj.isCached(true) ) { //available in memory
+		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
+		if( obj.isCached(true) || Recompiler.checkCPCheckpoint(mcIn) ) { //available in memory
 			sec.setVariable(output.getName(), obj);
+			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}
 		
 		//get input rdd handle (for matrix or frame)
 		JavaPairRDD<?,?> in = sec.getRDDHandleForVariable(input1.getName(), InputInfo.BinaryBlockInputInfo, -1, true);
-		DataCharacteristics mcIn = sec.getDataCharacteristics( input1.getName() );
 		
 		// Step 2: Checkpoint given rdd (only if currently in different storage level to prevent redundancy)
 		// -------

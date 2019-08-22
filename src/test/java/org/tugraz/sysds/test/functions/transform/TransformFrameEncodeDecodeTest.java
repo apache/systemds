@@ -178,11 +178,11 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			FrameBlock fb2 = reader2.readFrameFromHDFS(output("tfout"), -1L, -1L);
 			String[][] R1 = DataConverter.convertToStringFrame(fb1);
 			String[][] R2 = DataConverter.convertToStringFrame(fb2);
-			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);			
+			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
 			
 			if( rt == ExecMode.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
-					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
+					Statistics.getNoOfExecutedSPInst(), new Long(0), new Long(Statistics.getNoOfExecutedSPInst()));
 			}
 		}
 		catch(Exception ex) {

@@ -441,6 +441,8 @@ public class Statistics
 		parforInitTime = 0;
 		parforMergeTime = 0;
 		
+		sparkCtxCreateTime = 0;
+		
 		lTotalLix.reset();
 		lTotalLixUIP.reset();
 		lTotalUIPVar.reset();

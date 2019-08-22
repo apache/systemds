@@ -95,3 +95,6 @@ SYSTEMDS-130 IPA and Size Propagation
 SYSTEMDS-140 Distributed Tensor Operations
  * 141 Infrastructure for spark tensor operations
  * 142 Basis tensor operations (datagen, aggregate, elementwise)
+ 
+ SYSTEMDS-150 Release 0.1
+ * 151 Fixing native BLAS instructions (MKL,OpenBLAS)                 OK

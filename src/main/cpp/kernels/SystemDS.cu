@@ -20,7 +20,7 @@
 /**********************************
 When updating a kernel or adding a new one,
 please compile the ptx file and commit it:
-nvcc -w -ptx -arch=sm_30 --std c++11 SystemML.cu
+nvcc -w -ptx -arch=sm_30 --std c++11 SystemDS.cu
 ***********************************/
 
 #include <cfloat>
@@ -903,7 +903,7 @@ extern "C" __global__ void rbind_f(float *A, float *B, float *C, int rowsA,
  * reduced value.
  * The number of threads, blocks and amount of shared memory is calculated in a
  * specific way.
- * Please refer to the NVIDIA CUDA Sample or the SystemML code that invokes this
+ * Please refer to the NVIDIA CUDA Sample or the SystemDS code that invokes this
  * method to see
  * how its done.
  * The template-ized version of this function is similar to what is found in
@@ -1009,7 +1009,7 @@ __device__ void reduce(
  * single row.
  * The maximum number of blocks that can launched (as of compute capability 3.0)
  * is 2^31 - 1
- * This works out fine for SystemML, since the maximum elements in a Java array
+ * This works out fine for SystemDS, since the maximum elements in a Java array
  * can be 2^31 - c (some small constant)
  * If the matrix is "fat" and "short", i.e. there are small number of rows and a
  * large number of columns,
@@ -1963,24 +1963,24 @@ extern "C" __global__ void matrix_sigmoid_f(float *A, float *C,
 }
 
 template <typename T>
-__device__ void prepare_lstm_input(T* smlInput, T* cudnnInput, int N, int D, int TD, int size) {
+__device__ void prepare_lstm_input(T* sdsInput, T* cudnnInput, int N, int D, int TD, int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size) {
 		int n = index / TD;
 		int td = index % TD;
 		int t = td / D;
 		int d = td % D;
-		cudnnInput[t*N*D + n*D + d] = smlInput[index];
+		cudnnInput[t*N*D + n*D + d] = sdsInput[index];
 	}
 }
 
 
-extern "C" __global__ void prepare_lstm_input_d(double* smlInput, double* cudnnInput, int N, int D, int TD, int size) {
-  prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
+extern "C" __global__ void prepare_lstm_input_d(double* sdsInput, double* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_input(sdsInput, cudnnInput, N, D, TD, size);
 }
 
-extern "C" __global__ void prepare_lstm_input_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
-  prepare_lstm_input(smlInput, cudnnInput, N, D, TD, size);
+extern "C" __global__ void prepare_lstm_input_f(float* sdsInput, float* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_input(sdsInput, cudnnInput, N, D, TD, size);
 }
 
 __device__ int swap_co(int offset) {
@@ -1993,57 +1993,57 @@ __device__ void compute_lstm_weight_indexes(int index, int D, int M, int* ret) {
   // Elements in each weight matrix are arranged in the row-major order, but the column-major format works !!
   // CuDNN gate order: i, f, c, o
   // CuDNN weight order: w_i, w_f, w_c, w_o, r_i, r_f, r_c, r_o
-  // SystemML weight order: i, f, o, c; TF weight order: i, c, f, o
-  // SystemML performs (X_t %*% W + out_prev %*% R) => [N, 4*M]
+  // SystemDS weight order: i, f, o, c; TF weight order: i, c, f, o
+  // SystemDS performs (X_t %*% W + out_prev %*% R) => [N, 4*M]
   int DM = D*M; int MM = M*M; int DM4 = DM*4; 
   int M4 = M*4;
   if(index < DM4) {
     // Fill w_i, w_f, w_c and w_o
     int localIndex = index%DM;
-    int smlRowIndex = localIndex/M; 
-    int smlColIndex = swap_co(index/(DM))*M + localIndex%M;
+    int sdsRowIndex = localIndex/M; 
+    int sdsColIndex = swap_co(index/(DM))*M + localIndex%M;
     // Convert index to column-major where index = (index/(DM))*DM + (localIndex/M)*M + localIndex%M
     ret[1] = (index/(DM))*DM + (localIndex%M)*D + localIndex/M;
-    ret[0] = smlRowIndex*M4+smlColIndex;
+    ret[0] = sdsRowIndex*M4+sdsColIndex;
   }
   else if(index < (D+M)*M4) {
     // Fill r_i, r_f, r_c and r_o
     int tmpIndex = index-DM4;
     int localIndex = tmpIndex % MM;
-    int smlRowIndex = D + (localIndex / M);
-    int smlColIndex = swap_co(tmpIndex/(MM))*M + localIndex%M;
+    int sdsRowIndex = D + (localIndex / M);
+    int sdsColIndex = swap_co(tmpIndex/(MM))*M + localIndex%M;
     // Convert index to column-major where index = DM4 + (tmpIndex/(MM))*MM + (localIndex/M)*M + localIndex%M
     ret[1] = DM4 + (tmpIndex/(MM))*MM + (localIndex%M)*M + localIndex/M;
-    ret[0] = smlRowIndex*M4+smlColIndex;
+    ret[0] = sdsRowIndex*M4+sdsColIndex;
   }
 }
 
 template <typename T>
-__device__ void prepare_lstm_weight(T* smlWeight, T* smlBias, T* cudnnWeight, int D, int M) {
+__device__ void prepare_lstm_weight(T* sdsWeight, T* sdsBias, T* cudnnWeight, int D, int M) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   // Maximum (D+M+2)*M4 threads
   int M4 = M*4;
   if(index < (D+M)*M4) {
     int indexes[2];
     compute_lstm_weight_indexes(index, D, M, indexes);
-    cudnnWeight[indexes[1]] = smlWeight[indexes[0]];
+    cudnnWeight[indexes[1]] = sdsWeight[indexes[0]];
   }
   else if(index < (D+M+1)*M4) {
   	// Fill bias
   	// bias layout: bi bf bc bo 0 0 0 0
     // where W: [DxM], R: [MxM] and b: [1x1]
 	int tmpIndex = index - (D+M)*M4;
-	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
-	cudnnWeight[index] = smlBias[smlColIndex];
+	int sdsColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
+	cudnnWeight[index] = sdsBias[sdsColIndex];
   }
 }
 
-extern "C" __global__ void prepare_lstm_weight_d(double* smlWeight, double* smlBias, double* cudnnWeight, int D, int M) {
-  prepare_lstm_weight(smlWeight, smlBias, cudnnWeight, D, M);
+extern "C" __global__ void prepare_lstm_weight_d(double* sdsWeight, double* sdsBias, double* cudnnWeight, int D, int M) {
+  prepare_lstm_weight(sdsWeight, sdsBias, cudnnWeight, D, M);
 }
 
-extern "C" __global__ void prepare_lstm_weight_f(float* smlWeight, float* smlBias, float* cudnnWeight, int D, int M) {
-  prepare_lstm_weight(smlWeight, smlBias, cudnnWeight, D, M);
+extern "C" __global__ void prepare_lstm_weight_f(float* sdsWeight, float* sdsBias, float* cudnnWeight, int D, int M) {
+  prepare_lstm_weight(sdsWeight, sdsBias, cudnnWeight, D, M);
 }
 
 // We can later fold it in our reduce method
@@ -2144,7 +2144,7 @@ extern "C" __global__ void compute_nnz_f(float *g_idata, float *g_odata, unsigne
 }
 
 template <typename T>
-__device__ void prepare_lstm_output(T* smlInput, T* cudnnInput, int N, int T1, int M, int size) {
+__device__ void prepare_lstm_output(T* sdsInput, T* cudnnInput, int N, int T1, int M, int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size) {
 		int TM = T1*M;
@@ -2153,98 +2153,98 @@ __device__ void prepare_lstm_output(T* smlInput, T* cudnnInput, int N, int T1, i
 		int tm = index % TM;
 		int t = tm / M;
 		int m = tm % M;
-		smlInput[index] = cudnnInput[t*N*M + n*M + m];
+		sdsInput[index] = cudnnInput[t*N*M + n*M + m];
 	}
 }
 
 
-extern "C" __global__ void prepare_lstm_output_d(double* smlInput, double* cudnnInput, int N, int T, int M, int size) {
-  prepare_lstm_output(smlInput, cudnnInput, N, T, M, size);
+extern "C" __global__ void prepare_lstm_output_d(double* sdsInput, double* cudnnInput, int N, int T, int M, int size) {
+  prepare_lstm_output(sdsInput, cudnnInput, N, T, M, size);
 }
 
-extern "C" __global__ void prepare_lstm_output_f(float* smlInput, float* cudnnInput, int N, int T, int M, int size) {
-  prepare_lstm_output(smlInput, cudnnInput, N, T, M, size);
+extern "C" __global__ void prepare_lstm_output_f(float* sdsInput, float* cudnnInput, int N, int T, int M, int size) {
+  prepare_lstm_output(sdsInput, cudnnInput, N, T, M, size);
 }
 
 template <typename T>
-__device__ void prepare_lstm_backward_gradients(T* smlDout, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
+__device__ void prepare_lstm_backward_gradients(T* sdsDout, T* cudnnDy, int N, int T1, int M, int size, int return_sequences) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size && return_sequences != 0) {
-		// smlDout = [N, T, M]
+		// sdsDout = [N, T, M]
 		int TM = T1*M;
 		int NT = T1*N;
 		int n = index / TM;
 		int tm = index % TM;
 		int t = tm / M;
 		int m = tm % M;
-		T val = smlDout[index];
+		T val = sdsDout[index];
 		cudnnDy[t*N*M + n*M + m] = val;
 	}
 	else if(index < size) {
-		// smlDout = [N, T, M]
+		// sdsDout = [N, T, M]
 		int n = index / M;
 		int m = index % M;
-		T val = smlDout[index];
+		T val = sdsDout[index];
 		cudnnDy[(T1-1)*N*M + n*M + m] = val;
 	}
 }
 
 
-extern "C" __global__ void prepare_lstm_backward_gradients_d(double* smlInput, double* cudnnDy, int N, int T, int M, int size, int return_sequences) {
-  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
+extern "C" __global__ void prepare_lstm_backward_gradients_d(double* sdsInput, double* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(sdsInput, cudnnDy, N, T, M, size, return_sequences);
 }
 
-extern "C" __global__ void prepare_lstm_backward_gradients_f(float* smlInput, float* cudnnDy, int N, int T, int M, int size, int return_sequences) {
-  prepare_lstm_backward_gradients(smlInput, cudnnDy, N, T, M, size, return_sequences);
+extern "C" __global__ void prepare_lstm_backward_gradients_f(float* sdsInput, float* cudnnDy, int N, int T, int M, int size, int return_sequences) {
+  prepare_lstm_backward_gradients(sdsInput, cudnnDy, N, T, M, size, return_sequences);
 }
 
 template <typename T>
-__device__ void prepare_lstm_dweight(T* smldWeight, T* smldBias, T* cudnndWeight, int D, int M) {
+__device__ void prepare_lstm_dweight(T* sdsdWeight, T* sdsdBias, T* cudnndWeight, int D, int M) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   // Maximum (D+M+2)*M4 threads
   int M4 = M*4;
   if(index < (D+M)*M4) {
     int indexes[2];
     compute_lstm_weight_indexes(index, D, M, indexes);
-    smldWeight[indexes[0]] = cudnndWeight[indexes[1]];
+    sdsdWeight[indexes[0]] = cudnndWeight[indexes[1]];
   }
   else if(index < (D+M+1)*M4) {
   	// Fill bias
   	// bias layout: bi bf bc bo 0 0 0 0
     // where W: [DxM], R: [MxM] and b: [1x1]
 	int tmpIndex = index - (D+M)*M4;
-	int smlColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
-	smldBias[smlColIndex] = cudnndWeight[index];
+	int sdsColIndex = swap_co(tmpIndex/(M))*M + tmpIndex%M;
+	sdsdBias[sdsColIndex] = cudnndWeight[index];
   }
 }
 
-extern "C" __global__ void prepare_lstm_dweight_d(double* smldWeight, double* smldBias, double* cudnndWeight, int D, int M) {
-  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
+extern "C" __global__ void prepare_lstm_dweight_d(double* sdsdWeight, double* sdsdBias, double* cudnndWeight, int D, int M) {
+  prepare_lstm_dweight(sdsdWeight, sdsdBias, cudnndWeight, D, M);
 }
 
-extern "C" __global__ void prepare_lstm_dweight_f(float* smldWeight, float* smldBias, float* cudnndWeight, int D, int M) {
-  prepare_lstm_dweight(smldWeight, smldBias, cudnndWeight, D, M);
+extern "C" __global__ void prepare_lstm_dweight_f(float* sdsdWeight, float* sdsdBias, float* cudnndWeight, int D, int M) {
+  prepare_lstm_dweight(sdsdWeight, sdsdBias, cudnndWeight, D, M);
 }
 
 template <typename T>
-__device__ void prepare_lstm_dinput(T* smlInput, T* cudnnInput, int N, int D, int TD, int size) {
+__device__ void prepare_lstm_dinput(T* sdsInput, T* cudnnInput, int N, int D, int TD, int size) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if(index < size) {
 		int n = index / TD;
 		int td = index % TD;
 		int t = td / D;
 		int d = td % D;
-		smlInput[index] = cudnnInput[t*N*D + n*D + d];
+		sdsInput[index] = cudnnInput[t*N*D + n*D + d];
 	}
 }
 
 
-extern "C" __global__ void prepare_lstm_dinput_d(double* smlInput, double* cudnnInput, int N, int D, int TD, int size) {
-  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+extern "C" __global__ void prepare_lstm_dinput_d(double* sdsInput, double* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(sdsInput, cudnnInput, N, D, TD, size);
 }
 
-extern "C" __global__ void prepare_lstm_dinput_f(float* smlInput, float* cudnnInput, int N, int D, int TD, int size) {
-  prepare_lstm_dinput(smlInput, cudnnInput, N, D, TD, size);
+extern "C" __global__ void prepare_lstm_dinput_f(float* sdsInput, float* cudnnInput, int N, int D, int TD, int size) {
+  prepare_lstm_dinput(sdsInput, cudnnInput, N, D, TD, size);
 }
 
 

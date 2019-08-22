@@ -18,27 +18,27 @@
  */
  
 #include "config.h"
-#include "systemml.h"
+#include "systemds.h"
 #include "libmatrixmult.h"
 #include "libmatrixdnn.h"
 
 // Linux:
-// g++ -o lib/libsystemml_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_MKL_DNN -L$MKLROOT/lib/intel64 -m64 -O3 -shared -fPIC
-// g++ -o lib/libsystemml_openblas-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
+// g++ -o lib/libsystemds_mkl-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_MKL_DNN -L$MKLROOT/lib/intel64 -m64 -O3 -shared -fPIC
+// g++ -o lib/libsystemds_openblas-Linux-x86_64.so *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -I/opt/OpenBLAS/include/ -L/opt/OpenBLAS/lib/ -fopenmp -O3 -shared -fPIC
 
 // Mac OSX:	
-// g++ -o libsystemml_mkl-linux-x86_64.dylib *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -dynamiclib -fPIC -undefined dynamic_lookup
-// g++ -o libsystemml_openblas-linux-x86_64.dylib *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/OpenBLAS/lib/ -fopenmp -O3 -dynamiclib -fPIC -undefined dynamic_lookup
+// g++ -o libsystemds_mkl-linux-x86_64.dylib *.cpp  -I$JAVA_HOME/include -I$MKLROOT/include -I$JAVA_HOME/include/linux -lmkl_rt -lpthread  -lm -ldl -DUSE_INTEL_MKL -DUSE_GNU_THREADING -L$MKLROOT/lib/intel64 -m64 -fopenmp -O3 -dynamiclib -fPIC -undefined dynamic_lookup
+// g++ -o libsystemds_openblas-linux-x86_64.dylib *.cpp  -I$JAVA_HOME/include  -I$JAVA_HOME/include/linux -lopenblas -lpthread -lm -ldl -DUSE_OPEN_BLAS -L/opt/OpenBLAS/lib/ -fopenmp -O3 -dynamiclib -fPIC -undefined dynamic_lookup
 
 // Windows MKL: 
 // "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\vcvarsall.bat" amd64
 // "%MKLROOT%"\bin\mklvars.bat intel64
 // set JAVA_HOME=C:\Program Files\Java\jdk1.8.0_25
-// cl *.cpp -I. -I"%MKLROOT%"\include -I"%JAVA_HOME%"\include -I"%JAVA_HOME%"\include\win32 -DUSE_INTEL_MKL -Fesystemml_mkl-windows-x86_64.dll -MD -LD  "%MKLROOT%"\lib\intel64_win\mkl_intel_thread_dll.lib "%MKLROOT%"\lib\intel64_win\mkl_core_dll.lib "%MKLROOT%"\lib\intel64_win\mkl_intel_lp64_dll.lib
+// cl *.cpp -I. -I"%MKLROOT%"\include -I"%JAVA_HOME%"\include -I"%JAVA_HOME%"\include\win32 -DUSE_INTEL_MKL -Fesystemds_mkl-windows-x86_64.dll -MD -LD  "%MKLROOT%"\lib\intel64_win\mkl_intel_thread_dll.lib "%MKLROOT%"\lib\intel64_win\mkl_core_dll.lib "%MKLROOT%"\lib\intel64_win\mkl_intel_lp64_dll.lib
 // Windows OpenBLAS:
 // "C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\vcvarsall.bat" amd64
 // set JAVA_HOME=C:\Program Files\Java\jdk1.8.0_25
-// cl *.cpp -I. -I"%OPENBLASROOT%"\include -I"%JAVA_HOME%"\include -I"%JAVA_HOME%"\include\win32 -DUSE_OPEN_BLAS -Fesystemml_openblas-windows-x86_64.dll -MD -LD "%OPENBLASROOT%"\lib\libopenblas.dll.a
+// cl *.cpp -I. -I"%OPENBLASROOT%"\include -I"%JAVA_HOME%"\include -I"%JAVA_HOME%"\include\win32 -DUSE_OPEN_BLAS -Fesystemds_openblas-windows-x86_64.dll -MD -LD "%OPENBLASROOT%"\lib\libopenblas.dll.a
 
 // Results from Matrix-vector/vector-matrix 1M x 1K, dense show that GetDoubleArrayElements creates a copy on OpenJDK.
 
@@ -70,12 +70,12 @@
 // -------------------------------------------------------------------
 
 int maxThreads = -1;
-JNIEXPORT void JNICALL Java_org_apache_sysml_utils_NativeHelper_setMaxNumThreads
+JNIEXPORT void JNICALL Java_org_tugraz_sysds_utils_NativeHelper_setMaxNumThreads
   (JNIEnv *, jclass, jint jmaxThreads) {
   maxThreads = (int) jmaxThreads;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_dmmdd(
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_dmmdd(
     JNIEnv* env, jclass cls, jdoubleArray m1, jdoubleArray m2, jdoubleArray ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
 {
@@ -93,7 +93,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_dmmdd(
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_smmdd(
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_smmdd(
     JNIEnv* env, jclass cls, jobject m1, jobject m2, jobject ret,
     jint m1rlen, jint m1clen, jint m2clen, jint numThreads)
 {
@@ -108,7 +108,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_smmdd(
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_tsmm
   (JNIEnv * env, jclass cls, jdoubleArray m1, jdoubleArray ret, jint m1rlen, jint m1clen, jboolean leftTrans, jint numThreads) {
   double* m1Ptr = GET_DOUBLE_ARRAY(env, m1, numThreads);
   double* retPtr = GET_DOUBLE_ARRAY(env, ret, numThreads);
@@ -122,7 +122,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_tsmm
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dSparse
   (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -141,7 +141,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dSparse
   return (jboolean) true;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterSparseDense
+JNIEXPORT jboolean JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardFilterSparseDense
   (JNIEnv * env, jclass, jint apos, jint alen, jintArray aix, jdoubleArray avals, jdoubleArray dout,  
   	jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -160,7 +160,7 @@ JNIEXPORT jboolean JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwa
   return (jboolean) true;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dDense(
     JNIEnv* env, jclass, jdoubleArray input, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads)
@@ -181,7 +181,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dDense(
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_dconv2dBiasAddDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_dconv2dBiasAddDense(
     JNIEnv* env, jclass, jdoubleArray input, jdoubleArray bias, jdoubleArray filter,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads)
@@ -204,7 +204,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_dconv2dBiasAddDe
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_sconv2dBiasAddDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_sconv2dBiasAddDense(
     JNIEnv* env, jclass, jobject input, jobject bias, jobject filter,
     jobject ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) 
@@ -223,7 +223,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_sconv2dBiasAddDe
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDataDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardDataDense(
 	JNIEnv* env, jclass, jdoubleArray filter, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {
@@ -243,7 +243,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardDa
   return (jint) nnz;
 }
 
-JNIEXPORT jint JNICALL Java_org_apache_sysml_utils_NativeHelper_conv2dBackwardFilterDense(
+JNIEXPORT jint JNICALL Java_org_tugraz_sysds_utils_NativeHelper_conv2dBackwardFilterDense(
 	JNIEnv* env, jclass, jdoubleArray input, jdoubleArray dout,
     jdoubleArray ret, jint N, jint C, jint H, jint W, jint K, jint R, jint S,
     jint stride_h, jint stride_w, jint pad_h, jint pad_w, jint P, jint Q, jint numThreads) {

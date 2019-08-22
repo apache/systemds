@@ -78,6 +78,7 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 	private void runCSVReadInFunctionTest(String testname, boolean withMtD) {
 		try {
 			getAndLoadTestConfiguration(testname);
+			Statistics.reset();
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";

@@ -335,7 +335,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			
 			if( rt == ExecMode.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " +
-					Statistics.getNoOfExecutedSPInst(), new Long(2), new Long(Statistics.getNoOfExecutedSPInst()));
+					Statistics.getNoOfExecutedSPInst(), new Long(0), new Long(Statistics.getNoOfExecutedSPInst()));
 			}
 			
 			//additional checks for binning as encode-decode impossible

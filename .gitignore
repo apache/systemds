@@ -1,6 +1,9 @@
 # Mac
 .DS_Store
 
+# KDE
+.directory
+
 # Eclipse
 .classpath
 .project

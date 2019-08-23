@@ -96,8 +96,8 @@ public class NativeHelper {
 	/**
 	 * Initialize the native library before executing the DML program 
 	 * 
-	 * @param customLibPath specified by sysml.native.blas.directory
-	 * @param userSpecifiedBLAS specified by sysml.native.blas
+	 * @param customLibPath specified by sysds.native.blas.directory
+	 * @param userSpecifiedBLAS specified by sysds.native.blas
 	 */
 	public static void initialize(String customLibPath, String userSpecifiedBLAS) {
 		if(isBLASLoaded() && isSupportedBLAS(userSpecifiedBLAS) && !blasType.equalsIgnoreCase(userSpecifiedBLAS)) {
@@ -117,7 +117,7 @@ public class NativeHelper {
 	/**
 	 * Return true if the given BLAS type is supported.
 	 * 
-	 * @param userSpecifiedBLAS BLAS type specified via sysml.native.blas property
+	 * @param userSpecifiedBLAS BLAS type specified via sysds.native.blas property
 	 * @return true if the userSpecifiedBLAS is auto | mkl | openblas, else false
 	 */
 	private static boolean isSupportedBLAS(String userSpecifiedBLAS) {
@@ -167,7 +167,7 @@ public class NativeHelper {
 		if(!SystemUtils.IS_OS_LINUX)
 			return;
 
-		// attemptedLoading variable ensures that we don't try to load SystemML and other dependencies 
+		// attemptedLoading variable ensures that we don't try to load SystemDS and other dependencies
 		// again and again especially in the parfor (hence the double-checking with synchronized).
 		if(shouldReload(customLibPath) && isSupportedBLAS(userSpecifiedBLAS) && isSupportedArchitecture()) {
 			long start = System.nanoTime();
@@ -181,7 +181,7 @@ public class NativeHelper {
 					}
 
 
-					if(checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemml_" + blasType + "-Linux-x86_64.so")) {
+					if(checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemds_" + blasType + "-Linux-x86_64.so")) {
 						LOG.info("Using native blas: " + blasType + getNativeBLASPath());
 						CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
 					}
@@ -192,7 +192,7 @@ public class NativeHelper {
 				LOG.warn("Time to load native blas: " + timeToLoadInMilliseconds + " milliseconds.");
 		}
 		else if(LOG.isDebugEnabled() && !isSupportedBLAS(userSpecifiedBLAS)) {
-			LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'sysml.native.blas'=" + userSpecifiedBLAS + ".");
+			LOG.debug("Using internal Java BLAS as native BLAS support the configuration 'sysds.native.blas'=" + userSpecifiedBLAS + ".");
 		}
 	}
 	
@@ -207,7 +207,7 @@ public class NativeHelper {
 				isLoaded = loadBLAS(customLibPath, "mkl_rt", null);
 			}
 			else if(blas.equalsIgnoreCase("openblas")) {
-				boolean isGompLoaded = loadBLAS(customLibPath, "gomp", "gomp required for loading OpenBLAS-enabled SystemML library");
+				boolean isGompLoaded = loadBLAS(customLibPath, "gomp", "gomp required for loading OpenBLAS-enabled SystemDS library");
 				if(isGompLoaded) {
 					isLoaded = loadBLAS(customLibPath, "openblas", null);
 				}

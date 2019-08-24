@@ -26,8 +26,8 @@ SYSTEMDS-20 New Data Model
  * 
 
 SYSTEMDS-30 Builtin and Packaging
- * 31 Shell script for local runs
- * 32 Shell script for spark runs
+ * 31 Shell script for local runs                                     OK
+ * 32 Shell script for spark runs                                     OK
  * 33 Cleanup hadoop dependency for local runs
  * 34 Wrapper blocks for sequence files
  * 35 Replace unnecessary dependencies w/ custom

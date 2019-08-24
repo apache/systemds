@@ -208,17 +208,18 @@ public abstract class ProgramBlock implements ParseInfo
 			if( !LineageCache.reuse(tmp, ec) ) {
 				// process actual instruction
 				tmp.processInstruction(ec);
+				
 				// cache result
 				LineageCache.put(tmp, ec);
-			}
 
-			// post-process instruction (debug)
-			tmp.postprocessInstruction( ec );
+				// post-process instruction (debug)
+				tmp.postprocessInstruction( ec );
 
-			// maintain aggregate statistics
-			if( DMLScript.STATISTICS) {
-				Statistics.maintainCPHeavyHitters(
-					tmp.getExtendedOpcode(), System.nanoTime()-t0);
+				// maintain aggregate statistics
+				if( DMLScript.STATISTICS) {
+					Statistics.maintainCPHeavyHitters(
+						tmp.getExtendedOpcode(), System.nanoTime()-t0);
+				}
 			}
 
 			// optional trace information (instruction and runtime)

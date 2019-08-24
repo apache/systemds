@@ -51,9 +51,7 @@ public class LineageCache {
 	public static void put(Instruction inst, ExecutionContext ec) {
 		if (!DMLScript.LINEAGE_REUSE)
 			return;
-		//FIXME: move applicability check in isolated mapping class
-		if (inst instanceof ComputationCPInstruction 
-			&& inst.getOpcode().equalsIgnoreCase("tsmm")) {
+		if (inst instanceof ComputationCPInstruction && isReusable(inst) ) {
 			LineageItem[] items = ((LineageTraceable) inst).getLineageItems(ec);
 			for (LineageItem item : items) {
 				MatrixObject mo = ec.getMatrixObject(((ComputationCPInstruction) inst).output);
@@ -108,7 +106,7 @@ public class LineageCache {
 		if (!DMLScript.LINEAGE_REUSE)
 			return false;
 		
-		if (inst instanceof ComputationCPInstruction && LineageCache.ifReusable(inst)) {
+		if (inst instanceof ComputationCPInstruction && LineageCache.isReusable(inst)) {
 			boolean reused = true;
 			LineageItem[] items = ((ComputationCPInstruction) inst).getLineageItems(ec);
 			for (LineageItem item : items) {
@@ -138,9 +136,10 @@ public class LineageCache {
 			return readFromLocalFS(inst, key);
 	}
 	
-	public static boolean ifReusable (Instruction inst) {
+	public static boolean isReusable (Instruction inst) {
 		// TODO: Move this to the new class LineageCacheConfig and extend
-		return (inst.getOpcode().equalsIgnoreCase("tsmm"));
+		return (inst.getOpcode().equalsIgnoreCase("tsmm")
+			|| inst.getOpcode().equalsIgnoreCase("ba+*"));
 	}
 	
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------

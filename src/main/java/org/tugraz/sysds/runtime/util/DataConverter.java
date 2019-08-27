@@ -23,6 +23,8 @@ package org.tugraz.sysds.runtime.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.BlockRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.tugraz.sysds.common.Types;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
@@ -232,14 +234,12 @@ public class DataConverter
 	 * @param mb matrix block
 	 * @return 2d double array
 	 */
-	public static double[][] convertToDoubleMatrix( MatrixBlock mb )
-	{
+	public static double[][] convertToDoubleMatrix( MatrixBlock mb ) {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		double[][] ret = new double[rows][cols]; //0-initialized
 		
-		if( mb.getNonZeros() > 0 )
-		{
+		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
 				while( iter.hasNext() ) {
@@ -254,7 +254,6 @@ public class DataConverter
 						ret[i][j] = a[ix];
 			}
 		}
-		
 		return ret;
 	}
 
@@ -828,6 +827,36 @@ public class DataConverter
 	public static Array2DRowRealMatrix convertToArray2DRowRealMatrix(MatrixBlock mb) {
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
 		return new Array2DRowRealMatrix(data, false);
+	}
+	
+	public static BlockRealMatrix convertToBlockRealMatrix(MatrixBlock mb) {
+		BlockRealMatrix ret = new BlockRealMatrix(mb.getNumRows(), mb.getNumColumns());
+		if( mb.getNonZeros() > 0 ) {
+			if( mb.isInSparseFormat() ) {
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				while( iter.hasNext() ) {
+					IJV cell = iter.next();
+					ret.setEntry(cell.getI(), cell.getJ(), cell.getV());
+				}
+			}
+			else {
+				double[] a = mb.getDenseBlockValues();
+				for( int i=0, ix=0; i<mb.getNumRows(); i++ )
+					for( int j=0; j<mb.getNumColumns(); j++, ix++ )
+						ret.setEntry(i, j, a[ix]);
+			}
+		}
+		return ret;
+	}
+	
+	public static MatrixBlock convertToMatrixBlock(RealMatrix rm) {
+		MatrixBlock ret = new MatrixBlock(rm.getRowDimension(),
+			rm.getColumnDimension(), false).allocateDenseBlock();
+		for(int i=0; i<ret.getNumRows(); i++)
+			for(int j=0; j<ret.getNumColumns(); j++)
+				ret.quickSetValue(i, j, rm.getEntry(i, j));
+		ret.examSparsity();
+		return ret;
 	}
 
 	public static void copyToDoubleVector( MatrixBlock mb, double[] dest, int destPos )

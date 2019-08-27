@@ -89,6 +89,7 @@ public enum Builtins {
 	INTERQUANTILE("interQuantile", false),
 	INVERSE("inv", "inverse", false),
 	IQM("interQuartileMean", false),
+	KMEANS("kmeans", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin

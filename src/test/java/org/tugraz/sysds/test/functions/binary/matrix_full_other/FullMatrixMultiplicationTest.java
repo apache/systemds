@@ -184,7 +184,7 @@ public class FullMatrixMultiplicationTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args",
+			programArgs = new String[]{"-stats","-args",
 				input("A"), Integer.toString(rowsA), Integer.toString(colsA),
 				input("B"), Integer.toString(rowsB), Integer.toString(colsB), output("C") };
 			

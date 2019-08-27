@@ -164,8 +164,8 @@ public class NativeHelper {
 	// Performing loading in a method instead of a static block will throw a detailed stack trace in case of fatal errors
 	private static void performLoading(String customLibPath, String userSpecifiedBLAS) {
 		// Only Linux supported for BLAS
-		if(!SystemUtils.IS_OS_LINUX)
-			return;
+//		if(!SystemUtils.IS_OS_LINUX)
+//			return;
 
 		// attemptedLoading variable ensures that we don't try to load SystemDS and other dependencies
 		// again and again especially in the parfor (hence the double-checking with synchronized).
@@ -181,9 +181,22 @@ public class NativeHelper {
 					}
 
 
-					if(checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemds_" + blasType + "-Linux-x86_64.so")) {
-						LOG.info("Using native blas: " + blasType + getNativeBLASPath());
-						CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
+					if(SystemUtils.IS_OS_WINDOWS) {
+						if (checkAndLoadBLAS(customLibPath + "\\lib", blas) &&
+//								loadLibraryHelper(customLibPath + "\\bin\\systemds_" + blasType + "-Windows-AMD64.dll")) {
+//								loadLibraryHelper("systemds_" + blasType + "-Windows-AMD64.lib")) {
+//																loadLibraryHelper(customLibPath + "\\systemds_" + blasType + "-Windows-AMD64.dll")) {
+								loadBLAS(customLibPath, "systemds_" + blasType + "-Windows-AMD64", ""))
+						{
+							LOG.info("Using native blas: " + blasType + getNativeBLASPath());
+							CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
+						}
+					}
+					else {
+						if (checkAndLoadBLAS(customLibPath, blas) && loadLibraryHelper("libsystemds_" + blasType + "-Linux-x86_64.so")) {
+							LOG.info("Using native blas: " + blasType + getNativeBLASPath());
+							CURRENT_NATIVE_BLAS_STATE = NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE;
+						}
 					}
 				}
 			}
@@ -204,7 +217,11 @@ public class NativeHelper {
 		for(int i = 0; i < listBLAS.length; i++) {
 			String blas = listBLAS[i];
 			if(blas.equalsIgnoreCase("mkl")) {
-				isLoaded = loadBLAS(customLibPath, "mkl_rt", null);
+				if(SystemUtils.IS_OS_WINDOWS)
+					isLoaded = true;
+//					isLoaded = loadBLAS(customLibPath, "mkl_rt.dll", null);
+				else
+					isLoaded = loadBLAS(customLibPath, "mkl_rt", null);
 			}
 			else if(blas.equalsIgnoreCase("openblas")) {
 				boolean isGompLoaded = loadBLAS(customLibPath, "gomp", "gomp required for loading OpenBLAS-enabled SystemDS library");
@@ -295,9 +312,11 @@ public class NativeHelper {
 
 	private static boolean loadLibraryHelper(String path)  {
 		OutputStream out = null;
-		try( InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+path) ) {
+		try(InputStream in = NativeHelper.class.getResourceAsStream("/lib/"+path))
+		{
 			// This logic is added because Java does not allow to load library from a resource file.
-			if(in != null) {
+			if(in != null)
+			{
 				File temp = File.createTempFile(path, "");
 				temp.deleteOnExit();
 				out = FileUtils.openOutputStream(temp);

@@ -167,7 +167,7 @@ public class FullMatrixMultiplicationTransposeSelfTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("A"),
+			programArgs = new String[]{"-stats","-args", input("A"),
 				Integer.toString(rows), Integer.toString(cols), output("B") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";

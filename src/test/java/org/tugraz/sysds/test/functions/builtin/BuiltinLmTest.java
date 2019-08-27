@@ -127,7 +127,7 @@ public class BuiltinLmTest extends AutomatedTestBase
 
 
 			fullDMLScriptName = HOME + dml_test_name + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), input("B"), output("C") };
+			programArgs = new String[]{"-explain", "-stats", "-args", input("A"), input("B"), output("C") };
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " "  + expectedDir();
 

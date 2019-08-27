@@ -20,6 +20,7 @@
 package org.tugraz.sysds.runtime.matrix.data;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.CholeskyDecomposition;
 import org.apache.commons.math3.linear.DecompositionSolver;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -93,8 +94,10 @@ public class LibCommonsMath
 	 * @return matrix block
 	 */
 	private static MatrixBlock computeSolve(MatrixBlock in1, MatrixBlock in2) {
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in1);
-		Array2DRowRealMatrix vectorInput = DataConverter.convertToArray2DRowRealMatrix(in2);
+		//convert to commons math BlockRealMatrix instead of Array2DRowRealMatrix
+		//to avoid unnecessary conversion as QR internally creates a BlockRealMatrix
+		BlockRealMatrix matrixInput = DataConverter.convertToBlockRealMatrix(in1);
+		BlockRealMatrix vectorInput = DataConverter.convertToBlockRealMatrix(in2);
 		
 		/*LUDecompositionImpl ludecompose = new LUDecompositionImpl(matrixInput);
 		DecompositionSolver lusolver = ludecompose.getSolver();
@@ -106,7 +109,7 @@ public class LibCommonsMath
 		// Invoke solve
 		RealMatrix solutionMatrix = solver.solve(vectorInput);
 		
-		return DataConverter.convertToMatrixBlock(solutionMatrix.getData());
+		return DataConverter.convertToMatrixBlock(solutionMatrix);
 	}
 	
 	/**

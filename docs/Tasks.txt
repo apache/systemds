@@ -81,6 +81,7 @@ SYSTEMDS-110 New Builtin Functions
  * 113 Builtin functions for linear regression algorithms             OK
  * 114 Builtin function for stepwise regression                       OK
  * 115 Builtin function for model debugging (slice finder)            OK
+ * 116 Builtin function for kmeans
 
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK

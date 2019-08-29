@@ -18,7 +18,6 @@
 
 X = read($1);
 w = read($2);
-ress = slicefinder(X0 = X,W = w,  k = 5);
-
-#TODO write and check automatically
-print(toString(ress));
+y = read($3)
+ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
+write(ress, $4);

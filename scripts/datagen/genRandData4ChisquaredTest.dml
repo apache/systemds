@@ -21,7 +21,7 @@
 
 # generates a two column matrix of categorical
 # variables
-# used to test systemml's chi-squared bivariate stat
+# used to test systemds's chi-squared bivariate stat
 # computation
 
 # $1 is number of samples to generate

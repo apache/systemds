@@ -85,10 +85,10 @@
 #
 # EXAMPLES:
 #
-# hadoop jar SystemML.jar -f stratstats.dml -nvargs X=INPUT_DIR/X.mtx Xcid=INPUT_DIR/Xcid.mtx
+# hadoop jar SystemDS.jar -f stratstats.dml -nvargs X=INPUT_DIR/X.mtx Xcid=INPUT_DIR/Xcid.mtx
 #     Y=INPUT_DIR/Y.mtx Ycid=INPUT_DIR/Ycid.mtx S=INPUT_DIR/S.mtx Scid=1 O=OUTPUT_DIR/Out.mtx fmt=csv
 #
-# hadoop jar SystemML.jar -f stratstats.dml -nvargs X=INPUT_DIR/Data.mtx Xcid=INPUT_DIR/Xcid.mtx
+# hadoop jar SystemDS.jar -f stratstats.dml -nvargs X=INPUT_DIR/Data.mtx Xcid=INPUT_DIR/Xcid.mtx
 #     Ycid=INPUT_DIR/Ycid.mtx Scid=1 O=OUTPUT_DIR/Out.mtx
 
 fileX = $X;

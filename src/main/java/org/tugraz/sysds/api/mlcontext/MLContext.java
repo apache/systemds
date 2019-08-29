@@ -46,7 +46,7 @@ import org.tugraz.sysds.runtime.meta.MetaDataFormat;
 import org.tugraz.sysds.utils.MLContextProxy;
 import org.tugraz.sysds.utils.Explain.ExplainType;
 /**
- * The MLContext API offers programmatic access to SystemML on Spark from
+ * The MLContext API offers programmatic access to SystemDS on Spark from
  * languages such as Scala, Java, and Python.
  *
  */
@@ -130,7 +130,7 @@ public class MLContext implements ConfigurableAPI
 	private boolean initBeforeExecution = true;
 
 	/**
-	 * The different explain levels supported by SystemML.
+	 * The different explain levels supported by SystemDS.
 	 *
 	 */
 	public enum ExplainLevel {
@@ -164,7 +164,7 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * The different types of execution environments supported by SystemML. The
+	 * The different types of execution environments supported by SystemDS. The
 	 * default execution type is {@code DRIVER_AND_SPARK}. {@code DRIVER} refers
 	 * to all operations occurring in the local driver JVM. {@code SPARK} refers
 	 * to all operations occurring on Spark. {@code HADOOP} refers to all
@@ -192,7 +192,7 @@ public class MLContext implements ConfigurableAPI
 
 	/**
 	 * Retrieve the currently active MLContext. This is used internally by
-	 * SystemML via MLContextProxy.
+	 * SystemDS via MLContextProxy.
 	 *
 	 * @return the active MLContext
 	 */
@@ -201,7 +201,7 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * Create an MLContext based on a SparkSession for interaction with SystemML
+	 * Create an MLContext based on a SparkSession for interaction with SystemDS
 	 * on Spark.
 	 *
 	 * @param spark
@@ -212,7 +212,7 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * Create an MLContext based on a SparkContext for interaction with SystemML
+	 * Create an MLContext based on a SparkContext for interaction with SystemDS
 	 * on Spark.
 	 *
 	 * @param sparkContext
@@ -224,7 +224,7 @@ public class MLContext implements ConfigurableAPI
 
 	/**
 	 * Create an MLContext based on a JavaSparkContext for interaction with
-	 * SystemML on Spark.
+	 * SystemDS on Spark.
 	 *
 	 * @param javaSparkContext
 	 *            JavaSparkContext
@@ -248,15 +248,15 @@ public class MLContext implements ConfigurableAPI
 		} catch (MLContextException e) {
 			if (info() != null) {
 				log.warn("Apache Spark " + this.info().minimumRecommendedSparkVersion()
-						+ " or above is recommended for SystemML " + this.info().version());
+						+ " or above is recommended for SystemDS " + this.info().version());
 			} else {
 				try {
 					String minSparkVersion = MLContextUtil.getMinimumRecommendedSparkVersionFromPom();
 					log.warn("Apache Spark " + minSparkVersion
-							+ " or above is recommended for this version of SystemML.");
+							+ " or above is recommended for this version of SystemDS.");
 				} catch (MLContextException e1) {
 					log.error(
-							"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+							"Minimum recommended Spark version could not be determined from SystemDS jar file manifest or pom.xml");
 				}
 			}
 		}
@@ -354,7 +354,7 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * Set SystemML configuration based on a configuration file.
+	 * Set SystemDS configuration based on a configuration file.
 	 *
 	 * @param configFilePath
 	 *            path to the configuration file
@@ -452,7 +452,7 @@ public class MLContext implements ConfigurableAPI
 
 	/**
 	 * Whether or not to use (an available) GPU on the driver node. If a GPU is
-	 * not available, and the GPU mode is set, SystemML will crash when the
+	 * not available, and the GPU mode is set, SystemDS will crash when the
 	 * program is run.
 	 *
 	 * @param enable
@@ -465,7 +465,7 @@ public class MLContext implements ConfigurableAPI
 	/**
 	 * Whether or not to explicitly "force" the usage of GPU. If a GPU is not
 	 * available, and the GPU mode is set or if available memory on GPU is less,
-	 * SystemML will crash when the program is run.
+	 * SystemDS will crash when the program is run.
 	 *
 	 * @param enable
 	 *            true if needs to be enabled, false otherwise
@@ -649,7 +649,7 @@ public class MLContext implements ConfigurableAPI
 
 	/**
 	 * Obtain information about the project such as version and build time from
-	 * the manifest in the SystemML jar file.
+	 * the manifest in the SystemDS jar file.
 	 *
 	 * @return information about the project
 	 */
@@ -664,9 +664,9 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * Obtain the SystemML version number.
+	 * Obtain the SystemDS version number.
 	 *
-	 * @return the SystemML version number
+	 * @return the SystemDS version number
 	 */
 	public String version() {
 		if (info() == null) {
@@ -676,9 +676,9 @@ public class MLContext implements ConfigurableAPI
 	}
 
 	/**
-	 * Obtain the SystemML jar file build time.
+	 * Obtain the SystemDS jar file build time.
 	 *
-	 * @return the SystemML jar file build time
+	 * @return the SystemDS jar file build time
 	 */
 	public String buildTime() {
 		if (info() == null) {

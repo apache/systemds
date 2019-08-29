@@ -26,7 +26,7 @@
 # accuracy (%) for the predictions
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f m-svm-predict.dml -nvargs X=data Y=labels scoring_only=FALSE model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
+# hadoop jar SystemDS.jar -f m-svm-predict.dml -nvargs X=data Y=labels scoring_only=FALSE model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #													 
 
 cmdLine_Y = ifdef($Y, " ")

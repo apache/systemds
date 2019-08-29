@@ -23,7 +23,7 @@
 # Assume C_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for vector
-# hadoop jar SystemML.jar -f $C_HOME/Categorical.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/W" "$OUTPUT_DIR/Nc" "$OUPUT_DIR/R" "$OUTPUT_DIR/Pc" "$OUTPUT_DIR/C" "$OUTPUT_DIR/Mode"
+# hadoop jar SystemDS.jar -f $C_HOME/Categorical.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/W" "$OUTPUT_DIR/Nc" "$OUPUT_DIR/R" "$OUTPUT_DIR/Pc" "$OUTPUT_DIR/C" "$OUTPUT_DIR/Mode"
 
 V = read($1, rows=$2, cols=1, format="text")
 W = read($3, rows=$2, cols=1, format="text")

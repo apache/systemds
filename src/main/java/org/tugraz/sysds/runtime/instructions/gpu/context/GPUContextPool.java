@@ -110,7 +110,7 @@ public class GPUContextPool {
 			}
 
 		} catch (IllegalArgumentException e) {
-			LOG.warn("Invalid setting for setting systemml.gpu.availableGPUs, defaulting to use ALL GPUs");
+			LOG.warn("Invalid setting for setting systemds.gpu.availableGPUs, defaulting to use ALL GPUs");
 
 			// Initialize the list of devices & the pool of GPUContexts
 			for (int i = 0; i < deviceCount; i++) {

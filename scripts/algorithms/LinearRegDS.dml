@@ -65,7 +65,7 @@
 # * The last two statistics are only printed if there is no intercept (icpt=0)
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f LinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
+# hadoop jar SystemDS.jar -f LinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
 #     O=OUTPUT_DIR/Out icpt=2 reg=1.0 fmt=csv
 
 fileX = $X;

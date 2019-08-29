@@ -634,12 +634,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
 		int D = toInt(numRowsW) - M; // since W:(D+M, 4M) ... numFeatures 
-		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
-		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
+		Pointer sysdsWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
+		Pointer sysdsBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instructionName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
 				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
-				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
+				sysdsWPointer, sysdsBiasPointer, cudnnWPointer, D, M);
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		
@@ -699,12 +699,12 @@ public class DnnGPUInstruction extends GPUInstruction {
 		MatrixObject bias = getMatrixInputForGPUInstruction(ec, _input3.getName());
 		long numRowsW = W.getNumRows();
 		int D = toInt(numRowsW) - M; // since W:(D+M, 4M) ... numFeatures 
-		Pointer sysmlWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
-		Pointer sysmlBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
+		Pointer sysdsWPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, W, instructionName, D+M, 4*M);
+		Pointer sysdsBiasPointer = LibMatrixCuDNN.getDensePointerForCuDNN(gCtx, bias, instructionName, 1, 4*M);
 		Pointer cudnnWPointer = gCtx.allocate(instructionName, (D+M+2)*(4*M)*LibMatrixCUDA.sizeOfDataType);
 		LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_weight",
 				ExecutionConfig.getConfigForSimpleVectorOperations((D+M+2)*(4*M)),
-				sysmlWPointer, sysmlBiasPointer, cudnnWPointer, D, M);
+				sysdsWPointer, sysdsBiasPointer, cudnnWPointer, D, M);
 		ec.releaseMatrixInputForGPUInstruction(_input2.getName());
 		ec.releaseMatrixInputForGPUInstruction(_input3.getName());
 		

@@ -40,7 +40,7 @@
 #        + bivar.nominal.scale.stats -
 #        + bivar.ordinal.ordinal.stats -
 #
-# hadoop jar SystemML.jar -f bivar-stats.dml -nvargs X=<Data> \
+# hadoop jar SystemDS.jar -f bivar-stats.dml -nvargs X=<Data> \
 #    index1=<Feature Index Set 1> index2=<Feature Index Set 2> \
 #    types1=<Feature Types 1> types2=<Feature Types 2> OUTDIR=<Output Location>
 

@@ -26,9 +26,9 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.io.File;
 
-public class SystemMLLoaderUtils  {
+public class SystemDSLoaderUtils  {
 	
-	public void loadSystemML(String filePath) throws MalformedURLException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+	public void loadSystemDS(String filePath) throws MalformedURLException, NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 		URL url = new File(filePath).toURI().toURL();
 		URLClassLoader classLoader = (URLClassLoader)ClassLoader.getSystemClassLoader();
 		Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);

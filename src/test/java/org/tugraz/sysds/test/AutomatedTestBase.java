@@ -158,17 +158,17 @@ public abstract class AutomatedTestBase
 	private static final String CONFIG_DIR = "./src/test/config/";
 
 	/**
-	 * Location of the SystemML config file that we use as a template when
+	 * Location of the SystemDS config file that we use as a template when
 	 * generating the configs for each test case.
 	 */
 	private static final File CONFIG_TEMPLATE_FILE = new File(CONFIG_DIR, "SystemDS-config.xml");
 
 	/**
 	 * Location under which we create local temporary directories for test cases.
-	 * To adjust where testTemp is located, use -Dsystemml.testTemp.root.dir=<new location>.  This is necessary
+	 * To adjust where testTemp is located, use -Dsystemds.testTemp.root.dir=<new location>.  This is necessary
 	 * if any parent directories are public-protected.
 	 */
-	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemml.testTemp.root.dir","target/testTemp");
+	private static final String LOCAL_TEMP_ROOT_DIR = System.getProperty("systemds.testTemp.root.dir","target/testTemp");
 	private static final File LOCAL_TEMP_ROOT = new File(LOCAL_TEMP_ROOT_DIR);
 
 	/** Base directory for generated IN, OUT, EXPECTED test data artifacts instead of SCRIPT_DIR. */
@@ -200,8 +200,8 @@ public abstract class AutomatedTestBase
 	protected HashMap<String, String> testVariables; /* variables and their values */
 
 	/* For testing in the new way */
-	//protected String[] dmlArgs;            /* program-independent arguments to SystemML (e.g., debug, execution mode) */
-	protected String[] programArgs;        /* program-specific arguments, which are passed to SystemML via -args option */
+	//protected String[] dmlArgs;            /* program-independent arguments to SystemDS (e.g., debug, execution mode) */
+	protected String[] programArgs;        /* program-specific arguments, which are passed to SystemDS via -args option */
 	protected String rCmd;                 /* Rscript foo.R arg1, arg2 ...          */
 
 	protected String selectedTest;
@@ -321,7 +321,7 @@ public abstract class AutomatedTestBase
 	 *
 	 * @return the directory where the current test case should write temp
 	 *         files. This directory also contains the current test's customized
-	 *         SystemML config file.
+	 *         SystemDS config file.
 	 */
 	protected File getCurLocalTempDir() {
 		if (null == curLocalTempDir) {
@@ -335,7 +335,7 @@ public abstract class AutomatedTestBase
 	 * Subclasses must call {@link #loadTestConfiguration(TestConfiguration)}
 	 * before calling this method.
 	 *
-	 * @return the location of the current test case's SystemML config file
+	 * @return the location of the current test case's SystemDS config file
 	 */
 	protected File getCurConfigFile() {
 		return new File(getCurLocalTempDir(), "SystemDS-config.xml");
@@ -343,7 +343,7 @@ public abstract class AutomatedTestBase
 
 	/**
 	 * <p>
-	 * Tests that use custom SystemML configuration should override to ensure
+	 * Tests that use custom SystemDS configuration should override to ensure
 	 * scratch space and local temporary directory locations are also updated.
 	 * </p>
 	 */
@@ -887,19 +887,19 @@ public abstract class AutomatedTestBase
 			curLocalTempDir.mkdirs();
 			TestUtils.clearDirectory(curLocalTempDir.getPath());
 
-			// Create a SystemML config file for this test case based on default template
+			// Create a SystemDS config file for this test case based on default template
 			// from src/test/config or derive from custom configuration provided by test.
 			String configTemplate = FileUtils.readFileToString(getConfigTemplateFile(), "UTF-8");
 			String localTemp = curLocalTempDir.getPath();
 			String configContents = configTemplate
 				.replace(createXMLElement(DMLConfig.SCRATCH_SPACE, "scratch_space"),
 					createXMLElement(DMLConfig.SCRATCH_SPACE, localTemp+"/scratch_space"))
-				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemml"),
+				.replace(createXMLElement(DMLConfig.LOCAL_TMP_DIR, "/tmp/systemds"),
 					createXMLElement(DMLConfig.LOCAL_TMP_DIR, localTemp+"/localtmp"));
 			
 			FileUtils.write(getCurConfigFile(), configContents, "UTF-8");
 
-			System.out.printf("This test case will use SystemML config file %s\n", getCurConfigFile());
+			System.out.printf("This test case will use SystemDS config file %s\n", getCurConfigFile());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -1068,7 +1068,7 @@ public abstract class AutomatedTestBase
 
 	/**
 	 * <p>
-	 * Runs a test for which no exception is expected. If SystemML executes more
+	 * Runs a test for which no exception is expected. If SystemDS executes more
 	 * MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
 	 *
@@ -1110,7 +1110,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified as well
-	 * as the specific expectation which is expected. If SystemML executes more
+	 * as the specific expectation which is expected. If SystemDS executes more
 	 * MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
 	 *
@@ -1129,7 +1129,7 @@ public abstract class AutomatedTestBase
 	/**
 	 * <p>
 	 * Runs a test for which the exception expectation can be specified as well
-	 * as the specific expectation which is expected. If SystemML executes more
+	 * as the specific expectation which is expected. If SystemDS executes more
 	 * MR jobs than specified in maxMRJobs this test will fail.
 	 * </p>
 	 * @param newWay
@@ -1150,7 +1150,7 @@ public abstract class AutomatedTestBase
 	 * <p>
 	 * Runs a test for which the exception expectation and the error message
 	 * can be specified as well as the specific expectation which is expected.
-	 * If SystemML executes more MR jobs than specified in maxMRJobs this test
+	 * If SystemDS executes more MR jobs than specified in maxMRJobs this test
 	 * will fail.
 	 * </p>
 	 * @param newWay
@@ -1178,10 +1178,10 @@ public abstract class AutomatedTestBase
 		cleanupScratchSpace();
 
 		ArrayList<String> args = new ArrayList<String>();
-		// setup arguments to SystemML
+		// setup arguments to SystemDS
 
 		if (DEBUG) {
-			args.add("-Dsystemml.logging=trace");
+			args.add("-Dsystemds.logging=trace");
 		}
 
 		if (newWay) {
@@ -1209,7 +1209,7 @@ public abstract class AutomatedTestBase
 		else {
 			throw new RuntimeException("Unknown runtime platform: " + rtplatform);
 		}
-		//use optional config file since default under SystemML/DML
+		//use optional config file since default under SystemDS/DML
 		args.add("-config");
 		args.add(getCurConfigFile().getPath());
 
@@ -1475,7 +1475,7 @@ public abstract class AutomatedTestBase
 			TestUtils.removeHDFSDirectories(inputDirectories.toArray(new String[inputDirectories.size()]));
 			TestUtils.removeFiles(inputRFiles.toArray(new String[inputRFiles.size()]));
 
-			// The following cleanup code is disabled (see [SYSML-256]) until we can figure out
+			// The following cleanup code is disabled (see [SYSTEMML-256]) until we can figure out
 			// what test cases are creating temporary directories at the root of the project.
 			//TestUtils.removeTemporaryFiles();
 
@@ -1820,13 +1820,13 @@ public abstract class AutomatedTestBase
 	}
 
 	/**
-	 * Create a SystemML-preferred Spark Session.
+	 * Create a SystemDS-preferred Spark Session.
 	 *
 	 * @param appName the application name
 	 * @param master the master value (ie, "local", etc)
 	 * @return Spark Session
 	 */
-	public static SparkSession createSystemMLSparkSession(String appName, String master) {
+	public static SparkSession createSystemDSSparkSession(String appName, String master) {
 		Builder builder = SparkSession.builder();
 		if (appName != null) {
 			builder.appName(appName);

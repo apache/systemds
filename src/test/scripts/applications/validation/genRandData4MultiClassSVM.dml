@@ -22,10 +22,10 @@
 # generates random data to test multiclass SVM
 
 # 100K dataset
-# hadoop jar SystemML.jar -f genRandData4MultiClassSVM.dml -args 100000 500 5 5 itau/svm/w_100k itau/svm/X_100k_500 itau/svm/y_100k 0 0 0.01
+# hadoop jar SystemDS.jar -f genRandData4MultiClassSVM.dml -args 100000 500 5 5 itau/svm/w_100k itau/svm/X_100k_500 itau/svm/y_100k 0 0 0.01
 
 # 5M dataset
-# hadoop jar SystemML.jar -f genRandData4MultiClassSVM.dml -args 5000000 5000 5 5 itau/svm/w_5m itau/svm/X_5m_5k itau/svm/y_5m 0 0 0.001
+# hadoop jar SystemDS.jar -f genRandData4MultiClassSVM.dml -args 5000000 5000 5 5 itau/svm/w_5m itau/svm/X_5m_5k itau/svm/y_5m 0 0 0.001
 
 # $1 is number of samples
 # $2 is number of features (independent variables)

@@ -35,7 +35,7 @@
 # --------------------------------------------------------------------------------------------
 #
 # Example:
-# hadoop jar SystemML.jar -f genRandData4PCA.dml -nvargs R=1000000 C=1000 OUT=/user/biuser/pcaData.mtx FMT=csv
+# hadoop jar SystemDS.jar -f genRandData4PCA.dml -nvargs R=1000000 C=1000 OUT=/user/biuser/pcaData.mtx FMT=csv
 
 R =   ifdef ($R, 10000)
 C   = ifdef ($C, 1000)

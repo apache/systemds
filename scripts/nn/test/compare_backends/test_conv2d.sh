@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 
-jars='systemml-*-extra.jar'
+jars='systemds-*-extra.jar'
 
 # N = Number of images, C = number of channels, H = height, W = width
 # F = number of filters, Hf = filter height, Wf = filter width
@@ -34,17 +34,17 @@ Wf=3
 for sparsity in 0.1 0.2 0.5 0.6 0.9
 do
 	# Generating the data
-	$SPARK_HOME/bin/spark-submit SystemML.jar -f gen_conv2d.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
+	$SPARK_HOME/bin/spark-submit SystemDS.jar -f gen_conv2d.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
 	for stride in 1 2 3
 	do
 		for pad in 0 1 2
 		do
 			# Running a test in CPU mode
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f test_conv2d.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
+			$SPARK_HOME/bin/spark-submit SystemDS.jar -f test_conv2d.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
 			# Running a test in GPU mode
-			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_conv2d.dml -stats -gpu force  -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
+			$SPARK_HOME/bin/spark-submit --jars $jars SystemDS.jar -f test_conv2d.dml -stats -gpu force  -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W F=$F Hf=$Hf Wf=$Wf
 			# Comparing the CPU vs GPU results to make sure they are the same
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "conv2d:stride="$stride",pad="$pad",sparsity="$sparsity
+			$SPARK_HOME/bin/spark-submit SystemDS.jar -f compare.dml -args out_cp.csv out_gpu.csv "conv2d:stride="$stride",pad="$pad",sparsity="$sparsity
 			rm -rf out_cp.csv out_gpu.csv out_cp.csv.mtd out_gpu.csv.mtd
 		done
 	done

@@ -111,7 +111,7 @@ public class LinearLogRegTest extends AutomatedTestBase
 		runRScript(true);
 
         HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-        HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
-        TestUtils.compareMatrices(wR, wSYSTEMML, Math.pow(10, -14), "wR", "wSYSTEMML");
+        HashMap<CellIndex, Double> wSYSTEMDS= readDMLMatrixFromHDFS("w");
+        TestUtils.compareMatrices(wR, wSYSTEMDS, Math.pow(10, -14), "wR", "wSYSTEMDS");
     }
 }

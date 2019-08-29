@@ -439,7 +439,7 @@ public class HDFSTool
 		if (StringUtils.isNotEmpty(userName)) {
 			mtd.put(DataExpression.AUTHORPARAM, userName);
 		} else {
-			mtd.put(DataExpression.AUTHORPARAM, "SystemML");
+			mtd.put(DataExpression.AUTHORPARAM, "SystemDS");
 		}
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");

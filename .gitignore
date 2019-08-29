@@ -34,9 +34,9 @@ buildNumber.properties
 .cache*
 
 # User configuration files
-conf/SystemML-config.xml
+conf/SystemDS-config.xml
 conf/log4j.properties
-conf/systemml-env.sh
+conf/systemds-env.sh
 
 # Documentation artifacts
 docs/_site
@@ -45,16 +45,11 @@ docs/api
 # Excluded sources
 src/main/java/Dml.tokens
 src/main/java/DmlLexer.tokens
-src/main/java/Pydml.tokens
-src/main/java/PydmlLexer.tokens
-src/main/java/org/apache/sysml/parser/dml/DmlBaseListener.java
-src/main/java/org/apache/sysml/parser/dml/DmlLexer.java
-src/main/java/org/apache/sysml/parser/dml/DmlListener.java
-src/main/java/org/apache/sysml/parser/dml/DmlParser.java
-src/main/java/org/apache/sysml/parser/pydml/PydmlBaseListener.java
-src/main/java/org/apache/sysml/parser/pydml/PydmlLexer.java
-src/main/java/org/apache/sysml/parser/pydml/PydmlListener.java
-src/main/java/org/apache/sysml/parser/pydml/PydmlParser.java
+src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java
+src/main/java/org/tugraz/sysds/parser/dml/DmlLexer.java
+src/main/java/org/tugraz/sysds/parser/dml/DmlListener.java
+src/main/java/org/tugraz/sysds/parser/dml/DmlParser.java
+
 src/test/scripts/**/in
 src/test/scripts/**/out
 src/test/scripts/**/expected
@@ -67,10 +62,7 @@ scratch_space/
 Gemfile.lock
 
 # Python
-**/systemml.egg-info/
 **/__pycache__
-src/main/python/systemml/project_info.py
-src/main/python/systemml/systemml-java
 *.pyc
 
 # Spark

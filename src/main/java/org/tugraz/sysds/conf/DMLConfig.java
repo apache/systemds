@@ -54,46 +54,46 @@ import org.xml.sax.SAXException;
 
 public class DMLConfig
 {
-	public static final String DEFAULT_SYSTEMML_CONFIG_FILEPATH = "./SystemDS-config.xml";
+	public static final String DEFAULT_SYSTEMDS_CONFIG_FILEPATH = "./SystemDS-config.xml";
 	
 	private static final Log LOG = LogFactory.getLog(DMLConfig.class.getName());
 	
 	// external names of configuration properties 
 	// (single point of change for all internal refs)
-	public static final String LOCAL_TMP_DIR        = "sysml.localtmpdir";
-	public static final String SCRATCH_SPACE        = "sysml.scratch";
-	public static final String OPTIMIZATION_LEVEL   = "sysml.optlevel";
-	public static final String NUM_REDUCERS         = "sysml.numreducers";
-	public static final String JVM_REUSE            = "sysml.jvmreuse";
-	public static final String DEFAULT_BLOCK_SIZE   = "sysml.defaultblocksize";
-	public static final String YARN_APPMASTER       = "sysml.yarn.appmaster";
-	public static final String YARN_APPMASTERMEM    = "sysml.yarn.appmaster.mem";
-	public static final String YARN_MAPREDUCEMEM    = "sysml.yarn.mapreduce.mem";
-	public static final String YARN_APPQUEUE        = "sysml.yarn.app.queue"; 
-	public static final String CP_PARALLEL_OPS      = "sysml.cp.parallel.ops";
-	public static final String CP_PARALLEL_IO       = "sysml.cp.parallel.io";
-	public static final String NATIVE_BLAS          = "sysml.native.blas";
-	public static final String NATIVE_BLAS_DIR      = "sysml.native.blas.directory";
-	public static final String CODEGEN              = "sysml.codegen.enabled"; //boolean
-	public static final String CODEGEN_COMPILER     = "sysml.codegen.compiler"; //see SpoofCompiler.CompilerType
-	public static final String CODEGEN_OPTIMIZER    = "sysml.codegen.optimizer"; //see SpoofCompiler.PlanSelector
-	public static final String CODEGEN_PLANCACHE    = "sysml.codegen.plancache"; //boolean
-	public static final String CODEGEN_LITERALS     = "sysml.codegen.literals"; //1..heuristic, 2..always
-	public static final String CACHING_BUFFER_SIZE 	= "sysml.caching.bufferSize"; //double: default:0.15
-	public static final String EXTRA_FINEGRAINED_STATS = "sysml.stats.finegrained"; //boolean
-	public static final String STATS_MAX_WRAP_LEN   = "sysml.stats.maxWrapLength"; //int
-	public static final String AVAILABLE_GPUS       = "sysml.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
-	public static final String SYNCHRONIZE_GPU      = "sysml.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction 
-	public static final String EAGER_CUDA_FREE		= "sysml.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
-	public static final String GPU_EVICTION_POLICY	= "sysml.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
+	public static final String LOCAL_TMP_DIR        = "sysds.localtmpdir";
+	public static final String SCRATCH_SPACE        = "sysds.scratch";
+	public static final String OPTIMIZATION_LEVEL   = "sysds.optlevel";
+	public static final String NUM_REDUCERS         = "sysds.numreducers";
+	public static final String JVM_REUSE            = "sysds.jvmreuse";
+	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
+	public static final String YARN_APPMASTER       = "sysds.yarn.appmaster";
+	public static final String YARN_APPMASTERMEM    = "sysds.yarn.appmaster.mem";
+	public static final String YARN_MAPREDUCEMEM    = "sysds.yarn.mapreduce.mem";
+	public static final String YARN_APPQUEUE        = "sysds.yarn.app.queue";
+	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
+	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
+	public static final String NATIVE_BLAS          = "sysds.native.blas";
+	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
+	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
+	public static final String CODEGEN_COMPILER     = "sysds.codegen.compiler"; //see SpoofCompiler.CompilerType
+	public static final String CODEGEN_OPTIMIZER    = "sysds.codegen.optimizer"; //see SpoofCompiler.PlanSelector
+	public static final String CODEGEN_PLANCACHE    = "sysds.codegen.plancache"; //boolean
+	public static final String CODEGEN_LITERALS     = "sysds.codegen.literals"; //1..heuristic, 2..always
+	public static final String CACHING_BUFFER_SIZE 	= "sysds.caching.bufferSize"; //double: default:0.15
+	public static final String EXTRA_FINEGRAINED_STATS = "sysds.stats.finegrained"; //boolean
+	public static final String STATS_MAX_WRAP_LEN   = "sysds.stats.maxWrapLength"; //int
+	public static final String AVAILABLE_GPUS       = "sysds.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
+	public static final String SYNCHRONIZE_GPU      = "sysds.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction
+	public static final String EAGER_CUDA_FREE		= "sysds.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
+	public static final String GPU_EVICTION_POLICY	= "sysds.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
 	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
-	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysml.gpu.memory.util.factor";
-	public static final String GPU_MEMORY_ALLOCATOR = "sysml.gpu.memory.allocator"; // String to specify the memory allocator to use. Supported values are: cuda, unified_memory
-	public static final String FLOATING_POINT_PRECISION = "sysml.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
-	public static final String PRINT_GPU_MEMORY_INFO = "sysml.gpu.print.memoryInfo";
-	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysml.gpu.eviction.shadow.bufferSize";
+	public static final String GPU_MEMORY_UTILIZATION_FACTOR = "sysds.gpu.memory.util.factor";
+	public static final String GPU_MEMORY_ALLOCATOR = "sysds.gpu.memory.allocator"; // String to specify the memory allocator to use. Supported values are: cuda, unified_memory
+	public static final String FLOATING_POINT_PRECISION = "sysds.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
+	public static final String PRINT_GPU_MEMORY_INFO = "sysds.gpu.print.memoryInfo";
+	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysds.gpu.eviction.shadow.bufferSize";
 
 	// supported prefixes for custom map/reduce configurations
 	public static final String PREFIX_MAPRED = "mapred";
@@ -404,7 +404,7 @@ public class DMLConfig
 		} else {
 			// default
 			try {
-				config = new DMLConfig(DEFAULT_SYSTEMML_CONFIG_FILEPATH, false);
+				config = new DMLConfig(DEFAULT_SYSTEMDS_CONFIG_FILEPATH, false);
 			} catch (FileNotFoundException fnfe) {
 				LOG.info("Using internal default configuration settings.  If you wish to " +
 						 "customize any settings, please supply a `SystemDS-config.xml` file.");

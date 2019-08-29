@@ -26,7 +26,7 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 
 /**
- * Lop to convert CSV data into SystemML data format (TextCell, BinaryCell, or BinaryBlock)
+ * Lop to convert CSV data into SystemDS data format (TextCell, BinaryCell, or BinaryBlock)
  */
 public class CSVReBlock extends Lop 
 {

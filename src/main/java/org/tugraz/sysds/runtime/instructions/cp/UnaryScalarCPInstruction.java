@@ -46,7 +46,7 @@ public class UnaryScalarCPInstruction extends UnaryMatrixCPInstruction {
 			String outString = so.getLanguageSpecificStringValue();
 			
 			// print to stdout only when suppress flag in DMLScript is not set.
-			// The flag will be set, for example, when SystemML is invoked in fenced mode from Jaql.
+			// The flag will be set, for example, when SystemDS is invoked in fenced mode from Jaql.
 			if (!DMLScript.suppressPrint2Stdout())
 				System.out.println(outString);
 			

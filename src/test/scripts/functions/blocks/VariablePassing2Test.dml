@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# JUnit test class: org.apache.sysml.test.integration.functions.blocks.VariableTest.jav
+# JUnit test class: org.tugraz.sysds.test.integration.functions.blocks.VariableTest.jav
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 B = $$factor$$ * t(A);

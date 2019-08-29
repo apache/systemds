@@ -133,7 +133,7 @@
 				</executions>
 			</plugin>
 
-			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" ANTLR RUNTIME INTO SYSTEMML.JAR -->
+			<!-- PLEASE DO NOT REMOVE! NEEDED to "PACKAGE" ANTLR RUNTIME INTO SYSTEMDS.JAR -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -738,7 +738,7 @@
 								<exclude>src/main/java/*.tokens</exclude>
 								<exclude>**/*.interp</exclude>
 								<!-- Compiled ptx file from nvcc -->
-								<exclude>src/main/cpp/kernels/SystemML.ptx</exclude>
+								<exclude>src/main/cpp/kernels/SystemDS.ptx</exclude>
 								<!-- Test Validation files -->
 								<exclude>src/test/scripts/functions/jmlc/**/*.impute</exclude>
 								<exclude>src/test/scripts/functions/jmlc/**/*.map</exclude>

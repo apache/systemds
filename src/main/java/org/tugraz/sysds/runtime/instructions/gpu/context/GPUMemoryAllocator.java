@@ -48,7 +48,7 @@ public interface GPUMemoryAllocator {
 	public boolean canAllocate(long size);
 	
 	/**
-	 * Gets the available memory on GPU that SystemML can use.
+	 * Gets the available memory on GPU that SystemDS can use.
 	 *
 	 * @return the available memory in bytes
 	 */

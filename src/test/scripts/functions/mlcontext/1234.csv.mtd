@@ -8,6 +8,6 @@
     "header": false,
     "sep": ",",
     "description": {
-        "author": "SystemML"
+        "author": "SystemDS"
     }
 }

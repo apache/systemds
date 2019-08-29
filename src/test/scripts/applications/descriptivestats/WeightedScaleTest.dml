@@ -23,7 +23,7 @@
 # Assume S_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for V and rows = 5 for P
-# hadoop jar SystemML.jar -f $S_HOME/Scale.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/weight "$INPUT_DIR/prob 5
+# hadoop jar SystemDS.jar -f $S_HOME/Scale.dml -args "$INPUT_DIR/vector" 10000 "$INPUT_DIR/weight "$INPUT_DIR/prob 5
 # "$OUTPUT_DIR/mean" "$OUTPUT_DIR/std" "$OUTPUT_DIR/se" "$OUTPUT_DIR/var" "$OUTPUT_DIR/cv"
 # "$OUTPUT_DIR/min" "$OUTPUT_DIR/max" "$OUTPUT_DIR/rng" 
 # "$OUTPUT_DIR/g1" "$OUTPUT_DIR/se_g1" "$OUTPUT_DIR/g2" "$OUTPUT_DIR/se_g2" 

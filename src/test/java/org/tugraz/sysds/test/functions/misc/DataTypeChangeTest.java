@@ -158,7 +158,7 @@ public class DataTypeChangeTest extends AutomatedTestBase
 		//validate test only
 		runValidateTest(fullDMLScriptName, exceptionExpected);
 		
-		//integration test from outside SystemML 
+		//integration test from outside SystemDS
 		runTest(true, exceptionExpected, DMLException.class, -1);
 	}
 	

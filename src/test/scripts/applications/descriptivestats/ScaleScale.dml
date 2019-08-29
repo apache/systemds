@@ -23,7 +23,7 @@
 # Assume $SS_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume X and Y are scale variables and both have 100000 rows
-# hadoop jar SystemML.jar -f $SS_HOME/ScaleScale.dml -args "$INPUT_DIR/X" 100000 "$INPUT_DIR/Y" "$OUPUT_DIR/PearsonR"
+# hadoop jar SystemDS.jar -f $SS_HOME/ScaleScale.dml -args "$INPUT_DIR/X" 100000 "$INPUT_DIR/Y" "$OUPUT_DIR/PearsonR"
 
 X = read($1, rows=$2, cols=1, format="text");
 Y = read($3, rows=$2, cols=1, format="text");

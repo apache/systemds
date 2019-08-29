@@ -64,16 +64,16 @@ limitations under the License.
 
 ## Introduction
 
-SystemML compiles scripts written in Declarative Machine Learning (or DML for short) into mixed driver and distributed jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemML. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Spark is installed on your machine or cluster, place `SystemML.jar` into your directory. Now, create a text file `hello.dml` containing following code:
+SystemDS compiles scripts written in Declarative Machine Learning (or DML for short) into mixed driver and distributed jobs. DML’s syntax closely follows R, thereby minimizing the learning curve to use SystemDS. Before getting into detail, let’s start with a simple Hello World program in DML. Assuming that Spark is installed on your machine or cluster, place `SystemDS.jar` into your directory. Now, create a text file `hello.dml` containing following code:
 
     print("Hello World");
 
 To run this program on your machine, use following command:
 
-    spark-submit SystemML.jar -f hello.dml
+    spark-submit SystemDS.jar -f hello.dml
 
 The option `-f` in the above command refers to the path to the DML script. A detailed list of the
-available options can be found running `spark-submit SystemML.jar -help`.
+available options can be found running `spark-submit SystemDS.jar -help`.
 
 
 ## Variables
@@ -102,7 +102,7 @@ As seen in above example, there is no formal declaration of a variable. A variab
 
 ### Data Types
 
-Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](dml-language-reference.html#frames) and  [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions).  SystemML supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
+Three data types (frame, matrix and scalar) and four value types (double, integer, string, and boolean) are supported. Matrices are 2-dimensional, and support the double value type (i.e., the cells in a matrix are of type double). The frame data type denotes the tabular data, potentially containing columns of value type numeric, string, and boolean.  Frame functions are described in [Frames](dml-language-reference.html#frames) and  [Data Pre-Processing Built-In Functions](dml-language-reference.html#data-pre-processing-built-in-functions).  SystemDS supports type polymorphism for both data type (primarily, matrix and scalar types) and value type during evaluation. For example:
 
     # Spoiler alert: matrix() is a built-in function to
     # create matrix, which will be discussed later
@@ -140,7 +140,7 @@ Now that we have familiarized ourselves with variables and data type, let’s un
 
 ### Operators
 
-SystemML follows same associativity and precedence order as R as described in below table. The dimensions of the input matrices need to match the operator semantics, otherwise an exception will be raised at compile time. When one of the operands is a matrix and the other operand is a scalar value, the operation is performed cell-wise on the matrix using the scalar operand.
+SystemDS follows same associativity and precedence order as R as described in below table. The dimensions of the input matrices need to match the operator semantics, otherwise an exception will be raised at compile time. When one of the operands is a matrix and the other operand is a scalar value, the operation is performed cell-wise on the matrix using the scalar operand.
 
 **Table 1**: Operators
 
@@ -396,7 +396,7 @@ log             | INFO
 profile         | 0
 
 
-Of particular note is the `check` parameter. SystemML's `parfor` statement by default (`check = 1`) performs dependency analysis in an
+Of particular note is the `check` parameter. SystemDS's `parfor` statement by default (`check = 1`) performs dependency analysis in an
 attempt to guarantee result correctness for parallel execution. For example, the following `parfor` statement is **incorrect** because
 the iterations do not act independently, so they are not parallelizable. The iterations incorrectly try to increment the same `sum` variable.
 
@@ -406,7 +406,7 @@ the iterations do not act independently, so they are not parallelizable. The ite
 	}
 	print(sum)
 
-SystemML's `parfor` dependency analysis can occasionally result in false positives, as in the following example. This example creates a 2x30
+SystemDS's `parfor` dependency analysis can occasionally result in false positives, as in the following example. This example creates a 2x30
 matrix. It then utilizes a `parfor` loop to write 10 2x3 matrices into the 2x30 matrix. This `parfor` statement is parallelizable and correct,
 but the dependency analysis generates a false positive dependency error for the variable `ms`.
 
@@ -436,7 +436,7 @@ three ways:
 
 ### User-Defined Function (UDF)
 
-The UDF function declaration statement provides the function signature, which defines the formal parameters used to call the function and return values for the function. The function definition specifies the function implementation, and can either be a sequence of statements or external packages / libraries. If the UDF is implemented in a SystemML script, then UDF declaration and definition occur together.
+The UDF function declaration statement provides the function signature, which defines the formal parameters used to call the function and return values for the function. The function definition specifies the function implementation, and can either be a sequence of statements or external packages / libraries. If the UDF is implemented in a SystemDS script, then UDF declaration and definition occur together.
 
 The syntax for the UDF function declaration is given as follows. The function definition is stored as a list of statements in the function body. The explanation of the parameters is given below. Any statement can be placed inside a UDF definition except UDF function declaration statements. The variables specified in the return clause will be returned, and no explicit return statement within the function body is required.
 
@@ -482,7 +482,7 @@ userParam=value | User-defined parameter to invoke the package. | Yes | Any non-
 
     # example of an external UDF
     time = externalFunction(Integer i) return (Double B)
-           implemented in (classname="org.apache.sysml.udf.lib.TimeWrapper", exectype="mem");
+           implemented in (classname="org.tugraz.sysds.udf.lib.TimeWrapper", exectype="mem");
     t = time(1);
     print("Time: " + t);
 
@@ -576,13 +576,13 @@ In above script, `ifdef(\$nbrRows, 10)` function is a short-hand for "`ifdef(\$n
 
 Let’s assume that the above script is invoked using following the command line values:
 
-    spark-submit SystemML.jar -f test.dml -nvargs fname=test.mtx nbrRows=5 nbrCols=5
+    spark-submit SystemDS.jar -f test.dml -nvargs fname=test.mtx nbrRows=5 nbrCols=5
 
 In this case, the script will create a random matrix M with 5 rows and 5 columns and write it to the file "text.mtx" in csv format. After that it will print the message "Done creating and writing random matrix in test.mtx" on the standard output.
 
 If however, the above script is invoked from the command line using named arguments:
 
-    spark-submit SystemML.jar -f test.dml -nvargs fname=test.mtx nbrCols=5
+    spark-submit SystemDS.jar -f test.dml -nvargs fname=test.mtx nbrCols=5
 
 Then, the script will instead create a random matrix M with 10 rows (i.e. default value provided in the script) and 5 columns.
 
@@ -848,7 +848,7 @@ trace() | Return the sum of the cells of the main diagonal square matrix | Input
 The `read` and `write` functions support the reading and writing of matrices and scalars from/to the file system
 (local or HDFS). Typically, associated with each data file is a JSON-formatted metadata file (MTD) that stores
 metadata information about the content of the data file, such as the number of rows and columns.
-For data files written by SystemML, an MTD file will automatically be generated. The name of the
+For data files written by SystemDS, an MTD file will automatically be generated. The name of the
 MTD file associated with `<filename>` must be `<filename.mtd>`. In general, it is highly recommended
 that users provide MTD files for their own data as well.
 
@@ -857,7 +857,7 @@ that users provide MTD files for their own data as well.
 
 #### File formats and MTD files
 
-SystemML supports 4 file formats:
+SystemDS supports 4 file formats:
 
   * CSV (delimited)
   * Matrix Market (coordinate)
@@ -867,10 +867,10 @@ SystemML supports 4 file formats:
 The CSV format is a standard text-based format where columns are separated by delimiter characters, typically commas, and
 rows are represented on separate lines.
 
-SystemML supports the Matrix Market coordinate format, which is a text-based, space-separated format used to
+SystemDS supports the Matrix Market coordinate format, which is a text-based, space-separated format used to
 represent sparse matrices. Additional information about the Matrix Market format can be found at
 [http://math.nist.gov/MatrixMarket/formats.html#MMformat](http://math.nist.gov/MatrixMarket/formats.html#MMformat).
-SystemML does not currently support the Matrix Market array format for dense matrices. In the Matrix Market
+SystemDS does not currently support the Matrix Market array format for dense matrices. In the Matrix Market
 coordinate format, metadata (the number of rows, the number of columns, and the number of non-zero values) are
 included in the data file. Rows and columns index from 1. Matrix Market data must be in a single file, whereas the
 (i,j,v) text format can span multiple part files on HDFS. Therefore, for scalability reasons, the use of the (i,j,v) text and
@@ -881,7 +881,7 @@ of rowId, columnId, and cellValue, with the rowId and columnId indices being 1-b
 coordinate format, except metadata is stored in a separate file rather than in the data file itself, and the (i,j,v) text format
 can span multiple part files.
 
-The binary format can only be read and written by SystemML.
+The binary format can only be read and written by SystemDS.
 
 Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In the table below, we have
 a matrix consisting of 4 rows and 3 columns.
@@ -932,7 +932,7 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "format": "csv",
 	    "header": false,
 	    "sep": ",",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -965,7 +965,7 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols": 3,
 	    "nnz": 6,
 	    "format": "text",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -984,7 +984,7 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "cols_in_block": 1000,
 	    "nnz": 6,
 	    "format": "binary",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 </div>
@@ -998,7 +998,7 @@ that contains the scalar value 2.0.
 	    "data_type": "scalar",
 	    "value_type": "double",
 	    "format": "text",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 
@@ -1018,7 +1018,7 @@ Parameter Name | Description | Optional | Permissible values | Data type valid f
 `nnz` | Number of non-zero values | Yes | any integer &gt; `0` | `matrix`
 `format` | Data file format | Yes. Default value is `text` | `csv`, `mm`, `text`, `binary` | `matrix`, `scalar`. Formats `csv` and `mm` are applicable only to matrices
 `description` | Description of the data | Yes | Any valid JSON string or object | `matrix`, `scalar`
-`author` | User that created the metadata file, defaults to `SystemML` | N/A | N/A | N/A
+`author` | User that created the metadata file, defaults to `SystemDS` | N/A | N/A | N/A
 `created` | Date/time when metadata file was written | N/A | N/A | N/A
 
 
@@ -1057,11 +1057,11 @@ The user has the option of specifying each parameter value in the MTD file, the 
 **However, parameter values specified in both the `read` invocation and the MTD file must have the same value. Also, if a scalar value is being read,
 then `format` cannot be specified.**
 
-The `read` invocation in SystemML is parameterized as follows during compilation.
+The `read` invocation in SystemDS is parameterized as follows during compilation.
 
   1. Default values are assigned to parameters.
   2. Parameters provided in `read()` either fill in values or override defaults.
-  3. SystemML will look for the MTD file at compile time in the specified location (at the same path as the data file, where the filename of the MTD file is the same name as the data file with the extension `.mtd`).
+  3. SystemDS will look for the MTD file at compile time in the specified location (at the same path as the data file, where the filename of the MTD file is the same name as the data file with the extension `.mtd`).
   4. If all non-optional parameters aren't specified or conflicting values are detected, then an exception is thrown.
 
 
@@ -1101,7 +1101,7 @@ Additionally, `readMM()` and `read.csv()` are supported and can be used instead 
 
 The `write` method is used to persist `scalar` and `matrix` data to files in the local file system or HDFS. The syntax of `write` is shown below.
 The parameters are described in Table 13. Note that the set of supported parameters for `write` is NOT the same as for `read`.
-SystemML writes an MTD file for the written data.
+SystemDS writes an MTD file for the written data.
 
     write(identifier, "outputfile", [additional parameters])
 
@@ -1131,7 +1131,7 @@ Example content of `out/file.ijv.mtd`:
         "cols": 8,
         "nnz": 4,
         "format": "text",
-        "author": "SystemML",
+        "author": "SystemDS",
         "created": "2017-01-01 00:00:01 PST"
     }
 
@@ -1150,7 +1150,7 @@ Example content of `out/file.mtd`:
         "rows_in_block": 1000,
         "cols_in_block": 1000,
         "format": "binary",
-        "author": "SystemML",
+        "author": "SystemDS",
         "created": "2017-01-01 00:00:01 PST"
     }
 
@@ -1169,7 +1169,7 @@ Example content of `n.csv.mtd`:
         "format": "csv",
         "header": true,
         "sep": ";",
-        "author": "SystemML",
+        "author": "SystemDS",
         "created": "2017-01-01 00:00:01 PST"
     }
 
@@ -1183,7 +1183,7 @@ Example content of `out/scalar_i.mtd`:
         "data_type": "scalar",
         "value_type": "int",
         "format": "text",
-        "author": "SystemML",
+        "author": "SystemDS",
         "created": "2017-01-01 00:00:01 PST"
     }
 
@@ -1212,7 +1212,7 @@ This will generate the following `mymatrix.csv.mtd` metadata file:
 	    "header": false,
 	    "sep": ",",
 	    "description": "my matrix",
-	    "author": "SystemML",
+	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
 	}
 
@@ -1498,7 +1498,7 @@ Note that the metadata generated during the training phase (located at `/user/ml
 
 ### Deep Learning Built-In Functions
 
-SystemML represent a tensor as a matrix stored in a row-major format,
+SystemDS represent a tensor as a matrix stored in a row-major format,
 where first dimension of tensor and matrix are exactly the same. For example, a tensor (with all zeros)
 of shape [3, 2, 4, 5] can be instantiated by following DML statement:
 ```sh
@@ -1537,7 +1537,7 @@ Examples:
 | bias_multiply        |                             | `ones = matrix(1, rows=1, cols=height*width); output = input * matrix(bias %*% ones, rows=1, cols=numChannels*height*width)`                                |
 
 ### Parameter Server Built-in Function
-Apart from data-parallel operations and task-parallel parfor loops, SystemML also supports a **data-parallel Parameter Server** via a built-in function **paramserv**. Currently both local multi-threaded and spark distributed backend are supported to execute the **paramserv** function. So far we only support a single parameter server with N workers as well as synchronous and asynchronous model updates per batch or epoch. For example, in order to train a model in local backend with update strategy BSP, 10 epochs, 64 batchsize, 10 workers, **paramserv** function should look like this:
+Apart from data-parallel operations and task-parallel parfor loops, SystemDS also supports a **data-parallel Parameter Server** via a built-in function **paramserv**. Currently both local multi-threaded and spark distributed backend are supported to execute the **paramserv** function. So far we only support a single parameter server with N workers as well as synchronous and asynchronous model updates per batch or epoch. For example, in order to train a model in local backend with update strategy BSP, 10 epochs, 64 batchsize, 10 workers, **paramserv** function should look like this:
 
 
     resultModel=paramserv(model=initModel, features=X, labels=Y, 

@@ -47,7 +47,7 @@ public class InstallDependencyForIntegrationTests {
 				String baseDir = "src" + File.separator + "main" + File.separator + "cpp" + File.separator + "kernels" + File.separator;
 				System.out.println("==============================================");
 				System.out.println("Compiling the kernels into ptx");
-				String cmd = "nvcc -ptx " + baseDir + "SystemML.cu -o " + baseDir + "SystemML.ptx";
+				String cmd = "nvcc -ptx " + baseDir + "SystemDS.cu -o " + baseDir + "SystemDS.ptx";
 				Process child = runCommand(cmd);
 				System.out.println("==============================================");
 				try {
@@ -57,7 +57,7 @@ public class InstallDependencyForIntegrationTests {
 				} catch (IllegalThreadStateException ie) {
 					child.destroy();
 				}
-				if(!new File(baseDir + "SystemML.ptx").exists()) {
+				if(!new File(baseDir + "SystemDS.ptx").exists()) {
 					throw new DMLRuntimeException("Compiling the kernels into ptx was unsuccessful.");
 				}
 			}

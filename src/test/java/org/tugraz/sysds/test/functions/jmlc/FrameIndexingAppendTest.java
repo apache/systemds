@@ -104,7 +104,7 @@ public class FrameIndexingAppendTest extends AutomatedTestBase
 		
 		ArrayList<String[][]> ret = new ArrayList<String[][]>();
 		
-		//establish connection to SystemML
+		//establish connection to SystemDS
 		Connection conn = new Connection();
 		
 		try

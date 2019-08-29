@@ -44,7 +44,7 @@
 # Log       String  ---         [OPTIONAL] Location to write the log file
 # ---------------------------------------------------------------------------------------------
 # 
-# hadoop jar SystemML.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
+# hadoop jar SystemDS.jar -f $SVM_HOME/m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=intercept tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 
 cmdLine_fmt = ifdef($fmt, "text")

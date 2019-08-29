@@ -150,7 +150,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURL() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL");
-		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/applications/hits/HITS.dml";
 		URL url = new URL(urlString);
 		Script script = dmlFromUrl(url);
 		String expectedContent = "Licensed to the Apache Software Foundation";
@@ -161,7 +161,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCreateDMLScriptBasedOnURLString() throws MalformedURLException {
 		System.out.println("MLContextTest - create DML script based on URL string");
-		String urlString = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/applications/hits/HITS.dml";
+		String urlString = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/applications/hits/HITS.dml";
 		Script script = dmlFromUrl(urlString);
 		String expectedContent = "Licensed to the Apache Software Foundation";
 		String s = script.getScriptString();
@@ -1171,7 +1171,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testCSVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - CSV matrix from URL sum DML");
-		String csv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.csv";
+		String csv = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/org/tugraz/sysds/api/mlcontext/1234.csv";
 		URL url = new URL(csv);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url);
 		setExpectedStdOut("sum: 10.0");
@@ -1181,7 +1181,7 @@ public class MLContextTest extends MLContextTestBase {
 	@Test
 	public void testIJVMatrixFromURLSumDML() throws MalformedURLException {
 		System.out.println("MLContextTest - IJV matrix from URL sum DML");
-		String ijv = "https://raw.githubusercontent.com/apache/systemml/master/src/test/scripts/org/apache/sysml/api/mlcontext/1234.ijv";
+		String ijv = "https://raw.githubusercontent.com/tugraz-isds/systemds/master/src/test/scripts/org/tugraz/sysds/api/mlcontext/1234.ijv";
 		URL url = new URL(ijv);
 		MatrixMetadata mm = new MatrixMetadata(MatrixFormat.IJV, 2, 2);
 		Script script = dml("print('sum: ' + sum(M));").in("M", url, mm);

@@ -25,7 +25,7 @@ import org.tugraz.sysds.conf.ConfigurationManager;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
- * Abstract metadata class for MLContext API. Complex types such as SystemML
+ * Abstract metadata class for MLContext API. Complex types such as SystemDS
  * matrices and frames typically require metadata, so this abstract class serves
  * as a common parent class of these types.
  *

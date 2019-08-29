@@ -21,99 +21,99 @@
 
 <root>
    <!-- local fs tmp working directory-->
-   <sysml.localtmpdir>/tmp/systemds</sysml.localtmpdir>
+   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
 
    <!-- hdfs tmp working directory--> 
-   <sysml.scratch>scratch_space</sysml.scratch> 
+   <sysds.scratch>scratch_space</sysds.scratch>
 
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
-   <sysml.optlevel>2</sysml.optlevel>  
+   <sysds.optlevel>2</sysds.optlevel>
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
-   <sysml.numreducers>10</sysml.numreducers> 
+   <sysds.numreducers>10</sysds.numreducers>
    
    <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
-   <sysml.jvmreuse>false</sysml.jvmreuse> 
+   <sysds.jvmreuse>false</sysds.jvmreuse>
 
    <!-- default block dim for binary block files -->
-   <sysml.defaultblocksize>1000</sysml.defaultblocksize> 
+   <sysds.defaultblocksize>1000</sysds.defaultblocksize>
 
    <!-- run systemds control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
-   <sysml.yarn.appmaster>false</sysml.yarn.appmaster>
+   <sysds.yarn.appmaster>false</sysds.yarn.appmaster>
 
    <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
-   <sysml.yarn.appmaster.mem>2048</sysml.yarn.appmaster.mem>
+   <sysds.yarn.appmaster.mem>2048</sysds.yarn.appmaster.mem>
 
    <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
-   <sysml.yarn.mapreduce.mem>2048</sysml.yarn.mapreduce.mem>
+   <sysds.yarn.mapreduce.mem>2048</sysds.yarn.mapreduce.mem>
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
-   <sysml.yarn.app.queue>default</sysml.yarn.app.queue>
+   <sysds.yarn.app.queue>default</sysds.yarn.app.queue>
    
    <!-- enables multi-threaded operations in singlenode control program -->
-   <sysml.cp.parallel.ops>true</sysml.cp.parallel.ops>
+   <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
    
    <!-- enables multi-threaded read/write in singlenode control program -->
-   <sysml.cp.parallel.io>true</sysml.cp.parallel.io>
+   <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
    
    <!-- enables compressed linear algebra, experimental feature -->
-   <sysml.compressed.linalg>auto</sysml.compressed.linalg>
+   <sysds.compressed.linalg>auto</sysds.compressed.linalg>
    
    <!-- enables operator fusion via code generation, experimental feature -->
-   <sysml.codegen.enabled>true</sysml.codegen.enabled>
+   <sysds.codegen.enabled>true</sysds.codegen.enabled>
    
    <!-- set the codegen java compiler (auto, janino, javac) -->
-   <sysml.codegen.compiler>auto</sysml.codegen.compiler>
+   <sysds.codegen.compiler>auto</sysds.codegen.compiler>
 
    <!-- set the codegen optimizer (fuse_all, fuse_no_redundancy, fuse_cost_based_v2) -->
-   <sysml.codegen.compiler>fuse_cost_based_v2</sysml.codegen.compiler>
+   <sysds.codegen.compiler>fuse_cost_based_v2</sysds.codegen.compiler>
    
    <!-- if codegen.enabled, enables source code caching of fused operators -->
-   <sysml.codegen.plancache>true</sysml.codegen.plancache>
+   <sysds.codegen.plancache>true</sysds.codegen.plancache>
    
    <!-- if codegen.enabled, compile literals as constants: 1..heuristic, 2..always -->
-   <sysml.codegen.literals>1</sysml.codegen.literals>
+   <sysds.codegen.literals>1</sysds.codegen.literals>
    
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
-   <sysml.native.blas>none</sysml.native.blas>
+   <sysds.native.blas>none</sysds.native.blas>
 
    <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
-   <sysml.native.blas.directory>none</sysml.native.blas.directory>
+   <sysds.native.blas.directory>none</sysds.native.blas.directory>
    
    <!-- prints finegrained statistics information (includes extra GPU information and extra statistics information for Deep Neural Networks done in CP mode) -->
-   <sysml.stats.finegrained>false</sysml.stats.finegrained>
+   <sysds.stats.finegrained>false</sysds.stats.finegrained>
    
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
-    <sysml.gpu.availableGPUs>-1</sysml.gpu.availableGPUs>
+    <sysds.gpu.availableGPUs>-1</sysds.gpu.availableGPUs>
     
     <!-- whether to synchronize GPUs after every GPU instruction -->
-    <sysml.gpu.sync.postProcess>false</sysml.gpu.sync.postProcess>
+    <sysds.gpu.sync.postProcess>false</sysds.gpu.sync.postProcess>
     
     <!-- whether to perform eager CUDA free on rmvar instruction -->
-    <sysml.gpu.eager.cudaFree>false</sysml.gpu.eager.cudaFree>
+    <sysds.gpu.eager.cudaFree>false</sysds.gpu.eager.cudaFree>
     
     <!-- Developer flag used to debug GPU memory leaks. This has huge performance overhead and should be only turned on for debugging purposes.  -->
-    <sysml.gpu.print.memoryInfo>false</sysml.gpu.print.memoryInfo>
+    <sysds.gpu.print.memoryInfo>false</sysds.gpu.print.memoryInfo>
    
     <!-- the floating point precision. supported values are double, single -->
-    <sysml.floating.point.precision>double</sysml.floating.point.precision>
+    <sysds.floating.point.precision>double</sysds.floating.point.precision>
     
     <!-- the eviction policy for the GPU bufferpool. Supported values are lru, mru, lfu, min_evict, align_memory -->
-    <sysml.gpu.eviction.policy>min_evict</sysml.gpu.eviction.policy>
+    <sysds.gpu.eviction.policy>min_evict</sysds.gpu.eviction.policy>
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
-   <sysml.stats.maxWrapLength>30</sysml.stats.maxWrapLength>
+   <sysds.stats.maxWrapLength>30</sysds.stats.maxWrapLength>
    
    <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
-   <sysml.caching.bufferSize>0.15</sysml.caching.bufferSize>
+   <sysds.caching.bufferSize>0.15</sysds.caching.bufferSize>
    
    <!-- Advanced optimization: fraction of driver memory to use for GPU shadow buffer. This optimization is ignored for double precision. 
    By default, it is disabled (hence set to 0.0). If you intend to train network larger than GPU memory size, consider using single precision and setting this to 0.1 -->
-   <sysml.gpu.eviction.shadow.bufferSize>0.0</sysml.gpu.eviction.shadow.bufferSize>
+   <sysds.gpu.eviction.shadow.bufferSize>0.0</sysds.gpu.eviction.shadow.bufferSize>
    
    <!-- Fraction of available GPU memory to use. This is similar to TensorFlow's per_process_gpu_memory_fraction configuration property. (default: 0.9) -->
-   <sysml.gpu.memory.util.factor>0.9</sysml.gpu.memory.util.factor>
+   <sysds.gpu.memory.util.factor>0.9</sysds.gpu.memory.util.factor>
    
    <!-- Allocator to use to allocate GPU device memory. Supported values are cuda, unified_memory (default: cuda) -->
-   <sysml.gpu.memory.allocator>cuda</sysml.gpu.memory.allocator>
+   <sysds.gpu.memory.allocator>cuda</sysds.gpu.memory.allocator>
 </root>

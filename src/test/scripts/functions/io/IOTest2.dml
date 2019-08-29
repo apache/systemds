@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.io.IOTest2.java
+# junit test class: org.tugraz.sysds.test.integration.functions.io.IOTest2.java
 
 A = read("$$indir$$"+a, rows=$$rows$$, cols=$$cols$$, format="$$format$$");
 

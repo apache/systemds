@@ -50,7 +50,7 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 	static {
 		// for internal debugging only
 		if( LDEBUG ) {
-			Logger.getLogger("org.apache.sysml.hops.rewrite.RewriteMatrixMultChainOptimization")
+			Logger.getLogger("org.tugraz.sysds.hops.rewrite.RewriteMatrixMultChainOptimization")
 				  .setLevel((Level) Level.TRACE);
 		}
 	}

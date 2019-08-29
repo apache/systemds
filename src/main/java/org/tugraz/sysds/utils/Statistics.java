@@ -153,9 +153,9 @@ public class Statistics
 	public static void incrementNativeFailuresCounter() {
 		numNativeFailures.increment();
 		// This is very rare and am not sure it is possible at all. Our initial experiments never encountered this case.
-		// Note: all the native calls have a fallback to Java; so if the user wants she can recompile SystemML by 
+		// Note: all the native calls have a fallback to Java; so if the user wants she can recompile SystemDS by
 		// commenting this exception and everything should work fine.
-		throw new RuntimeException("Unexpected ERROR: OOM caused during JNI transfer. Please disable native BLAS by setting enviroment variable: SYSTEMML_BLAS=none");
+		throw new RuntimeException("Unexpected ERROR: OOM caused during JNI transfer. Please disable native BLAS by setting enviroment variable: SYSTEMDS_BLAS=none");
 	}
 
 	public static long getNoOfExecutedSPInst() {
@@ -889,7 +889,7 @@ public class Statistics
 	{
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("SystemML Statistics:\n");
+		sb.append("SystemDS Statistics:\n");
 		if( DMLScript.STATISTICS ) {
 			sb.append("Total elapsed time:\t\t" + String.format("%.3f", (getCompileTime()+getRunTime())*1e-9) + " sec.\n"); // nanoSec --> sec
 			sb.append("Total compilation time:\t\t" + String.format("%.3f", getCompileTime()*1e-9) + " sec.\n"); // nanoSec --> sec

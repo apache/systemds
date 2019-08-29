@@ -28,7 +28,7 @@ import jcuda.Pointer;
 
 /**
  * DESIGN DOCUMENTATION FOR SUPPORTING LOWER PRECISION:
- * 1. SystemML.cu has been templatized in following way to support different datatype:
+ * 1. SystemDS.cu has been templatized in following way to support different datatype:
  * - Similar to CuBLAS and CuSPARSE, the global kernels have the datatype specification in their name (for example: f for float
  * and d for datatpe). But unlike CuBLAS and CuSPARSE, these are suffixes so as to simplify the engine.  
  * - The global kernels with datatype specification invoke a corresponding templatized kernel (without suffix) which contains the core logic.
@@ -53,7 +53,7 @@ import jcuda.Pointer;
  * 2. The CUDA library calls (such as CuBLAS, CuSPARSE, etc) go through this interface.
  * The naming and parameters of the methods in this class are consistent with that of CUDA library to simplify development.
  * 
- * 3. During SystemML initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysml.dataType.
+ * 3. During SystemDS initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysds.dataType.
  */
 public interface CudaSupportFunctions {
 	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;

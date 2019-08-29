@@ -23,7 +23,7 @@
 setLocal EnableDelayedExpansion
 
 :: directory to write test case specific data
-SET TEMP=\temp\systemml_test
+SET TEMP=\temp\systemds_test
 
 :: should this test suite continue after encountering an error? true false
 SET CONTINUE_ON_ERROR=true
@@ -32,7 +32,7 @@ SET CONTINUE_ON_ERROR=true
 SET TEST_SCRIPT_REL_DIR=src\test\scripts
 
 :: expecting the run script to be in directory %PROJECT_ROOT_DIR%\bin
-SET RUN_SCRIPT=systemml.bat
+SET RUN_SCRIPT=systemds-standalone.bat
 
 :: the DML script with arguments we use to test the run script
 SET DML_SCRIPT=genLinearRegressionData.dml
@@ -165,7 +165,7 @@ SET CURRENT_TEST=Test_out__DML_script_file_name
 
 :: test again from a directory with spaces in path name
 
-SET "SPACE_DIR=%TEMP%\Space Folder\SystemML"
+SET "SPACE_DIR=%TEMP%\Space Folder\SystemDS"
 
 IF NOT EXIST "%SPACE_DIR%" (
     echo mkdir "%SPACE_DIR%" >> %TEST_LOG%

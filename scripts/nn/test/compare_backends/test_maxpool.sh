@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 
-jars='systemml-*-extra.jar'
+jars='systemds-*-extra.jar'
 
 # N = Number of images, C = number of channels, H = height, W = width
 N=5
@@ -30,17 +30,17 @@ W=28
 for sparsity in 0.1 0.2 0.5 0.6 0.9
 do
 	# Generating the data
-	$SPARK_HOME/bin/spark-submit SystemML.jar -f gen_maxpool.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W
+	$SPARK_HOME/bin/spark-submit SystemDS.jar -f gen_maxpool.dml -nvargs sp=$sparsity N=$N C=$C H=$H W=$W
 	for stride in 1 2 3
 	do
 		for pad in 0 1 2
 		do
 			# Running a test in CPU mode
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f test_maxpool.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W pool=3
+			$SPARK_HOME/bin/spark-submit SystemDS.jar -f test_maxpool.dml -nvargs stride=$stride pad=$pad out=out_cp.csv N=$N C=$C H=$H W=$W pool=3
 			# Running a test in GPU mode
-			$SPARK_HOME/bin/spark-submit --jars $jars SystemML.jar -f test_maxpool.dml -stats -gpu force -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W pool=3
+			$SPARK_HOME/bin/spark-submit --jars $jars SystemDS.jar -f test_maxpool.dml -stats -gpu force -nvargs stride=$stride pad=$pad out=out_gpu.csv N=$N C=$C H=$H W=$W pool=3
 			# Comparing the CPU vs GPU results to make sure they are the same
-			$SPARK_HOME/bin/spark-submit SystemML.jar -f compare.dml -args out_cp.csv out_gpu.csv "maxpool:sparsity="$sparsity",stride="$stride",pad="$pad
+			$SPARK_HOME/bin/spark-submit SystemDS.jar -f compare.dml -args out_cp.csv out_gpu.csv "maxpool:sparsity="$sparsity",stride="$stride",pad="$pad
 			rm -rf out_cp.csv out_gpu.csv out_cp.csv.mtd out_gpu.csv.mtd
 		done
 	done

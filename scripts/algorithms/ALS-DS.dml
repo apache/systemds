@@ -48,7 +48,7 @@
 # 2- An r x n matrix R
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS-DS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R rank=10 reg="L2" lambda=0.0001 fmt=csv
+# hadoop jar SystemDS.jar -f ALS-DS.dml -nvargs V=INPUT_DIR/V L=OUTPUT_DIR/L R=OUTPUT_DIR/R rank=10 reg="L2" lambda=0.0001 fmt=csv
 
 fileV      = $V;
 fileL      = $L;

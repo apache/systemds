@@ -2279,7 +2279,7 @@ public class LibMatrixCUDA {
 
 
 	/**
-	 * Implements the "solve" function for systemml Ax = B (A is of size m*n, B is of size m*1, x is of size n*1)
+	 * Implements the "solve" function for systemds Ax = B (A is of size m*n, B is of size m*1, x is of size n*1)
 	 *
 	 * @param ec         a valid {@link ExecutionContext}
 	 * @param gCtx       a valid {@link GPUContext}

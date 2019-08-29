@@ -23,7 +23,7 @@
 # Assume CC_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for both A and B
-# hadoop jar SystemML.jar -f $CC_HOME/CategoricalCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$OUPUT_DIR/PValue" "$OUTPUT_DIR/CramersV"
+# hadoop jar SystemDS.jar -f $CC_HOME/CategoricalCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$OUPUT_DIR/PValue" "$OUTPUT_DIR/CramersV"
 
 A = read($1, rows=$2, cols=1, format="text");
 B = read($3, rows=$2, cols=1, format="text");

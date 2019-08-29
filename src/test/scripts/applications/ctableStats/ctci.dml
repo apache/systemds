@@ -52,7 +52,7 @@
 #    Block Col 11-99:  RESERVED and set to zero
 #
 # EXAMPLE:
-# hadoop jar SystemML.jar -f PATH/ctci.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_test_head.mtx PATH/ctci_test_body.mtx
+# hadoop jar SystemDS.jar -f PATH/ctci.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_test_head.mtx PATH/ctci_test_body.mtx
 
 setwd ("test/scripts/applications/ctableStats"); # SET TO THE SCRIPT FOLDER
 source ("Binomial.dml"); # THIS SCRIPT SHOULD BE THERE TOO

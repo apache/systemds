@@ -24,7 +24,7 @@
 #
 # THIS VERSION IS WITH "DIFFERENTIAL" REGRESSIONS & AUXILIARY ATTRIBUTES
 #
-# hadoop jar SystemML.jar -f test/scripts/applications/impute/wfundInputGenerator2.dml -exec singlenode
+# hadoop jar SystemDS.jar -f test/scripts/applications/impute/wfundInputGenerator2.dml -exec singlenode
 #    -args
 #        test/scripts/applications/impute/initial_reports_unprocessed
 #        test/scripts/applications/impute/initial_reports_preprocessed

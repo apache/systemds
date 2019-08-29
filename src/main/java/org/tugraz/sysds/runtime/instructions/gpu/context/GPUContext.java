@@ -54,9 +54,9 @@ public class GPUContext {
 
 	protected static final Log LOG = LogFactory.getLog(GPUContext.class.getName());
 	/**
-	 * The minimum CUDA Compute capability needed for SystemML.
+	 * The minimum CUDA Compute capability needed for SystemDS.
 	 * After compute capability 3.0, 2^31 - 1 blocks and 1024 threads per block are supported.
-	 * If SystemML needs to run on an older card, this logic can be revisited.
+	 * If SystemDS needs to run on an older card, this logic can be revisited.
 	 */
 	final int MAJOR_REQUIRED = 3;
 	final int MINOR_REQUIRED = 0;
@@ -206,7 +206,7 @@ public class GPUContext {
 
 
 	/**
-	 * Gets the available memory on GPU that SystemML can use.
+	 * Gets the available memory on GPU that SystemDS can use.
 	 *
 	 * @return the available memory in bytes
 	 */
@@ -215,7 +215,7 @@ public class GPUContext {
 	}
 
 	/**
-	 * Makes sure that GPU that SystemML is trying to use has the minimum compute capability needed.
+	 * Makes sure that GPU that SystemDS is trying to use has the minimum compute capability needed.
 	 */
 	public void ensureComputeCapability() {
 		int[] devices = { -1 };

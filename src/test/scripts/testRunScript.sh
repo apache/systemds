@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 
 # directory to write test case temporary files
-TEMP=~/temp/systemml_test
+TEMP=~/temp/systemds_test
 
 # should this test suite continue after encountering an error? true false
 CONTINUE_ON_ERROR=true
@@ -30,7 +30,7 @@ CONTINUE_ON_ERROR=true
 TEST_SCRIPT_REL_DIR=src/test/scripts
 
 # expecting the run script to be in directory ${PROJECT_ROOT_DIR}/bin
-RUN_SCRIPT=systemml
+RUN_SCRIPT=systemds-standalone.sh
 
 # the DML script with arguments we use to test the run script
 DML_SCRIPT=genLinearRegressionData.dml
@@ -222,7 +222,7 @@ CURRENT_TEST="Test_out__DML_script_file_name"
 # test again from a directory with spaces in its path name
 echo "Running test cases again from a folder with spaces in path name..."
 
-SPACE_DIR="${TEMP}/Space Folder/SystemML"
+SPACE_DIR="${TEMP}/Space Folder/SystemDS"
 if [ ! -d "${SPACE_DIR}" ]
 then
     echo "mkdir -p ${SPACE_DIR}"    >> ${TEST_LOG}

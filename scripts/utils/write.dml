@@ -29,7 +29,7 @@
 #    header  : default "FALSE"; CSV header: TRUE | FALSE
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/write.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx" ofmt="binary" sep="|" header=TRUE
+#   hadoop jar SystemDS.jar -f algorithms/utils/write.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx" ofmt="binary" sep="|" header=TRUE
 #
 
 sep = ifdef($sep, ",")

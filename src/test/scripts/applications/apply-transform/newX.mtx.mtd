@@ -5,5 +5,5 @@
     ,"cols": 4
     ,"nnz": 12
     ,"format": "text"
-    ,"description": { "author": "SystemML" } 
+    ,"description": { "author": "SystemDS" }
 }

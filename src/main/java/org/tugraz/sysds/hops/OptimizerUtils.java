@@ -235,7 +235,7 @@ public class OptimizerUtils
 	 *  It does NOT take the execution time into account.
 	 *  The optimization scope is LOCAL, i.e., per statement block.
 	 *  All advanced rewrites are applied. This is the default optimization
-	 *  level of SystemML.
+	 *  level of SystemDS.
 	 *
 	 *  O3 GLOBAL TIME_MEMORY_BASED - Operation scheduling on CP or MR as well as
 	 *  many other rewrites of data flow properties such as block size, partitioning,
@@ -511,7 +511,7 @@ public class OptimizerUtils
 	
 	/**
 	 * Returns the number of reducers that potentially run in parallel.
-	 * This is either just the configured value (SystemML config) or
+	 * This is either just the configured value (SystemDS config) or
 	 * the minimum of configured value and available reduce slots. 
 	 * 
 	 * @param configOnly true if configured value

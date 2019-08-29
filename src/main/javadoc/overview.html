@@ -22,12 +22,12 @@
 -->
 <html>
 <body>
-<h1>SystemML Architecture</h1>
-Algorithms in Apache SystemML are written in a high-level R-like language called Declarative Machine learning Language (DML)
+<h1>SystemDS Architecture</h1>
+Algorithms in Apache SystemDS are written in a high-level R-like language called Declarative Machine learning Language (DML)
 or a high-level Python-like language called PyDML.
-SystemML compiles and optimizes these algorithms into hybrid runtime 
+SystemDS compiles and optimizes these algorithms into hybrid runtime
 plans of multi-threaded, in-memory operations on a single node (scale-up) and distributed MR or Spark operations on
-a cluster of nodes (scale-out). SystemML's high-level architecture consists of the following components:
+a cluster of nodes (scale-out). SystemDS's high-level architecture consists of the following components:
 
 <h2>Language</h2>
 DML (with either R- or Python-like syntax) provides linear algebra primitives, a rich set of statistical
@@ -35,38 +35,38 @@ functions and matrix manipulations,
 as well as user-defined and external functions, control structures including parfor loops, and recursion. 
 The user provides the DML script through one of the following APIs:
 <ul>
-  <li>Command-line interface ( {@link org.apache.sysml.api.DMLScript} )</li>
-  <li>Convenient programmatic interface for Spark users ( {@link org.apache.sysml.api.mlcontext.MLContext} )</li>
-  <li>Java Machine Learning Connector API ( {@link org.apache.sysml.api.jmlc.Connection} )</li>
+  <li>Command-line interface ( {@link org.tugraz.sysds.api.DMLScript} )</li>
+  <li>Convenient programmatic interface for Spark users ( {@link org.tugraz.sysds.api.mlcontext.MLContext} )</li>
+  <li>Java Machine Learning Connector API ( {@link org.tugraz.sysds.api.jmlc.Connection} )</li>
 </ul>
 
-{@link org.apache.sysml.parser.AParserWrapper} performs syntatic validation and 
+{@link org.tugraz.sysds.parser.AParserWrapper} performs syntatic validation and
 parses the input DML script using ANTLR into a 
-a hierarchy of {@link org.apache.sysml.parser.StatementBlock} and 
-{@link org.apache.sysml.parser.Statement}  as defined by control structures.
-Another important class of the language component is {@link org.apache.sysml.parser.DMLTranslator} 
+a hierarchy of {@link org.tugraz.sysds.parser.StatementBlock} and
+{@link org.tugraz.sysds.parser.Statement}  as defined by control structures.
+Another important class of the language component is {@link org.tugraz.sysds.parser.DMLTranslator}
 which performs live variable analysis and semantic validation.
 During that process we also retrieve input data characteristics -- i.e., format,
 number of rows, columns, and non-zero values -- as well as
 infrastructure characteristics, which are used for subsequent
 optimizations. Finally, we construct directed acyclic graphs (DAGs) 
-of high-level operators ( {@link org.apache.sysml.hops.Hop} ) per statement block.
+of high-level operators ( {@link org.tugraz.sysds.hops.Hop} ) per statement block.
 
 <h2>Optimizer</h2>
-The SystemML optimizer works over programs of HOP DAGs, where HOPs are operators on
+The SystemDS optimizer works over programs of HOP DAGs, where HOPs are operators on
 matrices or scalars, and are categorized according to their
 access patterns. Examples are matrix multiplications, unary
 aggregates like rowSums(), binary operations like cell-wise
 matrix additions, reorganization operations like transpose or
 sort, and more specific operations. We perform various optimizations
-on these HOP DAGs, including algebraic simplification rewrites (  {@link org.apache.sysml.hops.rewrite.ProgramRewriter} ), 
-intra-/{@link org.apache.sysml.hops.ipa.InterProceduralAnalysis} 
+on these HOP DAGs, including algebraic simplification rewrites (  {@link org.tugraz.sysds.hops.rewrite.ProgramRewriter} ),
+intra-/{@link org.tugraz.sysds.hops.ipa.InterProceduralAnalysis}
 for statistics propagation into functions and over entire programs, and
 operator ordering of matrix multiplication chains. We compute
 memory estimates for all HOPs, reflecting the memory
 requirements of in-memory single-node operations and
 intermediates. Each HOP DAG is compiled to a DAG of
-low-level operators ( {@link org.apache.sysml.lops.Lop} ) such as grouping and aggregate,
+low-level operators ( {@link org.tugraz.sysds.lops.Lop} ) such as grouping and aggregate,
 which are backend-specific physical operators. Operator selection
 picks the best physical operators for a given HOP
 based on memory estimates, data, and cluster characteristics.
@@ -78,20 +78,20 @@ an executable runtime program of instructions.
 We execute the generated runtime program locally
 in CP (control program), i.e., within a driver process.
 This driver handles recompilation, runs in-memory singlenode
-{@link org.apache.sysml.runtime.instructions.cp.CPInstruction} (some of which are multi-threaded ),
+{@link org.tugraz.sysds.runtime.instructions.cp.CPInstruction} (some of which are multi-threaded ),
 maintains an in-memory buffer pool, and launches MR or
 Spark jobs if the runtime plan contains distributed computations
-in the form of  {@link org.apache.sysml.runtime.instructions.mr.MRInstruction} 
-or Spark instructions ( {@link org.apache.sysml.runtime.instructions.spark.SPInstruction} ). 
-For the MR backend, the SystemML compiler groups LOPs --
+in the form of  {@link org.tugraz.sysds.runtime.instructions.mr.MRInstruction}
+or Spark instructions ( {@link org.tugraz.sysds.runtime.instructions.spark.SPInstruction} ).
+For the MR backend, the SystemDS compiler groups LOPs --
 and thus, MR instructions -- into a minimal number of MR
-jobs (MR-job instructions). This procedure is referred to as piggybacking ( {@link org.apache.sysml.lops.compile.Dag} )
+jobs (MR-job instructions). This procedure is referred to as piggybacking ( {@link org.tugraz.sysds.lops.compile.Dag} )
 For the Spark backend, we rely on Spark's lazy evaluation and stage construction.
-CP instructions may also be backed by GPU kernels ( {@link org.apache.sysml.runtime.instructions.gpu.GPUInstruction} ).
+CP instructions may also be backed by GPU kernels ( {@link org.tugraz.sysds.runtime.instructions.gpu.GPUInstruction} ).
 The multi-level buffer pool caches local matrices in-memory,
 evicts them if necessary, and handles data exchange between
 local and distributed runtime backends. 
-The core of SystemML's runtime instructions is an adaptive matrix block library,
+The core of SystemDS's runtime instructions is an adaptive matrix block library,
 which is sparsity-aware and operates on the entire matrix in CP, or blocks of a matrix in a distributed setting. Further
 key features include parallel for-loops for task-parallel
 computations, and dynamic recompilation for runtime plan adaptation addressing initial unknowns.

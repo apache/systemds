@@ -23,7 +23,7 @@
 # Assume GNMF_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 2000 and cols = 1500 for v,  rows = 2000 and cols = 50 for w, rows = 50 and cols = 1500 for h, max_iteration = 3
-# hadoop jar SystemML.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/in/v" "$INPUT_DIR/in/w" "$INPUT_DIR/in/h" 3 "$OUPUT_DIR/out/w" "$OUTPUT_DIR/out/h"
+# hadoop jar SystemDS.jar -f $GNMF_HOME/GNMF.dml -args "$INPUT_DIR/in/v" "$INPUT_DIR/in/w" "$INPUT_DIR/in/h" 3 "$OUPUT_DIR/out/w" "$OUTPUT_DIR/out/h"
 
 vFile = ifdef($1, "")
 wFile = ifdef($2, "")

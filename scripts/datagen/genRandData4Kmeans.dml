@@ -40,7 +40,7 @@
 # ----------------------------------------------------------------------------
 #
 # Example:
-# hadoop jar SystemML.jar -f genRandData4Kmeans.dml -nvargs nr=100000 nf=100
+# hadoop jar SystemDS.jar -f genRandData4Kmeans.dml -nvargs nr=100000 nf=100
 #     nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
 
 print ("BEGIN K-MEANS GENERATOR SCRIPT");

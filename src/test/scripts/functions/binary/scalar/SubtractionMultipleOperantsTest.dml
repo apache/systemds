@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.binary.scalar.SubtractionTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.binary.scalar.SubtractionTest.java
 
 $$readhelper$$
 

@@ -320,7 +320,7 @@ public class FrameRDDConverterUtils
 	 * 
 	 * @param dfschema schema as StructType
 	 * @param colnames column names
-	 * @param fschema array of SystemML ValueTypes
+	 * @param fschema array of SystemDS ValueTypes
 	 * @param containsID if true, contains ID column
 	 * @return 0-based column index of vector column, -1 if no vector.
 	 */

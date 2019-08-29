@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# JUnit test class: org.apache.sysml.test.integration.functions.blocks.VariableTest.java
+# JUnit test class: org.tugraz.sysds.test.integration.functions.blocks.VariableTest.java
 
 A = read("$$indir$$a", rows=$$rows$$, cols=$$cols$$, format="text");
 

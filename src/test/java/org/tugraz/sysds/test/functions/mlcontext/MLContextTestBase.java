@@ -66,7 +66,7 @@ public abstract class MLContextTestBase extends AutomatedTestBase {
 
 	@BeforeClass
 	public static void setUpClass() {
-		spark = createSystemMLSparkSession("SystemML MLContext Test", "local");
+		spark = createSystemDSSparkSession("SystemDS MLContext Test", "local");
 		ml = new MLContext(spark);
 		sc = MLContextUtil.getJavaSparkContext(ml);
 	}

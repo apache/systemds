@@ -86,7 +86,7 @@ public class MLContextMultipleScriptsTest extends AutomatedTestBase
 		DMLScript.setGlobalExecMode(platform);
 		
 		//create mlcontext
-		SparkSession spark = createSystemMLSparkSession("MLContextMultipleScriptsTest", "local");
+		SparkSession spark = createSystemDSSparkSession("MLContextMultipleScriptsTest", "local");
 		MLContext ml = new MLContext(spark);
 		ml.setExplain(true);
 

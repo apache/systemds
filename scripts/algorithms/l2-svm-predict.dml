@@ -40,7 +40,7 @@
 # ---------------------------------------------------------------------------------------------
 #
 # Example Usage:
-# hadoop jar SystemML.jar -f l2-svm-predict.dml -nvargs X=data Y=labels model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
+# hadoop jar SystemDS.jar -f l2-svm-predict.dml -nvargs X=data Y=labels model=model scores=scores accuracy=accuracy confusion=confusion fmt="text"
 #
 # Note about inputs: 
 # labels (entries in Y) should either be set to +1/-1

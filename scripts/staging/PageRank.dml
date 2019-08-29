@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # G: N x M, p: M x 1, e: N x 1: u: 1 x M
-# ./sparkDML2.sh SystemML.jar -f PageRank.dml -args "in/g" "in/p" "in/e" "in/u" 0.85 3 "out/w" 
+# ./sparkDML2.sh SystemDS.jar -f PageRank.dml -args "in/g" "in/p" "in/e" "in/u" 0.85 3 "out/w"
 
 G = read($1);
 p = read($2);

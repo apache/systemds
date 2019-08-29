@@ -17,9 +17,9 @@ limitations under the License.
 {% endcomment %}
 -->
 
-# SystemML-NN Tests
+# SystemDS-NN Tests
 
-#### This folder contains tests for the *SystemML-NN* (`nn`) deep learning library.
+#### This folder contains tests for the *SystemDS-NN* (`nn`) deep learning library.
 
 ---
 ## Tests
@@ -29,4 +29,4 @@ limitations under the License.
 * `run_tests.dml` - A DML script that runs all of the tests in `grad_check.dml` and `test.dml`.
 
 ## Execution
-* `spark-submit SystemML.jar -f nn/test/run_tests.dml` from the base of the project.
+* `spark-submit SystemDS.jar -f nn/test/run_tests.dml` from the base of the project.

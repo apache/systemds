@@ -42,7 +42,7 @@
 # $fmt = format of the output
 #
 # Example:
-# hadoop jar SystemML.jar -f genRandData4LinearReg_LTstats.dml -nvargs
+# hadoop jar SystemDS.jar -f genRandData4LinearReg_LTstats.dml -nvargs
 #     N=1000000 Nt=1000 nf=20 nc=3 Xmin=0.0 Xmax=1.0 spars=1.0 avgLTmin=3.0 avgLTmax=5.0 stdLT=1.25
 #     iceptmin=1.0 iceptmax=1.0 B=./B123 X=./X123 Y=./Y123 Xt=./Xt123 Yt=./Yt123 fmt=binary
 

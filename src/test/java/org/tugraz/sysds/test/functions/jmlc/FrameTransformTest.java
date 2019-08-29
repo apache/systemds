@@ -105,7 +105,7 @@ public class FrameTransformTest extends AutomatedTestBase
 		
 		ArrayList<double[][]> ret = new ArrayList<double[][]>();
 		
-		//establish connection to SystemML
+		//establish connection to SystemDS
 		Connection conn = new Connection();
 		
 		try

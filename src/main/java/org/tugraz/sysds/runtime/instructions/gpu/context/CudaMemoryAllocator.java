@@ -70,7 +70,7 @@ public class CudaMemoryAllocator implements GPUMemoryAllocator {
 	}
 	
 	/**
-	 * Gets the available memory on GPU that SystemML can use.
+	 * Gets the available memory on GPU that SystemDS can use.
 	 *
 	 * @return the available memory in bytes
 	 */

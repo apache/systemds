@@ -60,13 +60,13 @@
 #	          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0  
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
+# hadoop jar SystemDS.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
 #     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 impurity=Gini fmt=csv
 
 
 # External function for binning
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
-	implemented in (classname="org.apache.sysml.udf.lib.BinningWrapper",exectype="mem")
+	implemented in (classname="org.tugraz.sysds.udf.lib.BinningWrapper",exectype="mem")
 
 	
 # Default values of some parameters	

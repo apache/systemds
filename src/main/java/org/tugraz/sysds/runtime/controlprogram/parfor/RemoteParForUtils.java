@@ -184,7 +184,7 @@ public class RemoteParForUtils
 	}
 	
 	/**
-	 * Cleanup all temporary files created by this SystemML process.
+	 * Cleanup all temporary files created by this SystemDS process.
 	 */
 	public static void cleanupWorkingDirectories()
 	{
@@ -206,7 +206,7 @@ public class RemoteParForUtils
 	}
 
 	/**
-	 * Cleanup all temporary files created by this SystemML process,
+	 * Cleanup all temporary files created by this SystemDS process,
 	 * on shutdown via exit or interrupt.
 	 */
 	public static void cleanupWorkingDirectoriesOnShutdown() {

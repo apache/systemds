@@ -43,7 +43,7 @@
 # Log       String  ---         [OPTIONAL] Location to write the log file
 # ---------------------------------------------------------------------------------------------
 
-# hadoop jar SystemML.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y \
+# hadoop jar SystemDS.jar -f $L2SVM_HOME/l2-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/Y \
 #   icpt=0 tol=0.001 reg=1 maxiter=100 model=$OUPUT_DIR/w Log=$OUTPUT_DIR/Log fmt="text"
 #
 # Note about inputs: 

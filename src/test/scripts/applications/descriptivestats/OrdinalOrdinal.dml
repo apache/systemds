@@ -23,7 +23,7 @@
 # Assume OO_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for A and B
-# hadoop jar SystemML.jar -f $OO_HOME/OrdinalOrdinal.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$OUPUT_DIR/Spearman"
+# hadoop jar SystemDS.jar -f $OO_HOME/OrdinalOrdinal.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$OUPUT_DIR/Spearman"
 
 #-------------------------------------------------------------------------
 # Function to compute ranks

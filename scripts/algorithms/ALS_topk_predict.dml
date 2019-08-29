@@ -41,7 +41,7 @@
 # 2- A matrix containing the top-K predicted ratings for the users specified in the input matrix X  
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar system-ml.jar -f ALS-topk-predict.dml -nvargs X=INPUT_DIR/X L=INPUT_DIR/L R=INPUT_DIR/R V=INTPUT_DIR/V.mtx 
+# hadoop jar system-ds.jar -f ALS-topk-predict.dml -nvargs X=INPUT_DIR/X L=INPUT_DIR/L R=INPUT_DIR/R V=INTPUT_DIR/V.mtx
 #													Y=OUTPUT_DIR/Y K=5 fmt=csv
 
 fileX      = $X;

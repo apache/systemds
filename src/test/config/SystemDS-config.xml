@@ -20,45 +20,45 @@
 
 <root>
    <!-- local fs tmp working directory-->
-   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
+   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
 
    <!-- hdfs tmp working directory--> 
-   <sysml.scratch>scratch_space</sysml.scratch> 
+   <sysds.scratch>scratch_space</sysds.scratch>
 
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
-   <sysml.optlevel>2</sysml.optlevel>
+   <sysds.optlevel>2</sysds.optlevel>
 
    <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
-   <sysml.numreducers>10</sysml.numreducers> 
+   <sysds.numreducers>10</sysds.numreducers>
    
    <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
-   <sysml.jvmreuse>false</sysml.jvmreuse> 
+   <sysds.jvmreuse>false</sysds.jvmreuse>
 
    <!-- default block dim for binary block files -->
-   <sysml.defaultblocksize>1000</sysml.defaultblocksize> 
+   <sysds.defaultblocksize>1000</sysds.defaultblocksize>
 
-   <!-- run systemml control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
-   <sysml.yarn.appmaster>false</sysml.yarn.appmaster>
+   <!-- run systemds control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
+   <sysds.yarn.appmaster>false</sysds.yarn.appmaster>
 
    <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
-   <sysml.yarn.appmaster.mem>2048</sysml.yarn.appmaster.mem>
+   <sysds.yarn.appmaster.mem>2048</sysds.yarn.appmaster.mem>
 
    <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
-   <sysml.yarn.mapreduce.mem>2048</sysml.yarn.mapreduce.mem>
+   <sysds.yarn.mapreduce.mem>2048</sysds.yarn.mapreduce.mem>
 
    <!-- yarn application submission queue, relevant for default capacity scheduler -->
-   <sysml.yarn.app.queue>default</sysml.yarn.app.queue>
+   <sysds.yarn.app.queue>default</sysds.yarn.app.queue>
    
    <!-- enables multi-threaded matrix operations in singlenode control program -->
-   <sysml.cp.parallel.ops>true</sysml.cp.parallel.ops>
+   <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
    
    <!-- enables multi-threaded read/write in singlenode control program -->
-   <sysml.cp.parallel.io>true</sysml.cp.parallel.io>
+   <sysds.cp.parallel.io>true</sysds.cp.parallel.io>
 
    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
-   <sysml.native.blas>none</sysml.native.blas>
+   <sysds.native.blas>none</sysds.native.blas>
 
    <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
-   <sysml.native.blas.directory>none</sysml.native.blas.directory>
+   <sysds.native.blas.directory>none</sysds.native.blas.directory>
 
 </root>

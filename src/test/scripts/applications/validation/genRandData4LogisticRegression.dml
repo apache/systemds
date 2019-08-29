@@ -22,10 +22,10 @@
 # generates random data to test linear logistic regression
 
 # 100K dataset
-# hadoop jar SystemML.jar -f genRandData4LogisticRegression.dml -args 100000 500 0.0 5.0 itau/logreg/w_100k itau/logreg/X_100k_500 itau/logreg/y_100k 0 0 0.01
+# hadoop jar SystemDS.jar -f genRandData4LogisticRegression.dml -args 100000 500 0.0 5.0 itau/logreg/w_100k itau/logreg/X_100k_500 itau/logreg/y_100k 0 0 0.01
 
 # 1M dataset
-# hadoop jar SystemML.jar -f genRandData4LogisticRegression.dml -args 1000000 1000 0.0 5.0 itau/logreg/w_1m itau/logreg/X_1m_1k /logreg/y_1m 0 0 0.0001
+# hadoop jar SystemDS.jar -f genRandData4LogisticRegression.dml -args 1000000 1000 0.0 5.0 itau/logreg/w_1m itau/logreg/X_1m_1k /logreg/y_1m 0 0 0.0001
 
 # $1 is number of samples
 # $2 is number of features (independent variables)

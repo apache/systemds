@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.dmlscript.DMLScriptTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.dmlscript.DMLScriptTest.java
 
 A = read($1, rows=$2, cols=$3, format=$4);
 write(A, $5, format=$4);

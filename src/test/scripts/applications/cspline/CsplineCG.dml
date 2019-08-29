@@ -51,7 +51,7 @@
 # -------------------------------------------------------------------------------------
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f CsplineCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y K=OUTPUT_DIR/K O=OUTPUT_DIR/Out
+# hadoop jar SystemDS.jar -f CsplineCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y K=OUTPUT_DIR/K O=OUTPUT_DIR/Out
 # tol=0.001 maxi=100 fmt=csv Log=OUTPUT_DIR/log
 
 

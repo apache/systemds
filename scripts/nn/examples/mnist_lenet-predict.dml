@@ -56,7 +56,7 @@
 #   ```
 #   spark-submit --master local[*] --driver-memory 5G
 #   --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_lenet-predict.dml
+#   $SYSTEMDS_ROOT/target/SystemDS.jar -f nn/examples/mnist_lenet-predict.dml
 #   -nvargs X=nn/examples/data/mnist/images.csv C=1 Hin=28 Win=28
 #   model_dir=nn/examples/model/mnist_lenet out_dir=nn/examples/data/mnist
 #   ```

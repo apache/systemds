@@ -22,7 +22,7 @@
 # How to invoke this dml script L2SVM.dml?
 # Assume L2SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# hadoop jar SystemML.jar -f $L2SVM_HOME/L2SVM.pydml -nvargs X="$INPUT_DIR/X" Y="$INPUT_DIR/Y" icpt=0 tol=1.0E-8 reg=1.0 maxiter=3 model="$OUTPUT_DIR/w" Log="$OUTPUT_DIR/Log"
+# hadoop jar SystemDS.jar -f $L2SVM_HOME/L2SVM.pydml -nvargs X="$INPUT_DIR/X" Y="$INPUT_DIR/Y" icpt=0 tol=1.0E-8 reg=1.0 maxiter=3 model="$OUTPUT_DIR/w" Log="$OUTPUT_DIR/Log"
 
 # Note about inputs: 
 # Assumes that labels (entries in Y) 

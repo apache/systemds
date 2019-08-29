@@ -185,7 +185,7 @@ public final class MLContextUtil {
 	public static void verifySparkVersionSupported(SparkSession spark) {
 		String minimumRecommendedSparkVersion = null;
 		try {
-			// If this is being called using the SystemML jar file,
+			// If this is being called using the SystemDS jar file,
 			// ProjectInfo should be available.
 			ProjectInfo projectInfo = ProjectInfo.getProjectInfo();
 			minimumRecommendedSparkVersion = projectInfo.minimumRecommendedSparkVersion();
@@ -199,13 +199,13 @@ public final class MLContextUtil {
 				minimumRecommendedSparkVersion = getMinimumRecommendedSparkVersionFromPom();
 			} catch (MLContextException e1) {
 				throw new MLContextException(
-						"Minimum recommended Spark version could not be determined from SystemML jar file manifest or pom.xml");
+						"Minimum recommended Spark version could not be determined from SystemDS jar file manifest or pom.xml");
 			}
 		}
 		String sparkVersion = spark.version();
 		if (!MLContextUtil.isSparkVersionSupported(sparkVersion, minimumRecommendedSparkVersion)) {
 			throw new MLContextException(
-					"Spark " + sparkVersion + " or greater is recommended for this version of SystemML.");
+					"Spark " + sparkVersion + " or greater is recommended for this version of SystemDS.");
 		}
 	}
 
@@ -252,14 +252,14 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * Set default SystemML configuration properties.
+	 * Set default SystemDS configuration properties.
 	 */
 	public static void setDefaultConfig() {
 		ConfigurationManager.setGlobalConfig(new DMLConfig());
 	}
 
 	/**
-	 * Set SystemML configuration properties based on a configuration file.
+	 * Set SystemDS configuration properties based on a configuration file.
 	 *
 	 * @param configFilePath
 	 *            Path to configuration file.
@@ -279,7 +279,7 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * Set SystemML compiler configuration properties for MLContext
+	 * Set SystemDS compiler configuration properties for MLContext
 	 */
 	public static void setCompilerConfig() {
 		CompilerConfig compilerConfig = new CompilerConfig();
@@ -396,12 +396,12 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * Obtain the SystemML scalar value type string equivalent of an accepted
+	 * Obtain the SystemDS scalar value type string equivalent of an accepted
 	 * basic type (Integer, Boolean, Double, String)
 	 *
 	 * @param object
 	 *            the object type to be examined
-	 * @return a String representing the type as a SystemML scalar value type
+	 * @return a String representing the type as a SystemDS scalar value type
 	 */
 	public static String getBasicTypeString(Object object) {
 		if (!isBasicType(object)) {
@@ -475,20 +475,20 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * Convert input types to internal SystemML representations
+	 * Convert input types to internal SystemDS representations
 	 *
 	 * @param parameterName
 	 *            The name of the input parameter
 	 * @param parameterValue
 	 *            The value of the input parameter
-	 * @return input in SystemML data representation
+	 * @return input in SystemDS data representation
 	 */
 	public static Data convertInputType(String parameterName, Object parameterValue) {
 		return convertInputType(parameterName, parameterValue, null);
 	}
 
 	/**
-	 * Convert input types to internal SystemML representations
+	 * Convert input types to internal SystemDS representations
 	 *
 	 * @param parameterName
 	 *            The name of the input parameter
@@ -496,7 +496,7 @@ public final class MLContextUtil {
 	 *            The value of the input parameter
 	 * @param metadata
 	 *            matrix/frame metadata
-	 * @return input in SystemML data representation
+	 * @return input in SystemDS data representation
 	 */
 	public static Data convertInputType(String parameterName, Object parameterValue, Metadata metadata) {
 		String name = parameterName;
@@ -975,13 +975,13 @@ public final class MLContextUtil {
 	}
 
 	/**
-	 * The SystemML welcome message
+	 * The SystemDS welcome message
 	 *
-	 * @return the SystemML welcome message
+	 * @return the SystemDS welcome message
 	 */
 	public static String welcomeMessage() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\nWelcome to Apache SystemML!\n");
+		sb.append("\nWelcome to Apache SystemDS!\n");
 		try {
 			ProjectInfo info = ProjectInfo.getProjectInfo();
 			if (info.version() != null) {
@@ -997,7 +997,7 @@ public final class MLContextUtil {
 	 * Obtain the Spark Context
 	 *
 	 * @param mlContext
-	 *            the SystemML MLContext
+	 *            the SystemDS MLContext
 	 * @return the Spark Context
 	 */
 	public static SparkContext getSparkContext(MLContext mlContext) {
@@ -1008,7 +1008,7 @@ public final class MLContextUtil {
 	 * Obtain the Java Spark Context
 	 *
 	 * @param mlContext
-	 *            the SystemML MLContext
+	 *            the SystemDS MLContext
 	 * @return the Java Spark Context
 	 */
 	public static JavaSparkContext getJavaSparkContext(MLContext mlContext) {

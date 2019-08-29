@@ -26,7 +26,7 @@ import org.tugraz.sysds.api.mlcontext.Script;
 import org.tugraz.sysds.test.functions.mlcontext.MLContextTestBase;
 
 /**
- * Test the SystemML deep learning library, `nn`.
+ * Test the SystemDS deep learning library, `nn`.
  */
 public class NNTest extends MLContextTestBase {
 

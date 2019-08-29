@@ -67,7 +67,7 @@ import org.tugraz.sysds.parser.dml.DmlParser.StatementContext;
  * - Validation errors: Errors due to translation of AST to  DMLProgram
  * - Validation warnings: Messages to inform users that there might be potential bug in their program
  * 
- * As of this moment, Antlr4ParserWrapper is stateful and cannot be multithreaded. This is not big deal because each users calls SystemML in different process.
+ * As of this moment, Antlr4ParserWrapper is stateful and cannot be multithreaded. This is not big deal because each users calls SystemDS in different process.
  * If in future we intend to make it multi-threaded, look at cleanUpState method and resolve the dependency accordingly.    
  *
  */

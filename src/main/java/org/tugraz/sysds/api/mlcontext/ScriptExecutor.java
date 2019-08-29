@@ -56,7 +56,7 @@ import org.tugraz.sysds.utils.Explain.ExplainCounts;
 import org.tugraz.sysds.utils.Explain.ExplainType;
 
 /**
- * ScriptExecutor executes a DML or PYDML Script object using SystemML. This is
+ * ScriptExecutor executes a DML or PYDML Script object using SystemDS. This is
  * accomplished by calling the {@link #execute} method.
  * <p>
  * Script execution via the MLContext API typically consists of the following
@@ -447,7 +447,7 @@ public class ScriptExecutor {
 
 	/**
 	 * Parse the script into an ANTLR parse tree, and convert this parse tree
-	 * into a SystemML program. Parsing includes lexical/syntactic analysis.
+	 * into a SystemDS program. Parsing includes lexical/syntactic analysis.
 	 */
 	protected void parseScript() {
 		try {
@@ -487,7 +487,7 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Set the SystemML configuration properties.
+	 * Set the SystemDS configuration properties.
 	 *
 	 * @param config
 	 *            The configuration properties
@@ -691,7 +691,7 @@ public class ScriptExecutor {
 	}
 
 	/**
-	 * Obtain the SystemML configuration properties.
+	 * Obtain the SystemDS configuration properties.
 	 *
 	 * @return the configuration properties
 	 */

@@ -86,7 +86,7 @@ public class MLContextScratchCleanupTest extends AutomatedTestBase
 		DMLScript.setGlobalExecMode(platform);
 		
 		//create mlcontext
-		SparkSession spark = createSystemMLSparkSession("MLContextScratchCleanupTest", "local");
+		SparkSession spark = createSystemDSSparkSession("MLContextScratchCleanupTest", "local");
 		MLContext ml = new MLContext(spark);
 		ml.setExplain(true);
 

@@ -39,7 +39,7 @@ public class SumProductChainTest extends AutomatedTestBase
 	private static final String TEST_NAME2 = "SumAdditionChain";
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + SumProductChainTest.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
+	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 	
 	private static final int rows = 1191;

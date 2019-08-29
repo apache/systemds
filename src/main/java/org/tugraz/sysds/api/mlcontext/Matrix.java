@@ -36,9 +36,9 @@ import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 import org.tugraz.sysds.runtime.meta.MatrixCharacteristics;
 
 /**
- * Matrix encapsulates a SystemML matrix. It allows for easy conversion to
+ * Matrix encapsulates a SystemDS matrix. It allows for easy conversion to
  * various other formats, such as RDDs, JavaRDDs, DataFrames, and double[][]s.
- * After script execution, it offers a convenient format for obtaining SystemML
+ * After script execution, it offers a convenient format for obtaining SystemDS
  * matrix data in Scala tuples.
  *
  */
@@ -56,7 +56,7 @@ public class Matrix {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation.
 	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
@@ -69,7 +69,7 @@ public class Matrix {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation,
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation,
 	 * specifying the number of rows and columns.
 	 *
 	 * @param dataFrame
@@ -85,7 +85,7 @@ public class Matrix {
 	}
 
 	/**
-	 * Create a Matrix, specifying the SystemML binary-block matrix and its
+	 * Create a Matrix, specifying the SystemDS binary-block matrix and its
 	 * metadata.
 	 *
 	 * @param binaryBlocks
@@ -99,7 +99,7 @@ public class Matrix {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation.
 	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
@@ -109,9 +109,9 @@ public class Matrix {
 	}
 
 	/**
-	 * Obtain the matrix as a SystemML MatrixObject.
+	 * Obtain the matrix as a SystemDS MatrixObject.
 	 *
-	 * @return the matrix as a SystemML MatrixObject
+	 * @return the matrix as a SystemDS MatrixObject
 	 */
 	public MatrixObject toMatrixObject() {
 		return matrixObject;

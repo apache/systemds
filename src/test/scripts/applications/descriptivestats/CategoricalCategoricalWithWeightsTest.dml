@@ -23,7 +23,7 @@
 # Assume CC_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for both A and B
-# hadoop jar SystemML.jar -f $CC_HOME/CategoricalCategoricalWithWeightsTest.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$INPUT_DIR/WM" "$OUPUT_DIR/PValue" "$OUTPUT_DIR/CramersV"
+# hadoop jar SystemDS.jar -f $CC_HOME/CategoricalCategoricalWithWeightsTest.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/B" "$INPUT_DIR/WM" "$OUPUT_DIR/PValue" "$OUTPUT_DIR/CramersV"
 
 # A <- nominal 
 # B <- nominal 

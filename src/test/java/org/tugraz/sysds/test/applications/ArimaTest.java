@@ -143,7 +143,7 @@ public class ArimaTest extends AutomatedTestBase {
 
 		double tol = Math.pow(10, -14);
 		HashMap<CellIndex, Double> arima_model_R = readRMatrixFromFS("learnt.model");
-		HashMap<CellIndex, Double> arima_model_SYSTEMML= readDMLMatrixFromHDFS("learnt.model");
-		TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMML, tol, "arima_model_R", "arima_model_SYSTEMML");
+		HashMap<CellIndex, Double> arima_model_SYSTEMDS= readDMLMatrixFromHDFS("learnt.model");
+		TestUtils.compareMatrices(arima_model_R, arima_model_SYSTEMDS, tol, "arima_model_R", "arima_model_SYSTEMDS");
 	}
 }

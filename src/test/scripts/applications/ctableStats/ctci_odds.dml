@@ -55,7 +55,7 @@
 #     Col 23: Large side of 95%-confid. int-l of above percentage, Wilson Score
 #
 # EXAMPLE:
-# hadoop jar SystemML.jar -f PATH/ctci_odds.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_odds_test_output.mtx
+# hadoop jar SystemDS.jar -f PATH/ctci_odds.dml -args PATH/ctci_test.mtx 5602 2 PATH/ctci_odds_test_output.mtx
 
 powerOfTen = 10000;      # CONSTANT FOR ROUNDING THE RESULTS
 print ("BEGIN CTABLE ANALYSIS SCRIPT");

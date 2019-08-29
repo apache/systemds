@@ -56,7 +56,7 @@
 # INPUT 12: Output file for debugging (currently: the average parameters vector)
 #
 # Example:
-# hadoop jar SystemML.jar -f test/scripts/applications/impute/imputeGaussMCMC.dml -exec singlenode -args
+# hadoop jar SystemDS.jar -f test/scripts/applications/impute/imputeGaussMCMC.dml -exec singlenode -args
 #    test/scripts/applications/impute/initial_reports
 #    test/scripts/applications/impute/CReps
 #    test/scripts/applications/impute/RegresValueMap

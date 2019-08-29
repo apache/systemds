@@ -307,7 +307,7 @@ public class GLMTest extends AutomatedTestBase
 		proArgs.add("mii=0");
 		proArgs.add("X=" + input("X"));
 		proArgs.add("Y=" + input("Y"));
-		proArgs.add("B=" + output("betas_SYSTEMML"));
+		proArgs.add("B=" + output("betas_SYSTEMDS"));
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		
 		fullDMLScriptName = "scripts/algorithms/GLM.dml";
@@ -328,11 +328,11 @@ public class GLMTest extends AutomatedTestBase
 			max_abs_beta = (max_abs_beta >= Math.abs (beta[j]) ? max_abs_beta : Math.abs (beta[j]));
 		}
 
-		HashMap<CellIndex, Double> wSYSTEMML_raw = readDMLMatrixFromHDFS ("betas_SYSTEMML");
-		HashMap<CellIndex, Double> wSYSTEMML = new HashMap <CellIndex, Double> ();
-		for (CellIndex key : wSYSTEMML_raw.keySet())
+		HashMap<CellIndex, Double> wSYSTEMDS_raw = readDMLMatrixFromHDFS ("betas_SYSTEMDS");
+		HashMap<CellIndex, Double> wSYSTEMDS = new HashMap <CellIndex, Double> ();
+		for (CellIndex key : wSYSTEMDS_raw.keySet())
 			if (key.column == 1)
-				wSYSTEMML.put (key, wSYSTEMML_raw.get (key));
+				wSYSTEMDS.put (key, wSYSTEMDS_raw.get (key));
 
 		runRScript(true);
 
@@ -351,7 +351,7 @@ public class GLMTest extends AutomatedTestBase
 			//(at least for the final aggregation of partial results from individual threads).
 			eps = 0.000002; //2x the error threshold
 		}		
-		TestUtils.compareMatrices (wR, wSYSTEMML, eps * max_abs_beta, "wR", "wSYSTEMML");
+		TestUtils.compareMatrices (wR, wSYSTEMDS, eps * max_abs_beta, "wR", "wSYSTEMDS");
 	}
 	
 	double[] scaleWeights (double[] w_unscaled, double[][] X, double icept, double meanLF, double sigmaLF)

@@ -5,6 +5,6 @@
     "cols": 9,
     "format": "text",
     "description": {
-        "author": "SystemML"
+        "author": "SystemDS"
     }
 }

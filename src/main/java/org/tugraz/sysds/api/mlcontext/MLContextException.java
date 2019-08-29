@@ -20,7 +20,7 @@
 package org.tugraz.sysds.api.mlcontext;
 
 /**
- * Uncaught exception representing SystemML exceptions that occur through the
+ * Uncaught exception representing SystemDS exceptions that occur through the
  * MLContext API.
  *
  */

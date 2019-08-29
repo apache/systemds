@@ -864,10 +864,10 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		
 		if(return_sequences) {
 			gCtx.cudaFreeHelper(instName, hyPointer, DMLScript.EAGER_CUDA_FREE);
-			Pointer sysmlYPointer = getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M);
+			Pointer sysdsYPointer = getDenseOutputPointer(ec, gCtx, instName, outputName, N, T*M);
 			LibMatrixCUDA.getCudaKernels(gCtx).launchKernel("prepare_lstm_output",
 					ExecutionConfig.getConfigForSimpleVectorOperations(N*T*M),
-					sysmlYPointer, cudnnYPointer, N, T, M, N*T*M);
+					sysdsYPointer, cudnnYPointer, N, T, M, N*T*M);
 		}
 		gCtx.cudaFreeHelper(instName, cudnnYPointer, DMLScript.EAGER_CUDA_FREE);
 	}

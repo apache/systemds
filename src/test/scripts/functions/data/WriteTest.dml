@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.data.writeTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.data.writeTest.java
 
 A = read("$$indir$$a");
 write(A, "$$outdir$$a", format="$$format$$");

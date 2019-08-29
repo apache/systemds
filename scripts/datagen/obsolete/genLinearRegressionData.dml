@@ -43,7 +43,7 @@
 # ---------------------------------------------------------------------------------------------
 #
 # Example
-# ./runStandaloneSystemML.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
+# ./runStandaloneSystemDS.sh algorithms/datagen/genLinearRegressionData.dml -nvargs numSamples=1000 numFeatures=50 maxFeatureValue=5 maxWeight=5 addNoise=FALSE b=0 sparsity=0.7 output=linRegData.csv format=csv
 #
 
 perc = ifdef($perc, 0.8)

@@ -98,3 +98,4 @@ SYSTEMDS-140 Distributed Tensor Operations
  
  SYSTEMDS-150 Release 0.1
  * 151 Fixing native BLAS instructions (MKL,OpenBLAS)                 OK
+ * 152 Run script documentation                                       OK

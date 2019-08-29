@@ -29,6 +29,8 @@ limitations under the License.
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmpredict`-Function](#lmpredict-function)
+    * [`steplm`-Function](#steplm-function)
+    * [`slicefinder`-Function](#slicefinder-function)
     
 # Introduction
 
@@ -242,3 +244,81 @@ w = lm(X = X, y = y)
 yp = lmpredict(X, w)
 ```
 
+## `steplm`-Function
+
+The `steplm`-function (stepwise linear regression) implements a classical forward feature selection method.
+This method iteratively runs what-if scenarios and greedily selects the next best feature until the Akaike 
+information criterion (AIC) does not improve anymore. Each configuration trains a regression model via `lm`,
+which in turn calls either the closed form `lmDS` or iterative `lmGC`.
+
+### Usage
+```r
+steplm(X, y, icpt);
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Matrix of feature vectors. |
+| y       | Matrix[Double] | required | 1-column matrix of response values. |
+| icpt    | Integer        | `0`      | Intercept presence, shifting and rescaling the columns of X ([Details](#icpt-argument))|
+| reg     | Double         | `1e-7`   | Regularization constant (lambda) for L2-regularization. set to nonzero for highly dependent/sparse/numerous features|
+| tol     | Double         | `1e-7`   | Tolerance (epsilon); conjugate gradient procedure terminates early if L2 norm of the beta-residual is less than tolerance * its initial norm|
+| maxi    | Integer        | `0`      | Maximum number of conjugate gradient iterations. 0 = no maximum |
+| verbose | Boolean        | `TRUE`   | If `TRUE` print messages are activated |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix of regression parameters (the betas) and its size depend on `icpt` input value. (C in the example)|
+| Matrix[Double] | Matrix of `selected` features ordered as computed by the algorithm. (S in the example)|
+
+##### `icpt`-Argument
+
+The *icpt-arg* can be set to 2 modes:
+ 
+  * 0 = no intercept, no shifting, no rescaling
+  * 1 = add intercept, but neither shift nor rescale X
+
+##### `selected`-Output
+
+If the best AIC is achieved without any features the matrix of *selected* features contains 0. Moreover, in this case no further statistics will be produced 
+
+### Example
+```r
+X = rand (rows = 50, cols = 10)
+y = X %*% rand(rows=ncol(X), 1)
+[C, S] = steplm(X = X, y = y, icpt = 1);
+```
+
+## `slicefinder`-Function
+
+The `slicefinder`-function returns top-k worst performing subsets according to a model calculation.
+
+### Usage
+```r
+slicefinder(X,W, y, k, paq, S);
+```
+
+### Arguments
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| X       | Matrix[Double] | required | Recoded dataset into Matrix |
+| W       | Matrix[Double] | required | Trained model |
+| y       | Matrix[Double] | required | 1-column matrix of response values. |
+| k       | Integer        | 1        | Number of subsets required |
+| paq     | Integer        | 1        | amount of values wanted for each col, if paq = 1 then its off |
+| S       | Integer        | 2        | amount of subsets to combine (for now supported only 1 and 2) |
+
+### Returns
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Matrix containing the information of top_K slices (relative error, standart error, value0, value1, col_number(sort), rows, cols,range_row,range_cols, value00, value01,col_number2(sort), rows2, cols2,range_row2,range_cols2) |
+
+### Usage
+```r
+X = rand (rows = 50, cols = 10)
+y = X %*% rand(rows=ncol(X), 1)
+w = lm(X = X, y = y)
+ress = slicefinder(X = X,W = w, Y = y,  k = 5, paq = 1, S = 2);
+```

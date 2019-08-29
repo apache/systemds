@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #-------------------------------------------------------------
 #
 # Copyright 2019 Graz University of Technology
@@ -35,7 +35,7 @@ def default_classpath(systemds_root):
     build_lib = join(systemds_root, 'target', '*')
     lib_lib = join(systemds_root, 'target', 'lib', '*')
     hadoop_lib = join(systemds_root, 'target', 'lib', 'hadoop', '*')
-    sysds_jar = join(systemds_root, 'target', 'SystemDS.jar')
+    sysds_jar = join(systemds_root, 'target', 'classes')
     return build_lib, lib_lib, hadoop_lib, sysds_jar
 
 

@@ -23,13 +23,13 @@ source tree checked out and SYSTEMDS_ROOT set.
 In order to run SystemDS from your development directory and leave the 
 SystemDS source tree untouched, the following setup could be used (example for bash):
  ```shell script
-$ export SYSTEMDS_ROOT=/home/<username>/systemds
+$ export SYSTEMDS_ROOT=/home/$USER/systemds
 $ export PATH=$SYSTEMDS_ROOT/bin:$PATH
 ```
 Alternatively, if the run scripts are invoked from the root of the
 SystemDS source tree, `SYSTEMDS_ROOT` does not need to be set (example for python):
 
-`$ python bin/systemds-standalone.py -f <script.dml> <parameters>`
+`$ python bin/systemds-standalone.py -f <script.dml> -args <parameters>`
 
 The DML scripts residing in the directory `$SYSTEMDS_ROOT/scripts` will be found automatically by the run scripts. 
 

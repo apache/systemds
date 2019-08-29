@@ -28,7 +28,7 @@ import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 
 /**
  * Cost estimator for runtime programs. Previously this estimator used an offline created
- * performance profile. Since SystemML 1.0, this estimator uses a time-based cost model
+ * performance profile. Since SystemDS 1.0, this estimator uses a time-based cost model
  * that relies on floating operations and I/O, which does not require explicit profiling.
  * 
  */

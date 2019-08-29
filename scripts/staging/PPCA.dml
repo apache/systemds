@@ -33,7 +33,7 @@
 # tolrecerr	Int    0.02     reconstruction error tolerance value to stop the algorithm	
 # iter   	Int    10       maximum number of iterations
 # fmt    	String 'text'   output format of results PPCA such as "text" or "csv"
-# hadoop jar SystemML.jar -f PPCA.dml -nvargs X=/INPUT_DIR/X  C=/OUTPUT_DIR/C V=/OUTPUT_DIR/V k=2 tol=0.2 iter=100
+# hadoop jar SystemDS.jar -f PPCA.dml -nvargs X=/INPUT_DIR/X  C=/OUTPUT_DIR/C V=/OUTPUT_DIR/V k=2 tol=0.2 iter=100
 # ---------------------------------------------------------------------------------------------
 # OUTPUT PARAMETERS: 
 # ---------------------------------------------------------------------------------------------

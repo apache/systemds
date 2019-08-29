@@ -27,10 +27,10 @@
 # Arguments: 1.X 2.y 3.intercept 4.max_iteration 5.C 6.w
 
 # 100K dataset
-# hadoop jar SystemML.jar -f LinearLogisticRegression.dml -args itau/logreg/X_100k_500 itau/logreg/y_100k 0 50 0.001 itau/logreg/w_100k_1
+# hadoop jar SystemDS.jar -f LinearLogisticRegression.dml -args itau/logreg/X_100k_500 itau/logreg/y_100k 0 50 0.001 itau/logreg/w_100k_1
 
 # 1M dataset
-# hadoop jar SystemML.jar -f LinearLogisticRegression.dml -args itau/logreg/X_100m_5k itau/logreg/y_100m_1 0 50 0.001 itau/demo/logreg/w_100m_1
+# hadoop jar SystemDS.jar -f LinearLogisticRegression.dml -args itau/logreg/X_100m_5k itau/logreg/y_100m_1 0 50 0.001 itau/demo/logreg/w_100m_1
 
 
 # internal parameters

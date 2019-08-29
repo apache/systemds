@@ -94,7 +94,7 @@
 # -------------------------------------------------------------------------------------------
 #
 # Example with distribution = "Binomial.logit":
-# hadoop jar SystemML.jar -f GLM_HOME/GLM.dml -nvargs dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.001
+# hadoop jar SystemDS.jar -f GLM_HOME/GLM.dml -nvargs dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.001
 #     tol=0.00000001 disp=1.0 moi=100 mii=10 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas 
 #     fmt=csv O=OUTPUT_DIR/stats Log=OUTPUT_DIR/log
 #

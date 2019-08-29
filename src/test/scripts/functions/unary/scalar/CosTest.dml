@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.unary.scalar.CosTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.unary.scalar.CosTest.java
 
 $$readhelper$$
 

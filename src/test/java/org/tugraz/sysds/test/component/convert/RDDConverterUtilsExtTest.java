@@ -52,7 +52,7 @@ public class RDDConverterUtilsExtTest extends AutomatedTestBase {
 	@BeforeClass
 	public static void setUpClass() {
 		if (conf == null)
-			conf = SparkExecutionContext.createSystemMLSparkConf().setAppName("RDDConverterUtilsExtTest")
+			conf = SparkExecutionContext.createSystemDSSparkConf().setAppName("RDDConverterUtilsExtTest")
 					.setMaster("local");
 		if (sc == null)
 			sc = new JavaSparkContext(conf);

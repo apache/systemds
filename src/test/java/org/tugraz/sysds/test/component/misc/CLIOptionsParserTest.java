@@ -35,14 +35,14 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = MissingOptionException.class)
 	public void testNoOptions() throws Exception {
-		String cl = "systemml";
+		String cl = "systemds";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test
 	public void testFile() throws Exception {
-		String cl = "systemml -f test.dml";
+		String cl = "systemds -f test.dml";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals("test.dml", o.filePath);
@@ -50,7 +50,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testScript() throws Exception {
-		String cl = "systemml -s \"print('hello')\"";
+		String cl = "systemds -s \"print('hello')\"";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals("print('hello')", o.script);
@@ -58,16 +58,16 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testConfig() throws Exception {
-		String cl = "systemml -s \"print('hello')\" -config SystemML-config.xml";
+		String cl = "systemds -s \"print('hello')\" -config SystemDS-config.xml";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals("print('hello')", o.script);
-		Assert.assertEquals("SystemML-config.xml", o.configFile);
+		Assert.assertEquals("SystemDS-config.xml", o.configFile);
 	}
 
 	@Test
 	public void testDebug() throws Exception {
-		String cl = "systemml -s \"print('hello')\" -debug";
+		String cl = "systemds -s \"print('hello')\" -debug";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals("print('hello')", o.script);
@@ -76,7 +76,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testClean() throws Exception {
-		String cl = "systemml -clean";
+		String cl = "systemds -clean";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.clean);
@@ -84,21 +84,21 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = AlreadySelectedException.class)
 	public void testBadClean() throws Exception {
-		String cl = "systemml -clean -f test.dml";
+		String cl = "systemds -clean -f test.dml";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test(expected = AlreadySelectedException.class)
 	public void testBadScript() throws Exception {
-		String cl = "systemml -f test.dml -s \"print('hello')\"";
+		String cl = "systemds -f test.dml -s \"print('hello')\"";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test
 	public void testStats() throws Exception {
-		String cl = "systemml -f test.dml -stats";
+		String cl = "systemds -f test.dml -stats";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.stats);
@@ -107,7 +107,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testStatsCount() throws Exception {
-		String cl = "systemml -f test.dml -stats 9123";
+		String cl = "systemds -f test.dml -stats 9123";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.stats);
@@ -116,7 +116,7 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = ParseException.class)
 	public void testBadStats() throws Exception {
-		String cl = "systemml -f test.dml -stats help";
+		String cl = "systemds -f test.dml -stats help";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.stats);
@@ -124,7 +124,7 @@ public class CLIOptionsParserTest {
 
     @Test
     public void testLineage() throws Exception {
-        String cl = "systemml -f test.dml -lineage";
+        String cl = "systemds -f test.dml -lineage";
         String[] args = cl.split(" ");
         DMLOptions o = DMLOptions.parseCLArguments(args);
         Assert.assertEquals(true, o.lineage);
@@ -134,7 +134,7 @@ public class CLIOptionsParserTest {
     
 	@Test
 	public void testLineageDedup() throws Exception {
-		String cl = "systemml -f test.dml -lineage dedup";
+		String cl = "systemds -f test.dml -lineage dedup";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -144,7 +144,7 @@ public class CLIOptionsParserTest {
 	
 	@Test
 	public void testLineageReuse() throws Exception {
-		String cl = "systemml -f test.dml -lineage reuse";
+		String cl = "systemds -f test.dml -lineage reuse";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -154,7 +154,7 @@ public class CLIOptionsParserTest {
 	
 	@Test
 	public void testLineageDedupAndReuse() throws Exception {
-		String cl = "systemml -f test.dml -lineage dedup reuse";
+		String cl = "systemds -f test.dml -lineage dedup reuse";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.lineage);
@@ -164,21 +164,21 @@ public class CLIOptionsParserTest {
 	
 	@Test(expected = ParseException.class)
 	public void testBadLineageOptionDedup() throws Exception {
-		String cl = "systemml -f test.dml -lineage ded";
+		String cl = "systemds -f test.dml -lineage ded";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 	
 	@Test(expected = ParseException.class)
 	public void testBadLineageOptionReuse() throws Exception {
-		String cl = "systemml -f test.dml -lineage rese";
+		String cl = "systemds -f test.dml -lineage rese";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 	
 	@Test
 	public void testGPUForce() throws Exception {
-		String cl = "systemml -f test.dml -gpu force";
+		String cl = "systemds -f test.dml -gpu force";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.gpu);
@@ -187,14 +187,14 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = ParseException.class)
 	public void testBadGPUOption() throws Exception {
-		String cl = "systemml -f test.dml -gpu f2orce";
+		String cl = "systemds -f test.dml -gpu f2orce";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test
 	public void testHelp() throws Exception {
-		String cl = "systemml -help";
+		String cl = "systemds -help";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.help);
@@ -202,7 +202,7 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = AlreadySelectedException.class)
 	public void testBadHelp() throws Exception {
-		String cl = "systemml -help -clean";
+		String cl = "systemds -help -clean";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(true, o.help);
@@ -210,7 +210,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExplain1() throws Exception {
-		String cl = "systemml -f test.dml -explain";
+		String cl = "systemds -f test.dml -explain";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(Explain.ExplainType.RUNTIME, o.explainType);
@@ -218,7 +218,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExplain2() throws Exception {
-		String cl = "systemml -f test.dml -explain hops";
+		String cl = "systemds -f test.dml -explain hops";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(Explain.ExplainType.HOPS, o.explainType);
@@ -226,7 +226,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExplain3() throws Exception {
-		String cl = "systemml -f test.dml -explain runtime";
+		String cl = "systemds -f test.dml -explain runtime";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(Explain.ExplainType.RUNTIME, o.explainType);
@@ -234,7 +234,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExplain4() throws Exception {
-		String cl = "systemml -f test.dml -explain recompile_hops";
+		String cl = "systemds -f test.dml -explain recompile_hops";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(Explain.ExplainType.RECOMPILE_HOPS, o.explainType);
@@ -242,7 +242,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExplain5() throws Exception {
-		String cl = "systemml -f test.dml -explain recompile_runtime";
+		String cl = "systemds -f test.dml -explain recompile_runtime";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(Explain.ExplainType.RECOMPILE_RUNTIME, o.explainType);
@@ -250,7 +250,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExec2() throws Exception {
-		String cl = "systemml -f test.dml -exec spark";
+		String cl = "systemds -f test.dml -exec spark";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(ExecMode.SPARK, o.execMode);
@@ -258,7 +258,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExec3() throws Exception {
-		String cl = "systemml -f test.dml -exec singlenode";
+		String cl = "systemds -f test.dml -exec singlenode";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(ExecMode.SINGLE_NODE, o.execMode);
@@ -266,7 +266,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testExec4() throws Exception {
-		String cl = "systemml -f test.dml -exec hybrid";
+		String cl = "systemds -f test.dml -exec hybrid";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Assert.assertEquals(ExecMode.HYBRID, o.execMode);
@@ -274,14 +274,14 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = ParseException.class)
 	public void testBadExec() throws Exception {
-		String cl = "systemml -f test.dml -exec new_system";
+		String cl = "systemds -f test.dml -exec new_system";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test
 	public void testArgs1() throws Exception {
-		String cl = "systemml -f test.dml -args 10 \"x.csv\"";
+		String cl = "systemds -f test.dml -args 10 \"x.csv\"";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
@@ -292,7 +292,7 @@ public class CLIOptionsParserTest {
 
 	@Test
 	public void testArgs2() throws Exception {
-		String cl = "systemml -f test.dml -args 10 \"x.csv\" 1234.2 systemml.conf -config systemml.conf";
+		String cl = "systemds -f test.dml -args 10 \"x.csv\" 1234.2 systemds.conf -config systemds.conf";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
@@ -300,19 +300,19 @@ public class CLIOptionsParserTest {
 		Assert.assertEquals("10", m.get("$1"));
 		Assert.assertEquals("x.csv", m.get("$2"));
 		Assert.assertEquals("1234.2", m.get("$3"));
-		Assert.assertEquals("systemml.conf", m.get("$4"));
+		Assert.assertEquals("systemds.conf", m.get("$4"));
 	}
 
 	@Test(expected = ParseException.class)
 	public void testBadArgs1() throws Exception {
-		String cl = "systemml -f test.dml -args -config systemml.conf";
+		String cl = "systemds -f test.dml -args -config systemds.conf";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test
 	public void testNVArgs1() throws Exception {
-		String cl = "systemml -f test.dml -nvargs A=12 B=x.csv my123=12.2";
+		String cl = "systemds -f test.dml -nvargs A=12 B=x.csv my123=12.2";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
@@ -324,28 +324,28 @@ public class CLIOptionsParserTest {
 
 	@Test(expected = ParseException.class)
 	public void testBadNVArgs1() throws Exception {
-		String cl = "systemml -f test.dml -nvargs";
+		String cl = "systemds -f test.dml -nvargs";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test(expected = ParseException.class)
 	public void testBadNVArgs2() throws Exception {
-		String cl = "systemml -f test.dml -nvargs asd qwe";
+		String cl = "systemds -f test.dml -nvargs asd qwe";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test(expected = ParseException.class)
 	public void testBadNVArgs3() throws Exception {
-		String cl = "systemml -f test.dml -nvargs $X=12";
+		String cl = "systemds -f test.dml -nvargs $X=12";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
 
 	@Test(expected = ParseException.class)
 	public void testBadNVArgs4() throws Exception {
-		String cl = "systemml -f test.dml -nvargs 123=123";
+		String cl = "systemds -f test.dml -nvargs 123=123";
 		String[] args = cl.split(" ");
 		DMLOptions.parseCLArguments(args);
 	}
@@ -361,7 +361,7 @@ public class CLIOptionsParserTest {
 	 */
 	@Test
 	public void testNVArgs2() throws Exception {
-		String cl = "systemml -f test.dml -args \"def\"";
+		String cl = "systemds -f test.dml -args \"def\"";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
@@ -374,7 +374,7 @@ public class CLIOptionsParserTest {
 	 */
 	@Test
 	public void testNVArgs3() throws Exception {
-		String cl = "systemml -f test.dml -args 'def'";
+		String cl = "systemds -f test.dml -args 'def'";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
@@ -394,7 +394,7 @@ public class CLIOptionsParserTest {
 	 */
 	@Test
 	public void testNVArgs4() throws Exception {
-		String cl = "systemml -f test.dml -nvargs abc='def'";
+		String cl = "systemds -f test.dml -nvargs abc='def'";
 		String[] args = cl.split(" ");
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;

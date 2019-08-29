@@ -97,11 +97,11 @@ public class WelchTTest extends AutomatedTestBase {
 
 		double tol = Math.pow(10, -13);
 		HashMap<CellIndex, Double> t_statistics_R = readRMatrixFromFS("t_statistics");
-        HashMap<CellIndex, Double> t_statistics_SYSTEMML= readDMLMatrixFromHDFS("t_statistics");
-        TestUtils.compareMatrices(t_statistics_R, t_statistics_SYSTEMML, tol, "t_statistics_R", "t_statistics_SYSTEMML");
+        HashMap<CellIndex, Double> t_statistics_SYSTEMDS= readDMLMatrixFromHDFS("t_statistics");
+        TestUtils.compareMatrices(t_statistics_R, t_statistics_SYSTEMDS, tol, "t_statistics_R", "t_statistics_SYSTEMDS");
         
         HashMap<CellIndex, Double> degrees_of_freedom_R = readRMatrixFromFS("degrees_of_freedom");
-        HashMap<CellIndex, Double> degrees_of_freedom_SYSTEMML= readDMLMatrixFromHDFS("degrees_of_freedom");
-        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_SYSTEMML, tol, "degrees_of_freedom_R", "degrees_of_freedom_SYSTEMML");		
+        HashMap<CellIndex, Double> degrees_of_freedom_SYSTEMDS= readDMLMatrixFromHDFS("degrees_of_freedom");
+        TestUtils.compareMatrices(degrees_of_freedom_R, degrees_of_freedom_SYSTEMDS, tol, "degrees_of_freedom_R", "degrees_of_freedom_SYSTEMDS");
 	}
 }

@@ -28,7 +28,7 @@
 #    ofmt    : default "csv"; format of O: "csv", "binary"
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/rowIndexMax.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx"
+#   hadoop jar SystemDS.jar -f algorithms/utils/rowIndexMax.dml -nvargs I="/tmp/X.mtx" O="/tmp/X2.mtx"
 #
 
 ofmt = ifdef($ofmt, "csv")

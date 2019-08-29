@@ -8,6 +8,6 @@
     "schema": "string,fp64,boolean",
     "sep": ",",
     "description": {
-        "author": "SystemML"
+        "author": "SystemDS"
     }
 }

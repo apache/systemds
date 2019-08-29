@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# hadoop jar SystemML.jar -f CV_MultiClassSVM.dml -args demo/svm/X_50k_10 demo/svm/y_50k 4 0 2 0.001 1.0 100 
+# hadoop jar SystemDS.jar -f CV_MultiClassSVM.dml -args demo/svm/X_50k_10 demo/svm/y_50k 4 0 2 0.001 1.0 100
 
 
 X = read( $1, rows=$3, cols=$4 );

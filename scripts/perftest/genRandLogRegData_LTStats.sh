@@ -23,7 +23,7 @@
 # ./genRandLogRegData_LTStats.sh myperftest SPARK 150 LOGISTIC &>> logs/genMultinomialData.out
 # ./genRandLogRegData_LTStats.sh myperftest SPARK 1 REGRESSION &>> logs/genRegressionData.out
 if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
+if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
 if [ "$3" == "1" ]; then BASE=$1/binomial ; else BASE=$1/multinomial ; fi
 if [ "$4" == "LOGISTIC" ]; then DATAGEN_SCRIPT=../datagen/genRandData4LogReg_LTstats.dml ; else DATAGEN_SCRIPT=../datagen/genRandData4LinearReg_LTstats.dml ; fi
 

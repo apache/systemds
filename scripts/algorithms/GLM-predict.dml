@@ -82,7 +82,7 @@
 # ---------------------------------------------------------------------------------------------
 #
 # Example with distribution = "Poisson.log":
-# hadoop jar SystemML.jar -f GLM_HOME/GLM-predict.dml -nvargs dfam=1 vpow=1.0 link=1 lpow=0.0
+# hadoop jar SystemDS.jar -f GLM_HOME/GLM-predict.dml -nvargs dfam=1 vpow=1.0 link=1 lpow=0.0
 #   disp=3.0 fmt=csv X=INPUT_DIR/X B=INPUT_DIR/B Y=INPUT_DIR/Y M=OUTPUT_DIR/M O=OUTPUT_DIR/out.csv
 
 # Default values for input parameters:

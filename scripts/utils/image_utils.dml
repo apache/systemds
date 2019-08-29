@@ -62,7 +62,7 @@ crop_rgb = function(matrix[double] input, int Hin, int Win, int Hout, int Wout) 
  * }
  * Y = crop_grayscale(X, 8, 8, 6, 6)
  * """
- * from systemml import MLContext, dml
+ * from systemds import MLContext, dml
  * ml = MLContext(sc)
  * script = dml(script).input(X=image).output("Y")
  * out = ml.execute(script).get("Y").toNumPy()

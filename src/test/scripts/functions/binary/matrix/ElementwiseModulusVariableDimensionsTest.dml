@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.binary.matrix.ElementwiseModulusTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.binary.matrix.ElementwiseModulusTest.java
 
 A = read("$$indir$$a", rows=$$rows1$$, cols=$$cols1$$, format="text");
 B = read("$$indir$$b", rows=$$rows2$$, cols=$$cols2$$, format="text");

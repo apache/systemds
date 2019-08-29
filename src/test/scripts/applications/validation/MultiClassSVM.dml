@@ -23,15 +23,15 @@
 # 
 
 # 100k Dataset:
-# hadoop jar SystemML.jar -f MultiClassSVM.dml -args itau/svm/X_100k_500 itau/svm/y_100k 0 2 0.001 1.0 100 itau/svm/w_100k_1
+# hadoop jar SystemDS.jar -f MultiClassSVM.dml -args itau/svm/X_100k_500 itau/svm/y_100k 0 2 0.001 1.0 100 itau/svm/w_100k_1
 
 # 5M Dataset:
-# hadoop jar SystemML.jar -f MultiClassSVM.dml -args itau/svm/X_5m_5k itau/svm/y_5m 0 2 0.001 1.0 100 itau/svm/w_100k_1
+# hadoop jar SystemDS.jar -f MultiClassSVM.dml -args itau/svm/X_5m_5k itau/svm/y_5m 0 2 0.001 1.0 100 itau/svm/w_100k_1
 
 # Assume SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume number of classes is 10, epsilon = 0.000001, lambda=1.0, max_iterations = 100
-# hadoop jar SystemML.jar -f $SVM_HOME/MultiClassSVM.dml -args $INPUT_DIR/X $INPUT_DIR/y intercept 10 0.000001 1.0 100 $OUTPUT_DIR/w
+# hadoop jar SystemDS.jar -f $SVM_HOME/MultiClassSVM.dml -args $INPUT_DIR/X $INPUT_DIR/y intercept 10 0.000001 1.0 100 $OUTPUT_DIR/w
 
 X = read($1)
 check_X = sum(X)

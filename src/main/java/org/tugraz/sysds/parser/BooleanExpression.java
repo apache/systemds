@@ -113,7 +113,7 @@ public class BooleanExpression extends Expression
 			|| (getRight()!=null && getRight().getOutput().getDataType().isMatrix()) ) {
 			output.setDataType((getRight()==null) ? DataType.MATRIX :
 				computeDataType(this.getLeft(), this.getRight(), true));
-			//since SystemML only supports double matrices, the value type is forced to
+			//since SystemDS only supports double matrices, the value type is forced to
 			//double; once we support boolean matrices this needs to change
 			output.setValueType(ValueType.FP64);
 		}

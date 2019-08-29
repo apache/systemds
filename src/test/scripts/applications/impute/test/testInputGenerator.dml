@@ -23,7 +23,7 @@
 # How To Run:
 #
 # 
-# hadoop jar SystemML.jar -f test/scripts/applications/impute/test/testInputGenerator.dml -exec singlenode
+# hadoop jar SystemDS.jar -f test/scripts/applications/impute/test/testInputGenerator.dml -exec singlenode
 #    -args test/scripts/applications/impute/test/initial_reports test/scripts/applications/impute/test/CReps 
 #        test/scripts/applications/impute/test/RegresValueMap test/scripts/applications/impute/test/RegresParamMap
 

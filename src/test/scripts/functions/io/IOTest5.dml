@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.io.IOTest5.java
+# junit test class: org.tugraz.sysds.test.integration.functions.io.IOTest5.java
 
 B = 12;
 if( 1==1 ){

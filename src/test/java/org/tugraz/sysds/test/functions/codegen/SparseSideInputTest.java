@@ -43,8 +43,8 @@ public class SparseSideInputTest extends AutomatedTestBase
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + SparseSideInputTest.class.getSimpleName() + "/";
-	private static String TEST_CONF1 = "SystemML-config-codegen.xml";
-	private static String TEST_CONF2 = "SystemML-config-codegen-compress.xml";
+	private static String TEST_CONF1 = "SystemDS-config-codegen.xml";
+	private static String TEST_CONF2 = "SystemDS-config-codegen-compress.xml";
 	private static String TEST_CONF = TEST_CONF1;
 	
 	private static final int rows = 1798;

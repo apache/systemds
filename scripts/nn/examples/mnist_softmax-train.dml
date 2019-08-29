@@ -55,7 +55,7 @@
 #   ```
 #   spark-submit --master local[*] --driver-memory 10G
 #   --conf spark.driver.maxResultSize=0 --conf spark.rpc.message.maxSize=128
-#   $SYSTEMML_HOME/target/SystemML.jar -f nn/examples/mnist_softmax-train.dml
+#   $SYSTEMDS_ROOT/target/SystemDS.jar -f nn/examples/mnist_softmax-train.dml
 #   -nvargs train=nn/examples/data/mnist/mnist_train.csv test=nn/examples/data/mnist/mnist_test.csv
 #   epochs=1 out_dir=nn/examples/model/mnist_softmax
 #   ```

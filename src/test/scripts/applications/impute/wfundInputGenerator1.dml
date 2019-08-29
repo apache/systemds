@@ -25,7 +25,7 @@
 # THIS VERSION IS WITH "TRADITIONAL" REGRESSIONS
 #
 
-# hadoop jar SystemML.jar -f test/scripts/applications/impute/wfundInputGenerator.dml -exec singlenode
+# hadoop jar SystemDS.jar -f test/scripts/applications/impute/wfundInputGenerator.dml -exec singlenode
 #    -args
 #        test/scripts/applications/impute/initial_reports
 #        test/scripts/applications/impute/initial_reports_preprocessed

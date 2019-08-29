@@ -60,7 +60,7 @@
 # 2. Execute using Spark
 #   ```
 #   spark-submit --master local[*] --driver-memory 10G --conf spark.driver.maxResultSize=0
-#   --conf spark.rpc.message.maxSize=128 $SYSTEMML_HOME/target/SystemML.jar
+#   --conf spark.rpc.message.maxSize=128 $SYSTEMDS_ROOT/target/SystemDS.jar
 #   -f nn/examples/mnist_lenet_distrib_sgd-train-dummy-data.dml -nvargs N=1024 Nval=512 Ntest=512
 #   C=1 Hin=28 Win=28 K=10 batch_size=32 parallel_batches=8 epochs=10
 #   out_dir=nn/examples/model/mnist_lenet

@@ -93,7 +93,7 @@ public class FrameReadMetaTest extends AutomatedTestBase
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 	
-		//establish connection to SystemML
+		//establish connection to SystemDS
 		Connection conn = new Connection();
 		
 		//read meta data frame 

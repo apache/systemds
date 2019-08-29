@@ -20,13 +20,13 @@
 #-------------------------------------------------------------
 
 # 100k Dataset:
-# hadoop jar SystemML.jar -f MultiClassSVMScore.dml -args itau/svm/X_100k_500 1 itau/svm/y_100k 0 itau/svm/w_100k_1 itau/svm/X_100k_500_scores itau/svm/X_100k_500_predicted_y itau/svm/X_100k_500_correct_percentage
+# hadoop jar SystemDS.jar -f MultiClassSVMScore.dml -args itau/svm/X_100k_500 1 itau/svm/y_100k 0 itau/svm/w_100k_1 itau/svm/X_100k_500_scores itau/svm/X_100k_500_predicted_y itau/svm/X_100k_500_correct_percentage
 
 ## 5M Dataset:
-## hadoop jar SystemML.jar -f MultiClassSVM.dml -args itau/svm/X_5m_5k itau/svm/y_5m 0 2 0.001 1.0 100 itau/svm/w_100k_1
+## hadoop jar SystemDS.jar -f MultiClassSVM.dml -args itau/svm/X_5m_5k itau/svm/y_5m 0 2 0.001 1.0 100 itau/svm/w_100k_1
 
 # Invocation command
-# hadoop jar SystemML.jar -f MultiClassSVMScore.dml -args X y_specified y intercept W scores predicted_y correct_percentage
+# hadoop jar SystemDS.jar -f MultiClassSVMScore.dml -args X y_specified y intercept W scores predicted_y correct_percentage
 
 X = read($1);
 intercept = $4;

@@ -51,7 +51,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME12 = TEST_NAME+"12"; //Y=(X>=v); R=Y/rowSums(Y)
 	private static final String TEST_NAME13 = TEST_NAME+"13"; //rowSums(X)+rowSums(Y)
 	private static final String TEST_NAME14 = TEST_NAME+"14"; //colSums(max(floor(round(abs(min(sign(X+Y),rowSums(X))))),7))
-	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemml nn - softmax backward
+	private static final String TEST_NAME15 = TEST_NAME+"15"; //systemds nn - softmax backward
 	private static final String TEST_NAME16 = TEST_NAME+"16"; //Y=X-rowIndexMax(X); R=Y/rowSums(Y)
 	private static final String TEST_NAME17 = TEST_NAME+"17"; //MLogreg - vector-matrix w/ indexing
 	private static final String TEST_NAME18 = TEST_NAME+"18"; //MLogreg - matrix-vector cbind 0s
@@ -86,7 +86,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
-	private final static String TEST_CONF = "SystemML-config-codegen.xml";
+	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 	private final static File   TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 
 	private static final double eps = Math.pow(10, -10);

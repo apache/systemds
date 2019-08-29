@@ -24,7 +24,7 @@
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 1000 and cols = 1000 for g,  rows = 1000 and cols = 1 for p, rows = 1000 and cols = 1 for e, rows = 1 and cols = 1000 for u,
 # Assume alpha = 0.85, max_iteration = 3
-# hadoop jar SystemML.jar -f $PAGE_RANK_HOME/PageRank.dml -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 0.85 3 "$OUPUT_DIR/w" 
+# hadoop jar SystemDS.jar -f $PAGE_RANK_HOME/PageRank.dml -args "$INPUT_DIR/g" "$INPUT_DIR/p" "$INPUT_DIR/e" "$INPUT_DIR/u" 0.85 3 "$OUPUT_DIR/w"
 
 G = read($1);
 # dense

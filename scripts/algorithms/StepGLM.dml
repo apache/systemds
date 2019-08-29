@@ -70,7 +70,7 @@
 # -------------------------------------------------------------------------------------------
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f StepGLM.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
+# hadoop jar SystemDS.jar -f StepGLM.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
 # 			 S=OUTPUT_DIR_S/selected O=OUTPUT_DIR/stats link=2 yneg=-1.0 icpt=2 tol=0.00000001 
 #			 disp=1.0 moi=100 mii=10 thr=0.01 fmt=csv  
 #

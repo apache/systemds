@@ -20,9 +20,9 @@
 #-------------------------------------------------------------
 
 # 10 K Dataset w/ k-fold CV
-# hadoop jar SystemML.jar -f CV_MultiClassSVM.sasha.dml -args $INPUT_DIR/X $INPUT_DIR/y num_folds intercept num_classes max_num_iterations tolerance regularization
+# hadoop jar SystemDS.jar -f CV_MultiClassSVM.sasha.dml -args $INPUT_DIR/X $INPUT_DIR/y num_folds intercept num_classes max_num_iterations tolerance regularization
 #                                                             $1           $2           $3        $4        $5          $6                 $7        $8
-# EXAMPLE: hadoop jar SystemML.jar -f CV_MultiClassSVM.sasha.dml -args itau/svm/X_10k_10 itau/svm/y_10k 4 0 5 100 0.001 1.0
+# EXAMPLE: hadoop jar SystemDS.jar -f CV_MultiClassSVM.sasha.dml -args itau/svm/X_10k_10 itau/svm/y_10k 4 0 5 100 0.001 1.0
 
 
 #X = Rand(rows=1000000, cols=100);

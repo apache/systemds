@@ -123,21 +123,21 @@ public abstract class ParserWrapper {
 		catch (IOException ex)
 		{
 			String resPath = scriptPathToResourcePath(script);
-			LOG.debug("Looking for the following resource from the SystemML jar file: " + resPath);
+			LOG.debug("Looking for the following resource from the SystemDS jar file: " + resPath);
 			InputStream is = null;
 			try {
 				is = ParserWrapper.class.getResourceAsStream(resPath);
 				if (is == null) {
 					if (resPath.startsWith("/scripts")) {
-						LOG.error("Failed to read from the file system ('" + script + "') or SystemML jar file ('" + resPath + "')");
+						LOG.error("Failed to read from the file system ('" + script + "') or SystemDS jar file ('" + resPath + "')");
 						throw ex;
 					} else {
 						// for accessing script packages in the scripts directory
 						String scriptsResPath = "/scripts" + resPath;
-						LOG.debug("Looking for the following resource from the SystemML jar file: " + scriptsResPath);
+						LOG.debug("Looking for the following resource from the SystemDS jar file: " + scriptsResPath);
 						is = ParserWrapper.class.getResourceAsStream(scriptsResPath);
 						if (is == null) {
-							LOG.error("Failed to read from the file system ('" + script + "') or SystemML jar file ('" + resPath + "' or '" + scriptsResPath + "')");
+							LOG.error("Failed to read from the file system ('" + script + "') or SystemDS jar file ('" + resPath + "' or '" + scriptsResPath + "')");
 							throw ex;
 						}
 					}

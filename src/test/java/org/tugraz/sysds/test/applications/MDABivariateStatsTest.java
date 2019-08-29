@@ -131,9 +131,9 @@ public class MDABivariateStatsTest extends AutomatedTestBase
 		
 		runRScript(true);
 
-		HashMap<CellIndex, Double> statsSYSTEMML = readDMLMatrixFromHDFS("stats");
+		HashMap<CellIndex, Double> statsSYSTEMDS = readDMLMatrixFromHDFS("stats");
 		HashMap<CellIndex, Double> statsR = readRMatrixFromFS("stats");
 		
-		TestUtils.compareMatrices(statsSYSTEMML, statsR, 0.000001, "statsSYSTEMML", "statsR");
+		TestUtils.compareMatrices(statsSYSTEMDS, statsR, 0.000001, "statsSYSTEMDS", "statsR");
 	}
 }

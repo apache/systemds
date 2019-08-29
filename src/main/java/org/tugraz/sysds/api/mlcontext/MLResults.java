@@ -1997,7 +1997,7 @@ public class MLResults {
 
 	/**
 	 * Obtain the symbol table, which is essentially a {@code Map<String, Data>}
-	 * representing variables and their values as SystemML representations.
+	 * representing variables and their values as SystemDS representations.
 	 *
 	 * @return the symbol table
 	 */

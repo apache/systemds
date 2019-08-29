@@ -33,7 +33,7 @@ import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.meta.DataCharacteristics;
 
 /**
- * Frame encapsulates a SystemML frame.
+ * Frame encapsulates a SystemDS frame.
  *
  */
 public class Frame {
@@ -50,7 +50,7 @@ public class Frame {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation.
 	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
@@ -63,7 +63,7 @@ public class Frame {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation,
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation,
 	 * specifying the number of rows and columns.
 	 *
 	 * @param dataFrame
@@ -79,7 +79,7 @@ public class Frame {
 	}
 
 	/**
-	 * Convert a Spark DataFrame to a SystemML binary-block representation.
+	 * Convert a Spark DataFrame to a SystemDS binary-block representation.
 	 *
 	 * @param dataFrame
 	 *            the Spark DataFrame
@@ -89,7 +89,7 @@ public class Frame {
 	}
 
 	/**
-	 * Create a Frame, specifying the SystemML binary-block frame and its
+	 * Create a Frame, specifying the SystemDS binary-block frame and its
 	 * metadata.
 	 *
 	 * @param binaryBlocks
@@ -103,9 +103,9 @@ public class Frame {
 	}
 
 	/**
-	 * Obtain the frame as a SystemML FrameObject.
+	 * Obtain the frame as a SystemDS FrameObject.
 	 *
-	 * @return the frame as a SystemML FrameObject
+	 * @return the frame as a SystemDS FrameObject
 	 */
 	public FrameObject toFrameObject() {
 		return frameObject;

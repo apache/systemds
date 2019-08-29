@@ -22,7 +22,7 @@
 # generates random correlated data
 # can generate any number of variables/columns
 # used to test univariate stats computation
-# by systemml
+# by systemds
 
 # $1 is number of variables/columns
 # $2 is number of samples to create

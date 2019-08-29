@@ -36,7 +36,7 @@
 # OUTPUT: Matrix of summary statistics
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv
+# hadoop jar SystemDS.jar -f Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv
 #    STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
 #
 

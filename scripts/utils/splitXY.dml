@@ -29,7 +29,7 @@
 #    ofmt    : (default binary) format of OX and OY output matrix
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/splitXY.dml -nvargs X="/tmp/X.mtx" y=50 OX="/tmp/OX.mtx  OY="/tmp/OY.mtx  
+#   hadoop jar SystemDS.jar -f algorithms/utils/splitXY.dml -nvargs X="/tmp/X.mtx" y=50 OX="/tmp/OX.mtx  OY="/tmp/OY.mtx
 #
 
 ofmt = ifdef($ofmt, "binary")

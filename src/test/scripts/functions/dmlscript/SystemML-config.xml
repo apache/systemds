@@ -17,9 +17,9 @@
  * under the License.
 -->
 <root>
-<sysml.numreducers>10</sysml.numreducers>
-<sysml.scratch>scratch_space</sysml.scratch>
-<sysml.defaultblocksize>1000</sysml.defaultblocksize>
-<sysml.cp.parallel.ops>true</sysml.cp.parallel.ops>
-<sysml.cp.parallel.io>false</sysml.cp.parallel.io>
+<sysds.numreducers>10</sysds.numreducers>
+<sysds.scratch>scratch_space</sysds.scratch>
+<sysds.defaultblocksize>1000</sysds.defaultblocksize>
+<sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
+<sysds.cp.parallel.io>false</sysds.cp.parallel.io>
 </root>

@@ -43,7 +43,7 @@
 # Example:
 #   printf "0.8\n0.2" | hadoop fs -put - /tmp/sv.csv
 #   echo '{"data_type": "matrix", "value_type": "double", "rows": 2, "cols": 1, "format": "csv"}' | hadoop fs -put - /tmp/sv.csv.mtd
-#   hadoop jar SystemML.jar -f ./scripts/utils/sample.dml -nvargs X=/tmp/X.mtx sv=/tmp/sv.csv O=/tmp/Out ofmt=csv
+#   hadoop jar SystemDS.jar -f ./scripts/utils/sample.dml -nvargs X=/tmp/X.mtx sv=/tmp/sv.csv O=/tmp/Out ofmt=csv
 
 # set defaults
 ofmt = ifdef($ofmt, "text");

@@ -82,7 +82,7 @@
 #	T[1,4] = P-value
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O 
+# hadoop jar SystemDS.jar -f KM.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE GI=INPUT_DIR/GI SI=INPUT_DIR/SI O=OUTPUT_DIR/O
 #											M=OUTPUT_DIR/M T=OUTPUT_DIR/T alpha=0.05 etype=greenwood ctype=log fmt=csv
 
 fileX = $X;

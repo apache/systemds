@@ -45,7 +45,7 @@ public class DMLOptions {
 	public final Options        options;
 	public Map<String, String>  argVals       = new HashMap<>();  // Arguments map containing either named arguments or arguments by position for a DML program
 	public String               configFile    = null;             // Path to config file if default config and default config is to be overriden
-	public boolean              clean         = false;            // Whether to clean up all SystemML working directories (FS, DFS)
+	public boolean              clean         = false;            // Whether to clean up all SystemDS working directories (FS, DFS)
 	public boolean              stats         = false;            // Whether to record and print the statistics
 	public int                  statsCount    = 10;               // Default statistics count
 	public boolean              memStats      = false;            // max memory statistics
@@ -222,7 +222,7 @@ public class DMLOptions {
 		Option configOpt = OptionBuilder.withArgName("filename")
 			.withDescription("uses a given configuration file (can be on local/hdfs/gpfs; default values in SystemDS-config.xml")
 			.hasArg().create("config");
-		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemML working directories (FS, DFS); all other flags are ignored in this mode. \n")
+		Option cleanOpt = OptionBuilder.withDescription("cleans up all SystemDS working directories (FS, DFS); all other flags are ignored in this mode. \n")
 			.create("clean");
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")

@@ -28,7 +28,7 @@
  *
  * PySpark example:
  * from sklearn import datasets, neighbors
- * from systemml.mllearn import LogisticRegression
+ * from systemds.mllearn import LogisticRegression
  * from pyspark.sql import SQLContext
  * sqlCtx = SQLContext(sc)
  * digits = datasets.load_digits()
@@ -68,7 +68,7 @@
  * out = classification_report(y_true, y_pred, seq(1, 10))
  * print(out)
  * """
- * from systemml import MLContext, dml
+ * from systemds import MLContext, dml
  * ml = MLContext(sc)
  * script = dml(script).input(y_true=y_test, y_pred=y_predicted)
  * ml.execute(script)

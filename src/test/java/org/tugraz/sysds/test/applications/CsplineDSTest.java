@@ -105,8 +105,8 @@ public class CsplineDSTest  extends AutomatedTestBase {
 		runRScript(true);
 
 		HashMap<CellIndex, Double> priorR = readRMatrixFromFS("pred_y");
-		HashMap<CellIndex, Double> priorSYSTEMML= readDMLMatrixFromHDFS("pred_y");
+		HashMap<CellIndex, Double> priorSYSTEMDS= readDMLMatrixFromHDFS("pred_y");
 
-		TestUtils.compareMatrices(priorR, priorSYSTEMML, Math.pow(10, -12), "k_R", "k_SYSTEMML");
+		TestUtils.compareMatrices(priorR, priorSYSTEMDS, Math.pow(10, -12), "k_R", "k_SYSTEMDS");
 	}
 }

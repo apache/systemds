@@ -71,11 +71,11 @@ public class UnifiedMemoryAllocator  implements GPUMemoryAllocator {
 	 * @return true if there is enough available memory to allocate a pointer of the given size 
 	 */
 	public boolean canAllocate(long size) {
-		return true; // Unified memory can allocate any amount of memory. Note: all allocations are guarded by SystemML's optimizer which uses getAvailableMemory
+		return true; // Unified memory can allocate any amount of memory. Note: all allocations are guarded by SystemDS's optimizer which uses getAvailableMemory
 	}
 	
 	/**
-	 * Gets the available memory on GPU that SystemML can use.
+	 * Gets the available memory on GPU that SystemDS can use.
 	 *
 	 * @return the available memory in bytes
 	 */

@@ -72,7 +72,7 @@
 # Moreover, in this case no further statistics will be produced  
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
+# hadoop jar SystemDS.jar -f StepLinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas
 #     O=OUTPUT_DIR/stats S=OUTPUT_DIR/selected icpt=2 thr=0.01 fmt=csv write_beta=TRUE
 
 fileX = $X;

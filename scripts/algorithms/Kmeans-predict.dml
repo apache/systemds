@@ -83,13 +83,13 @@
 #
 # Examples:
 # 1. To predict Y given X and C:
-#     hadoop jar SystemML.jar -f Kmeans-predict.dml -nvargs X=INPUT_DIR/X
+#     hadoop jar SystemDS.jar -f Kmeans-predict.dml -nvargs X=INPUT_DIR/X
 #         C=INPUT_DIR/C prY=OUTPUT_DIR/PredY O=OUTPUT_DIR/stats
 # 2. To compare "actual" labels spY with "predicted" labels given X and C:
-#     hadoop jar SystemML.jar -f Kmeans-predict.dml -nvargs X=INPUT_DIR/X
+#     hadoop jar SystemDS.jar -f Kmeans-predict.dml -nvargs X=INPUT_DIR/X
 #         C=INPUT_DIR/C spY=INPUT_DIR/Y O=OUTPUT_DIR/stats
 # 3. To compare "actual" labels spY with given "predicted" labels prY:
-#     hadoop jar SystemML.jar -f Kmeans-predict.dml -nvargs spY=INPUT_DIR/Y
+#     hadoop jar SystemDS.jar -f Kmeans-predict.dml -nvargs spY=INPUT_DIR/Y
 #         prY=INPUT_DIR/PredY O=OUTPUT_DIR/stats
 
 

@@ -36,7 +36,7 @@
 # OUTPUT: Matrix of k parameters (the betas)
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f CsplineDS.dml -nvargs X=INPUT_DIR/X Y= INPUT_DIR/Y O=OUTPUT_DIR/Out
+# hadoop jar SystemDS.jar -f CsplineDS.dml -nvargs X=INPUT_DIR/X Y= INPUT_DIR/Y O=OUTPUT_DIR/Out
 # -inp_x=4.5 fmt=csv
 
 

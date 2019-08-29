@@ -68,7 +68,7 @@ import org.tugraz.sysds.runtime.util.DataConverter;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
- * Interaction with SystemML using the JMLC (Java Machine Learning Connector) API is initiated with
+ * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
  * a {@link Connection} object. The JMLC API is patterned
  * after JDBC. A DML script is precompiled by calling
  * the {@link #prepareScript(String, String[], String[], boolean)}
@@ -92,7 +92,7 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
  * <ul>
  *   <li>JMLC JUnit test cases (org.tugraz.sysds.test.integration.functions.jmlc)</li>
  *   <li><a target="_blank" href="http://apache.github.io/systemml/jmlc.html">JMLC section
- *   of SystemML online documentation</a></li>
+ *   of SystemDS online documentation</a></li>
  * </ul>
  */
 public class Connection implements Closeable
@@ -289,7 +289,7 @@ public class Connection implements Closeable
 	}
 	
 	/**
-	 * Close connection to SystemML, which clears the
+	 * Close connection to SystemDS, which clears the
 	 * thread-local DML and compiler configurations.
 	 */
 	@Override
@@ -412,11 +412,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a matrix in csv or textcell format
-	 * into a dense double array. The meta data string is the SystemML generated
+	 * into a dense double array. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input string matrix in csv or textcell format
-	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @param meta string representing SystemDS matrix metadata in JSON format
 	 * @return matrix as a two-dimensional double array
 	 * @throws IOException if IOException occurs
 	 */
@@ -477,11 +477,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a matrix in csv or textcell format
-	 * into a matrix block. The meta data string is the SystemML generated
+	 * into a matrix block. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input string matrix in csv or textcell format
-	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @param meta string representing SystemDS matrix metadata in JSON format
 	 * @return matrix as a matrix block
 	 * @throws IOException if IOException occurs
 	 */
@@ -493,11 +493,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input stream of a string matrix in csv or textcell format
-	 * into a matrix block. The meta data string is the SystemML generated
+	 * into a matrix block. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input InputStream to a string matrix in csv or textcell format
-	 * @param meta string representing SystemML matrix metadata in JSON format
+	 * @param meta string representing SystemDS matrix metadata in JSON format
 	 * @return matrix as a matrix block
 	 * @throws IOException if IOException occurs
 	 */
@@ -652,11 +652,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a frame in csv or textcell format
-	 * into a dense string array. The meta data string is the SystemML generated
+	 * into a dense string array. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input string frame in csv or textcell format
-	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @param meta string representing SystemDS frame metadata in JSON format
 	 * @return frame as a two-dimensional string array
 	 * @throws IOException if IOException occurs
 	 */
@@ -717,11 +717,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input string representation of a frame in csv or textcell format
-	 * into a frame block. The meta data string is the SystemML generated
+	 * into a frame block. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input string frame in csv or textcell format
-	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @param meta string representing SystemDS frame metadata in JSON format
 	 * @return frame as a frame block
 	 * @throws IOException if IOException occurs
 	 */
@@ -733,11 +733,11 @@ public class Connection implements Closeable
 	
 	/**
 	 * Converts an input stream of a string frame in csv or textcell format
-	 * into a frame block. The meta data string is the SystemML generated
+	 * into a frame block. The meta data string is the SystemDS generated
 	 * .mtd file including the number of rows and columns.
 	 * 
 	 * @param input InputStream to a string frame in csv or textcell format
-	 * @param meta string representing SystemML frame metadata in JSON format
+	 * @param meta string representing SystemDS frame metadata in JSON format
 	 * @return frame as a frame block
 	 * @throws IOException if IOException occurs
 	 */

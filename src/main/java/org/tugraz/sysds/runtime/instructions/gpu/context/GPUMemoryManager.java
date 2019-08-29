@@ -43,13 +43,13 @@ import org.tugraz.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
 /**
- * - All cudaFree and cudaMalloc in SystemML should go through this class to avoid OOM or incorrect results.
+ * - All cudaFree and cudaMalloc in SystemDS should go through this class to avoid OOM or incorrect results.
  * - This class can be refactored in future to accept a chunk of memory ahead of time rather than while execution. This will only thow memory-related errors during startup.  
  */
 public class GPUMemoryManager {
 	protected static final Log LOG = LogFactory.getLog(GPUMemoryManager.class.getName());
 	
-	// Developer flag: Use this flag to check for GPU memory leak in SystemML.  
+	// Developer flag: Use this flag to check for GPU memory leak in SystemDS.
 	// This has an additional overhead of maintaining stack trace of all the allocated GPU pointers via PointerInfo class.
 	private static final boolean DEBUG_MEMORY_LEAK = false;
 	private static final int [] DEBUG_MEMORY_LEAK_STACKTRACE_DEPTH = {5, 6, 7, 8, 9, 10}; // Avoids printing too much text while debuggin
@@ -57,7 +57,7 @@ public class GPUMemoryManager {
 	protected final GPUMemoryAllocator allocator;
 	/*****************************************************************************************/
 	// GPU Memory is divided into three major sections:
-	// 1. Matrix Memory: Memory allocated to matrices in SystemML and addressable by GPUObjects.
+	// 1. Matrix Memory: Memory allocated to matrices in SystemDS and addressable by GPUObjects.
 	// This memory section is divided into three minor sections:
 	// 1.1 Locked Matrix Memory
 	// 1.2 UnLocked + Non-Dirty Matrix Memory
@@ -70,7 +70,7 @@ public class GPUMemoryManager {
 		return matrixMemoryManager;
 	}
 	
-	// 2. Rmvar-ed pointers: If sysml.gpu.eager.cudaFree is set to false,
+	// 2. Rmvar-ed pointers: If sysds.gpu.eager.cudaFree is set to false,
 	// then this manager caches pointers of the GPUObject on which rmvar instruction has been executed for future reuse.
 	// We observe 2-3x improvement with this approach and hence recommend to set this flag to false.
 	protected final GPULazyCudaFreeMemoryManager lazyCudaFreeMemoryManager;
@@ -125,7 +125,7 @@ public class GPUMemoryManager {
 	}
 	
 	// If the available free size is less than this factor, GPUMemoryManager will warn users of multiple programs grabbing onto GPU memory.
-	// This often happens if user tries to use both TF and SystemML, and TF grabs onto 90% of the memory ahead of time.
+	// This often happens if user tries to use both TF and SystemDS, and TF grabs onto 90% of the memory ahead of time.
 	private static final double WARN_UTILIZATION_FACTOR = 0.7;
 	
 	public GPUMemoryManager(GPUContext gpuCtx) {

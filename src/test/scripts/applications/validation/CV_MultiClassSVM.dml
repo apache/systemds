@@ -22,12 +22,12 @@
 # 50k Dataset w/ 4-fold CV w/ 2 classes
 #    Total time:		3.7473180000000004 sec.
 #    Number of executed MR Jobs:	0.
-# hadoop jar SystemML.jar -f CV_MultiClassSVM.dml -args itau/svm/X_50k_10 itau/svm/y_50k 4 0 2 0.001 1.0 100 
+# hadoop jar SystemDS.jar -f CV_MultiClassSVM.dml -args itau/svm/X_50k_10 itau/svm/y_50k 4 0 2 0.001 1.0 100
 
 # 100k Dataset w/ 4-fold CV w/ 2 classes
 #    Total time:		206.549618 sec.
 #    Number of executed MR Jobs:	16.
-# hadoop jar SystemML.jar -f CV_MultiClassSVM.dml -args itau/svm/X_100k_500 itau/svm/y_100k 4 0 2 0.001 1.0 100 
+# hadoop jar SystemDS.jar -f CV_MultiClassSVM.dml -args itau/svm/X_100k_500 itau/svm/y_100k 4 0 2 0.001 1.0 100
 
 
 X = read( $1 );

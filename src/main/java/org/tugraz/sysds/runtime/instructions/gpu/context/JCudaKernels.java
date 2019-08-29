@@ -40,7 +40,7 @@ import jcuda.runtime.JCuda;
 
 public class JCudaKernels {
 
-	private final static String ptxFileName = "/kernels/SystemML.ptx";
+	private final static String ptxFileName = "/kernels/SystemDS.ptx";
 	private HashMap<String, CUfunction> kernels = new HashMap<>();
 	private CUmodule module;
 
@@ -133,7 +133,7 @@ public class JCudaKernels {
 				return Pointer.to(out.toByteArray());
 			} else {
 				throw new DMLRuntimeException("The input file " + ptxFileName
-						+ " not found. (Hint: Please compile SystemML using -DenableGPU=true flag. Example: mvn package -DenableGPU=true).");
+						+ " not found. (Hint: Please compile SystemDS using -DenableGPU=true flag. Example: mvn package -DenableGPU=true).");
 			}
 		} catch (IOException e) {
 			throw new DMLRuntimeException("Could not initialize the kernels", e);

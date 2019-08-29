@@ -29,7 +29,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 /**
- * Obtains information that is stored in the manifest when the SystemML jar is
+ * Obtains information that is stored in the manifest when the SystemDS jar is
  * built.
  *
  */
@@ -51,11 +51,11 @@ public class ProjectInfo {
 	}
 
 	private ProjectInfo() {
-		JarFile systemMlJar = null;
+		JarFile systemDsJar = null;
 		try {
 			String path = this.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-			systemMlJar = new JarFile(path);
-			Manifest manifest = systemMlJar.getManifest();
+			systemDsJar = new JarFile(path);
+			Manifest manifest = systemDsJar.getManifest();
 			Attributes mainAttributes = manifest.getMainAttributes();
 			properties = new TreeMap<>();
 			for (Object key : mainAttributes.keySet()) {
@@ -63,13 +63,13 @@ public class ProjectInfo {
 				properties.put(key.toString(), value);
 			}
 		} catch (Exception e) {
-			throw new MLContextException("Error trying to read from manifest in SystemML jar file", e);
+			throw new MLContextException("Error trying to read from manifest in SystemDS jar file", e);
 		} finally {
-			if (systemMlJar != null) {
+			if (systemDsJar != null) {
 				try {
-					systemMlJar.close();
+					systemDsJar.close();
 				} catch (IOException e) {
-					throw new MLContextException("Error closing SystemML jar file", e);
+					throw new MLContextException("Error closing SystemDS jar file", e);
 				}
 			}
 		}

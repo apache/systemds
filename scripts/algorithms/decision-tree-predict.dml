@@ -57,7 +57,7 @@
 #   3- Confusion matrix C if requested
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f decision-tree-predict.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=INPUT_DIR/model P=OUTPUT_DIR/predictions
+# hadoop jar SystemDS.jar -f decision-tree-predict.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=INPUT_DIR/model P=OUTPUT_DIR/predictions
 #														A=OUTPUT_DIR/accuracy CM=OUTPUT_DIR/confusion fmt=csv
 
 fileX = $X;

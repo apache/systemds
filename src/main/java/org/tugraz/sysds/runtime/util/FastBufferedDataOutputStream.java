@@ -31,11 +31,11 @@ import org.tugraz.sysds.runtime.matrix.data.MatrixBlockDataOutput;
 
 /**
  * This buffered output stream is essentially a merged version of
- * BufferedOutputStream and DataOutputStream, wrt SystemML requirements.
+ * BufferedOutputStream and DataOutputStream, wrt SystemDS requirements.
  * 
  * Micro-benchmarks showed a 25% performance improvement for local write binary block
  * due to the following advantages: 
- * - 1) unsynchronized buffered output stream (not required in SystemML since single writer)
+ * - 1) unsynchronized buffered output stream (not required in SystemDS since single writer)
  * - 2) single output buffer (avoid two-level buffers of individual streams)
  * - 3) specific support for writing double arrays in a blockwise fashion
  * 

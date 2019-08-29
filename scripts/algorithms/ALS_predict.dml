@@ -36,7 +36,7 @@
 # OUTPUT: Matrix Y containing the predicted ratings for users and items specified in input matrix X
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f ALS-predict.dml -nvargs Vrows=100000 Vcols=10000 \
+# hadoop jar SystemDS.jar -f ALS-predict.dml -nvargs Vrows=100000 Vcols=10000 \
 #   X=INPUT_DIR/X L=OUTPUT_DIR/L R=OUTPUT_DIR/R Y=OUTPUT_DIR/Y fmt=csv
 
 fileX = $X;

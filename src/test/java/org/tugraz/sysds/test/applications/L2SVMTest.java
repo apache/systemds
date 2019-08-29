@@ -108,7 +108,7 @@ public class L2SVMTest extends AutomatedTestBase
 		runRScript(true);
 
 		HashMap<CellIndex, Double> wR = readRMatrixFromFS("w");
-		HashMap<CellIndex, Double> wSYSTEMML= readDMLMatrixFromHDFS("w");
-		TestUtils.compareMatrices(wR, wSYSTEMML, epsilon, "wR", "wSYSTEMML");
+		HashMap<CellIndex, Double> wSYSTEMDS= readDMLMatrixFromHDFS("w");
+		TestUtils.compareMatrices(wR, wSYSTEMDS, epsilon, "wR", "wSYSTEMDS");
 	}
 }

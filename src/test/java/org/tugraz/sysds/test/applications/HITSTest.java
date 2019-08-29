@@ -76,13 +76,13 @@ public class HITSTest extends AutomatedTestBase
 		
 		runRScript(true);
 
-		HashMap<CellIndex, Double> hubsSYSTEMML = readDMLMatrixFromHDFS("hubs");
-		HashMap<CellIndex, Double> authSYSTEMML = readDMLMatrixFromHDFS("authorities");
+		HashMap<CellIndex, Double> hubsSYSTEMDS = readDMLMatrixFromHDFS("hubs");
+		HashMap<CellIndex, Double> authSYSTEMDS = readDMLMatrixFromHDFS("authorities");
 		HashMap<CellIndex, Double> hubsR = readRMatrixFromFS("hubs");
 		HashMap<CellIndex, Double> authR = readRMatrixFromFS("authorities");
 
-		TestUtils.compareMatrices(hubsSYSTEMML, hubsR, 0.001, "hubsSYSTEMML", "hubsR");
-		TestUtils.compareMatrices(authSYSTEMML, authR, 0.001, "authSYSTEMML", "authR");
+		TestUtils.compareMatrices(hubsSYSTEMDS, hubsR, 0.001, "hubsSYSTEMDS", "hubsR");
+		TestUtils.compareMatrices(authSYSTEMDS, authR, 0.001, "authSYSTEMDS", "authR");
 		
 	}
 }

@@ -31,7 +31,7 @@ import org.tugraz.sysds.test.TestConfiguration;
 import org.tugraz.sysds.test.TestUtils;
 
 /**
- * NOTE: there are differences to R's matrix operation; in SystemML byrow refers to both input and output
+ * NOTE: there are differences to R's matrix operation; in SystemDS byrow refers to both input and output
  * while in R it only refers to the output, while by default it reads the input in column-major order (you
  * can force it to row-major via a transpose of the input). 
  * 

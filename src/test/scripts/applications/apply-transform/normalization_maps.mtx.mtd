@@ -7,5 +7,5 @@
     ,"format": "csv"
     ,"header": false
     ,"sep": ","
-    ,"description": { "author": "SystemML" } 
+    ,"description": { "author": "SystemDS" }
 }

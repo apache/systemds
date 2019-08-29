@@ -23,7 +23,6 @@ SYSTEMDS-20 New Data Model
  * 26 Non-zero default value for sparse (row/col)
  * 27 Tensor buffer pool integration
  * 28 Tensor local readers and writers
- * 
 
 SYSTEMDS-30 Builtin and Packaging
  * 31 Shell script for local runs                                     OK
@@ -81,7 +80,7 @@ SYSTEMDS-110 New Builtin Functions
  * 113 Builtin functions for linear regression algorithms             OK
  * 114 Builtin function for stepwise regression                       OK
  * 115 Builtin function for model debugging (slice finder)            OK
- * 116 Builtin function for kmeans
+ * 116 Builtin function for kmeans									  OK
 
 SYSTEMDS-120 Performance Features
  * 121 Avoid spark context creation on parfor result merge            OK
@@ -91,7 +90,6 @@ SYSTEMDS-120 Performance Features
 SYSTEMDS-130 IPA and Size Propagation
  * 131 New IPA pass for function call forwarding                      OK
  * 132 Hop Size Propagation for Tensors
- 
 
 SYSTEMDS-140 Distributed Tensor Operations
  * 141 Infrastructure for spark tensor operations
@@ -100,3 +98,6 @@ SYSTEMDS-140 Distributed Tensor Operations
  SYSTEMDS-150 Release 0.1
  * 151 Fixing native BLAS instructions (MKL,OpenBLAS)                 OK
  * 152 Run script documentation                                       OK
+ * 153 convert all occurrences SystemML/sysml to SystemDS/sysds       OK
+ * 154 fix license headers in all touched files
+ * 155 import release scripts from SystemML repo

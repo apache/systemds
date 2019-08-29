@@ -308,7 +308,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final String PARFOR_MR_RESULTMERGE_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_resultmerge%VAR%"; 
 	public static final String PARFOR_DATAPARTITIONS_FNAME  = PARFOR_FNAME_PREFIX + "%ID%_datapartitions%VAR%"; 
 	
-	public static final String PARFOR_COUNTER_GROUP_NAME    = "SystemML ParFOR Counters";
+	public static final String PARFOR_COUNTER_GROUP_NAME    = "SystemDS ParFOR Counters";
 
 	// static ID generator sequences
 	private final static IDSequence _pfIDSeq = new IDSequence();

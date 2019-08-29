@@ -40,8 +40,8 @@
 # ----------------------------------------------------------------------------
 #
 # Example:
-# hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 C=centroids.mtx
-# hadoop jar SystemML.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=TRUE Y=clusters.mtx verb=TRUE
+# hadoop jar SystemDS.jar -f Kmeans.dml -nvargs X=X.mtx k=5 C=centroids.mtx
+# hadoop jar SystemDS.jar -f Kmeans.dml -nvargs X=X.mtx k=5 runs=100 maxi=5000 tol=0.00000001 samp=20 C=centroids.mtx isY=TRUE Y=clusters.mtx verb=TRUE
 
 fileX = $X;
 fileY = ifdef ($Y, "Y.mtx");

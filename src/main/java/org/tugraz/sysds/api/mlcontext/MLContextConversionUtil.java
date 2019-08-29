@@ -497,7 +497,7 @@ public class MLContextConversionUtil {
 		}
 
 		if (mf == null) {
-			throw new MLContextException("DataFrame format not recognized as an accepted SystemML MatrixFormat");
+			throw new MLContextException("DataFrame format not recognized as an accepted SystemDS MatrixFormat");
 		}
 		matrixMetadata.setMatrixFormat(mf);
 	}

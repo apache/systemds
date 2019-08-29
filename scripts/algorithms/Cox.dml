@@ -88,7 +88,7 @@
 # 4- A column matrix MF that contains the column indices of X with the baseline factors removed (if available)
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f Cox.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE F=INTPUT_DIR/F R=INTPUT_DIR/R 
+# hadoop jar SystemDS.jar -f Cox.dml -nvargs X=INPUT_DIR/X TE=INPUT_DIR/TE F=INTPUT_DIR/F R=INTPUT_DIR/R
 #									  M=OUTPUT_DIR/M S=OUTPUT_DIR/S T=OUTPUT_DIR/T COV=OUTPUT_DIR/COV RT=OUTPUT_DIR/RT 
 #									  XO=OUTPUT_DIR/XO MF=OUTPUT/MF alpha=0.05 tol=0.000001 moi=100 mii=20 fmt=csv
 

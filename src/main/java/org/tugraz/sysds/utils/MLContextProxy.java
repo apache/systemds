@@ -24,7 +24,7 @@ import org.tugraz.sysds.api.mlcontext.MLContextException;
 import org.tugraz.sysds.parser.Expression;
 
 /**
- * The purpose of this proxy is to shield systemml internals from direct access to MLContext
+ * The purpose of this proxy is to shield systemds internals from direct access to MLContext
  * which would try to load spark libraries and hence fail if these are not available. This
  * indirection is much more efficient than catching NoClassDefFoundErrors for every access
  * to MLContext (e.g., on each recompile).

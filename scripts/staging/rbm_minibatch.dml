@@ -54,7 +54,7 @@
 #
 
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f rbm.dml -nvargs X=$INPUT_DIR/X W=$OUTPUT_DIR/w A=$OUTPUT_DIR/a B=$OUTPUT_DIR/b batchsize=100 vis=10 hid=2 epochs=10 alpha=0.1
+# hadoop jar SystemDS.jar -f rbm.dml -nvargs X=$INPUT_DIR/X W=$OUTPUT_DIR/w A=$OUTPUT_DIR/a B=$OUTPUT_DIR/b batchsize=100 vis=10 hid=2 epochs=10 alpha=0.1
 
 
 # -------------------------------------------- START OF RBM_MINIBATCH.DML --------------------------------------------

@@ -42,7 +42,7 @@ import org.tugraz.sysds.utils.Statistics;
 
 public class APICodegenTest extends AutomatedTestBase
 {
-	protected final static String TEST_DIR = "org/apache/sysml/api/mlcontext";
+	protected final static String TEST_DIR = "org/tugraz/sysds/api/mlcontext";
 	protected final static String TEST_NAME = "MLContext";
 
 	private final static int rows = 100;
@@ -88,7 +88,7 @@ public class APICodegenTest extends AutomatedTestBase
 				System.out.println(Statistics.display());
 			}
 			else {
-				SparkConf conf = SparkExecutionContext.createSystemMLSparkConf()
+				SparkConf conf = SparkExecutionContext.createSystemDSSparkConf()
 					.setAppName("MLContextTest").setMaster("local");
 				JavaSparkContext sc = new JavaSparkContext(conf);
 				MLContext ml = new MLContext(sc);

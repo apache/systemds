@@ -63,7 +63,7 @@
 # -------------------------------------------------------------------------------------------
 #
 # Script invocation example:
-# hadoop jar SystemML.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
+# hadoop jar SystemDS.jar -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
 #     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv Log=OUTPUT_DIR/log
 
 fileX = $X;

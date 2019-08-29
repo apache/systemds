@@ -42,7 +42,7 @@
 #	algorithm webpage for pseudo code.
 #
 # Representing decision trees:
-#	Since SystemML can only represent matrices,
+#	Since SystemDS can only represent matrices,
 #	one question that needs answering is how to 
 #	represent decision trees. One option is to
 #	restrict ourselves to building binary decision
@@ -80,7 +80,7 @@
 #	v has to be a value in the domain of f.
 
 # Further notes:
-# Because of the way SystemML's groupedAggregate function
+# Because of the way SystemDS's groupedAggregate function
 # works, it is a good idea to have values in the domain of
 # a feature numbered starting with 1 contiguously through to
 # its domain size. Note that this is not a restriction. The

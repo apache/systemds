@@ -35,7 +35,7 @@
 # MODEL  String ---      Location to already existing model: eigenvectors and eigenvalues 
 # OUTPUT String /        Location to write output matrices (covariance matrix, new basis vectors, 
 #                           and data projected onto new basis vectors)
-# hadoop jar SystemML.jar -f PCA.dml -nvargs INPUT=INPUT_DIR/pca-1000x1000 
+# hadoop jar SystemDS.jar -f PCA.dml -nvargs INPUT=INPUT_DIR/pca-1000x1000
 # OUTPUT=OUTPUT_DIR/pca-1000x1000-model PROJDATA=1 CENTER=1 SCALE=1
 # ---------------------------------------------------------------------------------------------
 

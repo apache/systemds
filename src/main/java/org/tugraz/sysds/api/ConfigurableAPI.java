@@ -32,7 +32,7 @@ public interface ConfigurableAPI
 	
 	/**
 	 * Set configuration property, such as
-	 * {@code setConfigProperty("sysml.localtmpdir", "/tmp/systemml")}.
+	 * {@code setConfigProperty("sysds.localtmpdir", "/tmp/systemds")}.
 	 *
 	 * @param propertyName
 	 *            property name

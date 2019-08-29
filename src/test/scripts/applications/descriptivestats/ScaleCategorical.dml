@@ -23,7 +23,7 @@
 # Assume SC_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 10000 for A and Y, A is categorical variable and Y is scale variable
-# hadoop jar SystemML.jar -f $SC_HOME/ScaleCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/Y" 
+# hadoop jar SystemDS.jar -f $SC_HOME/ScaleCategorical.dml -args "$INPUT_DIR/A" 10000 "$INPUT_DIR/Y"
 #         "$OUPUT_DIR/VarY" "$OUTPUT_DIR/MeanY" "$OUTPUT_DIR/CFreqs" "$OUTPUT_DIR/CMeans" "$OUTPUT_DIR/CVars" 
 #         "$OUTPUT_DIR/Eta", "$OUTPUT_DIR/AnovaF"
 

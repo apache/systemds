@@ -66,8 +66,8 @@ public class CellwiseTmplTest extends AutomatedTestBase
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
-	private final static String TEST_CONF6 = "SystemML-config-codegen6.xml";
-	private final static String TEST_CONF7 = "SystemML-config-codegen.xml";
+	private final static String TEST_CONF6 = "SystemDS-config-codegen6.xml";
+	private final static String TEST_CONF7 = "SystemDS-config-codegen.xml";
 	private static String TEST_CONF = TEST_CONF7;
 	
 	private static final double eps = Math.pow(10, -10);

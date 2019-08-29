@@ -30,7 +30,7 @@
 #    ofmt    : (default binary) format of output matrix
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/project.dml -nvargs X="/tmp/M.mtx" P="/tmp/P.mtx" o="/tmp/PX.mtx" 
+#   hadoop jar SystemDS.jar -f algorithms/utils/project.dml -nvargs X="/tmp/M.mtx" P="/tmp/P.mtx" o="/tmp/PX.mtx"
 #
 # Assumptions:
 # The order of colIDs in P is preserved. Order of columns in result is same as order of columns in P.

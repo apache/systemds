@@ -18,10 +18,10 @@
 -->
 
 <root>
-   <sysml.localtmpdir>/tmp/systemml</sysml.localtmpdir>
-   <sysml.scratch>scratch_space</sysml.scratch>
-   <sysml.optlevel>6</sysml.optlevel>
-   <sysml.codegen.enabled>true</sysml.codegen.enabled>
-   <sysml.codegen.plancache>true</sysml.codegen.plancache>
-   <sysml.codegen.literals>1</sysml.codegen.literals>
+   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
+   <sysds.scratch>scratch_space</sysds.scratch>
+   <sysds.optlevel>6</sysds.optlevel>
+   <sysds.codegen.enabled>true</sysds.codegen.enabled>
+   <sysds.codegen.plancache>true</sysds.codegen.plancache>
+   <sysds.codegen.literals>1</sysds.codegen.literals>
 </root>

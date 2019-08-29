@@ -60,7 +60,7 @@
 # OUTPUT: Matrix PR, Matrix NNR, Matrix FEATURE_IMPORTANCE_VALUE
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f knn.dml -nvargs X=%datapath%/train.csv
+# hadoop jar SystemDS.jar -f knn.dml -nvargs X=%datapath%/train.csv
 #                       T=%datapath%/test.csv NNR=%tmpdir%/NNR.csv fmt=csv
 
 

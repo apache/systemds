@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$3" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$3" == "MR" ]; then CMD="hadoop jar SystemML.jar " ; else CMD="echo " ; fi
+if [ "$3" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$3" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
 
 BASE=$2
 

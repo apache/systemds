@@ -80,7 +80,7 @@
 # -------------------------------------------------------------------------------------
 #
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
+# hadoop jar SystemDS.jar -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B
 #     O=OUTPUT_DIR/Out icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv Log=OUTPUT_DIR/log
 
 fileX = $X;

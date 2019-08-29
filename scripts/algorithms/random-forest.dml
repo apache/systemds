@@ -64,13 +64,13 @@
 # 			  If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j   
 # -------------------------------------------------------------------------------------------
 # HOW TO INVOKE THIS SCRIPT - EXAMPLE:
-# hadoop jar SystemML.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
+# hadoop jar SystemDS.jar -f random-forest.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
 #     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 num_trees=10 impurity=Gini fmt=csv
 
 
 # External function for binning
 binning = externalFunction(Matrix[Double] A, Integer binsize, Integer numbins) return (Matrix[Double] B, Integer numbinsdef) 
-	implemented in (classname="org.apache.sysml.udf.lib.BinningWrapper",exectype="mem")
+	implemented in (classname="org.tugraz.sysds.udf.lib.BinningWrapper",exectype="mem")
 
 	
 # Default values of some parameters	

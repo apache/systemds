@@ -6,6 +6,6 @@
     "nnz": 4,
     "format": "text",
     "description": {
-        "author": "SystemML"
+        "author": "SystemDS"
     }
 }

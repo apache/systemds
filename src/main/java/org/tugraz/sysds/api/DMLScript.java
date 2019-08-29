@@ -213,7 +213,7 @@ public class DMLScript
 			}
 
 			if (dmlOptions.clean) {
-				cleanSystemMLWorkspace();
+				cleanSystemDSWorkspace();
 				return true;
 			}
 
@@ -553,7 +553,7 @@ public class DMLScript
 			}
 		}
 		
-		//3) cleanup systemml-internal working dirs
+		//3) cleanup systemds-internal working dirs
 		CacheableData.cleanupCacheDir(); //might be local/hdfs
 		LocalFileUtils.cleanupWorkingDirectory();
 	}
@@ -565,7 +565,7 @@ public class DMLScript
 
 	private static void printInvocationInfo(String fnameScript, String fnameOptConfig, Map<String,String> argVals) {
 		LOG.debug("****** args to DML Script ******\n" + "UUID: " + getUUID() + "\n" + "SCRIPT PATH: " + fnameScript + "\n" 
-			+ "RUNTIME: " + getGlobalExecMode() + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMML_CONFIG_FILEPATH + "\n"
+			+ "RUNTIME: " + getGlobalExecMode() + "\n" + "BUILTIN CONFIG: " + DMLConfig.DEFAULT_SYSTEMDS_CONFIG_FILEPATH + "\n"
 			+ "OPTIONAL CONFIG: " + fnameOptConfig + "\n");
 		if( !argVals.isEmpty() ) {
 			LOG.debug("Script arguments are: \n");
@@ -585,7 +585,7 @@ public class DMLScript
 		return dateFormat.format(date);
 	}
 
-	private static void cleanSystemMLWorkspace() {
+	private static void cleanSystemDSWorkspace() {
 		try {
 			//read the default config
 			DMLConfig conf = DMLConfig.readConfigurationFile(null);

@@ -38,11 +38,11 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 	private final static String TEST_NAME1 = "Algorithm_L2SVM";
 	private final static String TEST_DIR = "functions/codegenalg/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AlgorithmL2SVM.class.getSimpleName() + "/";
-	private final static String TEST_CONF_DEFAULT = "SystemML-config-codegen.xml";
+	private final static String TEST_CONF_DEFAULT = "SystemDS-config-codegen.xml";
 	private final static File TEST_CONF_FILE_DEFAULT = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_DEFAULT);
-	private final static String TEST_CONF_FUSE_ALL = "SystemML-config-codegen-fuse-all.xml";
+	private final static String TEST_CONF_FUSE_ALL = "SystemDS-config-codegen-fuse-all.xml";
 	private final static File TEST_CONF_FILE_FUSE_ALL = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF_FUSE_ALL);
-	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemML-config-codegen-fuse-no-redundancy.xml";
+	private final static String TEST_CONF_FUSE_NO_REDUNDANCY = "SystemDS-config-codegen-fuse-no-redundancy.xml";
 	private final static File TEST_CONF_FILE_FUSE_NO_REDUNDANCY = new File(SCRIPT_DIR + TEST_DIR,
 			TEST_CONF_FUSE_NO_REDUNDANCY);
 

@@ -2,7 +2,7 @@ HOW TO RUN THE PERFORMANCE SUITE
 ================================
 
 Create a directory <...> on target machine on cluster, and copy from
-repository SystemML/system-ml: machine/cluster:
+repository SystemDS/system-ds: machine/cluster:
 
    scripts/algorithms   to <...>/algorithms
    scripts/datagen      to <...>/datagen
@@ -10,9 +10,9 @@ repository SystemML/system-ml: machine/cluster:
 
 Also copy:
 
-   scripts/sparkDML.sh     to <...>/perftest/                     // Edit sparkDML and set SPARK_HOME and SYSTEMML_HOME.
-   target/system-ml-5.0-SNAPSHOT.jar  to <...>/perftest/SystemML.jar
-   test/config/SystemML-config.xml to <...>/perftest/SystemML-config.xml
+   scripts/sparkDML.sh     to <...>/perftest/                     // Edit sparkDML and set SPARK_HOME and SYSTEMDS_ROOT.
+   target/system-ds-5.0-SNAPSHOT.jar  to <...>/perftest/SystemDS.jar
+   test/config/SystemDS-config.xml to <...>/perftest/SystemDS-config.xml
 
    chmod -R +x <...>/./*                        // Change permissions
 

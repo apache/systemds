@@ -818,7 +818,7 @@ public class DataConverter
 	}
 	
 	/**
-	 * Helper method that converts SystemML matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
+	 * Helper method that converts SystemDS matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
 	 * which is useful in invoking Apache CommonsMath.
 	 * 
 	 * @param mb matrix object

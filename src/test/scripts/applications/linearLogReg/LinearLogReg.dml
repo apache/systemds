@@ -27,7 +27,7 @@
 # Assume LLR_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
 # Assume rows = 100 and cols = 50 for x, rows_test= 25 and cols_test = 50 for Xt
-# hadoop jar SystemML.jar -f $LLR_HOME/LinearLogReg.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Xt" "$INPUT_DIR/y" "$INPUT_DIR/yt" "$OUTPUT_DIR/w"
+# hadoop jar SystemDS.jar -f $LLR_HOME/LinearLogReg.dml -args "$INPUT_DIR/X" "$INPUT_DIR/Xt" "$INPUT_DIR/y" "$INPUT_DIR/yt" "$OUTPUT_DIR/w"
 
 C = 2
 tol = 0.001

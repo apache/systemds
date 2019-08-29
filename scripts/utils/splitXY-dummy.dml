@@ -32,7 +32,7 @@
 #    ofmt    : (default binary) format of OX and OY output matrix
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/splitXY-dummy.dml -nvargs X="/tmp/X.mtx" S=4 N=3 OX=/tmp/OX.mtx OY=/tmp/OY.mtx ofmt=csv 
+#   hadoop jar SystemDS.jar -f algorithms/utils/splitXY-dummy.dml -nvargs X="/tmp/X.mtx" S=4 N=3 OX=/tmp/OX.mtx OY=/tmp/OY.mtx ofmt=csv
 #
 
 

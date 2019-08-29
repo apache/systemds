@@ -37,7 +37,7 @@ $INDEX1     = Indices for Set1
 $INDEX2     = Indices for Set2
 $FMT        = output format
 ------------------------------------------------
-hadoop jar SystemML.jar -f genData4Stats.dml -nvargs R=1000000 C=1000 NC=50 MAXDOMAIN=1100 DATA=stats/data TYPES=stats/types SETSIZE=15 LABELSETSIZE=10 TYPES1=... Types2=... INDEX1=.. INDEX2=..FMT=csv
+hadoop jar SystemDS.jar -f genData4Stats.dml -nvargs R=1000000 C=1000 NC=50 MAXDOMAIN=1100 DATA=stats/data TYPES=stats/types SETSIZE=15 LABELSETSIZE=10 TYPES1=... Types2=... INDEX1=.. INDEX2=..FMT=csv
 ------------------------------------------------
 */
 

@@ -23,7 +23,7 @@
 # INPUT 1: Input file name for X input data (data records)
 # INPUT 2: The number k of centroids
 # INPUT 3: Output file name for the centroids
-# Example: hadoop jar SystemML.jar -f kMeans.dml -args X_input_file 5 centroids_file
+# Example: hadoop jar SystemDS.jar -f kMeans.dml -args X_input_file 5 centroids_file
 
 print( "Performing initialization..." );
 

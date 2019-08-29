@@ -28,7 +28,7 @@
 #    ofmt : (default "csv") format of output
 #
 # Example:
-#   hadoop jar SystemML.jar -f algorithms/utils/head.dml -nvargs x="/tmp/M.mtx" n=100 o="/tmp/o.mtx"
+#   hadoop jar SystemDS.jar -f algorithms/utils/head.dml -nvargs x="/tmp/M.mtx" n=100 o="/tmp/o.mtx"
 #
 
 ofmt = ifdef ($ofmt, "csv");

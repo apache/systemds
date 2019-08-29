@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# junit test class: org.apache.sysml.test.integration.functions.unary.matrix.TransposeTest.java
+# junit test class: org.tugraz.sysds.test.integration.functions.unary.matrix.TransposeTest.java
 
 Vector = read("$$indir$$vector", rows=$$rows$$, cols=1, format="text");
 TransposedVector = t(Vector);

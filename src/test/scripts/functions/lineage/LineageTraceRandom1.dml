@@ -19,7 +19,7 @@
 # How to invoke this dml script LineageTrace.dml?
 # Assume LR_HOME is set to the home of the dml script
 # Assume rows = 20 and cols = 20 for X
-# hadoop jar SystemML.jar -f $LR_HOME/LineageTrace.dml -args "$INPUT_DIR/X" "$OUTPUT_DIR/X" "$OUTPUT_DIR/Y"
+# hadoop jar SystemDS.jar -f $LR_HOME/LineageTrace.dml -args "$INPUT_DIR/X" "$OUTPUT_DIR/X" "$OUTPUT_DIR/Y"
 
 X = rand(rows=10, cols=3);
 

@@ -45,7 +45,7 @@ public abstract class UnivariateStatsBase extends AutomatedTestBase {
 
 	/**
 	 * Number of rows in the primary input to each aggregate ("V" in the test
-	 * script, "X" in the SystemML documentation)
+	 * script, "X" in the SystemDS documentation)
 	 */
 	protected final static int rows1 = 2000;
 

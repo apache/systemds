@@ -28,7 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class MultipleBuiltinsTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "MultipleBuiltins";
+	private final static String TEST_NAME = "multipleBuiltins";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + MultipleBuiltinsTest.class.getSimpleName() + "/";
 	

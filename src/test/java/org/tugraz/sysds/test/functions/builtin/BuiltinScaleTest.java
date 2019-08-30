@@ -28,7 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class BuiltinScaleTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Scale";
+	private final static String TEST_NAME = "scale";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinScaleTest.class.getSimpleName() + "/";
 	

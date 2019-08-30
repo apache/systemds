@@ -28,7 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class BuiltinNormalizeTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Normalize";
+	private final static String TEST_NAME = "normalize";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinNormalizeTest.class.getSimpleName() + "/";
 	

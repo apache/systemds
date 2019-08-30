@@ -33,4 +33,6 @@ custom_install("batch");
 custom_install("matrixStats");
 custom_install("outliers");
 custom_install("caret");
+custom_install("Sigmoid");
+custom_install("DescTools");
 

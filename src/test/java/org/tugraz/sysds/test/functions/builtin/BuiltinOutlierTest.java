@@ -28,7 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class BuiltinOutlierTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Outlier";
+	private final static String TEST_NAME = "outlier";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinOutlierTest.class.getSimpleName() + "/";
 	

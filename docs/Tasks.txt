@@ -100,4 +100,4 @@ SYSTEMDS-140 Distributed Tensor Operations
  * 152 Run script documentation                                       OK
  * 153 convert all occurrences SystemML/sysml to SystemDS/sysds       OK
  * 154 fix license headers in all touched files                       OK
- * 155 import release scripts from SystemML repo
+ * 155 import release scripts from SystemML repo                      OK

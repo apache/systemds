@@ -43,12 +43,13 @@ docs/_site
 docs/api
 
 # Excluded sources
-src/main/java/Dml.tokens
-src/main/java/DmlLexer.tokens
-src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java
-src/main/java/org/tugraz/sysds/parser/dml/DmlLexer.java
-src/main/java/org/tugraz/sysds/parser/dml/DmlListener.java
-src/main/java/org/tugraz/sysds/parser/dml/DmlParser.java
+# (we're including the generated files to simply IDE setup w/o mvn build)
+# src/main/java/Dml.tokens
+# src/main/java/DmlLexer.tokens
+# src/main/java/org/tugraz/sysds/parser/dml/DmlBaseListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlLexer.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlListener.java
+# src/main/java/org/tugraz/sysds/parser/dml/DmlParser.java
 
 src/test/scripts/**/in
 src/test/scripts/**/out

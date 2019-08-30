@@ -370,8 +370,8 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		if (getSeed() == DataGenOp.UNSPECIFIED_SEED) {
 			//generate pseudo-random seed (because not specified)
 			if (runtimeSeed == null)
-				runtimeSeed = DataGenOp.generateRandomSeed();
-			
+				runtimeSeed = (minValue == maxValue && sparsity == 1) ? 
+					DataGenOp.UNSPECIFIED_SEED : DataGenOp.generateRandomSeed();
 			int position = (method == DataGenMethod.RAND) ? SEED_POSITION_RAND + 1 :
 					(method == DataGenMethod.SAMPLE) ? SEED_POSITION_SAMPLE + 1 : 0;
 			tmpInstStr = InstructionUtils.replaceOperand(

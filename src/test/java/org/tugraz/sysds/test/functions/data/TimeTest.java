@@ -25,7 +25,7 @@ import org.tugraz.sysds.test.TestConfiguration;
 
 public class TimeTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Time";
+	private final static String TEST_NAME = "time";
 	private final static String TEST_DIR = "functions/data/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TimeTest.class.getSimpleName() + "/";
 	

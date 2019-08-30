@@ -28,7 +28,7 @@ import java.util.HashMap;
 
 public class BuiltinLmTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "Lm";
+	private final static String TEST_NAME = "lm";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinLmTest.class.getSimpleName() + "/";
 

@@ -28,7 +28,7 @@ import org.tugraz.sysds.test.TestUtils;
 
 public class BuiltinSigmoidTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME = "Sigmoid";
+	private final static String TEST_NAME = "sigmoid";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinSigmoidTest.class.getSimpleName() + "/";
 	

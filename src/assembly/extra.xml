@@ -1,0 +1,82 @@
+<!--
+ * Modifications Copyright 2019 Graz University of Technology
+ * 
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<assembly
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+	<!-- Assembly file for the SystemML extra jar artifact. -->
+	<id>extra</id>
+
+	<formats>
+		<format>jar</format>
+	</formats>
+
+	<includeBaseDirectory>false</includeBaseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>${basedir}/src/assembly/extra</directory>
+			<includes>
+				<include>LICENSE</include>
+				<include>NOTICE</include>
+			</includes>
+			<outputDirectory>./META-INF</outputDirectory>
+		</fileSet>
+
+	</fileSets>
+
+	<!-- Include JCuda Jars -->
+	<dependencySets>
+		<dependencySet>
+			<includes>
+				<include>org.jcuda:jcuda:jar:${jcuda.version}</include>
+				<include>org.jcuda:jcublas:jar:${jcuda.version}</include>
+				<include>org.jcuda:jcusparse:jar:${jcuda.version}</include>
+				<include>org.jcuda:jcusolver:jar:${jcuda.version}</include>
+				<include>org.jcuda:jcudnn:jar:${jcuda.version}</include>
+
+				<!-- windows specific jcuda jars -->
+				<include>org.jcuda:jcuda-natives:jar:windows-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcublas-natives:jar:windows-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusparse-natives:jar:windows-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusolver-natives:jar:windows-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcudnn-natives:jar:windows-x86_64:${jcuda.version}</include>
+
+				<!-- linux x86_64 specific jcuda jars -->
+				<include>org.jcuda:jcuda-natives:jar:linux-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcublas-natives:jar:linux-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusparse-natives:jar:linux-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusolver-natives:jar:linux-x86_64:${jcuda.version}</include>
+				<include>org.jcuda:jcudnn-natives:jar:linux-x86_64:${jcuda.version}</include>
+
+				<!-- linux ppc_64le specific jcuda jars -->
+				<include>org.jcuda:jcuda-natives:jar:linux-ppc_64:${jcuda.version}</include>
+				<include>org.jcuda:jcublas-natives:jar:linux-ppc_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusparse-natives:jar:linux-ppc_64:${jcuda.version}</include>
+				<include>org.jcuda:jcusolver-natives:jar:linux-ppc_64:${jcuda.version}</include>
+				<include>org.jcuda:jcudnn-natives:jar:linux-ppc_64:${jcuda.version}</include>
+			</includes>
+			<unpack>true</unpack>
+			<scope>compile</scope>
+		</dependencySet>
+	</dependencySets>
+
+</assembly>

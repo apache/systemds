@@ -69,10 +69,9 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
  * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
- * a {@link Connection} object. The JMLC API is patterned
- * after JDBC. A DML script is precompiled by calling
- * the {@link #prepareScript(String, String[], String[], boolean)}
- * method or the {@link #prepareScript(String, Map, String[], String[], boolean)}
+ * a {@link Connection} object. The JMLC API is designed after JDBC. A DML script is precompiled by calling
+ * the {@link #prepareScript(String, String[], String[])}
+ * method or the {@link #prepareScript(String, Map, String[], String[])}
  * method on the {@link Connection} object, which returns a
  * {@link PreparedScript} object. Note that this is similar to calling
  * a {@code prepareStatement} method on a JDBC {@code Connection} object.
@@ -86,14 +85,6 @@ import org.tugraz.sysds.runtime.util.UtilFunctions;
  * {@code ResultSet}. Data can be read from a {@link ResultVariables} object by calling
  * its {@link ResultVariables#getFrame(String) getFrame} and
  * {@link ResultVariables#getMatrix(String) getMatrix} methods.
- * 
- * <p>
- * For examples, please see the following:
- * <ul>
- *   <li>JMLC JUnit test cases (org.tugraz.sysds.test.integration.functions.jmlc)</li>
- *   <li><a target="_blank" href="http://apache.github.io/systemml/jmlc.html">JMLC section
- *   of SystemDS online documentation</a></li>
- * </ul>
  */
 public class Connection implements Closeable
 {

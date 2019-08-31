@@ -55,14 +55,23 @@
 		</fileSet>
 
 		<fileSet>
-			<directory>${basedir}/src/main/standalone</directory>
+			<directory>${basedir}/conf</directory>
 			<includes>
 				<include>log4j.properties</include>
-				<include>README.txt</include>
 				<include>SystemDS-config.xml</include>
 			</includes>
 			<outputDirectory>.</outputDirectory>
 		</fileSet>
+
+    <fileSet>
+			<directory>${basedir}/src/main/standalone</directory>
+			<includes>
+				<include>log4j.properties</include>
+				<include>SystemDS-config.xml</include>
+			</includes>
+			<outputDirectory>.</outputDirectory>
+		</fileSet>
+
 
 		<fileSet>
 			<directory>${basedir}/src/test/config/hadoop_bin_windows/bin</directory>

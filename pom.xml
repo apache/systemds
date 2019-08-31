@@ -723,6 +723,7 @@
 								<exclude>**/*.csv</exclude>
 								<exclude>**/*.ijv</exclude>
 								<exclude>**/*.json</exclude>
+								<exclude>**/*.libsvm</exclude>
 								<exclude>**/*.mtx</exclude>
 								<exclude>**/*.mtd</exclude>
 								<exclude>**/part-*</exclude>

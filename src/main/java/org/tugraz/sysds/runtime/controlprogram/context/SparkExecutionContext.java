@@ -478,10 +478,7 @@ public class SparkExecutionContext extends ExecutionContext
 				fromFile = true;*/
 			} else { //default case
 				TensorBlock tb = to.acquireRead(); //pin matrix in memory
-				int[] blen = new int[dc.getNumDims()];
-				for (int i = 0; i < blen.length; i++) {
-					blen[i] = (int) dc.getBlockSize(i);
-				}
+				int[] blen = dc.getBlockSizes();
 				rdd = toTensorJavaPairRDD(sc, tb, blen, numParts, inclEmpty);
 				to.release(); //unpin matrix
 				_parRDDs.registerRDD(rdd.id(), OptimizerUtils.estimatePartitionedSizeExactSparsity(dc), true);
@@ -714,9 +711,69 @@ public class SparkExecutionContext extends ExecutionContext
 		return bret;
 	}
 
+	@SuppressWarnings("unchecked")
+	public PartitionedBroadcast<TensorBlock> getBroadcastForTensorObject(TensorObject to) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+
+		PartitionedBroadcast<TensorBlock> bret = null;
+
+		//reuse existing broadcast handle
+		if (to.getBroadcastHandle() != null && to.getBroadcastHandle().isPartitionedBroadcastValid()) {
+			bret = to.getBroadcastHandle().getPartitionedBroadcast();
+		}
+
+		//create new broadcast handle (never created, evicted)
+		if (bret == null) {
+			//account for overwritten invalid broadcast (e.g., evicted)
+			if (to.getBroadcastHandle() != null)
+				CacheableData.addBroadcastSize(-to.getBroadcastHandle().getPartitionedBroadcastSize());
+
+			//obtain meta data for matrix
+			DataCharacteristics dc = to.getDataCharacteristics();
+			long[] dims = dc.getDims();
+			int[] blen = dc.getBlockSizes();
+
+			//create partitioned matrix block and release memory consumed by input
+			PartitionedBlock<TensorBlock> pmb = new PartitionedBlock<>(to.acquireReadAndRelease(), dims, blen);
+
+			//determine coarse-grained partitioning
+			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(dims, blen);
+			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
+			Broadcast<PartitionedBlock<TensorBlock>>[] ret = new Broadcast[numParts];
+
+			//create coarse-grained partitioned broadcasts
+			if (numParts > 1) {
+				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
+			} else { //single partition
+				ret[0] = getSparkContext().broadcast(pmb);
+				if (!isLocalMaster())
+					pmb.clearBlocks();
+			}
+
+			bret = new PartitionedBroadcast<>(ret, to.getDataCharacteristics());
+			// create the broadcast handle if the matrix or frame has never been broadcasted
+			if (to.getBroadcastHandle() == null) {
+				to.setBroadcastHandle(new BroadcastObject<MatrixBlock>());
+			}
+			to.getBroadcastHandle().setPartitionedBroadcast(bret,
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(to.getDataCharacteristics()));
+			CacheableData.addBroadcastSize(to.getBroadcastHandle().getPartitionedBroadcastSize());
+		}
+
+		if (DMLScript.STATISTICS) {
+			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+			Statistics.incSparkBroadcastCount(1);
+		}
+
+		return bret;
+	}
+
 	public PartitionedBroadcast<MatrixBlock> getBroadcastForVariable(String varname) {
-		MatrixObject mo = getMatrixObject(varname);
-		return getBroadcastForMatrixObject(mo);
+		return getBroadcastForMatrixObject(getMatrixObject(varname));
+	}
+
+	public PartitionedBroadcast<TensorBlock> getBroadcastForTensorVariable(String varname) {
+		return getBroadcastForTensorObject(getTensorObject(varname));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -905,13 +962,13 @@ public class SparkExecutionContext extends ExecutionContext
 		try {
 			//compute block indexes
 			long[] blockIx = new long[tc.getNumDims()];
+			int[] blkSize = tc.getBlockSizes();
 			int[] outDims = new int[tc.getNumDims()];
 			int[] offset = new int[tc.getNumDims()];
 			for (int i = tc.getNumDims() - 1; i >= 0; i--) {
 				blockIx[i] = ix % tc.getNumBlocks(i);
-				outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i] + 1,
-						tc.getBlockSize(i));
-				offset[i] = (int) (blockIx[i] * tc.getBlockSize(i));
+				outDims[i] = UtilFunctions.computeBlockSize(tc.getDim(i), blockIx[i] + 1, blkSize[i]);
+				offset[i] = (int) (blockIx[i] * blkSize[i]);
 				ix /= tc.getNumBlocks(i);
 			}
 			// TODO: sparse
@@ -1160,7 +1217,13 @@ public class SparkExecutionContext extends ExecutionContext
 				lower[i] = (int) ((ix.getIndex(i) - 1) * dc.getBlockSize(i));
 				upper[i] = lower[i] + block.getDim(i) - 1;
 			}
-			out.getNextIndexes(upper);
+			upper[upper.length - 1]++;
+			for (int i = upper.length - 1; i > 0; i--) {
+				if (upper[i] == block.getDim(i)) {
+					upper[i] = 0;
+					upper[i - 1]++;
+				}
+			}
 
 			// TODO sparse copy
 			out.copy(lower, upper, block);

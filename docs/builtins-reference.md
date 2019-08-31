@@ -56,8 +56,8 @@ tensor(data, dims, byRow = TRUE)
 ### Arguments
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
-| data    | Matrix[?], Tensor[?], String, Scalar[?] | required | The data with which the tensor should be filled. See [`data`-Argument](#data-argument).|
-| dims    | Matrix[Integer], Tensor[Integer], String, List[Integer] | required | The dimensions of the tensor. See [`dims`-Argument](#dims-argument). |
+| data    | Matrix[?], Tensor[?], Scalar[?] | required | The data with which the tensor should be filled. See [`data`-Argument](#data-argument).|
+| dims    | Matrix[Integer], Tensor[Integer], Scalar[String], List[Integer] | required | The dimensions of the tensor. See [`dims`-Argument](#dims-argument). |
 | byRow   | Boolean        | TRUE     | NOT USED. Will probably be removed or replaced. |
 
 Note that this function is highly **unstable** and will be overworked and might change signature and functionality.
@@ -103,6 +103,8 @@ print("Tensor D: Values=tst, dims=Tensor C");
 D = tensor("tst", C); # fill with string, dimensions given by tensor
 print(toString(D))
 ```
+
+Note that reshape construction is not yet supported for **SPARK** execution.
 
 # DML-Bodied Built-In Functions
 

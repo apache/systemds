@@ -66,12 +66,8 @@ public class TensorCharacteristics extends DataCharacteristics
 
 	@Override
 	public DataCharacteristics set(DataCharacteristics that) {
-		long[] dims = new long[that.getNumDims()];
-		int[] blockSizes = new int[that.getNumDims()];
-		for (int i = 0; i < dims.length; i++) {
-			dims[i] = that.getDim(i);
-			blockSizes[i] = (int)that.getBlockSize(i);
-		}
+		long[] dims = that.getDims().clone();
+		int[] blockSizes = that.getBlockSizes().clone();
 		set(dims, blockSizes, that.getNonZeros());
 		return this;
 	}
@@ -111,6 +107,11 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
+	public long[] getDims() {
+		return _dims;
+	}
+
+	@Override
 	public TensorCharacteristics setDim(int i, long dim) {
 		_dims[i] = dim;
 		return this;
@@ -123,8 +124,13 @@ public class TensorCharacteristics extends DataCharacteristics
 	}
 
 	@Override
-	public long getBlockSize(int i) {
+	public int getBlockSize(int i) {
 		return _blkSizes[i];
+	}
+
+	@Override
+	public int[] getBlockSizes() {
+		return _blkSizes;
 	}
 
 	@Override

@@ -32,19 +32,12 @@ import org.tugraz.sysds.common.Types.ValueType;
 
 public class BinaryM extends Lop 
 {
-	
-	public enum CacheType {
-		RIGHT,
-		RIGHT_PART,
-	}
-	
 	public enum VectorType{
 		COL_VECTOR,
 		ROW_VECTOR,
 	}
 	
 	private OperationTypes _operation;
-	private CacheType _cacheType = null;
 	private VectorType _vectorType = null; 
 	
 	/**
@@ -56,14 +49,12 @@ public class BinaryM extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et exec type
-	 * @param partitioned true if partitioned
 	 * @param colVector true if colVector
 	 */
-	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean partitioned, boolean colVector ) {
+	public BinaryM(Lop input1, Lop input2, OperationTypes op, DataType dt, ValueType vt, ExecType et, boolean colVector ) {
 		super(Lop.Type.Binary, dt, vt);
 		
 		_operation = op;
-		_cacheType = partitioned ? CacheType.RIGHT_PART : CacheType.RIGHT;
 		_vectorType = colVector ? VectorType.COL_VECTOR : VectorType.ROW_VECTOR;
 		
 		this.addInput(input1);
@@ -184,7 +175,7 @@ public class BinaryM extends Lop
 		sb.append( prepOutputOperand(output));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append(_cacheType);
+		sb.append("RIGHT");
 		
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(_vectorType);

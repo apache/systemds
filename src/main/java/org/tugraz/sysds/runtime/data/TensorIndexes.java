@@ -17,7 +17,6 @@
 package org.tugraz.sysds.runtime.data;
 
 import org.apache.hadoop.io.WritableComparable;
-import scala.Array;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -58,14 +57,17 @@ public class TensorIndexes implements WritableComparable<TensorIndexes>, Externa
 		return _ix[dim];
 	}
 
+	public long[] getIndexes() {
+		return _ix;
+	}
+
 	public int getNumDims() {
 		return _ix.length;
 	}
 
 	public TensorIndexes setIndexes(long[] ix) {
 		// copy
-		_ix = new long[ix.length];
-		Array.copy(ix, 0, _ix, 0, ix.length);
+		_ix = ix.clone();
 		return this;
 	}
 

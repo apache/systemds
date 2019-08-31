@@ -45,11 +45,13 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		checkOutputDataType(in1, in2, out);
 		
 		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
-		
-		if( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR ) 
+
+		if (in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR)
 			return new BinaryScalarScalarCPInstruction(operator, in1, in2, out, opcode, str);
-		else if( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
+		else if (in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX)
 			return new BinaryMatrixMatrixCPInstruction(operator, in1, in2, out, opcode, str);
+		else if (in1.getDataType() == DataType.TENSOR && in2.getDataType() == DataType.TENSOR)
+			return new BinaryTensorTensorCPInstruction(operator, in1, in2, out, opcode, str);
 		else
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}

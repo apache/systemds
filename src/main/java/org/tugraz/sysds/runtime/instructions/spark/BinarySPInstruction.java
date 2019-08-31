@@ -29,6 +29,8 @@ import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.tugraz.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.tugraz.sysds.runtime.data.TensorBlock;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.runtime.instructions.cp.CPOperand;
 import org.tugraz.sysds.runtime.instructions.cp.ScalarObject;
@@ -37,7 +39,10 @@ import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixMatrixBinaryO
 import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixScalarUnaryFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.MatrixVectorBinaryOpPartitionFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.OuterVectorBinaryOpFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateTensorFunction;
 import org.tugraz.sysds.runtime.instructions.spark.functions.ReplicateVectorFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.TensorTensorBinaryOpFunction;
+import org.tugraz.sysds.runtime.instructions.spark.functions.TensorTensorBinaryOpPartitionFunction;
 import org.tugraz.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
@@ -89,6 +94,16 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			}
 			else
 				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
+		}
+		else if (dt1 == DataType.TENSOR || dt2 == DataType.TENSOR) {
+			if (dt1 == DataType.TENSOR && dt2 == DataType.TENSOR) {
+				if (isBroadcast)
+					return new BinaryTensorTensorBroadcastSPInstruction(operator, in1, in2, out, opcode, str);
+				else
+					return new BinaryTensorTensorSPInstruction(operator, in1, in2, out, opcode, str);
+			}
+			else
+				throw new DMLRuntimeException("Tensor binary operation not yet implemented for tensor-scalar, or tensor-matrix");
 		}
 		return null;
 	}
@@ -160,7 +175,50 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
-	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype) 
+	/**
+	 * Common binary tensor-tensor process instruction
+	 *
+	 * @param ec execution context
+	 */
+	protected void processTensorTensorBinaryInstruction(ExecutionContext ec) {
+		SparkExecutionContext sec = (SparkExecutionContext)ec;
+
+		//sanity check dimensions
+		checkTensorTensorBinaryCharacteristics(sec);
+		updateBinaryTensorOutputDataCharacteristics(sec);
+
+		// Get input RDDs
+		JavaPairRDD<TensorIndexes, TensorBlock> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(input1.getName());
+		JavaPairRDD<TensorIndexes, TensorBlock> in2 = sec.getBinaryTensorBlockRDDHandleForVariable(input2.getName());
+		DataCharacteristics tc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics tc2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics dcOut = sec.getDataCharacteristics(output.getName());
+
+		BinaryOperator bop = (BinaryOperator) _optr;
+
+		// TODO blocking scheme for tensors/matrices with mismatching number of dimensions
+		for (int i = 0; i < tc1.getNumDims(); i++) {
+			long numReps = getNumDimReplicas(tc1, tc2, i);
+			if (numReps > 1)
+				in2 = in2.flatMapToPair(new ReplicateTensorFunction(i, numReps));
+		}
+		int numPrefPart = SparkUtils.isHashPartitioned(in1) ? in1.getNumPartitions() :
+				SparkUtils.isHashPartitioned(in2) ? in2.getNumPartitions() :
+						Math.min(in1.getNumPartitions() + in2.getNumPartitions(),
+								2 * SparkUtils.getNumPreferredPartitions(dcOut));
+
+		//execute binary operation
+		JavaPairRDD<TensorIndexes, TensorBlock> out = in1
+				.join(in2, numPrefPart)
+				.mapValues(new TensorTensorBinaryOpFunction(bop));
+
+		//set output RDD
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), input1.getName());
+		sec.addLineageRDD(output.getName(), input2.getName());
+	}
+
+	protected void processMatrixBVectorBinaryInstruction(ExecutionContext ec, VectorType vtype)
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 		
@@ -199,7 +257,38 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		sec.addLineageBroadcast(output.getName(), bcastVar);
 	}
 
-	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec) 
+	protected void processTensorTensorBroadcastBinaryInstruction(ExecutionContext ec) {
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+
+		//sanity check dimensions
+		checkTensorTensorBinaryCharacteristics(sec);
+
+		//get input RDDs
+		String rddVar = input1.getName();
+		String bcastVar = input2.getName();
+		JavaPairRDD<TensorIndexes, TensorBlock> in1 = sec.getBinaryTensorBlockRDDHandleForVariable(rddVar);
+		PartitionedBroadcast<TensorBlock> in2 = sec.getBroadcastForTensorVariable(bcastVar);
+		DataCharacteristics mc2 = sec.getDataCharacteristics(bcastVar);
+
+		BinaryOperator bop = (BinaryOperator) _optr;
+
+		boolean[] replicateDim = new boolean[mc2.getNumDims()];
+		for (int i = 0; i < replicateDim.length; i++)
+			replicateDim[i] = mc2.getDim(i) == 1;
+
+		//execute map binary operation
+		JavaPairRDD<TensorIndexes, TensorBlock> out = null;
+		out = in1.mapPartitionsToPair(
+				new TensorTensorBinaryOpPartitionFunction(bop, in2, replicateDim), true);
+
+		//set output RDD
+		updateBinaryTensorOutputDataCharacteristics(sec);
+		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.addLineageRDD(output.getName(), rddVar);
+		sec.addLineageBroadcast(output.getName(), bcastVar);
+	}
+
+	protected void processMatrixScalarBinaryInstruction(ExecutionContext ec)
 	{
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
 	
@@ -269,17 +358,23 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		if( left ) 
 		{
 			if(mc1.getCols()==1 ) //outer
-				return (long) Math.ceil((double)mc2.getCols() / mc2.getColsPerBlock());	
+				return mc2.getNumColBlocks();
 		}
 		else
 		{
 			if(mc2.getRows()==1 && mc1.getRows()>1) //outer, row vector
-				return (long) Math.ceil((double)mc1.getRows() / mc1.getRowsPerBlock());	
+				return mc1.getNumRowBlocks();
 			else if( mc2.getCols()==1 && mc1.getCols()>1 ) //col vector
-				return (long) Math.ceil((double)mc1.getCols() / mc1.getColsPerBlock());			
+				return mc2.getNumColBlocks();
 		}
 		
 		return 1; //matrix-matrix
+	}
+
+	protected long getNumDimReplicas(DataCharacteristics dc1, DataCharacteristics dc2, int dim) {
+		if (dc2.getDim(dim) == 1 && dc2.getDim(dim) > 1)
+			return dc1.getNumBlocks(dim);
+		return 1;
 	}
 
 	protected void checkMatrixMatrixBinaryCharacteristics(SparkExecutionContext sec) 
@@ -309,7 +404,43 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		}	
 	}
 
-	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned) 
+	protected void checkTensorTensorBinaryCharacteristics(SparkExecutionContext sec)
+	{
+		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());
+
+		//check for unknown input dimensions
+		if (!(mc1.dimsKnown() && mc2.dimsKnown())) {
+			// TODO print dimensions
+			throw new DMLRuntimeException("Unknown dimensions tensor-tensor binary operations");
+		}
+
+		boolean dimensionMismatch = mc1.getNumDims() != mc2.getNumDims();
+		if (!dimensionMismatch) {
+			for (int i = 0; i < mc1.getNumDims(); i++) {
+				if (mc1.getDim(i) != mc2.getDim(i) && mc2.getDim(i) != 1) {
+					dimensionMismatch = true;
+					break;
+				}
+			}
+		}
+		//check for dimension mismatch
+		if (dimensionMismatch) {
+			throw new DMLRuntimeException("Dimensions mismatch tensor-tensor binary operations");
+		}
+
+		boolean blockSizeMismatch = false;
+		for (int i = 0; i < mc1.getNumDims(); i++) {
+			if (mc1.getNumBlocks(i) != mc2.getNumBlocks(i) && mc2.getDim(i) != 1) {
+				blockSizeMismatch = true;
+				break;
+			}
+		}
+		if (blockSizeMismatch)
+			throw new DMLRuntimeException("Blocksize mismatch tensor-tensor binary operations");
+	}
+
+	protected void checkBinaryAppendInputCharacteristics(SparkExecutionContext sec, boolean cbind, boolean checkSingleBlk, boolean checkAligned)
 	{
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mc2 = sec.getDataCharacteristics(input2.getName());

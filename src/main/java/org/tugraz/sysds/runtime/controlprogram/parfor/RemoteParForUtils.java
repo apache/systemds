@@ -124,8 +124,7 @@ public class RemoteParForUtils
 				MatrixObject mo = (MatrixObject) dat;
 				if( mo.isDirty() )
 				{
-					if( ParForProgramBlock.ALLOW_REUSE_MR_PAR_WORKER && rvarFnames!=null )
-					{
+					if( rvarFnames!=null ) {
 						String fname = rvarFnames.get( rvar._name );
 						if( fname!=null )
 							mo.setFileName( fname );
@@ -134,8 +133,7 @@ public class RemoteParForUtils
 						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)		
 						rvarFnames.put(rvar._name, mo.getFileName());
 					}
-					else
-					{
+					else {
 						//export result var (iff actually modified in parfor)
 						mo.exportData(); //note: this is equivalent to doing it in close (currently not required because 1 Task=1Map tasks, hence only one map invocation)
 					}

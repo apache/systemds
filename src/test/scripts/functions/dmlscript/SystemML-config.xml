@@ -17,7 +17,6 @@
  * under the License.
 -->
 <root>
-<sysds.numreducers>10</sysds.numreducers>
 <sysds.scratch>scratch_space</sysds.scratch>
 <sysds.defaultblocksize>1000</sysds.defaultblocksize>
 <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>

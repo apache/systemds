@@ -27,7 +27,6 @@ import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.conf.CompilerConfig;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.hops.OptimizerUtils;
 import org.tugraz.sysds.hops.recompile.Recompiler;
 import org.tugraz.sysds.lops.Lop;
@@ -287,9 +286,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean USE_PB_CACHE                = false; // reuse copied program blocks whenever possible, not there can be issues related to recompile
 	public static final boolean USE_RANGE_TASKS_IF_USEFUL   = true; // use range tasks whenever size>3, false, otherwise wrong split order in remote 
 	public static final boolean USE_STREAMING_TASK_CREATION = true; // start working while still creating tasks, prevents blocking due to too small task queue
-	public static final boolean ALLOW_NESTED_PARALLELISM	= true; // if not, transparently change parfor to for on program conversions (local,remote)
-	public static       boolean ALLOW_REUSE_MR_JVMS         = true; // potential benefits: less setup costs per task, NOTE> cannot be used MR4490 in Hadoop 1.0.3, still not fixed in 1.1.1
-	public static       boolean ALLOW_REUSE_MR_PAR_WORKER   = ALLOW_REUSE_MR_JVMS; //potential benefits: less initialization, reuse in-memory objects and result consolidation!
+	public static final boolean ALLOW_NESTED_PARALLELISM    = true; // if not, transparently change parfor to for on program conversions (local,remote)
 	public static final boolean USE_PARALLEL_RESULT_MERGE   = false; // if result merge is run in parallel or serial 
 	public static final boolean USE_PARALLEL_RESULT_MERGE_REMOTE = true; // if remote result merge should be run in parallel for multiple result vars
 	public static final boolean ALLOW_DATA_COLOCATION       = true;
@@ -379,9 +376,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	public ParForProgramBlock(int ID, Program prog, String iterPredVar, HashMap<String,String> params, ArrayList<ResultVar> resultVars) 
 	{
 		super(prog, iterPredVar);
-
-		//init internal flags according to DML config
-		initInternalConfigurations(ConfigurationManager.getDMLConfig());
 		
 		//ID generation and setting 
 		setParForProgramBlockIDs( ID );
@@ -553,11 +547,6 @@ public class ParForProgramBlock extends ForProgramBlock
 	
 	public boolean hasFunctions() {
 		return _hasFunctions;
-	}
-
-	public static void initInternalConfigurations( DMLConfig conf ) {
-		ALLOW_REUSE_MR_JVMS = conf.getBooleanValue(DMLConfig.JVM_REUSE);
-		ALLOW_REUSE_MR_PAR_WORKER = ALLOW_REUSE_MR_JVMS;
 	}
 	
 	@Override
@@ -1268,8 +1257,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		
 		//determine max degree of parallelism
 		int numReducers = OptimizerUtils.isSparkExecutionMode() ?
-			SparkExecutionContext.getDefaultParallelism(false) :
-			ConfigurationManager.getNumReducers();
+			SparkExecutionContext.getDefaultParallelism(false) : 1;
 		int maxNumRed = InfrastructureAnalyzer.getRemoteParallelReduceTasks();
 		//correction max number of reducers on yarn clusters
 		if( InfrastructureAnalyzer.isYarnEnabled() )

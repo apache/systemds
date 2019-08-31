@@ -163,10 +163,6 @@ public class ConfigurationManager
 		return getCompilerConfig().getInt(ConfigType.BLOCK_SIZE);
 	}
 	
-	public static int getNumReducers() {
-		return getDMLConfig().getIntValue(DMLConfig.NUM_REDUCERS);
-	}
-	
 	public static boolean isDynamicRecompilation() {
 		return getCompilerConfigFlag(ConfigType.ALLOW_DYN_RECOMPILATION);
 	}

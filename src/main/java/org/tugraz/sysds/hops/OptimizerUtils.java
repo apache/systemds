@@ -522,7 +522,7 @@ public class OptimizerUtils
 		if( isSparkExecutionMode() )
 			return SparkExecutionContext.getDefaultParallelism(false);
 		
-		int ret = ConfigurationManager.getNumReducers();
+		int ret = 2 * InfrastructureAnalyzer.getLocalParallelism();
 		if( !configOnly ) {
 			ret = Math.min(ret,InfrastructureAnalyzer.getRemoteParallelReduceTasks());
 			

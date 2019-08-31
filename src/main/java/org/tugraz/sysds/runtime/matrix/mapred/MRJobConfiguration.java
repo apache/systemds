@@ -23,14 +23,11 @@
 package org.tugraz.sysds.runtime.matrix.mapred;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.filecache.DistributedCache;
 import org.tugraz.sysds.api.DMLScript;
 import org.tugraz.sysds.conf.ConfigurationManager;
-import org.tugraz.sysds.conf.DMLConfig;
 import org.tugraz.sysds.lops.Lop;
 import org.tugraz.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.tugraz.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -44,7 +41,6 @@ import org.apache.hadoop.mapred.JobConf;
 @SuppressWarnings({"deprecation" })
 public class MRJobConfiguration 
 {
-		
 	 //internal param: custom deserializer/serializer (usually 30% faster than WritableSerialization)
 	public static final boolean USE_BINARYBLOCK_SERIALIZATION = true;
 	
@@ -241,19 +237,5 @@ public class MRJobConfiguration
 		String frameworkList = job.get(MRConfigurationNames.IO_SERIALIZATIONS);
 		String frameworkClassBB = BinaryBlockSerialization.class.getCanonicalName();
 		job.set(MRConfigurationNames.IO_SERIALIZATIONS, frameworkClassBB+","+frameworkList);
-	}
-	
-	/**
-	 * Set all configurations with prefix mapred or mapreduce that exist in the given
-	 * DMLConfig into the given JobConf.
-	 * 
-	 * @param job job configuration
-	 * @param config dml configuration
-	 */
-	public static void setupCustomMRConfigurations( JobConf job, DMLConfig config ) {
-		Map<String,String> map = config.getCustomMRConfig();
-		for( Entry<String,String> e : map.entrySet() ) {
-			job.set(e.getKey(), e.getValue());
-		}
 	}
 }

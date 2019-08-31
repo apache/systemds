@@ -80,7 +80,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	// global constant configuration parameters
 	public static final long    CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
 		1e-5 * InfrastructureAnalyzer.getLocalMaxMemory());       //if below threshold [in bytes]
-	public static double CACHING_BUFFER_SIZE = 0.15; 
+	public static final double CACHING_BUFFER_SIZE = 0.15; 
 	public static final RPolicy CACHING_BUFFER_POLICY = RPolicy.FIFO; 
 	public static final boolean CACHING_BUFFER_PAGECACHE = false; 
 	public static final boolean CACHING_WRITE_CACHE_ON_READ = false;	

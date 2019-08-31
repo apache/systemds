@@ -26,7 +26,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -65,13 +64,7 @@ public class DMLConfig
 	public static final String LOCAL_TMP_DIR        = "sysds.localtmpdir";
 	public static final String SCRATCH_SPACE        = "sysds.scratch";
 	public static final String OPTIMIZATION_LEVEL   = "sysds.optlevel";
-	public static final String NUM_REDUCERS         = "sysds.numreducers";
-	public static final String JVM_REUSE            = "sysds.jvmreuse";
 	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
-	public static final String YARN_APPMASTER       = "sysds.yarn.appmaster";
-	public static final String YARN_APPMASTERMEM    = "sysds.yarn.appmaster.mem";
-	public static final String YARN_MAPREDUCEMEM    = "sysds.yarn.mapreduce.mem";
-	public static final String YARN_APPQUEUE        = "sysds.yarn.app.queue";
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
@@ -81,13 +74,11 @@ public class DMLConfig
 	public static final String CODEGEN_OPTIMIZER    = "sysds.codegen.optimizer"; //see SpoofCompiler.PlanSelector
 	public static final String CODEGEN_PLANCACHE    = "sysds.codegen.plancache"; //boolean
 	public static final String CODEGEN_LITERALS     = "sysds.codegen.literals"; //1..heuristic, 2..always
-	public static final String CACHING_BUFFER_SIZE 	= "sysds.caching.bufferSize"; //double: default:0.15
-	public static final String EXTRA_FINEGRAINED_STATS = "sysds.stats.finegrained"; //boolean
 	public static final String STATS_MAX_WRAP_LEN   = "sysds.stats.maxWrapLength"; //int
 	public static final String AVAILABLE_GPUS       = "sysds.gpu.availableGPUs"; // String to specify which GPUs to use (a range, all GPUs, comma separated list or a specific GPU)
 	public static final String SYNCHRONIZE_GPU      = "sysds.gpu.sync.postProcess"; // boolean: whether to synchronize GPUs after every instruction
-	public static final String EAGER_CUDA_FREE		= "sysds.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
-	public static final String GPU_EVICTION_POLICY	= "sysds.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
+	public static final String EAGER_CUDA_FREE      = "sysds.gpu.eager.cudaFree"; // boolean: whether to perform eager CUDA free on rmvar
+	public static final String GPU_EVICTION_POLICY  = "sysds.gpu.eviction.policy"; // string: can be lru, lfu, min_evict
 	
 	// Fraction of available memory to use. The available memory is computer when the GPUContext is created
 	// to handle the tradeoff on calling cudaMemGetInfo too often.
@@ -96,10 +87,6 @@ public class DMLConfig
 	public static final String FLOATING_POINT_PRECISION = "sysds.floating.point.precision"; // String to specify the datatype to use internally: supported values are double, single
 	public static final String PRINT_GPU_MEMORY_INFO = "sysds.gpu.print.memoryInfo";
 	public static final String EVICTION_SHADOW_BUFFERSIZE = "sysds.gpu.eviction.shadow.bufferSize";
-
-	// supported prefixes for custom map/reduce configurations
-	public static final String PREFIX_MAPRED = "mapred";
-	public static final String PREFIX_MAPREDUCE = "mapreduce";
 	
 	//internal config
 	public static final String DEFAULT_SHARED_DIR_PERMISSION = "777"; //for local fs and DFS
@@ -119,13 +106,7 @@ public class DMLConfig
 		_defaultVals.put(LOCAL_TMP_DIR,          "/tmp/systemds" );
 		_defaultVals.put(SCRATCH_SPACE,          "scratch_space" );
 		_defaultVals.put(OPTIMIZATION_LEVEL,     String.valueOf(OptimizerUtils.DEFAULT_OPTLEVEL.ordinal()) );
-		_defaultVals.put(NUM_REDUCERS,           "10" );
-		_defaultVals.put(JVM_REUSE,              "false" );
 		_defaultVals.put(DEFAULT_BLOCK_SIZE,     String.valueOf(OptimizerUtils.DEFAULT_BLOCKSIZE) );
-		_defaultVals.put(YARN_APPMASTER,         "false" );
-		_defaultVals.put(YARN_APPMASTERMEM,      "2048" );
-		_defaultVals.put(YARN_MAPREDUCEMEM,      "-1" );
-		_defaultVals.put(YARN_APPQUEUE,    	     "default" );
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(CODEGEN,                "false" );
@@ -135,18 +116,16 @@ public class DMLConfig
 		_defaultVals.put(CODEGEN_LITERALS,       "1" );
 		_defaultVals.put(NATIVE_BLAS,            "none" );
 		_defaultVals.put(NATIVE_BLAS_DIR,        "none" );
-		_defaultVals.put(EXTRA_FINEGRAINED_STATS,"false" );
 		_defaultVals.put(PRINT_GPU_MEMORY_INFO,  "false" );
 		_defaultVals.put(EVICTION_SHADOW_BUFFERSIZE,  "0.0" );
 		_defaultVals.put(STATS_MAX_WRAP_LEN,     "30" );
 		_defaultVals.put(GPU_MEMORY_UTILIZATION_FACTOR,      "0.9" );
-		_defaultVals.put(GPU_MEMORY_ALLOCATOR,	 "cuda");
+		_defaultVals.put(GPU_MEMORY_ALLOCATOR,   "cuda");
 		_defaultVals.put(AVAILABLE_GPUS,         "-1");
 		_defaultVals.put(GPU_EVICTION_POLICY,    "min_evict");
 		_defaultVals.put(SYNCHRONIZE_GPU,        "false" );
-		_defaultVals.put(CACHING_BUFFER_SIZE,    "0.15" );
 		_defaultVals.put(EAGER_CUDA_FREE,        "false" );
-		_defaultVals.put(FLOATING_POINT_PRECISION,        	 "double" );
+		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 	}
 	
 	public DMLConfig() {
@@ -169,7 +148,7 @@ public class DMLConfig
 			LOCAL_MR_MODE_STAGING_DIR = getTextValue(LOCAL_TMP_DIR) + "/hadoop/mapred/staging";
 			throw fnfe;
 		} catch (Exception e){
-		    //log error, since signature of generated ParseException doesn't allow to pass it 
+			//log error, since signature of generated ParseException doesn't allow to pass it 
 			if( !silent )
 				LOG.error("Failed to parse DML config file ",e);
 			throw new ParseException("ERROR: error parsing DMLConfig file " + fileName);
@@ -311,36 +290,6 @@ public class DMLConfig
 		}
 	}
 
-	/**
-	 * Get a map of key/value pairs of all configurations w/ the prefix 'mapred'
-	 * or 'mapreduce'.
-	 * 
-	 * @return map of mapred and mapreduce key/value pairs
-	 */
-	public Map<String, String> getCustomMRConfig()
-	{
-		HashMap<String, String> ret = new HashMap<>();
-	
-		//check for non-existing config xml tree
-		if( _xmlRoot == null )
-			return ret;
-		
-		//get all mapred.* and mapreduce.* tag / value pairs		
-		NodeList list = _xmlRoot.getElementsByTagName("*");
-		for( int i=0; list!=null && i<list.getLength(); i++ ) {
-			if( list.item(i) instanceof Element &&
-				(  ((Element)list.item(i)).getNodeName().startsWith(PREFIX_MAPRED) 
-				|| ((Element)list.item(i)).getNodeName().startsWith(PREFIX_MAPREDUCE)) )
-			{
-				Element elem = (Element) list.item(i);
-				ret.put(elem.getNodeName(), 
-						elem.getFirstChild().getNodeValue());
-			}
-		}
-		
-		return ret;
-	}
-	
 	public synchronized String serializeDMLConfig() 
 	{
 		String ret = null;
@@ -418,22 +367,18 @@ public class DMLConfig
 		return config;
 	}
 
-	public String getConfigInfo() 
-	{
+	public String getConfigInfo()  {
 		String[] tmpConfig = new String[] { 
-				LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL,
-				NUM_REDUCERS, DEFAULT_BLOCK_SIZE,
-				YARN_APPMASTER, YARN_APPMASTERMEM, YARN_MAPREDUCEMEM, 
-				CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
-				CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
-				EXTRA_FINEGRAINED_STATS, STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO, CACHING_BUFFER_SIZE,
-				AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY, EVICTION_SHADOW_BUFFERSIZE,
-				GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR
+			LOCAL_TMP_DIR,SCRATCH_SPACE,OPTIMIZATION_LEVEL, DEFAULT_BLOCK_SIZE,
+			CP_PARALLEL_OPS, CP_PARALLEL_IO, NATIVE_BLAS, NATIVE_BLAS_DIR,
+			CODEGEN, CODEGEN_COMPILER, CODEGEN_OPTIMIZER, CODEGEN_PLANCACHE, CODEGEN_LITERALS,
+			STATS_MAX_WRAP_LEN, PRINT_GPU_MEMORY_INFO,
+			AVAILABLE_GPUS, SYNCHRONIZE_GPU, EAGER_CUDA_FREE, FLOATING_POINT_PRECISION, GPU_EVICTION_POLICY,
+			EVICTION_SHADOW_BUFFERSIZE, GPU_MEMORY_ALLOCATOR, GPU_MEMORY_UTILIZATION_FACTOR
 		}; 
 		
 		StringBuilder sb = new StringBuilder();
-		for( String tmp : tmpConfig )
-		{
+		for( String tmp : tmpConfig ) {
 			sb.append("INFO: ");
 			sb.append(tmp);
 			sb.append(": ");
@@ -444,23 +389,6 @@ public class DMLConfig
 		return sb.toString();
 	}
 	
-	public void updateYarnMemorySettings(String amMem, String mrMem)
-	{
-		//app master memory
-		NodeList list1 = _xmlRoot.getElementsByTagName(YARN_APPMASTERMEM);
-		if (list1 != null && list1.getLength() > 0) {
-			Element elem = (Element) list1.item(0);
-			elem.getFirstChild().setNodeValue(String.valueOf(amMem));
-		}
-		
-		//mapreduce memory
-		NodeList list2 = _xmlRoot.getElementsByTagName(YARN_MAPREDUCEMEM);
-		if (list2 != null && list2.getLength() > 0) {
-			Element elem = (Element) list2.item(0);
-			elem.getFirstChild().setNodeValue(String.valueOf(mrMem));
-		}
-	}
-
 	public static String getDefaultTextValue( String key ) {
 		return _defaultVals.get( key );
 	}

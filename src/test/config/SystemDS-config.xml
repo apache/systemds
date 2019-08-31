@@ -28,27 +28,9 @@
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
    <sysds.optlevel>2</sysds.optlevel>
 
-   <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
-   <sysds.numreducers>10</sysds.numreducers>
-   
-   <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
-   <sysds.jvmreuse>false</sysds.jvmreuse>
-
    <!-- default block dim for binary block files -->
    <sysds.defaultblocksize>1000</sysds.defaultblocksize>
 
-   <!-- run systemds control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
-   <sysds.yarn.appmaster>false</sysds.yarn.appmaster>
-
-   <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
-   <sysds.yarn.appmaster.mem>2048</sysds.yarn.appmaster.mem>
-
-   <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
-   <sysds.yarn.mapreduce.mem>2048</sysds.yarn.mapreduce.mem>
-
-   <!-- yarn application submission queue, relevant for default capacity scheduler -->
-   <sysds.yarn.app.queue>default</sysds.yarn.app.queue>
-   
    <!-- enables multi-threaded matrix operations in singlenode control program -->
    <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
    

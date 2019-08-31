@@ -1222,9 +1222,6 @@ public class ProgramConverter
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		if( !InfrastructureAnalyzer.isLocalMode(job) ) {
 			handleDMLConfig(confStr);
-			//init internal configuration w/ parsed or default config
-			ParForProgramBlock.initInternalConfigurations(
-					ConfigurationManager.getDMLConfig());
 		}
 		
 		//handle additional configs

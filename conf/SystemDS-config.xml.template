@@ -27,27 +27,9 @@
    <!-- compiler optimization level, valid values: 0 | 1 | 2 | 3 | 4, default: 2 -->
    <sysds.optlevel>2</sysds.optlevel>
 
-   <!-- default number of reduce tasks per MR job, default: 2 x number of nodes -->
-   <sysds.numreducers>10</sysds.numreducers>
-   
-   <!-- override jvm reuse flag for specific MR jobs, valid values: true | false  -->
-   <sysds.jvmreuse>false</sysds.jvmreuse>
-
    <!-- default block dim for binary block files -->
    <sysds.defaultblocksize>1000</sysds.defaultblocksize>
 
-   <!-- run systemds control program as yarn appmaster, in case of MR1 always falls back to client, please disable for debug mode -->
-   <sysds.yarn.appmaster>false</sysds.yarn.appmaster>
-
-   <!-- maximum jvm heap size of the dml yarn appmaster in MB, the requested memory is 1.5x this parameter -->
-   <sysds.yarn.appmaster.mem>2048</sysds.yarn.appmaster.mem>
-
-   <!-- maximum jvm heap size of the map/reduce tasks in MB, the requested memory is 1.5x this parameter, negative values ignored  -->
-   <sysds.yarn.mapreduce.mem>2048</sysds.yarn.mapreduce.mem>
-
-   <!-- yarn application submission queue, relevant for default capacity scheduler -->
-   <sysds.yarn.app.queue>default</sysds.yarn.app.queue>
-   
    <!-- enables multi-threaded operations in singlenode control program -->
    <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
    
@@ -78,9 +60,6 @@
    <!-- custom directory where BLAS libraries are available, experimental feature (options: absolute directory path or none). If set to none, we use standard LD_LIBRARY_PATH. -->
    <sysds.native.blas.directory>none</sysds.native.blas.directory>
    
-   <!-- prints finegrained statistics information (includes extra GPU information and extra statistics information for Deep Neural Networks done in CP mode) -->
-   <sysds.stats.finegrained>false</sysds.stats.finegrained>
-   
     <!-- sets the GPUs to use per process, -1 for all GPUs, a specific GPU number (5), a range (eg: 0-2) or a comma separated list (eg: 0,2,4)-->
     <sysds.gpu.availableGPUs>-1</sysds.gpu.availableGPUs>
     
@@ -101,9 +80,6 @@
     
    <!-- maximum wrap length for instruction and miscellaneous timer column of statistics -->
    <sysds.stats.maxWrapLength>30</sysds.stats.maxWrapLength>
-   
-   <!-- Advanced optimization: fraction of driver memory to use for caching (default: 0.15) -->
-   <sysds.caching.bufferSize>0.15</sysds.caching.bufferSize>
    
    <!-- Advanced optimization: fraction of driver memory to use for GPU shadow buffer. This optimization is ignored for double precision. 
    By default, it is disabled (hence set to 0.0). If you intend to train network larger than GPU memory size, consider using single precision and setting this to 0.1 -->

@@ -1039,122 +1039,6 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		return footprint;
 	}
-	
-	/**
-	 * Optimization that chooses between two methods to perform matrix multiplication on map-reduce.
-	 * 
-	 * More details on the cost-model used: refer ICDE 2011 paper.
-	 * 
-	 * @param m1_rows m1 rows
-	 * @param m1_cols m1 cols
-	 * @param m1_rpb m1 rows per block
-	 * @param m1_cpb m1 cols per block
-	 * @param m1_nnz m1 num non-zeros
-	 * @param m2_rows m2 rows
-	 * @param m2_cols m2 cols
-	 * @param m2_rpb m2 rows per block
-	 * @param m2_cpb m2 cols per block
-	 * @param m2_nnz m2 num non-zeros
-	 * @param mmtsj the MMTSJType
-	 * @param chainType the chain type
-	 * @param leftPMInput the left pm input
-	 * @return the MMultMethod
-	 */
-	@SuppressWarnings("unused")
-	private static MMultMethod optFindMMultMethodMR ( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, long m1_nnz,
-			                                        long m2_rows, long m2_cols, long m2_rpb, long m2_cpb, long m2_nnz,
-			                                        MMTSJType mmtsj, ChainType chainType, boolean leftPMInput ) 
-	{	
-		double memBudget = MAPMULT_MEM_MULTIPLIER * OptimizerUtils.getRemoteMemBudgetMap(true);		
-		
-		// Step 0: check for forced mmultmethod
-		if( FORCED_MMULT_METHOD !=null )
-			return FORCED_MMULT_METHOD;
-		
-		// Step 1: check TSMM
-		// If transpose self pattern and result is single block:
-		// use specialized TSMM method (always better than generic jobs)
-		if(    ( mmtsj == MMTSJType.LEFT && m2_cols>=0 && m2_cols <= m2_cpb )
-			|| ( mmtsj == MMTSJType.RIGHT && m1_rows>=0 && m1_rows <= m1_rpb ) )
-		{
-			return MMultMethod.TSMM;
-		}
-
-		// Step 2: check MapMultChain
-		// If mapmultchain pattern and result is a single block:
-		// use specialized mapmult method
-		if( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES )
-		{
-			//matmultchain if dim2(X)<=blocksize and all vectors fit in mappers
-			//(X: m1_cols x m1_rows, v: m1_rows x m2_cols, w: m1_cols x m2_cols) 
-			//NOTE: generalization possibe: m2_cols>=0 && m2_cols<=m2_cpb
-			if( chainType!=ChainType.NONE && m1_rows>=0 && m1_rows<= m1_rpb  && m2_cols==1 )
-			{
-				if( chainType==ChainType.XtXv && m1_rows>=0 && m2_cols>=0 
-					&& OptimizerUtils.estimateSize(m1_rows, m2_cols ) < memBudget )
-				{
-					return MMultMethod.MAPMM_CHAIN;
-				}
-				else if( (chainType==ChainType.XtwXv || chainType==ChainType.XtXvy )
-					&& m1_rows>=0 && m2_cols>=0 && m1_cols>=0
-					&&   OptimizerUtils.estimateSize(m1_rows, m2_cols ) 
-					   + OptimizerUtils.estimateSize(m1_cols, m2_cols) < memBudget )
-				{
-					return MMultMethod.MAPMM_CHAIN;
-				}
-			}
-		}
-		
-		// Step 3: check for PMM (permutation matrix needs to fit into mapper memory)
-		// (needs to be checked before mapmult for consistency with removeEmpty compilation 
-		double footprintPM1 = getMapmmMemEstimate(m1_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
-		double footprintPM2 = getMapmmMemEstimate(m2_rows, 1, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, true);
-		if( (footprintPM1 < memBudget && m1_rows>=0 || footprintPM2 < memBudget && m2_rows>=0 ) 
-			&& leftPMInput ) 
-		{
-			return MMultMethod.PMM;
-		}
-		
-		// Step 4: check MapMult
-		// If the size of one input is small, choose a method that uses distributed cache
-		// (with awareness of output size because one input block might generate many output blocks)		
-		//memory estimates for local partitioning (mb -> partitioned mb)
-		double m1SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz); //m1 partitioned 
-		double m2SizeP = OptimizerUtils.estimatePartitionedSizeExactSparsity(m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz); //m2 partitioned
-		
-		//memory estimates for remote execution (broadcast and outputs)
-		double footprint1 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 1, false);
-		double footprint2 = getMapmmMemEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m1_nnz, m2_rows, m2_cols, m2_rpb, m2_cpb, m2_nnz, 2, false);		
-		
-		if (   (footprint1 < memBudget && m1_rows>=0 && m1_cols>=0)
-			|| (footprint2 < memBudget && m2_rows>=0 && m2_cols>=0) ) 
-		{
-			//apply map mult if one side fits in remote task memory 
-			//(if so pick smaller input for distributed cache)
-			if( m1SizeP < m2SizeP && m1_rows>=0 && m1_cols>=0)
-				return MMultMethod.MAPMM_L;
-			else
-				return MMultMethod.MAPMM_R;
-		}
-		
-		// Step 5: check for unknowns
-		// If the dimensions are unknown at compilation time, simply assume 
-		// the worst-case scenario and produce the most robust plan -- which is CPMM
-		if ( m1_rows == -1 || m1_cols == -1 || m2_rows == -1 || m2_cols == -1 )
-			return MMultMethod.CPMM;
-
-		// Step 6: Decide CPMM vs RMM based on io costs
-
-		//estimate shuffle costs weighted by parallelism
-		double rmm_costs = getRMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
-		double cpmm_costs = getCPMMCostEstimate(m1_rows, m1_cols, m1_rpb, m1_cpb, m2_rows, m2_cols, m2_rpb, m2_cpb);
-				
-		//final mmult method decision 
-		if ( cpmm_costs < rmm_costs ) 
-			return MMultMethod.CPMM;
-		else 
-			return MMultMethod.RMM;
-	}
 
 	private static MMultMethod optFindMMultMethodCP( long m1_rows, long m1_cols, long m2_rows, long m2_cols, MMTSJType mmtsj, ChainType chainType, boolean leftPM ) 
 	{	
@@ -1346,7 +1230,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 
 	private static double getCPMMCostEstimate( long m1_rows, long m1_cols, long m1_rpb, long m1_cpb, 
-            long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
+		long m2_rows, long m2_cols, long m2_rpb, long m2_cpb )
 	{
 		long m1_nrb = (long) Math.ceil((double)m1_rows/m1_rpb); // number of row blocks in m1
 		long m1_ncb = (long) Math.ceil((double)m1_cols/m1_cpb); // number of column blocks in m1
@@ -1363,16 +1247,16 @@ public class AggBinaryOp extends MultiThreadedHop
 		// CPMM phase 1
 		double cpmm_shuffle1 = m1_size + m2_size;
 		double cpmm_nred1 = Math.min( m1_ncb, //max used reducers 
-                                      numReducersCPMM); //available reducers		
+			numReducersCPMM); //available reducer
 		double cpmm_io1 = m1_size + m2_size + cpmm_nred1 * result_size;
 		// CPMM phase 2
 		double cpmm_shuffle2 = cpmm_nred1 * result_size;
-		double cpmm_io2 = cpmm_nred1 * result_size + result_size;			
+		double cpmm_io2 = cpmm_nred1 * result_size + result_size;
 		double cpmm_nred2 = Math.min( m1_nrb * m2_ncb, //max used reducers 
-                                      numReducersCPMM); //available reducers		
+			numReducersCPMM); //available reducers
 		// CPMM total costs
 		double cpmm_costs =  (cpmm_shuffle1+cpmm_io1)/cpmm_nred1  //cpmm phase1
-		                    +(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2
+			+(cpmm_shuffle2+cpmm_io2)/cpmm_nred2; //cpmm phase2
 		
 		//return total costs
 		return cpmm_costs;

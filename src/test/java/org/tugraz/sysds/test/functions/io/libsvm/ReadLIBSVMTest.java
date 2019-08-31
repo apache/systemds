@@ -36,7 +36,7 @@ public class ReadLIBSVMTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
 	}
-			
+	
 	@Test
 	public void testlibsvm1_Seq_CP() {
 		runlibsvmTest(1, ExecMode.SINGLE_NODE, false);
@@ -63,7 +63,7 @@ public class ReadLIBSVMTest extends AutomatedTestBase
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrix = HOME + "libsvm_" + testNumber;
+			String inputMatrix = HOME + "test" + testNumber+".libsvm";
 			String dmlOutput = output("dml.scalar");
 			
 			fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
@@ -72,7 +72,7 @@ public class ReadLIBSVMTest extends AutomatedTestBase
 		}
 		finally {
 			rtplatform = oldPlatform;
-			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;		
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 		}
 	}
 }

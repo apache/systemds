@@ -59,7 +59,7 @@ public class WriteLIBSVMTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		String inputMatrixName = HOME + "libsvmw_" + mno;
+		String inputMatrixName = HOME + "test" + mno +"w.libsvm";
 		String dmlOutput = output("dml.scalar");
 		String libsvmOutputName = output("libsvm_dml.data");
 		
@@ -70,5 +70,4 @@ public class WriteLIBSVMTest extends AutomatedTestBase
 		runTest(true, false, null, -1);
 		rtplatform = oldPlatform;
 	}
-
 }

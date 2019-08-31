@@ -27,7 +27,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.tugraz.systemds</groupId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.2.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>

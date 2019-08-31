@@ -27,8 +27,8 @@ import org.tugraz.sysds.runtime.functionobjects.ReduceAll;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
 import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
-import scala.Array;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -59,7 +59,7 @@ public class BasicTensor extends TensorBlock implements Externalizable
 	public BasicTensor() {
 		this(DEFAULT_VTYPE, DEFAULT_DIMS.clone(), true, -1);
 	}
-	
+
 	public BasicTensor(ValueType vt, int[] dims) {
 		this(vt, dims, true, -1);
 	}
@@ -519,19 +519,20 @@ public class BasicTensor extends TensorBlock implements Externalizable
 		if (src.isEmpty(false)) {
 			return;
 		}
+		DenseBlock db = src.getDenseBlock();
 		int rowLower = lower[0];
 		int rowUpper = upper[0] + 1;
 		int columnLower = lower[lower.length - 1];
 		int columnUpper = upper[upper.length - 1];
 		for (int i = 1; i < lower.length - 1; i++) {
-			columnLower += lower[i] * _denseBlock.getCumODims(i);
-			columnUpper += upper[i] * _denseBlock.getCumODims(i);
+			columnLower += lower[i] * db.getCumODims(i);
+			columnUpper += upper[i] * db.getCumODims(i);
 		}
 		if (columnLower == columnUpper || columnUpper == 0) {
 			rowUpper--;
-			columnUpper = _denseBlock.getCumODims(0);
+			columnUpper = db.getCumODims(0);
 		}
-		_denseBlock.set(rowLower, rowUpper, columnLower, columnUpper, src.getDenseBlock());
+		_denseBlock.set(rowLower, rowUpper, columnLower, columnUpper, db);
 	}
 
 	////////
@@ -545,14 +546,7 @@ public class BasicTensor extends TensorBlock implements Externalizable
 
 	///////
 	// Aggregations
-
-	/**
-	 * Aggregate a unary operation on this tensor.
-	 * @param op the operation to apply
-	 * @param result the result tensor
-	 * @return the result tensor
-	 */
-	public BasicTensor aggregateUnaryOperations(AggregateUnaryOperator op, BasicTensor result) {
+	public BasicTensor aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
 		// TODO allow to aggregate along a dimension?
 		// TODO performance
 		if (op.aggOp.increOp.fn instanceof KahanPlus) {
@@ -564,29 +558,61 @@ public class BasicTensor extends TensorBlock implements Externalizable
 			dim1 = 2;
 		}
 		//prepare result matrix block
-		if(result==null || result._vt != _vt)
-			result = new BasicTensor(_vt, new int[]{dim0, dim1}, false);
-		else
-			result.reset(new int[]{dim0, dim1}, false);
+		BasicTensor res;
+		if(result==null || checkType(result)._vt != _vt)
+			res = new BasicTensor(_vt, new int[]{dim0, dim1}, false);
+		else {
+			res = (BasicTensor) result;
+			res.reset(new int[]{dim0, dim1}, false);
+		}
 
 		if( LibTensorAgg.isSupportedUnaryAggregateOperator(op) )
 			if (op.indexFn instanceof ReduceAll)
-				LibTensorAgg.aggregateUnaryTensor(this, result, op);
+				LibTensorAgg.aggregateUnaryTensor(this, res, op);
 			else
 				throw new DMLRuntimeException("Only ReduceAll UnaryAggregationOperators are supported for tensor");
 		else
 			throw new DMLRuntimeException("Current UnaryAggregationOperator not supported for tensor");
-		return result;
+		return res;
 	}
 
-	public void incrementalAggregate(AggregateOperator aggOp, BasicTensor partialResult) {
+	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock partialResult) {
 		if(!aggOp.correctionExists) {
 			if(aggOp.increOp.fn instanceof Plus) {
-				LibTensorAgg.aggregateBinaryTensor(partialResult, this, aggOp);
+				LibTensorAgg.aggregateBinaryTensor((BasicTensor) partialResult, this, aggOp);
 			}
 		}
 		else
 			throw new DMLRuntimeException("Correction not supported. correctionLocation: "+aggOp.correctionLocation);
+	}
+
+	@Override
+	public TensorBlock binaryOperations(BinaryOperator op, TensorBlock thatValue, TensorBlock result) {
+		if( !LibTensorBincell.isValidDimensionsBinary(this, thatValue) ) {
+			throw new RuntimeException("Block sizes are not matched for binary cell operations");
+		}
+		//prepare result matrix block
+		BasicTensor that = checkType(thatValue);
+		ValueType vt = resultValueType(_vt, that._vt);
+		BasicTensor res;
+		if (result == null || checkType(result)._vt != vt)
+			res = new BasicTensor(vt, _dims, false);
+		else {
+			res = (BasicTensor) result;
+			res.reset(_dims, false);
+		}
+
+		LibTensorBincell.bincellOp(this, (BasicTensor) thatValue, res, op);
+
+		return res;
+	}
+
+	@Override
+	protected BasicTensor checkType(TensorBlock that) {
+		if (that instanceof BasicTensor)
+			return (BasicTensor) that;
+		else
+			throw new DMLRuntimeException("BasicTensor.checkType(TensorBlock) given TensorBlock was no BasicTensor");
 	}
 
 	@Override
@@ -648,8 +674,20 @@ public class BasicTensor extends TensorBlock implements Externalizable
 
 	@Override
 	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) {
-		// TODO Auto-generated method stub
-		return null;
+		if (!(block instanceof BasicTensor))
+			throw new DMLRuntimeException("BasicTensor.slice(int,int,int,int,CacheBlock) CacheBlock was no BasicTensor");
+		BasicTensor bt = (BasicTensor) block;
+		
+		int[] dims = _dims.clone();
+		dims[0] = ru - rl + 1;
+		dims[1] = cu - cl + 1;
+		bt.reset(_dims, false);
+		
+		int[] offsets = new int[dims.length];
+		offsets[0] = rl;
+		offsets[1] = cl;
+		
+		return slice(offsets, bt);
 	}
 
 	/**
@@ -660,9 +698,9 @@ public class BasicTensor extends TensorBlock implements Externalizable
 	 * @return the sliced result block
 	 */
 	public BasicTensor slice(int[] offsets, BasicTensor outBlock) {
+		// TODO change signature to use upper lower instead of offsets and size of outBlock
 		// TODO perf
-		int[] srcIx = new int[offsets.length];
-		Array.copy(offsets, 0, srcIx, 0, offsets.length);
+		int[] srcIx = offsets.clone();
 		int[] destIx = new int[offsets.length];
 		for (int l = 0; l < outBlock.getLength(); l++) {
 			outBlock.set(destIx, get(srcIx));

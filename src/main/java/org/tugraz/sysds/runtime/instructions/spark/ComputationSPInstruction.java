@@ -89,7 +89,24 @@ public abstract class ComputationSPInstruction extends SPInstruction implements 
 				sec.getDataCharacteristics(output.getName()).set(dcIn1.getRows(), dcIn1.getCols(), dcIn1.getRowsPerBlock(), dcIn1.getRowsPerBlock());
 		}
 	}
-	
+
+	protected void updateBinaryTensorOutputDataCharacteristics(SparkExecutionContext sec) {
+		DataCharacteristics dcIn1 = sec.getDataCharacteristics(input1.getName());
+		DataCharacteristics dcIn2 = sec.getDataCharacteristics(input2.getName());
+		DataCharacteristics dcOut = sec.getDataCharacteristics(output.getName());
+
+		// TODO the dcOut dims will not be accurate here, because set output dimensions currently do only support
+		//  matrix size informations. Changing this requires changes in `Hop` and `OutputParameters`.
+		if(!dcOut.dimsKnown()) {
+			if(!dcIn1.dimsKnown())
+				throw new DMLRuntimeException("The output dimensions are not specified and cannot be inferred from input:" + dcIn1.toString() + " " + dcIn2.toString() + " " + dcOut.toString());
+			else
+				dcOut.set(dcIn1);
+		}
+		// TODO remove this once dcOut dims are accurate if known
+		dcOut.set(dcIn1);
+	}
+
 	protected void updateUnaryAggOutputDataCharacteristics(SparkExecutionContext sec, IndexFunction ixFn) {
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());

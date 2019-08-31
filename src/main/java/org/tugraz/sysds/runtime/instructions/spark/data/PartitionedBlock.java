@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -34,6 +36,7 @@ import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlockFactory;
 import org.tugraz.sysds.runtime.util.FastBufferedDataInputStream;
 import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
+import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 /**
  * This class is for partitioned matrix/frame blocks, to be used as broadcasts. 
@@ -44,17 +47,15 @@ import org.tugraz.sysds.runtime.util.FastBufferedDataOutputStream;
  */
 public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 {
-	protected CacheBlock[] _partBlocks = null; 
-	protected long _rlen = -1;
-	protected long _clen = -1;
-	protected int _brlen = -1;
-	protected int _bclen = -1;
+	private static final long serialVersionUID = 1298817743064415129L;
+	protected CacheBlock[] _partBlocks = null;
+	protected long[] _dims = {-1, -1};
+	protected int[] _blens = {-1, -1};
 	protected int _offset = 0;
 	
 	public PartitionedBlock() {
 		//do nothing (required for Externalizable)
 	}
-	
 	
 	@SuppressWarnings("unchecked")
 	public PartitionedBlock(T block, int brlen, int bclen) 
@@ -64,10 +65,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int clen = block.getNumColumns();
 		
 		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
+		_dims = new long[]{rlen, clen};
+		_blens = new int[]{brlen, bclen};
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
 		int code = CacheBlockFactory.getCode(block);
@@ -78,8 +77,36 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 				int i = index / ncblks;
 				int j = index % ncblks;
 				T tmp = (T) CacheBlockFactory.newInstance(code);
-				return block.slice(i * _brlen, Math.min((i + 1) * _brlen, rlen) - 1,
-					j * _bclen, Math.min((j + 1) * _bclen, clen) - 1, tmp);
+				return block.slice(i * _blens[0], Math.min((i + 1) * _blens[0], rlen) - 1,
+					j * _blens[1], Math.min((j + 1) * _blens[1], clen) - 1, tmp);
+			});
+		} catch(Exception ex) {
+			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
+		}
+
+		_offset = 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	public PartitionedBlock(T block, long[] dims, int[] blens)
+	{
+		//partitioning input broadcast
+		_dims = dims;
+		_blens = blens;
+		int nblks = 1;
+		for (int i = 0; i < dims.length; i++)
+			nblks *= getNumDimBlocks(i);
+		int code = CacheBlockFactory.getCode(block);
+
+		try {
+			_partBlocks = new CacheBlock[nblks];
+			int div = nblks / getNumRowBlocks();
+			Arrays.parallelSetAll(_partBlocks, index -> {
+				int i = index / div;
+				int j = index % div;
+				T tmp = (T) CacheBlockFactory.newInstance(code);
+				return block.slice(i * _blens[0], Math.min((i + 1) * _blens[0], (int)_dims[0]) - 1,
+						j * _blens[1], Math.min((j + 1) * _blens[1], (int)_dims[1]) - 1, tmp);
 			});
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);
@@ -91,11 +118,9 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	public PartitionedBlock(int rlen, int clen, int brlen, int bclen) 
 	{
 		//partitioning input broadcast
-		_rlen = rlen;
-		_clen = clen;
-		_brlen = brlen;
-		_bclen = bclen;
-		
+		_dims = new long[]{rlen, clen};
+		_blens = new int[]{brlen, bclen};
+
 		int nrblks = getNumRowBlocks();
 		int ncblks = getNumColumnBlocks();
 		_partBlocks = new CacheBlock[nrblks * ncblks];
@@ -104,10 +129,8 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	public PartitionedBlock<T> createPartition( int offset, int numBlks)
 	{
 		PartitionedBlock<T> ret = new PartitionedBlock<>();
-		ret._rlen = _rlen;
-		ret._clen = _clen;
-		ret._brlen = _brlen;
-		ret._bclen = _bclen;
+		ret._dims = _dims.clone();
+		ret._blens = _blens.clone();
 		ret._partBlocks = new CacheBlock[numBlks];
 		ret._offset = offset;
 		System.arraycopy(_partBlocks, offset, ret._partBlocks, 0, numBlks);
@@ -116,27 +139,39 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	}
 	
 	public long getNumRows() {
-		return _rlen;
+		return _dims[0];
 	}
 	
 	public long getNumCols() {
-		return _clen;
+		return _dims[1];
+	}
+
+	public long getDim(int i) {
+		return _dims[i];
 	}
 	
 	public long getNumRowsPerBlock() {
-		return _brlen;
+		return _blens[0];
 	}
 	
 	public long getNumColumnsPerBlock() {
-		return _bclen;
+		return _blens[1];
+	}
+
+	public long getNumDimPerBlock(int i) {
+		return _blens[i];
 	}
 
 	public int getNumRowBlocks() {
-		return (int)Math.ceil((double)_rlen/_brlen);
+		return getNumDimBlocks(0);
 	}
 
 	public int getNumColumnBlocks() {
-		return (int)Math.ceil((double)_clen/_bclen);
+		return getNumDimBlocks(1);
+	}
+
+	public int getNumDimBlocks(int dim) {
+		return (int)Math.ceil((double)_dims[dim]/_blens[dim]);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -153,6 +188,13 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 		int cix = colIndex - 1;
 		int ix = rix*ncblks+cix - _offset;
 		return (T)_partBlocks[ix];
+	}
+
+	@SuppressWarnings("unchecked")
+	public T getBlock(int[] ix) {
+		long index = UtilFunctions.computeBlockNumber(ix, _dims, _blens);
+		index -= _offset;
+		return (T)_partBlocks[(int) index];
 	}
 
 	public void setBlock(int rowIndex, int colIndex, T block) {
@@ -243,10 +285,9 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	private void writeHeaderAndPayload(DataOutput dos) 
 		throws IOException
 	{
-		dos.writeLong(_rlen);
-		dos.writeLong(_clen);
-		dos.writeInt(_brlen);
-		dos.writeInt(_bclen);
+		dos.writeInt(_dims.length);
+		for (long dim : _dims) dos.writeLong(dim);
+		for (int blen : _blens) dos.writeInt(blen);
 		dos.writeInt(_offset);
 		dos.writeInt(_partBlocks.length);
 		dos.writeByte(CacheBlockFactory.getCode(_partBlocks[0]));
@@ -258,11 +299,14 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 	private int readHeader(DataInput dis) 
 		throws IOException
 	{
-		_rlen = dis.readLong();
-		_clen = dis.readLong();
-		_brlen = dis.readInt();
-		_bclen = dis.readInt();
-		_offset = dis.readInt();		
+		int length = dis.readInt();
+		_dims = new long[length];
+		for (int i = 0; i < length; i++)
+			_dims[i] = dis.readLong();
+		_blens = new int[length];
+		for (int i = 0; i < length; i++)
+			_blens[i] = dis.readInt();
+		_offset = dis.readInt();
 		int len = dis.readInt();
 		int code = dis.readByte();
 		

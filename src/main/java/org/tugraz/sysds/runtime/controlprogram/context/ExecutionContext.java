@@ -446,7 +446,12 @@ public class ExecutionContext {
 	public void releaseTensorInput(String varName) {
 		getTensorObject(varName).release();
 	}
-	
+
+	public void releaseTensorInput(String... varNames) {
+		for( String varName : varNames )
+			releaseTensorInput(varName);
+	}
+
 	public ScalarObject getScalarInput(CPOperand input) {
 		return input.isLiteral() ? input.getLiteral() : 
 			getScalarInput(input.getName(), input.getValueType(), false);

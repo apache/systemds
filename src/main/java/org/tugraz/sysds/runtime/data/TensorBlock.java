@@ -17,7 +17,12 @@
 
 package org.tugraz.sysds.runtime.data;
 
+import org.tugraz.sysds.common.Types.ValueType;
+import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 import org.tugraz.sysds.runtime.util.UtilFunctions;
 
 public abstract class TensorBlock implements CacheBlock
@@ -100,7 +105,51 @@ public abstract class TensorBlock implements CacheBlock
 
 	public abstract double get(int r, int c);
 
+	/**
+	 * Set a cell to the value given as an `Object`. The type is inferred by either the `schema` or `valueType`, depending
+	 * if the `TensorBlock` is a `BasicTensor` or `DataTensor`.
+	 * @param ix indexes in each dimension, starting with 0
+	 * @param v value to set
+	 */
 	public abstract void set(int[] ix, Object v);
 
+	/**
+	 * Set a cell in a 2-dimensional tensor.
+	 * @param r row of the cell
+	 * @param c column of the cell
+	 * @param v value to set
+	 */
 	public abstract void set(int r, int c, double v);
+
+	/**
+	 * Aggregate a unary operation on this tensor.
+	 * @param op the operation to apply
+	 * @param result the result tensor
+	 * @return the result tensor
+	 */
+	public abstract TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result);
+
+	public abstract void incrementalAggregate(AggregateOperator aggOp, TensorBlock partialResult);
+
+	public abstract TensorBlock binaryOperations(BinaryOperator op, TensorBlock thatValue, TensorBlock result);
+
+	protected abstract TensorBlock checkType(TensorBlock that);
+
+	public static ValueType resultValueType(ValueType in1, ValueType in2) {
+		// TODO reconsider with operation types
+		if (in1 == ValueType.UNKNOWN || in2 == ValueType.UNKNOWN)
+			throw new DMLRuntimeException("Operations on unknown value types not possible");
+		else if (in1 == ValueType.STRING || in2 == ValueType.STRING)
+			return ValueType.STRING;
+		else if (in1 == ValueType.FP64 || in2 == ValueType.FP64)
+			return ValueType.FP64;
+		else if (in1 == ValueType.FP32 || in2 == ValueType.FP32)
+			return ValueType.FP32;
+		else if (in1 == ValueType.INT64 || in2 == ValueType.INT64)
+			return ValueType.INT64;
+		else if (in1 == ValueType.INT32 || in2 == ValueType.INT32)
+			return ValueType.INT32;
+		else // Boolean - Boolean
+			return ValueType.INT64;
+	}
 }

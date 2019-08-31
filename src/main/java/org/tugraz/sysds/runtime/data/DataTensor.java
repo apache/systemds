@@ -20,6 +20,9 @@ import org.apache.commons.lang.math.IntRange;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.runtime.DMLRuntimeException;
 import org.tugraz.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateOperator;
+import org.tugraz.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.tugraz.sysds.runtime.matrix.operators.BinaryOperator;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -286,6 +289,32 @@ public class DataTensor extends TensorBlock {
 		if (getNumDims() != 2)
 			throw new DMLRuntimeException("DataTensor.set(int,int,double) dimension mismatch: expected=2 actual=" + getNumDims());
 		_colsdata[_schema[c].ordinal()].set(r, _colsToIx[c], v);
+	}
+
+	@Override
+	public TensorBlock aggregateUnaryOperations(AggregateUnaryOperator op, TensorBlock result) {
+		// TODO aggregateUnaryOperations for DataTensor
+		throw new DMLRuntimeException("DataTensor.aggregateUnaryOperations is not implemented yet.");
+	}
+
+	@Override
+	public void incrementalAggregate(AggregateOperator aggOp, TensorBlock partialResult) {
+		// TODO incrementalAggregate for DataTensor
+		throw new DMLRuntimeException("DataTensor.incrementalAggregate is not implemented yet.");
+	}
+
+	@Override
+	public TensorBlock binaryOperations(BinaryOperator op, TensorBlock thatValue, TensorBlock result) {
+		// TODO binaryOperations for DataTensor
+		throw new DMLRuntimeException("DataTensor.binaryOperations is not implemented yet.");
+	}
+
+	@Override
+	protected DataTensor checkType(TensorBlock that) {
+		if (that instanceof DataTensor)
+			return (DataTensor) that;
+		else
+			throw new DMLRuntimeException("BasicTensor.checkType(TensorBlock) given TensorBlock was no BasicTensor");
 	}
 
 	public void copy(DataTensor that) {

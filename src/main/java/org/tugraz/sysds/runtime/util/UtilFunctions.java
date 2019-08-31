@@ -156,6 +156,21 @@ public class UtilFunctions
 		return (int)Math.min(blockSize, remain);
 	}
 
+	/**
+	 * Calculates the number of the block this index refers to (basically a linearisation).
+	 * @param ix the dimensional indexes
+	 * @param dims length of dimensions
+	 * @param blen length of blocks
+	 * @return the number of the block
+	 */
+	public static long computeBlockNumber(int[] ix, long[] dims, int[] blen) {
+		long pos = ix[ix.length - 1] - 1;
+		for (int i = ix.length - 2; i >= 0; i--) {
+			pos += (ix[i] - 1) * Math.ceil((double)dims[i + 1] / blen[i + 1]);
+		}
+		return pos;
+	}
+
 	public static ArrayList<Integer> getBalancedBlockSizesDefault(int len, int k, boolean constK) {
 		int nk = constK ? k : roundToNext(Math.min(8*k,len/32), k);
 		return getBalancedBlockSizes(len, nk);

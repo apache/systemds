@@ -1046,6 +1046,8 @@ public class DataConverter
 					// we either reached the dimension limit or the colLength if j == 1
 					// so we add border (because of the completely iterated dimension) and increment the next
 					// dimension while setting the current one to 0
+					if (ix[j] != tb.getDim(j))
+						sb.append("...");
 					sb.append(rightBorder);
 					borderCount++;
 					ix[j] = 0;

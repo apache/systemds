@@ -1,4 +1,6 @@
 /*
+ * Modifications Copyright 2019 Graz University of Technology
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,6 +23,9 @@ package org.tugraz.sysds.runtime.controlprogram.caching;
 
 import java.util.ArrayList;
 
+import org.tugraz.sysds.runtime.data.BasicTensor;
+import org.tugraz.sysds.runtime.data.DataTensor;
+import org.tugraz.sysds.runtime.data.TensorIndexes;
 import org.tugraz.sysds.runtime.matrix.data.FrameBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixBlock;
 import org.tugraz.sysds.runtime.matrix.data.MatrixIndexes;
@@ -37,23 +42,31 @@ public class CacheBlockFactory
 		switch( code ) {
 			case 0: return new MatrixBlock();
 			case 1: return new FrameBlock();
+			case 2: return new BasicTensor();
+			case 3: return new DataTensor();
 		}
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}
 
 	public static int getCode(CacheBlock block) {
-		if( block instanceof MatrixBlock )
+		if (block instanceof MatrixBlock)
 			return 0;
-		else if( block instanceof FrameBlock )
+		else if (block instanceof FrameBlock)
 			return 1;
-		throw new RuntimeException("Unsupported cache block type: "+block.getClass().getName());
+		else if (block instanceof BasicTensor)
+			return 2;
+		else if (block instanceof DataTensor)
+			return 3;
+		throw new RuntimeException("Unsupported cache block type: " + block.getClass().getName());
 	}
 
 	public static ArrayList<?> getPairList(CacheBlock block) {
 		int code = getCode(block);
-		switch( code ) {
-			case 0: return new ArrayList<Pair<MatrixIndexes,MatrixBlock>>();
-			case 1: return new ArrayList<Pair<Long,FrameBlock>>();
+		switch (code) {
+			case 0: return new ArrayList<Pair<MatrixIndexes, MatrixBlock>>();
+			case 1: return new ArrayList<Pair<Long, FrameBlock>>();
+			case 2: return new ArrayList<Pair<TensorIndexes, BasicTensor>>();
+			case 3: return new ArrayList<Pair<TensorIndexes, DataTensor>>();
 		}
 		throw new RuntimeException("Unsupported cache block type: "+code);
 	}

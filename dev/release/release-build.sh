@@ -311,7 +311,7 @@ if [[ "$RELEASE_PREPARE" == "true" ]]; then
     exit 0
 fi
 
-ToDo: fix release deployment
+#ToDo: fix release deployment
 if [[ "$RELEASE_PUBLISH" == "true" ]]; then
     echo "Preparing release $RELEASE_VERSION"
     # Checkout code

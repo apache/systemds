@@ -58,4 +58,4 @@ $ systemds-standalone.sh Univar-Stats.dml -nvargs X=data/haberman.data TYPES=dat
 ```
 
 #### Using Intel MKL native instructions
-To use the MKL acceleration download and install the latest MKL libtary from [1] 
+To use the MKL acceleration download and install the latest MKL library from [1] 

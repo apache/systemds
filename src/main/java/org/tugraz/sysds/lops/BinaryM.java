@@ -146,40 +146,25 @@ public class BinaryM extends Lop
 
 	public static boolean isOpcode(String opcode) {
 		return opcode.equals("map+") || opcode.equals("map-") ||
-			   opcode.equals("map*") || opcode.equals("map/") ||
-			   opcode.equals("map%%") || opcode.equals("map%/%") ||
-			   opcode.equals("map<") || opcode.equals("map<=") ||
-			   opcode.equals("map>") || opcode.equals("map>=") ||
-			   opcode.equals("map==") || opcode.equals("map!=") ||
-			   opcode.equals("map&&") || opcode.equals("map||") ||
-			   opcode.equals("mapmin") || opcode.equals("mapmax") ||
-			   opcode.equals("map^") || opcode.equals("map1-*");
+			opcode.equals("map*") || opcode.equals("map/") ||
+			opcode.equals("map%%") || opcode.equals("map%/%") ||
+			opcode.equals("map<") || opcode.equals("map<=") ||
+			opcode.equals("map>") || opcode.equals("map>=") ||
+			opcode.equals("map==") || opcode.equals("map!=") ||
+			opcode.equals("map&&") || opcode.equals("map||") ||
+			opcode.equals("mapmin") || opcode.equals("mapmax") ||
+			opcode.equals("map^") || opcode.equals("map1-*");
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String output) 
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() ); 
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append ( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append ( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append("RIGHT");
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append(_vectorType);
-		
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output),
+			"RIGHT",
+			_vectorType.name());
 	}
 }

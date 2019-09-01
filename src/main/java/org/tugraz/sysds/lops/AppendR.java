@@ -20,6 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -54,24 +55,12 @@ public class AppendR extends Lop
 	//called when append executes in CP
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input2));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _cbind );
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(1).prepInputOperand(input2),
+			prepOutputOperand(output),
+			String.valueOf(_cbind));
 	}
 }

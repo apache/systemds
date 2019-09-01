@@ -21,7 +21,7 @@ package org.tugraz.sysds.lops;
 
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -173,17 +173,10 @@ public class UnaryCP extends Lop
 	
 	@Override
 	public String getInstructions(String input, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getExecType());
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpCode() );
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append(getInputs().get(0).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output));
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpCode(),
+			getInputs().get(0).prepScalarInputOperand(getExecType()),
+			prepOutputOperand(output));
 	}
 }

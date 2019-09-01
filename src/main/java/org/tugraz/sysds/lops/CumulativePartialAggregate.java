@@ -21,6 +21,7 @@ package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.Aggregate.OperationTypes;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -67,15 +68,10 @@ public class CumulativePartialAggregate extends Lop
 	
 	@Override
 	public String getInstructions(String input, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input) );
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input),
+			prepOutputOperand(output));
 	}
 }

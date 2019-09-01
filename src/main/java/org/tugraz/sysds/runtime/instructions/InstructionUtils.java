@@ -986,4 +986,14 @@ public class InstructionUtils
 		}
 		return sb.toString();
 	}
+	
+	public static String concatOperands(String... inputs) {
+		StringBuilder sb = new StringBuilder(64);
+		for( int i=0; i<inputs.length-1; i++ ) {
+			sb.append(inputs[i]);
+			sb.append(Lop.OPERAND_DELIMITOR);
+		}
+		sb.append(inputs[inputs.length-1]);
+		return sb.toString();
+	}
 }

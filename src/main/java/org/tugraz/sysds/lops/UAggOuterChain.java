@@ -21,7 +21,7 @@ package org.tugraz.sysds.lops;
 
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -56,8 +56,7 @@ public class UAggOuterChain extends Lop
 	 * @param vt value type
 	 * @param et execution type
 	 */
-	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) 
-	{
+	public UAggOuterChain(Lop input1, Lop input2, Aggregate.OperationTypes uaop, PartialAggregate.DirectionTypes uadir, Binary.OperationTypes bop, DataType dt, ValueType vt, ExecType et) {
 		super(Lop.Type.UaggOuterChain, dt, vt);
 		addInput(input1);
 		addInput(input2);
@@ -68,7 +67,6 @@ public class UAggOuterChain extends Lop
 		_uaggOp = uaop;
 		_uaggDir = uadir;
 		_binOp = bop;
-		
 		lps.setProperties(inputs, et);
 	}
 	
@@ -78,33 +76,14 @@ public class UAggOuterChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String input2, String output)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		//exec type
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inst op code
-		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//outer operation op code
-		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//inner operation op code
-		sb.append(Binary.getOpcode(_binOp));
-		sb.append(Lop.OPERAND_DELIMITOR);
-				
-		//inputs and outputs
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( getInputs().get(0).prepInputOperand(input2));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
-				
-		return sb.toString();
+	public String getInstructions(String input1, String input2, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			PartialAggregate.getOpcode(_uaggOp, _uaggDir), //outer
+			Binary.getOpcode(_binOp), //inner
+			getInputs().get(0).prepInputOperand(input1),
+			getInputs().get(0).prepInputOperand(input2),
+			prepOutputOperand(output));
 	}
 }

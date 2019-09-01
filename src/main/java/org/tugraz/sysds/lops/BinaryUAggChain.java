@@ -20,6 +20,7 @@
 package org.tugraz.sysds.lops;
 
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -66,31 +67,13 @@ public class BinaryUAggChain extends Lop
 	}
 	
 	@Override
-	public String getInstructions(String input1, String output)
-	{
-		StringBuilder sb = new StringBuilder();
-		
-		//exec type
-		sb.append(getExecType());
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inst op code
-		sb.append(OPCODE);
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//outer operation op code
-		sb.append(Binary.getOpcode(_binOp));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		
-		//inner operation op code
-		sb.append(PartialAggregate.getOpcode(_uaggOp, _uaggDir));		
-		sb.append(Lop.OPERAND_DELIMITOR);
-
-		//inputs and outputs
-		sb.append( getInputs().get(0).prepInputOperand(input1));
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append( this.prepOutputOperand(output));
-				
-		return sb.toString();
+	public String getInstructions(String input1, String output) {
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			Binary.getOpcode(_binOp), //outer opcode
+			PartialAggregate.getOpcode(_uaggOp, _uaggDir), //inner opcode
+			getInputs().get(0).prepInputOperand(input1),
+			prepOutputOperand(output));
 	}
 }

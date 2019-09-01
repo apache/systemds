@@ -21,7 +21,7 @@ package org.tugraz.sysds.lops;
 
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -107,7 +107,7 @@ public class PickByCount extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append(operation);
 		
-		sb.append( OPERAND_DELIMITOR );		
+		sb.append( OPERAND_DELIMITOR );
 		sb.append(inMemoryInput);
 		
 		return sb.toString();
@@ -121,23 +121,12 @@ public class PickByCount extends Lop
 	 */
 	@Override
 	public String getInstructions(String input, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		sb.append( Lop.OPERAND_DELIMITOR );
-		
-		sb.append( getInputs().get(0).prepInputOperand(input));
-		sb.append( OPERAND_DELIMITOR );
-		
-		sb.append( this.prepOutputOperand(output) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append(operation);
-		
-		sb.append( OPERAND_DELIMITOR );		
-		sb.append(inMemoryInput);
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input),
+			prepOutputOperand(output),
+			operation.name(),
+			String.valueOf(inMemoryInput));
 	}
 }

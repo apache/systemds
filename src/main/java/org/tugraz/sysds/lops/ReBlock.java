@@ -22,7 +22,7 @@ package org.tugraz.sysds.lops;
  
 import org.tugraz.sysds.lops.LopProperties.ExecType;
 import org.tugraz.sysds.lops.OutputParameters.Format;
-
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 
@@ -63,28 +63,14 @@ public class ReBlock extends Lop
 
 	@Override
 	public String getInstructions(String input1, String output) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "rblk" );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _rows_per_block );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _cols_per_block );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append(_outputEmptyBlocks);
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			"rblk",
+			getInputs().get(0).prepInputOperand(input1),
+			prepOutputOperand(output),
+			String.valueOf(_rows_per_block),
+			String.valueOf(_cols_per_block ),
+			String.valueOf(_outputEmptyBlocks));
 	}
 	
 	// This function is replicated in Dag.java

@@ -22,6 +22,7 @@ package org.tugraz.sysds.lops;
 import org.tugraz.sysds.common.Types.DataType;
 import org.tugraz.sysds.common.Types.ValueType;
 import org.tugraz.sysds.lops.LopProperties.ExecType;
+import org.tugraz.sysds.runtime.instructions.InstructionUtils;
 
 /**
  * TODO Additional compiler enhancements:
@@ -69,30 +70,14 @@ public class AppendG extends Lop
 	//called when append executes in SP
 	@Override
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String input_index4, String output_index) {
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( OPCODE );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input_index1));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(1).prepInputOperand(input_index2));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(2).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(3).prepScalarInputOperand(getExecType()));
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output_index) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( _cbind );
-		
-		return sb.toString();
+		return InstructionUtils.concatOperands(
+			getExecType().name(),
+			OPCODE,
+			getInputs().get(0).prepInputOperand(input_index1),
+			getInputs().get(1).prepInputOperand(input_index2),
+			getInputs().get(2).prepScalarInputOperand(getExecType()),
+			getInputs().get(3).prepScalarInputOperand(getExecType()),
+			prepOutputOperand(output_index),
+			String.valueOf(_cbind));
 	}
 }
